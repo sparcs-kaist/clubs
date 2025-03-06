@@ -1,6 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
-export const takeOne = <T>(values: T[]): T => values[0];
 export const isEmptyObject = obj =>
   obj && Object.keys(obj).length === 0 && obj.constructor === Object;
 
@@ -31,10 +30,18 @@ export function getArrayDiff<T extends string | number>(
   return Array.from(union).filter(x => !intersection.has(x));
 }
 
+export const takeOne = <T>(values: T[]): T | null => {
+  // 하나를 가져올 때 쓰는 함수
+  // 배열이 비어있으면 null을 반환
+  if (values.length === 0) return null;
+  return values[0];
+};
+
 type IdType = number | string;
 export function takeOnlyOne<T>(name?: string): (array: T[]) => T {
   return (array: T[]) => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
+    // 배열의 요소가 하나가 아니면 예외 던짐
     if (array.length === 0)
       throw new NotFoundException(`${name ?? "array"} is empty`);
     if (array.length > 1)
@@ -77,7 +84,8 @@ export function takeAll<T extends { id: K }, K extends IdType>(
   };
 }
 
-export function takeIfExist<T>(name?: string): (array: T[]) => T[] {
+export function takeExist<T>(name?: string): (array: T[]) => T[] {
+  // 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
   return (array: T[]) => {
     if (array.length === 0)
       throw new NotFoundException(`${name ?? "array"} is empty`);
