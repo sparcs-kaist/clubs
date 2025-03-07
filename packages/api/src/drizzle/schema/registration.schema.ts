@@ -153,6 +153,7 @@ export const RegistrationApplicationStudent = mysqlTable(
     clubId: int("club_id")
       .notNull()
       .references(() => Club.id),
+    semesterId: int("semester_d_id").references(() => SemesterD.id),
     registrationApplicationStudentEnumId: int(
       "registration_application_student_status_enum",
     ).notNull(),
