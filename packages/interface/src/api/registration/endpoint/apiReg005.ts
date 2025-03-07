@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
+
 /**
  * @version v0.1
  * @description 동아리 가입을 신청합니다.
@@ -15,7 +17,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const responseBodyMap = {

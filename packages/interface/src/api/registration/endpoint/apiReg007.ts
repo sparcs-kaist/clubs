@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
+import { zMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 /**
@@ -13,13 +15,13 @@ const url = (applyId: string) =>
 const method = "PATCH";
 
 const requestParam = z.object({
-  applyId: z.coerce.number().int().min(1),
+  applyId: zMemberRegistration.shape.id,
 });
 
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
   applyStatusEnumId: z.nativeEnum(RegistrationApplicationStudentStatusEnum),
 });
 

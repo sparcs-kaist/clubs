@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zUserName } from "@sparcs-clubs/interface/common/commonString";
 import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
 
@@ -15,7 +16,7 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
 });
