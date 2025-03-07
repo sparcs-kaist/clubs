@@ -92,7 +92,7 @@ export class MemberRegistrationService {
         RegistrationApplicationStudentStatusEnum.Pending,
       ],
     });
-    if (isAlreadyApplied)
+    if (isAlreadyApplied.length > 0)
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
     // 동아리 가입 신청
     await this.memberRegistrationRepository.insert({

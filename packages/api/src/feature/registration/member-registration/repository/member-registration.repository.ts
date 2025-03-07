@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray, SQL } from "drizzle-orm";
+import { and, eq, inArray, isNull, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
@@ -69,7 +69,7 @@ export class MemberRegistrationRepository {
         ),
       );
     }
-    whereClaues.push(eq(RegistrationApplicationStudent.deletedAt, null));
+    whereClaues.push(isNull(RegistrationApplicationStudent.deletedAt));
 
     const result = await tx
       .select()
