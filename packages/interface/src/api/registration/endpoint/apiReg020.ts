@@ -5,6 +5,8 @@ import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zUserName } from "@sparcs-clubs/interface/common/commonString";
 import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
 
+import { zMemberRegistration } from "../type/member.registration.type";
+
 /**
  * @version v0.1
  * @description 동아리별 가입 신청의 세부 상태를 확인합니다.
@@ -34,12 +36,11 @@ const responseBodyMap = {
     regularMemberRejections: z.coerce.number().int().min(0),
     items: z.array(
       z.object({
-        memberRegistrationId: z.coerce.number().int().min(1),
-        RegistrationApplicationStudentStatusEnumId: z.coerce
-          .number()
-          .int()
-          .min(1),
+        memberRegistrationId: zMemberRegistration.shape.id,
+        RegistrationApplicationStudentStatusEnumId:
+          zMemberRegistration.shape.registrationApplicationStudentEnum,
         isRegularMemberRegistration: z.coerce.boolean(),
+        //todo: 엔티티로 바꾸기
         student: z.object({
           id: z.coerce.number().int().min(1),
           studentNumber: z.coerce.number().int().min(1),

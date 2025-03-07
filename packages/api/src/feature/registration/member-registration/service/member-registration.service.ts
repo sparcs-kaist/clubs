@@ -83,6 +83,7 @@ export class MemberRegistrationService {
     }
 
     // 이미 해당 동아리에 해당 학생의 반려되지 않은 신청이 존재하는지 확인하기
+    //todo: 반려되는 경우에는 재신청할 수 있는 상황. 논의 필요.
     const isAlreadyApplied = await this.memberRegistrationRepository.find({
       studentId,
       clubId,
@@ -280,8 +281,8 @@ export class MemberRegistrationService {
     executiveId: number;
     query: ApiReg020RequestQuery;
   }): Promise<ApiReg020ResponseOk> {
-    // const semesterId =
-    //   await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId =
+      await this.clubPublicService.dateToSemesterId(getKSTDate());
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       clubId: param.query.clubId,
@@ -296,7 +297,11 @@ export class MemberRegistrationService {
           ...(await this.userPublicService.getStudentById(
             registration.student,
           )),
-          StudentEnumId: 1, //todo: 수정 바로 필요.
+          StudentEnumId:
+            await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterId(
+              registration.student.id,
+              semesterId,
+            ),
         },
       })),
     );
@@ -367,8 +372,8 @@ export class MemberRegistrationService {
     executiveId: number;
     query: ApiReg019RequestQuery;
   }): Promise<ApiReg019ResponseOk> {
-    // const semesterId =
-    //   await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId =
+      await this.clubPublicService.dateToSemesterId(getKSTDate());
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({});
     const memberRegistrations = await Promise.all(
@@ -398,7 +403,11 @@ export class MemberRegistrationService {
             ...(await this.userPublicService.getStudentById(
               registration.student,
             )),
-            StudentEnumId: 1, //todo: 수정 바로 필요.
+            StudentEnumId:
+              await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterId(
+                registration.student.id,
+                semesterId,
+              ),
           },
           registrationApplicationStudentEnum:
             registration.registrationApplicationStudentEnum,

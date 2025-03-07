@@ -12,7 +12,7 @@ export const zMemberRegistration = z.object({
   registrationApplicationStudentEnum: z.nativeEnum(
     RegistrationApplicationStudentStatusEnum,
   ),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 // 외부 entity의 값을 전부 받아온 형태.

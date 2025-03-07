@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 /**
  * @version v0.1
@@ -22,7 +21,8 @@ const requestQuery = z.object({});
 
 const requestBody = z.object({
   clubId: zClub.shape.id,
-  applyStatusEnumId: z.nativeEnum(RegistrationApplicationStudentStatusEnum),
+  applyStatusEnumId:
+    zMemberRegistration.shape.registrationApplicationStudentEnum,
 });
 
 const responseBodyMap = {
