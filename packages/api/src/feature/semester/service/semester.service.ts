@@ -5,7 +5,7 @@ import type {
   ApiSem001ResponseOK,
 } from "@sparcs-clubs/interface/api/semester/apiSem001";
 
-import SemesterRepository from "./semester.repository";
+import SemesterRepository from "../repository/semester.repository";
 
 @Injectable()
 export default class SemesterService {

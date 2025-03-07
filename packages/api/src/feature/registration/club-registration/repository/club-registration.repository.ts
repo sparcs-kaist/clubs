@@ -48,9 +48,9 @@ import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import { File } from "@sparcs-clubs/api/drizzle/schema/file.schema";
 import {
   Registration,
-  RegistrationDeadlineD,
   RegistrationExecutiveComment,
 } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Professor,
   ProfessorT,

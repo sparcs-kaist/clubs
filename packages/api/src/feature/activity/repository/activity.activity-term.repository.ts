@@ -4,7 +4,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 
 // import logger from "@sparcs-clubs/api/common/util/logger";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
+import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 @Injectable()
 export default class ActivityActivityTermRepository {

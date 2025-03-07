@@ -34,7 +34,6 @@ import {
 import {
   Activity,
   ActivityClubChargedExecutive,
-  ActivityDeadlineD,
   ActivityEvidenceFile,
   ActivityFeedback,
   ActivityParticipant,
@@ -43,6 +42,7 @@ import {
 } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
 import { Club, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
+import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Professor,
   Student,

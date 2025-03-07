@@ -6,7 +6,8 @@ import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
 
 import { takeUnique } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { ClubT, SemesterD } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 @Injectable()
 export default class SemesterDRepository {

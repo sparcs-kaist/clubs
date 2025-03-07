@@ -4,8 +4,8 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { AuthActivatedRefreshTokens } from "@sparcs-clubs/api/drizzle/schema/refresh-token.schema";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Employee,
   EmployeeT,

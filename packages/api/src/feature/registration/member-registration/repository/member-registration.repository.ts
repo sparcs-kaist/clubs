@@ -31,10 +31,8 @@ import {
   Division,
   DivisionPermanentClubD,
 } from "@sparcs-clubs/api/drizzle/schema/division.schema";
-import {
-  RegistrationApplicationStudent,
-  RegistrationDeadlineD,
-} from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Student,
   StudentT,
