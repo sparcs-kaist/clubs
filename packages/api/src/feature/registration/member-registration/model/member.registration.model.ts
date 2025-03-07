@@ -16,6 +16,7 @@ export class MMemberRegistration
   student: IMemberRegistration["student"];
   club: IMemberRegistration["club"];
   registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+  semester: IMemberRegistration["semester"];
   createdAt: IMemberRegistration["createdAt"];
   constructor(data: IMemberRegistration) {
     super();
@@ -27,6 +28,7 @@ export class MMemberRegistration
       id: result.id,
       student: { id: result.studentId },
       club: { id: result.clubId },
+      semester: { id: result.semesterId },
       registrationApplicationStudentEnum:
         result.registrationApplicationStudentEnumId,
       createdAt: result.createdAt,

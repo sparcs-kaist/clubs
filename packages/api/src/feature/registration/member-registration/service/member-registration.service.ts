@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { desc } from "drizzle-orm";
 
 import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
 import {
@@ -19,6 +20,7 @@ import type {
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -98,6 +100,7 @@ export class MemberRegistrationService {
     await this.memberRegistrationRepository.insert({
       studentId,
       clubId,
+      semesterId,
     });
     return {};
   }
@@ -109,8 +112,16 @@ export class MemberRegistrationService {
     //   await this.memberRegistrationRepository.isMemberRegistrationEvent();
     // if (!ismemberRegistrationEvent)
     //   return { status: HttpStatus.NO_CONTENT, data: { applies: [] } };
+    const cur = getKSTDate();
+    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    if (semesterId === undefined)
+      throw new HttpException(
+        "Semester Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     const registrations = await this.memberRegistrationRepository.find({
       studentId,
+      semesterId,
     });
     const result = await Promise.all(
       registrations.map(async registration => {
@@ -150,7 +161,8 @@ export class MemberRegistrationService {
     //     "Not a member registration event duration",
     //     HttpStatus.BAD_REQUEST,
     //   );
-    await this.memberRegistrationRepository.delete(applyId);
+
+    await this.memberRegistrationRepository.delete(studentId, applyId);
     return {};
   }
 
@@ -248,8 +260,16 @@ export class MemberRegistrationService {
     //     "Not a member registration event duration",
     //     HttpStatus.BAD_REQUEST,
     //   );
+    const cur = getKSTDate();
+    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    if (semesterId === undefined)
+      throw new HttpException(
+        "Semester Error",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     const registrations = await this.memberRegistrationRepository.find({
       clubId,
+      semesterId,
     });
     const result = await Promise.all(
       registrations.map(async registration => ({
@@ -286,6 +306,10 @@ export class MemberRegistrationService {
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       clubId: param.query.clubId,
+      semesterId,
+      pageOffset: param.query.pageOffset,
+      itemCount: param.query.itemCount,
+      orderBy: desc(RegistrationApplicationStudent.createdAt),
     });
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => ({
@@ -305,7 +329,6 @@ export class MemberRegistrationService {
         },
       })),
     );
-    //todo: orderby 추가하기
     return {
       totalRegistrations: memberRegistrations.length,
       totalWaitings: memberRegistrations.filter(
@@ -375,7 +398,12 @@ export class MemberRegistrationService {
     const semesterId =
       await this.clubPublicService.dateToSemesterId(getKSTDate());
     // logger.debug(semesterId);
-    const registrations = await this.memberRegistrationRepository.find({});
+    const registrations = await this.memberRegistrationRepository.find({
+      semesterId,
+      pageOffset: param.query.pageOffset,
+      itemCount: param.query.itemCount,
+      orderBy: desc(RegistrationApplicationStudent.createdAt),
+    });
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => {
         const club = await this.clubPublicService.fetchSummary(

@@ -34,6 +34,10 @@ export class MemberRegistrationRepository {
       ids?: number[];
       studentId?: number;
       clubId?: number;
+      semesterId?: number;
+      pageOffset?: number;
+      itemCount?: number;
+      orderBy?: SQL;
       registrationApplicationStudentEnum?: number;
       registrationApplicationStudentEnums?: number[];
     },
@@ -53,6 +57,11 @@ export class MemberRegistrationRepository {
     if (param.clubId) {
       whereClaues.push(eq(RegistrationApplicationStudent.clubId, param.clubId));
     }
+    if (param.semesterId) {
+      whereClaues.push(
+        eq(RegistrationApplicationStudent.semesterId, param.semesterId),
+      );
+    }
     if (param.registrationApplicationStudentEnum) {
       whereClaues.push(
         eq(
@@ -70,11 +79,18 @@ export class MemberRegistrationRepository {
       );
     }
     whereClaues.push(isNull(RegistrationApplicationStudent.deletedAt));
-
-    const result = await tx
+    let query = tx
       .select()
       .from(RegistrationApplicationStudent)
-      .where(and(...whereClaues));
+      .where(and(...whereClaues))
+      .$dynamic();
+    query =
+      param.itemCount !== undefined ? query.limit(param.itemCount) : query;
+    query =
+      param.pageOffset !== undefined ? query.offset(param.pageOffset) : query;
+    query = param.orderBy !== undefined ? query.orderBy(param.orderBy) : query;
+
+    const result = await query.execute();
 
     return result.map(row => MMemberRegistration.from(row));
   }
@@ -84,6 +100,10 @@ export class MemberRegistrationRepository {
     ids?: number[];
     studentId?: number;
     clubId?: number;
+    semesterId?: number;
+    pageOffset?: number;
+    itemCount?: number;
+    orderBy?: SQL;
     registrationApplicationStudentEnum?: number;
     registrationApplicationStudentEnums?: number[];
   }): Promise<MMemberRegistration[]> {
@@ -114,8 +134,16 @@ export class MemberRegistrationRepository {
   ): Promise<void> {
     const [result] = await tx
       .update(RegistrationApplicationStudent)
-      .set(param)
-      .where(eq(RegistrationApplicationStudent.id, param.id));
+      .set({
+        registrationApplicationStudentEnumId:
+          param.registrationApplicationStudentEnum,
+      })
+      .where(
+        and(
+          eq(RegistrationApplicationStudent.id, param.id),
+          isNull(RegistrationApplicationStudent.deletedAt),
+        ),
+      );
     if (result.affectedRows === 0) {
       throw new HttpException("Failed to update", HttpStatus.BAD_REQUEST);
     }
@@ -124,17 +152,27 @@ export class MemberRegistrationRepository {
     await this.withTransaction(async tx => this.updateTx(tx, param));
   }
 
-  async deleteTx(tx: DrizzleTransaction, id: number): Promise<void> {
+  async deleteTx(
+    tx: DrizzleTransaction,
+    studentId: number,
+    id: number,
+  ): Promise<void> {
     const cur = getKSTDate();
     const [result] = await tx
       .update(RegistrationApplicationStudent)
       .set({ deletedAt: cur })
-      .where(eq(RegistrationApplicationStudent.id, id));
+      .where(
+        and(
+          eq(RegistrationApplicationStudent.id, id),
+          eq(RegistrationApplicationStudent.studentId, studentId),
+          isNull(RegistrationApplicationStudent.deletedAt),
+        ),
+      );
     if (result.affectedRows === 0) {
       throw new HttpException("Failed to delete", HttpStatus.BAD_REQUEST);
     }
   }
-  async delete(id: number): Promise<void> {
-    await this.withTransaction(async tx => this.deleteTx(tx, id));
+  async delete(studentId: number, id: number): Promise<void> {
+    await this.withTransaction(async tx => this.deleteTx(tx, studentId, id));
   }
 }
