@@ -3,6 +3,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { hangulIncludes } from "es-hangul";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -91,14 +92,22 @@ const AllMemberList: React.FC<AllMemberListProps> = ({
   });
 
   const [searchedMembers, setSearchedMembers] = useState(
-    members.members.filter(member => member.name.startsWith(searchText)),
+    members.members.filter(
+      member =>
+        member.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        hangulIncludes(member.name, searchText),
+    ),
   );
 
   const memberCount = searchedMembers.length;
 
   useEffect(() => {
     setSearchedMembers(
-      members.members.filter(member => member.name.startsWith(searchText)),
+      members.members.filter(
+        member =>
+          member.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          hangulIncludes(member.name, searchText),
+      ),
     );
   }, [members.members, searchText]);
 
