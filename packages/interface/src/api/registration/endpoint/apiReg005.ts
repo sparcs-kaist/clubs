@@ -6,6 +6,7 @@ import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 /**
  * @version v0.1
  * @description 동아리 가입을 신청합니다.
+ * 이미 동아리 회원이거나(신청 대표자), 이미 가입한 경우 400 에러를 반환합니다.
  */
 
 const url = () =>

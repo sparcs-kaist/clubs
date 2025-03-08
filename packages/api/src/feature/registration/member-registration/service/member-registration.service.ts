@@ -82,15 +82,6 @@ export class MemberRegistrationService {
       );
     }
 
-    // 이미 해당 동아리에 해당 학생의 신청이 존재하는지 확인하기
-    //todo: 반려되는 경우에는 재신청할 수 있는 상황. 논의 필요.
-    const isAlreadyApplied = await this.memberRegistrationRepository.find({
-      studentId,
-      clubId,
-    });
-    if (isAlreadyApplied.length > 0)
-      throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
-
     // 이미 해당 동아리 학생인지 확인하기
     const isAlreadyMember = await this.clubPublicService.isStudentBelongsTo(
       studentId,
@@ -98,6 +89,14 @@ export class MemberRegistrationService {
     );
     if (isAlreadyMember)
       throw new HttpException("Already a member", HttpStatus.BAD_REQUEST);
+
+    // 이미 해당 동아리에 해당 학생의 신청이 존재하는지 확인하기
+    const isAlreadyApplied = await this.memberRegistrationRepository.find({
+      studentId,
+      clubId,
+    });
+    if (isAlreadyApplied.length > 0)
+      throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
     await this.memberRegistrationRepository.insert({
