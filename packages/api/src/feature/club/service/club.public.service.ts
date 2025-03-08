@@ -18,6 +18,7 @@ import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.reposi
 import { MClub } from "../model/club.model";
 import ClubStudentTRepository from "../repository/club.club-student-t.repository";
 import ClubTRepository from "../repository/club.club-t.repository";
+import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
 import ClubRepository from "../repository/club.repository";
 import SemesterDRepository from "../repository/club.semester-d.repository";
 
@@ -31,6 +32,7 @@ export default class ClubPublicService {
     private semesterDRepository: SemesterDRepository,
     private divisionRepository: DivisionRepository,
     private divisionPublicService: DivisionPublicService,
+    private divisionPermanentClubDRepository: DivisionPermanentClubDRepository,
     private userPublicService: UserPublicService,
   ) {}
 
@@ -436,5 +438,11 @@ export default class ClubPublicService {
     );
 
     return clubs;
+  }
+
+  async isPermanentClubsByClubId(clubId: number) {
+    const club =
+      await this.divisionPermanentClubDRepository.findPermenantClub(clubId);
+    return club;
   }
 }

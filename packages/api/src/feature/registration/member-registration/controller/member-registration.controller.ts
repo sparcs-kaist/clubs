@@ -70,11 +70,10 @@ export class MemberRegistrationController {
     @GetStudent() user: GetStudent,
     @Body() body: ApiReg005RequestBody,
   ): Promise<ApiReg005ResponseCreated> {
-    const result =
-      await this.memberRegistrationService.postStudentMemberRegistration(
-        user.studentId,
-        body.clubId,
-      );
+    const result = await this.memberRegistrationService.postMemberRegistration(
+      user.studentId,
+      body.clubId,
+    );
     return result;
   }
 
@@ -85,7 +84,7 @@ export class MemberRegistrationController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiReg006ResponseOk | ApiReg006ResponseNoContent> {
     const result =
-      await this.memberRegistrationService.getStudentRegistrationsMemberRegistrationsMy(
+      await this.memberRegistrationService.getMemberRegistrationsMy(
         user.studentId,
       );
     res.status(result.status);
@@ -102,7 +101,7 @@ export class MemberRegistrationController {
     @Param() { applyId }: ApiReg013RequestParam,
   ): Promise<ApiReg013ResponseOk> {
     const result =
-      await this.memberRegistrationService.deleteStudentRegistrationsMemberRegistration(
+      await this.memberRegistrationService.deleteMemberRegistration(
         user.studentId,
         applyId,
       );
@@ -120,13 +119,12 @@ export class MemberRegistrationController {
     @Param() { applyId }: ApiReg007RequestParam,
     @Body() { clubId, applyStatusEnumId }: ApiReg007RequestBody,
   ): Promise<ApiReg007ResponseNoContent> {
-    const result =
-      await this.memberRegistrationService.patchStudentRegistrationsMemberRegistration(
-        user.studentId,
-        applyId,
-        clubId,
-        applyStatusEnumId,
-      );
+    const result = await this.memberRegistrationService.patchMemberRegistration(
+      user.studentId,
+      applyId,
+      clubId,
+      applyStatusEnumId,
+    );
     return result;
   }
 
@@ -138,7 +136,7 @@ export class MemberRegistrationController {
     @Param() { clubId }: ApiReg008RequestParam,
   ): Promise<ApiReg008ResponseOk> {
     const result =
-      await this.memberRegistrationService.getStudentRegistrationsMemberRegistrationsClub(
+      await this.memberRegistrationService.getMemberRegistrationsClub(
         user.studentId,
         clubId,
       );

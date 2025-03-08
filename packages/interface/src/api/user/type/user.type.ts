@@ -60,6 +60,7 @@ export const zStudent = z.object({
   }),
 });
 
+//todo: 미완성 상태. 사용하지 말것.
 export const zStudentHistory = z.object({
   id: zId,
   studentId: zStudent.pick({ id: true }),

@@ -1,9 +1,11 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zUserName } from "@sparcs-clubs/interface/common/commonString";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+
+import { zMemberRegistration } from "../type/member.registration.type";
 
 /**
  * @version v0.1
@@ -15,7 +17,7 @@ const url = (clubId: string) =>
 const method = "GET";
 
 const requestParam = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const requestQuery = z.object({});
@@ -26,11 +28,11 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     applies: z.array(
       z.object({
-        id: z.coerce.number().int().min(1),
-        applyStatusEnumId: z.nativeEnum(
-          RegistrationApplicationStudentStatusEnum,
-        ),
-        createdAt: z.coerce.date(),
+        id: zMemberRegistration.shape.id,
+        applyStatusEnumId:
+          zMemberRegistration.shape.registrationApplicationStudentEnum,
+        createdAt: zMemberRegistration.shape.createdAt,
+        //todo: 엔티티로 바꾸기
         student: z.object({
           id: z.coerce.number().int().min(1),
           name: zUserName,

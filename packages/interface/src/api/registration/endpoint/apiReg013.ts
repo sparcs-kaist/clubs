@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+
 /**
  * @version v0.1
  * @description 동아리 가입 신청을 취소합니다.
@@ -11,7 +13,7 @@ const url = (applyId: string) =>
 const method = "DELETE";
 
 const requestParam = z.object({
-  applyId: z.coerce.number().int().min(1),
+  applyId: zMemberRegistration.shape.id,
 });
 
 const requestQuery = z.object({});

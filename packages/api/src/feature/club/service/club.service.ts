@@ -59,7 +59,8 @@ export class ClubService {
     private clubRegistrationPublicService: ClubRegistrationPublicService,
   ) {}
 
-  private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  // private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
     const result = await this.clubRepository.getClubs();
