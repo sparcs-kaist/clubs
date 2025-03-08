@@ -1,13 +1,25 @@
-import { InferSelectModel } from "drizzle-orm";
+import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
-export type MemberRegistrationDbResult = InferSelectModel<
+type MemberRegistrationDbResult = InferSelectModel<
   typeof RegistrationApplicationStudent
 >;
+
+const orderByFieldMap = {
+  createdAt: RegistrationApplicationStudent.createdAt,
+  registrationApplicationStudentEnum:
+    RegistrationApplicationStudent.registrationApplicationStudentEnumId,
+  semesterId: RegistrationApplicationStudent.semesterId,
+};
+
+export type IMemberRegistrationOrderBy = Partial<{
+  [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
+}>;
 
 export class MMemberRegistration
   extends MEntity
@@ -33,5 +45,18 @@ export class MMemberRegistration
         result.registrationApplicationStudentEnumId,
       createdAt: result.createdAt,
     });
+  }
+
+  static makeOrderBy(orderBy: IMemberRegistrationOrderBy): SQL[] {
+    return Object.entries(orderBy)
+      .filter(
+        ([key, orderByType]) =>
+          orderByType && orderByFieldMap[key as keyof typeof orderByFieldMap],
+      )
+      .map(([key, orderByType]) =>
+        orderByType === OrderByTypeEnum.ASC
+          ? asc(orderByFieldMap[key])
+          : desc(orderByFieldMap[key]),
+      );
   }
 }

@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { desc } from "drizzle-orm";
 
 import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
 import {
@@ -19,8 +18,8 @@ import type {
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
-import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -76,7 +75,6 @@ export class MemberRegistrationService {
     const isClubOperatingThisSemester = clubExistedSemesters.some(
       semester => semester.id === semesterId,
     );
-
     if (!isClubOperatingThisSemester) {
       throw new HttpException(
         "The club is not operating in the current semester.",
@@ -84,18 +82,23 @@ export class MemberRegistrationService {
       );
     }
 
-    // 이미 해당 동아리에 해당 학생의 반려되지 않은 신청이 존재하는지 확인하기
+    // 이미 해당 동아리에 해당 학생의 신청이 존재하는지 확인하기
     //todo: 반려되는 경우에는 재신청할 수 있는 상황. 논의 필요.
     const isAlreadyApplied = await this.memberRegistrationRepository.find({
       studentId,
       clubId,
-      registrationApplicationStudentEnums: [
-        RegistrationApplicationStudentStatusEnum.Approved,
-        RegistrationApplicationStudentStatusEnum.Pending,
-      ],
     });
     if (isAlreadyApplied.length > 0)
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
+
+    // 이미 해당 동아리 학생인지 확인하기
+    const isAlreadyMember = await this.clubPublicService.isStudentBelongsTo(
+      studentId,
+      clubId,
+    );
+    if (isAlreadyMember)
+      throw new HttpException("Already a member", HttpStatus.BAD_REQUEST);
+
     // 동아리 가입 신청
     await this.memberRegistrationRepository.insert({
       studentId,
@@ -309,7 +312,9 @@ export class MemberRegistrationService {
       semesterId,
       pageOffset: param.query.pageOffset,
       itemCount: param.query.itemCount,
-      orderBy: desc(RegistrationApplicationStudent.createdAt),
+      orderBy: {
+        createdAt: OrderByTypeEnum.DESC,
+      },
     });
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => ({
@@ -402,7 +407,9 @@ export class MemberRegistrationService {
       semesterId,
       pageOffset: param.query.pageOffset,
       itemCount: param.query.itemCount,
-      orderBy: desc(RegistrationApplicationStudent.createdAt),
+      orderBy: {
+        createdAt: OrderByTypeEnum.DESC,
+      },
     });
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => {

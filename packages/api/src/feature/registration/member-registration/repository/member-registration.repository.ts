@@ -14,7 +14,10 @@ import {
   DrizzleTransaction,
 } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
-import { MMemberRegistration } from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
+import {
+  IMemberRegistrationOrderBy,
+  MMemberRegistration,
+} from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
 
 @Injectable()
 export class MemberRegistrationRepository {
@@ -37,33 +40,33 @@ export class MemberRegistrationRepository {
       semesterId?: number;
       pageOffset?: number;
       itemCount?: number;
-      orderBy?: SQL;
+      orderBy?: IMemberRegistrationOrderBy;
       registrationApplicationStudentEnum?: number;
       registrationApplicationStudentEnums?: number[];
     },
   ): Promise<MMemberRegistration[]> {
-    const whereClaues: SQL[] = [];
+    const whereClause: SQL[] = [];
     if (param.id) {
-      whereClaues.push(eq(RegistrationApplicationStudent.id, param.id));
+      whereClause.push(eq(RegistrationApplicationStudent.id, param.id));
     }
     if (param.ids) {
-      whereClaues.push(inArray(RegistrationApplicationStudent.id, param.ids));
+      whereClause.push(inArray(RegistrationApplicationStudent.id, param.ids));
     }
     if (param.studentId) {
-      whereClaues.push(
+      whereClause.push(
         eq(RegistrationApplicationStudent.studentId, param.studentId),
       );
     }
     if (param.clubId) {
-      whereClaues.push(eq(RegistrationApplicationStudent.clubId, param.clubId));
+      whereClause.push(eq(RegistrationApplicationStudent.clubId, param.clubId));
     }
     if (param.semesterId) {
-      whereClaues.push(
+      whereClause.push(
         eq(RegistrationApplicationStudent.semesterId, param.semesterId),
       );
     }
     if (param.registrationApplicationStudentEnum) {
-      whereClaues.push(
+      whereClause.push(
         eq(
           RegistrationApplicationStudent.registrationApplicationStudentEnumId,
           param.registrationApplicationStudentEnum,
@@ -71,24 +74,27 @@ export class MemberRegistrationRepository {
       );
     }
     if (param.registrationApplicationStudentEnums) {
-      whereClaues.push(
+      whereClause.push(
         inArray(
           RegistrationApplicationStudent.registrationApplicationStudentEnumId,
           param.registrationApplicationStudentEnums,
         ),
       );
     }
-    whereClaues.push(isNull(RegistrationApplicationStudent.deletedAt));
+    whereClause.push(isNull(RegistrationApplicationStudent.deletedAt));
     let query = tx
       .select()
       .from(RegistrationApplicationStudent)
-      .where(and(...whereClaues))
+      .where(and(...whereClause))
       .$dynamic();
     query =
       param.itemCount !== undefined ? query.limit(param.itemCount) : query;
     query =
       param.pageOffset !== undefined ? query.offset(param.pageOffset) : query;
-    query = param.orderBy !== undefined ? query.orderBy(param.orderBy) : query;
+
+    if (param.orderBy) {
+      query = query.orderBy(...MMemberRegistration.makeOrderBy(param.orderBy));
+    }
 
     const result = await query.execute();
 
@@ -103,7 +109,7 @@ export class MemberRegistrationRepository {
     semesterId?: number;
     pageOffset?: number;
     itemCount?: number;
-    orderBy?: SQL;
+    orderBy?: IMemberRegistrationOrderBy;
     registrationApplicationStudentEnum?: number;
     registrationApplicationStudentEnums?: number[];
   }): Promise<MMemberRegistration[]> {
