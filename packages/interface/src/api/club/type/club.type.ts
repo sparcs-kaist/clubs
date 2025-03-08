@@ -6,6 +6,7 @@ import {
   zDivisionSummary,
   zDivisionSummaryResponse,
 } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 import {
   zProfessor,
   zStudent,
@@ -15,9 +16,7 @@ import {
   ClubDelegateEnum,
   ClubTypeEnum,
 } from "@sparcs-clubs/interface/common/enum/club.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
-
-import { zSemester } from "./semester.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 const zClubRoom = z.object({
   id: zId,

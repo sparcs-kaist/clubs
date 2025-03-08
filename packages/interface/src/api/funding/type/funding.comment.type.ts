@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { zExecutiveSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 import { zFunding } from "./funding.type";
 

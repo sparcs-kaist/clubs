@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 
-import { IActivityDuration } from "@sparcs-clubs/interface/api/activity/type/activity.duration.type";
 import { IActivityResponseSummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";

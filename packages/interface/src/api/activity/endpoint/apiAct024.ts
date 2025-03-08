@@ -2,7 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 /**
  * @version v0.1

@@ -16,7 +16,7 @@ import {
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 
 import { takeUnique } from "@sparcs-clubs/api/common/util/util";
 import {

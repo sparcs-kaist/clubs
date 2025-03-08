@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { IActivityDuration } from "@sparcs-clubs/interface/api/activity/type/activity.duration.type";
 import { IFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
 import {
   ApiFnd001RequestBody,
@@ -60,6 +59,7 @@ import {
   IFunding,
   IFundingResponse,
 } from "@sparcs-clubs/interface/api/funding/type/funding.type";
+import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
 import {
   IExecutive,
   IStudent,
@@ -74,11 +74,11 @@ import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
+import FundingDeadlineRepository from "@sparcs-clubs/api/feature/semester/repository/funding.deadline.repository";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
 import FundingCommentRepository from "../repository/funding.comment.repository";
-import FundingDeadlineRepository from "../repository/funding.deadline.repository";
 import FundingRepository from "../repository/funding.repository";
 
 @Injectable()
