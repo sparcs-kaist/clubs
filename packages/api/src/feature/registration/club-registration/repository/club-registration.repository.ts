@@ -38,7 +38,7 @@ import {
 } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Club,
@@ -140,7 +140,7 @@ export class ClubRegistrationRepository {
             ),
           )
           .for("share")
-          .then(takeUnique);
+          .then(takeOne);
         if (!delegate) {
           throw new HttpException(
             "Student is not delegate of the club",
@@ -228,7 +228,7 @@ export class ClubRegistrationRepository {
             ),
           )
           .for("share")
-          .then(takeUnique);
+          .then(takeOne);
 
         logger.debug(professor);
 
@@ -306,7 +306,7 @@ export class ClubRegistrationRepository {
           ),
         )
         .for("update")
-        .then(takeUnique);
+        .then(takeOne);
       if (
         !registration ||
         registration.RegistrationStatusEnum === RegistrationStatusEnum.Approved
@@ -341,7 +341,7 @@ export class ClubRegistrationRepository {
             ),
           )
           .for("share")
-          .then(takeUnique);
+          .then(takeOne);
 
         logger.debug(professor);
 
@@ -581,7 +581,7 @@ export class ClubRegistrationRepository {
           and(eq(Registration.id, applyId), isNull(Registration.deletedAt)),
         )
         .for("share")
-        .then(takeUnique);
+        .then(takeOne);
       if (!registration) {
         throw new HttpException(
           "Registration not found",
@@ -689,7 +689,7 @@ export class ClubRegistrationRepository {
         .select({ count: count(Registration.id) })
         .from(Registration)
         .where(isNull(Registration.deletedAt))
-        .then(takeUnique)
+        .then(takeOne)
     ).count;
 
     const startOffset = (pageOffset - 1) * itemCount;
@@ -865,7 +865,7 @@ export class ClubRegistrationRepository {
           and(eq(Registration.id, applyId), isNull(Registration.deletedAt)),
         )
         .for("share")
-        .then(takeUnique);
+        .then(takeOne);
       if (!registration) {
         throw new HttpException(
           "Registration not found",

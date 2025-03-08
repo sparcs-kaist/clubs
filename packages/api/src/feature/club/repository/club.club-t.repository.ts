@@ -4,7 +4,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 import { ClubT } from "src/drizzle/schema/club.schema";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { Professor } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
@@ -26,7 +26,7 @@ export default class ClubTRepository {
           ),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
   }
 
   async findClubDetail(semesterId: number, clubId: number) {
@@ -64,7 +64,7 @@ export default class ClubTRepository {
         ),
       )
       .limit(1)
-      .then(takeUnique));
+      .then(takeOne));
     return result;
   }
 
@@ -132,6 +132,6 @@ export default class ClubTRepository {
           isNull(ClubT.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
   }
 }

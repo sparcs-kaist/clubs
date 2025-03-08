@@ -5,7 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { StudentStatusEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Student,
@@ -44,7 +44,7 @@ export default class StudentRepository {
           ),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     if (isAvailable !== 0) {
       return true;
     }
@@ -75,7 +75,7 @@ export default class StudentRepository {
           isNull(StudentT.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     return result;
   }
 

@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Executive,
@@ -63,7 +63,7 @@ export default class ExecutiveRepository {
           isNull(ExecutiveT.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     return result;
   }
 
@@ -174,7 +174,7 @@ export default class ExecutiveRepository {
         Student,
         and(eq(Student.userId, Executive.userId), isNull(Student.deletedAt)),
       )
-      .then(takeUnique);
+      .then(takeOne);
 
     return result ? VExecutiveSummary.fromDBResult(result) : null;
   }

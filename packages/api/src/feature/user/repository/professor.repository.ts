@@ -5,7 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IProfessor } from "@sparcs-clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Professor,
@@ -31,7 +31,7 @@ export default class ProfessorRepository {
           isNull(ProfessorT.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     return result;
   }
 

@@ -22,7 +22,7 @@ import {
 } from "src/drizzle/schema/club.schema";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
@@ -129,7 +129,7 @@ export default class ClubStudentTRepository {
           eq(ClubStudentT.studentId, studentId),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     // Todo: 현재 학기에 활동 중인지 필터링 해야함.
     return student;
   }
