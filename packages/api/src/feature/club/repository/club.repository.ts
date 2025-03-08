@@ -40,6 +40,7 @@ import {
   Division,
   DivisionPermanentClubD,
 } from "@sparcs-clubs/api/drizzle/schema/division.schema";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Professor,
   ProfessorT,
@@ -686,6 +687,22 @@ export default class ClubRepository {
     if (!result) {
       throw new NotFoundException("Club not found");
     }
+    return result;
+  }
+
+  /**
+   * @param clubId 동아리 id
+   * @returns 해당 동아리가 등록했던 학기들의 정보를 리턴합니다.
+   * 동아리가 등록했던 학기의 구분은 ClubT 테이블을 기준으로 합니다.
+   * TODO: History 로 넘어가야 합니다.
+   */
+  async selectSemestersByClubId(param: { clubId: number }) {
+    const result = await this.db
+      .select()
+      .from(SemesterD)
+      .innerJoin(ClubT, eq(SemesterD.id, ClubT.semesterId))
+      .where(and(eq(ClubT.clubId, param.clubId), isNull(ClubT.deletedAt)))
+      .then(e => e.map(({ semester_d }) => semester_d)); // eslint-disable-line camelcase
     return result;
   }
 }

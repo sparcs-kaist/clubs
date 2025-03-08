@@ -5,6 +5,7 @@ import type {
   ApiSem001ResponseOK,
 } from "@sparcs-clubs/interface/api/semester/apiSem001";
 
+import { OrderByTypeEnum } from "../model/semester.model";
 import SemesterRepository from "../repository/semester.repository";
 
 @Injectable()
@@ -21,21 +22,22 @@ export default class SemesterService {
   }): Promise<ApiSem001ResponseOK> {
     const { pageOffset, itemCount } = param.query;
 
-    const { semesters, total } =
-      await this.semesterRepository.selectSemesterByOffsetAndItemCount({
+    const semesters = await this.semesterRepository.find({
+      pagination: {
         offset: pageOffset,
         itemCount,
-      });
+      },
+      orderBy: {
+        startTerm: OrderByTypeEnum.DESC,
+      },
+    });
+
+    const total = await this.semesterRepository.find({});
+    const totalCount = total.length;
 
     return {
-      semesters: semesters.map(semester => ({
-        id: semester.id,
-        year: semester.year,
-        name: semester.name,
-        startTerm: semester.startTerm,
-        endTerm: semester.endTerm,
-      })),
-      total,
+      semesters,
+      total: totalCount,
       offset: param.query.pageOffset,
     };
   }

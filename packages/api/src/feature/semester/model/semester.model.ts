@@ -1,10 +1,25 @@
-import { InferSelectModel } from "drizzle-orm";
+import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
 
 import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 type SemesterDBResult = InferSelectModel<typeof SemesterD>;
+
+const orderByFieldMap = {
+  startTerm: SemesterD.startTerm,
+  endTerm: SemesterD.endTerm,
+  year: SemesterD.year,
+};
+
+export enum OrderByTypeEnum {
+  ASC = 1,
+  DESC,
+}
+
+export type ISemesterOrderBy = Partial<{
+  [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
+}>;
 
 export class MSemester implements ISemester {
   id: ISemester["id"];
@@ -25,5 +40,18 @@ export class MSemester implements ISemester {
       endTerm: result.endTerm,
       year: result.year,
     });
+  }
+
+  static makeOrderBy(orderBy: ISemesterOrderBy): SQL[] {
+    return Object.entries(orderBy)
+      .filter(
+        ([key, orderByType]) =>
+          orderByType && orderByFieldMap[key as keyof typeof orderByFieldMap],
+      )
+      .map(([key, orderByType]) =>
+        orderByType === OrderByTypeEnum.ASC
+          ? asc(orderByFieldMap[key])
+          : desc(orderByFieldMap[key]),
+      );
   }
 }
