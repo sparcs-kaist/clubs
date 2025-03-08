@@ -24,7 +24,7 @@ import {
 } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { Club, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
@@ -71,7 +71,7 @@ export class MemberRegistrationRepository {
           ),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     if (isAvailable === 1) {
       return true;
     }
@@ -106,7 +106,7 @@ export class MemberRegistrationRepository {
           isNull(RegistrationApplicationStudent.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     if (getMemberRegistration !== 0) return false;
     return true;
   }

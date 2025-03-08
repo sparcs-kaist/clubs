@@ -417,7 +417,11 @@ export default class ClubPublicService {
       "endTerm" in semester
         ? semester
         : await this.semesterDRepository.fetch(semester.id);
-    const result = await this.clubRepository.find(clubId, semesterParam, date);
+    const result = await this.clubRepository.findOne(
+      clubId,
+      semesterParam,
+      date,
+    );
     return result;
   }
 

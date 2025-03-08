@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { AuthActivatedRefreshTokens } from "@sparcs-clubs/api/drizzle/schema/refresh-token.schema";
 import {
@@ -71,7 +71,7 @@ export class AuthRepository {
       .select()
       .from(User)
       .where(eq(User.email, email))
-      .then(takeUnique);
+      .then(takeOne);
 
     let result: FindOrCreateUserReturn = {
       id: user.id,
@@ -91,7 +91,7 @@ export class AuthRepository {
           gte(SemesterD.endTerm, currentDate),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
 
     // type이 "Student"인 경우 student table에서 해당 studentNumber이 있는지 확인 후 upsert
     // student_t에서 이번 학기의 해당 student_id이 있는지 확인 후 upsert
@@ -109,7 +109,7 @@ export class AuthRepository {
         .select()
         .from(Student)
         .where(eq(Student.number, parseInt(studentNumber)))
-        .then(takeUnique);
+        .then(takeOne);
 
       // studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
       let studentEnum = 3;
@@ -199,7 +199,7 @@ export class AuthRepository {
         .where(
           and(eq(Executive.studentId, student.id), isNull(Executive.deletedAt)),
         )
-        .then(takeUnique);
+        .then(takeOne);
       if (executive) {
         result.executive = {
           id: executive.executive.id,
@@ -217,7 +217,7 @@ export class AuthRepository {
         .select()
         .from(Professor)
         .where(eq(Professor.userId, user.id))
-        .then(takeUnique);
+        .then(takeOne);
       await this.db
         .insert(ProfessorT)
         .values({
@@ -251,7 +251,7 @@ export class AuthRepository {
         .select()
         .from(Employee)
         .where(and(eq(Employee.userId, user.id)))
-        .then(takeUnique);
+        .then(takeOne);
       await this.db
         .insert(EmployeeT)
         .values({
@@ -306,7 +306,7 @@ export class AuthRepository {
       .select()
       .from(User)
       .where(eq(User.id, id))
-      .then(takeUnique);
+      .then(takeOne);
 
     const result: {
       id: number;
@@ -369,7 +369,7 @@ export class AuthRepository {
       .select()
       .from(Executive)
       .where(eq(Executive.userId, id))
-      .then(takeUnique);
+      .then(takeOne);
 
     if (executive) {
       result.executive = {
@@ -382,7 +382,7 @@ export class AuthRepository {
       .select()
       .from(Professor)
       .where(eq(Professor.userId, id))
-      .then(takeUnique);
+      .then(takeOne);
 
     if (professor) {
       result.professor = {
@@ -395,7 +395,7 @@ export class AuthRepository {
       .select()
       .from(Employee)
       .where(eq(Employee.userId, id))
-      .then(takeUnique);
+      .then(takeOne);
 
     if (employee) {
       result.employee = {
