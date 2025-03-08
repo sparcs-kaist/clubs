@@ -81,7 +81,7 @@ export class ClubService {
     const currentSemester = await this.clubPublicService.fetchSemester(today);
     let targetSemesterId = currentSemester.id;
     try {
-      this.clubRegistrationPublicService.checkDeadline({
+      await this.clubRegistrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;
