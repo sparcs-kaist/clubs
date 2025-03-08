@@ -12,8 +12,8 @@ import type {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import ActivityActivityTermRepository from "@sparcs-clubs/api/feature/semester/repository/activity.activity-term.repository";
 
-import ActivityActivityTermRepository from "../repository/activity.activity-term.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()

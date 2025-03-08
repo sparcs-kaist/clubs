@@ -7,7 +7,7 @@ import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 @Injectable()
-export default class ActivityActivityTermRepository {
+export default class ActivityRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
   /**

@@ -74,10 +74,10 @@ import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import ActivityActivityTermRepository from "@sparcs-clubs/api/feature/semester/repository/activity.activity-term.repository";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
-import ActivityActivityTermRepository from "../repository/activity.activity-term.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()
