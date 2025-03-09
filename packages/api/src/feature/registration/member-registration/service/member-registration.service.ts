@@ -19,7 +19,7 @@ import type {
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -135,7 +135,7 @@ export class MemberRegistrationService {
           .getDivisionById({
             id: club.division.id,
           })
-          .then(takeUnique);
+          .then(takeOne);
         return {
           id: registration.id,
           clubId: club.id,
@@ -424,7 +424,7 @@ export class MemberRegistrationService {
           .getDivisionById({
             id: club.division.id,
           })
-          .then(takeUnique);
+          .then(takeOne);
         return {
           id: registration.id,
           clubId: club.id,
