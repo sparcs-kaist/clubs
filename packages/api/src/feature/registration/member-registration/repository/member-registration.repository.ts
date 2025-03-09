@@ -19,6 +19,21 @@ import {
   MMemberRegistration,
 } from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
 
+type IMemberRegistrationQuery = {
+  id?: number;
+  ids?: number[];
+  studentId?: number;
+  clubId?: number;
+  semesterId?: number;
+  pagination?: {
+    offset: number;
+    itemCount: number;
+  };
+  orderBy?: IMemberRegistrationOrderBy;
+  registrationApplicationStudentEnum?: number;
+  registrationApplicationStudentEnums?: number[];
+};
+
 @Injectable()
 export class MemberRegistrationRepository {
   @Inject(DrizzleAsyncProvider) private db: MySql2Database;
@@ -32,18 +47,7 @@ export class MemberRegistrationRepository {
 
   async findTx(
     tx: DrizzleTransaction,
-    param: {
-      id?: number;
-      ids?: number[];
-      studentId?: number;
-      clubId?: number;
-      semesterId?: number;
-      pageOffset?: number;
-      itemCount?: number;
-      orderBy?: IMemberRegistrationOrderBy;
-      registrationApplicationStudentEnum?: number;
-      registrationApplicationStudentEnums?: number[];
-    },
+    param: IMemberRegistrationQuery,
   ): Promise<MMemberRegistration[]> {
     const whereClause: SQL[] = [];
     if (param.id) {
@@ -87,11 +91,13 @@ export class MemberRegistrationRepository {
       .from(RegistrationApplicationStudent)
       .where(and(...whereClause))
       .$dynamic();
-    query =
-      param.itemCount !== undefined ? query.limit(param.itemCount) : query;
-    query =
-      param.pageOffset !== undefined ? query.offset(param.pageOffset) : query;
 
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
     if (param.orderBy) {
       query = query.orderBy(...MMemberRegistration.makeOrderBy(param.orderBy));
     }
@@ -101,18 +107,7 @@ export class MemberRegistrationRepository {
     return result.map(row => MMemberRegistration.from(row));
   }
 
-  async find(param: {
-    id?: number;
-    ids?: number[];
-    studentId?: number;
-    clubId?: number;
-    semesterId?: number;
-    pageOffset?: number;
-    itemCount?: number;
-    orderBy?: IMemberRegistrationOrderBy;
-    registrationApplicationStudentEnum?: number;
-    registrationApplicationStudentEnums?: number[];
-  }): Promise<MMemberRegistration[]> {
+  async find(param: IMemberRegistrationQuery): Promise<MMemberRegistration[]> {
     return this.withTransaction(async tx => this.findTx(tx, param));
   }
 

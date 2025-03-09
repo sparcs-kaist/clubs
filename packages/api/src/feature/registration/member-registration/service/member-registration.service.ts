@@ -309,8 +309,10 @@ export class MemberRegistrationService {
     const registrations = await this.memberRegistrationRepository.find({
       clubId: param.query.clubId,
       semesterId,
-      pageOffset: param.query.pageOffset,
-      itemCount: param.query.itemCount,
+      pagination: {
+        offset: param.query.pageOffset,
+        itemCount: param.query.itemCount,
+      },
       orderBy: {
         createdAt: OrderByTypeEnum.DESC,
       },
@@ -404,8 +406,10 @@ export class MemberRegistrationService {
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       semesterId,
-      pageOffset: param.query.pageOffset,
-      itemCount: param.query.itemCount,
+      pagination: {
+        offset: param.query.pageOffset,
+        itemCount: param.query.itemCount,
+      },
       orderBy: {
         createdAt: OrderByTypeEnum.DESC,
       },
