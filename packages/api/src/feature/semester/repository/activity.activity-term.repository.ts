@@ -1,48 +1,109 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, gte, isNull, lt, lte } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNull,
+  lt,
+  lte,
+  not,
+  or,
+  SQL,
+} from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-// import logger from "@sparcs-clubs/api/common/util/logger";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  DrizzleAsyncProvider,
+  DrizzleTransaction,
+} from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
+import {
+  IActivityDurationOrderBy,
+  MActivityDuration,
+} from "../model/activity.duration.model";
+
+interface IActivityDurationQuery {
+  id?: number;
+  ids?: number[];
+  date?: Date;
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
+  pagination?: {
+    offset?: number;
+    itemCount?: number;
+  };
+  orderBy?: IActivityDurationOrderBy;
+}
+
 @Injectable()
-export default class ActivityRepository {
+export class ActivityDurationRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
-  /**
-   * @param date 날짜를 받습니다.
-   * @returns 해당 날짜가 포함된 활동기간의 정보를 리턴합니다.
-   * 배열 내부 객체로 리턴하며, 배열의 길이는 항상 1 이하여야 합니다.
-   * 이 제한조건은 호출자가 직접 검사해야 합니다.
-   */
-  async selectActivityDByDate(date: Date) {
-    const result = await this.db
-      .select()
-      .from(ActivityD)
-      .where(
-        and(
-          lte(ActivityD.startTerm, date),
-          gte(ActivityD.endTerm, date),
-          isNull(ActivityD.deletedAt),
-        ),
-      )
-      .orderBy(desc(ActivityD.endTerm));
-    return result;
+  async withTransaction<T>(
+    callback: (tx: DrizzleTransaction) => Promise<T>,
+  ): Promise<T> {
+    return this.db.transaction(callback);
   }
 
-  /**
-   * @param date 날짜를 받습니다.
-   * @returns 해당 날짜가 포함된 활동기간의 __직전__ 활동기간 정보를 리턴합니다.
-   * 배열 내부 객체로 리턴하며, 배열의 길이는 항상 1 이여야 합니다.
-   */
-  async selectLastActivityDByDate(date: Date) {
-    const result = await this.db
+  async findTx(
+    tx: DrizzleTransaction,
+    param: IActivityDurationQuery,
+  ): Promise<MActivityDuration[]> {
+    const whereClause: SQL[] = [isNull(ActivityD.deletedAt)];
+
+    if (param.id) {
+      whereClause.push(eq(ActivityD.id, param.id));
+    }
+    if (param.ids) {
+      whereClause.push(inArray(ActivityD.id, param.ids));
+    }
+    if (param.date) {
+      whereClause.push(
+        and(
+          lte(ActivityD.startTerm, param.date),
+          gte(ActivityD.endTerm, param.date),
+        ),
+      );
+    }
+    if (param.duration) {
+      whereClause.push(
+        not(
+          or(
+            lt(ActivityD.endTerm, param.duration.startTerm),
+            gt(ActivityD.startTerm, param.duration.endTerm),
+          ),
+        ),
+      );
+    }
+
+    let query = tx
       .select()
       .from(ActivityD)
-      .where(and(lt(ActivityD.endTerm, date), isNull(ActivityD.deletedAt)))
-      .orderBy(desc(ActivityD.endTerm))
-      .limit(1);
-    return result;
+      .where(and(...whereClause))
+      .$dynamic();
+
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
+
+    if (param.orderBy) {
+      query = query.orderBy(...MActivityDuration.makeOrderBy(param.orderBy));
+    }
+
+    const result = await query.execute();
+
+    return result.map(e => MActivityDuration.from(e));
+  }
+
+  async find(param: IActivityDurationQuery): Promise<MActivityDuration[]> {
+    return this.withTransaction(tx => this.findTx(tx, param));
   }
 }

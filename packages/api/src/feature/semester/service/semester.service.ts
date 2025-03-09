@@ -6,10 +6,10 @@ import type {
 } from "@sparcs-clubs/interface/api/semester/apiSem001";
 
 import { OrderByTypeEnum } from "../model/semester.model";
-import SemesterRepository from "../repository/semester.repository";
+import { SemesterRepository } from "../repository/semester.repository";
 
 @Injectable()
-export default class SemesterService {
+export class SemesterService {
   constructor(private readonly semesterRepository: SemesterRepository) {}
 
   /**

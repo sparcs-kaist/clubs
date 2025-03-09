@@ -1,36 +1,83 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, gt, isNull, lte } from "drizzle-orm";
+import { Inject, Injectable } from "@nestjs/common";
+import { and, eq, gte, inArray, isNull, lte, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
+import {
+  DrizzleAsyncProvider,
+  DrizzleTransaction,
+} from "src/drizzle/drizzle.provider";
+import { FundingDeadlineD } from "src/drizzle/schema/semester.schema";
 
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import {
+  IFundingDeadlineOrderBy,
+  MFundingDeadline,
+} from "../model/funding.deadline.model";
 
-import { MFundingDeadline } from "../model/funding.deadline.model";
+interface IFundingDeadlineQuery {
+  id?: number;
+  ids?: number[];
+  date?: Date;
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
+  pagination?: {
+    offset?: number;
+    itemCount?: number;
+  };
+  orderBy?: IFundingDeadlineOrderBy;
+}
 
 @Injectable()
-export default class FundingDeadlineRepository {
+export class FundingDeadlineRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
-  /**
-   * @param date 날짜를 받습니다.
-   * @returns 해당 날짜가 포함된 자금 지원 신청 마감 기한 정보를 리턴합니다.
-   */
-  async fetch(date: Date): Promise<MFundingDeadline> {
-    const result = await this.db
-      .select()
-      .from(FundingDeadlineD)
-      .where(
+  async findTx(
+    tx: DrizzleTransaction,
+    param: IFundingDeadlineQuery,
+  ): Promise<MFundingDeadline[]> {
+    const whereClause: SQL[] = [isNull(FundingDeadlineD.deletedAt)];
+
+    if (param.id) {
+      whereClause.push(eq(FundingDeadlineD.id, param.id));
+    }
+    if (param.ids) {
+      whereClause.push(inArray(FundingDeadlineD.id, param.ids));
+    }
+    if (param.date) {
+      whereClause.push(eq(FundingDeadlineD.startDate, param.date));
+    }
+    if (param.duration) {
+      whereClause.push(
         and(
-          lte(FundingDeadlineD.startDate, date),
-          gt(FundingDeadlineD.endDate, date),
-          isNull(FundingDeadlineD.deletedAt),
+          gte(FundingDeadlineD.startDate, param.duration.startTerm),
+          lte(FundingDeadlineD.endDate, param.duration.endTerm),
         ),
       );
-
-    if (result.length === 0) {
-      throw new NotFoundException("Funding deadline not found");
     }
 
-    return result[0];
+    let query = tx
+      .select()
+      .from(FundingDeadlineD)
+      .where(and(...whereClause))
+      .$dynamic();
+
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
+
+    if (param.orderBy) {
+      query = query.orderBy(...MFundingDeadline.makeOrderBy(param.orderBy));
+    }
+
+    const result = await query.execute();
+
+    return result.map(e => MFundingDeadline.from(e));
+  }
+
+  async find(param: IFundingDeadlineQuery): Promise<MFundingDeadline[]> {
+    return this.db.transaction(tx => this.findTx(tx, param));
   }
 }

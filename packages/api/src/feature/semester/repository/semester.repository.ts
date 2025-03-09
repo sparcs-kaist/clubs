@@ -1,5 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gt, gte, isNull, lt, lte, not, or, SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNull,
+  lt,
+  lte,
+  not,
+  or,
+  SQL,
+} from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
@@ -12,6 +24,7 @@ import { ISemesterOrderBy, MSemester } from "../model/semester.model";
 
 interface ISemesterQuery {
   id?: number;
+  ids?: number[];
   date?: Date;
   duration?: {
     startTerm: Date;
@@ -25,7 +38,7 @@ interface ISemesterQuery {
 }
 
 @Injectable()
-export default class SemesterRepository {
+export class SemesterRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
   async withTransaction<T>(
@@ -42,6 +55,9 @@ export default class SemesterRepository {
 
     if (param.id) {
       whereClause.push(eq(SemesterD.id, param.id));
+    }
+    if (param.ids) {
+      whereClause.push(inArray(SemesterD.id, param.ids));
     }
     if (param.date) {
       whereClause.push(

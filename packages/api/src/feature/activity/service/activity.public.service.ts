@@ -6,13 +6,11 @@ import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/act
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ActivityRepository from "@sparcs-clubs/api/feature/activity/repository/activity.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
-import ActivityActivityTermRepository from "@sparcs-clubs/api/feature/semester/repository/activity.activity-term.repository";
 
 @Injectable()
 export default class ActivityPublicService {
   constructor(
     private activityRepository: ActivityRepository,
-    private activityActivityTermRepository: ActivityActivityTermRepository,
     private clubPublicService: ClubPublicService,
   ) {}
 

@@ -74,7 +74,7 @@ import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
-import FundingDeadlineRepository from "@sparcs-clubs/api/feature/semester/repository/funding.deadline.repository";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
@@ -90,7 +90,7 @@ export default class FundingService {
     private readonly userPublicService: UserPublicService,
     private readonly clubPublicService: ClubPublicService,
     private readonly activityPublicService: ActivityPublicService,
-    private fundingDeadlineRepository: FundingDeadlineRepository,
+    private readonly semesterPublicService: SemesterPublicService,
   ) {}
 
   async postStudentFunding(

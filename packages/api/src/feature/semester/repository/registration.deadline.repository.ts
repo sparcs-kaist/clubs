@@ -1,31 +1,87 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { desc } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
+import {
+  DrizzleAsyncProvider,
+  DrizzleTransaction,
+} from "src/drizzle/drizzle.provider";
 import { RegistrationDeadlineD } from "src/drizzle/schema/semester.schema";
 
-import { ApiReg004ResponseOK } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg004";
+import {
+  IRegistrationDeadlineOrderBy,
+  MRegistrationDeadline,
+} from "../model/registration.deadline.model";
+
+interface IRegistrationDeadlineQuery {
+  id?: number;
+  ids?: number[];
+  date?: Date;
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
+  pagination?: {
+    offset?: number;
+    itemCount?: number;
+  };
+  orderBy?: IRegistrationDeadlineOrderBy;
+}
 
 @Injectable()
-export class RegistrationRepository {
+export class RegistrationDeadlineRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
-  async getStudentRegistrationEvents(): Promise<ApiReg004ResponseOK> {
-    // const { eventEnumCount } = await this.db
-    //   .select({ eventEnumCount: count(RegistrationDeadlineEnum.enumId) })
-    //   .from(RegistrationDeadlineEnum)
-    //   .where(isNull(RegistrationDeadlineEnum.deletedAt))
-    //   .then(takeUnique);
-    const result = await this.db
-      .select({
-        id: RegistrationDeadlineD.id,
-        registrationEventEnumId:
-          RegistrationDeadlineD.registrationDeadlineEnumId,
-        startTerm: RegistrationDeadlineD.startDate,
-        endTerm: RegistrationDeadlineD.endDate,
-      })
+  async findTx(
+    tx: DrizzleTransaction,
+    param: IRegistrationDeadlineQuery,
+  ): Promise<MRegistrationDeadline[]> {
+    const whereClause: SQL[] = [isNull(RegistrationDeadlineD.deletedAt)];
+
+    if (param.id) {
+      whereClause.push(eq(RegistrationDeadlineD.id, param.id));
+    }
+    if (param.ids) {
+      whereClause.push(inArray(RegistrationDeadlineD.id, param.ids));
+    }
+    if (param.date) {
+      whereClause.push(eq(RegistrationDeadlineD.startDate, param.date));
+    }
+    if (param.duration) {
+      whereClause.push(
+        and(
+          gte(RegistrationDeadlineD.startDate, param.duration.startTerm),
+          lte(RegistrationDeadlineD.endDate, param.duration.endTerm),
+        ),
+      );
+    }
+
+    let query = tx
+      .select()
       .from(RegistrationDeadlineD)
-      .orderBy(desc(RegistrationDeadlineD.startDate));
-    return { events: result };
+      .where(and(...whereClause))
+      .$dynamic();
+
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
+
+    if (param.orderBy) {
+      query = query.orderBy(
+        ...MRegistrationDeadline.makeOrderBy(param.orderBy),
+      );
+    }
+
+    const result = await query.execute();
+
+    return result.map(e => MRegistrationDeadline.from(e));
+  }
+
+  async find(
+    param: IRegistrationDeadlineQuery,
+  ): Promise<MRegistrationDeadline[]> {
+    return this.db.transaction(tx => this.findTx(tx, param));
   }
 }
