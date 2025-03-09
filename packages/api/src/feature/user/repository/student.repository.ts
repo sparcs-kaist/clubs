@@ -60,6 +60,24 @@ export default class StudentRepository {
     return result;
   }
 
+  async selectStudentStatusEnumIdByStudentIdSemesterId(
+    studentId: number,
+    semesterId: number,
+  ) {
+    const result = await this.db
+      .select({ studentEnumId: StudentT.studentEnum })
+      .from(StudentT)
+      .where(
+        and(
+          eq(StudentT.studentId, studentId),
+          eq(StudentT.semesterId, semesterId),
+          isNull(StudentT.deletedAt),
+        ),
+      )
+      .then(takeOne);
+    return result;
+  }
+
   async getStudentPhoneNumber(id: number) {
     const crt = getKSTDate();
     const result = await this.db

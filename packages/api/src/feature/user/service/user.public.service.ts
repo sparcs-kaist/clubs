@@ -240,4 +240,17 @@ export default class UserPublicService {
     const executive = await this.executiveRepository.findSummary(executiveId);
     return executive;
   }
+
+  //student의 studentstatusenum을 가져옵니다.
+  async getStudentStatusEnumIdByStudentIdSemesterId(
+    studentId: number,
+    semesterId,
+  ): Promise<number> {
+    const studentEnumId =
+      await this.studentRepository.selectStudentStatusEnumIdByStudentIdSemesterId(
+        studentId,
+        semesterId,
+      );
+    return studentEnumId.studentEnumId;
+  }
 }
