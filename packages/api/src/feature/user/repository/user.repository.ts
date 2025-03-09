@@ -10,7 +10,7 @@ import {
 } from "src/drizzle/schema/user.schema";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
 
 @Injectable()
 export default class UserRepository {
@@ -63,7 +63,7 @@ export default class UserRepository {
       .select({ phoneNumber: User.phoneNumber })
       .from(User)
       .where(and(eq(User.id, userId), isNull(User.deletedAt)))
-      .then(takeUnique);
+      .then(takeOne);
     return phoneNumber;
   }
 
