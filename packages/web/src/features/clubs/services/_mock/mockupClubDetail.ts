@@ -10,7 +10,10 @@ const mockupData: ApiClb002ResponseOK = {
   representative: "장주원",
   advisor: "",
   totalMemberCnt: 1,
-  divisionName: "생활문화",
+  division: {
+    id: 1,
+    name: "생활문화",
+  },
   foundingYear: 2015,
   room: "학부학생회관별관(N12) 3101호",
   description:

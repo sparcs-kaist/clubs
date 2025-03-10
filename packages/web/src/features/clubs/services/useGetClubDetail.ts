@@ -8,7 +8,7 @@ import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";
 
 export const useGetClubDetail = (clubId: string) =>
   useQuery<ApiClb002ResponseOK, Error>({
-    queryKey: [apiClb002.url(clubId)],
+    queryKey: [apiClb002.url(clubId), clubId],
     queryFn: async (): Promise<ApiClb002ResponseOK> => {
       const { data } = await axiosClient.get(apiClb002.url(clubId), {});
 

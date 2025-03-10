@@ -4,8 +4,8 @@ import React from "react";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
+import { ClubDetailProps } from "@sparcs-clubs/web/features/clubs/components/ClubDetailCard";
 
-import { ClubDetailProps } from "../components/ClubDetailCard";
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
 const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => (
