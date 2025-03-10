@@ -1,6 +1,7 @@
 import React from "react";
 
 import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -10,7 +11,6 @@ import {
   IndentedItem,
   ListItem,
 } from "@sparcs-clubs/web/common/components/ListItem";
-import ProgressCheckSection from "@sparcs-clubs/web/common/components/ProgressStatus/_atomic/ProgressCheckSection";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
@@ -18,9 +18,9 @@ import {
   ProfessorIsApprovedTagList,
   RegistrationTypeTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
+import RegisterClubStatusSection from "@sparcs-clubs/web/features/executive/register-club/components/RegisterClubStatusSection";
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
 import { FilePreviewContainer } from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubDetailFrame";
-import { getRegisterClubProgress } from "@sparcs-clubs/web/features/register-club/constants/registerClubProgress";
 import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
@@ -32,12 +32,14 @@ import { professorEnumToText } from "@sparcs-clubs/web/utils/getUserType";
 
 export interface ClubRegisterDetail {
   applyId: number;
+  profile: UserTypeEnum;
 }
 
-const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
+const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   applyId,
+  profile,
 }: ClubRegisterDetail) => {
-  const { data, isLoading, isError } = useRegisterClubDetail("undergraduate", {
+  const { data, isLoading, isError } = useRegisterClubDetail(profile, {
     applyId: +applyId,
   });
 
@@ -53,27 +55,13 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
       isError={isError || divisionError}
     >
       <Card padding="32px" gap={20} outline>
-        <FlexWrapper gap={16} direction="column">
-          <Typography fw="MEDIUM" lh={20} fs={16}>
-            신청 상태
-          </Typography>
-          {data && (
-            <ProgressCheckSection
-              labels={
-                getRegisterClubProgress(
-                  data?.registrationStatusEnumId,
-                  data?.updatedAt,
-                ).labels
-              }
-              progress={
-                getRegisterClubProgress(
-                  data?.registrationStatusEnumId,
-                  data?.updatedAt,
-                ).progress
-              }
-            />
-          )}
-        </FlexWrapper>
+        {data && (
+          <RegisterClubStatusSection
+            status={data.registrationStatusEnumId}
+            editedAt={data.updatedAt}
+            comments={data.comments}
+          />
+        )}
         <FlexWrapper gap={20} direction="row">
           <Typography fw="MEDIUM" lh={20} fs={16} style={{ flex: 1 }}>
             등록 구분
@@ -158,13 +146,7 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
                 {data?.activityPlanFile && (
                   <FilePreviewContainer>
                     <ThumbnailPreviewList
-                      fileList={[
-                        {
-                          id: "1",
-                          name: data?.activityPlanFile?.name,
-                          url: data?.activityPlanFile?.url,
-                        },
-                      ]}
+                      fileList={[data.activityPlanFile]}
                       disabled
                     />
                   </FilePreviewContainer>
@@ -178,13 +160,7 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
               {data?.clubRuleFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
-                    fileList={[
-                      {
-                        id: "1",
-                        name: data?.clubRuleFile?.name,
-                        url: data?.clubRuleFile?.url,
-                      },
-                    ]}
+                    fileList={[data.clubRuleFile]}
                     disabled
                   />
                 </FilePreviewContainer>
@@ -197,13 +173,7 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
               {data?.externalInstructionFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
-                    fileList={[
-                      {
-                        id: "1",
-                        name: data?.externalInstructionFile?.name,
-                        url: data?.externalInstructionFile?.url,
-                      },
-                    ]}
+                    fileList={[data.externalInstructionFile]}
                     disabled
                   />
                 </FilePreviewContainer>
@@ -214,7 +184,7 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
         {data &&
           data.registrationTypeEnumId === RegistrationTypeEnum.Promotional &&
           data.clubId && (
-            <MyRegisterClubActFrame profile="permanent" clubId={data.clubId} />
+            <MyRegisterClubActFrame profile={profile} clubId={data.clubId} />
           )}
         {data?.professor && (
           <FlexWrapper gap={20} direction="row">
@@ -236,4 +206,4 @@ const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
   );
 };
 
-export default ClubRegisterDetailFrame;
+export default RegisterClubDetailFrame;
