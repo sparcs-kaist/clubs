@@ -21,7 +21,7 @@ import {
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
 import { FilePreviewContainer } from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubDetailFrame";
 import { getRegisterClubProgress } from "@sparcs-clubs/web/features/register-club/constants/registerClubProgress";
-import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
   getActualMonth,

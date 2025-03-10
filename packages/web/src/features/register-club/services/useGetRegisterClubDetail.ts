@@ -7,7 +7,7 @@ import {
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
-import { registerClubDetailGet } from "../services/_atomic/registerClubApiList";
+import { registerClubDetailGet } from "./_atomic/registerClubApiList";
 
 const useRegisterClubDetail = (
   profile: string,

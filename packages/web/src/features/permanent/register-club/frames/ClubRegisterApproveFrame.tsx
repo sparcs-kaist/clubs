@@ -2,7 +2,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { formatSlashDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {

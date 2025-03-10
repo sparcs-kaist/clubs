@@ -13,7 +13,7 @@ import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import NotForExecutive from "@sparcs-clubs/web/common/frames/NotForExecutive";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import MyRegisterClubEditFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubEditFrame";
-import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
 const MyRegisterClubEdit = () => {
   const { isLoggedIn, login, profile } = useAuth();

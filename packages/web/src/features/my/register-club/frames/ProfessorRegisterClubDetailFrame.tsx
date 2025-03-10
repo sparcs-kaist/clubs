@@ -2,7 +2,7 @@ import { useParams } from "next/navigation";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
 import MyRegisterClubDetailFrame from "./MyRegisterClubDetailFrame";
 
