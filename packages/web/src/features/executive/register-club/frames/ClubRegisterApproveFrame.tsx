@@ -11,9 +11,9 @@ import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
 import { formatSlashDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
-import useRegisterClubDetail from "../services/getRegisterClubDetail";
 import { patchClubRegistrationExecutive } from "../services/patchClubRegistrationExecutive";
 import { postClubRegistrationSendBack } from "../services/postClubRegistrationSendBack";
 
@@ -29,7 +29,7 @@ const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {
 
   const [rejectionDetail, setRejectionDetail] = useState("");
 
-  const { data, isLoading, isError } = useRegisterClubDetail({
+  const { data, isLoading, isError } = useRegisterClubDetail("executive", {
     applyId,
   });
 

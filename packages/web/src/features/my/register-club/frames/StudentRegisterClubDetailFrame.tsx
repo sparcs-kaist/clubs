@@ -3,7 +3,7 @@ import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import { useGetMyClubRegistration } from "@sparcs-clubs/web/features/my/services/getMyClubRegistration";
-import useGetClubRegistration from "@sparcs-clubs/web/features/my/services/useGetClubRegistration";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
 
 import MyRegisterClubDetailFrame from "./MyRegisterClubDetailFrame";
 
@@ -16,7 +16,7 @@ const StudentRegisterClubDetailFrame: React.FC<{ userType: string }> = ({
     data: clubDetail,
     isLoading,
     isError,
-  } = useGetClubRegistration({ applyId: +id });
+  } = useRegisterClubDetail("undergraduate", { applyId: +id });
 
   const {
     data: myClubRegistrationData,

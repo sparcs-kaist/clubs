@@ -2,7 +2,7 @@ import { useParams } from "next/navigation";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import useGetClubRegistrationProfessor from "@sparcs-clubs/web/features/my/services/getProfessorClubRegistration";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
 
 import MyRegisterClubDetailFrame from "./MyRegisterClubDetailFrame";
 
@@ -15,7 +15,7 @@ const ProfessorRegisterClubDetailFrame: React.FC<{ userType: string }> = ({
     data: clubDetail,
     isLoading,
     isError,
-  } = useGetClubRegistrationProfessor({ applyId: +id });
+  } = useRegisterClubDetail("professor", { applyId: +id });
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

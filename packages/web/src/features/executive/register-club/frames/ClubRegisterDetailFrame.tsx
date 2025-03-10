@@ -20,6 +20,7 @@ import {
 } from "@sparcs-clubs/web/constants/tableTagList";
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
 import { FilePreviewContainer } from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubDetailFrame";
+import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/hooks/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
   getActualMonth,
@@ -29,7 +30,6 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 import { professorEnumToText } from "@sparcs-clubs/web/utils/getUserType";
 
 import RegisterClubStatusSection from "../components/RegisterClubStatusSection";
-import useRegisterClubDetail from "../services/getRegisterClubDetail";
 
 export interface ClubRegisterDetail {
   applyId: number;
@@ -38,7 +38,7 @@ export interface ClubRegisterDetail {
 const ClubRegisterDetailFrame: React.FC<ClubRegisterDetail> = ({
   applyId,
 }: ClubRegisterDetail) => {
-  const { data, isLoading, isError } = useRegisterClubDetail({
+  const { data, isLoading, isError } = useRegisterClubDetail("executive", {
     applyId: +applyId,
   });
 
