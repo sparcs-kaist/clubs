@@ -21,7 +21,7 @@ import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
-import { patchClubMemberRegistration } from "../members/services/patchClubMemberRegistration";
+import { usePatchClubMemberRegistration } from "../members/services/usePatchClubMemberRegistration";
 
 interface MembersTableProps {
   memberList: ApiReg008ResponseOk["applies"];
@@ -61,7 +61,7 @@ const openApproveModal = (
       <CancellableModalContent
         confirmButtonText="승인"
         onConfirm={async () => {
-          await patchClubMemberRegistration(
+          await usePatchClubMemberRegistration(
             { applyId: member.id },
             {
               clubId,
@@ -97,7 +97,7 @@ const openRejectModal = (
       <CancellableModalContent
         confirmButtonText="반려"
         onConfirm={async () => {
-          await patchClubMemberRegistration(
+          await usePatchClubMemberRegistration(
             { applyId: member.id },
             {
               clubId,

@@ -14,7 +14,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 
-import { useGetClubMembers } from "../services/getClubMembers";
+import { useGetClubMembers } from "../services/useGetClubMembers";
 import { SemesterProps } from "../types/semesterList";
 
 interface AllMemberListProps {

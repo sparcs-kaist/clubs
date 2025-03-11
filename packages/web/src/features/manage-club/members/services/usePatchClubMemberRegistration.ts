@@ -9,7 +9,7 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-export const patchClubMemberRegistration = async (
+export const usePatchClubMemberRegistration = async (
   requestParam: ApiReg007RequestParam,
   requestBody: ApiReg007RequestBody,
 ) => {

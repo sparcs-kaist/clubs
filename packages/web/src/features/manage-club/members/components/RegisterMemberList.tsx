@@ -10,7 +10,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
 import MembersTable from "@sparcs-clubs/web/features/manage-club/components/MembersTable";
-import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/getClubMemberRegistration";
+import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMemberRegistration";
 import { useGetClubDelegate } from "@sparcs-clubs/web/features/manage-club/services/getClubDelegate";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 

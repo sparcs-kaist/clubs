@@ -13,7 +13,7 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
 import MembersTable from "@sparcs-clubs/web/features/manage-club/components/MembersTable";
-import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/getClubMemberRegistration";
+import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMemberRegistration";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
