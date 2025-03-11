@@ -1,462 +1,179 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import {
-  and,
-  count,
-  eq,
-  gt,
-  gte,
-  isNotNull,
-  isNull,
-  lt,
-  lte,
-  or,
-} from "drizzle-orm";
+import { and, eq, inArray, isNull, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
-import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import { ApiReg007ResponseNoContent } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg007";
-import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
-import { ApiReg013ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
 import {
-  RegistrationApplicationStudentStatusEnum,
-  RegistrationDeadlineEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+  IMemberRegistrationCreate,
+  IMemberRegistrationUpdate,
+} from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
-import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { Club, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import {
-  Division,
-  DivisionPermanentClubD,
-} from "@sparcs-clubs/api/drizzle/schema/division.schema";
+  DrizzleAsyncProvider,
+  DrizzleTransaction,
+} from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import {
-  RegistrationApplicationStudent,
-  RegistrationDeadlineD,
-} from "@sparcs-clubs/api/drizzle/schema/registration.schema";
-import {
-  Student,
-  StudentT,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+  IMemberRegistrationOrderBy,
+  MMemberRegistration,
+} from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
 
-interface IRegistrationApplicationStudent {
-  id: number;
-  studentId: number;
-  clubId: number;
-  registrationApplicationStudentEnumId: number;
-  createdAt: Date;
-  deletedAt?: Date; // nullable
-}
+type IMemberRegistrationQuery = {
+  id?: number;
+  ids?: number[];
+  studentId?: number;
+  clubId?: number;
+  semesterId?: number;
+  pagination?: {
+    offset: number;
+    itemCount: number;
+  };
+  orderBy?: IMemberRegistrationOrderBy;
+  registrationApplicationStudentEnum?: number;
+  registrationApplicationStudentEnums?: number[];
+};
 
 @Injectable()
 export class MemberRegistrationRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  @Inject(DrizzleAsyncProvider) private db: MySql2Database;
+  constructor() {}
 
-  async isMemberRegistrationEvent(): Promise<boolean> {
-    const cur = getKSTDate();
-    const memberRegistrationEventEnum =
-      RegistrationDeadlineEnum.StudentRegistrationApplication;
-    const { isAvailable } = await this.db
-      .select({ isAvailable: count(RegistrationDeadlineD.id) })
-      .from(RegistrationDeadlineD)
-      .where(
-        and(
-          isNotNull(RegistrationDeadlineD.endDate),
-          gt(RegistrationDeadlineD.endDate, cur),
-          lt(RegistrationDeadlineD.startDate, cur),
-          eq(
-            RegistrationDeadlineD.registrationDeadlineEnumId,
-            memberRegistrationEventEnum,
-          ),
-        ),
-      )
-      .then(takeUnique);
-    if (isAvailable === 1) {
-      return true;
+  async withTransaction<Result>(
+    callback: (tx: DrizzleTransaction) => Promise<Result>,
+  ): Promise<Result> {
+    return this.db.transaction(callback);
+  }
+
+  async findTx(
+    tx: DrizzleTransaction,
+    param: IMemberRegistrationQuery,
+  ): Promise<MMemberRegistration[]> {
+    const whereClause: SQL[] = [];
+    if (param.id) {
+      whereClause.push(eq(RegistrationApplicationStudent.id, param.id));
     }
-    return false;
-  }
-
-  async getMemberClubRegistrationExceptRejected(
-    studentId: number,
-    clubId: number,
-  ) {
-    const pending = RegistrationApplicationStudentStatusEnum.Pending;
-    const approved = RegistrationApplicationStudentStatusEnum.Approved;
-    const { getMemberRegistration } = await this.db
-      .select({
-        getMemberRegistration: count(RegistrationApplicationStudent.id),
-      })
-      .from(RegistrationApplicationStudent)
-      .where(
-        and(
-          or(
-            eq(
-              RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-              pending,
-            ),
-            eq(
-              RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-              approved,
-            ),
-          ),
-          eq(RegistrationApplicationStudent.clubId, clubId),
-          eq(RegistrationApplicationStudent.studentId, studentId),
-          isNull(RegistrationApplicationStudent.deletedAt),
-        ),
-      )
-      .then(takeUnique);
-    if (getMemberRegistration !== 0) return false;
-    return true;
-  }
-
-  async postMemberRegistration(
-    studentId: number,
-    clubId: number,
-  ): Promise<ApiReg005ResponseCreated> {
-    await this.db.transaction(async tx => {
-      const [result] = await tx.insert(RegistrationApplicationStudent).values({
-        studentId,
-        clubId,
-        registrationApplicationStudentEnumId:
-          RegistrationApplicationStudentStatusEnum.Pending,
-      });
-      const { affectedRows } = result;
-      if (affectedRows !== 1) {
-        throw new HttpException("Registration failed", 500);
-      }
-    });
-    return {};
-  }
-
-  async getStudentRegistrationsMemberRegistrationsMy(
-    studentId: number,
-  ): Promise<ApiReg006ResponseOk> {
-    const pending = RegistrationApplicationStudentStatusEnum.Pending;
-    const approved = RegistrationApplicationStudentStatusEnum.Approved;
-    const crt = getKSTDate();
-    const result = await this.db
-      .select({
-        id: RegistrationApplicationStudent.id,
-        clubId: RegistrationApplicationStudent.clubId,
-        clubNameKr: Club.nameKr,
-        type: ClubT.clubStatusEnumId,
-        isPermanent: DivisionPermanentClubD.id,
-        divisionName: Division.name,
-        applyStatusEnumId:
+    if (param.ids) {
+      whereClause.push(inArray(RegistrationApplicationStudent.id, param.ids));
+    }
+    if (param.studentId) {
+      whereClause.push(
+        eq(RegistrationApplicationStudent.studentId, param.studentId),
+      );
+    }
+    if (param.clubId) {
+      whereClause.push(eq(RegistrationApplicationStudent.clubId, param.clubId));
+    }
+    if (param.semesterId) {
+      whereClause.push(
+        eq(RegistrationApplicationStudent.semesterId, param.semesterId),
+      );
+    }
+    if (param.registrationApplicationStudentEnum) {
+      whereClause.push(
+        eq(
           RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-      })
-      .from(RegistrationApplicationStudent)
-      .leftJoin(Club, eq(Club.id, RegistrationApplicationStudent.clubId))
-      .innerJoin(
-        ClubT,
-        and(
-          eq(Club.id, ClubT.clubId),
-          or(
-            and(isNull(ClubT.endTerm), lte(ClubT.startTerm, crt)),
-            gte(ClubT.endTerm, crt),
-          ),
-          or(eq(ClubT.clubStatusEnumId, 1), eq(ClubT.clubStatusEnumId, 2)),
-        ),
-      )
-      .leftJoin(
-        DivisionPermanentClubD,
-        and(
-          eq(DivisionPermanentClubD.clubId, Club.id),
-          lte(DivisionPermanentClubD.startTerm, crt),
-          or(
-            gte(DivisionPermanentClubD.endTerm, crt),
-            isNull(DivisionPermanentClubD.endTerm),
-          ),
-        ),
-      )
-      .leftJoin(Division, eq(Division.id, Club.divisionId))
-      .where(
-        and(
-          or(
-            eq(
-              RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-              pending,
-            ),
-            eq(
-              RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-              approved,
-            ),
-          ),
-          eq(RegistrationApplicationStudent.studentId, studentId),
-          isNull(RegistrationApplicationStudent.deletedAt),
+          param.registrationApplicationStudentEnum,
         ),
       );
-
-    return {
-      applies: result.map(item => ({
-        ...item,
-        isPermanent: item.isPermanent !== null,
-      })),
-    };
-  }
-
-  async deleteMemberRegistration(
-    studentId,
-    applyId,
-  ): Promise<ApiReg013ResponseOk> {
-    const cur = getKSTDate();
-    await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(RegistrationApplicationStudent)
-        .set({
-          deletedAt: cur,
-        })
-        .where(
-          and(
-            eq(RegistrationApplicationStudent.id, applyId),
-            eq(RegistrationApplicationStudent.studentId, studentId),
-            isNull(RegistrationApplicationStudent.deletedAt),
-          ),
-        );
-      if (result.affectedRows > 2) {
-        throw new HttpException("Registration delete failed", 500);
-      } else if (result.affectedRows === 0) {
-        throw new HttpException("Application Not Found", HttpStatus.NOT_FOUND);
-      }
-    });
-    return {};
-  }
-
-  async patchMemberRegistration(
-    applyId,
-    clubId,
-    applyStatusEnumId,
-  ): Promise<ApiReg007ResponseNoContent> {
-    await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(RegistrationApplicationStudent)
-        .set({
-          registrationApplicationStudentEnumId: applyStatusEnumId,
-        })
-        .where(
-          and(
-            eq(RegistrationApplicationStudent.id, applyId),
-            eq(RegistrationApplicationStudent.clubId, clubId),
-            isNull(RegistrationApplicationStudent.deletedAt),
-          ),
-        );
-      if (result.affectedRows > 2) {
-        throw new HttpException("Registration update failed", 500);
-      } else if (result.affectedRows === 0) {
-        throw new HttpException("Application Not Found", HttpStatus.NOT_FOUND);
-      }
-    });
-    return {};
-  }
-
-  async getMemberRegistrationClub(clubId): Promise<ApiReg008ResponseOk> {
-    const result = await this.db
-      .select({
-        id: RegistrationApplicationStudent.id,
-        applyStatusEnumId:
+    }
+    if (param.registrationApplicationStudentEnums) {
+      whereClause.push(
+        inArray(
           RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-        createdAt: RegistrationApplicationStudent.createdAt,
-        student: {
-          id: RegistrationApplicationStudent.studentId,
-          name: Student.name,
-          phoneNumber: Student.phoneNumber,
-          email: Student.email,
-          studentNumber: Student.number,
-        },
-      })
-      .from(RegistrationApplicationStudent)
-      .where(
-        and(
-          eq(RegistrationApplicationStudent.clubId, clubId),
-          isNull(RegistrationApplicationStudent.deletedAt),
+          param.registrationApplicationStudentEnums,
         ),
-      )
-      .leftJoin(
-        Student,
-        eq(Student.id, RegistrationApplicationStudent.studentId),
       );
-    return { applies: result };
-  }
-
-  async findMemberRegistrationById(
-    applyId: number,
-  ): Promise<IRegistrationApplicationStudent | null> {
-    const result = await this.db
+    }
+    whereClause.push(isNull(RegistrationApplicationStudent.deletedAt));
+    let query = tx
       .select()
       .from(RegistrationApplicationStudent)
-      .where(
-        and(
-          eq(RegistrationApplicationStudent.id, applyId),
-          isNull(RegistrationApplicationStudent.deletedAt),
-        ),
-      )
-      .execute();
+      .where(and(...whereClause))
+      .$dynamic();
 
-    return result.length > 0 ? result[0] : null;
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
+    if (param.orderBy) {
+      query = query.orderBy(...MMemberRegistration.makeOrderBy(param.orderBy));
+    }
+
+    const result = await query.execute();
+
+    return result.map(row => MMemberRegistration.from(row));
   }
 
-  /**
-   * @description getExecutiveRegistrationsMemberRegistrations 서비스를 위한
-   * 전용 쿼리입니다.
-   */
-  async getExecutiveRegistrationsMemberRegistrations(param: {
-    clubId: number;
-    pageOffset: number;
-    itemCount: number;
-    semesterId: number;
-  }) {
-    const today = getKSTDate();
-    const result = await this.db
-      .select({
-        id: RegistrationApplicationStudent.id,
-        clubId: RegistrationApplicationStudent.clubId,
-        clubName: Club.nameKr,
-        clubTypeEnumId: ClubT.clubStatusEnumId,
-        division: {
-          id: Division.id,
-          name: Division.name,
-        },
-        student: {
-          id: StudentT.id,
-          studentNumber: Student.number,
-          StudentEnumId: StudentT.studentEnum,
-          StudentStatusEnumId: StudentT.studentStatusEnum,
-          name: Student.name,
-          phoneNumber: Student.phoneNumber,
-          email: Student.email,
-        },
+  async find(param: IMemberRegistrationQuery): Promise<MMemberRegistration[]> {
+    return this.withTransaction(async tx => this.findTx(tx, param));
+  }
+
+  async insertTx(
+    tx: DrizzleTransaction,
+    param: IMemberRegistrationCreate,
+  ): Promise<void> {
+    const [result] = await tx.insert(RegistrationApplicationStudent).values({
+      ...param,
+      registrationApplicationStudentEnumId:
+        RegistrationApplicationStudentStatusEnum.Pending,
+    });
+    if (result.insertId === undefined) {
+      throw new HttpException("Failed to insert", HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async insert(param: IMemberRegistrationCreate): Promise<void> {
+    await this.withTransaction(async tx => this.insertTx(tx, param));
+  }
+
+  async updateTx(
+    tx: DrizzleTransaction,
+    param: IMemberRegistrationUpdate,
+  ): Promise<void> {
+    const [result] = await tx
+      .update(RegistrationApplicationStudent)
+      .set({
         registrationApplicationStudentEnumId:
-          RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-        permanent: DivisionPermanentClubD,
+          param.registrationApplicationStudentEnum,
       })
-      .from(RegistrationApplicationStudent)
-      .innerJoin(
-        Club,
-        and(
-          eq(RegistrationApplicationStudent.clubId, Club.id),
-          isNull(Club.deletedAt),
-        ),
-      )
-      .innerJoin(
-        ClubT,
-        and(
-          eq(RegistrationApplicationStudent.clubId, ClubT.clubId),
-          eq(ClubT.semesterId, param.semesterId),
-          isNull(ClubT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Division,
-        and(eq(Club.divisionId, Division.id), isNull(Division.deletedAt)),
-      )
-      .innerJoin(
-        StudentT,
-        and(
-          eq(StudentT.studentId, RegistrationApplicationStudent.studentId),
-          eq(StudentT.semesterId, param.semesterId),
-          isNull(StudentT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Student,
-        and(
-          eq(RegistrationApplicationStudent.studentId, Student.id),
-          isNull(Student.deletedAt),
-        ),
-      )
-      .leftJoin(
-        DivisionPermanentClubD,
-        and(
-          isNull(DivisionPermanentClubD.deletedAt),
-          eq(Club.id, DivisionPermanentClubD.clubId),
-          lte(DivisionPermanentClubD.startTerm, today),
-          or(
-            isNull(DivisionPermanentClubD.endTerm),
-            gte(DivisionPermanentClubD.endTerm, today),
-          ),
-        ),
-      )
       .where(
         and(
-          eq(RegistrationApplicationStudent.clubId, param.clubId),
+          eq(RegistrationApplicationStudent.id, param.id),
           isNull(RegistrationApplicationStudent.deletedAt),
         ),
       );
-    logger.debug(result.length);
-    return result;
+    if (result.affectedRows === 0) {
+      throw new HttpException("Failed to update", HttpStatus.BAD_REQUEST);
+    }
+  }
+  async update(param: IMemberRegistrationUpdate): Promise<void> {
+    await this.withTransaction(async tx => this.updateTx(tx, param));
   }
 
-  /**
-   * @description getExecutiveRegistrationsMemberRegistrationsBrief 서비스를 위한
-   * 전용 쿼리입니다.
-   */
-  async getExecutiveRegistrationsMemberRegistrationsBrief(param: {
-    pageOffset: number;
-    itemCount: number;
-    semesterId: number;
-  }) {
-    const today = getKSTDate();
-    const result = await this.db
-      .select({
-        clubId: RegistrationApplicationStudent.clubId,
-        clubName: Club.nameKr,
-        clubTypeEnumId: ClubT.clubStatusEnumId,
-        division: {
-          id: Division.id,
-          name: Division.name,
-        },
-        student: {
-          StudentEnumId: StudentT.studentEnum,
-          StudentStatusEnumId: StudentT.studentStatusEnum,
-        },
-        registrationApplicationStudentEnumId:
-          RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-        permanent: DivisionPermanentClubD,
-      })
-      .from(RegistrationApplicationStudent)
-      .innerJoin(
-        Club,
+  async deleteTx(
+    tx: DrizzleTransaction,
+    studentId: number,
+    id: number,
+  ): Promise<void> {
+    const cur = getKSTDate();
+    const [result] = await tx
+      .update(RegistrationApplicationStudent)
+      .set({ deletedAt: cur })
+      .where(
         and(
-          eq(RegistrationApplicationStudent.clubId, Club.id),
-          isNull(Club.deletedAt),
+          eq(RegistrationApplicationStudent.id, id),
+          eq(RegistrationApplicationStudent.studentId, studentId),
+          isNull(RegistrationApplicationStudent.deletedAt),
         ),
-      )
-      .innerJoin(
-        ClubT,
-        and(
-          eq(RegistrationApplicationStudent.clubId, ClubT.clubId),
-          eq(ClubT.semesterId, param.semesterId),
-          isNull(ClubT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Division,
-        and(eq(Club.divisionId, Division.id), isNull(Division.deletedAt)),
-      )
-      .innerJoin(
-        StudentT,
-        and(
-          eq(StudentT.studentId, RegistrationApplicationStudent.studentId),
-          eq(StudentT.semesterId, param.semesterId),
-          isNull(StudentT.deletedAt),
-        ),
-      )
-      .leftJoin(
-        DivisionPermanentClubD,
-        and(
-          isNull(DivisionPermanentClubD.deletedAt),
-          eq(Club.id, DivisionPermanentClubD.clubId),
-          lte(DivisionPermanentClubD.startTerm, today),
-          or(
-            isNull(DivisionPermanentClubD.endTerm),
-            gte(DivisionPermanentClubD.endTerm, today),
-          ),
-        ),
-      )
-      .where(and(isNull(RegistrationApplicationStudent.deletedAt)));
-    logger.debug(result.length);
-    return result;
+      );
+    if (result.affectedRows === 0) {
+      throw new HttpException("Failed to delete", HttpStatus.BAD_REQUEST);
+    }
+  }
+  async delete(studentId: number, id: number): Promise<void> {
+    await this.withTransaction(async tx => this.deleteTx(tx, studentId, id));
   }
 }

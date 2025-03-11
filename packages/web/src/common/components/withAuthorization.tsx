@@ -1,34 +1,17 @@
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { ComponentType } from "react";
-import styled from "styled-components";
 
 import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
+import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
 import { getUserTypeEnumKeyByValue } from "@sparcs-clubs/web/utils/getUserType";
 import { getLocalStorageItem } from "@sparcs-clubs/web/utils/localStorage";
+import logger from "@sparcs-clubs/web/utils/logger";
 
 import ErrorPageTemplate from "../frames/ErrorPageTemplate";
 import LoginRequired from "../frames/LoginRequired";
 import getLogin from "../services/getLogin";
-
-const ErrorMessage = styled.div`
-  color: ${({ theme }) => theme.colors.BLACK};
-  text-align: center;
-  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
-  font-size: 32px;
-  font-weight: ${({ theme }) => theme.fonts.WEIGHT.MEDIUM};
-  line-height: 48px;
-  word-break: keep-all;
-
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
-    font-size: 28px;
-  }
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.xs}) {
-    font-size: 20px;
-    line-height: 32px;
-  }
-`;
 
 export const withAuthorization = <P extends object>(
   WrappedComponent: ComponentType<P>,
@@ -40,7 +23,7 @@ export const withAuthorization = <P extends object>(
       const response = await getLogin();
       window.location.href = response.url;
     } catch (error) {
-      console.error("Login failed", error);
+      logger.error("Login failed", error);
     }
   };
 

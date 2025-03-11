@@ -12,7 +12,10 @@ const SearchAndFilterWrapper = styled.div`
   display: flex;
   flex-direction: row;
   gap: 20px;
-  height: 36px;
+  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
+    flex-direction: column;
+    align-items: flex-end;
+  }
 `;
 
 const ResetButtonWrapper = styled.div`
@@ -41,7 +44,9 @@ const MemberSearchAndFilter: React.FC<
   return (
     <FlexWrapper direction="column" gap={20}>
       <SearchAndFilterWrapper>
-        <SearchInput searchText={searchText} handleChange={handleChange} />
+        <div style={{ width: "100%" }}>
+          <SearchInput searchText={searchText} handleChange={handleChange} />
+        </div>
         <SemesterFilter
           semesters={semesters}
           selectedSemesters={selectedSemesters}

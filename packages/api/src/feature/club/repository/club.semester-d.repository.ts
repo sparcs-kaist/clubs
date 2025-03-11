@@ -4,7 +4,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
 
-import { takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { ClubT, SemesterD } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 
@@ -45,7 +45,7 @@ export default class SemesterDRepository {
           isNull(SemesterD.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     return result;
   }
 
