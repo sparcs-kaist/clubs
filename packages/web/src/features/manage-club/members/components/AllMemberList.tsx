@@ -91,8 +91,8 @@ const AllMemberList: React.FC<AllMemberListProps> = ({
     semesterId: semester.id,
   });
 
+  // useFilteredMembers 훅을 통해 검색 로직을 통일
   const searchedMembers = useFilteredMembers(members.members, searchText);
-
   const memberCount = searchedMembers.length;
 
   const table = useReactTable({

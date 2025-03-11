@@ -1,3 +1,4 @@
+import { hangulIncludes } from "es-hangul";
 import { useEffect, useState } from "react";
 
 export const useFilteredMembers = <T extends { name: string }>(
@@ -8,8 +9,10 @@ export const useFilteredMembers = <T extends { name: string }>(
 
   useEffect(() => {
     setFiltered(
-      members.filter(member =>
-        member.name.toLowerCase().startsWith(searchText.toLowerCase()),
+      members.filter(
+        member =>
+          member.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          hangulIncludes(member.name, searchText),
       ),
     );
   }, [members, searchText]);
