@@ -3,7 +3,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 
 import { ApiClb010ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
@@ -14,6 +14,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 
+import { useFilteredMembers } from "../hooks/useFilteredMembers";
 import { useGetClubMembers } from "../services/useGetClubMembers";
 import { SemesterProps } from "../types/semesterList";
 
@@ -90,17 +91,9 @@ const AllMemberList: React.FC<AllMemberListProps> = ({
     semesterId: semester.id,
   });
 
-  const [searchedMembers, setSearchedMembers] = useState(
-    members.members.filter(member => member.name.startsWith(searchText)),
-  );
+  const searchedMembers = useFilteredMembers(members.members, searchText);
 
   const memberCount = searchedMembers.length;
-
-  useEffect(() => {
-    setSearchedMembers(
-      members.members.filter(member => member.name.startsWith(searchText)),
-    );
-  }, [members.members, searchText]);
 
   const table = useReactTable({
     columns,
