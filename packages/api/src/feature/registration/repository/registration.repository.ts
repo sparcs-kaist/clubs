@@ -9,7 +9,7 @@ import {
 
 import { ApiReg004ResponseOK } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg004";
 
-import { takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
 
 @Injectable()
 export class RegistrationRepository {
@@ -20,7 +20,7 @@ export class RegistrationRepository {
       .select({ eventEnumCount: count(RegistrationDeadlineEnum.enumId) })
       .from(RegistrationDeadlineEnum)
       .where(isNull(RegistrationDeadlineEnum.deletedAt))
-      .then(takeUnique);
+      .then(takeOne);
     const result = await this.db
       .select({
         id: RegistrationDeadlineD.id,

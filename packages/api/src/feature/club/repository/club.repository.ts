@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   and,
   desc,
@@ -17,12 +22,13 @@ import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
 import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
 import {
   ClubDelegateEnum,
   ClubTypeEnum,
 } from "@sparcs-clubs/interface/common/enum/club.enum";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {
   Club,
   ClubDelegateD,
@@ -101,14 +107,14 @@ export default class ClubRepository {
         ),
       )
       .limit(1)
-      .then(takeUnique);
+      .then(takeOne);
 
     const divisionName = await this.db
       .select({ name: Division.name })
       .from(Club)
       .leftJoin(Division, eq(Division.id, Club.divisionId))
       .where(eq(Club.id, clubId))
-      .then(takeUnique);
+      .then(takeOne);
     return { ...clubInfo, divisionName };
   }
 
@@ -523,7 +529,7 @@ export default class ClubRepository {
     return result.map(club => VClubSummary.fromDBResult(club));
   }
 
-  async find(
+  async findOne(
     clubId: number,
     semester: ISemester,
     date?: Date,
@@ -592,12 +598,91 @@ export default class ClubRepository {
     });
   }
 
+  async find(param: {
+    id?: IClubs["id"];
+    ids?: IClubs["id"][];
+    semester: ISemester;
+    clubStatusEnumId?: ClubTypeEnum;
+    clubStatusEnumIds?: ClubTypeEnum[];
+    divisionId?: IDivision["id"];
+    date?: Date;
+  }): Promise<MClub[]> {
+    if (!param.semester) {
+      throw new BadRequestException("Semester or date is required");
+    }
+    const day = param.date ?? getKSTDate(param.semester.endTerm);
+    const whereClause = [];
+    const delegateWhereClause = [];
+    if (param.id) {
+      whereClause.push(eq(Club.id, param.id));
+      delegateWhereClause.push(eq(ClubDelegateD.clubId, param.id));
+    }
+
+    if (param.ids) {
+      whereClause.push(inArray(Club.id, param.ids));
+      delegateWhereClause.push(inArray(ClubDelegateD.clubId, param.ids));
+    }
+
+    if (param.semester) {
+      whereClause.push(eq(ClubT.semesterId, param.semester.id));
+    }
+
+    if (param.clubStatusEnumId) {
+      whereClause.push(eq(ClubT.clubStatusEnumId, param.clubStatusEnumId));
+    }
+
+    if (param.clubStatusEnumIds) {
+      whereClause.push(
+        inArray(ClubT.clubStatusEnumId, param.clubStatusEnumIds),
+      );
+    }
+    if (param.divisionId) {
+      whereClause.push(eq(Club.divisionId, param.divisionId));
+    }
+
+    whereClause.push(isNull(Club.deletedAt));
+    whereClause.push(isNull(ClubT.deletedAt));
+
+    delegateWhereClause.push(
+      and(
+        lte(ClubDelegateD.startTerm, day),
+        or(gte(ClubDelegateD.endTerm, day), isNull(ClubDelegateD.endTerm)),
+      ),
+    );
+
+    const [clubResult, delegateResult] = await Promise.all([
+      this.db
+        .select()
+        .from(Club)
+        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .leftJoin(
+          ClubRoomT,
+          and(
+            eq(Club.id, ClubRoomT.clubId),
+            eq(ClubT.semesterId, ClubRoomT.semesterId),
+          ),
+        )
+        .where(and(...whereClause)),
+      this.db
+        .select()
+        .from(ClubDelegateD)
+        .where(and(...delegateWhereClause)),
+    ]);
+
+    return clubResult.map(club =>
+      MClub.fromDBResult({
+        ...club,
+        club_delegate_d: delegateResult.filter(e => e.clubId === club.club.id),
+      }),
+    );
+  }
+
   async fetch(
     clubId: number,
     semester: ISemester,
     date?: Date,
   ): Promise<MClub> {
-    const result = await this.find(clubId, semester, date);
+    const result = await this.findOne(clubId, semester, date);
     if (!result) {
       throw new NotFoundException("Club not found");
     }

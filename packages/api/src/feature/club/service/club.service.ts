@@ -59,7 +59,8 @@ export class ClubService {
     private clubRegistrationPublicService: ClubRegistrationPublicService,
   ) {}
 
-  private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  // private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
     const result = await this.clubRepository.getClubs();
@@ -80,7 +81,7 @@ export class ClubService {
     const currentSemester = await this.clubPublicService.fetchSemester(today);
     let targetSemesterId = currentSemester.id;
     try {
-      this.clubRegistrationPublicService.checkDeadline({
+      await this.clubRegistrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;
