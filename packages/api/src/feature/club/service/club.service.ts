@@ -63,7 +63,7 @@ export class ClubService {
   private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getClubs();
+    const result = await this.clubRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
