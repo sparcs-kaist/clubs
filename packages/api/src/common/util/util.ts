@@ -92,3 +92,10 @@ export function takeExist<T>(name?: string): (array: T[]) => T[] {
     return array;
   };
 }
+
+export function takeNotNull<T>(): (entity: T | null) => T {
+  return (entity: T | null) => {
+    if (entity === null) throw new NotFoundException(`Entity is null`);
+    return entity;
+  };
+}

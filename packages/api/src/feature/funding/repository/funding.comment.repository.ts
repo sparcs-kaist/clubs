@@ -16,26 +16,27 @@ export default class FundingCommentRepository extends BaseRepository<
   MFundingComment,
   IFundingCommentRequest,
   FundingCommentDbResult,
-  typeof FundingFeedback
+  typeof FundingFeedback,
+  number
 > {
   constructor() {
     super(FundingFeedback, MFundingComment);
   }
 
-  async fetchAllTx(
+  async findAllTx(
     tx: DrizzleTransaction,
     ids: number[],
   ): Promise<MFundingComment[]>;
-  async fetchAllTx(
+  async findAllTx(
     tx: DrizzleTransaction,
     fundingId: number,
   ): Promise<MFundingComment[]>;
-  async fetchAllTx(
+  async findAllTx(
     tx: DrizzleTransaction,
     arg1: number | number[],
   ): Promise<MFundingComment[]> {
     if (Array.isArray(arg1)) {
-      return super.fetchAllTx(tx, arg1);
+      return super.findAllTx(tx, arg1);
     }
 
     const result = await tx
@@ -47,14 +48,14 @@ export default class FundingCommentRepository extends BaseRepository<
     return result.map(row => MFundingComment.from(row));
   }
 
-  async fetchAll(fundingId: number): Promise<MFundingComment[]>;
-  async fetchAll(ids: number[]): Promise<MFundingComment[]>;
-  async fetchAll(arg1: number | number[]): Promise<MFundingComment[]> {
+  async findAll(fundingId: number): Promise<MFundingComment[]>;
+  async findAll(ids: number[]): Promise<MFundingComment[]>;
+  async findAll(arg1: number | number[]): Promise<MFundingComment[]> {
     if (Array.isArray(arg1)) {
-      return super.fetchAll(arg1);
+      return super.findAll(arg1);
     }
 
-    return this.withTransaction(async tx => this.fetchAllTx(tx, arg1));
+    return this.withTransaction(async tx => this.findAllTx(tx, arg1));
   }
 
   async insertTx(

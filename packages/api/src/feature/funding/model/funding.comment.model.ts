@@ -11,7 +11,10 @@ import { VFundingSummary } from "./funding.summary.model";
 
 export type FundingCommentDbResult = InferSelectModel<typeof FundingFeedback>;
 
-export class MFundingComment extends MEntity implements IFundingComment {
+export class MFundingComment
+  extends MEntity<number>
+  implements IFundingComment
+{
   funding: { id: number };
 
   executive: {

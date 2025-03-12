@@ -1,3 +1,3 @@
-export abstract class MEntity {
-  id: number;
+export abstract class MEntity<I> {
+  id: I;
 }

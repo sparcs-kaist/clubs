@@ -229,7 +229,7 @@ export default class FundingService {
       );
     }
 
-    const comments = await this.fundingCommentRepository.fetchAll(funding.id);
+    const comments = await this.fundingCommentRepository.findAll(funding.id);
 
     const commentedExecutive =
       await this.userPublicService.fetchExecutiveSummaries(
@@ -260,7 +260,7 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.findAll(id);
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -583,6 +583,12 @@ export default class FundingService {
                 { id: 0, count: 0 },
               ).id,
         ) ?? null,
+      professor: club.professor
+        ? {
+            id: club.professor.id,
+            name: "DUMMY", // 실제 교수 이름 정보가 있다면 대체
+          }
+        : null,
     }));
 
     const executivesWithCounts = executives.map(executive => ({
@@ -628,6 +634,12 @@ export default class FundingService {
           division: devisions.find(
             division => division.id === club.division.id,
           ),
+          professor: club.professor
+            ? {
+                id: club.professor.id,
+                name: "DUMMY", // 실제 교수 이름 정보가 있다면 대체
+              }
+            : null,
 
           totalCount: fundings.filter(
             funding =>
@@ -725,7 +737,7 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
+        const comments = await this.fundingCommentRepository.findAll(
           funding.id,
         );
         return {
@@ -818,7 +830,7 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
+        const comments = await this.fundingCommentRepository.findAll(
           funding.id,
         );
         return {
@@ -904,7 +916,7 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.findAll(id);
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
