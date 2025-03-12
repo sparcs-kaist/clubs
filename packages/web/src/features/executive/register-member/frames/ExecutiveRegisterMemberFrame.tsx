@@ -142,51 +142,34 @@ export const ExecutiveRegisterMember = () => {
     ]);
   }, [categories]);
 
-  const filterClubsWithSearch = useMemo(() => {
-    const filteredRowsWithSearch = data?.items.filter(
-      item =>
-        (item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
-          hangulIncludes(item.clubName, searchText)) &&
-        ((item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(3) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)) ||
-          (!item.isPermanent &&
-            convertedCategories[0].selectedContent.includes(
-              item.clubTypeEnumId,
-            ) &&
-            convertedCategories[1].selectedContent.includes(item.division.id))),
-    );
+  const filteredClubs = useMemo(() => {
+    if (!data) {
+      return { total: 0, items: [], offset: 0 };
+    }
+
+    const rows = data.items.filter(item => {
+      const searchMatched =
+        searchText === "" ||
+        item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
+        hangulIncludes(item.clubName, searchText);
+
+      const clubTypeMatched = item.isPermanent
+        ? convertedCategories[0].selectedContent.includes(3)
+        : convertedCategories[0].selectedContent.includes(item.clubTypeEnumId);
+
+      const divisionMatched = convertedCategories[1].selectedContent.includes(
+        item.division.id,
+      );
+
+      return searchMatched && clubTypeMatched && divisionMatched;
+    });
 
     return {
-      total: filteredRowsWithSearch?.length ?? 0,
-      items: filteredRowsWithSearch ?? [],
-      offset: data?.offset ?? 0,
+      total: rows.length,
+      items: rows,
+      offset: data.offset,
     };
-  }, [searchText, convertedCategories, currentPage, data]);
-
-  const filterClubsWithoutSearch = useMemo(() => {
-    const filteredRowsWithoutSearch = data?.items.filter(
-      item =>
-        (item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(3) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)) ||
-        (!item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(
-            item.clubTypeEnumId,
-          ) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)),
-    );
-
-    return {
-      total: filteredRowsWithoutSearch?.length ?? 0,
-      items: filteredRowsWithoutSearch ?? [],
-      offset: data?.offset ?? 0,
-    };
-  }, [convertedCategories, currentPage, data]);
-
-  const filteredClubs =
-    searchText === "" ? filterClubsWithoutSearch : filterClubsWithSearch;
+  }, [data, searchText, convertedCategories, currentPage]);
 
   useEffect(() => {
     if (categories[1].content.length === 0 && divisionData) {

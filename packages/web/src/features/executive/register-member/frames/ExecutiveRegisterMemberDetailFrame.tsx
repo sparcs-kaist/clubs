@@ -15,11 +15,15 @@ import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Toggle from "@sparcs-clubs/web/common/components/Toggle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
-import { mockupClubMemberRegister } from "@sparcs-clubs/web/features/executive/register-member/[id]/_mock/mockClubMemberRegister";
+//import { mockupClubMemberRegister } from "@sparcs-clubs/web/features/executive/register-member/[id]/_mock/mockClubMemberRegister";
 import { useGetRegisterMemberDetail } from "@sparcs-clubs/web/features/executive/register-member/[id]/services/getRegisterMemberDetail";
 import RegisterInfoTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterInfoTable";
 import StatusInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/StatusInfoFrame";
 import TotalInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/TotalInfoFrame";
+
+const DividerContainer = styled.div`
+  padding-left: 28px;
+`;
 
 const ExecutiveRegisterMemberDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,10 +31,6 @@ const ExecutiveRegisterMemberDetail = () => {
 
   const { id } = useParams<{ id: string }>();
   const clubId = parseInt(id);
-
-  const DividerContainer = styled.div`
-    padding-left: 28px;
-  `;
 
   const { data, isLoading, isError } = useGetRegisterMemberDetail({
     clubId,
@@ -48,7 +48,7 @@ const ExecutiveRegisterMemberDetail = () => {
     regularMemberApprovals: data.regularMemberApprovals,
     regularMemberRejections: data.regularMemberRejections,
     total: data.total,
-    items: data.items.slice((currentPage - 1) * limit, currentPage * limit),
+    items: data.items,
     offset: (currentPage - 1) * limit,
   };
 
@@ -132,7 +132,7 @@ const ExecutiveRegisterMemberDetail = () => {
         )}
         <FlexWrapper direction="row" gap={16} justify="center">
           <Pagination
-            totalPage={Math.ceil(mockupClubMemberRegister.total / limit)}
+            totalPage={data ? Math.ceil(data.total / limit) : 1}
             currentPage={currentPage}
             limit={limit}
             setPage={handlePageChange}
