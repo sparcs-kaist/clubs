@@ -5,11 +5,12 @@ import styled, { useTheme } from "styled-components";
 
 import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
 
+import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
+import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
 import {
   getTagColorFromClubType,
-  getTagColorFromDivision,
   getTagContentFromClubType,
 } from "@sparcs-clubs/web/types/clubdetail.types";
 
@@ -58,6 +59,8 @@ const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
   const theme = useTheme();
   const [isMobile, setIsMobile] = useState(false);
 
+  const { data: divisionData, isLoading, isError } = useGetDivisionType();
+
   useEffect(() => {
     const mediaQuery = window.matchMedia(
       `(max-width: ${theme.responsive.BREAKPOINT.sm})`,
@@ -85,14 +88,18 @@ const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
             </Tag>
           }
         />
-        <ClubInfoItem
-          title={isMobile ? "분과" : "소속 분과"}
-          content={
-            <Tag color={getTagColorFromDivision(club.divisionName)}>
-              {club.divisionName}
-            </Tag>
-          }
-        />
+        <AsyncBoundary isLoading={isLoading} isError={isError}>
+          <ClubInfoItem
+            title={isMobile ? "분과" : "소속 분과"}
+            content={
+              <Tag
+                color={divisionData?.divisionTagList[club.division.id]?.color}
+              >
+                {club.division.name}
+              </Tag>
+            }
+          />
+        </AsyncBoundary>
       </ClubInfoRow>
       <ResponsiveClubInfoRow>
         <ClubInfoItem title="성격" content={club.characteristic} />

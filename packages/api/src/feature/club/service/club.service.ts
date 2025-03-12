@@ -118,7 +118,7 @@ export class ClubService {
       type: clubDetails.type,
       characteristic: clubDetails.characteristic,
       advisor: clubDetails.advisor,
-      divisionName: clubDetails.divisionName.name,
+      division: clubDetails.division,
       description: clubDetails.description ? clubDetails.description : "",
       isPermanent,
       foundingYear: clubDetails.foundingYear,

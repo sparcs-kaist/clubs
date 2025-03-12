@@ -5,8 +5,6 @@ import React from "react";
 import styled from "styled-components";
 
 // import ScrollingText from "./_atomic/ScrollingText";
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
-
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
@@ -17,17 +15,14 @@ import {
   getClubType,
   getShortClubType,
   getTagColorFromClubType,
-} from "@sparcs-clubs/web/features/clubs/services/clubTypeControl";
+} from "@sparcs-clubs/web/features/clubs/constants/clubTypeControl";
 import isStudent from "@sparcs-clubs/web/utils/isStudent";
 
+import { ClubDetail } from "../types";
 import ClubRegistrationButtonWrapper from "./_atomic/ClubRegistrationButtonWrapper";
 
-export interface ClubProps {
-  club: ApiClb001ResponseOK["divisions"][number]["clubs"][number];
-}
-
 interface ClubCardProps {
-  club: ApiClb001ResponseOK["divisions"][number]["clubs"][number];
+  club: ClubDetail;
   isRegistrationPeriod?: boolean;
   isMobile?: boolean;
 }
@@ -53,15 +48,6 @@ const ClubCardLongText = styled(Typography).withConfig({
   line-height: ${({ isMobile }) => (isMobile ? "16px" : "20px")};
 `;
 
-const ClubCardNameWithTag = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1 0 0;
-  overflow: hidden;
-  white-space: nowrap;
-`;
-
 const ClubName = styled.div.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
 })<{ isMobile: boolean }>`
@@ -73,6 +59,15 @@ const ClubName = styled.div.withConfig({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+`;
+
+const ClubCardNameWithTag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 0 0;
+  overflow: hidden;
+  white-space: nowrap;
 `;
 
 const ClubCard: React.FC<ClubCardProps> = ({

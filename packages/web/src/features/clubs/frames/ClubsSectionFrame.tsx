@@ -4,13 +4,14 @@ import React from "react";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
-import type { ClubProps } from "@sparcs-clubs/web/features/clubs/components/ClubCard";
 import ClubListGrid from "@sparcs-clubs/web/features/clubs/components/ClubListGrid";
+
+import { ClubDetail } from "../types";
 
 type ClubsSectionFrameProps = {
   showLength?: boolean; // section title에 길이 보여줄지 여부
   title: string; // 분과
-  clubList: Array<ClubProps["club"]>;
+  clubList: ClubDetail[];
   isRegistrationPeriod?: boolean;
 };
 
