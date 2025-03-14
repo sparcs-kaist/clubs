@@ -253,4 +253,16 @@ export default class UserPublicService {
       );
     return studentEnumId.studentEnumId;
   }
+
+  async getStudentEnumsByIdsAndSemesterId(
+    studentIds: number[],
+    semesterId: number,
+  ): Promise<{ id: number; studentEnumId: number }[]> {
+    const studentEnums =
+      await this.studentRepository.getStudentEnumsByIdsAndSemesterId(
+        studentIds,
+        semesterId,
+      );
+    return studentEnums;
+  }
 }

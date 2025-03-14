@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray, isNull, SQL } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
@@ -45,10 +45,7 @@ export class MemberRegistrationRepository {
     return this.db.transaction(callback);
   }
 
-  async findTx(
-    tx: DrizzleTransaction,
-    param: IMemberRegistrationQuery,
-  ): Promise<MMemberRegistration[]> {
+  private makeWhereClause(param: IMemberRegistrationQuery): SQL[] {
     const whereClause: SQL[] = [];
     if (param.id) {
       whereClause.push(eq(RegistrationApplicationStudent.id, param.id));
@@ -86,10 +83,34 @@ export class MemberRegistrationRepository {
       );
     }
     whereClause.push(isNull(RegistrationApplicationStudent.deletedAt));
+
+    return whereClause;
+  }
+
+  async countTx(
+    tx: DrizzleTransaction,
+    param: IMemberRegistrationQuery,
+  ): Promise<number> {
+    const [result] = await tx
+      .select({ count: count() })
+      .from(RegistrationApplicationStudent)
+      .where(and(...this.makeWhereClause(param)));
+
+    return result.count;
+  }
+
+  async count(param: IMemberRegistrationQuery): Promise<number> {
+    return this.withTransaction(async tx => this.countTx(tx, param));
+  }
+
+  async findTx(
+    tx: DrizzleTransaction,
+    param: IMemberRegistrationQuery,
+  ): Promise<MMemberRegistration[]> {
     let query = tx
       .select()
       .from(RegistrationApplicationStudent)
-      .where(and(...whereClause))
+      .where(and(...this.makeWhereClause(param)))
       .$dynamic();
 
     if (param.pagination) {
