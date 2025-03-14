@@ -3,7 +3,6 @@ import { JwtService } from "@nestjs/jwt";
 
 import { ApiAut001RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut001";
 import { ApiAut002ResponseCreated } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut002";
-import { ApiAut003ResponseOk } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
 import { ApiAut004RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut004";
 
 import { getSsoConfig } from "@sparcs-clubs/api/env";
@@ -15,7 +14,7 @@ import { Client } from "../util/sparcs-sso";
 
 @Injectable()
 export class AuthService {
-  private readonly ssoClient;
+  private readonly ssoClient: Client;
 
   constructor(
     private readonly authRepository: AuthRepository,
@@ -79,7 +78,7 @@ export class AuthService {
       department = process.env.USER_KU_KAIST_ORG_ID;
     }
 
-    const user = await this.authRepository.findOrCreateUser(
+    const userResult = await this.authRepository.findOrCreateUser(
       email,
       studentNumber,
       sid,
@@ -87,12 +86,22 @@ export class AuthService {
       type,
       department,
     );
+
+    const user = {
+      ...userResult,
+      ssoSid: ssoProfile.sid || sid,
+    };
+    // console.log("login");
+    // console.log("user", user);
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){
     //   if(!(await this.executiveRepository.findExecutiveById(user.executive.id))) throw new HttpException("Cannot find Executive", 403);
     // }
     const accessToken = this.getAccessToken(user);
     const refreshToken = this.getRefreshToken(user);
+
+    // console.log("accessToken", accessToken);
+    // console.log("refreshToken", refreshToken);
     const current = new Date(); // todo 시간 변경 필요.
     const accessTokenTokenExpiresAt = new Date(
       current.getTime() + parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN),
@@ -128,9 +137,11 @@ export class AuthService {
     sid: string;
     name: string;
     email: string;
+    ssoSid: string;
   }): Promise<ApiAut002ResponseCreated> {
     const user = await this.authRepository.findUserById(_user.id);
-    const accessToken = this.getAccessToken(user);
+    const ssoSid = _user.ssoSid || user.sid;
+    const accessToken = this.getAccessToken({ ...user, ssoSid });
 
     return {
       accessToken,
@@ -144,18 +155,33 @@ export class AuthService {
       sid: string;
       name: string;
       email: string;
+      ssoSid: string;
     },
     refreshToken: string,
-  ): Promise<ApiAut003ResponseOk> {
-    return (await this.authRepository.deleteRefreshTokenRecord(
+    origin: string,
+  ): Promise<string> {
+    const deleteResult = await this.authRepository.deleteRefreshTokenRecord(
       _user.id,
       refreshToken,
-    ))
-      ? {}
-      : (() => {
-          throw new HttpException("Cannot delete refreshtoken", 500);
-        })();
+    );
+    if (!deleteResult) {
+      throw new HttpException("Cannot delete refreshtoken", 500);
+    }
+    const sid = _user.ssoSid || _user.sid;
+
+    // console.log("logout");
+    // console.log("user", _user);
+    // console.log("sid", sid);
+    const absoluteUrl = `${origin}`;
+    // console.log("absoluteUrl", absoluteUrl);
+    const logoutUrl = this.ssoClient.get_logout_url(sid, absoluteUrl);
+    // console.log("logoutUrl", logoutUrl);
+    return logoutUrl;
   }
+
+  // https://sparcssso.kaist.ac.kr/api/v2/logout/?client_id=test66e3182a161d5091f265&sid=ef555bb2840666056248&timestamp=1741854619&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fsession%2Flogout%3Fnext%3Dhttp%3A%2F%2Flocalhost%3A5173&sign=edabde02a25d56e329e6b16eec20d4e6
+  // https://sparcssso.kaist.ac.kr/api/v2/logout/?client_id=test21232f99b1696bc5b282&sid=17ac015dcbe7a824f9d4&timestamp=1741851534&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauth%2Fsign-out&sign=6843141132f12d3212aa2918554d4e4c
+  // https://sparcssso.kaist.ac.kr/api/v2/logout/?client_id=test21232f99b1696bc5b282&sid=17ac015dcbe7a824f9d4&timestamp=1741855527&redirect_uri=http%3A%2F%2Flocalhost%3A8000&sign=038477872ced73b229326b7731fd609b
 
   getAccessToken(user: {
     id: number;
@@ -184,6 +210,7 @@ export class AuthService {
     employee?: {
       id: number;
     };
+    ssoSid: string;
   }) {
     const accessToken: {
       undergraduate?: string;
@@ -201,6 +228,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "undergraduate",
           studentId: user.undergraduate.id,
           studentNumber: user.undergraduate.number,
@@ -219,6 +247,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "master",
           studentId: user.master.id,
           studentNumber: user.master.number,
@@ -237,6 +266,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "doctor",
           studentId: user.doctor.id,
           studentNumber: user.doctor.number,
@@ -255,6 +285,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "executive",
           executiveId: user.executive.id,
           studentId: user.executive.studentId,
@@ -273,6 +304,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "professor",
           professorId: user.professor.id,
         },
@@ -290,6 +322,7 @@ export class AuthService {
           sid: user.sid,
           name: user.name,
           email: user.email,
+          ssoSid: user.ssoSid,
           type: "employee",
           employeeId: user.employee.id,
         },
@@ -308,6 +341,7 @@ export class AuthService {
     sid: string;
     name: string;
     email: string;
+    ssoSid: string;
   }) {
     const refreshToken = this.jwtService.sign(
       {
@@ -315,6 +349,7 @@ export class AuthService {
         id: user.id,
         sid: user.sid,
         name: user.name,
+        ssoSid: user.ssoSid,
       },
       {
         secret: process.env.REFRESH_TOKEN_SECRET_KEY,

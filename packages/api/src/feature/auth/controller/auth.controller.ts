@@ -6,6 +6,7 @@ import {
   Req,
   Res,
   Session,
+  UnauthorizedException,
   UseGuards,
   UsePipes,
 } from "@nestjs/common";
@@ -18,9 +19,7 @@ import apiAut001, {
 import apiAut002, {
   ApiAut002ResponseCreated,
 } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut002";
-import apiAut003, {
-  ApiAut003ResponseOk,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
+import apiAut003 from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
 import apiAut004, {
   ApiAut004RequestQuery,
 } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut004";
@@ -90,17 +89,23 @@ export class AuthController {
   async postAuthRefresh(
     @Req() req: Request & UserRefreshTokenPayload,
   ): Promise<ApiAut002ResponseCreated> {
-    return this.authService.postAuthRefresh(req.user);
+    return this.authService.postAuthRefresh({
+      ...req.user,
+    });
   }
 
   @Public()
   @UseGuards(JwtRefreshGuard)
   @Post("/auth/sign-out")
   @UsePipes(new ZodPipe(apiAut003))
-  postAuthSignout(
+  async postAuthSignout(
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request & UserRefreshTokenPayload,
-  ): Promise<ApiAut003ResponseOk> {
+  ): Promise<void> {
+    //): Promise<ApiAut003ResponseOk> {
+    if (!req.user) {
+      throw new UnauthorizedException("로그인 되어 있지 않습니다");
+    }
     const { refreshToken } = req?.cookies || {};
     res.cookie("refreshToken", null, {
       maxAge: -1,
@@ -112,7 +117,19 @@ export class AuthController {
       httpOnly: true,
       path: "/auth/sign-out",
     });
-    return this.authService.postAuthSignout(req.user, refreshToken);
+
+    // console.log("req", req);
+    // console.log("req.user", req.user);
+    const logoutUrl = await this.authService.postAuthSignout(
+      req.user,
+      refreshToken,
+      req.get("origin"),
+    );
+
+    // console.log("logoutUrl");
+    // console.log(logoutUrl);
+    return res.redirect(logoutUrl);
+    // return signOutResult;
   }
 
   // test용 API, 실제 사용하지 않음

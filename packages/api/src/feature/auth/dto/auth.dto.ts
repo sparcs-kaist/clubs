@@ -8,10 +8,11 @@ interface User {
   studentId?: number;
   studentNumber?: number;
   executiveId?: number;
+  ssoSid: string; // 개발 모드에서 sso logout을 위해서 추가
 }
 
 export interface UserRefreshTokenPayload {
-  user: Pick<User, "id" | "sid" | "name" | "email">;
+  user: Pick<User, "id" | "sid" | "name" | "email" | "ssoSid">;
 }
 
 export interface UserAccessTokenPayload {
