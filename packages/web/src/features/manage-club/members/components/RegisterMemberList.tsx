@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 
 import { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
@@ -8,7 +8,7 @@ import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/en
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
-import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
+import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import MembersTable from "@sparcs-clubs/web/features/manage-club/components/MembersTable";
 import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMemberRegistration";
 import { useGetClubDelegate } from "@sparcs-clubs/web/features/manage-club/services/getClubDelegate";

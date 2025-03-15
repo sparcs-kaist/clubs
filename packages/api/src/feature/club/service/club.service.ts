@@ -63,7 +63,7 @@ export class ClubService {
   private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getClubs();
+    const result = await this.clubRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
@@ -118,7 +118,7 @@ export class ClubService {
       type: clubDetails.type,
       characteristic: clubDetails.characteristic,
       advisor: clubDetails.advisor,
-      divisionName: clubDetails.divisionName.name,
+      division: clubDetails.division,
       description: clubDetails.description ? clubDetails.description : "",
       isPermanent,
       foundingYear: clubDetails.foundingYear,

@@ -14,6 +14,7 @@ import ClubMemberCard, {
 const CardWrapper = styled.div`
   width: 100%;
   padding-left: 20px;
+
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
     padding-left: 16px;
   }

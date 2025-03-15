@@ -12,7 +12,6 @@ import {
 export const useGetMyMemberRegistration = () =>
   useQuery<ApiReg006ResponseOk, Error>({
     queryKey: [apiReg006.url()],
-
     queryFn: async (): Promise<ApiReg006ResponseOk> => {
       const { data, status } = await axiosClientWithAuth.get(
         apiReg006.url(),

@@ -1,7 +1,8 @@
 import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 
 import type { TagColor } from "@sparcs-clubs/web/common/components/Tag";
-import type { ClubProps } from "@sparcs-clubs/web/features/clubs/components/ClubCard";
+
+import { ClubDetail } from "../types";
 
 const getTagColorFromClubType = (
   clubType: ClubTypeEnum,
@@ -18,7 +19,7 @@ const getTagColorFromClubType = (
   return color;
 };
 
-const getClubType = (club: ClubProps["club"]) => {
+const getClubType = (club: ClubDetail) => {
   let clubType: string;
   if (club.isPermanent) {
     clubType = "상임동아리";
@@ -30,7 +31,7 @@ const getClubType = (club: ClubProps["club"]) => {
   return clubType;
 };
 
-const getShortClubType = (club: ClubProps["club"]) => {
+const getShortClubType = (club: ClubDetail) => {
   let clubType: string;
   if (club.isPermanent) {
     clubType = "상임";
