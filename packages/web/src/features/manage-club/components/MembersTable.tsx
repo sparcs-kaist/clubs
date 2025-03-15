@@ -25,6 +25,8 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 import { usePatchClubMemberRegistration } from "../members/services/usePatchClubMemberRegistration";
 
+type MemberRegistrationType = ApiReg008ResponseOk["applies"][number];
+
 interface MembersTableProps {
   memberList: ApiReg008ResponseOk["applies"];
   clubName: string;
@@ -57,7 +59,7 @@ const openDelegateCannotBeRejectedModal = (refetch: () => void) => {
 };
 
 const openApproveModal = (
-  member: ApiReg008ResponseOk["applies"][0],
+  member: MemberRegistrationType,
   clubName: string,
   clubId: number,
   year: number,
@@ -93,7 +95,7 @@ const openApproveModal = (
 };
 
 const openRejectModal = (
-  member: ApiReg008ResponseOk["applies"][0],
+  member: MemberRegistrationType,
   clubName: string,
   clubId: number,
   year: number,
@@ -128,7 +130,7 @@ const openRejectModal = (
   ));
 };
 
-const columnHelper = createColumnHelper<ApiReg008ResponseOk["applies"][0]>();
+const columnHelper = createColumnHelper<MemberRegistrationType>();
 
 const columnsFunction = (
   clubName: string,
@@ -213,9 +215,7 @@ const columnsFunction = (
           <RemarkColumnItem>
             <Typography
               fs={16}
-              fw="REGULAR"
               lh={20}
-              ff="PRETENDARD"
               style={{
                 flex: 1,
                 textAlign: "center",
@@ -233,9 +233,7 @@ const columnsFunction = (
             </Typography>
             <Typography
               fs={16}
-              fw="REGULAR"
               lh={20}
-              ff="PRETENDARD"
               style={{
                 flex: 1,
                 textAlign: "center",
@@ -285,9 +283,7 @@ const columnsFunction = (
             />
             <Typography
               fs={16}
-              fw="REGULAR"
               lh={20}
-              ff="PRETENDARD"
               style={{
                 flex: 1,
                 textAlign: "center",
@@ -299,9 +295,7 @@ const columnsFunction = (
             </Typography>
             <Typography
               fs={16}
-              fw="REGULAR"
               lh={20}
-              ff="PRETENDARD"
               style={{
                 flex: 1,
                 textAlign: "center",
