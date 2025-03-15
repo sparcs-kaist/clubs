@@ -91,8 +91,8 @@ export class AuthService {
       ...userResult,
       ssoSid: ssoProfile.sid || sid,
     };
-    // console.log("login");
-    // console.log("user", user);
+    console.log("login");
+    console.log("user", user);
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){
     //   if(!(await this.executiveRepository.findExecutiveById(user.executive.id))) throw new HttpException("Cannot find Executive", 403);
@@ -100,8 +100,8 @@ export class AuthService {
     const accessToken = this.getAccessToken(user);
     const refreshToken = this.getRefreshToken(user);
 
-    // console.log("accessToken", accessToken);
-    // console.log("refreshToken", refreshToken);
+    console.log("accessToken", accessToken);
+    console.log("refreshToken", refreshToken);
     const current = new Date(); // todo 시간 변경 필요.
     const accessTokenTokenExpiresAt = new Date(
       current.getTime() + parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN),
@@ -169,13 +169,13 @@ export class AuthService {
     }
     const sid = _user.ssoSid || _user.sid;
 
-    // console.log("logout");
-    // console.log("user", _user);
-    // console.log("sid", sid);
+    console.log("logout");
+    console.log("user", _user);
+    console.log("sid", sid);
     const absoluteUrl = `${origin}`;
-    // console.log("absoluteUrl", absoluteUrl);
+    console.log("absoluteUrl", absoluteUrl);
     const logoutUrl = this.ssoClient.get_logout_url(sid, absoluteUrl);
-    // console.log("logoutUrl", logoutUrl);
+    console.log("logoutUrl", logoutUrl);
     return logoutUrl;
   }
 

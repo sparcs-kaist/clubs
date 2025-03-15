@@ -35,6 +35,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, "refresh") {
       ? {
           id: payload.id,
           sid: payload.sid,
+          ssoSid: payload.ssoSid,
           name: payload.name,
           email: payload.email,
         }

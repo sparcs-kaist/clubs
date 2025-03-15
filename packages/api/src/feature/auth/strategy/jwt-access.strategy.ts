@@ -25,6 +25,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, "access") {
     return {
       id: payload.id,
       sid: payload.sid,
+      ssoSid: payload.ssoSid,
       name: payload.name,
       email: payload.email,
       type: payload.type,
