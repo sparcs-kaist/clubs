@@ -58,7 +58,8 @@ const openDelegateCannotBeRejectedModal = (refetch: () => void) => {
   ));
 };
 
-const openApproveModal = (
+const openStatusChangeModal = (
+  targetStatus: RegistrationApplicationStudentStatusEnum,
   member: MemberRegistrationType,
   clubName: string,
   clubId: number,
@@ -66,65 +67,30 @@ const openApproveModal = (
   semesterName: string,
   refetch: () => void,
 ) => {
+  const actionText =
+    targetStatus === RegistrationApplicationStudentStatusEnum.Approved
+      ? "승인"
+      : "반려";
   overlay.open(({ isOpen, close }) => (
     <Modal isOpen={isOpen}>
       <CancellableModalContent
-        confirmButtonText="승인"
+        confirmButtonText={actionText}
         onConfirm={async () => {
           await usePatchClubMemberRegistration(
             { applyId: member.id },
             {
               clubId,
-              applyStatusEnumId:
-                RegistrationApplicationStudentStatusEnum.Approved,
+              applyStatusEnumId: targetStatus,
             },
           );
           close();
           refetch();
         }}
-        onClose={() => {
-          close();
-        }}
+        onClose={close}
       >
-        {member.student.studentNumber} {member.student.name} 학생의 {year}
-        년도 {semesterName}학기 {clubName} 동아리 신청을
-        <br /> 승인하시겠습니까?
-      </CancellableModalContent>
-    </Modal>
-  ));
-};
-
-const openRejectModal = (
-  member: MemberRegistrationType,
-  clubName: string,
-  clubId: number,
-  year: number,
-  semesterName: string,
-  refetch: () => void,
-) => {
-  overlay.open(({ isOpen, close }) => (
-    <Modal isOpen={isOpen}>
-      <CancellableModalContent
-        confirmButtonText="반려"
-        onConfirm={async () => {
-          await usePatchClubMemberRegistration(
-            { applyId: member.id },
-            {
-              clubId,
-              applyStatusEnumId:
-                RegistrationApplicationStudentStatusEnum.Rejected,
-            },
-          );
-          close();
-          refetch();
-        }}
-        onClose={() => {
-          close();
-        }}
-      >
-        {member.student.studentNumber} {member.student.name} 학생의 {year}
-        년도 {semesterName}학기 {clubName} 동아리 신청을
-        <br /> 반려하시겠습니까?
+        {member.student.studentNumber} {member.student.name} 학생의 {year}년도{" "}
+        {semesterName}학기 {clubName} 동아리 신청을
+        <br /> {actionText}하시겠습니까?
       </CancellableModalContent>
     </Modal>
   ));
@@ -185,7 +151,8 @@ const columnsFunction = (
             text={["승인", "반려"]}
             onClick={[
               () =>
-                openApproveModal(
+                openStatusChangeModal(
+                  RegistrationApplicationStudentStatusEnum.Approved,
                   member,
                   clubName,
                   clubId,
@@ -199,7 +166,8 @@ const columnsFunction = (
                     delegate.studentNumber === member.student.studentNumber,
                 )
                   ? openDelegateCannotBeRejectedModal(refetch)
-                  : openRejectModal(
+                  : openStatusChangeModal(
+                      RegistrationApplicationStudentStatusEnum.Rejected,
                       member,
                       clubName,
                       clubId,
@@ -252,7 +220,8 @@ const columnsFunction = (
                       delegate.studentNumber === member.student.studentNumber,
                   )
                     ? openDelegateCannotBeRejectedModal(refetch)
-                    : openRejectModal(
+                    : openStatusChangeModal(
+                        RegistrationApplicationStudentStatusEnum.Rejected,
                         member,
                         clubName,
                         clubId,
@@ -271,7 +240,8 @@ const columnsFunction = (
               text={["승인"]}
               onClick={[
                 () =>
-                  openApproveModal(
+                  openStatusChangeModal(
+                    RegistrationApplicationStudentStatusEnum.Approved,
                     member,
                     clubName,
                     clubId,
