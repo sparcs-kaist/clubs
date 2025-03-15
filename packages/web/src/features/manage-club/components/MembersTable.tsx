@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-table";
 import { overlay } from "overlay-kit";
 import React from "react";
-import styled from "styled-components";
 
 import { ApiClb006ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
 import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
@@ -17,7 +16,6 @@ import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/Confi
 import Table from "@sparcs-clubs/web/common/components/Table";
 import TableButton from "@sparcs-clubs/web/common/components/Table/TableButton";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
-import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { MemTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
@@ -34,12 +32,6 @@ interface MembersTableProps {
   refetch: () => void;
   delegates: ApiClb006ResponseOK["delegates"];
 }
-
-const RemarkColumnItem = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-`;
 
 const openDelegateCannotBeRejectedModal = (refetch: () => void) => {
   overlay.open(({ isOpen, close }) => (
@@ -144,9 +136,11 @@ const columnsFunction = (
     header: "비고",
     cell: info => {
       const member = info.row.original;
-      return (
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Pending && (
+      if (
+        member.applyStatusEnumId ===
+        RegistrationApplicationStudentStatusEnum.Pending
+      ) {
+        return (
           <TableButton
             text={["승인", "반려"]}
             onClick={[
@@ -176,114 +170,64 @@ const columnsFunction = (
                       refetch,
                     ),
             ]}
+            clickable={[true, true]}
           />
-        )) ||
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Approved && (
-          <RemarkColumnItem>
-            <Typography
-              fs={16}
-              lh={20}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontStyle: "normal",
-                color: "var(--gray300, #DDD)",
-                textDecorationLine: "underline",
-                textDecorationStyle: "solid",
-                textDecorationSkipInk: "none",
-                textDecorationThickness: "auto",
-                textUnderlineOffset: "auto",
-                textUnderlinePosition: "from-font",
-              }}
-            >
-              승인
-            </Typography>
-            <Typography
-              fs={16}
-              lh={20}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontStyle: "normal",
-                color: "var(--gray300, #DDD)",
-              }}
-            >
-              /
-            </Typography>
-            <TableButton
-              text={["반려"]}
-              onClick={[
-                () =>
-                  delegates.some(
-                    delegate =>
-                      delegate.studentNumber === member.student.studentNumber,
-                  )
-                    ? openDelegateCannotBeRejectedModal(refetch)
-                    : openStatusChangeModal(
-                        RegistrationApplicationStudentStatusEnum.Rejected,
-                        member,
-                        clubName,
-                        clubId,
-                        year,
-                        semesterName,
-                        refetch,
-                      ),
-              ]}
-            />
-          </RemarkColumnItem>
-        )) ||
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Rejected && (
-          <RemarkColumnItem>
-            <TableButton
-              text={["승인"]}
-              onClick={[
-                () =>
-                  openStatusChangeModal(
-                    RegistrationApplicationStudentStatusEnum.Approved,
-                    member,
-                    clubName,
-                    clubId,
-                    year,
-                    semesterName,
-                    refetch,
-                  ),
-              ]}
-            />
-            <Typography
-              fs={16}
-              lh={20}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontStyle: "normal",
-                color: "var(--gray300, #DDD)",
-              }}
-            >
-              /
-            </Typography>
-            <Typography
-              fs={16}
-              lh={20}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontStyle: "normal",
-                color: "var(--gray300, #DDD)",
-                textDecorationLine: "underline",
-                textDecorationStyle: "solid",
-                textDecorationSkipInk: "none",
-                textDecorationThickness: "auto",
-                textUnderlineOffset: "auto",
-                textUnderlinePosition: "from-font",
-              }}
-            >
-              반려
-            </Typography>
-          </RemarkColumnItem>
-        ))
-      );
+        );
+      }
+      if (
+        member.applyStatusEnumId ===
+        RegistrationApplicationStudentStatusEnum.Approved
+      ) {
+        return (
+          <TableButton
+            text={["승인", "반려"]}
+            onClick={[
+              () => {},
+              () =>
+                delegates.some(
+                  delegate =>
+                    delegate.studentNumber === member.student.studentNumber,
+                )
+                  ? openDelegateCannotBeRejectedModal(refetch)
+                  : openStatusChangeModal(
+                      RegistrationApplicationStudentStatusEnum.Rejected,
+                      member,
+                      clubName,
+                      clubId,
+                      year,
+                      semesterName,
+                      refetch,
+                    ),
+            ]}
+            clickable={[false, true]}
+          />
+        );
+      }
+      if (
+        member.applyStatusEnumId ===
+        RegistrationApplicationStudentStatusEnum.Rejected
+      ) {
+        return (
+          <TableButton
+            text={["승인", "반려"]}
+            onClick={[
+              () =>
+                openStatusChangeModal(
+                  RegistrationApplicationStudentStatusEnum.Approved,
+                  member,
+                  clubName,
+                  clubId,
+                  year,
+                  semesterName,
+                  refetch,
+                ),
+              () => {},
+            ]}
+            clickable={[true, false]}
+          />
+        );
+      }
+      return null;
     },
     size: 15,
   }),
