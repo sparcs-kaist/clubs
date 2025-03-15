@@ -1,3 +1,4 @@
+import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -16,7 +17,7 @@ const RegisterMemberListWrapper = styled.div`
   gap: 20px;
 `;
 
-const RegisterMemberListFrame = () => {
+const RegisterMemberListFrame: React.FC = () => {
   const {
     data: termData,
     isLoading: isLoadingTerm,
