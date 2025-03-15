@@ -24,6 +24,7 @@ const TableWithPagination = styled.div`
 
 const RegisterMemberList = () => {
   const [page, setPage] = useState<number>(1);
+  const pageSize = 10;
 
   const { data: idData } = useGetMyManageClub() as {
     data: ApiClb015ResponseOk;
@@ -62,7 +63,11 @@ const RegisterMemberList = () => {
     refetch: () => void;
   };
 
-  const totalPage = memberData && Math.ceil(memberData.applies.length / 10);
+  const totalPage =
+    memberData && Math.ceil(memberData.applies.length / pageSize);
+
+  const paginatedMembers =
+    memberData?.applies.slice((page - 1) * pageSize, page * pageSize) || [];
 
   return (
     <TableWithPagination>
@@ -72,7 +77,7 @@ const RegisterMemberList = () => {
       >
         {memberData && (
           <MembersTable
-            memberList={memberData.applies}
+            memberList={paginatedMembers}
             clubName={clubData.nameKr}
             clubId={idData.clubId}
             refetch={memberRefetch}
@@ -83,7 +88,7 @@ const RegisterMemberList = () => {
           <Pagination
             totalPage={totalPage}
             currentPage={page}
-            limit={10}
+            limit={pageSize}
             setPage={setPage}
           />
         )}
