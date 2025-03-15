@@ -15,7 +15,7 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
-import { useGetClubMembers } from "@sparcs-clubs/web/features/manage-club/members/services/getClubMembers";
+import { useGetClubMembers } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMembers";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
