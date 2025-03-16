@@ -9,8 +9,10 @@ import { MemTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface StatusInfoFrameProps {
-  statusInfo: { Regular: number; NonRegular: number; Total: number };
   status: RegistrationApplicationStudentStatusEnum;
+  Regular: number;
+  NonRegular: number;
+  Total: number;
 }
 
 const StatusWrapper = styled.div`
@@ -58,8 +60,10 @@ export const TotalContentsContainer = styled.div`
 `;
 
 const StatusInfoFrame: React.FC<StatusInfoFrameProps> = ({
-  statusInfo,
   status,
+  Regular,
+  NonRegular,
+  Total,
 }) => {
   const { color, text } = getTagDetail(status, MemTagList);
 
@@ -68,19 +72,17 @@ const StatusInfoFrame: React.FC<StatusInfoFrameProps> = ({
       <FlexWrapper gap={40} direction="row">
         <TotalCountContainer>
           <Tag color={color}>{text}</Tag>
-          <TotalContentsContainer>{statusInfo.Total}명</TotalContentsContainer>
+          <TotalContentsContainer>{Total}명</TotalContentsContainer>
         </TotalCountContainer>
+
         <StatusCountContainer>
           <Tag color="BLUE">정회원</Tag>
-          <StatusContentsContainer>
-            {statusInfo.Regular}명
-          </StatusContentsContainer>
+          <StatusContentsContainer>{Regular}명</StatusContentsContainer>
         </StatusCountContainer>
+
         <StatusCountContainer>
           <Tag color="GRAY">준회원</Tag>
-          <StatusContentsContainer>
-            {statusInfo.NonRegular}명
-          </StatusContentsContainer>
+          <StatusContentsContainer>{NonRegular}명</StatusContentsContainer>
         </StatusCountContainer>
       </FlexWrapper>
     </StatusWrapper>
