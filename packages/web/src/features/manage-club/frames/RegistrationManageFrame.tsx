@@ -13,7 +13,7 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import MembersTable from "@sparcs-clubs/web/features/manage-club/components/MembersTable";
-import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/getClubMemberRegistration";
+import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMemberRegistration";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
@@ -50,12 +50,10 @@ const RegistrationManageFrame: React.FC = () => {
     data: memberData,
     isLoading: memberIsLoading,
     isError: memberIsError,
-    refetch: memberRefetch,
   } = useGetMemberRegistration({ clubId: idData.clubId }) as {
     data: ApiReg008ResponseOk;
     isLoading: boolean;
     isError: boolean;
-    refetch: () => void;
   };
 
   const appliedCount =
@@ -132,7 +130,6 @@ const RegistrationManageFrame: React.FC = () => {
                 memberList={memberData.applies}
                 clubName={clubData.nameKr}
                 clubId={idData.clubId}
-                refetch={memberRefetch}
                 delegates={delegatesNow.delegates}
               />
             </>

@@ -13,7 +13,7 @@ import RegisterMemberListFrame from "@sparcs-clubs/web/features/manage-club/memb
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 import { useCheckManageClub } from "@sparcs-clubs/web/hooks/checkManageClub";
 
-const ManageClubMembers = () => {
+const ManageClubMembers: React.FC = () => {
   const { delegate, isLoading } = useCheckManageClub();
   const { data: clubData } = useGetMyManageClub() as {
     data: ApiClb015ResponseOk;

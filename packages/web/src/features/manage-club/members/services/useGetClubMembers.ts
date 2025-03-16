@@ -10,7 +10,7 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-import { mockSemesterMembers } from "../frames/_mock/mockMembers";
+import { mockSemesterMembers } from "./_mock/mockMembers";
 
 export const useGetClubMembers = (requestParam: ApiClb010RequestParam) =>
   useSuspenseQuery<ApiClb010ResponseOk, Error>({
