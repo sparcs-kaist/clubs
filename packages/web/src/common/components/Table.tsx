@@ -32,7 +32,6 @@ const TableInner = styled.table.withConfig({
   flex-direction: column;
   align-items: flex-start;
   min-width: ${({ minWidth }) => `max(100%, ${minWidth}px)`};
-  width: fit-content;
   border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
   border-radius: 8px;
   overflow: hidden;
