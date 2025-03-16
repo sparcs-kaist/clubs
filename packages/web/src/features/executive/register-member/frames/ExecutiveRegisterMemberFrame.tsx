@@ -158,10 +158,6 @@ export const ExecutiveRegisterMember = () => {
     }
   }, [categories, DivisionNameList, divisionData]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
   return (
     <AsyncBoundary
       isLoading={isLoading || divisionLoading}
@@ -209,7 +205,7 @@ export const ExecutiveRegisterMember = () => {
                 totalPage={Math.ceil(data.total / limit)}
                 currentPage={currentPage}
                 limit={limit}
-                setPage={handlePageChange}
+                setPage={setCurrentPage}
               />
             </FlexWrapper>
           </TableWithPaginationWrapper>

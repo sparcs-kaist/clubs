@@ -8,11 +8,15 @@ import Tag from "@sparcs-clubs/web/common/components/Tag";
 import { MemTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
-interface StatusInfoFrameProps {
+type StatusInfo = {
   status: RegistrationApplicationStudentStatusEnum;
-  Regular: number;
-  NonRegular: number;
-  Total: number;
+  regular: number;
+  nonRegular: number;
+  total: number;
+};
+interface StatusInfoFrameProps {
+  isTotal?: boolean;
+  statusInfo: StatusInfo;
 }
 
 const StatusWrapper = styled.div`
@@ -26,6 +30,18 @@ const TotalCountContainer = styled.div`
   align-items: center;
   display: flex;
   flex-direction: row;
+`;
+
+const TotalTitleContainer = styled.div`
+  width: fit-content;
+  padding: 4px 12px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20px;
 `;
 
 const StatusCountContainer = styled.div`
@@ -60,29 +76,35 @@ export const TotalContentsContainer = styled.div`
 `;
 
 const StatusInfoFrame: React.FC<StatusInfoFrameProps> = ({
-  status,
-  Regular,
-  NonRegular,
-  Total,
+  statusInfo,
+  isTotal = false,
 }) => {
-  const { color, text } = getTagDetail(status, MemTagList);
+  const { color, text } = getTagDetail(statusInfo.status, MemTagList);
 
   return (
     <StatusWrapper>
       <FlexWrapper gap={40} direction="row">
         <TotalCountContainer>
-          <Tag color={color}>{text}</Tag>
-          <TotalContentsContainer>{Total}명</TotalContentsContainer>
+          {isTotal ? (
+            <TotalTitleContainer>전체</TotalTitleContainer>
+          ) : (
+            <Tag color={color}>{text}</Tag>
+          )}
+          <TotalContentsContainer>{statusInfo.total}명</TotalContentsContainer>
         </TotalCountContainer>
 
         <StatusCountContainer>
           <Tag color="BLUE">정회원</Tag>
-          <StatusContentsContainer>{Regular}명</StatusContentsContainer>
+          <StatusContentsContainer>
+            {statusInfo.regular}명
+          </StatusContentsContainer>
         </StatusCountContainer>
 
         <StatusCountContainer>
           <Tag color="GRAY">준회원</Tag>
-          <StatusContentsContainer>{NonRegular}명</StatusContentsContainer>
+          <StatusContentsContainer>
+            {statusInfo.nonRegular}명
+          </StatusContentsContainer>
         </StatusCountContainer>
       </FlexWrapper>
     </StatusWrapper>

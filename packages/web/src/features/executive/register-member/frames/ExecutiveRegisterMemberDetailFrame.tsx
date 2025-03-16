@@ -2,7 +2,7 @@
 
 import { Divider } from "@mui/material";
 import { useParams } from "next/navigation";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
@@ -16,92 +16,64 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import RegisterInfoTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterInfoTable";
 import StatusInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/StatusInfoFrame";
-import TotalInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/TotalInfoFrame";
 import { useGetRegisterMemberDetail } from "@sparcs-clubs/web/features/executive/register-member/services/useGetRegisterMemberDetail";
 
-const defaultStatusInfo = { Regular: 0, NonRegular: 0, Total: 0 };
-function getStatusInfo(
-  data: Awaited<ReturnType<typeof useGetRegisterMemberDetail>["data"]>,
-  status: RegistrationApplicationStudentStatusEnum,
-) {
-  if (!data) {
-    return { status, ...defaultStatusInfo };
-  }
+const defaultStatusInfo = {
+  status: RegistrationApplicationStudentStatusEnum.Pending,
+  regular: 0,
+  nonRegular: 0,
+  total: 0,
+};
 
-  switch (status) {
-    case RegistrationApplicationStudentStatusEnum.Pending:
-      return {
-        status,
-        Regular: data.regularMemberWaitings,
-        NonRegular: data.totalWaitings - data.regularMemberWaitings,
-        Total: data.totalWaitings,
-      };
-    case RegistrationApplicationStudentStatusEnum.Approved:
-      return {
-        status,
-        Regular: data.regularMemberApprovals,
-        NonRegular: data.totalApprovals - data.regularMemberApprovals,
-        Total: data.totalApprovals,
-      };
-    case RegistrationApplicationStudentStatusEnum.Rejected:
-      return {
-        status,
-        Regular: data.regularMemberRejections,
-        NonRegular: data.totalRejections - data.regularMemberRejections,
-        Total: data.totalRejections,
-      };
-    default:
-      return { status, ...defaultStatusInfo };
-  }
-}
-
-function getTotalStatusInfo(
-  data: Awaited<ReturnType<typeof useGetRegisterMemberDetail>["data"]>,
-) {
-  if (!data) return defaultStatusInfo;
-  return {
-    Regular: data.regularMemberRegistrations,
-    NonRegular: data.totalRegistrations - data.regularMemberRegistrations,
-    Total: data.totalRegistrations,
-  };
-}
-
-const ExecutiveRegisterMemberDetail = () => {
+const ExecutiveRegisterMemberDetail: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
   const { id } = useParams<{ id: string }>();
   const clubId = parseInt(id);
 
+  const club = useGetClubDetail(id as string);
   const { data, isLoading, isError } = useGetRegisterMemberDetail({
     clubId,
     pageOffset: currentPage,
     itemCount: limit,
   });
 
-  const club = useGetClubDetail(id as string);
+  const getStatusInfo = useCallback(
+    (status?: RegistrationApplicationStudentStatusEnum) => {
+      if (!data) {
+        return defaultStatusInfo;
+      }
 
-  const pageTitle = useMemo(
-    () => `회원 등록 신청 내역 (${club.data?.nameKr ?? ""})`,
-    [club.data?.nameKr],
-  );
+      switch (status) {
+        case RegistrationApplicationStudentStatusEnum.Pending:
+          return {
+            status,
+            regular: data.regularMemberWaitings,
+            nonRegular: data.totalWaitings - data.regularMemberWaitings,
+            total: data.totalWaitings,
+          };
+        case RegistrationApplicationStudentStatusEnum.Approved:
+          return {
+            status,
+            regular: data.regularMemberApprovals,
+            nonRegular: data.totalApprovals - data.regularMemberApprovals,
+            total: data.totalApprovals,
+          };
+        case RegistrationApplicationStudentStatusEnum.Rejected:
+          return {
+            status,
+            regular: data.regularMemberRejections,
+            nonRegular: data.totalRejections - data.regularMemberRejections,
+            total: data.totalRejections,
+          };
 
-  const pendingInfo = useMemo(
-    () => getStatusInfo(data, RegistrationApplicationStudentStatusEnum.Pending),
+        default:
+          return defaultStatusInfo;
+      }
+    },
     [data],
   );
-  const approvedInfo = useMemo(
-    () =>
-      getStatusInfo(data, RegistrationApplicationStudentStatusEnum.Approved),
-    [data],
-  );
-  const rejectedInfo = useMemo(
-    () =>
-      getStatusInfo(data, RegistrationApplicationStudentStatusEnum.Rejected),
-    [data],
-  );
-
-  const totalInfo = useMemo(() => getTotalStatusInfo(data), [data]);
 
   const totalPage = data ? Math.ceil(data.total / limit) : 1;
 
@@ -117,16 +89,28 @@ const ExecutiveRegisterMemberDetail = () => {
             { name: "회원 등록 신청 내역", path: `/executive/register-member` },
           ]}
           enableLast
-          title={pageTitle}
+          title={`회원 등록 신청 내역 (${club.data?.nameKr ?? ""})`}
         />
         <Card gap={16} padding="16px">
           <Toggle label={<Typography>회원 등록 신청 통계</Typography>}>
-            <StatusInfoFrame {...pendingInfo} />
-            <StatusInfoFrame {...approvedInfo} />
+            <StatusInfoFrame
+              statusInfo={getStatusInfo(
+                RegistrationApplicationStudentStatusEnum.Pending,
+              )}
+            />
+            <StatusInfoFrame
+              statusInfo={getStatusInfo(
+                RegistrationApplicationStudentStatusEnum.Approved,
+              )}
+            />
             <FlexWrapper gap={8} direction="column">
-              <StatusInfoFrame {...rejectedInfo} />
+              <StatusInfoFrame
+                statusInfo={getStatusInfo(
+                  RegistrationApplicationStudentStatusEnum.Rejected,
+                )}
+              />
               <Divider style={{ marginLeft: 28 }} />
-              <TotalInfoFrame statusInfo={totalInfo} />
+              <StatusInfoFrame statusInfo={getStatusInfo()} />
             </FlexWrapper>
           </Toggle>
         </Card>
