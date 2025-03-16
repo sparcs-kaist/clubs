@@ -13,7 +13,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Toggle from "@sparcs-clubs/web/common/components/Toggle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
+import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import RegisterInfoTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterInfoTable";
 import StatusInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/StatusInfoFrame";
 import TotalInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/TotalInfoFrame";
