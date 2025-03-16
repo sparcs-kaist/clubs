@@ -1,3 +1,4 @@
+import { ApiReg019ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg019";
 import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 
 const divisionName = [
@@ -36,7 +37,7 @@ const items = Array.from({ length: 120 }, (_, index) => ({
   regularMemberApprovals: 90,
 }));
 
-const mockupRegistrationMember = {
+const mockupRegistrationMember: ApiReg019ResponseOk = {
   items,
   total: items.length,
   offset: 1,

@@ -8,7 +8,7 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 import AllMemberList from "../components/AllMemberList";
 import MemberSearchAndFilter from "../components/MemberSearchAndFilter";
-import { useGetClubSemesters } from "../services/getClubSemesters";
+import { useGetClubSemesters } from "../services/useGetClubSemesters";
 import { SemesterProps } from "../types/semesterList";
 
 interface AllMemberListFrameProps {

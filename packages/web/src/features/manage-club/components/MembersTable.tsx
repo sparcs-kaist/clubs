@@ -21,24 +21,24 @@ import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
-import { patchClubMemberRegistration } from "../members/services/patchClubMemberRegistration";
+import usePatchClubMemberRegistration from "../members/services/usePatchClubMemberRegistration";
+
+type MemberRegistrationType = ApiReg008ResponseOk["applies"][number];
 
 interface MembersTableProps {
   memberList: ApiReg008ResponseOk["applies"];
   clubName: string;
   clubId: number;
-  refetch: () => void;
   delegates: ApiClb006ResponseOK["delegates"];
 }
 
-const openDelegateCannotBeRejectedModal = (refetch: () => void) => {
+const openDelegateCannotBeRejectedModal = () => {
   overlay.open(({ isOpen, close }) => (
     <Modal isOpen={isOpen}>
       <ConfirmModalContent
         confirmButtonText="확인"
         onConfirm={async () => {
           close();
-          refetch();
         }}
       >
         동아리 대표자/대의원의 동아리 신청은 반려할 수 없습니다.
@@ -48,86 +48,13 @@ const openDelegateCannotBeRejectedModal = (refetch: () => void) => {
   ));
 };
 
-const openApproveModal = (
-  member: ApiReg008ResponseOk["applies"][0],
-  clubName: string,
-  clubId: number,
-  year: number,
-  semesterName: string,
-  refetch: () => void,
-) => {
-  overlay.open(({ isOpen, close }) => (
-    <Modal isOpen={isOpen}>
-      <CancellableModalContent
-        confirmButtonText="승인"
-        onConfirm={async () => {
-          await patchClubMemberRegistration(
-            { applyId: member.id },
-            {
-              clubId,
-              applyStatusEnumId:
-                RegistrationApplicationStudentStatusEnum.Approved,
-            },
-          );
-          close();
-          refetch();
-        }}
-        onClose={() => {
-          close();
-        }}
-      >
-        {member.student.studentNumber} {member.student.name} 학생의 {year}
-        년도 {semesterName}학기 {clubName} 동아리 신청을
-        <br /> 승인하시겠습니까?
-      </CancellableModalContent>
-    </Modal>
-  ));
-};
-
-const openRejectModal = (
-  member: ApiReg008ResponseOk["applies"][0],
-  clubName: string,
-  clubId: number,
-  year: number,
-  semesterName: string,
-  refetch: () => void,
-) => {
-  overlay.open(({ isOpen, close }) => (
-    <Modal isOpen={isOpen}>
-      <CancellableModalContent
-        confirmButtonText="반려"
-        onConfirm={async () => {
-          await patchClubMemberRegistration(
-            { applyId: member.id },
-            {
-              clubId,
-              applyStatusEnumId:
-                RegistrationApplicationStudentStatusEnum.Rejected,
-            },
-          );
-          close();
-          refetch();
-        }}
-        onClose={() => {
-          close();
-        }}
-      >
-        {member.student.studentNumber} {member.student.name} 학생의 {year}
-        년도 {semesterName}학기 {clubName} 동아리 신청을
-        <br /> 반려하시겠습니까?
-      </CancellableModalContent>
-    </Modal>
-  ));
-};
-
-const columnHelper = createColumnHelper<ApiReg008ResponseOk["applies"][0]>();
+const columnHelper = createColumnHelper<MemberRegistrationType>();
 
 const columnsFunction = (
-  clubName: string,
-  clubId: number,
-  year: number,
-  semesterName: string,
-  refetch: () => void,
+  openStatusChangeModal: (
+    targetStatus: RegistrationApplicationStudentStatusEnum,
+    member: MemberRegistrationType,
+  ) => void,
   delegates: ApiClb006ResponseOK["delegates"],
 ) => [
   columnHelper.accessor("applyStatusEnumId", {
@@ -155,7 +82,7 @@ const columnsFunction = (
   }),
   columnHelper.accessor("student.phoneNumber", {
     header: "전화번호",
-    cell: info => info.getValue(),
+    cell: info => info.getValue() ?? "-",
     size: 20,
   }),
   columnHelper.accessor("student.email", {
@@ -168,77 +95,34 @@ const columnsFunction = (
     header: "비고",
     cell: info => {
       const member = info.row.original;
+
       return (
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Pending && (
-          <TableButton
-            text={["승인", "반려"]}
-            onClick={[
-              () =>
-                openApproveModal(
-                  member,
-                  clubName,
-                  clubId,
-                  year,
-                  semesterName,
-                  refetch,
-                ),
-              () =>
-                delegates.some(
-                  delegate =>
-                    delegate.studentNumber === member.student.studentNumber,
-                )
-                  ? openDelegateCannotBeRejectedModal(refetch)
-                  : openRejectModal(
-                      member,
-                      clubName,
-                      clubId,
-                      year,
-                      semesterName,
-                      refetch,
-                    ),
-            ]}
-          />
-        )) ||
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Approved && (
-          <TableButton
-            text={["반려"]}
-            onClick={[
-              () =>
-                delegates.some(
-                  delegate =>
-                    delegate.studentNumber === member.student.studentNumber,
-                )
-                  ? openDelegateCannotBeRejectedModal(refetch)
-                  : openRejectModal(
-                      member,
-                      clubName,
-                      clubId,
-                      year,
-                      semesterName,
-                      refetch,
-                    ),
-            ]}
-          />
-        )) ||
-        (member.applyStatusEnumId ===
-          RegistrationApplicationStudentStatusEnum.Rejected && (
-          <TableButton
-            text={["승인"]}
-            onClick={[
-              () =>
-                openApproveModal(
-                  member,
-                  clubName,
-                  clubId,
-                  year,
-                  semesterName,
-                  refetch,
-                ),
-            ]}
-          />
-        ))
+        <TableButton
+          text={["승인", "반려"]}
+          onClick={[
+            () =>
+              openStatusChangeModal(
+                RegistrationApplicationStudentStatusEnum.Approved,
+                member,
+              ),
+            () =>
+              delegates.some(
+                delegate =>
+                  delegate.studentNumber === member.student.studentNumber,
+              )
+                ? openDelegateCannotBeRejectedModal()
+                : openStatusChangeModal(
+                    RegistrationApplicationStudentStatusEnum.Rejected,
+                    member,
+                  ),
+          ]}
+          clickable={[
+            member.applyStatusEnumId !==
+              RegistrationApplicationStudentStatusEnum.Approved,
+            member.applyStatusEnumId !==
+              RegistrationApplicationStudentStatusEnum.Rejected,
+          ]}
+        />
       );
     },
     size: 15,
@@ -249,19 +133,45 @@ const MembersTable: React.FC<MembersTableProps> = ({
   memberList,
   clubName,
   clubId,
-  refetch,
   delegates,
 }) => {
   const { semester: semesterInfo } = useGetSemesterNow();
+  const { mutate } = usePatchClubMemberRegistration();
 
-  const columns = columnsFunction(
-    clubName,
-    clubId,
-    semesterInfo?.year ?? 0,
-    semesterInfo?.name ?? "",
-    refetch,
-    delegates,
-  );
+  const openStatusChangeModal = (
+    targetStatus: RegistrationApplicationStudentStatusEnum,
+    member: MemberRegistrationType,
+  ) => {
+    const actionText =
+      targetStatus === RegistrationApplicationStudentStatusEnum.Approved
+        ? "승인"
+        : "반려";
+    overlay.open(({ isOpen, close }) => (
+      <Modal isOpen={isOpen}>
+        <CancellableModalContent
+          confirmButtonText={actionText}
+          onConfirm={() => {
+            mutate({
+              requestParam: { applyId: member.id },
+              body: {
+                clubId,
+                applyStatusEnumId: targetStatus,
+              },
+            });
+            close();
+          }}
+          onClose={close}
+        >
+          {member.student.studentNumber} {member.student.name} 학생의{" "}
+          {semesterInfo?.year ?? 0}년도 {semesterInfo?.name ?? ""}학기{" "}
+          {clubName} 동아리 신청을
+          <br /> {actionText}하시겠습니까?
+        </CancellableModalContent>
+      </Modal>
+    ));
+  };
+
+  const columns = columnsFunction(openStatusChangeModal, delegates);
   const table = useReactTable({
     columns,
     data: memberList,

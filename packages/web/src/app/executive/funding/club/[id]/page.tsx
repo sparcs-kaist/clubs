@@ -11,7 +11,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
+import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import ExecutiveFundingClubFrame from "@sparcs-clubs/web/features/executive/funding/frames/ExecutiveFundingClubFrame";
 
 const ExecutiveFundingClub = () => {

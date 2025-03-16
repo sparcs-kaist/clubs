@@ -110,13 +110,13 @@ export default class ClubRepository {
       .limit(1)
       .then(takeOne);
 
-    const divisionName = await this.db
-      .select({ name: Division.name })
+    const division = await this.db
+      .select({ id: Division.id, name: Division.name })
       .from(Club)
       .leftJoin(Division, eq(Division.id, Club.divisionId))
       .where(eq(Club.id, clubId))
       .then(takeOne);
-    return { ...clubInfo, divisionName };
+    return { ...clubInfo, division };
   }
 
   async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {

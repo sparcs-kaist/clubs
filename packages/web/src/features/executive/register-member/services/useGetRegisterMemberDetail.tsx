@@ -6,7 +6,7 @@ import type {
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 import apiReg020 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 
-import { mockupClubMemberRegister } from "@sparcs-clubs/web/features/executive/register-member/[id]/_mock/mockClubMemberRegister";
+import { mockupClubMemberRegister } from "@sparcs-clubs/web/features/executive/register-member/services/_mock/mockClubMemberRegister";
 import {
   axiosClientWithAuth,
   defineAxiosMock,
