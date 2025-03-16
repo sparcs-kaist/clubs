@@ -55,12 +55,10 @@ const RegisterMemberList = () => {
     data: memberData,
     isLoading: memberIsLoading,
     isError: memberIsError,
-    refetch: memberRefetch,
   } = useGetMemberRegistration({ clubId: idData.clubId }) as {
     data: ApiReg008ResponseOk;
     isLoading: boolean;
     isError: boolean;
-    refetch: () => void;
   };
 
   const totalPage =
@@ -80,7 +78,6 @@ const RegisterMemberList = () => {
             memberList={paginatedMembers}
             clubName={clubData.nameKr}
             clubId={idData.clubId}
-            refetch={memberRefetch}
             delegates={delegatesNow.delegates}
           />
         )}

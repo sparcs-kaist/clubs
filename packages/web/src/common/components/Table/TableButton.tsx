@@ -21,19 +21,6 @@ const CellText = styled.div.withConfig({
     isGray ? theme.colors.GRAY[300] : theme.colors.BLACK};
 `;
 
-const NonClickableText = styled.span`
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
-  color: ${({ theme }) => theme.colors.GRAY[300]};
-  text-decoration-line: underline;
-  text-decoration-style: solid;
-  text-decoration-skip-ink: none;
-  text-decoration-thickness: auto;
-  text-underline-offset: auto;
-  text-underline-position: from-font;
-`;
-
 const TableButton: React.FC<TableButtonProps> = ({
   text,
   onClick,
@@ -42,11 +29,11 @@ const TableButton: React.FC<TableButtonProps> = ({
   <FlexWrapper direction="row" gap={12}>
     {text.map((item, index) => (
       <React.Fragment key={item}>
-        {clickable[index] ? (
-          <TextButton text={item} onClick={onClick[index]} />
-        ) : (
-          <NonClickableText>{item}</NonClickableText>
-        )}
+        <TextButton
+          text={item}
+          onClick={onClick[index]}
+          disabled={!clickable[index]}
+        />
         {index < text.length - 1 && <CellText isGray>/</CellText>}
       </React.Fragment>
     ))}

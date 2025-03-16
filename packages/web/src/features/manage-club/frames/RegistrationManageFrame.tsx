@@ -50,12 +50,10 @@ const RegistrationManageFrame: React.FC = () => {
     data: memberData,
     isLoading: memberIsLoading,
     isError: memberIsError,
-    refetch: memberRefetch,
   } = useGetMemberRegistration({ clubId: idData.clubId }) as {
     data: ApiReg008ResponseOk;
     isLoading: boolean;
     isError: boolean;
-    refetch: () => void;
   };
 
   const appliedCount =
@@ -132,7 +130,6 @@ const RegistrationManageFrame: React.FC = () => {
                 memberList={memberData.applies}
                 clubName={clubData.nameKr}
                 clubId={idData.clubId}
-                refetch={memberRefetch}
                 delegates={delegatesNow.delegates}
               />
             </>
