@@ -1,3 +1,4 @@
+import { ApiReg020ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 const registerState = [
@@ -31,7 +32,7 @@ const items = Array.from({ length: 100 }, (_, index) => ({
   },
 }));
 
-export const mockupClubMemberRegister = {
+export const mockupClubMemberRegister: ApiReg020ResponseOk = {
   totalRegistrations: 100,
   totalWaitings: 20,
   totalApprovals: 70,
