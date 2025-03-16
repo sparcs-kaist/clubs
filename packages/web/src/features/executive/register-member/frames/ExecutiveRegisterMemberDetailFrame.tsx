@@ -2,8 +2,7 @@
 
 import { Divider } from "@mui/material";
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import styled from "styled-components";
+import React, { useCallback, useState } from "react";
 
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
@@ -15,81 +14,68 @@ import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Toggle from "@sparcs-clubs/web/common/components/Toggle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
-import { mockupClubMemberRegister } from "@sparcs-clubs/web/features/executive/register-member/[id]/_mock/mockClubMemberRegister";
-import { useGetRegisterMemberDetail } from "@sparcs-clubs/web/features/executive/register-member/[id]/services/getRegisterMemberDetail";
 import RegisterInfoTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterInfoTable";
 import StatusInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/StatusInfoFrame";
-import TotalInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/TotalInfoFrame";
+import { useGetRegisterMemberDetail } from "@sparcs-clubs/web/features/executive/register-member/services/useGetRegisterMemberDetail";
 
-const ExecutiveRegisterMemberDetail = () => {
+const defaultStatusInfo = {
+  status: RegistrationApplicationStudentStatusEnum.Pending,
+  regular: 0,
+  nonRegular: 0,
+  total: 0,
+};
+
+const ExecutiveRegisterMemberDetail: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
   const { id } = useParams<{ id: string }>();
   const clubId = parseInt(id);
 
-  const DividerContainer = styled.div`
-    padding-left: 28px;
-  `;
-
+  const club = useGetClubDetail(id as string);
   const { data, isLoading, isError } = useGetRegisterMemberDetail({
     clubId,
     pageOffset: currentPage,
     itemCount: limit,
   });
 
-  const paginatedData = data && {
-    totalRegistrations: data.totalRegistrations,
-    totalWaitings: data.totalWaitings,
-    totalApprovals: data.totalApprovals,
-    totalRejections: data.totalRejections,
-    regularMemberRegistrations: data.regularMemberRegistrations,
-    regularMemberWaitings: data.regularMemberWaitings,
-    regularMemberApprovals: data.regularMemberApprovals,
-    regularMemberRejections: data.regularMemberRejections,
-    total: data.total,
-    items: data.items.slice((currentPage - 1) * limit, currentPage * limit),
-    offset: (currentPage - 1) * limit,
-  };
+  const getStatusInfo = useCallback(
+    (status?: RegistrationApplicationStudentStatusEnum) => {
+      if (!data) {
+        return defaultStatusInfo;
+      }
 
-  const pendingInfo = paginatedData && {
-    Regular: paginatedData.regularMemberWaitings,
-    NonRegular:
-      paginatedData.totalWaitings - paginatedData.regularMemberWaitings,
-    Total: paginatedData.totalWaitings,
-  };
+      switch (status) {
+        case RegistrationApplicationStudentStatusEnum.Pending:
+          return {
+            status,
+            regular: data.regularMemberWaitings,
+            nonRegular: data.totalWaitings - data.regularMemberWaitings,
+            total: data.totalWaitings,
+          };
+        case RegistrationApplicationStudentStatusEnum.Approved:
+          return {
+            status,
+            regular: data.regularMemberApprovals,
+            nonRegular: data.totalApprovals - data.regularMemberApprovals,
+            total: data.totalApprovals,
+          };
+        case RegistrationApplicationStudentStatusEnum.Rejected:
+          return {
+            status,
+            regular: data.regularMemberRejections,
+            nonRegular: data.totalRejections - data.regularMemberRejections,
+            total: data.totalRejections,
+          };
 
-  const approvalInfo = paginatedData && {
-    Regular: paginatedData.regularMemberApprovals,
-    NonRegular:
-      paginatedData.totalApprovals - paginatedData.regularMemberApprovals,
-    Total: paginatedData.totalApprovals,
-  };
+        default:
+          return defaultStatusInfo;
+      }
+    },
+    [data],
+  );
 
-  const rejectionInfo = paginatedData && {
-    Regular: paginatedData.regularMemberRejections,
-    NonRegular:
-      paginatedData.totalRejections - paginatedData.regularMemberRejections,
-    Total: paginatedData.totalRejections,
-  };
-
-  const totalInfo = paginatedData && {
-    Regular: paginatedData.regularMemberRegistrations,
-    NonRegular:
-      paginatedData.totalRegistrations -
-      paginatedData.regularMemberRegistrations,
-    Total: paginatedData.totalRegistrations,
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const defaultStatusInfo = { Regular: 0, NonRegular: 0, Total: 0 };
-
-  const club = useGetClubDetail(id as string);
-
-  const GetPageTitle = () => `회원 등록 신청 내역 (${club.data?.nameKr})`;
+  const totalPage = data ? Math.ceil(data.total / limit) : 1;
 
   return (
     <AsyncBoundary
@@ -103,39 +89,40 @@ const ExecutiveRegisterMemberDetail = () => {
             { name: "회원 등록 신청 내역", path: `/executive/register-member` },
           ]}
           enableLast
-          title={GetPageTitle()}
+          title={`회원 등록 신청 내역 (${club.data?.nameKr ?? ""})`}
         />
         <Card gap={16} padding="16px">
           <Toggle label={<Typography>회원 등록 신청 통계</Typography>}>
             <StatusInfoFrame
-              statusInfo={pendingInfo || defaultStatusInfo}
-              status={RegistrationApplicationStudentStatusEnum.Pending}
+              statusInfo={getStatusInfo(
+                RegistrationApplicationStudentStatusEnum.Pending,
+              )}
             />
             <StatusInfoFrame
-              statusInfo={approvalInfo || defaultStatusInfo}
-              status={RegistrationApplicationStudentStatusEnum.Approved}
+              statusInfo={getStatusInfo(
+                RegistrationApplicationStudentStatusEnum.Approved,
+              )}
             />
             <FlexWrapper gap={8} direction="column">
               <StatusInfoFrame
-                statusInfo={rejectionInfo || defaultStatusInfo}
-                status={RegistrationApplicationStudentStatusEnum.Rejected}
+                statusInfo={getStatusInfo(
+                  RegistrationApplicationStudentStatusEnum.Rejected,
+                )}
               />
-              <DividerContainer>
-                <Divider />
-              </DividerContainer>
-              <TotalInfoFrame statusInfo={totalInfo || defaultStatusInfo} />
+              <Divider style={{ marginLeft: 28 }} />
+              <StatusInfoFrame statusInfo={getStatusInfo()} />
             </FlexWrapper>
           </Toggle>
         </Card>
-        {data && paginatedData && (
-          <RegisterInfoTable memberRegisterInfoList={paginatedData} />
-        )}
+
+        {data && <RegisterInfoTable memberRegisterInfoList={data} />}
+
         <FlexWrapper direction="row" gap={16} justify="center">
           <Pagination
-            totalPage={Math.ceil(mockupClubMemberRegister.total / limit)}
+            totalPage={totalPage}
             currentPage={currentPage}
             limit={limit}
-            setPage={handlePageChange}
+            setPage={setCurrentPage}
           />
         </FlexWrapper>
       </FlexWrapper>

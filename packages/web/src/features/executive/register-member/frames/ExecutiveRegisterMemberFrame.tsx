@@ -10,15 +10,10 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
 import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
-import RegistrationMemberTable from "@sparcs-clubs/web/common/components/RegisterMemberTable";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
-import { useGetMemberRegistration } from "@sparcs-clubs/web/features/executive/register-member/services/getMemberRegistration";
-
-interface ConvertedSelectedCategories {
-  name: string;
-  selectedContent: number[];
-}
+import RegistrationMemberTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterMemberTable";
+import { useGetMemberRegistration } from "@sparcs-clubs/web/features/executive/register-member/services/useGetMemberRegistration";
 
 const ClubSearchAndFilterWrapper = styled.div`
   display: flex;
@@ -52,9 +47,15 @@ const TableWithPaginationWrapper = styled.div`
   align-self: stretch;
 `;
 
+interface ConvertedSelectedCategories {
+  name: string;
+  selectedContent: (number | string)[];
+}
+
 export const ExecutiveRegisterMember = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 10;
+
   const { data, isLoading, isError } = useGetMemberRegistration({
     pageOffset: currentPage,
     itemCount: limit,
@@ -71,21 +72,8 @@ export const ExecutiveRegisterMember = () => {
     [divisionData],
   );
 
-  const DivisionIdList = useMemo(
-    () => divisionData?.divisions?.map(item => item.id.toString()) ?? [],
-    [divisionData],
-  );
-
   const [searchText, setSearchText] = useState<string>("");
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  /*
-    동아리 구분에 대해서만 hardcoding  
-    정동아리, 가동아리만 club.enum에 존재하고, 상임동아리(3)는 필터링을 위해 편의상 설정한 것이기 때문
-  */
   const [categories, setCategories] = useState<CategoryProps[]>([
     {
       name: "구분",
@@ -95,40 +83,26 @@ export const ExecutiveRegisterMember = () => {
     {
       name: "분과",
       content: DivisionNameList,
-      selectedContent: DivisionIdList,
+      selectedContent: DivisionNameList,
     },
   ]);
 
   const [convertedCategories, setConvertedCategories] = useState<
     ConvertedSelectedCategories[]
   >([
-    {
-      name: "구분",
-      selectedContent: [1, 2, 3],
-    },
-    {
-      name: "분과",
-      selectedContent: DivisionIdList.map(item => parseInt(item)),
-    },
+    { name: "구분", selectedContent: [1, 2, 3] },
+    { name: "분과", selectedContent: DivisionNameList },
   ]);
 
   useMemo(() => {
     const convertedClubType = categories[0].selectedContent.map(item => {
-      switch (item) {
-        case "정동아리":
-          return 1;
-        case "가동아리":
-          return 2;
-        case "상임동아리":
-          return 3;
-        default:
-          return 0;
-      }
+      if (item === "정동아리") return 1;
+      if (item === "가동아리") return 2;
+      if (item === "상임동아리") return 3;
+      return 0;
     });
 
-    const convertedDivisionId = categories[1].selectedContent.map(item =>
-      parseInt(item),
-    );
+    const convertedDivisionNames = categories[1].selectedContent;
 
     setConvertedCategories([
       {
@@ -137,56 +111,39 @@ export const ExecutiveRegisterMember = () => {
       },
       {
         name: "분과",
-        selectedContent: convertedDivisionId,
+        selectedContent: convertedDivisionNames,
       },
     ]);
   }, [categories]);
 
-  const filterClubsWithSearch = useMemo(() => {
-    const filteredRowsWithSearch = data?.items.filter(
-      item =>
-        (item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
-          hangulIncludes(item.clubName, searchText)) &&
-        ((item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(3) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)) ||
-          (!item.isPermanent &&
-            convertedCategories[0].selectedContent.includes(
-              item.clubTypeEnumId,
-            ) &&
-            convertedCategories[1].selectedContent.includes(item.division.id))),
-    );
+  const filteredClubs = useMemo(() => {
+    if (!data) {
+      return { total: 0, items: [], offset: 0 };
+    }
+
+    const rows = data.items.filter(item => {
+      const searchMatched =
+        searchText === "" ||
+        item.clubName.toLowerCase().includes(searchText.toLowerCase()) ||
+        hangulIncludes(item.clubName, searchText);
+
+      const clubTypeMatched = item.isPermanent
+        ? convertedCategories[0].selectedContent.includes(3)
+        : convertedCategories[0].selectedContent.includes(item.clubTypeEnumId);
+
+      const divisionMatched = convertedCategories[1].selectedContent.includes(
+        item.division.name,
+      );
+
+      return searchMatched && clubTypeMatched && divisionMatched;
+    });
 
     return {
-      total: filteredRowsWithSearch?.length ?? 0,
-      items: filteredRowsWithSearch ?? [],
-      offset: data?.offset ?? 0,
+      total: rows.length,
+      items: rows,
+      offset: data.offset,
     };
-  }, [searchText, convertedCategories, currentPage, data]);
-
-  const filterClubsWithoutSearch = useMemo(() => {
-    const filteredRowsWithoutSearch = data?.items.filter(
-      item =>
-        (item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(3) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)) ||
-        (!item.isPermanent &&
-          convertedCategories[0].selectedContent.includes(
-            item.clubTypeEnumId,
-          ) &&
-          convertedCategories[1].selectedContent.includes(item.division.id)),
-    );
-
-    return {
-      total: filteredRowsWithoutSearch?.length ?? 0,
-      items: filteredRowsWithoutSearch ?? [],
-      offset: data?.offset ?? 0,
-    };
-  }, [convertedCategories, currentPage, data]);
-
-  const filteredClubs =
-    searchText === "" ? filterClubsWithoutSearch : filterClubsWithSearch;
+  }, [data, searchText, convertedCategories, currentPage]);
 
   useEffect(() => {
     if (categories[1].content.length === 0 && divisionData) {
@@ -195,11 +152,11 @@ export const ExecutiveRegisterMember = () => {
         {
           name: "분과",
           content: DivisionNameList,
-          selectedContent: DivisionIdList,
+          selectedContent: DivisionNameList,
         },
       ]);
     }
-  }, [categories, DivisionIdList, DivisionNameList]);
+  }, [categories, DivisionNameList, divisionData]);
 
   return (
     <AsyncBoundary
@@ -234,7 +191,7 @@ export const ExecutiveRegisterMember = () => {
                     {
                       name: "분과",
                       content: DivisionNameList,
-                      selectedContent: DivisionIdList,
+                      selectedContent: DivisionNameList,
                     },
                   ]);
                 }}
@@ -248,7 +205,7 @@ export const ExecutiveRegisterMember = () => {
                 totalPage={Math.ceil(data.total / limit)}
                 currentPage={currentPage}
                 limit={limit}
-                setPage={handlePageChange}
+                setPage={setCurrentPage}
               />
             </FlexWrapper>
           </TableWithPaginationWrapper>
