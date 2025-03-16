@@ -2,52 +2,6 @@ import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 
 import type { TagColor } from "@sparcs-clubs/web/common/components/Tag";
 
-interface RawClubDetail {
-  id: number;
-  name: string;
-  type: string;
-  characteristic: string;
-  representative: string;
-  advisor: string | null;
-  totalMemberCnt: number;
-  divisionName: string;
-  foundingYear: number;
-  room: string;
-  description: string;
-}
-
-interface ClubDetail {
-  id: number;
-  name: string;
-  type: string;
-  characteristic: string;
-  representative: string;
-  advisor?: string;
-  totalMemberCnt: number;
-  divisionName: string;
-  foundingYear: number;
-  room: string;
-  description: string;
-}
-
-const fromObj = (clubObj: RawClubDetail): ClubDetail => {
-  const club: ClubDetail = {
-    id: clubObj.id,
-    name: clubObj.name,
-    type: clubObj.type.trim(),
-    representative: clubObj.representative,
-    advisor: clubObj.advisor === null ? undefined : clubObj.advisor,
-    totalMemberCnt: clubObj.totalMemberCnt,
-    characteristic: clubObj.characteristic,
-    divisionName: clubObj.divisionName,
-    foundingYear: clubObj.foundingYear,
-    room: clubObj.room,
-    description: clubObj.description,
-  };
-
-  return club;
-};
-
 const getTagColorFromClubType = (
   clubType: ClubTypeEnum,
   isPermanent: boolean,
@@ -112,9 +66,7 @@ const getTagColorFromDivision = (divisionName: string): TagColor => {
   }
 };
 
-export type { ClubDetail };
 export {
-  fromObj,
   getTagColorFromClubType,
   getTagColorFromDivision,
   getTagContentFromClubType,
