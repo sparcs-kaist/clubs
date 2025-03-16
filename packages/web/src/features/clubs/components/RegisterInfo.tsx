@@ -9,6 +9,7 @@ import apiReg006, {
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
+import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
@@ -77,18 +78,18 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
     );
   }, [myRegistrationList]);
 
-  const semester = useGetSemesterNow()?.semester;
+  const { semester, isLoading, isError } = useGetSemesterNow();
 
   const ModalText = useMemo(
     () => (
-      <>
+      <AsyncBoundary isLoading={isLoading} isError={isError}>
         {semester?.year}년도 {semester?.name}학기
         <ResponsiveBr /> {club.type === 1 ? "정동아리" : "가동아리"}{" "}
         {club.nameKr}의 <br />
         {isRegistered
           ? "회원 등록을 취소합니다."
           : "회원 등록 신청을 진행합니다."}
-      </>
+      </AsyncBoundary>
     ),
     [semester, club, isRegistered],
   );
