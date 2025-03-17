@@ -125,7 +125,7 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
     ) {
       return (
         <Button type="disabled" onClick={submitHandler}>
-          회장 승인 완료
+          회원 승인 완료
         </Button>
       );
     }

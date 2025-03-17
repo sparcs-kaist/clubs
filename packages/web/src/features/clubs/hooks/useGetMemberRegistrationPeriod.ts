@@ -20,8 +20,10 @@ const useGetMemberRegistrationPeriod = () => {
     if (termData) {
       const now = new Date();
       const currentEvents = termData.events.filter(
-        event => now >= event.startTerm && now <= event.endTerm,
+        event =>
+          now >= new Date(event.startTerm) && now <= new Date(event.endTerm),
       );
+
       if (currentEvents.length > 0) {
         const memberRegistration = currentEvents.filter(
           event =>
