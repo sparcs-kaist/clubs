@@ -23,7 +23,7 @@ const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
-    targetSemester: z.object({
+    semester: z.object({
       id: zSemester.shape.id,
       year: zSemester.shape.year,
       name: zSemester.shape.name,

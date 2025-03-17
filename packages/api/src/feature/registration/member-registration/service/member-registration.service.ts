@@ -17,10 +17,15 @@ import type {
   ApiReg020ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 import { ApiReg026ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
+import { ApiReg028ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg028";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import {
+  getKSTDate,
+  takeOne,
+  takeOnlyOne,
+} from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -485,7 +490,11 @@ export class MemberRegistrationService {
 
     return {
       total: totalItems.length,
-      items: totalItems,
+      items: totalItems.slice(
+        // TODO: 나중에 쿼리 자체 변경 필요
+        (param.query.pageOffset - 1) * param.query.itemCount,
+        param.query.pageOffset * param.query.itemCount,
+      ),
       offset: param.query.pageOffset,
     };
   }
@@ -504,6 +513,32 @@ export class MemberRegistrationService {
       clubId,
       semesterId,
       totalMemberRegistrationCount: result,
+    };
+  }
+
+  async getMemberRegistrationDeadline(): Promise<ApiReg028ResponseOk> {
+    const today = getKSTDate();
+    const semester = await this.clubPublicService.fetchSemester();
+    const deadline = await this.memberRegistrationRepository
+      .selectMemberRegistrationDeadline({
+        semesterId: semester.id,
+      })
+      .then(takeOnlyOne("MemberRegistrationDeadline"));
+    return {
+      semester: {
+        id: semester.id,
+        year: semester.year,
+        name: semester.name,
+        startTerm: semester.startTerm,
+        endTerm: semester.endTerm,
+      },
+      deadline:
+        deadline.startDate <= today && today <= deadline.endDate
+          ? {
+              startDate: deadline.startDate,
+              endDate: deadline.endDate,
+            }
+          : null,
     };
   }
 }

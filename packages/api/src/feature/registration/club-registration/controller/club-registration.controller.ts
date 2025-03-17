@@ -74,11 +74,16 @@ import apiReg025, {
   ApiReg025RequestUrl,
   ApiReg025ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg025";
+import apiReg027, {
+  ApiReg027RequestUrl,
+  ApiReg027ResponseOk,
+} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg027";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
   Professor,
+  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -358,6 +363,15 @@ export class ClubRegistrationController {
       await this.clubRegistrationService.getStudentRegistrationsAvailableClub(
         student.studentId,
       );
+    return result;
+  }
+
+  @Public()
+  @Get(ApiReg027RequestUrl)
+  @UsePipes(new ZodPipe(apiReg027))
+  async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
+    const result =
+      await this.clubRegistrationService.getClubRegistrationDeadline();
     return result;
   }
 }

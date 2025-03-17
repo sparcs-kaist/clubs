@@ -1140,4 +1140,21 @@ export class ClubRegistrationRepository {
         );
     });
   }
+
+  async selectClubRegistrationDeadline(param: { semesterId: number }) {
+    const result = await this.db
+      .select()
+      .from(RegistrationDeadlineD)
+      .where(
+        and(
+          eq(RegistrationDeadlineD.semesterId, param.semesterId),
+          eq(
+            RegistrationDeadlineD.registrationDeadlineEnumId,
+            RegistrationDeadlineEnum.ClubRegistrationApplication,
+          ),
+          isNull(RegistrationDeadlineD.deletedAt),
+        ),
+      );
+    return result;
+  }
 }

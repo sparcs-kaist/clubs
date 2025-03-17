@@ -26,6 +26,7 @@ import type {
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg023";
 import type { ApiReg024ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg024";
 import { ApiReg025ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg025";
+import { ApiReg027ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg027";
 import { IStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 import {
@@ -34,7 +35,7 @@ import {
 } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -967,6 +968,34 @@ export class ClubRegistrationService {
         ...clubSummaryResponse,
         availableRegistrationTypeEnums,
       },
+    };
+  }
+
+  async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
+    const today = getKSTDate();
+    const semester = await this.clubPublicService.fetchSemester();
+    console.log(semester);
+    const deadline = await this.clubRegistrationRepository
+      .selectClubRegistrationDeadline({
+        semesterId: semester.id,
+      })
+      .then(takeOnlyOne("ClubRegistrationDeadline"));
+
+    return {
+      semester: {
+        id: semester.id,
+        year: semester.year,
+        name: semester.name,
+        startTerm: semester.startTerm,
+        endTerm: semester.endTerm,
+      },
+      deadline:
+        deadline.startDate <= today && today <= deadline.endDate
+          ? {
+              startDate: deadline.startDate,
+              endDate: deadline.endDate,
+            }
+          : null,
     };
   }
 }
