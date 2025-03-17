@@ -6,14 +6,20 @@ import {
   IMemberRegistrationCreate,
   IMemberRegistrationUpdate,
 } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import {
+  RegistrationApplicationStudentStatusEnum,
+  RegistrationDeadlineEnum,
+} from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import {
   DrizzleAsyncProvider,
   DrizzleTransaction,
 } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import {
+  RegistrationApplicationStudent,
+  RegistrationDeadlineD,
+} from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import {
   IMemberRegistrationOrderBy,
   MMemberRegistration,
@@ -194,7 +200,25 @@ export class MemberRegistrationRepository {
       throw new HttpException("Failed to delete", HttpStatus.BAD_REQUEST);
     }
   }
+
   async delete(studentId: number, id: number): Promise<void> {
     await this.withTransaction(async tx => this.deleteTx(tx, studentId, id));
+  }
+
+  async selectMemberRegistrationDeadline(param: { semesterId: number }) {
+    const result = await this.db
+      .select()
+      .from(RegistrationDeadlineD)
+      .where(
+        and(
+          eq(RegistrationDeadlineD.semesterId, param.semesterId),
+          eq(
+            RegistrationDeadlineD.registrationDeadlineEnumId,
+            RegistrationDeadlineEnum.StudentRegistrationApplication,
+          ),
+          isNull(RegistrationDeadlineD.deletedAt),
+        ),
+      );
+    return result;
   }
 }
