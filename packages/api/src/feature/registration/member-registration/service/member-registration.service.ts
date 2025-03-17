@@ -16,6 +16,7 @@ import type {
   ApiReg020RequestQuery,
   ApiReg020ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
+import { ApiReg026ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
@@ -306,17 +307,23 @@ export class MemberRegistrationService {
     const semesterId =
       await this.clubPublicService.dateToSemesterId(getKSTDate());
     // logger.debug(semesterId);
-    const registrations = await this.memberRegistrationRepository.find({
-      clubId: param.query.clubId,
-      semesterId,
-      pagination: {
-        offset: param.query.pageOffset,
-        itemCount: param.query.itemCount,
-      },
-      orderBy: {
-        createdAt: OrderByTypeEnum.DESC,
-      },
-    });
+    const [registrations, total] = await Promise.all([
+      this.memberRegistrationRepository.find({
+        clubId: param.query.clubId,
+        semesterId,
+        pagination: {
+          offset: param.query.pageOffset,
+          itemCount: param.query.itemCount,
+        },
+        orderBy: {
+          createdAt: OrderByTypeEnum.DESC,
+        },
+      }),
+      this.memberRegistrationRepository.count({
+        clubId: param.query.clubId,
+        semesterId,
+      }),
+    ]);
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => ({
         id: registration.id,
@@ -387,7 +394,7 @@ export class MemberRegistrationService {
           email: e.student.email,
         },
       })),
-      total: memberRegistrations.length,
+      total,
       offset: param.query.pageOffset,
     };
   }
@@ -406,25 +413,23 @@ export class MemberRegistrationService {
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       semesterId,
-      pagination: {
-        offset: param.query.pageOffset,
-        itemCount: param.query.itemCount,
-      },
-      orderBy: {
-        createdAt: OrderByTypeEnum.DESC,
-      },
     });
+
+    const [divisions, studentEnums] = await Promise.all([
+      this.divisionPublicService.getCurrentDivisions(),
+      this.userPublicService.getStudentEnumsByIdsAndSemesterId(
+        registrations.map(e => e.student.id),
+        semesterId,
+      ),
+    ]);
+
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => {
         const club = await this.clubPublicService.fetchSummary(
           registration.club.id,
         );
+        const division = divisions.find(e => e.id === club.division.id);
         //todo club summary에서 division의 name까지 추가해주면 안되나?
-        const division = await this.divisionPublicService
-          .getDivisionById({
-            id: club.division.id,
-          })
-          .then(takeOne);
         return {
           id: registration.id,
           clubId: club.id,
@@ -433,20 +438,8 @@ export class MemberRegistrationService {
           isPermanent: await this.clubPublicService.isPermanentClubsByClubId(
             club.id,
           ),
-          division: {
-            id: division.id,
-            name: division.name,
-          },
-          student: {
-            ...(await this.userPublicService.getStudentById(
-              registration.student,
-            )),
-            StudentEnumId:
-              await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterId(
-                registration.student.id,
-                semesterId,
-              ),
-          },
+          division,
+          studentEnum: studentEnums.find(e => e.id === registration.student.id),
           registrationApplicationStudentEnum:
             registration.registrationApplicationStudentEnum,
         };
@@ -473,7 +466,7 @@ export class MemberRegistrationService {
       ).length,
       // 정회원의 enum이 1이라고 가정
       regularMemberRegistrations: memberRegistrations.filter(
-        e2 => e2.student.StudentEnumId === 1 && e2.clubId === e.clubId,
+        e2 => e2.studentEnum.studentEnumId === 1 && e2.clubId === e.clubId,
       ).length,
       totalApprovals: memberRegistrations.filter(
         e2 =>
@@ -483,7 +476,7 @@ export class MemberRegistrationService {
       ).length,
       regularMemberApprovals: memberRegistrations.filter(
         e2 =>
-          e2.student.StudentEnumId === 1 &&
+          e2.studentEnum.studentEnumId === 1 &&
           e2.clubId === e.clubId &&
           e2.registrationApplicationStudentEnum ===
             RegistrationApplicationStudentStatusEnum.Approved,
@@ -494,6 +487,23 @@ export class MemberRegistrationService {
       total: totalItems.length,
       items: totalItems,
       offset: param.query.pageOffset,
+    };
+  }
+
+  async getClubMemberRegistrationCount(
+    clubId: number,
+  ): Promise<ApiReg026ResponseOk> {
+    // 기간 확인 해야 하나? 일단 스킵
+    const semesterId =
+      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const result = await this.memberRegistrationRepository.count({
+      clubId,
+      semesterId,
+    });
+    return {
+      clubId,
+      semesterId,
+      totalMemberRegistrationCount: result,
     };
   }
 }
