@@ -16,6 +16,7 @@ import type {
   ApiReg020RequestQuery,
   ApiReg020ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
+import { ApiReg026ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
@@ -486,6 +487,23 @@ export class MemberRegistrationService {
       total: totalItems.length,
       items: totalItems,
       offset: param.query.pageOffset,
+    };
+  }
+
+  async getClubMemberRegistrationCount(
+    clubId: number,
+  ): Promise<ApiReg026ResponseOk> {
+    // 기간 확인 해야 하나? 일단 스킵
+    const semesterId =
+      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const result = await this.memberRegistrationRepository.count({
+      clubId,
+      semesterId,
+    });
+    return {
+      clubId,
+      semesterId,
+      totalMemberRegistrationCount: result,
     };
   }
 }

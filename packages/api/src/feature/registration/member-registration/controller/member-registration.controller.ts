@@ -44,10 +44,18 @@ import type {
   ApiReg020ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
 import apiReg020 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
+import type {
+  ApiReg026RequestParam,
+  ApiReg026ResponseOk,
+} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
+import apiReg026, {
+  ApiReg026RequestUrl,
+} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
+  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -175,6 +183,19 @@ export class MemberRegistrationController {
         },
       );
 
+    return result;
+  }
+
+  @Public()
+  @Get(ApiReg026RequestUrl)
+  @UsePipes(new ZodPipe(apiReg026))
+  async getClubMemberRegistrationCount(
+    @Param() { clubId }: ApiReg026RequestParam,
+  ): Promise<ApiReg026ResponseOk> {
+    const result =
+      await this.memberRegistrationService.getClubMemberRegistrationCount(
+        clubId,
+      );
     return result;
   }
 }
