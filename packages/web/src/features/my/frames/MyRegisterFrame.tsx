@@ -27,7 +27,8 @@ const MyRegisterFrame: React.FC<{ profile: string }> = ({ profile }) => {
     if (termData) {
       const now = new Date();
       const currentEvents = termData.events.filter(
-        event => now >= event.startTerm && now <= event.endTerm,
+        event =>
+          now >= new Date(event.startTerm) && now <= new Date(event.endTerm),
       );
       if (currentEvents.length === 0) {
         setRegistrationStatus(RegistrationDeadlineEnum.Finish);

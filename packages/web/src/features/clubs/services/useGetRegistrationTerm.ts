@@ -16,7 +16,7 @@ export const useGetRegistrationTerm = () =>
     queryFn: async (): Promise<ApiReg004ResponseOK> => {
       const { data } = await axiosClientWithAuth.get(apiReg004.url(), {});
 
-      return apiReg004.responseBodyMap[200].parse(data);
+      return data;
     },
   });
 

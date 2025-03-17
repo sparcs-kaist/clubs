@@ -37,7 +37,6 @@ const columns = [
         </Tag>
       );
     },
-    size: 90,
   }),
   columnHelper.accessor("registrationTypeEnumId", {
     id: "type",
@@ -53,7 +52,6 @@ const columns = [
         </Tag>
       );
     },
-    size: 120,
   }),
   columnHelper.accessor("divisionId", {
     id: "division",
@@ -68,7 +66,6 @@ const columns = [
         </Tag>
       );
     },
-    size: 120,
   }),
   columnHelper.accessor(row => row.clubNameKr ?? row.newClubNameKr, {
     id: "clubName",
@@ -84,7 +81,6 @@ const columns = [
     id: "activityField",
     header: "활동 분야",
     cell: info => info.getValue(),
-    size: 240,
   }),
   columnHelper.accessor("professorName", {
     id: "advisorProfessor",

@@ -28,7 +28,8 @@ const ManageClubFrame: React.FC = () => {
     if (data) {
       const now = new Date();
       const currentEvents = data.events.filter(
-        event => now >= event.startTerm && now <= event.endTerm,
+        event =>
+          now >= new Date(event.startTerm) && now <= new Date(event.endTerm),
       );
       if (currentEvents.length === 0) {
         setIsRegistrationPeriod(false);

@@ -8,6 +8,7 @@ import MyMemberTable from "@sparcs-clubs/web/features/my/components/MyMemberTabl
 
 const MyMemberRegisterFrame: React.FC = () => {
   const { data, isLoading, isError } = useGetMyMemberRegistration();
+
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={20}>
