@@ -500,7 +500,13 @@ export default class ClubRepository {
       .select()
       .from(Club)
       .leftJoin(ClubT, eq(Club.id, ClubT.clubId))
-      .where(eq(Club.id, clubId))
+      .where(
+        and(
+          eq(Club.id, clubId),
+          isNull(Club.deletedAt),
+          isNull(ClubT.deletedAt),
+        ),
+      )
       .orderBy(desc(ClubT.startTerm))
       .limit(1);
 
@@ -536,7 +542,7 @@ export default class ClubRepository {
         ),
       );
     }
-
+    whereClause.push(isNull(Club.deletedAt));
     whereClause.push(isNull(ClubT.deletedAt));
 
     const result = await this.db
