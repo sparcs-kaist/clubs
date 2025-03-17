@@ -59,8 +59,8 @@ type ApiReg028ResponseOk = z.infer<(typeof apiReg028.responseBodyMap)[200]>;
 export default apiReg028;
 
 export type {
+  ApiReg028RequestBody,
   ApiReg028RequestParam,
   ApiReg028RequestQuery,
-  ApiReg028RequestBody,
   ApiReg028ResponseOk,
 };

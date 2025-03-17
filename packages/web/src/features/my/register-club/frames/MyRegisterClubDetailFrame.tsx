@@ -33,10 +33,10 @@ import CommentToast from "@sparcs-clubs/web/common/components/Toast/CommentToast
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
 import { RegistrationTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
+import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import { deleteMyClubRegistration } from "@sparcs-clubs/web/features/my/services/deleteMyClubRegistration";
 import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/services/usePatchClubRegProfessorApprove";
 import { getRegisterClubProgress } from "@sparcs-clubs/web/features/register-club/constants/registerClubProgress";
-import useGetClubRegistrationPeriod from "@sparcs-clubs/web/features/register-club/hooks/useGetClubRegistrationPeriod";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
   getActualMonth,
@@ -83,11 +83,7 @@ const MyRegisterClubDetailFrame: React.FC<{
   const router = useRouter();
   const { id } = useParams();
 
-  const {
-    data: deadlineData,
-    isLoading: isLoadingDeadline,
-    isError: isErrorDeadline,
-  } = useGetClubRegistrationPeriod();
+  const { data, isLoading, isError } = useGetClubRegistrationDeadline();
   const { mutate } = usePatchClubRegProfessorApprove();
 
   const {
@@ -384,8 +380,8 @@ const MyRegisterClubDetailFrame: React.FC<{
         >
           목록으로 돌아가기
         </Button>
-        <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline}>
-          {deadlineData.isClubRegistrationPeriod &&
+        <AsyncBoundary isLoading={isLoading} isError={isError}>
+          {data?.deadline &&
             (isProfessor ? (
               <FlexWrapper direction="row" gap={10}>
                 <Button

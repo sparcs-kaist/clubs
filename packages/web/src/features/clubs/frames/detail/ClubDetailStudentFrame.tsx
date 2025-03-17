@@ -7,8 +7,8 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import { ClubDetailProps } from "@sparcs-clubs/web/features/clubs/components/ClubDetailCard";
 import { RegisterInfo } from "@sparcs-clubs/web/features/clubs/components/RegisterInfo";
-import useGetMemberRegistrationPeriod from "@sparcs-clubs/web/features/clubs/hooks/useGetMemberRegistrationPeriod";
 import useGetMyRegistration from "@sparcs-clubs/web/features/clubs/hooks/useGetMyRegistration";
+import useGetMemberRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetMemberRegistrationDeadline";
 
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
@@ -20,15 +20,15 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
   } = useGetMyRegistration(club.id);
 
   const {
-    data: { isMemberRegistrationPeriod },
-    isLoading: isLoadingTerm,
-    isError: isErrorTerm,
-  } = useGetMemberRegistrationPeriod();
+    data,
+    isLoading: isLoadingDeadline,
+    isError: isErrorDeadline,
+  } = useGetMemberRegistrationDeadline();
 
   return (
     <AsyncBoundary
-      isLoading={isLoading || isLoadingTerm}
-      isError={isError || isErrorTerm}
+      isLoading={isLoading || isLoadingDeadline}
+      isError={isError || isErrorDeadline}
     >
       <FlexWrapper direction="column" gap={60}>
         <PageHead
@@ -38,7 +38,7 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
           ]}
           title={club.nameKr}
           action={
-            isMemberRegistrationPeriod && (
+            data?.deadline && (
               <RegisterInfo
                 club={club}
                 registrationStatus={registrationStatus}
@@ -50,7 +50,7 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
         />
         <ClubDetailInfoFrame
           club={club}
-          isRegistrationPeriod={isMemberRegistrationPeriod}
+          isRegistrationPeriod={data?.deadline != null}
         />
       </FlexWrapper>
     </AsyncBoundary>
