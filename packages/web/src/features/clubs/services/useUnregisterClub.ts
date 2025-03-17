@@ -1,18 +1,22 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import apiReg006 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
 import type {
   ApiReg013RequestParam,
   ApiReg013ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
 import apiReg013 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
+import apiReg026 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
 
 import {
   axiosClientWithAuth,
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useUnregisterClub = () =>
-  useMutation<
+const useUnregisterClub = (clubId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
     ApiReg013ResponseOk,
     Error,
     { requestParam: ApiReg013RequestParam }
@@ -25,7 +29,16 @@ const useUnregisterClub = () =>
 
       return apiReg013.responseBodyMap[200].parse(data);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [apiReg006.url()],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [apiReg026.url(clubId.toString())],
+      });
+    },
   });
+};
 
 export default useUnregisterClub;
 

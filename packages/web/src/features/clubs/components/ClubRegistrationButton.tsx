@@ -1,13 +1,10 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import apiReg006, {
-  ApiReg006ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
+import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
@@ -40,37 +37,15 @@ const ClubRegistrationButton: React.FC<ClubRegistrationButtonProps> = ({
   isInClub,
   myRegistrationList,
 }) => {
-  const queryClient = useQueryClient();
-
-  const { mutate: registerClub } = useRegisterClub();
-  const { mutate: unregisterClub } = useUnregisterClub();
+  const { mutate: registerClub } = useRegisterClub({ clubId: club.id });
+  const { mutate: unregisterClub } = useUnregisterClub(club.id);
   const { semester: semesterInfo } = useGetSemesterNow();
-
-  const toggleRegistered = useCallback(() => {
-    registerClub(
-      { body: { clubId: club.id } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: [apiReg006.url()] });
-        },
-      },
-    );
-  }, [club]);
 
   const toggleUnregistered = useCallback(() => {
     const thisRegistration = myRegistrationList.applies.find(
       apply => apply.clubId === club.id,
     );
-    unregisterClub(
-      {
-        requestParam: { applyId: thisRegistration!.id },
-      },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: [apiReg006.url()] });
-        },
-      },
-    );
+    unregisterClub({ requestParam: { applyId: thisRegistration!.id } });
   }, [myRegistrationList]);
 
   const ModalText = useMemo(
@@ -93,7 +68,7 @@ const ClubRegistrationButton: React.FC<ClubRegistrationButtonProps> = ({
         <CancellableModalContent
           onClose={close}
           onConfirm={() => {
-            (isRegistered ? toggleUnregistered : toggleRegistered)();
+            (isRegistered ? toggleUnregistered : registerClub)();
             close();
           }}
         >
