@@ -1,7 +1,7 @@
 "use client";
 
 import { hangulIncludes } from "es-hangul";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -52,9 +52,9 @@ interface ConvertedSelectedCategories {
   selectedContent: (number | string)[];
 }
 
-export const ExecutiveRegisterMember = () => {
+export const ExecutiveRegisterMember: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const limit = 10;
+  const limit = 100;
 
   const { data, isLoading, isError } = useGetMemberRegistration({
     pageOffset: currentPage,
