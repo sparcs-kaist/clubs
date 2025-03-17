@@ -15,6 +15,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Info from "@sparcs-clubs/web/common/components/Info";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import WarningInfo from "@sparcs-clubs/web/common/components/WarningInfo";
+import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import usePutClubRegistration from "@sparcs-clubs/web/features/my/services/usePutClubRegistration";
 import ActivityReportFrame from "@sparcs-clubs/web/features/register-club/components/activity-report/ActivityReportFrame";
 import AdvancedInformFrame from "@sparcs-clubs/web/features/register-club/components/advanced-info/AdvancedInformFrame";
@@ -22,7 +23,6 @@ import BasicInformFrame from "@sparcs-clubs/web/features/register-club/component
 import ProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/ProvisionalBasicInformFrame";
 import ClubRulesFrame from "@sparcs-clubs/web/features/register-club/components/compliance/ClubRulesFrame";
 import { registerClubDeadlineInfoText } from "@sparcs-clubs/web/features/register-club/constants";
-import useGetClubRegistrationPeriod from "@sparcs-clubs/web/features/register-club/hooks/useGetClubRegistrationPeriod";
 import { RegisterClubModel } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import computeErrorMessage from "@sparcs-clubs/web/features/register-club/utils/computeErrorMessage";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
@@ -48,10 +48,10 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
   const [isAgreed, setIsAgreed] = useState(false);
 
   const {
-    data: deadlineData,
-    isLoading: isLoadingDeadline,
-    isError: isErrorDeadline,
-  } = useGetClubRegistrationPeriod();
+    data: clubDeadline,
+    isLoading,
+    isError,
+  } = useGetClubRegistrationDeadline();
 
   const formCtx = useForm<RegisterClubModel>({
     mode: "all",
@@ -155,15 +155,17 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
         <FlexWrapper direction="column" gap={60}>
           <FlexWrapper direction="column" gap={20}>
             <AsyncBoundary
-              isLoading={isLoadingDeadline || semesterLoading}
-              isError={isErrorDeadline || semesterError}
+              isLoading={isLoading || semesterLoading}
+              isError={isError || semesterError}
             >
-              <Info
-                text={registerClubDeadlineInfoText(
-                  deadlineData.deadline!,
-                  semesterInfo,
-                )}
-              />
+              {clubDeadline?.deadline && (
+                <Info
+                  text={registerClubDeadlineInfoText(
+                    clubDeadline.deadline.endDate,
+                    semesterInfo,
+                  )}
+                />
+              )}
             </AsyncBoundary>
             <WarningInfo>
               <Typography lh={24} color="BLACK">
