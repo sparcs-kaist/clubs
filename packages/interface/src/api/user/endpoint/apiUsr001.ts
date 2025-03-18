@@ -1,12 +1,12 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@sparcs-clubs/interface/common/commonString";
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
+import { zStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { registry } from "@sparcs-clubs/interface/open-api";
 
-/**
- * @version v0.1
- * @description 서비스를 신청하는 유저의 정보를 가져옵니다
- */
+extendZodWithOpenApi(z);
 
 const url = () => `student/user/my`;
 const method = "GET";
@@ -18,24 +18,43 @@ const requestQuery = z.object({});
 const requestBody = z.object({});
 
 const responseBodyMap = {
-  [HttpStatusCode.Ok]: z.object({
-    clubs: z.array(
-      z.object({
-        id: z.number().int().min(1),
-        nameKr: zClubName,
-        nameEn: zClubName,
-      }),
-    ),
-    id: z.number().int().min(1),
-    name: z.string().max(30),
-    email: z.string().max(50),
-    department: z.string().max(10),
-    studentNumber: z.number().int().min(20000000).max(30000000),
-    phoneNumber: z.string().max(20).optional(),
-  }),
+  [HttpStatusCode.Ok]: z
+    .object({
+      clubs: z.array(
+        z.object({
+          id: zClub.shape.id,
+          nameKr: zClub.shape.nameKr,
+          nameEn: zClub.shape.nameEn,
+        }),
+      ),
+      id: zStudent.shape.id,
+      name: zStudent.shape.name,
+      email: zStudent.shape.email,
+      department: z.string().max(10), // TODO: zStudentHistory와 연결하기
+      studentNumber: z.number().int().min(20000000).max(30000000), // TODO: zStudent와 연결하기. 학번 문자열로 통일 필요
+      phoneNumber: zStudent.shape.phoneNumber,
+    })
+    .openapi("CLB-001 response"),
 };
 
 const responseErrorMap = {};
+
+registry.registerPath({
+  method: "get",
+  path: url(),
+  description: "학생의 마이페이지 정보를 가져옵니다",
+  summary: "학생의 마이페이지 정보를 가져옵니다",
+  responses: {
+    200: {
+      description: "성공",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});
 
 const apiUsr001 = {
   url,

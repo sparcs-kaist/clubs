@@ -3,8 +3,10 @@ import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/
 import { PromotionalPrintingOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
 import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
 
-import { StatusAndDate } from "../common/components/ProgressCheckSection";
-import { ProgressCheckSectionStatusEnum } from "../common/components/ProgressCheckSection/progressCheckStationStatus";
+import {
+  ProgressCheckSectionStatusEnum,
+  StatusAndDate,
+} from "../common/components/ProgressStatus/_atomic/progressCheckStationStatus";
 
 interface ManageProgress {
   labels: string[];

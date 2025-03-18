@@ -43,7 +43,7 @@ export const Registration = mysqlTable(
     ).notNull(),
     // .references(() => RegistrationStatusEnum.enumId),
     clubNameKr: varchar("club_name_kr", { length: 30 }),
-    clubNameEn: varchar("club_name_en", { length: 30 }),
+    clubNameEn: varchar("club_name_en", { length: 100 }),
     studentId: int("student_id")
       .notNull()
       .references(() => Student.id),
@@ -153,6 +153,7 @@ export const RegistrationApplicationStudent = mysqlTable(
     clubId: int("club_id")
       .notNull()
       .references(() => Club.id),
+    semesterId: int("semester_d_id").references(() => SemesterD.id),
     registrationApplicationStudentEnumId: int(
       "registration_application_student_status_enum",
     ).notNull(),

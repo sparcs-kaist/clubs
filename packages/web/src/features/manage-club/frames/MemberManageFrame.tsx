@@ -1,6 +1,7 @@
 import {
   createColumnHelper,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import React from "react";
@@ -14,8 +15,8 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
-import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/getClubDetail";
-import { useGetClubMembers } from "@sparcs-clubs/web/features/manage-club/members/services/getClubMembers";
+import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
+import { useGetClubMembers } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMembers";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
@@ -27,33 +28,26 @@ const columns = [
     id: "studentNumber",
     header: "학번",
     cell: info => info.getValue(),
-    size: 20,
+    size: 25,
   }),
   columnHelper.accessor("name", {
     id: "name",
     header: "신청자",
     cell: info => info.getValue(),
-    size: 20,
+    size: 25,
   }),
   columnHelper.accessor("phoneNumber", {
     id: "phoneNumber",
     header: "전화번호",
-    cell: info => info.getValue(),
-    size: 20,
+    cell: info => info.getValue() ?? "-",
+    size: 25,
     enableSorting: false,
   }),
   columnHelper.accessor("email", {
     id: "email",
     header: "이메일",
     cell: info => info.getValue(),
-    size: 20,
-    enableSorting: false,
-  }),
-  columnHelper.display({
-    id: "remarks",
-    header: "비고",
-    cell: () => " ",
-    size: 20,
+    size: 25,
     enableSorting: false,
   }),
 ];
@@ -80,6 +74,7 @@ const MemberManageFrame: React.FC = () => {
     columns,
     data: membersData.members,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   // 자신이 대표자인 동아리 clubId에 해당하는 동아리 세부정보 가져오기

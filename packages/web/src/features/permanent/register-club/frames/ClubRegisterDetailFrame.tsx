@@ -10,7 +10,7 @@ import {
   IndentedItem,
   ListItem,
 } from "@sparcs-clubs/web/common/components/ListItem";
-import ProgressCheckSection from "@sparcs-clubs/web/common/components/ProgressCheckSection";
+import ProgressCheckSection from "@sparcs-clubs/web/common/components/ProgressStatus/_atomic/ProgressCheckSection";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";

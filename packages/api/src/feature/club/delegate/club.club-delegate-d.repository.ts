@@ -13,7 +13,7 @@ import {
   or,
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { getKSTDate, takeUnique } from "src/common/util/util";
+import { getKSTDate, takeOne } from "src/common/util/util";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 import {
   Club,
@@ -160,7 +160,7 @@ export class ClubDelegateDRepository {
       )
       .orderBy(ClubDelegateD.endTerm)
       .limit(1)
-      .then(takeUnique);
+      .then(takeOne);
 
     return representative;
   }
@@ -247,7 +247,7 @@ export class ClubDelegateDRepository {
         ),
       )
       .limit(1)
-      .then(takeUnique));
+      .then(takeOne));
     return result;
   }
 
@@ -470,7 +470,7 @@ export class ClubDelegateDRepository {
           isNull(ClubDelegateD.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     if (president !== 0) return true;
     return false;
   }

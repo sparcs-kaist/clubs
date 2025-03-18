@@ -1,5 +1,5 @@
 {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnSave": true,
-    "files.eol": "\n"
+    "files.eol": "\n",
 }

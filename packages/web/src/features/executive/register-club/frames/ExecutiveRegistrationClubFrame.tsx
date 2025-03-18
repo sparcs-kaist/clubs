@@ -64,7 +64,7 @@ const RegistrationTypeList = Object.keys(RegistrationTypeTagList).map(key =>
 
 export const ExecutiveRegistrationClubFrame = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 10;
+  const limit = 100;
   const [searchText, setSearchText] = useState<string>("");
 
   const { data, isLoading, isError } = useGetRegisterClub({

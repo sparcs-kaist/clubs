@@ -1,7 +1,9 @@
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
 
-import { StatusAndDate } from "@sparcs-clubs/web/common/components/ProgressCheckSection";
-import { ProgressCheckSectionStatusEnum } from "@sparcs-clubs/web/common/components/ProgressCheckSection/progressCheckStationStatus";
+import {
+  ProgressCheckSectionStatusEnum,
+  StatusAndDate,
+} from "@sparcs-clubs/web/common/components/ProgressStatus/_atomic/progressCheckStationStatus";
 
 interface FundingProgressDetail {
   labels: string[];

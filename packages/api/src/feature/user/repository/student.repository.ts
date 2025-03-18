@@ -5,7 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { StudentStatusEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Student,
@@ -44,7 +44,7 @@ export default class StudentRepository {
           ),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     if (isAvailable !== 0) {
       return true;
     }
@@ -57,6 +57,41 @@ export default class StudentRepository {
       .from(StudentT)
       .where(and(eq(StudentT.id, studentTId), isNull(StudentT.deletedAt)));
 
+    return result;
+  }
+
+  async selectStudentStatusEnumIdByStudentIdSemesterId(
+    studentId: number,
+    semesterId: number,
+  ) {
+    const result = await this.db
+      .select({ studentEnumId: StudentT.studentEnum })
+      .from(StudentT)
+      .where(
+        and(
+          eq(StudentT.studentId, studentId),
+          eq(StudentT.semesterId, semesterId),
+          isNull(StudentT.deletedAt),
+        ),
+      )
+      .then(takeOne);
+    return result;
+  }
+
+  async getStudentEnumsByIdsAndSemesterId(
+    studentIds: number[],
+    semesterId: number,
+  ) {
+    const result = await this.db
+      .select({ id: StudentT.studentId, studentEnumId: StudentT.studentEnum })
+      .from(StudentT)
+      .where(
+        and(
+          inArray(StudentT.studentId, studentIds),
+          eq(StudentT.semesterId, semesterId),
+          isNull(StudentT.deletedAt),
+        ),
+      );
     return result;
   }
 
@@ -75,7 +110,7 @@ export default class StudentRepository {
           isNull(StudentT.deletedAt),
         ),
       )
-      .then(takeUnique);
+      .then(takeOne);
     return result;
   }
 

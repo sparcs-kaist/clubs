@@ -59,10 +59,11 @@ export class ClubService {
     private clubRegistrationPublicService: ClubRegistrationPublicService,
   ) {}
 
-  private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  // private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
+  private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getClubs();
+    const result = await this.clubRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
@@ -80,7 +81,7 @@ export class ClubService {
     const currentSemester = await this.clubPublicService.fetchSemester(today);
     let targetSemesterId = currentSemester.id;
     try {
-      this.clubRegistrationPublicService.checkDeadline({
+      await this.clubRegistrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;
@@ -117,7 +118,7 @@ export class ClubService {
       type: clubDetails.type,
       characteristic: clubDetails.characteristic,
       advisor: clubDetails.advisor,
-      divisionName: clubDetails.divisionName.name,
+      division: clubDetails.division,
       description: clubDetails.description ? clubDetails.description : "",
       isPermanent,
       foundingYear: clubDetails.foundingYear,

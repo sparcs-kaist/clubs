@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   and,
   desc,
@@ -17,12 +22,13 @@ import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
 import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
 import {
   ClubDelegateEnum,
   ClubTypeEnum,
 } from "@sparcs-clubs/interface/common/enum/club.enum";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {
   Club,
   ClubDelegateD,
@@ -46,6 +52,7 @@ import { VClubSummary } from "../model/club.summary.model";
 interface IClubs {
   id: number;
   name: string;
+  districtId: number;
   clubs: {
     type: number;
     id: number;
@@ -101,24 +108,25 @@ export default class ClubRepository {
         ),
       )
       .limit(1)
-      .then(takeUnique);
+      .then(takeOne);
 
-    const divisionName = await this.db
-      .select({ name: Division.name })
+    const division = await this.db
+      .select({ id: Division.id, name: Division.name })
       .from(Club)
       .leftJoin(Division, eq(Division.id, Club.divisionId))
       .where(eq(Club.id, clubId))
-      .then(takeUnique);
-    return { ...clubInfo, divisionName };
+      .then(takeOne);
+    return { ...clubInfo, division };
   }
 
-  async getClubs(): Promise<ApiClb001ResponseOK> {
+  async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
     const crt = getKSTDate();
-    const rows = await this.db
+    const clubs = await this.db
       .select({
         id: Division.id,
+        districtId: Division.districtId,
         name: Division.name,
-        clubs: {
+        club: {
           type: ClubT.clubStatusEnumId,
           id: Club.id,
           nameKr: Club.nameKr,
@@ -186,26 +194,43 @@ export default class ClubRepository {
         Professor.name,
         DivisionPermanentClubD.id,
       );
-    const record = rows.reduce<Record<number, IClubs>>((acc, row) => {
-      const divId = row.id;
-      const divName = row.name;
-      const club = row.clubs;
 
-      if (!acc[divId]) {
-        acc[divId] = { id: divId, name: divName, clubs: [] };
-      }
+    const stackedClubs = clubs.reduce<Record<number, IClubs>>(
+      (
+        acc,
+        { id: divId, name: divName, club: divClub, districtId: divDistrictId },
+      ) => {
+        acc[divId] ??= {
+          id: divId,
+          name: divName,
+          clubs: [],
+          districtId: divDistrictId,
+        };
 
-      if (club) {
-        acc[divId].clubs.push({
-          ...club,
-          isPermanent: club.isPermanent !== null,
-        });
-      }
-      return acc;
-    }, {});
+        if (divClub) {
+          acc[divId].clubs.push({
+            ...divClub,
+            isPermanent: divClub.isPermanent !== null,
+          });
+        }
+        return acc;
+      },
+      {},
+    );
+
+    const sortedClubs = Object.values(stackedClubs)
+      .sort((a, b) => {
+        if (a.districtId !== b.districtId) {
+          return a.districtId - b.districtId;
+        }
+        return a.name.localeCompare(b.name);
+      })
+      .map(({ districtId: _districtId, ...rest }) => rest);
+
     const result = {
-      divisions: Object.values(record),
+      divisions: sortedClubs,
     };
+
     return result;
   }
 
@@ -475,7 +500,13 @@ export default class ClubRepository {
       .select()
       .from(Club)
       .leftJoin(ClubT, eq(Club.id, ClubT.clubId))
-      .where(eq(Club.id, clubId))
+      .where(
+        and(
+          eq(Club.id, clubId),
+          isNull(Club.deletedAt),
+          isNull(ClubT.deletedAt),
+        ),
+      )
       .orderBy(desc(ClubT.startTerm))
       .limit(1);
 
@@ -511,7 +542,7 @@ export default class ClubRepository {
         ),
       );
     }
-
+    whereClause.push(isNull(Club.deletedAt));
     whereClause.push(isNull(ClubT.deletedAt));
 
     const result = await this.db
@@ -523,7 +554,7 @@ export default class ClubRepository {
     return result.map(club => VClubSummary.fromDBResult(club));
   }
 
-  async find(
+  async findOne(
     clubId: number,
     semester: ISemester,
     date?: Date,
@@ -592,12 +623,91 @@ export default class ClubRepository {
     });
   }
 
+  async find(param: {
+    id?: IClubs["id"];
+    ids?: IClubs["id"][];
+    semester: ISemester;
+    clubStatusEnumId?: ClubTypeEnum;
+    clubStatusEnumIds?: ClubTypeEnum[];
+    divisionId?: IDivision["id"];
+    date?: Date;
+  }): Promise<MClub[]> {
+    if (!param.semester) {
+      throw new BadRequestException("Semester or date is required");
+    }
+    const day = param.date ?? getKSTDate(param.semester.endTerm);
+    const whereClause = [];
+    const delegateWhereClause = [];
+    if (param.id) {
+      whereClause.push(eq(Club.id, param.id));
+      delegateWhereClause.push(eq(ClubDelegateD.clubId, param.id));
+    }
+
+    if (param.ids) {
+      whereClause.push(inArray(Club.id, param.ids));
+      delegateWhereClause.push(inArray(ClubDelegateD.clubId, param.ids));
+    }
+
+    if (param.semester) {
+      whereClause.push(eq(ClubT.semesterId, param.semester.id));
+    }
+
+    if (param.clubStatusEnumId) {
+      whereClause.push(eq(ClubT.clubStatusEnumId, param.clubStatusEnumId));
+    }
+
+    if (param.clubStatusEnumIds) {
+      whereClause.push(
+        inArray(ClubT.clubStatusEnumId, param.clubStatusEnumIds),
+      );
+    }
+    if (param.divisionId) {
+      whereClause.push(eq(Club.divisionId, param.divisionId));
+    }
+
+    whereClause.push(isNull(Club.deletedAt));
+    whereClause.push(isNull(ClubT.deletedAt));
+
+    delegateWhereClause.push(
+      and(
+        lte(ClubDelegateD.startTerm, day),
+        or(gte(ClubDelegateD.endTerm, day), isNull(ClubDelegateD.endTerm)),
+      ),
+    );
+
+    const [clubResult, delegateResult] = await Promise.all([
+      this.db
+        .select()
+        .from(Club)
+        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .leftJoin(
+          ClubRoomT,
+          and(
+            eq(Club.id, ClubRoomT.clubId),
+            eq(ClubT.semesterId, ClubRoomT.semesterId),
+          ),
+        )
+        .where(and(...whereClause)),
+      this.db
+        .select()
+        .from(ClubDelegateD)
+        .where(and(...delegateWhereClause)),
+    ]);
+
+    return clubResult.map(club =>
+      MClub.fromDBResult({
+        ...club,
+        club_delegate_d: delegateResult.filter(e => e.clubId === club.club.id),
+      }),
+    );
+  }
+
   async fetch(
     clubId: number,
     semester: ISemester,
     date?: Date,
   ): Promise<MClub> {
-    const result = await this.find(clubId, semester, date);
+    const result = await this.findOne(clubId, semester, date);
     if (!result) {
       throw new NotFoundException("Club not found");
     }

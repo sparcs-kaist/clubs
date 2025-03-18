@@ -38,10 +38,19 @@ const zClubDelegate = z.object({
 });
 
 export const zClub = z.object({
-  id: zId,
+  id: zId.openapi({
+    description: "동아리 ID",
+    example: 1,
+  }),
   // plain schema
-  nameKr: z.string().max(255).min(1),
-  nameEn: z.string().max(255).min(1),
+  nameKr: z.string().max(255).min(1).openapi({
+    description: "동아리의 한국어 이름입니다.",
+    example: "술박스",
+  }),
+  nameEn: z.string().max(255).min(1).openapi({
+    description: "동아리의 영어 이름입니다.",
+    example: "sulbox",
+  }),
   description: z.string().nullable(),
   foundingYear: z.number(),
   // clubT schema

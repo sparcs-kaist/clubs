@@ -72,6 +72,35 @@ const credits: SemesterCredit[] = [
         roleType: RoleType.member,
         comment: "도비는 자유에요",
       },
+      {
+        nickname: "choemseong",
+        name: "최민성",
+        role: "FE",
+        roleType: RoleType.member,
+        comment: "봄학기는 설레요🍓😋",
+      },
+
+      {
+        nickname: "gb",
+        name: "권혁원",
+        role: "APM(BE)",
+        roleType: RoleType.APM_BE,
+        comment: "바로 Clubs 정상화~",
+      },
+      {
+        nickname: "david",
+        name: "정동윤",
+        role: "FE",
+        roleType: RoleType.member,
+        comment: "1년차 뉴비 납시오~",
+      },
+      {
+        nickname: "ms",
+        name: "문영준",
+        role: "인턴",
+        roleType: RoleType.intern,
+        comment: "👶",
+      },
     ],
   },
   {
@@ -124,7 +153,7 @@ const credits: SemesterCredit[] = [
         name: "정동윤",
         role: "FE",
         roleType: RoleType.member,
-        comment: "1년차 뉴비 납시오~",
+        comment: "추운 겨울도 Clubs와 함께라면!",
       },
       {
         nickname: "chan",

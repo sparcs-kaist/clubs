@@ -62,18 +62,7 @@ export default tseslint.config(
     rules: {
       "curly": "off",
       "import/extensions": "off",
-      "import/no-extraneous-dependencies": [
-        "error",
-        {
-          packageDir: [
-            "./packages/web/",
-            "./packages/api/",
-            "./packages/interface/",
-            "./",
-          ],
-          devDependencies: true,
-        },
-      ],
+      "import/no-extraneous-dependencies": "off",
       "import/no-unresolved": "off",
       "import/prefer-default-export": "off",
       "radix": ["error", "as-needed"],

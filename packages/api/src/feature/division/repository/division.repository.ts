@@ -5,7 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IDivisionSummary } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
 
-import { getKSTDate, takeUnique } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {
   DrizzleAsyncProvider,
   DrizzleTransaction,
@@ -50,7 +50,7 @@ export default class DivisionRepository {
       .select({ id: Division.id })
       .from(Division)
       .where(and(eq(Division.id, divisionId), isNull(Division.deletedAt)))
-      .then(takeUnique);
+      .then(takeOne);
     return result ? result.id : undefined;
   }
 

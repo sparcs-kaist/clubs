@@ -1,7 +1,7 @@
 // import { ApiReg015ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
 import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
-import { ProgressCheckSectionStatusEnum } from "@sparcs-clubs/web/common/components/ProgressCheckSection/progressCheckStationStatus";
+import { ProgressCheckSectionStatusEnum } from "@sparcs-clubs/web/common/components/ProgressStatus/_atomic/progressCheckStationStatus";
 
 export const mockClubRegisterDetail = {
   statusAndDate: [
