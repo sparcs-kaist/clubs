@@ -56,10 +56,7 @@ const RegisterClubDetail: React.FC = () => {
         title="동아리 등록 신청 내역"
         enableLast
       />
-      <RegisterClubDetailFrame
-        applyId={+applyId}
-        profile={UserTypeEnum.Undergraduate}
-      />
+      <RegisterClubDetailFrame applyId={+applyId} profile={"permanent"} />
       <Link href="/manage-club/permanent/register-club">
         <Button>목록으로 돌아가기</Button>
       </Link>

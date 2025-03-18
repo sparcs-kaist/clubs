@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 
 import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
@@ -20,7 +21,6 @@ import {
 } from "@sparcs-clubs/web/constants/tableTagList";
 import RegisterClubStatusSection from "@sparcs-clubs/web/features/executive/register-club/components/RegisterClubStatusSection";
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
-import { FilePreviewContainer } from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubDetailFrame";
 import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
@@ -32,8 +32,21 @@ import { professorEnumToText } from "@sparcs-clubs/web/utils/getUserType";
 
 export interface ClubRegisterDetail {
   applyId: number;
-  profile: UserTypeEnum;
+  profile: UserTypeEnum | "permanent";
 }
+
+const FilePreviewContainerWrapper = styled(FlexWrapper)`
+  padding-left: 24px;
+  align-self: stretch;
+`;
+
+export const FilePreviewContainer: React.FC<React.PropsWithChildren> = ({
+  children = null,
+}) => (
+  <FilePreviewContainerWrapper direction="column" gap={12}>
+    {children}
+  </FilePreviewContainerWrapper>
+);
 
 const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   applyId,
@@ -55,11 +68,12 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
       isError={isError || divisionError}
     >
       <Card padding="32px" gap={20} outline>
-        {data && (
+        {/* 교수: progress 보여주지 않음. 상임동아리: progress는 보이나 comments 가림 */}
+        {data && profile !== UserTypeEnum.Professor && (
           <RegisterClubStatusSection
             status={data.registrationStatusEnumId}
             editedAt={data.updatedAt}
-            comments={data.comments}
+            comments={profile !== "permanent" ? data.comments : []}
           />
         )}
         <FlexWrapper gap={20} direction="row">
