@@ -10,8 +10,8 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
+import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/services/usePatchClubRegProfessorApprove";
-import useGetClubRegistrationPeriod from "@sparcs-clubs/web/features/register-club/hooks/useGetClubRegistrationPeriod";
 import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
 const ProfessorRegisterClubDetailButton: React.FC = () => {
@@ -30,7 +30,7 @@ const ProfessorRegisterClubDetailButton: React.FC = () => {
     data: deadlineData,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
-  } = useGetClubRegistrationPeriod();
+  } = useGetClubRegistrationDeadline();
 
   const professorApproveHandler = () => {
     overlay.open(({ isOpen, close }) => (
@@ -62,7 +62,7 @@ const ProfessorRegisterClubDetailButton: React.FC = () => {
       isLoading={isLoadingDeadline || isLoading}
       isError={isErrorDeadline || isError}
     >
-      {deadlineData.isClubRegistrationPeriod && (
+      {deadlineData?.deadline && (
         <FlexWrapper direction="row" gap={10}>
           <Button
             style={{ width: "max-content" }}

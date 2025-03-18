@@ -7,9 +7,9 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
+import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import { deleteMyClubRegistration } from "@sparcs-clubs/web/features/my/services/deleteMyClubRegistration";
 import { useGetMyClubRegistration } from "@sparcs-clubs/web/features/my/services/getMyClubRegistration";
-import useGetClubRegistrationPeriod from "@sparcs-clubs/web/features/register-club/hooks/useGetClubRegistrationPeriod";
 
 const StudentRegisterClubDetailButton: React.FC = () => {
   const { id } = useParams();
@@ -19,7 +19,7 @@ const StudentRegisterClubDetailButton: React.FC = () => {
     data: deadlineData,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
-  } = useGetClubRegistrationPeriod();
+  } = useGetClubRegistrationDeadline();
   const {
     data: myClubRegistrationData,
     isLoading: isLoadingMyClubRegistration,
@@ -73,7 +73,7 @@ const StudentRegisterClubDetailButton: React.FC = () => {
       isLoading={isLoadingDeadline || isLoadingMyClubRegistration}
       isError={isErrorDeadline || isErrorMyClubRegistration}
     >
-      {deadlineData.isClubRegistrationPeriod && isMyRegistration && (
+      {deadlineData?.deadline && isMyRegistration && (
         <FlexWrapper direction="row" gap={10}>
           <Button style={{ width: "max-content" }} onClick={deleteHandler}>
             삭제
