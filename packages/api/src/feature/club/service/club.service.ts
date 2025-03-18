@@ -32,6 +32,7 @@ import type { ApiClb016ResponseOk } from "@sparcs-clubs/interface/api/club/endpo
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
 import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
 
@@ -59,8 +60,8 @@ export class ClubService {
     private clubRegistrationPublicService: ClubRegistrationPublicService,
   ) {}
 
-  // private readonly EXCLUDED_CLUB_IDS: number[] = [112, 113, 121];
-  private readonly EXCLUDED_CLUB_IDS: number[] = [113, 121];
+  private readonly EXCLUDED_CLUB_IDS: number[] =
+    env.NODE_ENV === "local" ? [] : [112, 113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
     const result = await this.clubRepository.getAllClubsGroupedByDivision();
