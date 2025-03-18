@@ -37,7 +37,7 @@ const ClubInfoContent = styled(ClubInfoItemInner)`
     font-size: 14px;
     line-height: 20px;
   }
-  display: fill;
+  flex: 1;
 `;
 
 const ClubInfoItem: React.FC<ClubInfoItemProps> = ({ title, content }) => (

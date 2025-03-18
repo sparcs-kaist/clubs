@@ -90,11 +90,9 @@ const ClubMemberCard: React.FC<ClubDetailFrameProps> = ({
       </Contents>
       <Contents>{club.representative}</Contents>
       <Contents>
-        {club.advisor === null ||
-        club.advisor === undefined ||
+        {!club.advisor ||
         club.advisor === "null" ||
-        club.advisor === "undefined" ||
-        club.advisor === ""
+        club.advisor === "undefined"
           ? "-"
           : club.advisor}
       </Contents>

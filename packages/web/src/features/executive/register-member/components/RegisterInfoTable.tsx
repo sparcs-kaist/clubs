@@ -64,7 +64,7 @@ const columns = [
   columnHelper.accessor("student.phoneNumber", {
     id: "student.phoneNumber",
     header: "전화번호",
-    cell: info => info.getValue(),
+    cell: info => info.getValue() ?? "-",
     size: 160,
   }),
   columnHelper.accessor("student.email", {

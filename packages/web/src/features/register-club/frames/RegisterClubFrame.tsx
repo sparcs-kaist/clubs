@@ -13,16 +13,15 @@ import Info from "@sparcs-clubs/web/common/components/Info";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import WarningInfo from "@sparcs-clubs/web/common/components/WarningInfo";
+import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import { useGetMyClubRegistration } from "@sparcs-clubs/web/features/my/services/getMyClubRegistration";
 import ClubButton from "@sparcs-clubs/web/features/register-club/components/ClubButton";
 import {
   registerClubDeadlineInfoText,
   registerClubOptions,
 } from "@sparcs-clubs/web/features/register-club/constants";
-import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
 import useGetAvailableRegistrationInfo from "../hooks/useGetAvailableRegistrationInfo";
-import useGetClubRegistrationPeriod from "../hooks/useGetClubRegistrationPeriod";
 
 const ClubButtonWrapper = styled.div`
   display: flex;
@@ -55,16 +54,10 @@ const RegisterClubFrame: React.FC = () => {
   } = useGetAvailableRegistrationInfo();
 
   const {
-    data: deadlineData,
+    data: clubDeadline,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
-  } = useGetClubRegistrationPeriod();
-
-  const {
-    semester: semesterInfo,
-    isLoading: semesterLoading,
-    isError: semesterError,
-  } = useGetSemesterNow();
+  } = useGetClubRegistrationDeadline();
 
   const onClickRegisterClub = useCallback(() => {
     if (selectedType === RegistrationTypeEnum.Renewal)
@@ -111,9 +104,7 @@ const RegisterClubFrame: React.FC = () => {
   }, [availableRegistrationInfo, selectedType]);
 
   const isRegisterButtonDisabled =
-    selectedType === null ||
-    !canRegisterClub ||
-    !deadlineData.isClubRegistrationPeriod;
+    selectedType === null || !canRegisterClub || clubDeadline?.deadline == null;
 
   return (
     <FlexWrapper direction="column" gap={60}>
@@ -143,15 +134,12 @@ const RegisterClubFrame: React.FC = () => {
           </WarningInfo>
         )}
       </AsyncBoundary>
-      <AsyncBoundary
-        isLoading={isLoadingDeadline || semesterLoading}
-        isError={isErrorDeadline || semesterError}
-      >
-        {deadlineData.isClubRegistrationPeriod ? (
+      <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline}>
+        {clubDeadline?.deadline ? (
           <Info
             text={registerClubDeadlineInfoText(
-              deadlineData.deadline!,
-              semesterInfo,
+              clubDeadline.deadline.endDate,
+              clubDeadline.semester,
             )}
           />
         ) : (

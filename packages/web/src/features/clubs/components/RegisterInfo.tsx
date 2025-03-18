@@ -1,24 +1,25 @@
 import { overlay } from "overlay-kit";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
 import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
 import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
+import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
-import { useRegisterClub } from "../services/registerClub";
-import { useUnregisterClub } from "../services/unregisterClub";
+import useGetMemberRegistrationCount from "../services/useGetMemberRegistrationCount";
+import useRegisterClub from "../services/useRegisterClub";
+import useUnregisterClub from "../services/useUnregisterClub";
 
 interface RegisterInfoProps {
   club: ApiClb002ResponseOK;
-  isInClub: RegistrationApplicationStudentStatusEnum;
-  refetch: () => void;
+  registrationStatus: RegistrationApplicationStudentStatusEnum;
   isRegistered: boolean;
   myRegistrationList: ApiReg006ResponseOk;
 }
@@ -30,94 +31,84 @@ const RegisterInfoWrapper = styled.div`
   align-items: center;
 `;
 
+const ResponsiveBr = styled.br`
+  display: none;
+  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
+    display: block;
+  }
+`;
+
 export const RegisterInfo: React.FC<RegisterInfoProps> = ({
   club,
-  isInClub,
-  refetch,
+  registrationStatus,
   isRegistered,
   myRegistrationList,
 }) => {
-  const ToggleRegistered = async (close: () => void) => {
-    close();
-    await useRegisterClub(club.id);
-    await refetch();
-  };
+  const { mutate: registerClub } = useRegisterClub({ clubId: club.id });
+  const { mutate: unregisterClub } = useUnregisterClub(club.id);
+  const {
+    data: registrationCount,
+    isLoading: isLoadingCount,
+    isError: isErrorCount,
+  } = useGetMemberRegistrationCount({ clubId: club.id });
 
-  const ToggleUnregistered = async (close: () => void) => {
-    const thisRegistration = (
-      myRegistrationList as {
-        applies: {
-          id: number;
-          clubId: number;
-          applyStatusEnumId: RegistrationApplicationStudentStatusEnum;
-        }[];
-      }
-    ).applies.find(apply => apply.clubId === club.id);
-    await useUnregisterClub({
-      applyId: (
-        thisRegistration as {
-          id: number;
-          clubId: number;
-          applyStatusEnumId: RegistrationApplicationStudentStatusEnum;
-        }
-      ).id,
+  const toggleUnregistered = useCallback(() => {
+    const thisRegistration = myRegistrationList.applies.find(
+      apply => apply.clubId === club.id,
+    );
+    unregisterClub({
+      requestParam: { applyId: thisRegistration!.id },
     });
-    await refetch();
-    close();
-  };
+  }, [myRegistrationList]);
 
-  const ResponsiveBr = styled.br`
-    display: none;
-    @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
-      display: block;
-    }
-  `;
+  const { semester, isLoading, isError } = useGetSemesterNow();
 
-  const semester = useGetSemesterNow()?.semester;
+  const ModalText = useMemo(
+    () => (
+      <AsyncBoundary isLoading={isLoading} isError={isError}>
+        {semester?.year}년도 {semester?.name}학기
+        <ResponsiveBr /> {club.type === 1 ? "정동아리" : "가동아리"}{" "}
+        {club.nameKr}의 <br />
+        {isRegistered
+          ? "회원 등록을 취소합니다."
+          : "회원 등록 신청을 진행합니다."}
+      </AsyncBoundary>
+    ),
+    [semester, club, isRegistered],
+  );
 
-  const submitHandler = () => {
+  const submitHandler = useCallback(() => {
     overlay.open(({ isOpen, close }) => (
       <Modal isOpen={isOpen} onClose={close}>
-        {isRegistered ? (
-          <CancellableModalContent
-            onClose={close}
-            onConfirm={() => {
-              ToggleUnregistered(close);
-            }}
-          >
-            {semester?.year}년도 {semester?.name}학기
-            <ResponsiveBr /> {club.type === 1 ? "정동아리" : "가동아리"}{" "}
-            {club.nameKr}의<br />
-            회원 등록을 취소합니다.
-          </CancellableModalContent>
-        ) : (
-          <CancellableModalContent
-            onClose={close}
-            onConfirm={() => {
-              ToggleRegistered(close);
-            }}
-          >
-            {semester?.year}년도 {semester?.name}학기
-            <ResponsiveBr /> {club.type === 1 ? "정동아리" : "가동아리"}{" "}
-            {club.nameKr}의<br />
-            회원 등록 신청을 진행합니다.
-          </CancellableModalContent>
-        )}
+        <CancellableModalContent
+          onClose={close}
+          onConfirm={() => {
+            (isRegistered ? toggleUnregistered : registerClub)();
+            close();
+          }}
+        >
+          {ModalText}
+        </CancellableModalContent>
       </Modal>
     ));
-  };
-  const renderButton = () => {
-    if (isInClub === RegistrationApplicationStudentStatusEnum.Pending) {
+  }, [isRegistered, ModalText]);
+
+  const renderButton = useCallback(() => {
+    if (
+      registrationStatus === RegistrationApplicationStudentStatusEnum.Pending
+    ) {
       return (
         <Button type="default" onClick={submitHandler}>
           회원 등록 취소
         </Button>
       );
     }
-    if (isInClub === RegistrationApplicationStudentStatusEnum.Approved) {
+    if (
+      registrationStatus === RegistrationApplicationStudentStatusEnum.Approved
+    ) {
       return (
         <Button type="disabled" onClick={submitHandler}>
-          회장 승인 완료
+          회원 승인 완료
         </Button>
       );
     }
@@ -126,12 +117,15 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
         회원 등록 신청
       </Button>
     );
-  };
+  }, [registrationStatus]);
+
   return (
     <RegisterInfoWrapper>
-      <Typography fs={16} color="GRAY.600" fw="REGULAR">
-        등록 신청 {club.totalMemberCnt}명
-      </Typography>
+      <AsyncBoundary isLoading={isLoadingCount} isError={isErrorCount}>
+        <Typography fs={16} color="GRAY.600">
+          등록 신청 {registrationCount?.totalMemberRegistrationCount ?? 0}명
+        </Typography>
+      </AsyncBoundary>
       {renderButton()}
     </RegisterInfoWrapper>
   );

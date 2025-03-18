@@ -10,7 +10,6 @@ import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/en
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import { RegistrationStatusTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import { mockMemberRegister } from "@sparcs-clubs/web/features/my/services/_mock/mockMyRegister";
 import {
   getTagColorFromClubType,
   getTagColorFromDivision,
@@ -23,7 +22,7 @@ interface MyMemberTableProps {
 }
 
 const columnHelper =
-  createColumnHelper<(typeof mockMemberRegister)["applies"][number]>();
+  createColumnHelper<ApiReg006ResponseOk["applies"][number]>();
 
 const columns = [
   columnHelper.accessor("applyStatusEnumId", {
@@ -84,7 +83,7 @@ const MyMemberTable: React.FC<MyMemberTableProps> = ({
     getCoreRowModel: getCoreRowModel(),
     enableSorting: false,
   });
-  const getRowLink = (row: (typeof mockMemberRegister)["applies"][number]) => ({
+  const getRowLink = (row: ApiReg006ResponseOk["applies"][number]) => ({
     pathname: `/clubs/${row.clubId.toString()}`,
   });
   return (

@@ -1,10 +1,8 @@
 import React from "react";
 
-export interface SemesterProps {
-  id: number;
-  year: number;
-  name: string;
-}
+import { Semester } from "@sparcs-clubs/web/types/semester";
+
+export type SemesterProps = Pick<Semester, "id" | "year" | "name">;
 
 export interface SemesterListProps {
   semesters: SemesterProps[];

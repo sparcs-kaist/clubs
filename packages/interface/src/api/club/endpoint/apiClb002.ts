@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
 import { zClubName } from "@sparcs-clubs/interface/common/commonString";
 import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 
@@ -32,7 +33,10 @@ const responseBodyMap = {
     advisor: z.coerce.string().max(20).optional(), // 동아리 지도교수
     totalMemberCnt: z.coerce.number().int().min(1),
     description: z.coerce.string(),
-    divisionName: z.coerce.string().max(20), // 분과명
+    division: z.object({
+      id: zDivision.shape.id,
+      name: zDivision.shape.name,
+    }), // 분과명
     foundingYear: z.coerce.number().int().min(1985).max(2100),
     room: z.coerce.string().max(50), // 동아리방 위치
   }),
@@ -58,8 +62,8 @@ const apiClb002 = {
 export default apiClb002;
 
 export type {
+  ApiClb002RequestBody,
   ApiClb002RequestParam,
   ApiClb002RequestQuery,
-  ApiClb002RequestBody,
   ApiClb002ResponseOK,
 };

@@ -52,6 +52,7 @@ import { VClubSummary } from "../model/club.summary.model";
 interface IClubs {
   id: number;
   name: string;
+  districtId: number;
   clubs: {
     type: number;
     id: number;
@@ -109,22 +110,23 @@ export default class ClubRepository {
       .limit(1)
       .then(takeOne);
 
-    const divisionName = await this.db
-      .select({ name: Division.name })
+    const division = await this.db
+      .select({ id: Division.id, name: Division.name })
       .from(Club)
       .leftJoin(Division, eq(Division.id, Club.divisionId))
       .where(eq(Club.id, clubId))
       .then(takeOne);
-    return { ...clubInfo, divisionName };
+    return { ...clubInfo, division };
   }
 
-  async getClubs(): Promise<ApiClb001ResponseOK> {
+  async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
     const crt = getKSTDate();
-    const rows = await this.db
+    const clubs = await this.db
       .select({
         id: Division.id,
+        districtId: Division.districtId,
         name: Division.name,
-        clubs: {
+        club: {
           type: ClubT.clubStatusEnumId,
           id: Club.id,
           nameKr: Club.nameKr,
@@ -192,26 +194,43 @@ export default class ClubRepository {
         Professor.name,
         DivisionPermanentClubD.id,
       );
-    const record = rows.reduce<Record<number, IClubs>>((acc, row) => {
-      const divId = row.id;
-      const divName = row.name;
-      const club = row.clubs;
 
-      if (!acc[divId]) {
-        acc[divId] = { id: divId, name: divName, clubs: [] };
-      }
+    const stackedClubs = clubs.reduce<Record<number, IClubs>>(
+      (
+        acc,
+        { id: divId, name: divName, club: divClub, districtId: divDistrictId },
+      ) => {
+        acc[divId] ??= {
+          id: divId,
+          name: divName,
+          clubs: [],
+          districtId: divDistrictId,
+        };
 
-      if (club) {
-        acc[divId].clubs.push({
-          ...club,
-          isPermanent: club.isPermanent !== null,
-        });
-      }
-      return acc;
-    }, {});
+        if (divClub) {
+          acc[divId].clubs.push({
+            ...divClub,
+            isPermanent: divClub.isPermanent !== null,
+          });
+        }
+        return acc;
+      },
+      {},
+    );
+
+    const sortedClubs = Object.values(stackedClubs)
+      .sort((a, b) => {
+        if (a.districtId !== b.districtId) {
+          return a.districtId - b.districtId;
+        }
+        return a.name.localeCompare(b.name);
+      })
+      .map(({ districtId: _districtId, ...rest }) => rest);
+
     const result = {
-      divisions: Object.values(record),
+      divisions: sortedClubs,
     };
+
     return result;
   }
 
@@ -481,7 +500,13 @@ export default class ClubRepository {
       .select()
       .from(Club)
       .leftJoin(ClubT, eq(Club.id, ClubT.clubId))
-      .where(eq(Club.id, clubId))
+      .where(
+        and(
+          eq(Club.id, clubId),
+          isNull(Club.deletedAt),
+          isNull(ClubT.deletedAt),
+        ),
+      )
       .orderBy(desc(ClubT.startTerm))
       .limit(1);
 
@@ -517,7 +542,7 @@ export default class ClubRepository {
         ),
       );
     }
-
+    whereClause.push(isNull(Club.deletedAt));
     whereClause.push(isNull(ClubT.deletedAt));
 
     const result = await this.db
