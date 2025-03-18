@@ -69,7 +69,13 @@ const ExecutiveRegisterMemberDetail: React.FC = () => {
           };
 
         default:
-          return defaultStatusInfo;
+          return {
+            status: RegistrationApplicationStudentStatusEnum.Pending,
+            regular: data.regularMemberRegistrations,
+            nonRegular:
+              data.totalRegistrations - data.regularMemberRegistrations,
+            total: data.totalRegistrations,
+          };
       }
     },
     [data],
@@ -110,7 +116,7 @@ const ExecutiveRegisterMemberDetail: React.FC = () => {
                 )}
               />
               <Divider style={{ marginLeft: 28 }} />
-              <StatusInfoFrame statusInfo={getStatusInfo()} />
+              <StatusInfoFrame statusInfo={getStatusInfo()} isTotal />
             </FlexWrapper>
           </Toggle>
         </Card>
