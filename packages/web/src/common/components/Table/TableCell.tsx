@@ -18,6 +18,7 @@ interface TableCellProps {
   children: ReactNode;
   width?: string | number;
   minWidth?: number;
+  onClick?: (event: React.MouseEvent<HTMLTableCellElement>) => void;
 }
 
 const CommonCellHeaderWrapper = styled.th.withConfig({
@@ -89,6 +90,7 @@ const TableCell: React.FC<TableCellProps> = ({
   children,
   width = "150px",
   minWidth = 100,
+  onClick = () => {},
 }) => {
   const isHeader = type === "Header" || type === "HeaderSort";
   const CommonCellWrapper = useMemo(
@@ -124,7 +126,12 @@ const TableCell: React.FC<TableCellProps> = ({
   }
 
   return (
-    <CommonCellWrapper width={width} minWidth={minWidth} isHeader={isHeader}>
+    <CommonCellWrapper
+      width={width}
+      minWidth={minWidth}
+      isHeader={isHeader}
+      onClick={onClick}
+    >
       {content}
     </CommonCellWrapper>
   );

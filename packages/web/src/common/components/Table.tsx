@@ -147,6 +147,7 @@ const Table = <T,>({
                         key={header.id}
                         width={header.column.getSize()}
                         type="HeaderSort"
+                        onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(
                           header.column.columnDef.header,

@@ -1,6 +1,7 @@
 import {
   createColumnHelper,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useState } from "react";
@@ -37,33 +38,26 @@ const columns = [
     id: "studentNumber",
     header: "학번",
     cell: info => info.getValue(),
-    size: 20,
+    size: 25,
   }),
   columnHelper.accessor("name", {
     id: "name",
     header: "신청자",
     cell: info => info.getValue(),
-    size: 20,
+    size: 25,
   }),
   columnHelper.accessor("phoneNumber", {
     id: "phoneNumber",
     header: "전화번호",
     cell: info => info.getValue() ?? "-",
-    size: 20,
+    size: 25,
     enableSorting: false,
   }),
   columnHelper.accessor("email", {
     id: "email",
     header: "이메일",
     cell: info => info.getValue(),
-    size: 20,
-    enableSorting: false,
-  }),
-  columnHelper.display({
-    id: "remarks",
-    header: "비고",
-    cell: () => " ",
-    size: 20,
+    size: 25,
     enableSorting: false,
   }),
 ];
@@ -91,6 +85,7 @@ const AllMemberList: React.FC<AllMemberListProps> = ({
     columns,
     data: searchedMembers,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
