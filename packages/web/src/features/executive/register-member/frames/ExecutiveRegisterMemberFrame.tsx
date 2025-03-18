@@ -54,7 +54,7 @@ interface ConvertedSelectedCategories {
 
 export const ExecutiveRegisterMember: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const limit = 100;
+  const limit = 200;
 
   const { data, isLoading, isError } = useGetMemberRegistration({
     pageOffset: currentPage,
