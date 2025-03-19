@@ -1,10 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
-  asc,
   ColumnBaseConfig,
   ColumnDataType,
-  desc,
   eq,
   gt,
   gte,
@@ -26,13 +24,8 @@ import {
 } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { MEntity } from "../model/entity.model";
-import {
-  FilterCondition,
-  FilterValue,
-  QueryOptions,
-  SortCondition,
-} from "../model/query.model";
-import { getKSTDate, takeNotNull } from "../util/util";
+import logger from "../util/logger";
+import { getKSTDate, takeOnlyOne } from "../util/util";
 
 interface TableWithId {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
@@ -41,6 +34,45 @@ interface TableWithId {
 interface ModelWithFrom<I, T extends MEntity<I>, D> {
   from(result: D): T;
 }
+
+// 필터 연산자 타입 정의
+export type FilterOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "in"
+  | "like"
+  | "isNull"
+  | "isNotNull";
+
+// 기본 필터 옵션 타입 정의
+export interface FilterOption<T> {
+  operator?: FilterOperator; // operator 생략시 기본값 'eq'로 처리
+  value: T;
+}
+
+// 필드별 필터 조건 타입
+export type FieldFilters<D> = Partial<{
+  [K in keyof D]: FilterOption<D[K]> | D[K];
+}>;
+
+// 통합된 쿼리 인터페이스 정의
+export interface IBaseQuery<I, D> {
+  id?: I;
+  ids?: I[];
+  pagination?: {
+    offset: number;
+    itemCount: number;
+  };
+  orderBy?: Record<string, string>;
+  filters?: FieldFilters<D>;
+}
+
+// 컬럼 타입 정의 (MySql 전용 컬럼 타입 사용)
+type MySqlColumnType = MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
 
 @Injectable()
 export abstract class BaseRepository<
@@ -63,43 +95,191 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
-  async findTx(tx: DrizzleTransaction, id: I): Promise<M | null> {
-    const result = await tx
-      .select()
-      .from(this.table)
-      .where(eq(this.table.id, id))
-      .then(rows => rows.map(row => this.modelClass.from(row as D)));
-
-    return (result[0] as M) ?? null;
-  }
-
-  async find(id: I): Promise<M | null> {
-    return this.withTransaction(async tx => this.findTx(tx, id));
-  }
-
-  async findAllTx(tx: DrizzleTransaction, ids: I[]): Promise<M[]> {
-    if (ids.length === 0) {
+  async findTx(tx: DrizzleTransaction, query?: IBaseQuery<I, D>): Promise<M[]> {
+    if (!query) {
       return [];
     }
 
-    const result = await tx
+    // 쿼리 조건 구성
+    const whereClause: SQL[] = [];
+
+    // 기본 필드 처리 (id, ids)
+    if (query.id) {
+      whereClause.push(eq(this.table.id, query.id));
+    }
+    if (query.ids && query.ids.length > 0) {
+      whereClause.push(inArray(this.table.id, query.ids));
+    }
+
+    // 필터 처리
+    if (query.filters) {
+      this.processFilters(query.filters, whereClause);
+    }
+
+    // 소프트 삭제 처리 (deletedAt 필드가 있는 경우)
+    if ("deletedAt" in this.table) {
+      this.handleSoftDelete(whereClause);
+    }
+
+    // 기본 쿼리 구성 및 where 조건 추가
+    let queryBuilder = tx
       .select()
       .from(this.table)
-      .where(inArray(this.table.id, ids));
+      .where(and(...whereClause))
+      .$dynamic();
 
+    // 페이지네이션 추가
+    if (query.pagination) {
+      queryBuilder = queryBuilder.limit(query.pagination.itemCount);
+      queryBuilder = queryBuilder.offset(
+        (query.pagination.offset - 1) * query.pagination.itemCount,
+      );
+    }
+
+    // 정렬 조건 추가
+    if (query.orderBy) {
+      const orderByResult = this.generateOrderBy(query.orderBy);
+      if (orderByResult.length > 0) {
+        queryBuilder = queryBuilder.orderBy(...(orderByResult as SQL[]));
+      }
+    }
+
+    // 쿼리 실행 및 결과 변환
+    const result = await queryBuilder.execute();
     return result.map(row => this.modelClass.from(row as D));
   }
 
-  async findAll(ids: I[]): Promise<M[]> {
-    return this.withTransaction(async tx => this.findAllTx(tx, ids));
+  /**
+   * 필터를 처리하는 헬퍼 메서드
+   */
+  private processFilters(filters: FieldFilters<D>, whereClause: SQL[]): void {
+    Object.entries(filters).forEach(([key, filter]) => {
+      // 테이블에 해당 필드가 있는지 확인
+      if (key in this.table) {
+        if (filter === null || filter === undefined) {
+          return;
+        }
+
+        try {
+          // 테이블 컬럼 가져오기
+          const column = this.getColumn(key);
+
+          // FilterOption 타입인지 또는 기본 값인지 확인
+          if (
+            typeof filter === "object" &&
+            filter !== null &&
+            "value" in filter
+          ) {
+            // FilterOption 객체인 경우
+            const { operator = "eq", value } = filter as FilterOption<unknown>;
+            this.applyOperator(operator, column, value, whereClause);
+          } else {
+            // 기본 값인 경우 (eq 연산자로 처리)
+            whereClause.push(eq(column, filter));
+          }
+        } catch (error) {
+          // 컬럼 접근 오류시 무시
+          logger.error(`Column access error for ${key}:`, error);
+        }
+      }
+    });
+  }
+
+  /**
+   * 연산자를 적용하는 헬퍼 메서드
+   */
+  private applyOperator(
+    operator: FilterOperator,
+    column: MySqlColumnType,
+    value: unknown,
+    whereClause: SQL[],
+  ): void {
+    switch (operator) {
+      case "eq":
+        whereClause.push(eq(column, value));
+        break;
+      case "neq":
+        whereClause.push(ne(column, value));
+        break;
+      case "gt":
+        whereClause.push(gt(column, value));
+        break;
+      case "gte":
+        whereClause.push(gte(column, value));
+        break;
+      case "lt":
+        whereClause.push(lt(column, value));
+        break;
+      case "lte":
+        whereClause.push(lte(column, value));
+        break;
+      case "in":
+        if (Array.isArray(value)) {
+          whereClause.push(inArray(column, value));
+        }
+        break;
+      case "like":
+        if (typeof value === "string") {
+          whereClause.push(like(column, `%${value}%`));
+        }
+        break;
+      case "isNull":
+        whereClause.push(isNull(column));
+        break;
+      case "isNotNull":
+        whereClause.push(isNotNull(column));
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * 소프트 삭제 처리를 위한 헬퍼 메서드
+   */
+  private handleSoftDelete(whereClause: SQL[]): void {
+    try {
+      // deletedAt 컬럼 가져오기
+      const deletedAtColumn = this.getColumn("deletedAt");
+      whereClause.push(isNull(deletedAtColumn));
+    } catch (error) {
+      // 컬럼 접근 오류시 무시
+      logger.error("DeletedAt column access error:", error);
+    }
+  }
+
+  /**
+   * 특정 이름의 컬럼을 가져오는 헬퍼 메서드
+   */
+  private getColumn(key: string): MySqlColumnType {
+    // 컬럼 타입 캐스팅 - 안전하게 처리
+    if (key in this.table) {
+      // TypeScript 타입 체커를 우회하기 위해 인덱싱을 사용
+      return this.table[key as keyof T] as MySqlColumnType;
+    }
+    throw new Error(`Column ${key} not found in table`);
+  }
+
+  /**
+   * 정렬 조건을 생성하는 메서드
+   * 상속받는 클래스에서 오버라이드 가능
+   */
+  protected generateOrderBy(_orderBy: Record<string, string>): SQL[] {
+    // 기본 구현에서는 빈 배열 반환
+    // 상속 클래스에서 구체적인 구현을 제공해야 함
+    return [];
+  }
+
+  async find(query?: IBaseQuery<I, D>): Promise<M[]> {
+    return this.withTransaction(async tx => this.findTx(tx, query));
   }
 
   async insertTx(tx: DrizzleTransaction, param: R): Promise<M> {
     const [result] = await tx.insert(this.table).values(param).execute();
 
-    const newId = result.insertId as I;
+    const id = result.insertId as I;
 
-    return this.findTx(tx, newId).then(takeNotNull());
+    return this.findTx(tx, { id }).then(takeOnlyOne());
   }
 
   async insert(param: R): Promise<M> {
@@ -112,7 +292,8 @@ export abstract class BaseRepository<
       .set(param)
       .where(eq(this.table.id, id))
       .execute();
-    return this.findTx(tx, id).then(takeNotNull());
+
+    return this.findTx(tx, { id }).then(takeOnlyOne());
   }
 
   async put(id: I, param: R): Promise<M> {
@@ -131,7 +312,7 @@ export abstract class BaseRepository<
       .where(eq(this.table.id, oldbie.id))
       .execute();
 
-    return this.findTx(tx, oldbie.id).then(takeNotNull());
+    return this.findTx(tx, { id: oldbie.id }).then(takeOnlyOne());
   }
 
   // eslint-disable-next-line no-shadow
@@ -139,7 +320,7 @@ export abstract class BaseRepository<
     return this.withTransaction(async tx => this.patchTx(tx, oldbie, consumer));
   }
 
-  async deleteTx(tx: DrizzleTransaction, id: number | string): Promise<void> {
+  async deleteTx(tx: DrizzleTransaction, id: I): Promise<void> {
     await tx
       .update(this.table)
       .set({ deletedAt: getKSTDate() })
@@ -147,109 +328,7 @@ export abstract class BaseRepository<
       .execute();
   }
 
-  async delete(id: number | string): Promise<void> {
+  async delete(id: I): Promise<void> {
     return this.withTransaction(async tx => this.deleteTx(tx, id));
-  }
-
-  /**
-   * 트랜잭션 내에서 쿼리 옵션으로 데이터를 조회하는 메서드
-   */
-  async queryTx(
-    tx: DrizzleTransaction,
-    options: QueryOptions<D>,
-  ): Promise<M[]> {
-    return this.executeQuery(tx, options);
-  }
-
-  /**
-   * 쿼리 옵션으로 데이터를 조회하는 메서드
-   */
-  async query(options: QueryOptions<D>): Promise<M[]> {
-    return this.withTransaction(tx => this.queryTx(tx, options));
-  }
-
-  /**
-   * 필터 조건을 SQL 조건으로 변환하는 헬퍼 메서드
-   */
-  protected filterToSql(table: T, filter: FilterCondition<D>): SQL {
-    const column = table[filter.field as string];
-
-    switch (filter.operator) {
-      case "eq":
-        return eq(column, filter.value as FilterValue);
-      case "neq":
-        return ne(column, filter.value as FilterValue);
-      case "gt":
-        return gt(column, filter.value as FilterValue);
-      case "gte":
-        return gte(column, filter.value as FilterValue);
-      case "lt":
-        return lt(column, filter.value as FilterValue);
-      case "lte":
-        return lte(column, filter.value as FilterValue);
-      case "in":
-        if (!Array.isArray(filter.value)) {
-          throw new Error("'in' 연산자에는 배열 값이 필요합니다");
-        }
-        return inArray(
-          column,
-          filter.value as Array<string | number | boolean | Date>,
-        );
-      case "like":
-        return like(column, `%${filter.value as string}%`);
-      case "isNull":
-        return isNull(column);
-      case "isNotNull":
-        return isNotNull(column);
-      default:
-        throw new Error(`지원하지 않는 연산자입니다: ${filter.operator}`);
-    }
-  }
-
-  /**
-   * 정렬 조건을 SQL 조건으로 변환하는 헬퍼 메서드
-   */
-  protected sortToSql(table: T, sort: SortCondition<D>): SQL {
-    const column = table[sort.field as string];
-    return sort.order === "asc" ? asc(column) : desc(column);
-  }
-
-  /**
-   * 쿼리 옵션을 받아 실제 쿼리를 실행하는 헬퍼 메서드
-   */
-  protected async executeQuery(
-    tx: DrizzleTransaction,
-    options: QueryOptions<D>,
-  ): Promise<M[]> {
-    let query = tx.select().from(this.table);
-
-    if (options.filters && options.filters.length > 0) {
-      const conditions = options.filters.map(filter =>
-        this.filterToSql(this.table, filter),
-      );
-      // @ts-expect-error - Drizzle ORM 타입 이슈
-      query = query.where(and(...conditions));
-    }
-
-    if (options.sort && options.sort.length > 0) {
-      const sortConditions = options.sort.map(sort =>
-        this.sortToSql(this.table, sort),
-      );
-      // @ts-expect-error - Drizzle ORM 타입 이슈
-      query = query.orderBy(...sortConditions);
-    }
-
-    if (options.limit) {
-      // @ts-expect-error - Drizzle ORM 타입 이슈
-      query = query.limit(options.limit);
-    }
-
-    if (options.offset) {
-      // @ts-expect-error - Drizzle ORM 타입 이슈
-      query = query.offset(options.offset);
-    }
-
-    const result = await query;
-    return result.map(row => this.modelClass.from(row as D));
   }
 }
