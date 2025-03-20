@@ -39,7 +39,7 @@ const ManageClubFrame: React.FC = () => {
     return <NoManageClub />;
   }
 
-  if (data?.deadline == null) {
+  if (data == null) {
     return <NoSemesterInfo />;
   }
 
