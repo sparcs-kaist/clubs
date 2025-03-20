@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from "@nestjs/common";
 
 import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
 import {
@@ -100,6 +105,7 @@ export class MemberRegistrationService {
     const isAlreadyApplied = await this.memberRegistrationRepository.find({
       studentId,
       clubId,
+      semesterId,
     });
     if (isAlreadyApplied.length > 0)
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
@@ -169,6 +175,18 @@ export class MemberRegistrationService {
     //     "Not a member registration event duration",
     //     HttpStatus.BAD_REQUEST,
     //   );
+
+    const application = await this.memberRegistrationRepository
+      .find({
+        id: applyId,
+      })
+      .then(takeOnlyOne("MemberRegistration"));
+
+    if (
+      this.clubPublicService.isStudentBelongsTo(studentId, application.club.id)
+    ) {
+      throw new BadRequestException("Student is already a member of the club");
+    }
 
     await this.memberRegistrationRepository.delete(studentId, applyId);
     return {};
