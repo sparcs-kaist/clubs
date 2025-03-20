@@ -8,7 +8,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import NoManageClub from "@sparcs-clubs/web/common/frames/NoManageClub";
-import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
+import useGetMemberRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetMemberRegistrationDeadline";
 import ActivityManageFrame from "@sparcs-clubs/web/features/manage-club/frames/ActivityManageFrame";
 import InfoManageFrame from "@sparcs-clubs/web/features/manage-club/frames/InfoManageFrame";
 import MemberManageFrame from "@sparcs-clubs/web/features/manage-club/frames/MemberManageFrame";
@@ -23,7 +23,7 @@ const ManageClubFrame: React.FC = () => {
     data,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
-  } = useGetClubRegistrationDeadline();
+  } = useGetMemberRegistrationDeadline(); // TODO: 동아리 등록 기간에 나와야 하는 것들도 처리하기
 
   if (isLoading) {
     return (
