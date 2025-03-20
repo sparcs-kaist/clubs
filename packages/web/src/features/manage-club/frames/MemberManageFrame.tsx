@@ -18,7 +18,7 @@ import Table from "@sparcs-clubs/web/common/components/Table";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import { useGetClubMembers } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMembers";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
-import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
+import { Semester } from "@sparcs-clubs/web/types/semester";
 
 const columnHelper =
   createColumnHelper<ApiClb010ResponseOk["members"][number]>();
@@ -52,7 +52,9 @@ const columns = [
   }),
 ];
 
-const MemberManageFrame: React.FC = () => {
+const MemberManageFrame: React.FC<{ semesterInfo: Semester }> = ({
+  semesterInfo,
+}) => {
   // 자신이 대표자인 동아리 clubId 가져오기
   const { data: idData } = useGetMyManageClub() as {
     data: ApiClb015ResponseOk;
@@ -65,7 +67,7 @@ const MemberManageFrame: React.FC = () => {
     isError: memberIsError,
   } = useGetClubMembers({
     clubId: idData.clubId,
-    semesterId: 16, // TODO: 현재 학기를 받아와서 수정
+    semesterId: semesterInfo.id,
   });
 
   const membersCount = membersData.members.length;
@@ -88,19 +90,13 @@ const MemberManageFrame: React.FC = () => {
     isError: boolean;
   };
 
-  const {
-    semester: semesterInfo,
-    isLoading: semesterLoading,
-    isError: semesterError,
-  } = useGetSemesterNow();
-
-  const title = `${semesterInfo?.year}년 ${semesterInfo?.name}학기 (총 ${membersCount}명)`;
+  const title = `${semesterInfo.year}년 ${semesterInfo.name}학기 (총 ${membersCount}명)`;
 
   return (
     <FoldableSectionTitle title="회원 명단">
       <AsyncBoundary
-        isLoading={clubIsLoading || memberIsLoading || semesterLoading}
-        isError={clubIsError || memberIsError || semesterError}
+        isLoading={clubIsLoading || memberIsLoading}
+        isError={clubIsError || memberIsError}
       >
         {clubData && membersData && (
           <FlexWrapper direction="column" gap={16}>
