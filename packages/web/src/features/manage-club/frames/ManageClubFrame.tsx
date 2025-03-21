@@ -8,6 +8,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import NoManageClub from "@sparcs-clubs/web/common/frames/NoManageClub";
+import NoSemesterInfo from "@sparcs-clubs/web/common/frames/NoSemesterInfo";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import ActivityManageFrame from "@sparcs-clubs/web/features/manage-club/frames/ActivityManageFrame";
 import InfoManageFrame from "@sparcs-clubs/web/features/manage-club/frames/InfoManageFrame";
@@ -38,6 +39,10 @@ const ManageClubFrame: React.FC = () => {
     return <NoManageClub />;
   }
 
+  if (data == null) {
+    return <NoSemesterInfo />;
+  }
+
   return (
     <FlexWrapper direction="column" gap={60}>
       <PageHead
@@ -49,7 +54,11 @@ const ManageClubFrame: React.FC = () => {
         clubId={clubId || 0}
       />
       <ActivityManageFrame />
-      {data?.deadline ? <RegistrationManageFrame /> : <MemberManageFrame />}
+      {data?.deadline ? (
+        <RegistrationManageFrame />
+      ) : (
+        <MemberManageFrame semesterInfo={data.semester} />
+      )}
       {/* <ServiceManageFrame /> */}
     </FlexWrapper>
   );
