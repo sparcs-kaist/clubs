@@ -100,6 +100,7 @@ export class MemberRegistrationService {
     const isAlreadyApplied = await this.memberRegistrationRepository.find({
       studentId,
       clubId,
+      semesterId,
     });
     if (isAlreadyApplied.length > 0)
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
@@ -169,6 +170,22 @@ export class MemberRegistrationService {
     //     "Not a member registration event duration",
     //     HttpStatus.BAD_REQUEST,
     //   );
+
+    const application = await this.memberRegistrationRepository
+      .find({
+        id: applyId,
+      })
+      .then(takeOnlyOne("MemberRegistration"));
+
+    if (
+      this.clubPublicService.isStudentBelongsTo(studentId, application.club.id)
+    ) {
+      // 만약 동아리원인 경우 삭제
+      this.clubPublicService.removeStudentFromClub(
+        studentId,
+        application.club.id,
+      );
+    }
 
     await this.memberRegistrationRepository.delete(studentId, applyId);
     return {};
