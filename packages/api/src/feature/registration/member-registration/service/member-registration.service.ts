@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
 import {
@@ -185,7 +180,11 @@ export class MemberRegistrationService {
     if (
       this.clubPublicService.isStudentBelongsTo(studentId, application.club.id)
     ) {
-      throw new BadRequestException("Student is already a member of the club");
+      // 만약 동아리원인 경우 삭제
+      this.clubPublicService.removeStudentFromClub(
+        studentId,
+        application.club.id,
+      );
     }
 
     await this.memberRegistrationRepository.delete(studentId, applyId);
