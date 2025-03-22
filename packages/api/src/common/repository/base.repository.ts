@@ -26,15 +26,16 @@ import {
 
 import { OrderByTypeEnum } from "../enums";
 import { MEntity } from "../model/entity.model";
-import { getKSTDate, takeOnlyOne } from "../util/util";
+import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
 interface TableWithId {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
 }
 
-interface ModelWithFrom<M extends MEntity, D> {
-  from(result: D): M;
-  tableName: string;
+interface ModelWithFrom<Model extends MEntity, DbResult, Query> {
+  from(result: DbResult): Model;
+  modelName: string;
+  fieldMap(field: keyof Query): keyof DbResult;
 }
 
 export interface BaseQueryFields {
@@ -47,21 +48,22 @@ export interface BaseQueryFields {
   order?: Record<string, OrderByTypeEnum>;
 }
 
-// D 타입에서 파생된 쿼리 타입 (D 타입의 모든 필드를 선택적으로 포함)
-export type BaseRepositoryQuery<D> = BaseQueryFields & Partial<D>;
+export type BaseRepositoryQuery<Query> = BaseQueryFields & Partial<Query>;
 
 @Injectable()
 export abstract class BaseRepository<
-  M extends MEntity,
-  R,
-  D,
-  T extends MySqlTable & TableWithId,
+  Model extends MEntity,
+  CreateParam,
+  UpdateParam,
+  DbResult,
+  Table extends MySqlTable & TableWithId,
+  Query,
 > {
   @Inject(DrizzleAsyncProvider) private db: MySql2Database;
 
   constructor(
-    protected table: T,
-    protected modelClass: ModelWithFrom<M, D>,
+    protected table: Table,
+    protected modelClass: ModelWithFrom<Model, DbResult, Query>,
   ) {}
 
   async withTransaction<Result>(
@@ -70,7 +72,7 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
-  protected makeWhereClause(param: BaseRepositoryQuery<D>): SQL[] {
+  protected makeWhereClause(param: BaseRepositoryQuery<Query>): SQL[] {
     const whereClause: SQL[] = [];
 
     // 기본 필터링: id와 ids
@@ -81,8 +83,7 @@ export abstract class BaseRepository<
       whereClause.push(inArray(this.table.id, param.ids));
     }
 
-    // 테이블의 모든 필드에 대해 필터링 적용
-    // D 타입의 모든 키를 순회하면서 파라미터에 해당 값이 있는지 확인
+    // Query 타입의 모든 키를 순회하면서 파라미터에 해당 값이 있는지 확인
     const specialKeys = ["id", "ids", "pagination", "order"];
     Object.keys(param).forEach(key => {
       // 특별한 키는 제외
@@ -90,20 +91,26 @@ export abstract class BaseRepository<
         return; // continue 대신 return 사용
       }
 
-      // 파라미터 값이 존재하고 테이블에 해당 컬럼이 있는 경우
+      // 파라미터 값이 존재하는 경우
       const value = param[key];
-      if (value !== undefined && value !== null && this.table[key]) {
+      if (value !== undefined && value !== null) {
+        // Query 필드를 테이블 필드로 변환
+        const tableField = this.getTableField(key as keyof Query);
+        if (!tableField || !this.table[tableField]) {
+          throw new Error(`Invalid query field: ${key}`);
+        }
+
         // 배열인 경우 IN 연산자 사용
         if (Array.isArray(value)) {
-          whereClause.push(inArray(this.table[key], value));
+          whereClause.push(inArray(this.table[tableField], value));
         }
         // 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
         else if (typeof value === "object") {
-          this.processAdvancedOperators(whereClause, key, value);
+          this.processAdvancedOperators(whereClause, key as keyof Query, value);
         }
         // 단일 값인 경우 = 연산자 사용
         else {
-          whereClause.push(eq(this.table[key], value));
+          whereClause.push(eq(this.table[tableField], value));
         }
       }
     });
@@ -111,12 +118,24 @@ export abstract class BaseRepository<
     return whereClause;
   }
 
+  // Query 필드를 테이블 필드로 변환하는 헬퍼 메서드
+  private getTableField(queryField: keyof Query): string {
+    const dbField = this.modelClass.fieldMap(queryField);
+    return dbField as string;
+  }
+
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
   private processAdvancedOperators(
     whereClause: SQL[],
-    field: string,
+    queryField: keyof Query,
     conditions: Record<string, unknown>,
   ): void {
+    // Query 필드를 테이블 필드로 변환
+    const tableField = this.getTableField(queryField);
+    if (!tableField || !this.table[tableField]) {
+      return; // 테이블에 해당 필드가 없으면 처리하지 않음
+    }
+
     // 객체의 키-값 쌍을 forEach로 순회
     Object.entries(conditions).forEach(([operator, operand]) => {
       if (operand === undefined || operand === null) {
@@ -125,35 +144,37 @@ export abstract class BaseRepository<
 
       switch (operator) {
         case "eq":
-          whereClause.push(eq(this.table[field], operand));
+          whereClause.push(eq(this.table[tableField], operand));
           break;
         case "ne":
-          whereClause.push(ne(this.table[field], operand));
+          whereClause.push(ne(this.table[tableField], operand));
           break;
         case "gt":
-          whereClause.push(gt(this.table[field], operand));
+          whereClause.push(gt(this.table[tableField], operand));
           break;
         case "gte":
-          whereClause.push(gte(this.table[field], operand));
+          whereClause.push(gte(this.table[tableField], operand));
           break;
         case "lt":
-          whereClause.push(lt(this.table[field], operand));
+          whereClause.push(lt(this.table[tableField], operand));
           break;
         case "lte":
-          whereClause.push(lte(this.table[field], operand));
+          whereClause.push(lte(this.table[tableField], operand));
           break;
         case "like":
-          whereClause.push(like(this.table[field], `%${String(operand)}%`));
+          whereClause.push(
+            like(this.table[tableField], `%${String(operand)}%`),
+          );
           break;
         case "startsWith":
-          whereClause.push(like(this.table[field], `${String(operand)}%`));
+          whereClause.push(like(this.table[tableField], `${String(operand)}%`));
           break;
         case "endsWith":
-          whereClause.push(like(this.table[field], `%${String(operand)}`));
+          whereClause.push(like(this.table[tableField], `%${String(operand)}`));
           break;
         case "in":
           if (Array.isArray(operand)) {
-            whereClause.push(inArray(this.table[field], operand));
+            whereClause.push(inArray(this.table[tableField], operand));
           }
           break;
         default:
@@ -169,14 +190,18 @@ export abstract class BaseRepository<
 
     // 객체의 키-값 쌍을 순회하며 정렬 조건 생성
     Object.entries(order).forEach(([field, direction]) => {
+      // Query 필드를 테이블 필드로 변환
+      const tableField = this.getTableField(field as keyof Query);
       // 테이블에 해당 필드가 존재하는지 확인
-      if (this.table[field]) {
+      if (tableField && this.table[tableField]) {
         // direction에 따라 asc() 또는 desc() 호출
         if (direction === OrderByTypeEnum.ASC) {
-          orderClauses.push(asc(this.table[field]));
+          orderClauses.push(asc(this.table[tableField]));
         } else {
-          orderClauses.push(desc(this.table[field]));
+          orderClauses.push(desc(this.table[tableField]));
         }
+      } else {
+        throw new Error(`Invalid order field: ${field}`);
       }
     });
 
@@ -190,8 +215,8 @@ export abstract class BaseRepository<
 
   async findTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<D>,
-  ): Promise<M[]> {
+    param: BaseRepositoryQuery<Query>,
+  ): Promise<Model[]> {
     let query = tx
       .select()
       .from(this.table)
@@ -211,12 +236,36 @@ export abstract class BaseRepository<
 
     const result = await query.execute();
 
-    return result.map(row => this.modelClass.from(row as D));
+    return result.map(row => this.modelClass.from(row as DbResult));
+  }
+
+  async find(param: BaseRepositoryQuery<Query>): Promise<Model[]> {
+    return this.withTransaction(async tx => this.findTx(tx, param));
+  }
+
+  async fetchTx(tx: DrizzleTransaction, id: number): Promise<Model> {
+    return this.findTx(tx, { id } as BaseRepositoryQuery<Query>).then(
+      takeOnlyOne(this.modelClass.modelName),
+    );
+  }
+
+  async fetch(id: number): Promise<Model> {
+    return this.withTransaction(async tx => this.fetchTx(tx, id));
+  }
+
+  async fetchAllTx(tx: DrizzleTransaction, ids: number[]): Promise<Model[]> {
+    return this.findTx(tx, { ids } as BaseRepositoryQuery<Query>).then(
+      takeAll(ids, this.modelClass.modelName),
+    );
+  }
+
+  async fetchAll(ids: number[]): Promise<Model[]> {
+    return this.withTransaction(async tx => this.fetchAllTx(tx, ids));
   }
 
   async countTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<D>,
+    param: BaseRepositoryQuery<Query>,
   ): Promise<number> {
     const [result] = await tx
       .select({ count: count() })
@@ -226,48 +275,45 @@ export abstract class BaseRepository<
     return result.count;
   }
 
-  async count(param: BaseRepositoryQuery<D>): Promise<number> {
+  async count(param: BaseRepositoryQuery<Query>): Promise<number> {
     return this.withTransaction(async tx => this.countTx(tx, param));
   }
 
-  async find(param: BaseRepositoryQuery<D>): Promise<M[]> {
-    return this.withTransaction(async tx => this.findTx(tx, param));
-  }
-
-  async insertTx(tx: DrizzleTransaction, param: R): Promise<M> {
+  async createTx(tx: DrizzleTransaction, param: CreateParam): Promise<Model> {
     const [result] = await tx.insert(this.table).values(param).execute();
 
     const newId = Number(result.insertId);
 
-    return this.findTx(tx, { id: newId } as BaseRepositoryQuery<D>).then(
-      takeOnlyOne(this.modelClass.tableName),
-    );
+    return this.fetchTx(tx, newId);
   }
 
-  async insert(param: R): Promise<M> {
-    return this.withTransaction(async tx => this.insertTx(tx, param));
+  async create(param: CreateParam): Promise<Model> {
+    return this.withTransaction(async tx => this.createTx(tx, param));
   }
 
-  async putTx(tx: DrizzleTransaction, id: number, param: R): Promise<M> {
+  async putTx(
+    tx: DrizzleTransaction,
+    id: number,
+    param: UpdateParam,
+  ): Promise<Model> {
     await tx
       .update(this.table)
       .set(param)
       .where(eq(this.table.id, id))
       .execute();
-    return this.findTx(tx, { id } as BaseRepositoryQuery<D>).then(
-      takeOnlyOne(this.modelClass.tableName),
-    );
+
+    return this.fetchTx(tx, id);
   }
 
-  async put(id: number, param: R): Promise<M> {
+  async put(id: number, param: UpdateParam): Promise<Model> {
     return this.withTransaction(async tx => this.putTx(tx, id, param));
   }
 
   async patchTx(
     tx: DrizzleTransaction,
-    oldbie: M,
-    consumer: (oldbie: M) => M, // eslint-disable-line no-shadow
-  ): Promise<M> {
+    oldbie: Model,
+    consumer: (oldbie: Model) => Model, // eslint-disable-line no-shadow
+  ): Promise<Model> {
     const param = consumer(oldbie);
     await tx
       .update(this.table)
@@ -275,13 +321,13 @@ export abstract class BaseRepository<
       .where(eq(this.table.id, oldbie.id))
       .execute();
 
-    return this.findTx(tx, { id: oldbie.id } as BaseRepositoryQuery<D>).then(
-      takeOnlyOne(this.modelClass.tableName),
-    );
+    return this.fetchTx(tx, oldbie.id);
   }
 
-  // eslint-disable-next-line no-shadow
-  async patch(oldbie: M, consumer: (oldbie: M) => M): Promise<M> {
+  async patch(
+    oldbie: Model,
+    consumer: (oldbie: Model) => Model, // eslint-disable-line no-shadow
+  ): Promise<Model> {
     return this.withTransaction(async tx => this.patchTx(tx, oldbie, consumer));
   }
 
