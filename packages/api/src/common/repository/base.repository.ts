@@ -25,7 +25,7 @@ import {
 } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { OrderByTypeEnum } from "../enums";
-import { MEntity } from "../model/entity.model";
+import { IdType, MEntity } from "../model/entity.model";
 import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
 interface TableWithId {
@@ -33,19 +33,19 @@ interface TableWithId {
 }
 
 interface ModelWithFrom<
-  Model extends MEntity<IdType>,
+  Model extends MEntity<Id>,
   DbResult,
   Query,
-  IdType = number,
+  Id extends IdType = number,
 > {
   from(result: DbResult): Model;
   modelName: string;
   fieldMap(field: keyof Query): keyof DbResult;
 }
 
-export interface BaseQueryFields<IdType = number> {
-  id?: IdType;
-  ids?: IdType[];
+export interface BaseQueryFields<Id extends IdType = number> {
+  id?: Id;
+  ids?: Id[];
   pagination?: {
     offset: number;
     itemCount: number;
@@ -55,24 +55,24 @@ export interface BaseQueryFields<IdType = number> {
 
 export type BaseRepositoryQuery<
   Query,
-  IdType = number,
-> = BaseQueryFields<IdType> & Partial<Query>;
+  Id extends IdType = number,
+> = BaseQueryFields<Id> & Partial<Query>;
 
 @Injectable()
 export abstract class BaseRepository<
-  Model extends MEntity<IdType>,
+  Model extends MEntity<Id>,
   CreateParam,
   UpdateParam,
   DbResult,
   Table extends MySqlTable & TableWithId,
   Query,
-  IdType = number,
+  Id extends IdType = number,
 > {
   @Inject(DrizzleAsyncProvider) private db: MySql2Database;
 
   constructor(
     protected table: Table,
-    protected modelClass: ModelWithFrom<Model, DbResult, Query, IdType>,
+    protected modelClass: ModelWithFrom<Model, DbResult, Query, Id>,
   ) {}
 
   async withTransaction<Result>(
@@ -81,7 +81,7 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
-  protected makeWhereClause(param: BaseRepositoryQuery<Query, IdType>): SQL[] {
+  protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL[] {
     const whereClause: SQL[] = [];
 
     // 기본 필터링: id와 ids
@@ -224,7 +224,7 @@ export abstract class BaseRepository<
 
   async findTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, IdType>,
+    param: BaseRepositoryQuery<Query, Id>,
   ): Promise<Model[]> {
     let query = tx
       .select()
@@ -248,38 +248,37 @@ export abstract class BaseRepository<
     return result.map(row => this.modelClass.from(row as DbResult));
   }
 
-  async find(param: BaseRepositoryQuery<Query, IdType>): Promise<Model[]> {
+  async find(param: BaseRepositoryQuery<Query, Id>): Promise<Model[]> {
     return this.withTransaction(async tx => this.findTx(tx, param));
   }
 
-  async fetchTx(tx: DrizzleTransaction, id: IdType): Promise<Model> {
-    const param = { id } as unknown as BaseRepositoryQuery<Query, IdType>;
+  async fetchTx(tx: DrizzleTransaction, id: Id): Promise<Model> {
+    const param = { id } as BaseRepositoryQuery<Query, Id>;
     return this.findTx(tx, param).then(
       takeOnlyOne<Model>(this.modelClass.modelName),
     );
   }
 
-  async fetch(id: IdType): Promise<Model> {
+  async fetch(id: Id): Promise<Model> {
     return this.withTransaction(async tx => this.fetchTx(tx, id));
   }
 
-  async fetchAllTx(tx: DrizzleTransaction, ids: IdType[]): Promise<Model[]> {
-    const param = { ids } as unknown as BaseRepositoryQuery<Query, IdType>;
+  async fetchAllTx(tx: DrizzleTransaction, ids: Id[]): Promise<Model[]> {
+    const param = { ids } as BaseRepositoryQuery<Query, Id>;
     const result = await this.findTx(tx, param);
-    // @ts-expect-error - IdType 제약 조건 문제는 런타임에는 영향이 없습니다
-    return takeAll<Model & { id: IdType }, IdType>(
+    return takeAll<Model, Id>(
       ids,
       this.modelClass.modelName,
-    )(result as (Model & { id: IdType })[]);
+    )(result as Array<Model>);
   }
 
-  async fetchAll(ids: IdType[]): Promise<Model[]> {
+  async fetchAll(ids: Id[]): Promise<Model[]> {
     return this.withTransaction(async tx => this.fetchAllTx(tx, ids));
   }
 
   async countTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, IdType>,
+    param: BaseRepositoryQuery<Query, Id>,
   ): Promise<number> {
     const [result] = await tx
       .select({ count: count() })
@@ -289,7 +288,7 @@ export abstract class BaseRepository<
     return result.count;
   }
 
-  async count(param: BaseRepositoryQuery<Query, IdType>): Promise<number> {
+  async count(param: BaseRepositoryQuery<Query, Id>): Promise<number> {
     return this.withTransaction(async tx => this.countTx(tx, param));
   }
 
@@ -302,18 +301,18 @@ export abstract class BaseRepository<
     return this.fetchTx(tx, newId);
   }
 
-  // insertId를 IdType으로 변환하는 헬퍼 메서드
-  private convertToIdType(insertId: string | number): IdType {
-    // IdType이 number인 경우
-    if (typeof (0 as unknown as IdType) === "number") {
-      return Number(insertId) as unknown as IdType;
+  // insertId를 Id로 변환하는 헬퍼 메서드
+  private convertToIdType(insertId: string | number): Id {
+    // Id가 number인 경우
+    if (typeof (0 as Id) === "number") {
+      return Number(insertId) as Id;
     }
-    // IdType이 string인 경우
-    if (typeof ("" as unknown as IdType) === "string") {
-      return String(insertId) as unknown as IdType;
+    // Id가 string인 경우
+    if (typeof ("" as Id) === "string") {
+      return String(insertId) as Id;
     }
     // 기타 타입인 경우 (기본적으로 원본 값 반환)
-    return insertId as unknown as IdType;
+    return insertId as Id;
   }
 
   async create(param: CreateParam): Promise<Model> {
@@ -322,7 +321,7 @@ export abstract class BaseRepository<
 
   async putTx(
     tx: DrizzleTransaction,
-    id: IdType,
+    id: Id,
     param: UpdateParam,
   ): Promise<Model> {
     await tx
@@ -334,7 +333,7 @@ export abstract class BaseRepository<
     return this.fetchTx(tx, id);
   }
 
-  async put(id: IdType, param: UpdateParam): Promise<Model> {
+  async put(id: Id, param: UpdateParam): Promise<Model> {
     return this.withTransaction(async tx => this.putTx(tx, id, param));
   }
 
@@ -360,7 +359,7 @@ export abstract class BaseRepository<
     return this.withTransaction(async tx => this.patchTx(tx, oldbie, consumer));
   }
 
-  async deleteTx(tx: DrizzleTransaction, id: IdType): Promise<void> {
+  async deleteTx(tx: DrizzleTransaction, id: Id): Promise<void> {
     await tx
       .update(this.table)
       .set({ deletedAt: getKSTDate() })
@@ -368,7 +367,7 @@ export abstract class BaseRepository<
       .execute();
   }
 
-  async delete(id: IdType): Promise<void> {
+  async delete(id: Id): Promise<void> {
     return this.withTransaction(async tx => this.deleteTx(tx, id));
   }
 }

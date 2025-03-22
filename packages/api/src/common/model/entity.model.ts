@@ -1,9 +1,11 @@
-export abstract class MEntity<T = number> {
+export type IdType = number | string;
+
+export abstract class MEntity<T extends IdType = number> {
   id: T;
 
   modelName: string;
 
-  static from(_result: unknown): MEntity<unknown> {
+  static from(_result: unknown): MEntity<IdType> {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 
