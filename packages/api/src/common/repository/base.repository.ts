@@ -7,7 +7,13 @@ import {
   count,
   desc,
   eq,
+  gt,
+  gte,
   inArray,
+  like,
+  lt,
+  lte,
+  ne,
   SQL,
 } from "drizzle-orm";
 import { MySqlColumn, MySqlTable } from "drizzle-orm/mysql-core";
@@ -91,6 +97,10 @@ export abstract class BaseRepository<
         if (Array.isArray(value)) {
           whereClause.push(inArray(this.table[key], value));
         }
+        // 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
+        else if (typeof value === "object") {
+          this.processAdvancedOperators(whereClause, key, value);
+        }
         // 단일 값인 경우 = 연산자 사용
         else {
           whereClause.push(eq(this.table[key], value));
@@ -99,6 +109,58 @@ export abstract class BaseRepository<
     });
 
     return whereClause;
+  }
+
+  // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
+  private processAdvancedOperators(
+    whereClause: SQL[],
+    field: string,
+    conditions: Record<string, unknown>,
+  ): void {
+    // 객체의 키-값 쌍을 forEach로 순회
+    Object.entries(conditions).forEach(([operator, operand]) => {
+      if (operand === undefined || operand === null) {
+        return; // 값이 없으면 건너뜀
+      }
+
+      switch (operator) {
+        case "eq":
+          whereClause.push(eq(this.table[field], operand));
+          break;
+        case "ne":
+          whereClause.push(ne(this.table[field], operand));
+          break;
+        case "gt":
+          whereClause.push(gt(this.table[field], operand));
+          break;
+        case "gte":
+          whereClause.push(gte(this.table[field], operand));
+          break;
+        case "lt":
+          whereClause.push(lt(this.table[field], operand));
+          break;
+        case "lte":
+          whereClause.push(lte(this.table[field], operand));
+          break;
+        case "like":
+          whereClause.push(like(this.table[field], `%${String(operand)}%`));
+          break;
+        case "startsWith":
+          whereClause.push(like(this.table[field], `${String(operand)}%`));
+          break;
+        case "endsWith":
+          whereClause.push(like(this.table[field], `%${String(operand)}`));
+          break;
+        case "in":
+          if (Array.isArray(operand)) {
+            whereClause.push(inArray(this.table[field], operand));
+          }
+          break;
+        default:
+          // 지원하지 않는 연산자는 무시
+          break;
+      }
+    });
   }
 
   // 여러 필드에 대한 정렬을 지원하는 구현
