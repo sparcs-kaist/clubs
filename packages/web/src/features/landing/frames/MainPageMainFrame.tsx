@@ -4,6 +4,7 @@ import React from "react";
 import styled from "styled-components";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import LanguageSwitcher from "@sparcs-clubs/web/common/components/LanguageSwitcher";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useEasterEgg from "@sparcs-clubs/web/common/hooks/useEasteregg";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
@@ -67,6 +68,8 @@ const MainPageMainFrame: React.FC = () => {
         <br />
         문의나 피드백은 하단 채널톡 버튼을 통해 제보 부탁드립니다!
       </Banner>
+      {/* for test */}
+      <LanguageSwitcher />
       <PageTitleWrapper>
         <ResponsiveSloganTypography
           fw="SEMIBOLD"
