@@ -1,5 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 
+import { IdType } from "../model/entity.model";
+
 export const isEmptyObject = obj =>
   obj && Object.keys(obj).length === 0 && obj.constructor === Object;
 
@@ -37,7 +39,6 @@ export const takeOne = <T>(values: T[]): T | null => {
   return values[0];
 };
 
-type IdType = number | string;
 export function takeOnlyOne<T>(name?: string): (array: T[]) => T {
   return (array: T[]) => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
