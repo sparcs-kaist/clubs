@@ -3,11 +3,11 @@ export abstract class MEntity<T = number> {
 
   modelName: string;
 
-  static from(_result: unknown): MEntity {
+  static from(_result: unknown): MEntity<unknown> {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 
-  static fieldMap(_field: unknown) {
+  static fieldMap<Query, DbResult>(_field: keyof Query): keyof DbResult {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 }

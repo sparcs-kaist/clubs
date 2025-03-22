@@ -32,15 +32,20 @@ interface TableWithId {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
 }
 
-interface ModelWithFrom<Model extends MEntity, DbResult, Query> {
+interface ModelWithFrom<
+  Model extends MEntity<IdType>,
+  DbResult,
+  Query,
+  IdType = number,
+> {
   from(result: DbResult): Model;
   modelName: string;
   fieldMap(field: keyof Query): keyof DbResult;
 }
 
-export interface BaseQueryFields {
-  id?: number;
-  ids?: number[];
+export interface BaseQueryFields<IdType = number> {
+  id?: IdType;
+  ids?: IdType[];
   pagination?: {
     offset: number;
     itemCount: number;
@@ -48,22 +53,26 @@ export interface BaseQueryFields {
   order?: Record<string, OrderByTypeEnum>;
 }
 
-export type BaseRepositoryQuery<Query> = BaseQueryFields & Partial<Query>;
+export type BaseRepositoryQuery<
+  Query,
+  IdType = number,
+> = BaseQueryFields<IdType> & Partial<Query>;
 
 @Injectable()
 export abstract class BaseRepository<
-  Model extends MEntity,
+  Model extends MEntity<IdType>,
   CreateParam,
   UpdateParam,
   DbResult,
   Table extends MySqlTable & TableWithId,
   Query,
+  IdType = number,
 > {
   @Inject(DrizzleAsyncProvider) private db: MySql2Database;
 
   constructor(
     protected table: Table,
-    protected modelClass: ModelWithFrom<Model, DbResult, Query>,
+    protected modelClass: ModelWithFrom<Model, DbResult, Query, IdType>,
   ) {}
 
   async withTransaction<Result>(
@@ -72,7 +81,7 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
-  protected makeWhereClause(param: BaseRepositoryQuery<Query>): SQL[] {
+  protected makeWhereClause(param: BaseRepositoryQuery<Query, IdType>): SQL[] {
     const whereClause: SQL[] = [];
 
     // 기본 필터링: id와 ids
@@ -215,7 +224,7 @@ export abstract class BaseRepository<
 
   async findTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query>,
+    param: BaseRepositoryQuery<Query, IdType>,
   ): Promise<Model[]> {
     let query = tx
       .select()
@@ -239,33 +248,38 @@ export abstract class BaseRepository<
     return result.map(row => this.modelClass.from(row as DbResult));
   }
 
-  async find(param: BaseRepositoryQuery<Query>): Promise<Model[]> {
+  async find(param: BaseRepositoryQuery<Query, IdType>): Promise<Model[]> {
     return this.withTransaction(async tx => this.findTx(tx, param));
   }
 
-  async fetchTx(tx: DrizzleTransaction, id: number): Promise<Model> {
-    return this.findTx(tx, { id } as BaseRepositoryQuery<Query>).then(
-      takeOnlyOne(this.modelClass.modelName),
+  async fetchTx(tx: DrizzleTransaction, id: IdType): Promise<Model> {
+    const param = { id } as unknown as BaseRepositoryQuery<Query, IdType>;
+    return this.findTx(tx, param).then(
+      takeOnlyOne<Model>(this.modelClass.modelName),
     );
   }
 
-  async fetch(id: number): Promise<Model> {
+  async fetch(id: IdType): Promise<Model> {
     return this.withTransaction(async tx => this.fetchTx(tx, id));
   }
 
-  async fetchAllTx(tx: DrizzleTransaction, ids: number[]): Promise<Model[]> {
-    return this.findTx(tx, { ids } as BaseRepositoryQuery<Query>).then(
-      takeAll(ids, this.modelClass.modelName),
-    );
+  async fetchAllTx(tx: DrizzleTransaction, ids: IdType[]): Promise<Model[]> {
+    const param = { ids } as unknown as BaseRepositoryQuery<Query, IdType>;
+    const result = await this.findTx(tx, param);
+    // @ts-expect-error - IdType 제약 조건 문제는 런타임에는 영향이 없습니다
+    return takeAll<Model & { id: IdType }, IdType>(
+      ids,
+      this.modelClass.modelName,
+    )(result as (Model & { id: IdType })[]);
   }
 
-  async fetchAll(ids: number[]): Promise<Model[]> {
+  async fetchAll(ids: IdType[]): Promise<Model[]> {
     return this.withTransaction(async tx => this.fetchAllTx(tx, ids));
   }
 
   async countTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query>,
+    param: BaseRepositoryQuery<Query, IdType>,
   ): Promise<number> {
     const [result] = await tx
       .select({ count: count() })
@@ -275,16 +289,31 @@ export abstract class BaseRepository<
     return result.count;
   }
 
-  async count(param: BaseRepositoryQuery<Query>): Promise<number> {
+  async count(param: BaseRepositoryQuery<Query, IdType>): Promise<number> {
     return this.withTransaction(async tx => this.countTx(tx, param));
   }
 
   async createTx(tx: DrizzleTransaction, param: CreateParam): Promise<Model> {
     const [result] = await tx.insert(this.table).values(param).execute();
 
-    const newId = Number(result.insertId);
+    // insertId를 적절한 타입으로 변환
+    const newId = this.convertToIdType(result.insertId);
 
     return this.fetchTx(tx, newId);
+  }
+
+  // insertId를 IdType으로 변환하는 헬퍼 메서드
+  private convertToIdType(insertId: string | number): IdType {
+    // IdType이 number인 경우
+    if (typeof (0 as unknown as IdType) === "number") {
+      return Number(insertId) as unknown as IdType;
+    }
+    // IdType이 string인 경우
+    if (typeof ("" as unknown as IdType) === "string") {
+      return String(insertId) as unknown as IdType;
+    }
+    // 기타 타입인 경우 (기본적으로 원본 값 반환)
+    return insertId as unknown as IdType;
   }
 
   async create(param: CreateParam): Promise<Model> {
@@ -293,7 +322,7 @@ export abstract class BaseRepository<
 
   async putTx(
     tx: DrizzleTransaction,
-    id: number,
+    id: IdType,
     param: UpdateParam,
   ): Promise<Model> {
     await tx
@@ -305,7 +334,7 @@ export abstract class BaseRepository<
     return this.fetchTx(tx, id);
   }
 
-  async put(id: number, param: UpdateParam): Promise<Model> {
+  async put(id: IdType, param: UpdateParam): Promise<Model> {
     return this.withTransaction(async tx => this.putTx(tx, id, param));
   }
 
@@ -331,7 +360,7 @@ export abstract class BaseRepository<
     return this.withTransaction(async tx => this.patchTx(tx, oldbie, consumer));
   }
 
-  async deleteTx(tx: DrizzleTransaction, id: number): Promise<void> {
+  async deleteTx(tx: DrizzleTransaction, id: IdType): Promise<void> {
     await tx
       .update(this.table)
       .set({ deletedAt: getKSTDate() })
@@ -339,7 +368,7 @@ export abstract class BaseRepository<
       .execute();
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: IdType): Promise<void> {
     return this.withTransaction(async tx => this.deleteTx(tx, id));
   }
 }
