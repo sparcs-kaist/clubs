@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -33,6 +34,7 @@ const NavItemInner = styled.div`
 
 const NavSubMenu = ({ sub }: { sub: SubPath[] }) => {
   const ff = useGetFeatureFlagString();
+  const t = useTranslations();
 
   const filteredSub = sub.filter(({ featureFlag }) => {
     if (!featureFlag) return false;
@@ -43,7 +45,7 @@ const NavSubMenu = ({ sub }: { sub: SubPath[] }) => {
     <NavItemOuter>
       <NavItemInner>
         {filteredSub.map(({ name, path }) => (
-          <NavSubItem key={name} name={name} path={path} />
+          <NavSubItem key={name} name={t(name)} path={path} />
         ))}
       </NavItemInner>
     </NavItemOuter>
