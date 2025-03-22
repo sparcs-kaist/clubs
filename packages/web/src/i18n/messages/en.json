@@ -1,8 +1,31 @@
 {
-    "동아리": "Clubs",
-    "공지사항": "Notice",
-    "의결기구": "Meeting",
-    "소통": "Community",
-    "서비스 신청": "Service",
-    "집행부": "Executive"
+    "path": {
+        "동아리": "Clubs",
+        "공지사항": "Notice",
+        "의결기구": "Meeting",
+        "소통": "Community",
+        "서비스 신청": "Service",
+        "집행부": "Executive",
+        "만든 사람들": "Credits",
+        "라이센스": "License",
+        "이용 약관": "Terms of Service",
+        "로그인": "Login",
+        "동아리 목록": "Clubs",
+        "나의 동아리": "My Clubs",
+        "동아리 등록 신청": "Register Club",
+        "대표 동아리 관리": "Manage Club",
+        "회원 등록 신청": "Register Member",
+        "활동 보고서": "Activity Report",
+        "지원금": "Funding",
+        "전동대회": "All Club Representative Meeting",
+        "확대운영위원회": "Expanded Operating Committee",
+        "운영위원회": "Operating Committee",
+        "분과회의": "Division Meeting",
+        "카카오톡 문의하기": "Contact Us",
+        "동아리연합회칙": "Rules",
+        "대여 사업": "Rental Business",
+        "홍보물 인쇄": "Printing Business",
+        "활동확인서 발급": "Activity Certificate",
+        "공용공간 비정기사용": "Common Space"
+    }
 }
