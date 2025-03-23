@@ -4,13 +4,14 @@ import {
   ApiReg011RequestParam,
   ApiReg011ResponseOk,
 } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
+import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 import { registerClubDetailGet } from "./_atomic/registerClubApiList";
 
-const useRegisterClubDetail = (
-  profile: string,
+const useGetRegisterClubDetail = (
+  profile: UserTypeEnum,
   requestParam: ApiReg011RequestParam,
 ) =>
   useQuery<ApiReg011ResponseOk, Error>({
@@ -28,4 +29,4 @@ const useRegisterClubDetail = (
     },
   });
 
-export default useRegisterClubDetail;
+export default useGetRegisterClubDetail;

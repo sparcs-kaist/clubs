@@ -82,7 +82,7 @@ const MyRegisterClubDetail = () => {
         >
           목록으로 돌아가기
         </Button>
-        {profile?.type === UserTypeEnum.Professor ? (
+        {isProfessor ? (
           <ProfessorRegisterClubDetailButton />
         ) : (
           <StudentRegisterClubDetailButton />

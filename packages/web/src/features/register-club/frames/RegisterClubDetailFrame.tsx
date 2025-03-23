@@ -21,7 +21,7 @@ import {
 } from "@sparcs-clubs/web/constants/tableTagList";
 import RegisterClubStatusSection from "@sparcs-clubs/web/features/executive/register-club/components/RegisterClubStatusSection";
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
-import useRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
+import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
   getActualMonth,
@@ -52,9 +52,12 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   applyId,
   profile,
 }: ClubRegisterDetail) => {
-  const { data, isLoading, isError } = useRegisterClubDetail(profile, {
-    applyId: +applyId,
-  });
+  const { data, isLoading, isError } = useGetRegisterClubDetail(
+    profile === "permanent" ? UserTypeEnum.Undergraduate : profile,
+    {
+      applyId: +applyId,
+    },
+  );
 
   const {
     data: divisionData,
