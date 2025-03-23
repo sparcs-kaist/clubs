@@ -1,10 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
 
-import {
-  IMemberRegistrationCreate,
-  IMemberRegistrationUpdate,
-} from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
@@ -13,6 +9,8 @@ import {
   RegistrationDeadlineD,
 } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import {
+  IMemberRegistrationCreate,
+  IMemberRegistrationPut,
   MemberRegistrationQuery,
   MMemberRegistration,
 } from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
@@ -25,7 +23,7 @@ type MemberRegistrationDbResult = InferSelectModel<
 export class MemberRegistrationRepository extends BaseRepository<
   MMemberRegistration,
   IMemberRegistrationCreate,
-  IMemberRegistrationUpdate,
+  IMemberRegistrationPut,
   MemberRegistrationDbResult,
   typeof RegistrationApplicationStudent,
   MemberRegistrationQuery

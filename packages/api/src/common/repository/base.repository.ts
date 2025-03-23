@@ -62,7 +62,7 @@ export type BaseRepositoryQuery<
 export abstract class BaseRepository<
   Model extends MEntity<Id>,
   CreateParam,
-  UpdateParam,
+  PutParam,
   DbResult,
   Table extends MySqlTable & TableWithId,
   Query,
@@ -296,11 +296,7 @@ export abstract class BaseRepository<
     return this.withTransaction(async tx => this.createTx(tx, param));
   }
 
-  async putTx(
-    tx: DrizzleTransaction,
-    id: Id,
-    param: UpdateParam,
-  ): Promise<Model> {
+  async putTx(tx: DrizzleTransaction, id: Id, param: PutParam): Promise<Model> {
     await tx
       .update(this.table)
       .set(param)
@@ -310,7 +306,7 @@ export abstract class BaseRepository<
     return this.fetchTx(tx, id);
   }
 
-  async put(id: Id, param: UpdateParam): Promise<Model> {
+  async put(id: Id, param: PutParam): Promise<Model> {
     return this.withTransaction(async tx => this.putTx(tx, id, param));
   }
 
