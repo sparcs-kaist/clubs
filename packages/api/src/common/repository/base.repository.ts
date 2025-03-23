@@ -19,6 +19,8 @@ import {
 import { MySqlColumn, MySqlTable } from "drizzle-orm/mysql-core";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
+import { OperationType } from "@sparcs-clubs/interface/common/utils/field-operations";
+
 import {
   DrizzleAsyncProvider,
   DrizzleTransaction,
@@ -61,8 +63,6 @@ export type BaseRepositoryQuery<
 @Injectable()
 export abstract class BaseRepository<
   Model extends MEntity<Id>,
-  CreateParam,
-  PutParam,
   DbResult,
   Table extends MySqlTable & TableWithId,
   Query,
@@ -283,8 +283,14 @@ export abstract class BaseRepository<
     return this.withTransaction(async tx => this.countTx(tx, param));
   }
 
-  async createTx(tx: DrizzleTransaction, param: CreateParam): Promise<Model> {
-    const [result] = await tx.insert(this.table).values(param).execute();
+  async createTx(
+    tx: DrizzleTransaction,
+    param: Partial<Model>,
+  ): Promise<Model> {
+    const [result] = await tx
+      .insert(this.table)
+      .values(param.to(OperationType.CREATE) as Table["$inferInsert"])
+      .execute();
 
     // insertId를 적절한 타입으로 변환
     const newId = result.insertId as Id;
@@ -292,21 +298,25 @@ export abstract class BaseRepository<
     return this.fetchTx(tx, newId);
   }
 
-  async create(param: CreateParam): Promise<Model> {
+  async create(param: Partial<Model>): Promise<Model> {
     return this.withTransaction(async tx => this.createTx(tx, param));
   }
 
-  async putTx(tx: DrizzleTransaction, id: Id, param: PutParam): Promise<Model> {
+  async putTx(
+    tx: DrizzleTransaction,
+    id: Id,
+    param: Partial<Model>,
+  ): Promise<Model> {
     await tx
       .update(this.table)
-      .set(param)
+      .set(param.to(OperationType.PUT) as Table["$inferInsert"])
       .where(eq(this.table.id, id))
       .execute();
 
     return this.fetchTx(tx, id);
   }
 
-  async put(id: Id, param: PutParam): Promise<Model> {
+  async put(id: Id, param: Partial<Model>): Promise<Model> {
     return this.withTransaction(async tx => this.putTx(tx, id, param));
   }
 

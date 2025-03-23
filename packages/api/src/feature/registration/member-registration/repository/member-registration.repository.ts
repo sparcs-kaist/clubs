@@ -9,8 +9,6 @@ import {
   RegistrationDeadlineD,
 } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import {
-  IMemberRegistrationCreate,
-  IMemberRegistrationPut,
   MemberRegistrationQuery,
   MMemberRegistration,
 } from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
@@ -22,8 +20,6 @@ type MemberRegistrationDbResult = InferSelectModel<
 @Injectable()
 export class MemberRegistrationRepository extends BaseRepository<
   MMemberRegistration,
-  IMemberRegistrationCreate,
-  IMemberRegistrationPut,
   MemberRegistrationDbResult,
   typeof RegistrationApplicationStudent,
   MemberRegistrationQuery

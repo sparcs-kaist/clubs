@@ -8,7 +8,7 @@ import { MySqlColumn } from "drizzle-orm/mysql-core";
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 import {
   Exclude,
-  ExcludeFieldsInOperation,
+  filterExcludedFields,
   OperationType,
 } from "@sparcs-clubs/interface/common/utils/field-operations";
 
@@ -48,6 +48,8 @@ export class MMemberRegistration
   @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
 
+  deletedAt: IMemberRegistration["deletedAt"];
+
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
@@ -62,7 +64,27 @@ export class MMemberRegistration
       registrationApplicationStudentEnum:
         result.registrationApplicationStudentEnumId,
       createdAt: result.createdAt,
+      deletedAt: result.deletedAt,
     });
+  }
+
+  to(operation: OperationType): MemberRegistrationDbResult {
+    const filtered = filterExcludedFields(
+      this,
+      MMemberRegistration.constructor as new (...args: unknown[]) => unknown,
+      operation,
+    );
+
+    return {
+      id: filtered.id ?? undefined,
+      studentId: filtered.student?.id,
+      clubId: filtered.club?.id,
+      semesterId: filtered.semester?.id,
+      registrationApplicationStudentEnumId:
+        filtered.registrationApplicationStudentEnum ?? undefined,
+      createdAt: filtered.createdAt ?? undefined,
+      deletedAt: filtered.deletedAt,
+    } as MemberRegistrationDbResult;
   }
 
   static fieldMap(
@@ -87,15 +109,3 @@ export class MMemberRegistration
     return fieldMappings[field];
   }
 }
-
-export type IMemberRegistrationCreate = ExcludeFieldsInOperation<
-  IMemberRegistration,
-  MMemberRegistration,
-  OperationType.CREATE
->;
-
-export type IMemberRegistrationPut = ExcludeFieldsInOperation<
-  IMemberRegistration,
-  MMemberRegistration,
-  OperationType.PUT
->;
