@@ -33,7 +33,6 @@ export type MemberRegistrationQuery = {
   studentId: number;
   clubId: number;
   semesterId: number;
-  registrationApplicationStudentEnumId: number;
 };
 
 export class MMemberRegistration
@@ -87,8 +86,6 @@ export class MMemberRegistration
       studentId: RegistrationApplicationStudent.studentId,
       clubId: RegistrationApplicationStudent.clubId,
       semesterId: RegistrationApplicationStudent.semesterId,
-      registrationApplicationStudentEnumId:
-        RegistrationApplicationStudent.registrationApplicationStudentEnumId,
     };
 
     if (!(field in fieldMappings)) {
