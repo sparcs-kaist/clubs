@@ -76,12 +76,6 @@ export class ChangeDivisionPresidentMessageContext {
       this.page === "/manage-division"
         ? ""
         : this.getChange()
-    }${
-      this.status === ChangeDivisionPresidentStatusEnum.Rejected &&
-      this.page === "/my" &&
-      !this.isModal
-        ? " (승인 전)"
-        : ""
     }`;
   }
 

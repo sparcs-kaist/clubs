@@ -10,17 +10,20 @@ import {
   ChangeDivisionPresidentMessageContext,
   ChangeDivisionPresidentStatusEnum,
 } from "@sparcs-clubs/web/constants/changeDivisionPresident";
-// import { patchMyDelegateRequest } from "@sparcs-clubs/web/features/my/services/patchMyDelegateRequest";
 
 interface ChangeDivisionPresidentModalContentProps {
-  needPhoneNumber: boolean;
+  status:
+    | ChangeDivisionPresidentStatusEnum.Requested
+    | ChangeDivisionPresidentStatusEnum.Confirmed;
   actingPresident: boolean;
   change: [string, string];
-  phonePlaceholder?: string;
+  phoneNumber: string | undefined;
+  divisionName: string;
   onClose: () => void;
   fetch: () => void;
   onConfirmed: () => void;
   onRejected: () => void;
+  setType: (type: "Requested" | "Finished" | "Rejected") => void;
 }
 
 const ButtonWrapper = styled.div`
@@ -32,19 +35,21 @@ const ButtonWrapper = styled.div`
 const ChangeDivisionPresidentModalContent: React.FC<
   ChangeDivisionPresidentModalContentProps
 > = ({
-  needPhoneNumber,
+  status,
   actingPresident,
   change,
-  phonePlaceholder = "010-XXXX-XXXX",
+  phoneNumber,
+  divisionName,
   onClose,
   fetch,
   onConfirmed,
   onRejected,
+  setType,
 }: ChangeDivisionPresidentModalContentProps) => {
   const messageContext = new ChangeDivisionPresidentMessageContext({
     actingPresident,
-    division: "'생활체육' 분과",
-    status: ChangeDivisionPresidentStatusEnum.Requested,
+    division: divisionName,
+    status,
     page: "/my",
     change,
     isModal: true,
@@ -54,27 +59,14 @@ const ChangeDivisionPresidentModalContent: React.FC<
   const [phone, setPhone] = useState<string>("");
 
   const onConfirm = () => {
-    // patchMyDelegateRequest(
-    //   { requestId: 1 },
-    //   {
-    //     phoneNumber: phone,
-    //     clubDelegateChangeRequestStatusEnum:
-    //       ClubDelegateChangeRequestStatusEnum.Rejected,
-    //   },
-    // );
+    setType("Finished");
     onConfirmed();
     onClose();
     fetch();
   };
 
   const onReject = () => {
-    // patchMyDelegateRequest(
-    //   { requestId: 1 },
-    //   {
-    //     clubDelegateChangeRequestStatusEnum:
-    //       ClubDelegateChangeRequestStatusEnum.Rejected,
-    //   },
-    // );
+    setType("Rejected");
     onRejected();
     onClose();
   };
@@ -87,9 +79,9 @@ const ChangeDivisionPresidentModalContent: React.FC<
         lh={28}
         style={{ whiteSpace: "pre-wrap", textAlign: "center" }}
       >
-        {messageContext.getBody()}
+        {`${messageContext.getBody()}`}
       </Typography>
-      {needPhoneNumber && (
+      {!phoneNumber && (
         <>
           <Typography
             fw="MEDIUM"
@@ -100,7 +92,7 @@ const ChangeDivisionPresidentModalContent: React.FC<
             전화번호를 입력해야 동아리 대표자 변경을 승인할 수 있습니다
           </Typography>
           <PhoneInput
-            placeholder={phonePlaceholder}
+            placeholder={phoneNumber || "010-XXXX-XXXX"}
             value={phone}
             onChange={setPhone}
             setErrorStatus={setErrorPhone}
@@ -117,7 +109,7 @@ const ChangeDivisionPresidentModalContent: React.FC<
           </Button>
           <Button
             type={
-              needPhoneNumber && (errorPhone || phone === "")
+              !phoneNumber && (errorPhone || phone === "")
                 ? "disabled"
                 : "default"
             }

@@ -13,33 +13,29 @@ import {
 } from "@sparcs-clubs/web/constants/changeDivisionPresident";
 import ChangeDivisionPresidentModalContent from "@sparcs-clubs/web/features/my/components/ChangeDivisionPresidentModalContent";
 
-export type MyChangeDivisionPresidentStatusEnum =
-  | ChangeDivisionPresidentStatusEnum.Requested
-  | ChangeDivisionPresidentStatusEnum.Confirmed;
-
 interface MyChangeDivisionPresidentProps {
-  status: MyChangeDivisionPresidentStatusEnum;
-  isDivisionPresident: boolean;
+  status:
+    | ChangeDivisionPresidentStatusEnum.Requested
+    | ChangeDivisionPresidentStatusEnum.Confirmed;
   actingPresident?: boolean;
-  change?: [string, string];
+  prevPresident: string;
+  newPresident: string;
+  phoneNumber: string | undefined;
+  divisionName: string;
+  setType: (type: "Requested" | "Finished" | "Rejected") => void;
   fetch: () => void;
   onConfirmed: () => void;
   onRejected: () => void;
 }
 
-const notificationStatus: Record<
-  MyChangeDivisionPresidentStatusEnum,
-  "Alert" | "Success"
-> = {
-  [ChangeDivisionPresidentStatusEnum.Requested]: "Alert",
-  [ChangeDivisionPresidentStatusEnum.Confirmed]: "Success",
-};
-
 const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   status = ChangeDivisionPresidentStatusEnum.Requested,
-  isDivisionPresident,
   actingPresident = false,
-  change = undefined,
+  prevPresident,
+  newPresident,
+  phoneNumber = "",
+  divisionName,
+  setType,
   fetch,
   onConfirmed,
   onRejected,
@@ -47,10 +43,10 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   const router = useRouter();
   const messageContext = new ChangeDivisionPresidentMessageContext({
     actingPresident,
-    division: "'생활체육' 분과",
+    division: divisionName,
     status,
     page: "/my",
-    change,
+    change: [prevPresident, newPresident],
     isModal: false,
   });
 
@@ -63,13 +59,16 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
     overlay.open(({ isOpen, close }) => (
       <Modal isOpen={isOpen}>
         <ChangeDivisionPresidentModalContent
-          needPhoneNumber
-          actingPresident
-          change={["20210227 박병찬", "20200510 이지윤"]}
+          actingPresident={actingPresident}
+          phoneNumber={phoneNumber}
+          change={[prevPresident, newPresident]}
+          divisionName={divisionName}
+          status={status}
           onClose={close}
           fetch={fetch}
           onConfirmed={onConfirmed}
           onRejected={onRejected}
+          setType={setType}
         />
       </Modal>
     ));
@@ -84,21 +83,23 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
 
   return (
     <NotificationCard
-      status={notificationStatus[status]}
+      status={
+        status === ChangeDivisionPresidentStatusEnum.Confirmed
+          ? "Success"
+          : "Alert"
+      }
       header={messageContext.getHeader()}
     >
       <FlexWrapper gap={8} direction="column">
         <Typography fs={16} lh={24} style={{ whiteSpace: "pre-wrap" }}>
-          {messageContext.getBody()}
+          {`${messageContext.getBody()}`}
         </Typography>
-        {isDivisionPresident && (
-          <TextButton
-            text={buttonString}
-            color="GRAY"
-            fw="REGULAR"
-            onClick={onClick}
-          />
-        )}
+        <TextButton
+          text={buttonString}
+          color="GRAY"
+          fw="REGULAR"
+          onClick={onClick}
+        />
       </FlexWrapper>
     </NotificationCard>
   );
