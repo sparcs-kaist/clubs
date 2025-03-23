@@ -24,7 +24,7 @@ export class MFundingComment
   extends MEntity<number>
   implements IFundingComment
 {
-  static modelName = "funding_comment";
+  static modelName = "fundingComment";
 
   funding: { id: number };
 
@@ -82,5 +82,12 @@ export class MFundingComment
     }
 
     return fieldMappings[field];
+  }
+
+  set(param: Partial<MFundingComment>): MFundingComment {
+    return new MFundingComment({
+      ...this,
+      ...param,
+    });
   }
 }

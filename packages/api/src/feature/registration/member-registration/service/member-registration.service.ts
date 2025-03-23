@@ -261,10 +261,11 @@ export class MemberRegistrationService {
           clubId,
         );
     }
-    await this.memberRegistrationRepository.patch(applyId, newbie => ({
-      ...newbie,
-      registrationApplicationStudentEnum: applyStatusEnumId,
-    }));
+    await this.memberRegistrationRepository.patch(applyId, newbie =>
+      newbie.set({
+        registrationApplicationStudentEnum: applyStatusEnumId,
+      }),
+    );
     return {};
   }
 

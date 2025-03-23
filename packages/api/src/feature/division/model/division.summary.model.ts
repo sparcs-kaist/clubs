@@ -10,7 +10,7 @@ import { MDivision } from "./division.model";
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
 export class VDivisionSummary extends MEntity implements IDivisionSummary {
-  // id: IDivision["id"];
+  static modelName = "divisionSummary";
 
   name: IDivisionSummary["name"];
 
@@ -30,9 +30,16 @@ export class VDivisionSummary extends MEntity implements IDivisionSummary {
     }
   }
 
-  static fromDB(result: DivisionDBResult): VDivisionSummary {
+  static from(result: DivisionDBResult): VDivisionSummary {
     return new VDivisionSummary({
       ...result,
+    });
+  }
+
+  set(param: Partial<VDivisionSummary>): VDivisionSummary {
+    return new VDivisionSummary({
+      ...this,
+      ...param,
     });
   }
 }

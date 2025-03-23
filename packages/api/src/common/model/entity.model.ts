@@ -14,4 +14,6 @@ export abstract class MEntity<T extends IdType = number> {
   static fieldMap(_field: unknown): MySqlColumn {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
+
+  abstract set(_param: Partial<MEntity<T>>): MEntity<T>;
 }
