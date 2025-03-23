@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { desc, eq } from "drizzle-orm";
 
 import { IFundingCommentRequest } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 
@@ -8,6 +7,7 @@ import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import {
   FundingCommentDbResult,
+  FundingCommentQuery,
   MFundingComment,
 } from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
 
@@ -15,49 +15,16 @@ import {
 export default class FundingCommentRepository extends BaseRepository<
   MFundingComment,
   IFundingCommentRequest,
+  IFundingCommentRequest,
   FundingCommentDbResult,
-  typeof FundingFeedback
+  typeof FundingFeedback,
+  FundingCommentQuery
 > {
   constructor() {
     super(FundingFeedback, MFundingComment);
   }
 
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    ids: number[],
-  ): Promise<MFundingComment[]>;
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    fundingId: number,
-  ): Promise<MFundingComment[]>;
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    arg1: number | number[],
-  ): Promise<MFundingComment[]> {
-    if (Array.isArray(arg1)) {
-      return super.fetchAllTx(tx, arg1);
-    }
-
-    const result = await tx
-      .select()
-      .from(FundingFeedback)
-      .where(eq(FundingFeedback.fundingId, arg1))
-      .orderBy(desc(FundingFeedback.createdAt));
-
-    return result.map(row => MFundingComment.from(row));
-  }
-
-  async fetchAll(fundingId: number): Promise<MFundingComment[]>;
-  async fetchAll(ids: number[]): Promise<MFundingComment[]>;
-  async fetchAll(arg1: number | number[]): Promise<MFundingComment[]> {
-    if (Array.isArray(arg1)) {
-      return super.fetchAll(arg1);
-    }
-
-    return this.withTransaction(async tx => this.fetchAllTx(tx, arg1));
-  }
-
-  async insertTx(
+  async createTx(
     tx: DrizzleTransaction,
     param: IFundingCommentRequest,
   ): Promise<MFundingComment> {
@@ -67,6 +34,6 @@ export default class FundingCommentRepository extends BaseRepository<
       executiveId: param.executive.id,
       feedback: param.content,
     };
-    return super.insertTx(tx, comment);
+    return super.createTx(tx, comment);
   }
 }

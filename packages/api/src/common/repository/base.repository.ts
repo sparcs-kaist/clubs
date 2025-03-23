@@ -40,7 +40,7 @@ interface ModelWithFrom<
 > {
   from(result: DbResult): Model;
   modelName: string;
-  fieldMap(field: keyof Query): keyof DbResult;
+  fieldMap(field: keyof Query): MySqlColumn;
 }
 
 export interface BaseQueryFields<Id extends IdType = number> {
@@ -105,13 +105,13 @@ export abstract class BaseRepository<
       if (value !== undefined && value !== null) {
         // Query 필드를 테이블 필드로 변환
         const tableField = this.getTableField(key as keyof Query);
-        if (!tableField || !this.table[tableField]) {
+        if (!tableField) {
           throw new Error(`Invalid query field: ${key}`);
         }
 
         // 배열인 경우 IN 연산자 사용
         if (Array.isArray(value)) {
-          whereClause.push(inArray(this.table[tableField], value));
+          whereClause.push(inArray(tableField, value));
         }
         // 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
         else if (typeof value === "object") {
@@ -119,7 +119,7 @@ export abstract class BaseRepository<
         }
         // 단일 값인 경우 = 연산자 사용
         else {
-          whereClause.push(eq(this.table[tableField], value));
+          whereClause.push(eq(tableField, value));
         }
       }
     });
@@ -128,9 +128,8 @@ export abstract class BaseRepository<
   }
 
   // Query 필드를 테이블 필드로 변환하는 헬퍼 메서드
-  private getTableField(queryField: keyof Query): string {
-    const dbField = this.modelClass.fieldMap(queryField);
-    return dbField as string;
+  private getTableField(queryField: keyof Query): MySqlColumn {
+    return this.modelClass.fieldMap(queryField);
   }
 
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
@@ -141,54 +140,51 @@ export abstract class BaseRepository<
   ): void {
     // Query 필드를 테이블 필드로 변환
     const tableField = this.getTableField(queryField);
-    if (!tableField || !this.table[tableField]) {
-      return; // 테이블에 해당 필드가 없으면 처리하지 않음
+    if (!tableField) {
+      throw new Error(`Invalid query field: ${String(queryField)}`);
     }
 
     // 객체의 키-값 쌍을 forEach로 순회
     Object.entries(conditions).forEach(([operator, operand]) => {
       if (operand === undefined || operand === null) {
-        return; // 값이 없으면 건너뜀
+        throw new Error(`Invalid operand: ${operand}`);
       }
 
       switch (operator) {
         case "eq":
-          whereClause.push(eq(this.table[tableField], operand));
+          whereClause.push(eq(tableField, operand));
           break;
         case "ne":
-          whereClause.push(ne(this.table[tableField], operand));
+          whereClause.push(ne(tableField, operand));
           break;
         case "gt":
-          whereClause.push(gt(this.table[tableField], operand));
+          whereClause.push(gt(tableField, operand));
           break;
         case "gte":
-          whereClause.push(gte(this.table[tableField], operand));
+          whereClause.push(gte(tableField, operand));
           break;
         case "lt":
-          whereClause.push(lt(this.table[tableField], operand));
+          whereClause.push(lt(tableField, operand));
           break;
         case "lte":
-          whereClause.push(lte(this.table[tableField], operand));
+          whereClause.push(lte(tableField, operand));
           break;
         case "like":
-          whereClause.push(
-            like(this.table[tableField], `%${String(operand)}%`),
-          );
+          whereClause.push(like(tableField, `%${String(operand)}%`));
           break;
         case "startsWith":
-          whereClause.push(like(this.table[tableField], `${String(operand)}%`));
+          whereClause.push(like(tableField, `${String(operand)}%`));
           break;
         case "endsWith":
-          whereClause.push(like(this.table[tableField], `%${String(operand)}`));
+          whereClause.push(like(tableField, `%${String(operand)}`));
           break;
         case "in":
           if (Array.isArray(operand)) {
-            whereClause.push(inArray(this.table[tableField], operand));
+            whereClause.push(inArray(tableField, operand));
           }
           break;
         default:
-          // 지원하지 않는 연산자는 무시
-          break;
+          throw new Error(`Invalid operator: ${operator}`);
       }
     });
   }
@@ -202,22 +198,17 @@ export abstract class BaseRepository<
       // Query 필드를 테이블 필드로 변환
       const tableField = this.getTableField(field as keyof Query);
       // 테이블에 해당 필드가 존재하는지 확인
-      if (tableField && this.table[tableField]) {
+      if (tableField) {
         // direction에 따라 asc() 또는 desc() 호출
         if (direction === OrderByTypeEnum.ASC) {
-          orderClauses.push(asc(this.table[tableField]));
+          orderClauses.push(asc(tableField));
         } else {
-          orderClauses.push(desc(this.table[tableField]));
+          orderClauses.push(desc(tableField));
         }
       } else {
         throw new Error(`Invalid order field: ${field}`);
       }
     });
-
-    // 정렬 조건이 없으면 기본적으로 ID로 오름차순 정렬
-    if (orderClauses.length === 0) {
-      orderClauses.push(asc(this.table.id));
-    }
 
     return orderClauses;
   }

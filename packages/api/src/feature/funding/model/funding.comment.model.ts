@@ -1,4 +1,9 @@
-import { InferSelectModel } from "drizzle-orm";
+import {
+  ColumnBaseConfig,
+  ColumnDataType,
+  InferSelectModel,
+} from "drizzle-orm";
+import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
@@ -11,7 +16,16 @@ import { VFundingSummary } from "./funding.summary.model";
 
 export type FundingCommentDbResult = InferSelectModel<typeof FundingFeedback>;
 
-export class MFundingComment extends MEntity implements IFundingComment {
+export type FundingCommentQuery = {
+  fundingId: number;
+};
+
+export class MFundingComment
+  extends MEntity<number>
+  implements IFundingComment
+{
+  static modelName = "funding_comment";
+
   funding: { id: number };
 
   executive: {
@@ -51,5 +65,22 @@ export class MFundingComment extends MEntity implements IFundingComment {
       content: result.feedback,
       createdAt: result.createdAt,
     });
+  }
+
+  static fieldMap(
+    field: keyof FundingCommentQuery,
+  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
+    const fieldMappings: Record<
+      keyof FundingCommentQuery,
+      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
+    > = {
+      fundingId: FundingFeedback.fundingId,
+    };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }

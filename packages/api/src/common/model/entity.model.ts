@@ -1,15 +1,17 @@
+import { MySqlColumn } from "drizzle-orm/mysql-core";
+
 export type IdType = number | string;
 
 export abstract class MEntity<T extends IdType = number> {
   id: T;
 
-  modelName: string;
+  static modelName: string;
 
   static from(_result: unknown): MEntity<IdType> {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 
-  static fieldMap<Query, DbResult>(_field: keyof Query): keyof DbResult {
+  static fieldMap(_field: unknown): MySqlColumn {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 }
