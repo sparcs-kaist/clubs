@@ -6,6 +6,11 @@ import {
 import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import {
+  Exclude,
+  ExcludeFieldsInOperation,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
@@ -28,11 +33,21 @@ export class MMemberRegistration
 {
   static modelName = "member_registration";
 
+  @Exclude(OperationType.CREATE, OperationType.PUT)
+  declare id: IMemberRegistration["id"];
+
   student: IMemberRegistration["student"];
+
   club: IMemberRegistration["club"];
+
+  @Exclude(OperationType.CREATE, OperationType.PUT)
   registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+
   semester: IMemberRegistration["semester"];
+
+  @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
+
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
@@ -72,3 +87,15 @@ export class MMemberRegistration
     return fieldMappings[field];
   }
 }
+
+export type IMemberRegistrationCreate = ExcludeFieldsInOperation<
+  IMemberRegistration,
+  MMemberRegistration,
+  OperationType.CREATE
+>;
+
+export type IMemberRegistrationPut = ExcludeFieldsInOperation<
+  IMemberRegistration,
+  MMemberRegistration,
+  OperationType.PUT
+>;
