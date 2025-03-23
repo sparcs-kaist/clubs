@@ -1,6 +1,3 @@
-import { z } from "zod";
-
-// 작업 타입을 enum으로 정의
 export enum OperationType {
   CREATE = "create",
   PUT = "put",
@@ -28,54 +25,6 @@ export function Exclude(...operations: OperationType[]): PropertyDecorator {
       classMetadata.set(key, operations);
     }
   };
-}
-
-// 이전 데코레이터의 별칭으로 ExcludeFrom도 제공
-export const ExcludeFrom = Exclude;
-
-/**
- * 런타임에 클래스에서 특정 작업에 대해 제외된 필드 목록을 가져옵니다.
- */
-export function getExcludedFields(
-  classType: new (...args: unknown[]) => unknown,
-  operation: OperationType,
-): string[] {
-  const className = classType.name;
-  const classMetadata = exclusionMetadata.get(className);
-  const excludedFields: string[] = [];
-
-  if (classMetadata) {
-    classMetadata.forEach((operations, field) => {
-      if (operations.includes(operation)) {
-        excludedFields.push(field);
-      }
-    });
-  }
-
-  return excludedFields;
-}
-
-/**
- * 클래스의 스키마를 가져옵니다
- */
-export function createSchemaFor(
-  classType: { name: string },
-  schema: z.ZodObject<z.ZodRawShape>,
-  operation: OperationType,
-): z.ZodObject<z.ZodRawShape> {
-  const shape = { ...schema.shape };
-  const className = classType.name;
-  const classMetadata = exclusionMetadata.get(className);
-
-  if (classMetadata) {
-    classMetadata.forEach((operations, field) => {
-      if (operations.includes(operation) && field in shape) {
-        delete shape[field];
-      }
-    });
-  }
-
-  return z.object(shape);
 }
 
 /**
@@ -109,8 +58,3 @@ type GetExcludeMetadata<
       : false
     : false
   : false;
-
-/**
- * 단순 필드 제외 헬퍼
- */
-export type ExcludeFieldsFromType<T, K extends keyof T> = Omit<T, K>;
