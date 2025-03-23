@@ -105,7 +105,9 @@ const Header: React.FC = () => {
           {isBetaPeriod && <Beta />}
         </LogoContainer>
         <FlexWrapper gap={8} direction={"row"}>
-          <LanguageSwitcher />
+          {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
+            <LanguageSwitcher />
+          )}
           <Login />
         </FlexWrapper>
         <Menu>
