@@ -229,7 +229,9 @@ export default class FundingService {
       );
     }
 
-    const comments = await this.fundingCommentRepository.fetchAll(funding.id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
 
     const commentedExecutive =
       await this.userPublicService.fetchExecutiveSummaries(
@@ -260,7 +262,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -725,9 +729,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -818,9 +822,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -904,7 +908,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -978,7 +984,7 @@ export default class FundingService {
 
     const fundingComment = await this.fundingCommentRepository.withTransaction(
       async tx => {
-        const comment = await this.fundingCommentRepository.insertTx(tx, {
+        const comment = await this.fundingCommentRepository.createTx(tx, {
           fundingStatusEnum,
           approvedAmount,
           funding: { id },
