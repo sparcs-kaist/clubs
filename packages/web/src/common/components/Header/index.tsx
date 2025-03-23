@@ -105,8 +105,8 @@ const Header: React.FC = () => {
           {isBetaPeriod && <Beta />}
         </LogoContainer>
         <FlexWrapper gap={8} direction={"row"}>
-          <Login />
           <LanguageSwitcher />
+          <Login />
         </FlexWrapper>
         <Menu>
           <Icon
