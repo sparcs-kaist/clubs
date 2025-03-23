@@ -1,6 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
   IMemberRegistrationCreate,
@@ -9,7 +8,6 @@ import {
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   RegistrationApplicationStudent,
   RegistrationDeadlineD,
@@ -32,15 +30,13 @@ export class MemberRegistrationRepository extends BaseRepository<
   typeof RegistrationApplicationStudent,
   MemberRegistrationQuery
 > {
-  @Inject(DrizzleAsyncProvider) private readonly drizzleDb: MySql2Database;
-
   constructor() {
     super(RegistrationApplicationStudent, MMemberRegistration);
   }
 
   // 별도 레포지토리로 분리해야 함
   async selectMemberRegistrationDeadline(param: { semesterId: number }) {
-    const result = await this.drizzleDb
+    const result = await this.db
       .select()
       .from(RegistrationDeadlineD)
       .where(

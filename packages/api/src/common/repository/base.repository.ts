@@ -68,7 +68,7 @@ export abstract class BaseRepository<
   Query,
   Id extends IdType = number,
 > {
-  @Inject(DrizzleAsyncProvider) private db: MySql2Database;
+  @Inject(DrizzleAsyncProvider) protected db: MySql2Database;
 
   constructor(
     protected table: Table,
