@@ -1,4 +1,12 @@
-import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
+import {
+  asc,
+  ColumnBaseConfig,
+  ColumnDataType,
+  desc,
+  InferSelectModel,
+  SQL,
+} from "drizzle-orm";
+import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 
@@ -21,10 +29,19 @@ export type IMemberRegistrationOrderBy = Partial<{
   [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
 }>;
 
+export type MemberRegistrationQuery = {
+  studentId: number;
+  clubId: number;
+  semesterId: number;
+  registrationApplicationStudentEnumId: number;
+};
+
 export class MMemberRegistration
   extends MEntity
   implements IMemberRegistration
 {
+  static modelName = "member_registration";
+
   student: IMemberRegistration["student"];
   club: IMemberRegistration["club"];
   registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
@@ -58,5 +75,26 @@ export class MMemberRegistration
           ? asc(orderByFieldMap[key])
           : desc(orderByFieldMap[key]),
       );
+  }
+
+  static fieldMap(
+    field: keyof MemberRegistrationQuery,
+  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
+    const fieldMappings: Record<
+      keyof MemberRegistrationQuery,
+      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
+    > = {
+      studentId: RegistrationApplicationStudent.studentId,
+      clubId: RegistrationApplicationStudent.clubId,
+      semesterId: RegistrationApplicationStudent.semesterId,
+      registrationApplicationStudentEnumId:
+        RegistrationApplicationStudent.registrationApplicationStudentEnumId,
+    };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }

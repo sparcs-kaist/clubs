@@ -50,7 +50,7 @@ export interface BaseQueryFields<Id extends IdType = number> {
     offset: number;
     itemCount: number;
   };
-  order?: Record<string, OrderByTypeEnum>;
+  orderBy?: Record<string, OrderByTypeEnum>;
 }
 
 export type BaseRepositoryQuery<
@@ -230,8 +230,8 @@ export abstract class BaseRepository<
       );
     }
 
-    if (param.order) {
-      query = query.orderBy(...this.makeOrderBy(param.order));
+    if (param.orderBy) {
+      query = query.orderBy(...this.makeOrderBy(param.orderBy));
     }
 
     const result = await query.execute();
@@ -316,24 +316,21 @@ export abstract class BaseRepository<
 
   async patchTx(
     tx: DrizzleTransaction,
-    oldbie: Model,
-    consumer: (oldbie: Model) => Model, // eslint-disable-line no-shadow
+    oldId: Id,
+    consumer: (oldbie: Model) => Model,
   ): Promise<Model> {
-    const param = consumer(oldbie);
+    const param = consumer(await this.fetchTx(tx, oldId));
     await tx
       .update(this.table)
       .set(param)
-      .where(eq(this.table.id, oldbie.id))
+      .where(eq(this.table.id, oldId))
       .execute();
 
-    return this.fetchTx(tx, oldbie.id);
+    return this.fetchTx(tx, oldId);
   }
 
-  async patch(
-    oldbie: Model,
-    consumer: (oldbie: Model) => Model, // eslint-disable-line no-shadow
-  ): Promise<Model> {
-    return this.withTransaction(async tx => this.patchTx(tx, oldbie, consumer));
+  async patch(oldId: Id, consumer: (oldbie: Model) => Model): Promise<Model> {
+    return this.withTransaction(async tx => this.patchTx(tx, oldId, consumer));
   }
 
   async deleteTx(tx: DrizzleTransaction, id: Id): Promise<void> {

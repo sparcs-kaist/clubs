@@ -106,7 +106,7 @@ export class MemberRegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.memberRegistrationRepository.insert({
+    await this.memberRegistrationRepository.create({
       studentId,
       clubId,
       semesterId,
@@ -187,7 +187,7 @@ export class MemberRegistrationService {
       );
     }
 
-    await this.memberRegistrationRepository.delete(studentId, applyId);
+    await this.memberRegistrationRepository.delete(applyId);
     return {};
   }
 
@@ -261,10 +261,10 @@ export class MemberRegistrationService {
           clubId,
         );
     }
-    await this.memberRegistrationRepository.update({
-      id: applyId,
+    await this.memberRegistrationRepository.patch(applyId, newbie => ({
+      ...newbie,
       registrationApplicationStudentEnum: applyStatusEnumId,
-    });
+    }));
     return {};
   }
 
