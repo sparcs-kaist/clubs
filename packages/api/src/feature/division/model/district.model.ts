@@ -22,11 +22,4 @@ export class MDistrict extends MEntity implements IDistrict {
       ...result,
     });
   }
-
-  set(param: Partial<MDistrict>): MDistrict {
-    return new MDistrict({
-      ...this,
-      ...param,
-    });
-  }
 }

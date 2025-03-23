@@ -83,11 +83,4 @@ export class MFundingComment
 
     return fieldMappings[field];
   }
-
-  set(param: Partial<MFundingComment>): MFundingComment {
-    return new MFundingComment({
-      ...this,
-      ...param,
-    });
-  }
 }

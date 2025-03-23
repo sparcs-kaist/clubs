@@ -31,11 +31,4 @@ export class MDivision extends MEntity implements IDivision {
       },
     });
   }
-
-  set(param: Partial<MDivision>): MDivision {
-    return new MDivision({
-      ...this,
-      ...param,
-    });
-  }
 }

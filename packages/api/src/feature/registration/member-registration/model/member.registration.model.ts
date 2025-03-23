@@ -94,11 +94,4 @@ export class MMemberRegistration
 
     return fieldMappings[field];
   }
-
-  set(param: Partial<MMemberRegistration>): MMemberRegistration {
-    return new MMemberRegistration({
-      ...this,
-      ...param,
-    });
-  }
 }

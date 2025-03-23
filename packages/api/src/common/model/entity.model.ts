@@ -15,5 +15,8 @@ export abstract class MEntity<T extends IdType = number> {
     throw new Error("Method not implemented. Must be overridden by subclass");
   }
 
-  abstract set(_param: Partial<MEntity<T>>): MEntity<T>;
+  set(param: Partial<this>): this {
+    Object.assign(this, param);
+    return this;
+  }
 }

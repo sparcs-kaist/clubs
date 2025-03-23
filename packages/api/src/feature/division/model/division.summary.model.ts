@@ -35,11 +35,4 @@ export class VDivisionSummary extends MEntity implements IDivisionSummary {
       ...result,
     });
   }
-
-  set(param: Partial<VDivisionSummary>): VDivisionSummary {
-    return new VDivisionSummary({
-      ...this,
-      ...param,
-    });
-  }
 }
