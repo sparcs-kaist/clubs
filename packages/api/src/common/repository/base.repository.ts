@@ -296,23 +296,9 @@ export abstract class BaseRepository<
     const [result] = await tx.insert(this.table).values(param).execute();
 
     // insertId를 적절한 타입으로 변환
-    const newId = this.convertToIdType(result.insertId);
+    const newId = result.insertId as Id;
 
     return this.fetchTx(tx, newId);
-  }
-
-  // insertId를 Id로 변환하는 헬퍼 메서드
-  private convertToIdType(insertId: string | number): Id {
-    // Id가 number인 경우
-    if (typeof (0 as Id) === "number") {
-      return Number(insertId) as Id;
-    }
-    // Id가 string인 경우
-    if (typeof ("" as Id) === "string") {
-      return String(insertId) as Id;
-    }
-    // 기타 타입인 경우 (기본적으로 원본 값 반환)
-    return insertId as Id;
   }
 
   async create(param: CreateParam): Promise<Model> {
