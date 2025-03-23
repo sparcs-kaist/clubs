@@ -1,18 +1,15 @@
-import React from "react";
+import { Locale } from "@sparcs-clubs/web/i18n/config";
+import { getUserLocale, setUserLocale } from "@sparcs-clubs/web/i18n/locale";
 
-import { locales } from "@sparcs-clubs/web/i18n/config";
-import { setUserLocale } from "@sparcs-clubs/web/i18n/locale";
+import Icon from "./Icon";
 
-import Button from "./Button";
+const LanguageSwitcher = () => {
+  const toggleLanguage = async () => {
+    const currentLocale = (await getUserLocale()) as Locale;
+    await setUserLocale(currentLocale === "ko" ? "en" : "ko");
+  };
 
-const LanguageSwitcher = () => (
-  <div style={{ display: "flex", gap: "12px" }}>
-    {locales.map(locale => (
-      <Button key={locale} onClick={() => setUserLocale(locale)}>
-        {locale.toUpperCase()}
-      </Button>
-    ))}
-  </div>
-);
+  return <Icon type={"language"} onClick={toggleLanguage} size={20} />;
+};
 
 export default LanguageSwitcher;
