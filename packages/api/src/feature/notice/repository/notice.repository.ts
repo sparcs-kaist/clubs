@@ -116,13 +116,7 @@ export class NoticeRepository {
   async updateTx(tx: DrizzleTransaction, param: INoticeUpdate): Promise<void> {
     const [result] = await tx
       .update(Notice)
-      .set({
-        createdAt: param.createdAt,
-        author: param.author,
-        title: param.title,
-        date: param.date,
-        link: param.link,
-      })
+      .set({ id: param.id })
       .where(and(eq(Notice.id, param.id), isNull(Notice.deletedAt)));
     if (result.affectedRows === 0) {
       throw new HttpException("Failed to update", HttpStatus.BAD_REQUEST);
