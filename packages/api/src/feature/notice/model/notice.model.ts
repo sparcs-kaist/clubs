@@ -17,7 +17,6 @@ export type INoticeOrderBy = Partial<{
 }>;
 
 export class MNotice extends MEntity implements INotice {
-  // id: INotice["id"];
   title: INotice["title"];
   author: INotice["author"];
   date: INotice["date"];
