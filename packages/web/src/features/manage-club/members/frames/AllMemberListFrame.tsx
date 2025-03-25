@@ -1,10 +1,16 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import * as XLSX from "xlsx";
 
-// import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
+import apiClb010, {
+  ApiClb010ResponseOk,
+} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
+import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 import AllMemberList from "../components/AllMemberList";
 import MemberSearchAndFilter from "../components/MemberSearchAndFilter";
@@ -21,15 +27,16 @@ const AllMemberListWrapper = styled.div`
   gap: 40px;
 `;
 
-// const IconButtonWrapper = styled.div`
-//   display: flex;
-//   flex-direction: column;
-//   width: 100%;
-//   align-items: flex-end;
-// `;
+const IconButtonWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: flex-end;
+`;
 
 const AllMemberListFrame: React.FC<AllMemberListFrameProps> = ({ clubId }) => {
   const [searchText, setSearchText] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   const {
     data: semesterData,
@@ -41,23 +48,63 @@ const AllMemberListFrame: React.FC<AllMemberListFrameProps> = ({ clubId }) => {
     semesterData.semesters,
   );
 
+  const downloadExcel = async () => {
+    setIsDownloading(true);
+    try {
+      const allData = await Promise.all(
+        selectedSemesters.map(async semester => {
+          const response = await axiosClientWithAuth.get(
+            apiClb010.url(clubId, semester.id),
+          );
+          return { semester, members: response.data.members };
+        }),
+      );
+
+      const wb = XLSX.utils.book_new();
+
+      allData.forEach(({ semester, members }) => {
+        const sheetData = members.map(
+          (member: ApiClb010ResponseOk["members"][number]) => ({
+            학번: member.studentNumber,
+            신청자: member.name,
+            전화번호: member.phoneNumber,
+            이메일: member.email,
+          }),
+        );
+        const sheetName = `${semester.year}-${semester.name}`;
+        const ws = XLSX.utils.json_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = url;
+      downloadLink.download = "전체회원명단.xlsx";
+      downloadLink.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("엑셀 다운로드 실패", error);
+    }
+    setIsDownloading(false);
+  };
+
   return (
     <FoldableSectionTitle title="전체 회원 명단" childrenMargin="20px">
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <AllMemberListWrapper>
           {semesterData.semesters.length > 0 && (
             <>
-              {/* <IconButtonWrapper> */}
-              {/*  <IconButton */}
-              {/*    type="default" */}
-              {/*    icon="save_alt" */}
-              {/*    onClick={() => { */}
-              {/*      TODO: 엑셀 다운로드 기능 구현  */}
-              {/*    }} */}
-              {/*  > */}
-              {/*    엑셀로 다운로드 */}
-              {/*  </IconButton> */}
-              {/* </IconButtonWrapper> */}
+              <IconButtonWrapper>
+                <IconButton
+                  type="default"
+                  icon="save_alt"
+                  onClick={downloadExcel}
+                >
+                  {isDownloading ? "다운로드 중..." : "엑셀로 다운로드"}
+                </IconButton>
+              </IconButtonWrapper>
               <MemberSearchAndFilter
                 semesters={semesterData.semesters}
                 selectedSemesters={selectedSemesters}
@@ -69,8 +116,6 @@ const AllMemberListFrame: React.FC<AllMemberListFrameProps> = ({ clubId }) => {
           )}
           {selectedSemesters.length === 0 ? (
             <Typography
-              ff="PRETENDARD"
-              fw="REGULAR"
               fs={16}
               lh={24}
               color="GRAY.300"
@@ -80,7 +125,7 @@ const AllMemberListFrame: React.FC<AllMemberListFrameProps> = ({ clubId }) => {
             </Typography>
           ) : (
             selectedSemesters
-              .sort((a, b) => b.id - a.id) // 최신 학기부터 정렬(ID가 클수록 최신 학기라고 가정)
+              .sort((a, b) => b.id - a.id)
               .map(semester => (
                 <AllMemberList
                   key={semester.id}
