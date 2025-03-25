@@ -6,6 +6,7 @@ import {
 import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 import {
   Exclude,
   filterExcludedFields,
@@ -41,7 +42,8 @@ export class MMemberRegistration
   club: IMemberRegistration["club"];
 
   @Exclude(OperationType.CREATE, OperationType.PUT)
-  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"] =
+    RegistrationApplicationStudentStatusEnum.Pending;
 
   semester: IMemberRegistration["semester"];
 
