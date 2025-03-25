@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zUserName } from "@sparcs-clubs/interface/common/commonString";
 import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { registry } from "@sparcs-clubs/interface/open-api";
 
 import { zMemberRegistration } from "../type/member.registration.type";
 
@@ -80,3 +81,30 @@ export type {
   ApiReg020RequestBody,
   ApiReg020ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(),
+  description: `
+  # REG-020
+
+  동아리별 가입 신청의 세부 상태를 확인합니다.
+
+  집행부원만 이용 가능합니다.
+  `,
+  summary: "REG-020: 집행부원이 동아리별 가입 신청의 세부 상태를 확인합니다.",
+  request: {
+    query: requestQuery,
+  },
+  responses: {
+    200: {
+      description: "성공적으로 조회되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[HttpStatusCode.Ok],
+        },
+      },
+    },
+  },
+});

@@ -7,14 +7,17 @@ import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interfac
 import zId from "@sparcs-clubs/interface/common/type/id.type";
 
 export const zMemberRegistration = z.object({
-  id: zId,
-  student: zStudent.pick({ id: true }),
-  club: zClub.pick({ id: true }),
-  semester: zSemester.pick({ id: true }),
-  registrationApplicationStudentEnum: z.nativeEnum(
-    RegistrationApplicationStudentStatusEnum,
-  ),
-  createdAt: z.coerce.date(),
+  id: zId.openapi({ description: "가입 신청 ID", examples: [1, 2, 3] }),
+  student: z.object({ id: zStudent.shape.id }),
+  club: z.object({ id: zClub.shape.id }),
+  semester: z.object({ id: zSemester.shape.id }),
+  registrationApplicationStudentEnum: z
+    .nativeEnum(RegistrationApplicationStudentStatusEnum)
+    .openapi({ description: "1: 대기 2: 승인 3: 반려", examples: [1, 2, 3] }),
+  createdAt: z.coerce.date().openapi({
+    description: "신청이 생성된 시각",
+    example: String(new Date()),
+  }),
 });
 
 // 외부 entity의 값을 전부 받아온 형태.
