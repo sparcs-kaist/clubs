@@ -22,7 +22,7 @@ export { default as apiReg028 } from "./endpoint/apiReg028";
 registry.registerPath({
   tags: ["member-registration"],
   method: "get",
-  path: "/",
+  path: "/#/Registration",
   summary: "REG-???: 동아리 신청(Registration)에 관한 도메인 설명",
   description: `
   # REG-???: 동아리 신청(Registration)
