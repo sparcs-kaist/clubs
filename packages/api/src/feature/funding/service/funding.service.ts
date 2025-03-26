@@ -52,10 +52,7 @@ import {
   ApiFnd016RequestQuery,
   ApiFnd016ResponseOk,
 } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
-import {
-  IFundingComment,
-  IFundingCommentRequest,
-} from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
+import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
   IFundingResponse,
@@ -990,7 +987,7 @@ export default class FundingService {
           funding: { id },
           executive: { id: executiveId },
           content,
-        } as IFundingCommentRequest);
+        });
         const funding = await this.fundingRepository.patchStatusTx(tx, {
           id,
           fundingStatusEnum,

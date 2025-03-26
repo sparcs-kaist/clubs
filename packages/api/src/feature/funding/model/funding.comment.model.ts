@@ -7,6 +7,11 @@ import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import {
+  Exclude,
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
@@ -34,11 +39,15 @@ export class MFundingComment
 
   content: string;
 
-  fundingStatusEnum: FundingStatusEnum;
+  fundingStatusEnum: FundingStatusEnum = FundingStatusEnum.Applied;
 
   approvedAmount: number;
 
+  @Exclude(OperationType.CREATE)
   createdAt: Date;
+
+  @Exclude(OperationType.CREATE)
+  deletedAt: Date | null;
 
   constructor(data: IFundingComment) {
     super();
@@ -65,6 +74,21 @@ export class MFundingComment
       content: result.feedback,
       createdAt: result.createdAt,
     });
+  }
+
+  to(operation: OperationType): FundingCommentDbResult {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      id: filtered.id ?? undefined,
+      fundingId: filtered.funding?.id,
+      executiveId: filtered.executive?.id,
+      feedback: filtered.content,
+      fundingStatusEnum: filtered.fundingStatusEnum,
+      approvedAmount: filtered.approvedAmount,
+      createdAt: filtered.createdAt,
+      deletedAt: filtered.deletedAt,
+    };
   }
 
   static fieldMap(

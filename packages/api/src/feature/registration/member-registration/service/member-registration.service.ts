@@ -107,9 +107,9 @@ export class MemberRegistrationService {
 
     // 동아리 가입 신청
     await this.memberRegistrationRepository.create({
-      studentId,
-      clubId,
-      semesterId,
+      student: { id: studentId },
+      club: { id: clubId },
+      semester: { id: semesterId },
     });
     return {};
   }

@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
 
-import { IFundingCommentRequest } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
@@ -14,8 +12,6 @@ import {
 @Injectable()
 export default class FundingCommentRepository extends BaseRepository<
   MFundingComment,
-  IFundingCommentRequest,
-  IFundingCommentRequest,
   FundingCommentDbResult,
   typeof FundingFeedback,
   FundingCommentQuery
@@ -26,7 +22,7 @@ export default class FundingCommentRepository extends BaseRepository<
 
   async createTx(
     tx: DrizzleTransaction,
-    param: IFundingCommentRequest,
+    param: Partial<MFundingComment>,
   ): Promise<MFundingComment> {
     const comment = {
       ...param,

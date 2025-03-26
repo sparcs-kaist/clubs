@@ -15,6 +15,7 @@ export const zMemberRegistration = z.object({
     RegistrationApplicationStudentStatusEnum,
   ),
   createdAt: z.coerce.date(),
+  deletedAt: z.coerce.date().nullable(),
 });
 
 // 외부 entity의 값을 전부 받아온 형태.
@@ -24,31 +25,7 @@ export const zMemberRegistrationResponse = zMemberRegistration.extend({
   semester: zSemester,
 });
 
-// repository에 전달하는 parameter의 type.
-export const zMemberRegistrationCreate = zMemberRegistration
-  .omit({
-    id: true,
-    registrationApplicationStudentEnum: true,
-    createdAt: true,
-  })
-  .transform(data => ({
-    studentId: data.student.id,
-    clubId: data.club.id,
-    semesterId: data.semester.id,
-  }));
-
-export const zMemberRegistrationUpdate = zMemberRegistration.pick({
-  id: true,
-  registrationApplicationStudentEnum: true,
-});
-
 export type IMemberRegistration = z.infer<typeof zMemberRegistration>;
 export type IMemberRegistrationResponse = z.infer<
   typeof zMemberRegistrationResponse
->;
-export type IMemberRegistrationCreate = z.infer<
-  typeof zMemberRegistrationCreate
->;
-export type IMemberRegistrationUpdate = z.infer<
-  typeof zMemberRegistrationUpdate
 >;

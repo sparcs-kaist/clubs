@@ -6,6 +6,12 @@ import {
 import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import {
+  Exclude,
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
@@ -29,10 +35,20 @@ export class MMemberRegistration
   static modelName = "member_registration";
 
   student: IMemberRegistration["student"];
+
   club: IMemberRegistration["club"];
-  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+
+  @Exclude(OperationType.CREATE, OperationType.PUT)
+  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"] =
+    RegistrationApplicationStudentStatusEnum.Pending;
+
   semester: IMemberRegistration["semester"];
+
+  @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
+
+  deletedAt: IMemberRegistration["deletedAt"];
+
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
@@ -47,7 +63,24 @@ export class MMemberRegistration
       registrationApplicationStudentEnum:
         result.registrationApplicationStudentEnumId,
       createdAt: result.createdAt,
+      deletedAt: result.deletedAt,
     });
+  }
+
+  to(operation: OperationType): MemberRegistrationDbResult {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      id: filtered.id ?? undefined,
+      studentId: filtered.student?.id,
+      clubId: filtered.club?.id,
+      semesterId: filtered.semester?.id,
+      registrationApplicationStudentEnumId:
+        filtered.registrationApplicationStudentEnum ??
+        RegistrationApplicationStudentStatusEnum.Pending,
+      createdAt: filtered.createdAt ?? undefined,
+      deletedAt: filtered.deletedAt,
+    } as MemberRegistrationDbResult;
   }
 
   static fieldMap(

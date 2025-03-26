@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zFundingCommentRequest } from "../type/funding.comment.type";
+import { zFundingComment } from "../type/funding.comment.type";
 import { zFunding } from "../type/funding.type";
 
 /**
@@ -25,7 +25,10 @@ const requestParam = z.object({
 
 const requestQuery = z.object({});
 
-const requestBody = zFundingCommentRequest.omit({
+const requestBody = zFundingComment.omit({
+  id: true,
+  createdAt: true,
+  deletedAt: true,
   funding: true,
   executive: true,
 });

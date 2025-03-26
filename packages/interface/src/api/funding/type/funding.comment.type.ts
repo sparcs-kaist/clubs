@@ -20,11 +20,5 @@ export const zFundingCommentResponse = zFundingComment.extend({
   executive: zExecutiveSummary,
 });
 
-export const zFundingCommentRequest = zFundingComment.omit({
-  id: true,
-  createdAt: true,
-});
-
 export type IFundingComment = z.infer<typeof zFundingComment>;
 export type IFundingCommentResponse = z.infer<typeof zFundingCommentResponse>;
-export type IFundingCommentRequest = z.infer<typeof zFundingCommentRequest>;
