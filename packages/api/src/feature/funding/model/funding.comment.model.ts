@@ -39,7 +39,7 @@ export class MFundingComment
 
   content: string;
 
-  fundingStatusEnum: FundingStatusEnum = FundingStatusEnum.Applied;
+  fundingStatusEnum: FundingStatusEnum;
 
   approvedAmount: number;
 

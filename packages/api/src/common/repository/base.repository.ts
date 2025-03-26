@@ -260,11 +260,9 @@ export abstract class BaseRepository<
 
   async fetchAllTx(tx: DrizzleTransaction, ids: Id[]): Promise<Model[]> {
     const param = { ids } as BaseRepositoryQuery<Query, Id>;
-    const result = await this.findTx(tx, param);
-    return takeAll<Model, Id>(
-      ids,
-      this.modelClass.modelName,
-    )(result as Array<Model>);
+    return this.findTx(tx, param).then(
+      takeAll<Model, Id>(ids, this.modelClass.modelName),
+    );
   }
 
   async fetchAll(ids: Id[]): Promise<Model[]> {
