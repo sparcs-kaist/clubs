@@ -10,6 +10,7 @@ import {
   gt,
   gte,
   inArray,
+  isNull,
   like,
   lt,
   lte,
@@ -32,7 +33,7 @@ import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
 interface TableWithIdAndDeletedAt {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
-  deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
+  deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, string | null>>;
 }
 
 interface ModelWithMethods<
@@ -85,9 +86,7 @@ export abstract class BaseRepository<
   protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL[] {
     const whereClause: SQL[] = [];
 
-    if (this.table.deletedAt) {
-      whereClause.push(eq(this.table.deletedAt, null));
-    }
+    whereClause.push(isNull(this.table.deletedAt));
 
     // 기본 필터링: id와 ids
     if (param.id) {
