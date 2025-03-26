@@ -11,10 +11,6 @@ import {
   UsePipes,
 } from "@nestjs/common";
 
-import apiFnd001, {
-  ApiFnd001RequestBody,
-  ApiFnd001ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd001";
 import apiFnd002, {
   ApiFnd002RequestParam,
   ApiFnd002ResponseOk,
@@ -80,6 +76,11 @@ import apiFnd016, {
   ApiFnd016RequestUrl,
   ApiFnd016ResponseOk,
 } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
+import {
+  apiFnd001,
+  ApiFnd001RequestBody,
+  ApiFnd001ResponseCreated,
+} from "@sparcs-clubs/interface/api/funding/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {

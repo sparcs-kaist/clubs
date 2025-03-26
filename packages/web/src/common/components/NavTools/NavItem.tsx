@@ -2,6 +2,7 @@
 
 import isPropValid from "@emotion/is-prop-valid";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 import styled from "styled-components";
 
@@ -41,6 +42,7 @@ const StyledLink = styled(Link)`
 
 const NavItem = ({ name, path = "", sub = [], highlight = false }: Path) => {
   const [isHover, setIsHover] = useState(false);
+  const t = useTranslations();
 
   return (
     <NavItemInner
@@ -48,7 +50,7 @@ const NavItem = ({ name, path = "", sub = [], highlight = false }: Path) => {
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => setIsHover(false)}
     >
-      {path ? <StyledLink href={path}>{name}</StyledLink> : name}
+      {path ? <StyledLink href={path}>{t(name)}</StyledLink> : t(name)}
       {!path && isHover && <NavSubMenu sub={sub} />}
     </NavItemInner>
   );

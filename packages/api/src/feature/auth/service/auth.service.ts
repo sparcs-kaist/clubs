@@ -6,6 +6,7 @@ import { ApiAut002ResponseCreated } from "@sparcs-clubs/interface/api/auth/endpo
 import { ApiAut003ResponseOk } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
 import { ApiAut004RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut004";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { getSsoConfig } from "@sparcs-clubs/api/env";
 
 import { Request } from "../dto/auth.dto";
@@ -60,6 +61,7 @@ export class AuthService {
     }
 
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
+    logger.info(JSON.stringify(ssoProfile));
 
     let studentNumber = ssoProfile.kaist_info.ku_std_no || "00000000";
     let email =

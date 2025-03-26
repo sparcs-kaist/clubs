@@ -4,6 +4,7 @@ import { useState } from "react";
 import apiReg014 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
 import apiReg015 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
 import { RegistrationStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -11,9 +12,9 @@ import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { formatSlashDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
-import useRegisterClubDetail from "../services/getRegisterClubDetail";
 import { patchClubRegistrationExecutive } from "../services/patchClubRegistrationExecutive";
 import { postClubRegistrationSendBack } from "../services/postClubRegistrationSendBack";
 
@@ -29,9 +30,12 @@ const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {
 
   const [rejectionDetail, setRejectionDetail] = useState("");
 
-  const { data, isLoading, isError } = useRegisterClubDetail({
-    applyId,
-  });
+  const { data, isLoading, isError } = useGetRegisterClubDetail(
+    UserTypeEnum.Executive,
+    {
+      applyId,
+    },
+  );
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
