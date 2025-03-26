@@ -1,10 +1,14 @@
 import { MySqlColumn } from "drizzle-orm/mysql-core";
 
-import { OperationType } from "@sparcs-clubs/interface/common/utils/field-operations";
+import {
+  Exclude,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
 export type IdType = number | string;
 
 export abstract class MEntity<T extends IdType = number> {
+  @Exclude(OperationType.CREATE, OperationType.PUT)
   id: T;
 
   static modelName: string;

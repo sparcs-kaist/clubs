@@ -287,9 +287,12 @@ export abstract class BaseRepository<
     tx: DrizzleTransaction,
     param: Partial<Model>,
   ): Promise<Model> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelInstance = new (this.modelClass as any)(param);
+
     const [result] = await tx
       .insert(this.table)
-      .values(param.to(OperationType.CREATE) as Table["$inferInsert"])
+      .values(modelInstance.to(OperationType.CREATE) as Table["$inferInsert"])
       .execute();
 
     // insertId를 적절한 타입으로 변환
@@ -307,9 +310,12 @@ export abstract class BaseRepository<
     id: Id,
     param: Partial<Model>,
   ): Promise<Model> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelInstance = new (this.modelClass as any)(param);
+
     await tx
       .update(this.table)
-      .set(param.to(OperationType.PUT) as Table["$inferInsert"])
+      .set(modelInstance.to(OperationType.PUT) as Table["$inferInsert"])
       .where(eq(this.table.id, id))
       .execute();
 

@@ -34,9 +34,6 @@ export class MMemberRegistration
 {
   static modelName = "member_registration";
 
-  @Exclude(OperationType.CREATE, OperationType.PUT)
-  declare id: IMemberRegistration["id"];
-
   student: IMemberRegistration["student"];
 
   club: IMemberRegistration["club"];
@@ -71,11 +68,7 @@ export class MMemberRegistration
   }
 
   to(operation: OperationType): MemberRegistrationDbResult {
-    const filtered = filterExcludedFields(
-      this,
-      MMemberRegistration.constructor as new (...args: unknown[]) => unknown,
-      operation,
-    );
+    const filtered = filterExcludedFields(this, operation);
 
     return {
       id: filtered.id ?? undefined,
@@ -83,7 +76,8 @@ export class MMemberRegistration
       clubId: filtered.club?.id,
       semesterId: filtered.semester?.id,
       registrationApplicationStudentEnumId:
-        filtered.registrationApplicationStudentEnum ?? undefined,
+        filtered.registrationApplicationStudentEnum ??
+        RegistrationApplicationStudentStatusEnum.Pending,
       createdAt: filtered.createdAt ?? undefined,
       deletedAt: filtered.deletedAt,
     } as MemberRegistrationDbResult;

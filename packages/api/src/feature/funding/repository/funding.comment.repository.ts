@@ -14,8 +14,6 @@ import {
 @Injectable()
 export default class FundingCommentRepository extends BaseRepository<
   MFundingComment,
-  IFundingCommentRequest,
-  IFundingCommentRequest,
   FundingCommentDbResult,
   typeof FundingFeedback,
   FundingCommentQuery
