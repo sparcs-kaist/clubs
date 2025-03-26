@@ -30,18 +30,19 @@ import { OrderByTypeEnum } from "../enums";
 import { IdType, MEntity } from "../model/entity.model";
 import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
-interface TableWithId {
+interface TableWithIdAndDeletedAt {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
+  deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
 }
 
-interface ModelWithFrom<
+interface ModelWithMethods<
   Model extends MEntity<Id>,
   DbResult,
   Query,
   Id extends IdType = number,
 > {
-  from(result: DbResult): Model;
   modelName: string;
+  from(result: DbResult): Model;
   fieldMap(field: keyof Query): MySqlColumn;
 }
 
@@ -64,7 +65,7 @@ export type BaseRepositoryQuery<
 export abstract class BaseRepository<
   Model extends MEntity<Id>,
   DbResult,
-  Table extends MySqlTable & TableWithId,
+  Table extends MySqlTable & TableWithIdAndDeletedAt,
   Query,
   Id extends IdType = number,
 > {
@@ -72,7 +73,7 @@ export abstract class BaseRepository<
 
   constructor(
     protected table: Table,
-    protected modelClass: ModelWithFrom<Model, DbResult, Query, Id>,
+    protected modelClass: ModelWithMethods<Model, DbResult, Query, Id>,
   ) {}
 
   async withTransaction<Result>(
@@ -83,6 +84,10 @@ export abstract class BaseRepository<
 
   protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL[] {
     const whereClause: SQL[] = [];
+
+    if (this.table.deletedAt) {
+      whereClause.push(eq(this.table.deletedAt, null));
+    }
 
     // 기본 필터링: id와 ids
     if (param.id) {
