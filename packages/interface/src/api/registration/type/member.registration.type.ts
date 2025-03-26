@@ -15,7 +15,6 @@ export const zMemberRegistration = z.object({
     RegistrationApplicationStudentStatusEnum,
   ),
   createdAt: z.coerce.date(),
-  deletedAt: z.coerce.date().nullable(),
 });
 
 // 외부 entity의 값을 전부 받아온 형태.

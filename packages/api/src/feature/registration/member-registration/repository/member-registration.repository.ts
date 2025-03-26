@@ -13,14 +13,12 @@ import {
   MMemberRegistration,
 } from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
 
-type MemberRegistrationDbResult = InferSelectModel<
-  typeof RegistrationApplicationStudent
->;
+type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
 
 @Injectable()
 export class MemberRegistrationRepository extends BaseRepository<
   MMemberRegistration,
-  MemberRegistrationDbResult,
+  FromDb,
   typeof RegistrationApplicationStudent,
   MemberRegistrationQuery
 > {

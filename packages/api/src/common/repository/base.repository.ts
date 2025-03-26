@@ -38,12 +38,12 @@ interface TableWithIdAndDeletedAt {
 
 interface ModelWithMethods<
   Model extends MEntity<Id>,
-  DbResult,
+  FromDb,
   Query,
   Id extends IdType = number,
 > {
   modelName: string;
-  from(result: DbResult): Model;
+  from(result: FromDb): Model;
   fieldMap(field: keyof Query): MySqlColumn;
 }
 
