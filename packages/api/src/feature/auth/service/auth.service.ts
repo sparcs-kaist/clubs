@@ -61,7 +61,7 @@ export class AuthService {
     }
 
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
-    logger.info(ssoProfile);
+    logger.info(JSON.stringify(ssoProfile));
 
     let studentNumber = ssoProfile.kaist_info.ku_std_no || "00000000";
     let email =
