@@ -39,7 +39,6 @@ export class MFundingComment
 
   content: string;
 
-  @Exclude(OperationType.CREATE, OperationType.PUT)
   fundingStatusEnum: FundingStatusEnum = FundingStatusEnum.Applied;
 
   approvedAmount: number;
