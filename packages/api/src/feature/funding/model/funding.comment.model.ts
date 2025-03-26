@@ -1,6 +1,7 @@
 import {
   ColumnBaseConfig,
   ColumnDataType,
+  InferInsertModel,
   InferSelectModel,
 } from "drizzle-orm";
 import { MySqlColumn } from "drizzle-orm/mysql-core";
@@ -19,7 +20,8 @@ import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema
 import { MFunding } from "./funding.model";
 import { VFundingSummary } from "./funding.summary.model";
 
-export type FundingCommentDbResult = InferSelectModel<typeof FundingFeedback>;
+export type FromDb = InferSelectModel<typeof FundingFeedback>;
+export type ToDb = InferInsertModel<typeof FundingFeedback>;
 
 export type FundingCommentQuery = {
   fundingId: number;
@@ -46,9 +48,6 @@ export class MFundingComment
   @Exclude(OperationType.CREATE)
   createdAt: Date;
 
-  @Exclude(OperationType.CREATE)
-  deletedAt: Date | null;
-
   constructor(data: IFundingComment) {
     super();
     Object.assign(this, data);
@@ -62,7 +61,7 @@ export class MFundingComment
     );
   }
 
-  static from(result: FundingCommentDbResult): MFundingComment {
+  static from(result: FromDb): MFundingComment {
     return new MFundingComment({
       id: result.id,
       funding: { id: result.fundingId },
@@ -76,7 +75,7 @@ export class MFundingComment
     });
   }
 
-  to(operation: OperationType): FundingCommentDbResult {
+  to(operation: OperationType): ToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
@@ -87,7 +86,6 @@ export class MFundingComment
       fundingStatusEnum: filtered.fundingStatusEnum,
       approvedAmount: filtered.approvedAmount,
       createdAt: filtered.createdAt,
-      deletedAt: filtered.deletedAt,
     };
   }
 

@@ -1,6 +1,7 @@
 import {
   ColumnBaseConfig,
   ColumnDataType,
+  InferInsertModel,
   InferSelectModel,
 } from "drizzle-orm";
 import { MySqlColumn } from "drizzle-orm/mysql-core";
@@ -16,9 +17,8 @@ import {
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
-type MemberRegistrationDbResult = InferSelectModel<
-  typeof RegistrationApplicationStudent
->;
+export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
+export type ToDb = InferInsertModel<typeof RegistrationApplicationStudent>;
 
 export type MemberRegistrationQuery = {
   studentId: number;
@@ -47,14 +47,12 @@ export class MMemberRegistration
   @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
 
-  deletedAt: IMemberRegistration["deletedAt"];
-
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
   }
 
-  static from(result: MemberRegistrationDbResult): MMemberRegistration {
+  static from(result: FromDb): MMemberRegistration {
     return new MMemberRegistration({
       id: result.id,
       student: { id: result.studentId },
@@ -63,11 +61,10 @@ export class MMemberRegistration
       registrationApplicationStudentEnum:
         result.registrationApplicationStudentEnumId,
       createdAt: result.createdAt,
-      deletedAt: result.deletedAt,
     });
   }
 
-  to(operation: OperationType): MemberRegistrationDbResult {
+  to(operation: OperationType): ToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
@@ -79,8 +76,7 @@ export class MMemberRegistration
         filtered.registrationApplicationStudentEnum ??
         RegistrationApplicationStudentStatusEnum.Pending,
       createdAt: filtered.createdAt ?? undefined,
-      deletedAt: filtered.deletedAt,
-    } as MemberRegistrationDbResult;
+    } as ToDb;
   }
 
   static fieldMap(

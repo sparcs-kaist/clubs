@@ -19,10 +19,6 @@ export const zMemberRegistration = z.object({
     description: "신청이 생성된 시각",
     example: String(new Date()),
   }),
-  deletedAt: z.coerce.date().nullable().openapi({
-    description: "신청이 삭제된 시각",
-    example: String(new Date()),
-  }),
 });
 
 registry.register("MemberRegistration", zMemberRegistration); // 아래 schema에 표시함

@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import {
-  FundingCommentDbResult,
+  FromDb,
   FundingCommentQuery,
   MFundingComment,
 } from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
@@ -11,7 +11,7 @@ import {
 @Injectable()
 export default class FundingCommentRepository extends BaseRepository<
   MFundingComment,
-  FundingCommentDbResult,
+  FromDb,
   typeof FundingFeedback,
   FundingCommentQuery
 > {
