@@ -35,6 +35,7 @@ import { OrderByTypeEnum } from "../enums";
 import { IdType, MEntity } from "../model/entity.model";
 import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
+// 쿼리 조건 래핑을 위해 필요한 타입 선언
 const mysqlQueryConditionOperators = [
   "eq",
   "ne",
@@ -94,6 +95,12 @@ export type BaseRepositoryQuery<
   Id extends IdType = number,
 > = BaseQueryFields<Id> & Partial<Query>;
 
+// 베이스 레포지토리 추상클래스
+// 사용 방법
+// 1. Model에 모델 클래스 넣기
+// 2. Table에 FromDB (InferSelectTable) 타입 넣기
+// 3. 쿼리 조건 추가 (id 등 제외)
+// 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseRepository<
   Model extends MEntity<Id>,
@@ -106,18 +113,14 @@ export abstract class BaseRepository<
 
   constructor(
     protected table: Table,
-    protected modelClass: ModelWithMethods<Model, DbResult, Query, Id>,
+    protected modelClass: ModelWithMethods<Model, DbResult, Query, Id>, // 모델엔티티 넣으면 됨
   ) {}
 
-  async withTransaction<Result>(
-    callback: (tx: DrizzleTransaction) => Promise<Result>,
-  ): Promise<Result> {
-    return this.db.transaction(callback);
-  }
-
-  // where 절을 생성하는 메서드
-  // find와 count에서 사용
-  // 주로 구현해야 할 메서드
+  /* where 절을 생성하는 메서드
+   * find와 count에서 사용
+   * 상속할 떄 super.makeWhereClause(param, specialKeys) 로 기본적인 쿼리 생성 (id 등)
+   * 추가적인 조건을 추가할 거면 specialKeys에 추가 (ex) duration ... )
+   */
   protected makeWhereClause(
     param: BaseRepositoryQuery<Query, Id>,
     specialKeys?: string[], // 제외할 키들 ex) duration ...
@@ -179,7 +182,7 @@ export abstract class BaseRepository<
           else if (value === null) {
             whereClause.push(isNull(tableField));
           }
-          // 단일 값인 경우 = 연산자 사용
+          // 단일 값인 경우 eq 연산자 사용
           else {
             whereClause.push(eq(tableField, value));
           }
@@ -189,11 +192,112 @@ export abstract class BaseRepository<
     return whereClause;
   }
 
-  // Query 필드를 테이블 필드로 변환하는 헬퍼 메서드
-  private getTableField(queryField: keyof Query): MySqlColumn {
-    return this.modelClass.fieldMap(queryField);
+  // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
+  async findTx(
+    tx: DrizzleTransaction,
+    param: BaseRepositoryQuery<Query, Id>,
+  ): Promise<Model[]> {
+    let query = tx
+      .select()
+      .from(this.table)
+      .where(and(...this.makeWhereClause(param)))
+      .$dynamic();
+
+    if (param.pagination) {
+      query = query.limit(param.pagination.itemCount);
+      query = query.offset(
+        (param.pagination.offset - 1) * param.pagination.itemCount,
+      );
+    }
+
+    if (param.orderBy) {
+      query = query.orderBy(...this.makeOrderBy(param.orderBy));
+    }
+
+    const result = await query.execute();
+
+    return result.map(row => this.modelClass.from(row as DbResult));
   }
 
+  async countTx(
+    tx: DrizzleTransaction,
+    param: BaseRepositoryQuery<Query, Id>,
+  ): Promise<number> {
+    const [result] = await tx
+      .select({ count: count() })
+      .from(this.table)
+      .where(and(...this.makeWhereClause(param)));
+
+    return result.count;
+  }
+
+  async createTx(
+    tx: DrizzleTransaction,
+    param: Partial<Model>,
+  ): Promise<Model> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelInstance = new (this.modelClass as any)(param);
+
+    const [result] = await tx
+      .insert(this.table)
+      .values(modelInstance.to(OperationType.CREATE) as Table["$inferInsert"])
+      .execute();
+
+    // insertId를 적절한 타입으로 변환
+    const newId = result.insertId as Id;
+
+    return this.fetchTx(tx, newId);
+  }
+
+  async putTx(
+    tx: DrizzleTransaction,
+    id: Id,
+    param: Partial<Model>,
+  ): Promise<Model> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const modelInstance = new (this.modelClass as any)(param);
+
+    await tx
+      .update(this.table)
+      .set(modelInstance.to(OperationType.PUT) as Table["$inferInsert"])
+      .where(eq(this.table.id, id))
+      .execute();
+
+    return this.fetchTx(tx, id);
+  }
+
+  async patchTx(
+    tx: DrizzleTransaction,
+    oldId: Id,
+    consumer: (oldbie: Model) => Model,
+  ): Promise<Model> {
+    const param = consumer(await this.fetchTx(tx, oldId));
+    await tx
+      .update(this.table)
+      .set(param)
+      .where(eq(this.table.id, oldId))
+      .execute();
+
+    return this.fetchTx(tx, oldId);
+  }
+
+  async deleteTx(tx: DrizzleTransaction, id: Id): Promise<void> {
+    await tx
+      .update(this.table)
+      .set({ deletedAt: getKSTDate() })
+      .where(eq(this.table.id, id))
+      .execute();
+  }
+
+  // 상속 후에도 사용하는 헬퍼 메서드
+  async withTransaction<Result>(
+    callback: (tx: DrizzleTransaction) => Promise<Result>,
+  ): Promise<Result> {
+    return this.db.transaction(callback);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // 이 아래는 바꿀 필요 없음
   // 뭐 이럴꺼면 중첩 쿼리도 처리할 수 있게 만들어 주죠?
   // ㅋㅋ 왠만하면 쓰지 마세요 (gb)
   protected processNestedQuery(
@@ -301,6 +405,7 @@ export abstract class BaseRepository<
   }
 
   // 여러 필드에 대한 정렬을 지원하는 구현
+  // find에서 사용
   protected makeOrderBy(order: Record<string, OrderByTypeEnum>): SQL[] {
     const orderClauses: SQL[] = [];
 
@@ -324,34 +429,40 @@ export abstract class BaseRepository<
     return orderClauses;
   }
 
-  async findTx(
-    tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, Id>,
-  ): Promise<Model[]> {
-    let query = tx
-      .select()
-      .from(this.table)
-      .where(and(...this.makeWhereClause(param)))
-      .$dynamic();
+  // private 헬퍼 메서드들
 
-    if (param.pagination) {
-      query = query.limit(param.pagination.itemCount);
-      query = query.offset(
-        (param.pagination.offset - 1) * param.pagination.itemCount,
-      );
-    }
-
-    if (param.orderBy) {
-      query = query.orderBy(...this.makeOrderBy(param.orderBy));
-    }
-
-    const result = await query.execute();
-
-    return result.map(row => this.modelClass.from(row as DbResult));
+  // Query 필드를 테이블 필드로 변환하는 헬퍼 메서드
+  // abstract class의 한계로 인해 필요
+  // 실제 구현 시에는 MEntity.fieldMap(queryField)를 사용하기에, 이 메서드는 사용하지 않음
+  private getTableField(queryField: keyof Query): MySqlColumn {
+    return this.modelClass.fieldMap(queryField);
   }
+
+  // 재구현 필요 X인 부분들
+  // TX 메서드만 구현하면 자동 반영
 
   async find(param: BaseRepositoryQuery<Query, Id>): Promise<Model[]> {
     return this.withTransaction(async tx => this.findTx(tx, param));
+  }
+
+  async count(param: BaseRepositoryQuery<Query, Id>): Promise<number> {
+    return this.withTransaction(async tx => this.countTx(tx, param));
+  }
+
+  async create(param: Partial<Model>): Promise<Model> {
+    return this.withTransaction(async tx => this.createTx(tx, param));
+  }
+
+  async put(id: Id, param: Partial<Model>): Promise<Model> {
+    return this.withTransaction(async tx => this.putTx(tx, id, param));
+  }
+
+  async patch(oldId: Id, consumer: (oldbie: Model) => Model): Promise<Model> {
+    return this.withTransaction(async tx => this.patchTx(tx, oldId, consumer));
+  }
+
+  async delete(id: Id): Promise<void> {
+    return this.withTransaction(async tx => this.deleteTx(tx, id));
   }
 
   async fetchTx(tx: DrizzleTransaction, id: Id): Promise<Model> {
@@ -361,6 +472,8 @@ export abstract class BaseRepository<
     );
   }
 
+  // id(ids) 로 쿼리하는 함수들
+  // 재구현 필요 X
   async fetch(id: Id): Promise<Model> {
     return this.withTransaction(async tx => this.fetchTx(tx, id));
   }
@@ -374,95 +487,5 @@ export abstract class BaseRepository<
 
   async fetchAll(ids: Id[]): Promise<Model[]> {
     return this.withTransaction(async tx => this.fetchAllTx(tx, ids));
-  }
-
-  async countTx(
-    tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, Id>,
-  ): Promise<number> {
-    const [result] = await tx
-      .select({ count: count() })
-      .from(this.table)
-      .where(and(...this.makeWhereClause(param)));
-
-    return result.count;
-  }
-
-  async count(param: BaseRepositoryQuery<Query, Id>): Promise<number> {
-    return this.withTransaction(async tx => this.countTx(tx, param));
-  }
-
-  async createTx(
-    tx: DrizzleTransaction,
-    param: Partial<Model>,
-  ): Promise<Model> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modelInstance = new (this.modelClass as any)(param);
-
-    const [result] = await tx
-      .insert(this.table)
-      .values(modelInstance.to(OperationType.CREATE) as Table["$inferInsert"])
-      .execute();
-
-    // insertId를 적절한 타입으로 변환
-    const newId = result.insertId as Id;
-
-    return this.fetchTx(tx, newId);
-  }
-
-  async create(param: Partial<Model>): Promise<Model> {
-    return this.withTransaction(async tx => this.createTx(tx, param));
-  }
-
-  async putTx(
-    tx: DrizzleTransaction,
-    id: Id,
-    param: Partial<Model>,
-  ): Promise<Model> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modelInstance = new (this.modelClass as any)(param);
-
-    await tx
-      .update(this.table)
-      .set(modelInstance.to(OperationType.PUT) as Table["$inferInsert"])
-      .where(eq(this.table.id, id))
-      .execute();
-
-    return this.fetchTx(tx, id);
-  }
-
-  async put(id: Id, param: Partial<Model>): Promise<Model> {
-    return this.withTransaction(async tx => this.putTx(tx, id, param));
-  }
-
-  async patchTx(
-    tx: DrizzleTransaction,
-    oldId: Id,
-    consumer: (oldbie: Model) => Model,
-  ): Promise<Model> {
-    const param = consumer(await this.fetchTx(tx, oldId));
-    await tx
-      .update(this.table)
-      .set(param)
-      .where(eq(this.table.id, oldId))
-      .execute();
-
-    return this.fetchTx(tx, oldId);
-  }
-
-  async patch(oldId: Id, consumer: (oldbie: Model) => Model): Promise<Model> {
-    return this.withTransaction(async tx => this.patchTx(tx, oldId, consumer));
-  }
-
-  async deleteTx(tx: DrizzleTransaction, id: Id): Promise<void> {
-    await tx
-      .update(this.table)
-      .set({ deletedAt: getKSTDate() })
-      .where(eq(this.table.id, id))
-      .execute();
-  }
-
-  async delete(id: Id): Promise<void> {
-    return this.withTransaction(async tx => this.deleteTx(tx, id));
   }
 }
