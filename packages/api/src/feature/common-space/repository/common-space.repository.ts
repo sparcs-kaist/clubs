@@ -1,7 +1,8 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { eq } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
+import { NotFoundException } from "@sparcs-clubs/api/common/exception/not-found.exception";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { CommonSpace } from "@sparcs-clubs/api/drizzle/schema/common-space.schema";
 
@@ -28,7 +29,7 @@ export class CommonSpaceRepository {
       .from(CommonSpace)
       .where(eq(CommonSpace.id, id));
     if (result.length !== 1) {
-      throw new HttpException("Common space not found", HttpStatus.NOT_FOUND);
+      throw new NotFoundException("Common space", id.toString());
     }
     return result[0];
   }
