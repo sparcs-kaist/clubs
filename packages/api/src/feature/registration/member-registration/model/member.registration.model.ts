@@ -1,41 +1,58 @@
-import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
+import {
+  ColumnBaseConfig,
+  ColumnDataType,
+  InferInsertModel,
+  InferSelectModel,
+} from "drizzle-orm";
+import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import {
+  Exclude,
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
-import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
-type MemberRegistrationDbResult = InferSelectModel<
-  typeof RegistrationApplicationStudent
->;
+export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
+export type ToDb = InferInsertModel<typeof RegistrationApplicationStudent>;
 
-const orderByFieldMap = {
-  createdAt: RegistrationApplicationStudent.createdAt,
-  registrationApplicationStudentEnum:
-    RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-  semesterId: RegistrationApplicationStudent.semesterId,
+export type MemberRegistrationQuery = {
+  studentId: number;
+  clubId: number;
+  semesterId: number;
+  registrationApplicationStudentEnumId: number;
+  createdAt: Date;
 };
-
-export type IMemberRegistrationOrderBy = Partial<{
-  [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
-}>;
 
 export class MMemberRegistration
   extends MEntity
   implements IMemberRegistration
 {
+  static modelName = "member_registration";
+
   student: IMemberRegistration["student"];
+
   club: IMemberRegistration["club"];
-  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+
+  @Exclude(OperationType.CREATE, OperationType.PUT)
+  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"] =
+    RegistrationApplicationStudentStatusEnum.Pending;
+
   semester: IMemberRegistration["semester"];
+
+  @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
+
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
   }
 
-  static from(result: MemberRegistrationDbResult): MMemberRegistration {
+  static from(result: FromDb): MMemberRegistration {
     return new MMemberRegistration({
       id: result.id,
       student: { id: result.studentId },
@@ -47,16 +64,40 @@ export class MMemberRegistration
     });
   }
 
-  static makeOrderBy(orderBy: IMemberRegistrationOrderBy): SQL[] {
-    return Object.entries(orderBy)
-      .filter(
-        ([key, orderByType]) =>
-          orderByType && orderByFieldMap[key as keyof typeof orderByFieldMap],
-      )
-      .map(([key, orderByType]) =>
-        orderByType === OrderByTypeEnum.ASC
-          ? asc(orderByFieldMap[key])
-          : desc(orderByFieldMap[key]),
-      );
+  to(operation: OperationType): ToDb {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      id: filtered.id ?? undefined,
+      studentId: filtered.student?.id,
+      clubId: filtered.club?.id,
+      semesterId: filtered.semester?.id,
+      registrationApplicationStudentEnumId:
+        filtered.registrationApplicationStudentEnum ??
+        RegistrationApplicationStudentStatusEnum.Pending,
+      createdAt: filtered.createdAt ?? undefined,
+    } as ToDb;
+  }
+
+  static fieldMap(
+    field: keyof MemberRegistrationQuery,
+  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
+    const fieldMappings: Record<
+      keyof MemberRegistrationQuery,
+      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
+    > = {
+      studentId: RegistrationApplicationStudent.studentId,
+      clubId: RegistrationApplicationStudent.clubId,
+      semesterId: RegistrationApplicationStudent.semesterId,
+      registrationApplicationStudentEnumId:
+        RegistrationApplicationStudent.registrationApplicationStudentEnumId,
+      createdAt: RegistrationApplicationStudent.createdAt,
+    };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }
