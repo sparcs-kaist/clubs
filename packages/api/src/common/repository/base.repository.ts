@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
   asc,
+  between,
   ColumnBaseConfig,
   ColumnDataType,
   count,
@@ -10,6 +11,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   isNull,
   like,
   lt,
@@ -31,11 +33,33 @@ import { OrderByTypeEnum } from "../enums";
 import { IdType, MEntity } from "../model/entity.model";
 import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
 
+const mysqlQueryConditionOperators = [
+  "eq",
+  "ne",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "like",
+  "startsWith",
+  "endsWith",
+  "in",
+  "isNotNull",
+] as const;
+
+// 타입으로 변환
+type MysqlQueryConditionOperators =
+  (typeof mysqlQueryConditionOperators)[number];
+
+// Clubs에서 사용하는 테이블에 id와 deletedAt 필드가 항상 있음을 보장하기 위한 interface
 interface TableWithIdAndDeletedAt {
   id: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
   deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, string | null>>;
 }
 
+// MEntity 의 static 메서드를 사용하기 위한 interface
+// 베이스 레포지토리 추상클래스 한정으로, MEntity를 직접 주입을 안해서 이렇게 한번 매핑해줘야 static 메서드들을 사용할 수 있음
+// 실제 repository 에서는 이 인터페이스를 사용 및 구현할 필요 없음
 interface ModelWithMethods<
   Model extends MEntity<Id>,
   FromDb,
@@ -47,6 +71,8 @@ interface ModelWithMethods<
   fieldMap(field: keyof Query): MySqlColumn;
 }
 
+// 기본적인 쿼리 파라미터들
+// id, ids, pagination, orderBy 등을 기본으로 지원하기 위함
 export interface BaseQueryFields<Id extends IdType = number> {
   id?: Id;
   ids?: Id[];
@@ -57,6 +83,7 @@ export interface BaseQueryFields<Id extends IdType = number> {
   orderBy?: Record<string, OrderByTypeEnum>;
 }
 
+// Query 에 쿼리 가능한 타입들을 명시하여 사용
 export type BaseRepositoryQuery<
   Query,
   Id extends IdType = number,
@@ -66,7 +93,7 @@ export type BaseRepositoryQuery<
 export abstract class BaseRepository<
   Model extends MEntity<Id>,
   DbResult,
-  Table extends MySqlTable & TableWithIdAndDeletedAt,
+  Table extends MySqlTable & TableWithIdAndDeletedAt, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query,
   Id extends IdType = number,
 > {
@@ -83,6 +110,9 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
+  // where 절을 생성하는 메서드
+  // find와 count에서 사용
+  // 주로 구현해야 할 메서드
   protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL[] {
     const whereClause: SQL[] = [];
 
@@ -106,7 +136,7 @@ export abstract class BaseRepository<
 
       // 파라미터 값이 존재하는 경우
       const value = param[key];
-      if (value !== undefined && value !== null) {
+      if (value !== undefined) {
         // Query 필드를 테이블 필드로 변환
         const tableField = this.getTableField(key as keyof Query);
         if (!tableField) {
@@ -116,10 +146,26 @@ export abstract class BaseRepository<
         // 배열인 경우 IN 연산자 사용
         if (Array.isArray(value)) {
           whereClause.push(inArray(tableField, value));
+        } else if (value instanceof Date) {
+          whereClause.push(eq(tableField, value));
         }
-        // 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
-        else if (typeof value === "object") {
-          this.processAdvancedOperators(whereClause, key as keyof Query, value);
+        // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
+        // 예시: { gt: 10, lt: 20 }
+        else if (
+          typeof value === "object" &&
+          Object.keys(value).every(k =>
+            mysqlQueryConditionOperators.includes(
+              k as MysqlQueryConditionOperators,
+            ),
+          )
+        ) {
+          whereClause.push(
+            this.processAdvancedOperators(key as keyof Query, value),
+          );
+        }
+        // null 인 경우 isNull 연산자 사용
+        else if (value === null) {
+          whereClause.push(isNull(tableField));
         }
         // 단일 값인 경우 = 연산자 사용
         else {
@@ -137,23 +183,25 @@ export abstract class BaseRepository<
   }
 
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
-  private processAdvancedOperators(
-    whereClause: SQL[],
+  protected processAdvancedOperators(
     queryField: keyof Query,
-    conditions: Record<string, unknown>,
-  ): void {
+    conditions: Record<MysqlQueryConditionOperators, unknown>,
+  ): SQL {
     // Query 필드를 테이블 필드로 변환
     const tableField = this.getTableField(queryField);
     if (!tableField) {
       throw new Error(`Invalid query field: ${String(queryField)}`);
     }
+    if (Object.keys(conditions).length === 0) {
+      throw new Error(`Empty conditions: ${String(conditions)}`);
+    }
 
+    const whereClause: SQL[] = [];
     // 객체의 키-값 쌍을 forEach로 순회
     Object.entries(conditions).forEach(([operator, operand]) => {
       if (operand === undefined || operand === null) {
         throw new Error(`Invalid operand: ${operand}`);
       }
-
       switch (operator) {
         case "eq":
           whereClause.push(eq(tableField, operand));
@@ -173,6 +221,17 @@ export abstract class BaseRepository<
         case "lte":
           whereClause.push(lte(tableField, operand));
           break;
+        case "isNotNull":
+          whereClause.push(isNotNull(tableField));
+          break;
+        case "between":
+          if (!Array.isArray(operand) || operand.length !== 2) {
+            throw new Error(
+              `Invalid operator and operand for between: ${tableField} ${operand}`,
+            );
+          }
+          whereClause.push(between(tableField, operand[0], operand[1]));
+          break;
         case "like":
           whereClause.push(like(tableField, `%${String(operand)}%`));
           break;
@@ -191,6 +250,7 @@ export abstract class BaseRepository<
           throw new Error(`Invalid operator: ${operator}`);
       }
     });
+    return and(...whereClause);
   }
 
   // 여러 필드에 대한 정렬을 지원하는 구현
