@@ -17,6 +17,8 @@ import {
   lt,
   lte,
   ne,
+  not,
+  or,
   SQL,
 } from "drizzle-orm";
 import { MySqlColumn, MySqlTable } from "drizzle-orm/mysql-core";
@@ -50,6 +52,9 @@ const mysqlQueryConditionOperators = [
 // 타입으로 변환
 type MysqlQueryConditionOperators =
   (typeof mysqlQueryConditionOperators)[number];
+
+const nestedQueryWrapper = ["and", "or", "not"] as const;
+type NestedQueryWrapper = (typeof nestedQueryWrapper)[number];
 
 // Clubs에서 사용하는 테이블에 id와 deletedAt 필드가 항상 있음을 보장하기 위한 interface
 interface TableWithIdAndDeletedAt {
@@ -113,7 +118,10 @@ export abstract class BaseRepository<
   // where 절을 생성하는 메서드
   // find와 count에서 사용
   // 주로 구현해야 할 메서드
-  protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL[] {
+  protected makeWhereClause(
+    param: BaseRepositoryQuery<Query, Id>,
+    specialKeys?: string[], // 제외할 키들 ex) duration ...
+  ): SQL[] {
     const whereClause: SQL[] = [];
 
     whereClause.push(isNull(this.table.deletedAt));
@@ -127,52 +135,56 @@ export abstract class BaseRepository<
     }
 
     // Query 타입의 모든 키를 순회하면서 파라미터에 해당 값이 있는지 확인
-    const specialKeys = ["id", "ids", "pagination", "order"];
-    Object.keys(param).forEach(key => {
-      // 특별한 키는 제외
-      if (specialKeys.includes(key)) {
-        return; // continue 대신 return 사용
-      }
+    const defaultKeys = ["id", "ids", "pagination", "order"];
+    if (specialKeys) {
+      defaultKeys.push(...specialKeys);
+    }
 
-      // 파라미터 값이 존재하는 경우
-      const value = param[key];
-      if (value !== undefined) {
-        // Query 필드를 테이블 필드로 변환
-        const tableField = this.getTableField(key as keyof Query);
-        if (!tableField) {
-          throw new Error(`Invalid query field: ${key}`);
-        }
-
-        // 배열인 경우 IN 연산자 사용
-        if (Array.isArray(value)) {
-          whereClause.push(inArray(tableField, value));
-        } else if (value instanceof Date) {
-          whereClause.push(eq(tableField, value));
-        }
-        // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
-        // 예시: { gt: 10, lt: 20 }
-        else if (
-          typeof value === "object" &&
-          Object.keys(value).every(k =>
-            mysqlQueryConditionOperators.includes(
-              k as MysqlQueryConditionOperators,
-            ),
-          )
-        ) {
+    Object.keys(param)
+      .filter(key => !defaultKeys.includes(key)) // 기본 키는 제외
+      .forEach(key => {
+        if (key in nestedQueryWrapper) {
           whereClause.push(
-            this.processAdvancedOperators(key as keyof Query, value),
+            this.processNestedQuery(param[key], key as NestedQueryWrapper),
           );
         }
-        // null 인 경우 isNull 연산자 사용
-        else if (value === null) {
-          whereClause.push(isNull(tableField));
+        // 파라미터 값이 존재하는 경우
+        const value = param[key];
+        if (value !== undefined) {
+          // Query 필드를 테이블 필드로 변환
+          const tableField = this.getTableField(key as keyof Query);
+          if (!tableField) {
+            throw new Error(`Invalid query field: ${key}`);
+          }
+
+          // 배열인 경우 IN 연산자 사용
+          if (Array.isArray(value)) {
+            whereClause.push(inArray(tableField, value));
+          }
+          // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
+          // 예시: { between: [10, 20] }, { gt: 10 }
+          else if (
+            typeof value === "object" &&
+            Object.keys(value).every(k =>
+              mysqlQueryConditionOperators.includes(
+                k as MysqlQueryConditionOperators,
+              ),
+            )
+          ) {
+            whereClause.push(
+              this.processAdvancedOperators(key as keyof Query, value),
+            );
+          }
+          // null 인 경우 isNull 연산자 사용
+          else if (value === null) {
+            whereClause.push(isNull(tableField));
+          }
+          // 단일 값인 경우 = 연산자 사용
+          else {
+            whereClause.push(eq(tableField, value));
+          }
         }
-        // 단일 값인 경우 = 연산자 사용
-        else {
-          whereClause.push(eq(tableField, value));
-        }
-      }
-    });
+      });
 
     return whereClause;
   }
@@ -180,6 +192,41 @@ export abstract class BaseRepository<
   // Query 필드를 테이블 필드로 변환하는 헬퍼 메서드
   private getTableField(queryField: keyof Query): MySqlColumn {
     return this.modelClass.fieldMap(queryField);
+  }
+
+  // 뭐 이럴꺼면 중첩 쿼리도 처리할 수 있게 만들어 주죠?
+  // ㅋㅋ 왠만하면 쓰지 마세요 (gb)
+  protected processNestedQuery(
+    conditions: Record<string, object>,
+    wrapper: NestedQueryWrapper,
+  ): SQL {
+    const whereClause = Object.entries(conditions).map(([key, value]): SQL => {
+      if (key in nestedQueryWrapper) {
+        return this.processNestedQuery(
+          value as Record<string, object>,
+          key as NestedQueryWrapper,
+        );
+      }
+      return this.processAdvancedOperators(
+        key as keyof Query,
+        value as Record<MysqlQueryConditionOperators, unknown>,
+      );
+    });
+    if (wrapper === "and") {
+      return and(...whereClause);
+    }
+    if (wrapper === "or") {
+      return or(...whereClause);
+    }
+    if (wrapper === "not") {
+      if (whereClause.length !== 1) {
+        throw new Error(
+          "Not operator can only be used with a single condition",
+        );
+      }
+      return not(whereClause[0]);
+    }
+    throw new Error(`Invalid wrapper: ${wrapper}`);
   }
 
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
@@ -250,7 +297,7 @@ export abstract class BaseRepository<
           throw new Error(`Invalid operator: ${operator}`);
       }
     });
-    return and(...whereClause);
+    return whereClause.length > 1 ? and(...whereClause) : whereClause[0];
   }
 
   // 여러 필드에 대한 정렬을 지원하는 구현
