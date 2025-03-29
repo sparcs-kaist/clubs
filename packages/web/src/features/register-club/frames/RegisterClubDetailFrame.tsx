@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
+import { ApiReg011ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
 import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
 
@@ -21,7 +22,6 @@ import {
 } from "@sparcs-clubs/web/constants/tableTagList";
 import RegisterClubStatusSection from "@sparcs-clubs/web/features/executive/register-club/components/RegisterClubStatusSection";
 import MyRegisterClubActFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubActFrame";
-import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { isProvisional } from "@sparcs-clubs/web/features/register-club/utils/registrationType";
 import {
   getActualMonth,
@@ -30,9 +30,9 @@ import {
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 import { professorEnumToText } from "@sparcs-clubs/web/utils/getUserType";
 
-export interface ClubRegisterDetail {
-  applyId: number;
+interface ClubRegisterDetail {
   profile: UserTypeEnum | "permanent";
+  clubDetail: ApiReg011ResponseOk;
 }
 
 const FilePreviewContainerWrapper = styled(FlexWrapper)`
@@ -49,16 +49,9 @@ export const FilePreviewContainer: React.FC<React.PropsWithChildren> = ({
 );
 
 const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
-  applyId,
   profile,
+  clubDetail,
 }: ClubRegisterDetail) => {
-  const { data, isLoading, isError } = useGetRegisterClubDetail(
-    profile === "permanent" ? UserTypeEnum.Undergraduate : profile,
-    {
-      applyId: +applyId,
-    },
-  );
-
   const {
     data: divisionData,
     isLoading: divisionLoading,
@@ -66,17 +59,14 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   } = useGetDivisionType();
 
   return (
-    <AsyncBoundary
-      isLoading={isLoading || divisionLoading}
-      isError={isError || divisionError}
-    >
+    <AsyncBoundary isLoading={divisionLoading} isError={divisionError}>
       <Card padding="32px" gap={20} outline>
         {/* 교수: progress 보여주지 않음. 상임동아리: progress는 보이나 comments 가림 */}
-        {data && profile !== UserTypeEnum.Professor && (
+        {profile !== UserTypeEnum.Professor && (
           <RegisterClubStatusSection
-            status={data.registrationStatusEnumId}
-            editedAt={data.updatedAt}
-            comments={profile !== "permanent" ? data.comments : []}
+            status={clubDetail.registrationStatusEnumId}
+            editedAt={clubDetail.updatedAt}
+            comments={profile !== "permanent" ? clubDetail.comments : []}
           />
         )}
         <FlexWrapper gap={20} direction="row">
@@ -85,14 +75,18 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
           </Typography>
           <Tag
             color={
-              data &&
-              getTagDetail(data.registrationTypeEnumId, RegistrationTypeTagList)
-                .color
+              getTagDetail(
+                clubDetail.registrationTypeEnumId,
+                RegistrationTypeTagList,
+              ).color
             }
           >
-            {data &&
-              getTagDetail(data.registrationTypeEnumId, RegistrationTypeTagList)
-                .text}
+            {
+              getTagDetail(
+                clubDetail.registrationTypeEnumId,
+                RegistrationTypeTagList,
+              ).text
+            }
           </Tag>
         </FlexWrapper>
         <FlexWrapper gap={16} direction="column">
@@ -101,48 +95,55 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
           </Typography>
           <FlexWrapper gap={12} direction="column">
             <ListItem>
-              동아리명 (국문): {data?.clubNameKr ?? data?.newClubNameKr}
+              동아리명 (국문):{" "}
+              {clubDetail.clubNameKr ?? clubDetail.newClubNameKr}
             </ListItem>
             <ListItem>
-              동아리명 (영문): {data?.clubNameEn ?? data?.newClubNameEn}
+              동아리명 (영문):{" "}
+              {clubDetail.clubNameEn ?? clubDetail.newClubNameEn}
             </ListItem>
-            {data?.clubNameKr && data?.newClubNameKr !== "" && (
-              <ListItem>신규 동아리명 (국문): {data?.newClubNameKr}</ListItem>
+            {clubDetail.clubNameKr && clubDetail.newClubNameKr !== "" && (
+              <ListItem>
+                신규 동아리명 (국문): {clubDetail.newClubNameKr}
+              </ListItem>
             )}
-            {data?.clubNameEn && data?.newClubNameEn !== "" && (
-              <ListItem>신규 동아리명 (영문): {data?.newClubNameEn}</ListItem>
+            {clubDetail.clubNameEn && clubDetail.newClubNameEn !== "" && (
+              <ListItem>
+                신규 동아리명 (영문): {clubDetail.newClubNameEn}
+              </ListItem>
             )}
-            <ListItem>{`대표자 이름: ${data?.representative.name}`}</ListItem>
+            <ListItem>{`대표자 이름: ${clubDetail.representative.name}`}</ListItem>
             <ListItem>
-              {`대표자 전화번호: ${data?.representative.phoneNumber}`}
+              {`대표자 전화번호: ${clubDetail.representative.phoneNumber}`}
             </ListItem>
-            {data &&
-              (isProvisional(data.registrationTypeEnumId) ? (
-                <ListItem>
-                  설립 연월: {getActualYear(data.foundedAt)}년{" "}
-                  {getActualMonth(data.foundedAt)}월
-                </ListItem>
-              ) : (
-                <ListItem>설립 연도: {getActualYear(data.foundedAt)}</ListItem>
-              ))}
+            {isProvisional(clubDetail.registrationTypeEnumId) ? (
+              <ListItem>
+                설립 연월: {getActualYear(clubDetail.foundedAt)}년{" "}
+                {getActualMonth(clubDetail.foundedAt)}월
+              </ListItem>
+            ) : (
+              <ListItem>
+                설립 연도: {getActualYear(clubDetail.foundedAt)}
+              </ListItem>
+            )}
             <ListItem>
-              {`소속 분과: ${data && divisionData?.divisionTagList[data?.divisionId]?.text}`}
+              {`소속 분과: ${clubDetail && divisionData?.divisionTagList[clubDetail.divisionId]?.text}`}
             </ListItem>
-            <ListItem>{`활동 분야 (국문): ${data?.activityFieldKr}`}</ListItem>
-            <ListItem>{`활동 분야 (영문): ${data?.activityFieldEn}`}</ListItem>
+            <ListItem>{`활동 분야 (국문): ${clubDetail.activityFieldKr}`}</ListItem>
+            <ListItem>{`활동 분야 (영문): ${clubDetail.activityFieldEn}`}</ListItem>
           </FlexWrapper>
         </FlexWrapper>
-        {data?.professor && (
+        {clubDetail.professor && (
           <FlexWrapper gap={16} direction="column">
             <Typography fw="MEDIUM" lh={20} fs={16}>
               지도교수 정보
             </Typography>
             <FlexWrapper gap={12} direction="column">
-              <ListItem>{`성함: ${data?.professor?.name}`}</ListItem>
+              <ListItem>{`성함: ${clubDetail.professor?.name}`}</ListItem>
               <ListItem>
-                {`직급: ${professorEnumToText(data?.professor?.professorEnumId)}`}
+                {`직급: ${professorEnumToText(clubDetail.professor?.professorEnumId)}`}
               </ListItem>
-              <ListItem>{`이메일: ${data?.professor?.email}`}</ListItem>
+              <ListItem>{`이메일: ${clubDetail.professor?.email}`}</ListItem>
             </FlexWrapper>
           </FlexWrapper>
         )}
@@ -152,18 +153,18 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
           </Typography>
           <FlexWrapper gap={12} direction="column">
             <ListItem>분과 정합성:</ListItem>
-            <IndentedItem>{data?.divisionConsistency}</IndentedItem>
+            <IndentedItem>{clubDetail.divisionConsistency}</IndentedItem>
             <ListItem>설립 목적:</ListItem>
-            <IndentedItem>{data?.foundationPurpose}</IndentedItem>
+            <IndentedItem>{clubDetail.foundationPurpose}</IndentedItem>
             <ListItem>주요 활동 계획:</ListItem>
-            <IndentedItem>{data?.activityPlan}</IndentedItem>
-            {data?.activityPlanFile && (
+            <IndentedItem>{clubDetail.activityPlan}</IndentedItem>
+            {clubDetail.activityPlanFile && (
               <>
                 <ListItem>활동계획서</ListItem>
-                {data?.activityPlanFile && (
+                {clubDetail.activityPlanFile && (
                   <FilePreviewContainer>
                     <ThumbnailPreviewList
-                      fileList={[data.activityPlanFile]}
+                      fileList={[clubDetail.activityPlanFile]}
                       disabled
                     />
                   </FilePreviewContainer>
@@ -171,26 +172,26 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
               </>
             )}
           </FlexWrapper>
-          {data?.clubRuleFile && (
+          {clubDetail.clubRuleFile && (
             <>
               <ListItem>동아리 회칙</ListItem>
-              {data?.clubRuleFile && (
+              {clubDetail.clubRuleFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
-                    fileList={[data.clubRuleFile]}
+                    fileList={[clubDetail.clubRuleFile]}
                     disabled
                   />
                 </FilePreviewContainer>
               )}
             </>
           )}
-          {data?.externalInstructionFile && (
+          {clubDetail.externalInstructionFile && (
             <>
               <ListItem>(선택) 외부 강사 지도 계획서</ListItem>
-              {data?.externalInstructionFile && (
+              {clubDetail.externalInstructionFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
-                    fileList={[data.externalInstructionFile]}
+                    fileList={[clubDetail.externalInstructionFile]}
                     disabled
                   />
                 </FilePreviewContainer>
@@ -198,23 +199,27 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
             </>
           )}
         </FlexWrapper>
-        {data &&
-          data.registrationTypeEnumId === RegistrationTypeEnum.Promotional &&
-          data.clubId && (
-            <MyRegisterClubActFrame profile={profile} clubId={data.clubId} />
+        {clubDetail.registrationTypeEnumId ===
+          RegistrationTypeEnum.Promotional &&
+          clubDetail.clubId && (
+            <MyRegisterClubActFrame
+              profile={profile}
+              clubId={clubDetail.clubId}
+            />
           )}
-        {data?.professor && (
+        {clubDetail.professor && (
           <FlexWrapper gap={20} direction="row">
             <Typography fw="MEDIUM" lh={20} fs={16} style={{ flex: 1 }}>
               지도교수 승인
             </Typography>
             <Tag
               color={
-                data &&
-                ProfessorIsApprovedTagList(data?.isProfessorSigned).color
+                clubDetail &&
+                ProfessorIsApprovedTagList(clubDetail.isProfessorSigned).color
               }
             >
-              {data && ProfessorIsApprovedTagList(data?.isProfessorSigned).text}
+              {clubDetail &&
+                ProfessorIsApprovedTagList(clubDetail.isProfessorSigned).text}
             </Tag>
           </FlexWrapper>
         )}
