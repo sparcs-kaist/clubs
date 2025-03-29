@@ -2,17 +2,19 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import type { ApiNtc001ResponseOK } from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
 
-import { NoticeRepository } from "../repository/notice.repository";
+import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
 
 @Injectable()
 export class NoticeService {
   constructor(private readonly noticeRepository: NoticeRepository) {}
 
   async getNotices(pageOffset: number, itemCount: number) {
-    const notices = await this.noticeRepository.getNoticePagination(
-      pageOffset,
-      itemCount,
-    );
+    const notices = await this.noticeRepository.find({
+      pagination: {
+        offset: pageOffset,
+        itemCount,
+      },
+    });
 
     if (!notices) {
       throw new HttpException(
@@ -22,14 +24,9 @@ export class NoticeService {
     }
 
     const serviceResponse: ApiNtc001ResponseOK = {
-      ...notices,
-      notices: notices.notices.map(notice => ({
-        date: notice.date,
-        id: notice.id,
-        title: notice.title,
-        author: notice.author,
-        link: notice.link,
-      })),
+      notices,
+      total: notices.length,
+      offset: pageOffset,
     };
 
     return serviceResponse;
