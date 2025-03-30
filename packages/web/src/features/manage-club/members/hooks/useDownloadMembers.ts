@@ -1,12 +1,8 @@
 import { useCallback, useState } from "react";
 
-import apiClb010, {
-  ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
-
-import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 import downloadExcel from "@sparcs-clubs/web/utils/downloadExcel";
 
+import { useGetClubMembers } from "../services/useGetClubMembers";
 import { SemesterProps } from "../types/semesterList";
 
 export function useDownloadMembers() {
@@ -16,14 +12,13 @@ export function useDownloadMembers() {
     async (clubId: number, selectedSemesters: SemesterProps[]) => {
       setIsDownloading(true);
       try {
-        const allData = await Promise.all(
-          selectedSemesters.map(async semester => {
-            const response = await axiosClientWithAuth.get<ApiClb010ResponseOk>(
-              apiClb010.url(clubId, semester.id),
-            );
-            return { semester, members: response.data.members };
-          }),
-        );
+        const allData = selectedSemesters.map(semester => {
+          const response = useGetClubMembers({
+            clubId,
+            semesterId: semester.id,
+          });
+          return { semester, members: response.data.members };
+        });
 
         const sheets = allData.map(({ semester, members }) => ({
           name: `${semester.year}-${semester.name}`,
