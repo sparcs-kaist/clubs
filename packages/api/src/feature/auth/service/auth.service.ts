@@ -64,16 +64,16 @@ export class AuthService {
     logger.info(JSON.stringify(ssoProfile));
 
     let isKaistIamLogin: boolean = true;
-    if (process.env.NODE_ENV !== "local")
-      if (
-        !ssoProfile.kaist_info.ku_std_no ||
-        !ssoProfile.sid ||
-        !ssoProfile.kaist_info.ku_kname ||
-        !ssoProfile.kaist_info.ku_person_type ||
-        !ssoProfile.kaist_info.ku_kaist_org_id
-      ) {
-        isKaistIamLogin = false;
-      }
+    // if (process.env.NODE_ENV !== "local")
+    if (
+      !ssoProfile.kaist_info.ku_std_no ||
+      !ssoProfile.sid ||
+      !ssoProfile.kaist_info.ku_kname ||
+      !ssoProfile.kaist_info.ku_person_type ||
+      !ssoProfile.kaist_info.ku_kaist_org_id
+    ) {
+      isKaistIamLogin = false;
+    }
 
     let studentNumber = ssoProfile.kaist_info.ku_std_no;
     let email = ssoProfile.kaist_info.mail?.replace("mailto:", "");
