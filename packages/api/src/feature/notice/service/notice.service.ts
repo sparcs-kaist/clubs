@@ -25,7 +25,7 @@ export class NoticeService {
 
     const serviceResponse: ApiNtc001ResponseOK = {
       notices,
-      total: notices.length,
+      total: await this.noticeRepository.count({}),
       offset: pageOffset,
     };
 
