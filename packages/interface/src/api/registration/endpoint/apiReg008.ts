@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zUserName } from "@sparcs-clubs/interface/common/commonString";
 import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { registry } from "@sparcs-clubs/interface/open-api";
 
 import { zMemberRegistration } from "../type/member.registration.type";
 
@@ -70,3 +71,31 @@ export type {
   ApiReg008RequestBody,
   ApiReg008ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(":clubId"),
+  description: `
+  # REG-008
+
+  동아리 가입 신청 목록을 조회합니다.
+
+  동아리 대의원만 조회할 수 있습니다.
+  `,
+  summary: "REG-008: 동아리 대의원이 동아리 가입 신청 목록을 조회합니다.",
+  request: {
+    params: requestParam,
+    query: requestQuery,
+  },
+  responses: {
+    200: {
+      description: "성공적으로 조회되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

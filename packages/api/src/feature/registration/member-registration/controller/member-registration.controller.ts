@@ -13,48 +13,37 @@ import {
 } from "@nestjs/common";
 import { Response } from "express";
 
-import apiReg005, {
+import {
+  apiReg005,
   ApiReg005RequestBody,
   ApiReg005ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
-import {
+  apiReg006,
   ApiReg006ResponseNoContent,
   ApiReg006ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import apiReg007, {
+  apiReg007,
   ApiReg007RequestBody,
   ApiReg007RequestParam,
   ApiReg007ResponseNoContent,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg007";
-import apiReg008, {
+  apiReg008,
   ApiReg008RequestParam,
   ApiReg008ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
-import apiReg013, {
+  apiReg013,
   ApiReg013RequestParam,
   ApiReg013ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
-import type {
+  apiReg019,
   ApiReg019RequestQuery,
   ApiReg019ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg019";
-import apiReg019 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg019";
-import type {
+  apiReg020,
   ApiReg020RequestQuery,
   ApiReg020ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
-import apiReg020 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
-import type {
+  apiReg026,
   ApiReg026RequestParam,
-  ApiReg026ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
-import apiReg026, {
   ApiReg026RequestUrl,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
-import apiReg028, {
+  ApiReg026ResponseOk,
+  apiReg028,
   ApiReg028RequestUrl,
   ApiReg028ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg028";
+} from "@sparcs-clubs/interface/api/registration/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -90,6 +79,7 @@ export class MemberRegistrationController {
   }
 
   @Student()
+  @UsePipes(new ZodPipe(apiReg006))
   @Get("/student/registrations/member-registrations/my")
   async getStudentRegistrationsMemberRegistrationsMy(
     @GetStudent() user: GetStudent,

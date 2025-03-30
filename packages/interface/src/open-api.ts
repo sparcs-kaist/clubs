@@ -15,5 +15,15 @@ export function generateOpenAPI(): ReturnType<
       version: "0.1",
       description: "API for SPARCS Clubs",
     },
+    tags: [
+      {
+        name: "member-registration",
+        description: "동아리 가입 신청 관리 API",
+      },
+      {
+        name: "funding",
+        description: "지원금 신청 관리 API",
+      },
+    ],
   });
 }

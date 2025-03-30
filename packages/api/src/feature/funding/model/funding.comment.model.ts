@@ -1,7 +1,18 @@
-import { InferSelectModel } from "drizzle-orm";
+import {
+  ColumnBaseConfig,
+  ColumnDataType,
+  InferInsertModel,
+  InferSelectModel,
+} from "drizzle-orm";
+import { MySqlColumn } from "drizzle-orm/mysql-core";
 
 import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import {
+  Exclude,
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
@@ -9,9 +20,19 @@ import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema
 import { MFunding } from "./funding.model";
 import { VFundingSummary } from "./funding.summary.model";
 
-export type FundingCommentDbResult = InferSelectModel<typeof FundingFeedback>;
+export type FromDb = InferSelectModel<typeof FundingFeedback>;
+export type ToDb = InferInsertModel<typeof FundingFeedback>;
 
-export class MFundingComment extends MEntity implements IFundingComment {
+export type FundingCommentQuery = {
+  fundingId: number;
+};
+
+export class MFundingComment
+  extends MEntity<number>
+  implements IFundingComment
+{
+  static modelName = "fundingComment";
+
   funding: { id: number };
 
   executive: {
@@ -24,6 +45,7 @@ export class MFundingComment extends MEntity implements IFundingComment {
 
   approvedAmount: number;
 
+  @Exclude(OperationType.CREATE)
   createdAt: Date;
 
   constructor(data: IFundingComment) {
@@ -39,7 +61,7 @@ export class MFundingComment extends MEntity implements IFundingComment {
     );
   }
 
-  static from(result: FundingCommentDbResult): MFundingComment {
+  static from(result: FromDb): MFundingComment {
     return new MFundingComment({
       id: result.id,
       funding: { id: result.fundingId },
@@ -51,5 +73,36 @@ export class MFundingComment extends MEntity implements IFundingComment {
       content: result.feedback,
       createdAt: result.createdAt,
     });
+  }
+
+  to(operation: OperationType): ToDb {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      id: filtered.id ?? undefined,
+      fundingId: filtered.funding?.id,
+      executiveId: filtered.executive?.id,
+      feedback: filtered.content,
+      fundingStatusEnum: filtered.fundingStatusEnum,
+      approvedAmount: filtered.approvedAmount,
+      createdAt: filtered.createdAt,
+    };
+  }
+
+  static fieldMap(
+    field: keyof FundingCommentQuery,
+  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
+    const fieldMappings: Record<
+      keyof FundingCommentQuery,
+      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
+    > = {
+      fundingId: FundingFeedback.fundingId,
+    };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }

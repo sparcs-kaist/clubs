@@ -131,7 +131,7 @@ export default class DivisionRepository {
         throw new NotFoundException("Division not found");
       }
     }
-    return result.map(e => MDivision.fromDB(e));
+    return result.map(e => MDivision.from(e));
   }
 
   async fetchAll(date: Date): Promise<IDivision[]>;

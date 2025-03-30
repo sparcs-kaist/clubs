@@ -10,6 +10,8 @@ import navPaths from "@sparcs-clubs/web/constants/nav";
 import paths from "@sparcs-clubs/web/constants/paths";
 import { getFeatureFlagString } from "@sparcs-clubs/web/hooks/getFeatureFlag";
 
+import FlexWrapper from "../FlexWrapper";
+import LanguageSwitcher from "../LanguageSwitcher";
 import MobileNavMenu from "../NavTools/MobileNavMenu";
 import Beta from "./_atomic/Beta";
 import Login from "./_atomic/Login";
@@ -102,7 +104,12 @@ const Header: React.FC = () => {
           <Logo onClick={handleClose} />
           {isBetaPeriod && <Beta />}
         </LogoContainer>
-        <Login />
+        <FlexWrapper gap={8} direction={"row"}>
+          {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
+            <LanguageSwitcher />
+          )}
+          <Login />
+        </FlexWrapper>
         <Menu>
           <Icon
             type={isMobileMenuVisible ? "close" : "menu"}

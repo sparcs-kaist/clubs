@@ -40,7 +40,7 @@ const zClubDelegate = z.object({
 export const zClub = z.object({
   id: zId.openapi({
     description: "동아리 ID",
-    example: 1,
+    examples: [1, 2, 3],
   }),
   // plain schema
   nameKr: z.string().max(255).min(1).openapi({

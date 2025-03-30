@@ -8,7 +8,7 @@ import { District } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 export type DistrictDBResult = InferSelectModel<typeof District>;
 
 export class MDistrict extends MEntity implements IDistrict {
-  // id: IDistrict["id"];
+  static modelName = "district";
 
   name: IDistrict["name"];
 
@@ -17,7 +17,7 @@ export class MDistrict extends MEntity implements IDistrict {
     Object.assign(this, data);
   }
 
-  static fromDB(result: DistrictDBResult): MDistrict {
+  static from(result: DistrictDBResult): MDistrict {
     return new MDistrict({
       ...result,
     });
