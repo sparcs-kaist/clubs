@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { ApiAut001RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut001";
@@ -63,14 +63,23 @@ export class AuthService {
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
     logger.info(JSON.stringify(ssoProfile));
 
-    let studentNumber = ssoProfile.kaist_info.ku_std_no || "00000000";
-    let email =
-      ssoProfile.kaist_info.mail?.replace("mailto:", "") ||
-      "unknown@kaist.ac.kr";
-    let sid = ssoProfile.sid || "00000000";
-    let name = ssoProfile.kaist_info.ku_kname || "unknown";
+    if (process.env.NODE_ENV !== "local")
+      if (
+        !ssoProfile.kaist_info.ku_std_no ||
+        !ssoProfile.sid ||
+        !ssoProfile.kaist_info.ku_kname ||
+        !ssoProfile.kaist_info.ku_person_type ||
+        !ssoProfile.kaist_info.ku_kaist_org_id
+      ) {
+        throw new HttpException("Invalid SSO Profile", HttpStatus.BAD_REQUEST);
+      }
+
+    let studentNumber = ssoProfile.kaist_info.ku_std_no;
+    let email = ssoProfile.kaist_info.mail?.replace("mailto:", "");
+    let { sid } = ssoProfile;
+    let name = ssoProfile.kaist_info.ku_kname;
     let type = ssoProfile.kaist_info.ku_person_type || "Student";
-    let department = ssoProfile.kaist_info.ku_kaist_org_id || "4421";
+    let department = ssoProfile.kaist_info.ku_kaist_org_id;
 
     if (process.env.NODE_ENV === "local") {
       studentNumber = process.env.USER_KU_STD_NO;
