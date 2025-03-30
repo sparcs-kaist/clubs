@@ -2,4 +2,6 @@
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnSave": true,
     "files.eol": "\n",
+    "eslint.useFlatConfig": true,
+    "eslint.format.enable": true,
 }
