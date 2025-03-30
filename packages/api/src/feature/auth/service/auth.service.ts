@@ -65,13 +65,7 @@ export class AuthService {
 
     const isKaistIamLogin: boolean = true;
     // if (process.env.NODE_ENV !== "local")
-    if (
-      !ssoProfile.kaist_info.ku_std_no ||
-      !ssoProfile.sid ||
-      !ssoProfile.kaist_info.ku_kname ||
-      !ssoProfile.kaist_info.ku_person_type ||
-      !ssoProfile.kaist_info.ku_kaist_org_id
-    ) {
+    if (!ssoProfile.kaist_info.ku_std_no || !ssoProfile.sid) {
       return { isKaistIamLogin: false };
     }
 
