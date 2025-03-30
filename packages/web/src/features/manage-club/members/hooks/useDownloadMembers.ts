@@ -12,13 +12,15 @@ export function useDownloadMembers() {
     async (clubId: number, selectedSemesters: SemesterProps[]) => {
       setIsDownloading(true);
       try {
-        const allData = selectedSemesters.map(semester => {
-          const response = useGetClubMembers({
-            clubId,
-            semesterId: semester.id,
-          });
-          return { semester, members: response.data.members };
-        });
+        const allData = await Promise.all(
+          selectedSemesters.map(async semester => {
+            const response = useGetClubMembers({
+              clubId,
+              semesterId: semester.id,
+            });
+            return { semester, members: response.data.members };
+          }),
+        );
 
         const sheets = allData.map(({ semester, members }) => ({
           name: `${semester.year}-${semester.name}`,
