@@ -22,9 +22,9 @@ export const MyChangesFrame = () => {
 
   const { data: myProfile } = useGetUserProfile();
 
-  const [type, setType] = useState<"Requested" | "Finished" | "Rejected">(
-    "Finished",
-  );
+  const [clubDelegateType, setClubDelegateType] = useState<
+    "Requested" | "Finished" | "Rejected"
+  >("Finished");
 
   const [divisionPresidentType, setDivisionPresidentType] = useState<
     "Requested" | "Finished" | "Rejected"
@@ -40,40 +40,42 @@ export const MyChangesFrame = () => {
   useEffect(() => {
     switch (data?.requests[0]?.clubDelegateChangeRequestStatusEnumId) {
       case ClubDelegateChangeRequestStatusEnum.Applied:
-        setType("Requested");
+        setClubDelegateType("Requested");
         break;
       case ClubDelegateChangeRequestStatusEnum.Approved:
-        setType("Finished");
+        setClubDelegateType("Finished");
         break;
       default:
-        setType("Finished");
+        setClubDelegateType("Finished");
     }
     switch (
       divisionPresidentData?.requests[0]?.changeDivisionPresidentStatusEnumId
     ) {
       case ChangeDivisionPresidentStatusEnum.Requested:
-        setType("Requested");
+        setDivisionPresidentType("Requested");
         break;
       case ChangeDivisionPresidentStatusEnum.Confirmed:
-        setType("Finished");
+        setDivisionPresidentType("Finished");
         break;
       default:
-        setType("Finished");
+        setDivisionPresidentType("Finished");
     }
-  }, [data]);
+  }, [data, divisionPresidentData]);
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      {data?.requests && data?.requests.length > 0 && type !== "Rejected" && (
-        <MyChangeRepresentative
-          type={type}
-          clubName={data?.requests[0].clubName}
-          prevRepresentative={`${data?.requests[0].prevStudentNumber} ${data?.requests[0].prevStudentName}`}
-          newRepresentative={`${myProfile?.studentNumber} ${myProfile?.name}`}
-          refetch={refetch}
-          requestId={data?.requests[0]?.id}
-          setType={setType}
-        />
-      )}
+      {data?.requests &&
+        data?.requests.length > 0 &&
+        clubDelegateType !== "Rejected" && (
+          <MyChangeRepresentative
+            type={clubDelegateType}
+            clubName={data?.requests[0].clubName}
+            prevRepresentative={`${data?.requests[0].prevStudentNumber} ${data?.requests[0].prevStudentName}`}
+            newRepresentative={`${myProfile?.studentNumber} ${myProfile?.name}`}
+            refetch={refetch}
+            requestId={data?.requests[0]?.id}
+            setType={setClubDelegateType}
+          />
+        )}
       {divisionPresidentData?.requests &&
         divisionPresidentData?.requests.length > 0 &&
         (divisionPresidentData?.requests[0]
