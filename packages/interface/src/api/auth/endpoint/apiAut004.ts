@@ -22,7 +22,16 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({}),
 };
 
-const responseErrorMap = {};
+const responseErrorMap = {
+  [HttpStatusCode.BadRequest]: z
+    .object({
+      message: z.string(),
+    })
+    .openapi({
+      description:
+        "kaist iam을 제외한 다른 방법으로 sparcs sso에 로그인 시도했을 경우 발생합니다.",
+    }),
+};
 
 const apiAut004 = {
   url,

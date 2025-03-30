@@ -9,6 +9,7 @@ import {
   noticeItemCount,
   noticePageOffset,
 } from "@sparcs-clubs/web/constants/mainPage";
+import paths from "@sparcs-clubs/web/constants/paths";
 import { useGetNotice } from "@sparcs-clubs/web/features/notices/services/useGetNotice";
 
 import MoreSectionTitle from "../components/MoreSectionTitle";
@@ -42,7 +43,7 @@ const NoticeSectionFrame: React.FC = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <NoticeSectionFrameInner>
-        <MoreSectionTitle title="공지사항" />
+        <MoreSectionTitle title="공지사항" path={paths.NOTICE.path} />
         <NoticeWrapper>
           {data?.notices.map(noticeInfo => (
             <Link
