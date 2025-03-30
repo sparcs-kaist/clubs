@@ -63,7 +63,7 @@ export class AuthService {
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
     logger.info(JSON.stringify(ssoProfile));
 
-    let isKaistIamLogin: boolean = true;
+    const isKaistIamLogin: boolean = true;
     // if (process.env.NODE_ENV !== "local")
     if (
       !ssoProfile.kaist_info.ku_std_no ||
@@ -72,7 +72,7 @@ export class AuthService {
       !ssoProfile.kaist_info.ku_person_type ||
       !ssoProfile.kaist_info.ku_kaist_org_id
     ) {
-      isKaistIamLogin = false;
+      return { isKaistIamLogin: false };
     }
 
     let studentNumber = ssoProfile.kaist_info.ku_std_no;

@@ -65,7 +65,7 @@ export class AuthController {
 
     logger.debug(next);
     if (!isKaistIamLogin) {
-      logger.debug(`Can't find kaist iam info. Redirecting to ${next}`);
+      logger.info(`Can't find kaist iam info. Redirecting to ${next}`);
       return res.redirect(`${next}errors/not-iam-login`);
     }
     res.cookie("refreshToken", token.refreshToken, {
