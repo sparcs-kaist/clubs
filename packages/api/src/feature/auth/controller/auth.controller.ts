@@ -63,10 +63,15 @@ export class AuthController {
     const { next, token, isKaistIamLogin } =
       await this.authService.getAuthSignInCallback(query, session);
 
-    logger.debug(next);
     if (!isKaistIamLogin) {
-      logger.info(`Can't find kaist iam info. Redirecting to ${next}`);
-      return res.redirect(`${next}errors/not-iam-login`);
+      const iamErrorRedirectionUrl =
+        process.env.NODE_ENV === "local"
+          ? "http://localhost:3000/errors/not-iam-login"
+          : "https://clubs.sparcs.org/errors/not-iam-login";
+      logger.info(
+        `Can't find kaist iam info. Redirecting to ${iamErrorRedirectionUrl}`,
+      );
+      return res.redirect(iamErrorRedirectionUrl);
     }
     res.cookie("refreshToken", token.refreshToken, {
       expires: token.refreshTokenExpiresAt,
