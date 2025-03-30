@@ -60,11 +60,14 @@ export class AuthController {
     @Query() query: ApiAut004RequestQuery,
     @Session() session: Request["session"],
   ) {
-    const { next, token } = await this.authService.getAuthSignInCallback(
-      query,
-      session,
-    );
+    const { next, token, isKaistIamLogin } =
+      await this.authService.getAuthSignInCallback(query, session);
 
+    logger.debug(next);
+    if (!isKaistIamLogin) {
+      logger.debug(`Can't find kaist iam info. Redirecting to ${next}`);
+      return res.redirect(`${next}errors/not-iam-login`);
+    }
     res.cookie("refreshToken", token.refreshToken, {
       expires: token.refreshTokenExpiresAt,
       httpOnly: true,
