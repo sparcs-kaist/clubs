@@ -138,7 +138,7 @@ export abstract class BaseRepository<
     }
 
     // Query 타입의 모든 키를 순회하면서 파라미터에 해당 값이 있는지 확인
-    const defaultKeys = ["id", "ids", "pagination", "order"];
+    const defaultKeys = ["id", "ids", "pagination", "orderBy"];
     if (specialKeys) {
       defaultKeys.push(...specialKeys);
     }
