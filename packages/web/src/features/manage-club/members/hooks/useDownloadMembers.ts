@@ -1,46 +1,64 @@
-import { useCallback, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
+
+import { ApiClb010ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
 
 import downloadExcel from "@sparcs-clubs/web/utils/downloadExcel";
 
-import { useGetClubMembers } from "../services/useGetClubMembers";
+import { getClubMembers } from "../services/useGetClubMembers";
 import { SemesterProps } from "../types/semesterList";
 
+type Member = ApiClb010ResponseOk["members"][number];
+
 export function useDownloadMembers() {
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadParams, setDownloadParams] = useState<{
+    clubId: number;
+    selectedSemesters: SemesterProps[];
+  } | null>(null);
+
+  const queries = useQueries({
+    queries: downloadParams
+      ? downloadParams.selectedSemesters.map(semester => ({
+          queryKey: ["clubMembers", downloadParams.clubId, semester.id],
+          queryFn: () => getClubMembers(downloadParams.clubId, semester.id),
+          enabled: !!downloadParams,
+        }))
+      : [],
+  });
+
+  const isDownloading = queries.some(query => query.isFetching);
+
+  useEffect(() => {
+    if (!downloadParams) return;
+
+    if (queries.every(query => query.isSuccess)) {
+      const allData = queries.map((query, index) => {
+        const semester = downloadParams.selectedSemesters[index];
+        return { semester, members: query.data.members };
+      });
+
+      const sheets = allData.map(({ semester, members }) => ({
+        name: `${semester.year}-${semester.name}`,
+        data: members.map((member: Member) => ({
+          학번: member.studentNumber,
+          신청자: member.name,
+          전화번호: member.phoneNumber,
+          이메일: member.email,
+        })),
+      }));
+
+      downloadExcel({
+        fileName: "전체회원명단.xlsx",
+        sheets,
+      });
+
+      setDownloadParams(null);
+    }
+  }, [queries, downloadParams]);
 
   const downloadMembers = useCallback(
-    async (clubId: number, selectedSemesters: SemesterProps[]) => {
-      setIsDownloading(true);
-      try {
-        const allData = await Promise.all(
-          selectedSemesters.map(async semester => {
-            const response = useGetClubMembers({
-              clubId,
-              semesterId: semester.id,
-            });
-            return { semester, members: response.data.members };
-          }),
-        );
-
-        const sheets = allData.map(({ semester, members }) => ({
-          name: `${semester.year}-${semester.name}`,
-          data: members.map(member => ({
-            학번: member.studentNumber,
-            신청자: member.name,
-            전화번호: member.phoneNumber,
-            이메일: member.email,
-          })),
-        }));
-
-        downloadExcel({
-          fileName: "전체회원명단.xlsx",
-          sheets,
-        });
-      } catch (error) {
-        console.error("엑셀 다운로드 실패", error);
-      } finally {
-        setIsDownloading(false);
-      }
+    (clubId: number, selectedSemesters: SemesterProps[]) => {
+      setDownloadParams({ clubId, selectedSemesters });
     },
     [],
   );

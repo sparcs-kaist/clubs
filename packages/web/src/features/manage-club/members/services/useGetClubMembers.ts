@@ -12,6 +12,13 @@ import {
 
 import { mockSemesterMembers } from "./_mock/mockMembers";
 
+export async function getClubMembers(clubId: number, semesterId: number) {
+  const { data } = await axiosClientWithAuth.get(
+    apiClb010.url(clubId, semesterId),
+  );
+  return data;
+}
+
 export const useGetClubMembers = (requestParam: ApiClb010RequestParam) =>
   useSuspenseQuery<ApiClb010ResponseOk, Error>({
     queryKey: [apiClb010.url(requestParam.clubId, requestParam.semesterId)],
