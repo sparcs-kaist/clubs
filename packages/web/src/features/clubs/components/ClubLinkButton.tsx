@@ -14,9 +14,9 @@ const ButtonContainer = styled.div`
   width: 100%;
   height: 100%;
   padding: 16px 40px;
-  background: white;
+  background: ${({ theme }) => theme.colors.WHITE};
   border-radius: 50px;
-  border: 1px solid #dddddd;
+  border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
   display: inline-flex;
   justify-content: flex-start;
   align-items: center;
@@ -24,19 +24,8 @@ const ButtonContainer = styled.div`
   cursor: pointer;
 
   &:hover {
-    background: #f4fafa;
-    outline: 1px solid #0099ad;
-    outline-offset: -1px;
-  }
-
-  &[data-property-1="default"] {
-    background: white;
-    border: 1px solid #dddddd;
-  }
-
-  &[data-property-1="hovering"] {
-    background: #f4fafa;
-    outline: 1px solid #0099ad;
+    background: ${({ theme }) => theme.colors.MINT[100]};
+    outline: 1px solid ${({ theme }) => theme.colors.PRIMARY};
     outline-offset: -1px;
   }
 `;
@@ -55,7 +44,7 @@ const TextWrapper = styled.div`
   display: flex;
   flex-direction: column;
 
-  color: #333333;
+  color: ${({ theme }) => theme.colors.BLACK};
   font-size: 16px;
   font-family: Pretendard, sans-serif;
   font-weight: 400;
@@ -72,10 +61,7 @@ const ClubLinkButton: React.FC<ClubLinkButtonProps> = ({
   link,
   icon,
 }) => (
-  <ButtonContainer
-    onClick={() => window.open(link, "_blank")}
-    data-property-1="default"
-  >
+  <ButtonContainer onClick={() => window.open(link, "_blank")}>
     <IconWrapper>
       <Image src={icon} alt={`${title} Icon`} width={30} height={30} />
     </IconWrapper>
