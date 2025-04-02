@@ -150,41 +150,49 @@ export abstract class BaseRepository<
           whereClause.push(
             this.processNestedQuery(param[key], key as NestedQueryWrapper),
           );
-        }
-        // 파라미터 값이 존재하는 경우
-        const value = param[key];
-        if (value !== undefined) {
-          // Query 필드를 테이블 필드로 변환
-          const tableField = this.getTableField(key as keyof Query);
-          if (!tableField) {
-            throw new Error(`Invalid query field: ${key}`);
-          }
+        } else {
+          // 파라미터 값이 존재하는 경우
+          const value = param[key];
+          if (value !== undefined) {
+            // Query 필드를 테이블 필드로 변환
+            // 복잡한 쿼리의 경우 specialKeys에 추가하여 이 메서드에서는 무시하고, 상속받은 메서드에서 처리
+            const tableField = this.getTableField(key as keyof Query);
+            if (!tableField) {
+              throw new Error(`Invalid query field: ${key}`);
+            }
 
-          // 배열인 경우 IN 연산자 사용
-          if (Array.isArray(value)) {
-            whereClause.push(inArray(tableField, value));
-          }
-          // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
-          // 예시: { between: [10, 20] }, { gt: 10 }
-          else if (
-            typeof value === "object" &&
-            Object.keys(value).every(k =>
-              mysqlQueryConditionOperators.includes(
-                k as MysqlQueryConditionOperators,
-              ),
-            )
-          ) {
-            whereClause.push(
-              this.processAdvancedOperators(key as keyof Query, value),
-            );
-          }
-          // null 인 경우 isNull 연산자 사용
-          else if (value === null) {
-            whereClause.push(isNull(tableField));
-          }
-          // 단일 값인 경우 eq 연산자 사용
-          else {
-            whereClause.push(eq(tableField, value));
+            // 배열인 경우 IN 연산자 사용
+            if (Array.isArray(value)) {
+              whereClause.push(inArray(tableField, value));
+            }
+            // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
+            // 예시: { between: [10, 20] }, { gt: 10 }
+            else if (
+              typeof value === "object" &&
+              Object.keys(value).every(k =>
+                mysqlQueryConditionOperators.includes(
+                  k as MysqlQueryConditionOperators,
+                ),
+              )
+            ) {
+              whereClause.push(
+                this.processAdvancedOperators(key as keyof Query, value),
+              );
+            }
+            // null 인 경우 isNull 연산자 사용
+            else if (value === null) {
+              whereClause.push(isNull(tableField));
+            }
+            // 단일 값인 경우 eq 연산자 사용
+            else if (
+              typeof value === "string" ||
+              typeof value === "number" ||
+              typeof value === "boolean"
+            ) {
+              whereClause.push(eq(tableField, value));
+            } else {
+              throw new Error(`Invalid key value: ${key} ${value}`);
+            }
           }
         }
       });
