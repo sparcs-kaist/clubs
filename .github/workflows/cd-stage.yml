@@ -55,6 +55,7 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
+          secret-envs: NEXT_PUBLIC_API_URL="https://clubs.stage.sparcs.org/api",NEXT_PUBLIC_APP_MODE=stage
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
