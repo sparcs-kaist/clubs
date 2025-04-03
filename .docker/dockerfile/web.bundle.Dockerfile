@@ -37,8 +37,6 @@ COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/packages/web /app/packages/web
 COPY --from=build /app/packages/interface /app/packages/interface
 WORKDIR /app/packages/web
-ENV NEXT_PUBLIC_API_URL="https://clubs.stage.sparcs.org/api"
-ENV NEXT_PUBLIC_APP_MODE=dev
 
 EXPOSE 3000
 CMD [ "pnpm", "start" ]
