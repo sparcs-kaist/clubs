@@ -9,7 +9,7 @@ FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate 
+RUN corepack prepare pnpm@9.14.4 --activate
 WORKDIR /app
 
 # Build to output .next build directory
@@ -37,6 +37,8 @@ COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/packages/web /app/packages/web
 COPY --from=build /app/packages/interface /app/packages/interface
 WORKDIR /app/packages/web
+ENV NEXT_PUBLIC_API_URL="https://clubs.stage.sparcs.org/api"
+ENV NEXT_PUBLIC_APP_MODE=dev
 
 EXPOSE 3000
 CMD [ "pnpm", "start" ]
