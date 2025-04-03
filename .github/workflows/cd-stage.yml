@@ -18,12 +18,12 @@ jobs:
   publish-docker-image:
     name: "Build and Publish Latest Docker Image"
     runs-on: ubuntu-24.04
-    
+
     strategy:
       fail-fast: true
       matrix:
         include:
-          - dockerfile: ./.docker/dockerfile/web.Dockerfile
+          - dockerfile: ./.docker/dockerfile/web.bundle.Dockerfile
             image: ghcr.io/sparcs-kaist/clubs-stage-web
           - dockerfile: ./.docker/dockerfile/api.Dockerfile
             image: ghcr.io/sparcs-kaist/clubs-stage-api
@@ -67,4 +67,3 @@ jobs:
         uses: distributhor/workflow-webhook@v3
         with:
           webhook_url: ${{ secrets.STAGE_WEBHOOK_ENDPOINT }}
-
