@@ -9,6 +9,7 @@ import apiNtc001 from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import logger from "@sparcs-clubs/api/common/util/logger";
+import scrapeAndSave from "@sparcs-clubs/api/feature/notice/controller/crawler";
 
 import { NoticeService } from "../service/notice.service";
 
@@ -30,5 +31,16 @@ export class NoticeController {
       query.itemCount,
     );
     return notices;
+  }
+
+  @Public()
+  @Get("/notices/fetch")
+  async crawlNotices(): Promise<unknown[]> {
+    return scrapeAndSave();
+    // return {
+    //   notices: [],
+    //   offset: 0,
+    //   total: 0,
+    // };
   }
 }
