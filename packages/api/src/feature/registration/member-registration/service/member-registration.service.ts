@@ -106,10 +106,10 @@ export class MemberRegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.memberRegistrationRepository.insert({
-      studentId,
-      clubId,
-      semesterId,
+    await this.memberRegistrationRepository.create({
+      student: { id: studentId },
+      club: { id: clubId },
+      semester: { id: semesterId },
     });
     return {};
   }
@@ -187,7 +187,7 @@ export class MemberRegistrationService {
       );
     }
 
-    await this.memberRegistrationRepository.delete(studentId, applyId);
+    await this.memberRegistrationRepository.delete(applyId);
     return {};
   }
 
@@ -261,10 +261,11 @@ export class MemberRegistrationService {
           clubId,
         );
     }
-    await this.memberRegistrationRepository.update({
-      id: applyId,
-      registrationApplicationStudentEnum: applyStatusEnumId,
-    });
+    await this.memberRegistrationRepository.patch(applyId, newbie =>
+      newbie.set({
+        registrationApplicationStudentEnum: applyStatusEnumId,
+      }),
+    );
     return {};
   }
 
@@ -445,21 +446,41 @@ export class MemberRegistrationService {
       ),
     ]);
 
+    const clubIds = registrations.reduce((acc: number[], registration) => {
+      if (!acc.includes(registration.club.id)) {
+        acc.push(registration.club.id);
+      }
+      return acc;
+    }, []);
+    const clubIdSummaryIsPermanentDivisionTuples = await Promise.all(
+      clubIds.map(async clubId => {
+        const club = await this.clubPublicService.fetchSummary(clubId);
+        const isPermanent =
+          await this.clubPublicService.isPermanentClubsByClubId(club.id);
+        const division = divisions.find(e => e.id === club.division.id);
+
+        return {
+          clubId,
+          club,
+          isPermanent,
+          division,
+        };
+      }),
+    );
+
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => {
-        const club = await this.clubPublicService.fetchSummary(
-          registration.club.id,
-        );
-        const division = divisions.find(e => e.id === club.division.id);
+        const { club, isPermanent, division } =
+          clubIdSummaryIsPermanentDivisionTuples.find(
+            e => e.clubId === registration.club.id,
+          );
         //todo club summary에서 division의 name까지 추가해주면 안되나?
         return {
           id: registration.id,
           clubId: club.id,
           clubNameKr: club.name,
           type: club.typeEnum,
-          isPermanent: await this.clubPublicService.isPermanentClubsByClubId(
-            club.id,
-          ),
+          isPermanent,
           division,
           studentEnum: studentEnums.find(e => e.id === registration.student.id),
           registrationApplicationStudentEnum:

@@ -41,7 +41,7 @@ const ServiceCardWrapper = styled.div`
 
 const ServiceSectionFrame: React.FC = () => (
   <ServiceSectionFrameInner>
-    <MoreSectionTitle title="서비스 신청" showMore={false} />
+    <MoreSectionTitle title="서비스 신청" />
     <ServiceCardWrapper>
       {/* <Link
         href={paths.SERVICE.sub[0].path}
