@@ -1,5 +1,5 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
-
+import { BadRequestException } from "../exception/bad-request.exception";
+import { NotFoundException } from "../exception/not-found.exception";
 import { IdType } from "../model/entity.model";
 
 export const isEmptyObject = obj =>
@@ -44,9 +44,19 @@ export function takeOnlyOne<T>(name?: string): (array: T[]) => T {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
     if (array.length === 0)
-      throw new NotFoundException(`${name ?? "array"} is empty`);
+      throw new NotFoundException(name ?? "Array", undefined, {
+        context: "takeOnlyOne",
+        arrayLength: array.length,
+      });
     if (array.length > 1)
-      throw new BadRequestException(`${name ?? "array"} is not only one`);
+      throw new BadRequestException(
+        "Multiple items found when expecting one",
+        name ?? "array",
+        {
+          context: "takeOnlyOne",
+          arrayLength: array.length,
+        },
+      );
     return array[0];
   };
 }
@@ -67,9 +77,12 @@ export function checkContainAllId<T, K extends IdType>(
   // 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
   const uniqueIds = getUniqueArray(ids);
   if (ids.some(id => !uniqueIds.includes(id))) {
-    throw new NotFoundException(
-      `The length of ${name ?? "array"} does not match | id length: ${uniqueIds.length} || array length: ${array.length}`,
-    );
+    throw new NotFoundException(name ?? "Array", undefined, {
+      context: "checkContainAllId",
+      expectedLength: uniqueIds.length,
+      actualLength: array.length,
+      ids: uniqueIds,
+    });
   }
 }
 
@@ -89,7 +102,10 @@ export function takeExist<T>(name?: string): (array: T[]) => T[] {
   // 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
   return (array: T[]) => {
     if (array.length === 0)
-      throw new NotFoundException(`${name ?? "array"} is empty`);
+      throw new NotFoundException(name ?? "Array", undefined, {
+        context: "takeExist",
+        arrayLength: array.length,
+      });
     return array;
   };
 }
