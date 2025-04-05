@@ -4,6 +4,7 @@ import jsdom from "jsdom";
 
 import type { ApiNtc001ResponseOK } from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
 
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
@@ -34,7 +35,7 @@ export class NoticeService {
   async getAllNotices() {
     return this.noticeRepository.find({
       orderBy: {
-        id: 1,
+        id: OrderByTypeEnum.ASC,
       },
     });
   }
@@ -46,7 +47,7 @@ export class NoticeService {
         itemCount,
       },
       orderBy: {
-        id: 1,
+        id: OrderByTypeEnum.ASC,
       },
     });
 
@@ -97,9 +98,7 @@ export class NoticeService {
     const { window } = new jsdom.JSDOM(html);
     const posts: PostCrawlResult[] = [];
     const rows = window.document.querySelectorAll("tr");
-    for (let i = 0; i < rows.length; i += 1) {
-      const element = rows[i];
-
+    rows.forEach(element => {
       const titleElement = element.querySelector(".article");
       if (titleElement !== null) {
         let title = titleElement.textContent;
@@ -126,7 +125,7 @@ export class NoticeService {
           }
         }
       }
-    }
+    });
     return posts;
   }
 
@@ -236,5 +235,7 @@ export class NoticeService {
         createdAt: post.createdAt,
       });
     }
+
+    // TODO: 쿼리 한번에 처리하기
   }
 }
