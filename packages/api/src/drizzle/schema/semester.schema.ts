@@ -19,10 +19,41 @@ export const SemesterD = mysqlTable("semester_d", {
 
 export const ActivityD = mysqlTable("activity_d", {
   id: int("id").autoincrement().primaryKey().notNull(),
+  semesterId: int("semester_id").notNull(),
   year: int("year").notNull(),
   name: varchar("name", { length: 10 }).notNull(),
   startTerm: datetime("start_term").notNull(),
   endTerm: datetime("end_term").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const ActivityDeadlineD = mysqlTable("activity_deadline_d", {
+  id: int("id").autoincrement().primaryKey().notNull(),
+  semesterId: int("semester_d_id").notNull(),
+  deadlineEnum: int("deadline_enum_id").notNull(),
+  startDate: datetime("start_date").notNull(),
+  endDate: datetime("end_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
+  id: int("id").autoincrement().primaryKey().notNull(),
+  semesterId: int("semester_id").notNull(),
+  deadlineEnum: int("deadline_enum").notNull(),
+  startDate: datetime("start_date").notNull(),
+  endDate: datetime("end_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const RegistrationDeadlineD = mysqlTable("registration_deadline_d", {
+  id: int("id").autoincrement().primaryKey(),
+  semesterId: int("semester_d_id").references(() => SemesterD.id),
+  registrationDeadlineEnumId: int("registration_deadline_enum_id").notNull(),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -34,25 +65,6 @@ export const ActivityD = mysqlTable("activity_d", {
 //   deletedAt: timestamp("deleted_at"),
 // });
 
-export const ActivityDeadlineD = mysqlTable("activity_deadline_d", {
-  id: int("id").autoincrement().primaryKey().notNull(),
-  // activityDId: int("activity_d_id").notNull(),
-  deadlineEnumId: int("deadline_enum_id").notNull(),
-  startDate: datetime("start_date").notNull(),
-  endDate: datetime("end_date").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});
-
-export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
-  id: int("id").autoincrement().primaryKey().notNull(),
-  deadlineEnum: int("deadline_enum").notNull(),
-  startDate: datetime("start_date").notNull(),
-  endDate: datetime("end_date").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});
-
 // export const RegistrationDeadlineEnum = mysqlTable(
 //   "registration_deadline_enum",
 //   {
@@ -62,13 +74,3 @@ export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
 //     deletedAt: timestamp("deleted_at"),
 //   },
 // );
-
-export const RegistrationDeadlineD = mysqlTable("registration_deadline_d", {
-  id: int("id").autoincrement().primaryKey(),
-  semesterId: int("semester_d_id").references(() => SemesterD.id),
-  registrationDeadlineEnumId: int("registration_deadline_enum_id").notNull(),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});
