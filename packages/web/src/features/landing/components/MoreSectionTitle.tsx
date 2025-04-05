@@ -5,7 +5,6 @@ import React from "react";
 import styled from "styled-components";
 
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
-import paths from "@sparcs-clubs/web/constants/paths";
 
 const MoreSectionTitleInner = styled.div`
   display: flex;
@@ -26,15 +25,12 @@ const MoreInfo = styled.div`
 
 const MoreSectionTitle: React.FC<{
   title: string;
-  showMore?: boolean;
-}> = ({ title, showMore = true }) => (
+  path?: string;
+}> = ({ title, path }) => (
   <MoreSectionTitleInner>
     <SectionTitle size="sm">{title}</SectionTitle>
-    {showMore && (
-      <Link
-        href={paths.CLUBS.sub[1].path}
-        style={{ display: "flex", flexDirection: "column" }}
-      >
+    {path && (
+      <Link href={path!} style={{ display: "flex", flexDirection: "column" }}>
         <MoreInfo>글 더보기</MoreInfo>
       </Link>
     )}

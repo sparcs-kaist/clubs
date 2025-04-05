@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -43,19 +44,23 @@ const MobileNavItem: React.FC<MobileNavItemProps> = ({
   isExpanded = false,
   highlight = false,
   onClick = () => {},
-}) => (
-  <MobileNavItemInner highlight={highlight} onClick={onClick}>
-    {path ? (
-      <Link href={path} target={path.startsWith("http") ? "_blank" : ""}>
-        {name}
-      </Link>
-    ) : (
-      name
-    )}
-    {!path && (
-      <Icon type={isExpanded ? "expand_less" : "expand_more"} size={20} />
-    )}
-  </MobileNavItemInner>
-);
+}) => {
+  const t = useTranslations();
+
+  return (
+    <MobileNavItemInner highlight={highlight} onClick={onClick}>
+      {path ? (
+        <Link href={path} target={path.startsWith("http") ? "_blank" : ""}>
+          {t(name)}
+        </Link>
+      ) : (
+        t(name)
+      )}
+      {!path && (
+        <Icon type={isExpanded ? "expand_less" : "expand_more"} size={20} />
+      )}
+    </MobileNavItemInner>
+  );
+};
 
 export default MobileNavItem;

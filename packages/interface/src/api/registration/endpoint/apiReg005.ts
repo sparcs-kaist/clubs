@@ -1,10 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-/**
- * @version v0.1
- * @description 동아리 가입을 신청합니다.
- */
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
+import { registry } from "@sparcs-clubs/interface/open-api";
 
 const url = () =>
   `/student/registrations/member-registrations/member-registration`;
@@ -15,7 +13,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const responseBodyMap = {
@@ -23,6 +21,39 @@ const responseBodyMap = {
 };
 
 const responseErrorMap = {};
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "post",
+  path: url(),
+  description: `
+  # REG-005
+
+  동아리 가입을 신청합니다.
+
+  이미 동아리 회원이거나(신청 대표자), 이미 가입한 경우 400 에러를 반환합니다.
+  `,
+  summary: "REG-005: 학생이 동아리 가입 신청을 생성합니다.",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: requestBody,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "성공적으로 신청이 등록되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[201],
+        },
+      },
+    },
+  },
+});
 
 const apiReg005 = {
   url,

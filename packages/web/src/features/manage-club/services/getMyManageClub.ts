@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
 import type {
   ApiClb015ResponseNoContent,
@@ -17,14 +18,23 @@ export const useGetMyManageClub = () =>
     queryFn: async (): Promise<
       ApiClb015ResponseOk | ApiClb015ResponseNoContent
     > => {
-      const { data, status } = await axiosClientWithAuth.get(apiClb015.url());
+      try {
+        const { data, status } = await axiosClientWithAuth.get(apiClb015.url());
 
-      if (status === 204) {
+        if (status === 200) {
+          return apiClb015.responseBodyMap[200].parse(data);
+        }
+
         return {};
-      }
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return {};
+        }
 
-      return apiClb015.responseBodyMap[200].parse(data);
+        throw error;
+      }
     },
+    select: data => data || {},
   });
 
 defineAxiosMock(mock => {

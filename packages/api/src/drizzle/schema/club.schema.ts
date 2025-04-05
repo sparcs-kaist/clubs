@@ -17,7 +17,7 @@ import { Professor, Student } from "./user.schema";
 export const Club = mysqlTable("club", {
   id: int("id").autoincrement().primaryKey(),
   nameKr: varchar("name_kr", { length: 30 }).unique(),
-  nameEn: varchar("name_en", { length: 30 }).unique(),
+  nameEn: varchar("name_en", { length: 100 }).unique(),
   divisionId: int("division_id") // 제일 최신의 분과
     .notNull()
     .references(() => Division.id),

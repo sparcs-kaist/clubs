@@ -2,16 +2,16 @@
 
 import React from "react";
 
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import { useGetMyMemberRegistration } from "@sparcs-clubs/web/features/clubs/services/getMyMemberRegistration";
+import useGetMyRegistration from "@sparcs-clubs/web/features/clubs/hooks/useGetMyRegistration";
+import { ClubDetail } from "@sparcs-clubs/web/features/clubs/types";
 
 import ClubRegistrationButton from "../ClubRegistrationButton";
 
 interface ClubRegistrationButtonWrapperProps {
-  club: ApiClb001ResponseOK["divisions"][number]["clubs"][number];
+  club: ClubDetail;
   isMobile?: boolean;
 }
 
@@ -19,41 +19,22 @@ const ClubRegistrationButtonWrapper: React.FC<
   ClubRegistrationButtonWrapperProps
 > = ({ club, isMobile = false }) => {
   const {
-    data: myRegistrationList,
+    data: { registrationStatus, isRegistered, registrations },
     isLoading,
     isError,
-    refetch,
-  } = useGetMyMemberRegistration();
-
-  let isInclub = false;
-  let isRegistered = false;
-
-  if (myRegistrationList && myRegistrationList.applies.length > 0) {
-    const thisRegistration = myRegistrationList.applies.find(
-      apply => apply.clubId === club.id,
-    );
-    if (thisRegistration) {
-      if (
-        thisRegistration.applyStatusEnumId ===
-        RegistrationApplicationStudentStatusEnum.Approved
-      ) {
-        isInclub = true;
-      }
-      isRegistered = true;
-    } else {
-      isRegistered = false;
-    }
-  }
+  } = useGetMyRegistration(club.id);
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <ClubRegistrationButton
         club={club}
-        refetch={refetch}
-        isInClub={isInclub}
+        isInClub={
+          registrationStatus ===
+          RegistrationApplicationStudentStatusEnum.Approved
+        }
         isRegistered={isRegistered}
         isMobile={isMobile}
-        myRegistrationList={myRegistrationList ?? { applies: [] }}
+        myRegistrationList={registrations}
       />
     </AsyncBoundary>
   );

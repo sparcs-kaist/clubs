@@ -9,7 +9,7 @@ FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate 
+RUN corepack prepare pnpm@9.14.4 --activate
 WORKDIR /app
 
 # Build to output .next build directory

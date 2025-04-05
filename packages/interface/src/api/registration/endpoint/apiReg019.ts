@@ -1,11 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import {
-  zClubName,
-  zUserName,
-} from "@sparcs-clubs/interface/common/commonString";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
+import { zDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { registry } from "@sparcs-clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -27,14 +25,14 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
       z.object({
-        clubId: z.coerce.number().int().min(1),
-        clubTypeEnumId: z.nativeEnum(ClubTypeEnum),
+        clubId: zClub.shape.id,
+        clubTypeEnumId: zClub.shape.typeEnum,
         isPermanent: z.coerce.boolean(),
         division: z.object({
-          id: z.coerce.number().int().min(1),
-          name: zUserName,
+          id: zDivision.shape.id,
+          name: zDivision.shape.name,
         }),
-        clubName: zClubName,
+        clubName: zClub.shape.nameKr,
         totalRegistrations: z.coerce.number().int().min(0),
         regularMemberRegistrations: z.coerce.number().int().min(0),
         totalApprovals: z.coerce.number().int().min(0),
@@ -71,3 +69,32 @@ export type {
   ApiReg019RequestBody,
   ApiReg019ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(),
+  description: `
+  # REG-019
+
+  동아리별 회원 등록 신청의 간략한 상태를 확인합니다.
+
+  집행부원만 이용 가능합니다.
+  `,
+  summary:
+    "REG-019: 집행부원이 동아리별 회원 등록 신청의 간략한 상태를 확인합니다.",
+  request: {
+    query: requestQuery,
+  },
+  responses: {
+    200: {
+      description:
+        "성공적으로 동아리별 회원 등록 신청의 간략한 상태를 확인했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

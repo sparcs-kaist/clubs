@@ -13,7 +13,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ClubRegisterDetailFrame from "@sparcs-clubs/web/features/permanent/register-club/frames/ClubRegisterDetailFrame";
+import RegisterClubDetailFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailFrame";
 
 const RegisterClubDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -56,7 +56,7 @@ const RegisterClubDetail: React.FC = () => {
         title="동아리 등록 신청 내역"
         enableLast
       />
-      <ClubRegisterDetailFrame applyId={+applyId} />
+      <RegisterClubDetailFrame applyId={+applyId} profile={"permanent"} />
       <Link href="/manage-club/permanent/register-club">
         <Button>목록으로 돌아가기</Button>
       </Link>

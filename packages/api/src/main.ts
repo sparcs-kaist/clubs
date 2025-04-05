@@ -25,7 +25,25 @@ async function bootstrap() {
   const openApiSpec = generateOpenAPI();
   // Swagger UI 제공 (NestJS 기본 SwaggerModule 사용 불가)
   const swaggerApp = express();
-  swaggerApp.use("", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+  swaggerApp.use(
+    "",
+    swaggerUi.serve,
+    swaggerUi.setup(openApiSpec, {
+      swaggerOptions: {
+        operationsSorter: (
+          a: {
+            get: (arg0: string) => string;
+          },
+          b: {
+            get: (arg0: string) => string;
+          },
+        ) => {
+          const result = a.get("path").localeCompare(b.get("path"));
+          return result;
+        },
+      },
+    }),
+  );
   app.use("/docs", swaggerApp);
   /* swagger 세팅 끝 */
 

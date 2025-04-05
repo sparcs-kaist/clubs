@@ -44,7 +44,7 @@ export const Registration = mysqlTable(
     ).notNull(),
     // .references(() => RegistrationStatusEnum.enumId),
     clubNameKr: varchar("club_name_kr", { length: 30 }),
-    clubNameEn: varchar("club_name_en", { length: 30 }),
+    clubNameEn: varchar("club_name_en", { length: 100 }),
     studentId: int("student_id")
       .notNull()
       .references(() => Student.id),
