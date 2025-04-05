@@ -1,51 +1,76 @@
-import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IRegistrationDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
+import {
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
+import {
+  MEntity,
+  MySqlColumnType,
+} from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-import { OrderByTypeEnum } from "./semester.model";
+export type FromDb = InferSelectModel<typeof RegistrationDeadlineD>;
+export type ToDb = InferInsertModel<typeof RegistrationDeadlineD>;
 
-type RegistrationDeadlineDBResult = InferSelectModel<
-  typeof RegistrationDeadlineD
->;
-
-const orderByFieldMap = {
-  startTerm: RegistrationDeadlineD.startDate,
-  endTerm: RegistrationDeadlineD.endDate,
+export type RegistrationDeadlineQuery = {
+  deadlineEnum?: number;
+  semesterId?: number;
+  startDate?: Date;
+  endDate?: Date;
+  date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
 
-export type IRegistrationDeadlineOrderBy = Partial<{
-  [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
-}>;
+export class MRegistrationDeadline
+  extends MEntity
+  implements IRegistrationDeadline
+{
+  static modelName = "RegistrationDeadline";
 
-export class MRegistrationDeadline implements IRegistrationDeadline {
-  id: IRegistrationDeadline["id"];
+  semester: IRegistrationDeadline["semester"];
   deadlineEnum: IRegistrationDeadline["deadlineEnum"];
   startDate: IRegistrationDeadline["startDate"];
   endDate: IRegistrationDeadline["endDate"];
 
   constructor(data: IRegistrationDeadline) {
+    super();
     Object.assign(this, data);
   }
 
-  static from(data: RegistrationDeadlineDBResult): MRegistrationDeadline {
+  to(operation: OperationType): ToDb {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      semesterId: filtered.semester.id,
+    } as ToDb;
+  }
+
+  static from(data: FromDb): MRegistrationDeadline {
     return new MRegistrationDeadline({
       ...data,
-      deadlineEnum: data.registrationDeadlineEnumId,
+      deadlineEnum: data.registrationDeadlineEnum,
+      semester: { id: data.semesterId },
     });
   }
 
-  static makeOrderBy(orderBy: IRegistrationDeadlineOrderBy): SQL[] {
-    return Object.entries(orderBy)
-      .filter(
-        ([key, orderByType]) =>
-          orderByType && orderByFieldMap[key as keyof typeof orderByFieldMap],
-      )
-      .map(([key, orderByType]) =>
-        orderByType === OrderByTypeEnum.ASC
-          ? asc(orderByFieldMap[key])
-          : desc(orderByFieldMap[key]),
-      );
+  static fieldMap(field: keyof RegistrationDeadlineQuery): MySqlColumnType {
+    const fieldMappings: Record<
+      keyof RegistrationDeadlineQuery,
+      MySqlColumnType
+    > = {
+      deadlineEnum: RegistrationDeadlineD.registrationDeadlineEnum,
+      semesterId: RegistrationDeadlineD.semesterId,
+      startDate: RegistrationDeadlineD.startDate,
+      endDate: RegistrationDeadlineD.endDate,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }

@@ -1,49 +1,75 @@
-import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IActivityDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
+import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import {
+  filterExcludedFields,
+  OperationType,
+} from "@sparcs-clubs/interface/common/utils/field-operations";
 
+import {
+  MEntity,
+  MySqlColumnType,
+} from "@sparcs-clubs/api/common/model/entity.model";
 import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-import { OrderByTypeEnum } from "./semester.model";
+export type FromDb = InferSelectModel<typeof ActivityDeadlineD>;
+export type ToDb = InferInsertModel<typeof ActivityDeadlineD>;
 
-type ActivityDeadlineDBResult = InferSelectModel<typeof ActivityDeadlineD>;
-
-const orderByFieldMap = {
-  startTerm: ActivityDeadlineD.startDate,
-  endTerm: ActivityDeadlineD.endDate,
+export type ActivityDeadlineQuery = {
+  deadlineEnum: number;
+  semesterId: number;
+  startDate: Date;
+  endDate: Date;
+  date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
 
-export type IActivityDeadlineOrderBy = Partial<{
-  [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
-}>;
+export class MActivityDeadline extends MEntity implements IActivityDeadline {
+  static modelName = "ActivityDeadline";
 
-export class MActivityDeadline implements IActivityDeadline {
-  id: IActivityDeadline["id"];
+  semester: ISemester;
   deadlineEnum: IActivityDeadline["deadlineEnum"];
   startDate: IActivityDeadline["startDate"];
   endDate: IActivityDeadline["endDate"];
 
   constructor(data: IActivityDeadline) {
+    super();
     Object.assign(this, data);
   }
 
-  static from(data: ActivityDeadlineDBResult): MActivityDeadline {
+  to(operation: OperationType): ToDb {
+    const filtered = filterExcludedFields(this, operation);
+
+    return {
+      semesterId: filtered.semester.id,
+      deadlineEnum: filtered.deadlineEnum,
+      startDate: filtered.startDate,
+      endDate: filtered.endDate,
+    } as ToDb;
+  }
+
+  static from(data: FromDb): MActivityDeadline {
     return new MActivityDeadline({
       ...data,
-      deadlineEnum: data.deadlineEnumId,
+      deadlineEnum: data.deadlineEnum,
+      semester: { id: data.semesterId },
     });
   }
 
-  static makeOrderBy(orderBy: IActivityDeadlineOrderBy): SQL[] {
-    return Object.entries(orderBy)
-      .filter(
-        ([key, orderByType]) =>
-          orderByType && orderByFieldMap[key as keyof typeof orderByFieldMap],
-      )
-      .map(([key, orderByType]) =>
-        orderByType === OrderByTypeEnum.ASC
-          ? asc(orderByFieldMap[key])
-          : desc(orderByFieldMap[key]),
-      );
+  static fieldMap(field: keyof ActivityDeadlineQuery): MySqlColumnType {
+    const fieldMappings: Record<keyof ActivityDeadlineQuery, MySqlColumnType> =
+      {
+        deadlineEnum: ActivityDeadlineD.deadlineEnum,
+        semesterId: ActivityDeadlineD.semesterId,
+        startDate: ActivityDeadlineD.startDate,
+        endDate: ActivityDeadlineD.endDate,
+        date: null,
+      };
+
+    if (!(field in fieldMappings)) {
+      throw new Error(`Invalid field: ${String(field)}`);
+    }
+
+    return fieldMappings[field];
   }
 }

@@ -24,6 +24,7 @@ export const ActivityD = mysqlTable("activity_d", {
   name: varchar("name", { length: 10 }).notNull(),
   startTerm: datetime("start_term").notNull(),
   endTerm: datetime("end_term").notNull(),
+  activityDurationTypeEnum: int("activity_duration_type_enum").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
 });
