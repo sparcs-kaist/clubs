@@ -7,10 +7,10 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import { getDivisionTagColor } from "@sparcs-clubs/web/constants/tableTagList";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import {
   getTagColorFromClubType,
-  getTagColorFromDivision,
   getTagContentFromClubType,
 } from "@sparcs-clubs/web/types/clubdetail.types";
 
@@ -71,7 +71,7 @@ const ClubInfoSection: React.FC<ClubInfoSectionProps> = ({ clubId }) => {
               <ClubInfoItem
                 title="소속 분과"
                 content={
-                  <Tag color={getTagColorFromDivision(data.division.name)}>
+                  <Tag color={getDivisionTagColor(data.division.name)}>
                     {data.division.name}
                   </Tag>
                 }
