@@ -194,7 +194,7 @@ export default class ActivityService {
         return arr[0];
       });
     if (
-      param.enums.find(e => Number(e) === todayDeadline.deadlineEnumId) ===
+      param.enums.find(e => Number(e) === todayDeadline.deadlineEnum) ===
       undefined
     )
       throw new HttpException(
@@ -293,9 +293,9 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
       enums: [
-        ActivityDeadlineEnum.Upload,
+        ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
-        ActivityDeadlineEnum.Exceptional,
+        ActivityDeadlineEnum.Exception,
       ],
     });
 
@@ -463,7 +463,7 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
-      enums: [ActivityDeadlineEnum.Upload, ActivityDeadlineEnum.Exceptional],
+      enums: [ActivityDeadlineEnum.Writing, ActivityDeadlineEnum.Exception],
     });
 
     const activities = await this.getActivities({ clubId: body.clubId });
@@ -523,9 +523,9 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
       enums: [
-        ActivityDeadlineEnum.Upload,
+        ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
-        ActivityDeadlineEnum.Exceptional,
+        ActivityDeadlineEnum.Exception,
       ],
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
@@ -1048,7 +1048,7 @@ export default class ActivityService {
         year: term.year,
       },
       deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnumId,
+        activityDeadlineEnum: todayDeadline.deadlineEnum,
         duration: {
           startTerm: todayDeadline.startDate,
           endTerm: todayDeadline.endDate,

@@ -8,9 +8,9 @@ export enum FundingStatusEnum {
 
 export enum FundingDeadlineEnum {
   Writing = 1, // 작성
-  Revision, // 수정
-  Review, // 검토
-  Exception, // 예외
+  Late, // 지연 제출기간, writing 기간 종료 후 수정제출 기간 전까지
+  Modification, // 수정
+  Exception, // 이의 제기
 }
 
 export enum FixtureEvidenceEnum {

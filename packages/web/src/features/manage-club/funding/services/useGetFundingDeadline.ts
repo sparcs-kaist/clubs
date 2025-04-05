@@ -32,7 +32,7 @@ defineAxiosMock(mock => {
       },
       deadline: {
         id: 1,
-        deadlineEnum: FundingDeadlineEnum.Revision,
+        deadlineEnum: FundingDeadlineEnum.Modification,
         startDate: new Date("2024-07-01"),
         endDate: new Date("2024-12-30"),
       },

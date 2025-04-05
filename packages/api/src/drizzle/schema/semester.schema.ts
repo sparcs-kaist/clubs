@@ -30,7 +30,7 @@ export const ActivityD = mysqlTable("activity_d", {
 
 export const ActivityDeadlineD = mysqlTable("activity_deadline_d", {
   id: int("id").autoincrement().primaryKey().notNull(),
-  semesterId: int("semester_d_id").notNull(),
+  semesterId: int("semester_id").notNull(),
   deadlineEnum: int("deadline_enum_id").notNull(),
   startDate: datetime("start_date").notNull(),
   endDate: datetime("end_date").notNull(),
@@ -51,7 +51,7 @@ export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
 export const RegistrationDeadlineD = mysqlTable("registration_deadline_d", {
   id: int("id").autoincrement().primaryKey(),
   semesterId: int("semester_d_id").references(() => SemesterD.id),
-  registrationDeadlineEnumId: int("registration_deadline_enum_id").notNull(),
+  registrationDeadlineEnum: int("registration_deadline_enum_id").notNull(),
   startDate: date("start_date"),
   endDate: date("end_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

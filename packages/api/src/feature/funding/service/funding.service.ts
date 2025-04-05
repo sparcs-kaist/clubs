@@ -383,7 +383,7 @@ export default class FundingService {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
 
@@ -412,7 +412,7 @@ export default class FundingService {
     );
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
     await this.fundingRepository.delete(param.id);

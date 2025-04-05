@@ -33,7 +33,7 @@ export class MemberRegistrationRepository extends BaseRepository<
         and(
           eq(RegistrationDeadlineD.semesterId, param.semesterId),
           eq(
-            RegistrationDeadlineD.registrationDeadlineEnumId,
+            RegistrationDeadlineD.registrationDeadlineEnum,
             RegistrationDeadlineEnum.StudentRegistrationApplication,
           ),
           isNull(RegistrationDeadlineD.deletedAt),
