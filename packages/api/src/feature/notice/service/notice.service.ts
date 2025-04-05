@@ -33,9 +33,8 @@ export class NoticeService {
 
   async getAllNotices() {
     return this.noticeRepository.find({
-      pagination: {
-        offset: 1,
-        itemCount: 100,
+      orderBy: {
+        id: 1,
       },
     });
   }
@@ -45,6 +44,9 @@ export class NoticeService {
       pagination: {
         offset: pageOffset,
         itemCount,
+      },
+      orderBy: {
+        id: 1,
       },
     });
 
@@ -103,11 +105,6 @@ export class NoticeService {
         let title = titleElement.textContent;
         title = title.replace(/\s+/g, " ").trim();
         const link = urlPrefix + titleElement.getAttribute("href");
-        // if (!link.endsWith("false")) {
-        //   link += "&referrerAllArticles=false";
-        // } else {
-        // }
-        // link += "";
         const articleId = findArticleId(link);
 
         let author = element.querySelector(".td_name .p-nick a").textContent;
@@ -125,7 +122,7 @@ export class NoticeService {
         }
         if (title && author && date && link) {
           if (posts.every(post => post.articleId !== articleId)) {
-            posts.push({ title, author, date, link, articleId });
+            posts.unshift({ title, author, date, link, articleId });
           }
         }
       }
@@ -155,7 +152,7 @@ export class NoticeService {
           .replace("search.totalCount=", ""),
       );
 
-      let posts = this.getPostsFromHTML(html);
+      const posts = this.getPostsFromHTML(html);
 
       const postOfPages = await Promise.all(
         this.determinePagesToCrawl(totalCount).map(page =>
@@ -165,10 +162,9 @@ export class NoticeService {
 
       postOfPages.forEach(postOfPage => {
         const ids = posts.map(post => post.articleId);
-        posts = [
-          ...posts,
+        posts.unshift(
           ...postOfPage.filter(post => !ids.includes(post.articleId)),
-        ];
+        );
         // 중복 제거
       });
 
@@ -196,7 +192,6 @@ export class NoticeService {
     const deletes = [];
 
     crawlResults.forEach(crawlResult => {
-      // const crawlResult = crawlResults[i];
       const find = noticesFromDB.find(
         e => e.articleId === crawlResult.articleId,
       );
@@ -241,7 +236,5 @@ export class NoticeService {
         createdAt: post.createdAt,
       });
     }
-
-    // Delete는 나중에...
   }
 }

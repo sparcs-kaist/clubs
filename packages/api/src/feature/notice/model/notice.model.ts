@@ -10,6 +10,7 @@ type NoticeDbResult = InferSelectModel<typeof Notice>;
 
 const orderByFieldMap = {
   createdAt: Notice.createdAt,
+  id: Notice.id,
 };
 
 export type INoticeOrderBy = Partial<{
