@@ -7,7 +7,7 @@ import {
 } from "drizzle-orm";
 
 import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
-import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import { ActivityDurationTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
 import {
   filterExcludedFields,
   OperationType,
@@ -20,15 +20,19 @@ import {
 } from "@sparcs-clubs/api/common/model/entity.model";
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-export type FromDb = InferSelectModel<typeof ActivityD>;
-export type ToDb = InferInsertModel<typeof ActivityD>;
+export type ActivityDurationFromDb = InferSelectModel<typeof ActivityD>;
+export type ActivityDurationToDb = InferInsertModel<typeof ActivityD>;
 
 export type ActivityDurationQuery = {
   semesterId?: number;
   startTerm?: Date;
   endTerm?: Date;
   year?: number;
-  activityDurationTypeEnum?: number;
+  activityDurationTypeEnum?: ActivityDurationTypeEnum;
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
 
@@ -49,7 +53,7 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
   name: IActivityDuration["name"];
   startTerm: IActivityDuration["startTerm"];
   endTerm: IActivityDuration["endTerm"];
-  semester: ISemester;
+  semester: IActivityDuration["semester"];
   activityDurationTypeEnum: IActivityDuration["activityDurationTypeEnum"];
 
   constructor(data: IActivityDuration) {
@@ -57,15 +61,20 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
     Object.assign(this, data);
   }
 
-  to(operation: OperationType): ToDb {
+  to(operation: OperationType): ActivityDurationToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
       semesterId: filtered.semester.id,
-    } as ToDb;
+      year: filtered.year,
+      name: filtered.name,
+      startTerm: filtered.startTerm,
+      endTerm: filtered.endTerm,
+      activityDurationTypeEnum: filtered.activityDurationTypeEnum,
+    };
   }
 
-  static from(data: FromDb): MActivityDuration {
+  static from(data: ActivityDurationFromDb): MActivityDuration {
     return new MActivityDuration({
       ...data,
       semester: { id: data.semesterId },
@@ -80,6 +89,7 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
         endTerm: ActivityD.endTerm,
         year: ActivityD.year,
         activityDurationTypeEnum: ActivityD.activityDurationTypeEnum,
+        duration: null,
         date: null,
       };
 

@@ -12,14 +12,21 @@ import {
 } from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-export type FromDb = InferSelectModel<typeof RegistrationDeadlineD>;
-export type ToDb = InferInsertModel<typeof RegistrationDeadlineD>;
+export type RegistrationDeadlineFromDb = InferSelectModel<
+  typeof RegistrationDeadlineD
+>;
+export type RegistrationDeadlineToDb = InferInsertModel<
+  typeof RegistrationDeadlineD
+>;
 
 export type RegistrationDeadlineQuery = {
   deadlineEnum?: number;
   semesterId?: number;
-  startDate?: Date;
-  endDate?: Date;
+  // specialKeys
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
 
@@ -31,23 +38,26 @@ export class MRegistrationDeadline
 
   semester: IRegistrationDeadline["semester"];
   deadlineEnum: IRegistrationDeadline["deadlineEnum"];
-  startDate: IRegistrationDeadline["startDate"];
-  endDate: IRegistrationDeadline["endDate"];
+  startTerm: IRegistrationDeadline["startTerm"];
+  endTerm: IRegistrationDeadline["endTerm"];
 
   constructor(data: IRegistrationDeadline) {
     super();
     Object.assign(this, data);
   }
 
-  to(operation: OperationType): ToDb {
+  to(operation: OperationType): RegistrationDeadlineToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
+      registrationDeadlineEnum: filtered.deadlineEnum,
       semesterId: filtered.semester.id,
-    } as ToDb;
+      startTerm: filtered.startTerm,
+      endTerm: filtered.endTerm,
+    };
   }
 
-  static from(data: FromDb): MRegistrationDeadline {
+  static from(data: RegistrationDeadlineFromDb): MRegistrationDeadline {
     return new MRegistrationDeadline({
       ...data,
       deadlineEnum: data.registrationDeadlineEnum,
@@ -62,8 +72,7 @@ export class MRegistrationDeadline
     > = {
       deadlineEnum: RegistrationDeadlineD.registrationDeadlineEnum,
       semesterId: RegistrationDeadlineD.semesterId,
-      startDate: RegistrationDeadlineD.startDate,
-      endDate: RegistrationDeadlineD.endDate,
+      duration: null,
       date: null,
     };
 

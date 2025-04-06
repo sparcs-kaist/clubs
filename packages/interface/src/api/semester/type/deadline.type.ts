@@ -11,24 +11,24 @@ export const zActivityDeadline = z.object({
   id: zId,
   semester: zSemester.pick({ id: true }),
   deadlineEnum: z.nativeEnum(ActivityDeadlineEnum),
-  startDate: z.date(),
-  endDate: z.date(),
+  startTerm: z.date(),
+  endTerm: z.date(),
 });
 
 export const zFundingDeadline = z.object({
   id: zId,
   semester: zSemester.pick({ id: true }),
   deadlineEnum: z.nativeEnum(FundingDeadlineEnum),
-  startDate: z.date(),
-  endDate: z.date(),
+  startTerm: z.date(),
+  endTerm: z.date(),
 });
 
 export const zRegistrationDeadline = z.object({
   id: zId,
   semester: zSemester.pick({ id: true }),
   deadlineEnum: z.nativeEnum(RegistrationDeadlineEnum),
-  startDate: z.date(),
-  endDate: z.date(),
+  startTerm: z.date(),
+  endTerm: z.date(),
 });
 
 export type IActivityDeadline = z.infer<typeof zActivityDeadline>;

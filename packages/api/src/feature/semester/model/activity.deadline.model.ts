@@ -13,14 +13,17 @@ import {
 } from "@sparcs-clubs/api/common/model/entity.model";
 import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-export type FromDb = InferSelectModel<typeof ActivityDeadlineD>;
-export type ToDb = InferInsertModel<typeof ActivityDeadlineD>;
+export type ActivityDeadlineFromDb = InferSelectModel<typeof ActivityDeadlineD>;
+export type ActivityDeadlineToDb = InferInsertModel<typeof ActivityDeadlineD>;
 
 export type ActivityDeadlineQuery = {
-  deadlineEnum: number;
-  semesterId: number;
-  startDate: Date;
-  endDate: Date;
+  deadlineEnum?: number;
+  semesterId?: number;
+  // specialKeys
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
 
@@ -29,26 +32,26 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
 
   semester: ISemester;
   deadlineEnum: IActivityDeadline["deadlineEnum"];
-  startDate: IActivityDeadline["startDate"];
-  endDate: IActivityDeadline["endDate"];
+  startTerm: IActivityDeadline["startTerm"];
+  endTerm: IActivityDeadline["endTerm"];
 
   constructor(data: IActivityDeadline) {
     super();
     Object.assign(this, data);
   }
 
-  to(operation: OperationType): ToDb {
+  to(operation: OperationType): ActivityDeadlineToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
       semesterId: filtered.semester.id,
       deadlineEnum: filtered.deadlineEnum,
-      startDate: filtered.startDate,
-      endDate: filtered.endDate,
-    } as ToDb;
+      startTerm: filtered.startTerm,
+      endTerm: filtered.endTerm,
+    } as ActivityDeadlineToDb;
   }
 
-  static from(data: FromDb): MActivityDeadline {
+  static from(data: ActivityDeadlineFromDb): MActivityDeadline {
     return new MActivityDeadline({
       ...data,
       deadlineEnum: data.deadlineEnum,
@@ -61,8 +64,7 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
       {
         deadlineEnum: ActivityDeadlineD.deadlineEnum,
         semesterId: ActivityDeadlineD.semesterId,
-        startDate: ActivityDeadlineD.startDate,
-        endDate: ActivityDeadlineD.endDate,
+        duration: null,
         date: null,
       };
 

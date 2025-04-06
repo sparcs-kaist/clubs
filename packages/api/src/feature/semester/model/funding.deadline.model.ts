@@ -12,39 +12,44 @@ import {
 } from "@sparcs-clubs/api/common/model/entity.model";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
-export type FromDb = InferSelectModel<typeof FundingDeadlineD>;
-export type ToDb = InferInsertModel<typeof FundingDeadlineD>;
+export type FundingDeadlineFromDb = InferSelectModel<typeof FundingDeadlineD>;
+export type FundingDeadlineToDb = InferInsertModel<typeof FundingDeadlineD>;
 
 export type FundingDeadlineQuery = {
   deadlineEnum?: number;
   semesterId?: number;
-  startDate?: Date;
-  endDate?: Date;
+  // specialKeys
+  duration?: {
+    startTerm: Date;
+    endTerm: Date;
+  };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
 };
-
 export class MFundingDeadline extends MEntity implements IFundingDeadline {
   static modelName = "FundingDeadline";
 
   semester: IFundingDeadline["semester"];
   deadlineEnum: IFundingDeadline["deadlineEnum"];
-  startDate: IFundingDeadline["startDate"];
-  endDate: IFundingDeadline["endDate"];
+  startTerm: IFundingDeadline["startTerm"];
+  endTerm: IFundingDeadline["endTerm"];
 
   constructor(data: IFundingDeadline) {
     super();
     Object.assign(this, data);
   }
 
-  to(operation: OperationType): ToDb {
+  to(operation: OperationType): FundingDeadlineToDb {
     const filtered = filterExcludedFields(this, operation);
 
     return {
+      deadlineEnum: filtered.deadlineEnum,
       semesterId: filtered.semester.id,
-    } as ToDb;
+      startTerm: filtered.startTerm,
+      endTerm: filtered.endTerm,
+    };
   }
 
-  static from(data: FromDb): MFundingDeadline {
+  static from(data: FundingDeadlineFromDb): MFundingDeadline {
     return new MFundingDeadline({
       ...data,
       semester: { id: data.semesterId },
@@ -55,8 +60,7 @@ export class MFundingDeadline extends MEntity implements IFundingDeadline {
     const fieldMappings: Record<keyof FundingDeadlineQuery, MySqlColumnType> = {
       deadlineEnum: FundingDeadlineD.deadlineEnum,
       semesterId: FundingDeadlineD.semesterId,
-      startDate: FundingDeadlineD.startDate,
-      endDate: FundingDeadlineD.endDate,
+      duration: null,
       date: null,
     };
 
