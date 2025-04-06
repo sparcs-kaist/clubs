@@ -1,87 +1,57 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, SQL } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
-import {
-  DrizzleAsyncProvider,
-  DrizzleTransaction,
-} from "src/drizzle/drizzle.provider";
-import { RegistrationDeadlineD } from "src/drizzle/schema/semester.schema";
+import { Injectable } from "@nestjs/common";
+import { gte, lte, not, or, SQL } from "drizzle-orm";
+
+import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
+import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 import {
-  IRegistrationDeadlineOrderBy,
   MRegistrationDeadline,
+  RegistrationDeadlineFromDb,
+  RegistrationDeadlineQuery,
 } from "../model/registration.deadline.model";
 
-interface IRegistrationDeadlineQuery {
-  id?: number;
-  ids?: number[];
-  date?: Date;
-  duration?: {
-    startTerm: Date;
-    endTerm: Date;
-  };
-  pagination?: {
-    offset?: number;
-    itemCount?: number;
-  };
-  orderBy?: IRegistrationDeadlineOrderBy;
-}
-
 @Injectable()
-export class RegistrationDeadlineRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+export class RegistrationDeadlineRepository extends BaseRepository<
+  MRegistrationDeadline,
+  RegistrationDeadlineFromDb,
+  typeof RegistrationDeadlineD,
+  RegistrationDeadlineQuery
+> {
+  constructor() {
+    super(RegistrationDeadlineD, MRegistrationDeadline);
+  }
 
-  async findTx(
-    tx: DrizzleTransaction,
-    param: IRegistrationDeadlineQuery,
-  ): Promise<MRegistrationDeadline[]> {
-    const whereClause: SQL[] = [isNull(RegistrationDeadlineD.deletedAt)];
+  protected makeWhereClause(param: RegistrationDeadlineQuery): SQL[] {
+    const whereClause: SQL[] = super.makeWhereClause(param, [
+      "duration",
+      "date",
+    ]);
 
-    if (param.id) {
-      whereClause.push(eq(RegistrationDeadlineD.id, param.id));
-    }
-    if (param.ids) {
-      whereClause.push(inArray(RegistrationDeadlineD.id, param.ids));
-    }
-    if (param.date) {
-      whereClause.push(eq(RegistrationDeadlineD.startDate, param.date));
-    }
     if (param.duration) {
+      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
       whereClause.push(
-        and(
-          gte(RegistrationDeadlineD.startDate, param.duration.startTerm),
-          lte(RegistrationDeadlineD.endDate, param.duration.endTerm),
+        not(
+          or(
+            lte(RegistrationDeadlineD.endTerm, param.duration.startTerm),
+            gte(RegistrationDeadlineD.startTerm, param.duration.endTerm),
+          ),
         ),
       );
     }
 
-    let query = tx
-      .select()
-      .from(RegistrationDeadlineD)
-      .where(and(...whereClause))
-      .$dynamic();
-
-    if (param.pagination) {
-      query = query.limit(param.pagination.itemCount);
-      query = query.offset(
-        (param.pagination.offset - 1) * param.pagination.itemCount,
+    // date: date를 startTerm, endTerm에 포함하는 지 확인
+    if (param.date) {
+      whereClause.push(
+        this.processNestedQuery(
+          {
+            startTerm: { lte: param.date },
+            endTerm: { gt: param.date },
+          },
+          "and",
+        ),
       );
     }
 
-    if (param.orderBy) {
-      query = query.orderBy(
-        ...MRegistrationDeadline.makeOrderBy(param.orderBy),
-      );
-    }
-
-    const result = await query.execute();
-
-    return result.map(e => MRegistrationDeadline.from(e));
-  }
-
-  async find(
-    param: IRegistrationDeadlineQuery,
-  ): Promise<MRegistrationDeadline[]> {
-    return this.db.transaction(tx => this.findTx(tx, param));
+    return whereClause;
   }
 }

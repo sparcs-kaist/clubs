@@ -571,10 +571,10 @@ export class MemberRegistrationService {
         endTerm: semester.endTerm,
       },
       deadline:
-        deadline.startDate <= today && today <= deadline.endDate
+        deadline.startTerm <= today && today <= deadline.endTerm
           ? {
-              startDate: deadline.startDate,
-              endDate: deadline.endDate,
+              startDate: deadline.startTerm,
+              endDate: deadline.endTerm,
             }
           : null,
     };

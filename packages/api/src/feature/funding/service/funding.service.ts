@@ -67,10 +67,11 @@ import {
 } from "@sparcs-clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
+import { FundingDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/funding.deadline.repository";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
@@ -88,6 +89,7 @@ export default class FundingService {
     private readonly clubPublicService: ClubPublicService,
     private readonly activityPublicService: ActivityPublicService,
     private readonly semesterPublicService: SemesterPublicService,
+    private readonly fundingDeadlineRepository: FundingDeadlineRepository,
   ) {}
 
   async postStudentFunding(
@@ -507,7 +509,9 @@ export default class FundingService {
 
     const [targetDuration, deadline] = await Promise.all([
       this.activityPublicService.fetchLastActivityD(),
-      this.fundingDeadlineRepository.fetch(today),
+      this.fundingDeadlineRepository
+        .find({ date: today })
+        .then(takeOnlyOne("FundingDeadline")),
     ]);
 
     return {
@@ -1086,7 +1090,9 @@ export default class FundingService {
 
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
     const today = getKSTDate();
-    const todayDeadline = await this.fundingDeadlineRepository.fetch(today);
+    const todayDeadline = await this.fundingDeadlineRepository
+      .find({ date: today })
+      .then(takeOnlyOne("FundingDeadline"));
     if (enums.find(e => Number(e) === todayDeadline.deadlineEnum) === undefined)
       throw new HttpException(
         "Today is not a day for funding",

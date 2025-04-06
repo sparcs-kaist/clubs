@@ -5,7 +5,8 @@ import type {
   ApiSem001ResponseOK,
 } from "@sparcs-clubs/interface/api/semester/apiSem001";
 
-import { OrderByTypeEnum } from "../model/semester.model";
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+
 import { SemesterRepository } from "../repository/semester.repository";
 
 @Injectable()
@@ -24,8 +25,8 @@ export class SemesterService {
 
     const semesters = await this.semesterRepository.find({
       pagination: {
-        offset: pageOffset,
-        itemCount,
+        offset: pageOffset ?? 0,
+        itemCount: itemCount ?? 9999,
       },
       orderBy: {
         startTerm: OrderByTypeEnum.DESC,

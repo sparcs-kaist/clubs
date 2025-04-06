@@ -4,15 +4,14 @@ import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activi
 
 import {
   getKSTDate,
-  takeAll,
   takeOne,
   takeOnlyOne,
 } from "@sparcs-clubs/api/common/util/util";
 
 import { MActivityDeadline } from "../model/activity.deadline.model";
 import { MSemester } from "../model/semester.model";
-import { ActivityDurationRepository } from "../repository/activity.activity-term.repository";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
+import { ActivityDurationRepository } from "../repository/activity.duration.repository";
 import { FundingDeadlineRepository } from "../repository/funding.deadline.repository";
 import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
 import { SemesterRepository } from "../repository/semester.repository";
@@ -61,9 +60,7 @@ export class SemesterPublicService {
    * 만약 모든 id에 대해 조회되지 않는 semester가 있으면 404 에러를 던집니다.
    */
   async fetchSemesterAll(ids: number[]): Promise<MSemester[]> {
-    const semester = await this.semesterRepository
-      .find({ ids })
-      .then(takeAll(ids, "Semester"));
+    const semester = await this.semesterRepository.fetchAll(ids);
     return semester;
   }
 

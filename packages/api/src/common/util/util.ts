@@ -1,4 +1,11 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from "@nestjs/common";
+import { addDays, isValid, parseISO, startOfDay } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 import { IdType } from "../model/entity.model";
 
@@ -19,6 +26,53 @@ export function getKSTDate(input?: string | Date): Date {
     return date;
   }
   return new Date(input);
+}
+
+/**
+ * 입력받은 날짜(또는 현재)의 KST 기준 00:00:00부터 다음날 00:00:00까지의 기간을 반환
+ * @param input 기준 날짜 (문자열 또는 Date 객체, 생략 시 현재)
+ * @returns 시작 시간과 종료 시간을 포함하는 객체
+ * TODO: 서버 런타임 시간대에 관계 없이 KST를 반환하도록 설정
+ */
+export function getKSTDateDuration(input?: string | Date): {
+  startTerm: Date;
+  endTerm: Date;
+} {
+  const timeZone = "Asia/Beijing";
+  let date: Date;
+
+  if (!input) {
+    // 입력이 없을 경우 현재 시간
+    date = new Date();
+  } else if (typeof input === "string") {
+    // 문자열이면 파싱
+    date = parseISO(input);
+  } else {
+    // Date 객체이면 그대로 사용
+    date = input;
+  }
+
+  // 유효성 검사
+  if (!isValid(date)) {
+    throw new HttpException(
+      "Invalid date input",
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
+
+  const kstDate = toZonedTime(date, timeZone);
+
+  // 해당 날짜의 00:00:00 (자정)
+  const startOfDayKST = startOfDay(kstDate);
+
+  // 다음날 00:00:00
+  const endOfDayKST = startOfDay(addDays(kstDate, 1));
+
+  // KST 시간을 UTC Date 객체로 변환하여 반환
+  return {
+    startTerm: startOfDayKST,
+    endTerm: endOfDayKST,
+  };
 }
 
 export function getArrayDiff<T extends string | number>(

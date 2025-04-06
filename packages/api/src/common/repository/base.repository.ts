@@ -158,7 +158,10 @@ export abstract class BaseRepository<
             // 복잡한 쿼리의 경우 specialKeys에 추가하여 이 메서드에서는 무시하고, 상속받은 메서드에서 처리
             const tableField = this.getTableField(key as keyof Query);
             if (!tableField) {
-              throw new Error(`Invalid query field: ${key}`);
+              // tableField가 null: date, duration 등 특수한 경우
+              throw new Error(
+                `You should add this field to the SpecialKeys: ${key}`,
+              );
             }
 
             // 배열인 경우 IN 연산자 사용

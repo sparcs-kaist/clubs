@@ -2,26 +2,26 @@ import { Injectable } from "@nestjs/common";
 import { gte, lte, not, or, SQL } from "drizzle-orm";
 
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 import {
-  MSemester,
-  SemesterFromDb,
-  SemesterQuery,
-} from "../model/semester.model";
+  ActivityDurationFromDb,
+  ActivityDurationQuery,
+  MActivityDuration,
+} from "../model/activity.duration.model";
 
 @Injectable()
-export class SemesterRepository extends BaseRepository<
-  MSemester,
-  SemesterFromDb,
-  typeof SemesterD,
-  SemesterQuery
+export class ActivityDurationRepository extends BaseRepository<
+  MActivityDuration,
+  ActivityDurationFromDb,
+  typeof ActivityD,
+  ActivityDurationQuery
 > {
   constructor() {
-    super(SemesterD, MSemester);
+    super(ActivityD, MActivityDuration);
   }
 
-  protected makeWhereClause(param: SemesterQuery): SQL[] {
+  protected makeWhereClause(param: ActivityDurationQuery): SQL[] {
     const whereClause: SQL[] = super.makeWhereClause(param, [
       "duration",
       "date",
@@ -32,8 +32,8 @@ export class SemesterRepository extends BaseRepository<
       whereClause.push(
         not(
           or(
-            lte(SemesterD.endTerm, param.duration.startTerm),
-            gte(SemesterD.startTerm, param.duration.endTerm),
+            lte(ActivityD.endTerm, param.duration.startTerm),
+            gte(ActivityD.startTerm, param.duration.endTerm),
           ),
         ),
       );

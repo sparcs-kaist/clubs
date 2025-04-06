@@ -22,6 +22,8 @@ export type SemesterQuery = {
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
+  startTerm?: Date;
+  endTerm?: Date;
 };
 
 export type SemesterOrderBy = ["startTerm", "endTerm", "year"][number];
@@ -64,6 +66,8 @@ export class MSemester extends MEntity implements ISemester {
     const fieldMappings: Record<keyof SemesterQuery, MySqlColumnType> = {
       duration: null,
       date: null,
+      startTerm: SemesterD.startTerm,
+      endTerm: SemesterD.endTerm,
     };
 
     if (!(field in fieldMappings)) {

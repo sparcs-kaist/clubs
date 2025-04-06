@@ -25,6 +25,8 @@ export type ActivityDeadlineQuery = {
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
+  startTerm?: Date;
+  endTerm?: Date;
 };
 
 export class MActivityDeadline extends MEntity implements IActivityDeadline {
@@ -66,6 +68,8 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
         semesterId: ActivityDeadlineD.semesterId,
         duration: null,
         date: null,
+        startTerm: ActivityDeadlineD.startTerm,
+        endTerm: ActivityDeadlineD.endTerm,
       };
 
     if (!(field in fieldMappings)) {

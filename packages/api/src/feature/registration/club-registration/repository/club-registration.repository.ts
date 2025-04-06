@@ -71,8 +71,8 @@ export class ClubRegistrationRepository {
       .from(RegistrationDeadlineD)
       .where(
         and(
-          lte(RegistrationDeadlineD.startDate, date),
-          gt(RegistrationDeadlineD.endDate, date),
+          lte(RegistrationDeadlineD.startTerm, date),
+          gt(RegistrationDeadlineD.endTerm, date),
           inArray(RegistrationDeadlineD.registrationDeadlineEnum, enums),
           isNull(RegistrationDeadlineD.deletedAt),
         ),
