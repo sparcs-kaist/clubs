@@ -11,10 +11,9 @@ import {
   MySqlColumnType,
 } from "@sparcs-clubs/api/common/model/entity.model";
 import {
-  adjustModelTimezoneFromDb,
-  adjustModelTimezoneToDb,
-  DateField,
-} from "@sparcs-clubs/api/common/util/decorators/time-decorator";
+  makeObjectPropsFromDBTimezone,
+  makeObjectPropsToDBTimezone,
+} from "@sparcs-clubs/api/common/util/util";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type SemesterFromDb = InferSelectModel<typeof SemesterD>;
@@ -38,10 +37,8 @@ export class MSemester extends MEntity implements ISemester {
 
   name: ISemester["name"];
 
-  @DateField()
   startTerm: ISemester["startTerm"];
 
-  @DateField()
   endTerm: ISemester["endTerm"];
 
   year: ISemester["year"];
@@ -53,7 +50,7 @@ export class MSemester extends MEntity implements ISemester {
 
   to(operation: OperationType): SemesterToDb {
     const filtered = filterExcludedFields(this, operation);
-    const adjusted = adjustModelTimezoneToDb(filtered);
+    const adjusted = makeObjectPropsToDBTimezone(filtered);
     return {
       name: adjusted.name,
       startTerm: adjusted.startTerm,
@@ -63,15 +60,14 @@ export class MSemester extends MEntity implements ISemester {
   }
 
   static from(result: SemesterFromDb): MSemester {
-    return adjustModelTimezoneFromDb(
-      new MSemester({
-        id: result.id,
-        name: result.name,
-        startTerm: result.startTerm,
-        endTerm: result.endTerm,
-        year: result.year,
-      }),
-    );
+    const adjusted = makeObjectPropsFromDBTimezone(result);
+    return new MSemester({
+      id: adjusted.id,
+      name: adjusted.name,
+      startTerm: adjusted.startTerm,
+      endTerm: adjusted.endTerm,
+      year: adjusted.year,
+    });
   }
 
   static fieldMap(field: keyof SemesterQuery): MySqlColumnType {
