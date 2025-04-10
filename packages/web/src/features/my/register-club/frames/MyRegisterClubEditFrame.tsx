@@ -161,7 +161,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               {clubDeadline?.deadline && (
                 <Info
                   text={registerClubDeadlineInfoText(
-                    clubDeadline.deadline.endDate,
+                    clubDeadline.deadline.endTerm,
                     semesterInfo,
                   )}
                 />

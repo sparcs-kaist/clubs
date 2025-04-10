@@ -8,9 +8,10 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-import { Club, SemesterD } from "./club.schema";
+import { Club } from "./club.schema";
 import { Division } from "./division.schema";
 import { File } from "./file.schema";
+import { SemesterD } from "./semester.schema";
 import { Executive, Professor, Student } from "./user.schema";
 
 export const RegistrationTypeEnum = mysqlTable("registration_type_enum", {
@@ -165,36 +166,6 @@ export const RegistrationApplicationStudent = mysqlTable(
       columns: [table.registrationApplicationStudentEnumId],
       foreignColumns: [RegistrationApplicationStudentStatusEnum.enumId],
       name: "registration_application_student_status_enum_id_fk",
-    }),
-  }),
-);
-
-export const RegistrationDeadlineEnum = mysqlTable(
-  "registration_deadline_enum",
-  {
-    enumId: int("enum_id").autoincrement().primaryKey(),
-    enumName: varchar("enum_name", { length: 255 }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    deletedAt: timestamp("deleted_at"),
-  },
-);
-
-export const RegistrationDeadlineD = mysqlTable(
-  "registration_deadline_d",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    semesterId: int("semester_d_id").references(() => SemesterD.id),
-    registrationDeadlineEnumId: int("registration_deadline_enum_id").notNull(),
-    startDate: date("start_date"),
-    endDate: date("end_date"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    deletedAt: timestamp("deleted_at"),
-  },
-  table => ({
-    registrationEventEnumIdFk: foreignKey({
-      columns: [table.registrationDeadlineEnumId],
-      foreignColumns: [RegistrationDeadlineEnum.enumId],
-      name: "registration_deadline_d_registration_deadline_enum_id_fk",
     }),
   }),
 );

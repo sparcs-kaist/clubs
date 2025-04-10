@@ -9,10 +9,10 @@ import ApiSem001 from "@sparcs-clubs/interface/api/semester/apiSem001";
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 
-import SemesterService from "./semester.service";
+import { SemesterService } from "../service/semester.service";
 
 @Controller()
-export default class SemesterController {
+export class SemesterController {
   constructor(private readonly semesterService: SemesterService) {}
 
   @Public()

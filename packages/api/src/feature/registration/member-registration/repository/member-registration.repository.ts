@@ -4,10 +4,8 @@ import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import {
-  RegistrationApplicationStudent,
-  RegistrationDeadlineD,
-} from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   MemberRegistrationQuery,
   MMemberRegistration,
@@ -35,7 +33,7 @@ export class MemberRegistrationRepository extends BaseRepository<
         and(
           eq(RegistrationDeadlineD.semesterId, param.semesterId),
           eq(
-            RegistrationDeadlineD.registrationDeadlineEnumId,
+            RegistrationDeadlineD.registrationDeadlineEnum,
             RegistrationDeadlineEnum.StudentRegistrationApplication,
           ),
           isNull(RegistrationDeadlineD.deletedAt),

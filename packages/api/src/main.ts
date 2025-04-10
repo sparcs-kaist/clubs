@@ -1,3 +1,4 @@
+import "reflect-metadata"; // 데코레이터 및 메타데이터를 사용하기 위해 import
 import { HttpException } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";

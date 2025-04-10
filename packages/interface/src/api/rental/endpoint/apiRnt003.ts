@@ -16,7 +16,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({
   clubId: z.coerce.number().int().min(0),
   startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
+  endTerm: z.coerce.date().optional(),
   pageOffset: z.coerce.number().min(1),
   itemCount: z.coerce.number().min(1),
 });
@@ -40,7 +40,7 @@ const responseBodyMap = {
         desiredStart: z.date(),
         desiredEnd: z.date(),
         startDate: z.date().optional(),
-        endDate: z.date().optional(),
+        endTerm: z.date().optional(),
         createdAt: z.date(),
       }),
     ),

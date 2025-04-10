@@ -1,6 +1,8 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { toZonedTime } from "date-fns-tz";
 
 import { IdType } from "../model/entity.model";
+import { DB_TIMEZONE } from "./decorators/time-decorator";
 
 export const isEmptyObject = obj =>
   obj && Object.keys(obj).length === 0 && obj.constructor === Object;
@@ -20,6 +22,28 @@ export function getKSTDate(input?: string | Date): Date {
   }
   return new Date(input);
 }
+
+/**
+ * 주어진 객체의 Date 프로퍼티들을 모두 DB에 넣을 수 있도록 KST 기준으로 변환
+ * 중첩 객체도 가능
+ * Query 객체에 사용
+ * @param obj
+ */
+export const makeObjectPropsToDBTimezone = <T extends object | unknown>(
+  obj: T,
+): T => {
+  if (!obj) return obj;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj))
+    return obj.map(item => makeObjectPropsToDBTimezone(item)) as T;
+  if (obj instanceof Date) {
+    return toZonedTime(obj, DB_TIMEZONE) as T;
+  }
+  const result = Object.values(obj).map(value =>
+    makeObjectPropsToDBTimezone(value),
+  ) as T;
+  return result;
+};
 
 export function getArrayDiff<T extends string | number>(
   arr1: T[],

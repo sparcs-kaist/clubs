@@ -5,18 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  exists,
-  gt,
-  inArray,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNull, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
@@ -34,7 +23,6 @@ import {
 import {
   Activity,
   ActivityClubChargedExecutive,
-  ActivityDeadlineD,
   ActivityEvidenceFile,
   ActivityFeedback,
   ActivityParticipant,
@@ -387,20 +375,6 @@ export default class ActivityRepository {
         and(
           eq(ActivityFeedback.activityId, param.activityId),
           isNull(ActivityFeedback.deletedAt),
-        ),
-      );
-    return result;
-  }
-
-  async selectDeadlineByDate(date: Date) {
-    const result = await this.db
-      .select()
-      .from(ActivityDeadlineD)
-      .where(
-        and(
-          lte(ActivityDeadlineD.startDate, date),
-          gt(ActivityDeadlineD.endDate, date),
-          isNull(ActivityDeadlineD.deletedAt),
         ),
       );
     return result;

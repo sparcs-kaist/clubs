@@ -168,7 +168,7 @@ const MeetingInformationFrame: React.FC<MeetingInformationFrameProps> = ({
                 )}
               />
               <FormController
-                name="endDate"
+                name="endTerm"
                 required={isDivisionMeeting}
                 control={control}
                 rules={{

@@ -18,7 +18,7 @@ export class GetCommonSpacesUsageOrderMyRepository {
   async getStudentCommonSpacesUsageOrderMy(
     studentId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
     offset: number,
     total: number,
   ): Promise<ApiCms007ResponseOk> {
@@ -36,8 +36,8 @@ export class GetCommonSpacesUsageOrderMyRepository {
         and(
           eq(CommonSpaceUsageOrderD.chargeStudentId, studentId),
           or(
-            between(CommonSpaceUsageOrderD.startTerm, startDate, endDate),
-            between(CommonSpaceUsageOrderD.endTerm, startDate, endDate),
+            between(CommonSpaceUsageOrderD.startTerm, startDate, endTerm),
+            between(CommonSpaceUsageOrderD.endTerm, startDate, endTerm),
           ),
           isNull(CommonSpaceUsageOrderD.deletedAt),
         ),

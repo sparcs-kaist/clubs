@@ -8,7 +8,7 @@ export interface MeetingAnnouncementModel {
   announcementTitle: string;
   announcementContent: string;
   startDate: Date;
-  endDate?: Date;
+  endTerm?: Date;
   isRegular: string;
   location?: string;
   locationEn?: string;

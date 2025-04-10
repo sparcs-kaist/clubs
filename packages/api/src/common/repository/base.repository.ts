@@ -33,7 +33,12 @@ import {
 
 import { OrderByTypeEnum } from "../enums";
 import { IdType, MEntity } from "../model/entity.model";
-import { getKSTDate, takeAll, takeOnlyOne } from "../util/util";
+import {
+  getKSTDate,
+  makeObjectPropsToDBTimezone,
+  takeAll,
+  takeOnlyOne,
+} from "../util/util";
 
 // 쿼리 조건 래핑을 위해 필요한 타입 선언
 const mysqlQueryConditionOperators = [
@@ -146,9 +151,11 @@ export abstract class BaseRepository<
     Object.keys(param)
       .filter(key => !defaultKeys.includes(key)) // 기본 키는 제외
       .forEach(key => {
-        if (key in nestedQueryWrapper) {
+        if (this.isNestedQueryWrapper(key)) {
           whereClause.push(
-            this.processNestedQuery(param[key], key as NestedQueryWrapper),
+            this.processNestedQuery({
+              [key]: param[key],
+            }),
           );
         } else {
           // 파라미터 값이 존재하는 경우
@@ -158,7 +165,10 @@ export abstract class BaseRepository<
             // 복잡한 쿼리의 경우 specialKeys에 추가하여 이 메서드에서는 무시하고, 상속받은 메서드에서 처리
             const tableField = this.getTableField(key as keyof Query);
             if (!tableField) {
-              throw new Error(`Invalid query field: ${key}`);
+              // tableField가 null: date, duration 등 특수한 경우
+              throw new Error(
+                `You should add this field to the SpecialKeys: ${key}`,
+              );
             }
 
             // 배열인 경우 IN 연산자 사용
@@ -169,6 +179,7 @@ export abstract class BaseRepository<
             // 예시: { between: [10, 20] }, { gt: 10 }
             else if (
               typeof value === "object" &&
+              Object.keys(value).length > 0 && // date인 경우 keys가 []임
               Object.keys(value).every(k =>
                 mysqlQueryConditionOperators.includes(
                   k as MysqlQueryConditionOperators,
@@ -187,7 +198,8 @@ export abstract class BaseRepository<
             else if (
               typeof value === "string" ||
               typeof value === "number" ||
-              typeof value === "boolean"
+              typeof value === "boolean" ||
+              value instanceof Date
             ) {
               whereClause.push(eq(tableField, value));
             } else {
@@ -208,7 +220,7 @@ export abstract class BaseRepository<
     let query = tx
       .select()
       .from(this.table)
-      .where(and(...this.makeWhereClause(param)))
+      .where(and(...this.makeWhereClause(makeObjectPropsToDBTimezone(param))))
       .$dynamic();
 
     if (param.pagination) {
@@ -234,7 +246,7 @@ export abstract class BaseRepository<
     const [result] = await tx
       .select({ count: count() })
       .from(this.table)
-      .where(and(...this.makeWhereClause(param)));
+      .where(and(...this.makeWhereClause(makeObjectPropsToDBTimezone(param))));
 
     return result.count;
   }
@@ -306,18 +318,21 @@ export abstract class BaseRepository<
 
   ///////////////////////////////////////////////////////////////////////////////
   // 이 아래는 바꿀 필요 없음
-  // 뭐 이럴꺼면 중첩 쿼리도 처리할 수 있게 만들어 주죠?
-  // ㅋㅋ 왠만하면 쓰지 마세요 (gb)
-  protected processNestedQuery(
-    conditions: Record<string, object>,
-    wrapper: NestedQueryWrapper,
-  ): SQL {
+  protected processNestedQuery(condition: {
+    and?: Record<string, object>;
+    or?: Record<string, object>;
+    not?: Record<string, object>;
+  }): SQL {
+    if (Object.keys(condition).length !== 1) {
+      throw new Error("Invalid condition");
+    }
+    const [wrapper, conditions] = Object.entries(condition)[0];
+
     const whereClause = Object.entries(conditions).map(([key, value]): SQL => {
-      if (key in nestedQueryWrapper) {
-        return this.processNestedQuery(
-          value as Record<string, object>,
-          key as NestedQueryWrapper,
-        );
+      if (this.isNestedQueryWrapper(key)) {
+        return this.processNestedQuery({
+          [key]: value as Record<string, object>,
+        });
       }
       return this.processAdvancedOperators(
         key as keyof Query,
@@ -339,6 +354,10 @@ export abstract class BaseRepository<
       return not(whereClause[0]);
     }
     throw new Error(`Invalid wrapper: ${wrapper}`);
+  }
+
+  private isNestedQueryWrapper(key: string): key is NestedQueryWrapper {
+    return nestedQueryWrapper.includes(key as NestedQueryWrapper);
   }
 
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)

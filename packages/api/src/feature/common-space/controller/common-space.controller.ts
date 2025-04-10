@@ -74,7 +74,7 @@ export class CommonSpaceController {
     const result = await this.commonspaceService.getCommonSpaceUsageOrder(
       param.spaceId,
       query.startDate,
-      query.endDate,
+      query.endTerm,
     );
     return result;
   }
@@ -146,7 +146,7 @@ export class CommonSpaceController {
         user.studentId,
         query.clubId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
         query.pageOffset,
         query.itemCount,
       );
@@ -164,7 +164,7 @@ export class CommonSpaceController {
       await this.commonspaceService.getStudentCommonSpacesUsageOrderMy(
         user.studentId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
         query.pageOffset,
         query.itemCount,
       );

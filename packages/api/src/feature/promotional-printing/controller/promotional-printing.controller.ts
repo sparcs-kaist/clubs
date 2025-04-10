@@ -47,7 +47,7 @@ export class PromotionalPrintingController {
     @Query("clubId") clubId: ApiPrt001RequestQuery["clubId"],
     @Query("startDate")
     startDate: ApiPrt001RequestQuery["startDate"] | undefined,
-    @Query("endDate") endDate: ApiPrt001RequestQuery["endDate"] | undefined,
+    @Query("endTerm") endTerm: ApiPrt001RequestQuery["endTerm"] | undefined,
     @Query("pageOffset") pageOffset: ApiPrt001RequestQuery["pageOffset"],
     @Query("itemCount") itemCount: ApiPrt001RequestQuery["itemCount"],
   ): Promise<ApiPrt001ResponseOk> {
@@ -56,7 +56,7 @@ export class PromotionalPrintingController {
     const query: ApiPrt001RequestQuery = apiPrt001.requestQuery.parse({
       clubId: Number(clubId),
       startDate: startDate === undefined ? undefined : new Date(startDate),
-      endDate: endDate === undefined ? undefined : new Date(endDate),
+      endTerm: endTerm === undefined ? undefined : new Date(endTerm),
       pageOffset: Number(pageOffset),
       itemCount: Number(itemCount),
     });

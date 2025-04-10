@@ -19,7 +19,7 @@ import {
   FundingStatusEnum,
   TransportationEnum,
 } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 export const zClubSupplies = z.object({
   name: z.string().max(255).optional(),

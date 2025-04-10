@@ -14,13 +14,13 @@ import {
 
 export const useGetMyRentals = (
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
   pageOffset: number,
   itemCount: number,
 ) => {
   const requestQuery: ApiRnt006RequestQuery = {
     startDate,
-    endDate,
+    endTerm,
     pageOffset,
     itemCount,
   };

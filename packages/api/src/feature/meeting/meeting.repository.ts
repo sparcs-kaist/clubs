@@ -66,7 +66,7 @@ export class MeetingRepository {
     announcementTitle: string;
     announcementContent: string;
     startDate: Date;
-    endDate?: Date;
+    endTerm?: Date;
     isRegular: boolean;
     location?: string;
     locationEn?: string;
@@ -99,7 +99,7 @@ export class MeetingRepository {
         announcementId,
         meetingEnumId: contents.meetingEnumId,
         startDate: contents.startDate,
-        endDate: contents.endDate,
+        endTerm: contents.endTerm,
         isRegular: contents.isRegular,
         location: contents.location,
         locationEn: contents.locationEn,
@@ -148,7 +148,7 @@ export class MeetingRepository {
       .select({
         meetingEnumId: Meeting.meetingEnumId,
         startDate: Meeting.startDate,
-        endDate: Meeting.endDate,
+        endTerm: Meeting.endTerm,
         isRegular: Meeting.isRegular,
         location: Meeting.location,
         locationEn: Meeting.locationEn,
@@ -174,7 +174,7 @@ export class MeetingRepository {
       announcementTitle?: string;
       announcementContent?: string;
       startDate?: Date;
-      endDate?: Date;
+      endTerm?: Date;
       isRegular?: boolean;
       location?: string;
       locationEn?: string;
@@ -212,7 +212,7 @@ export class MeetingRepository {
       const meetingUpdates: {
         meetingEnumId?: number;
         startDate?: Date;
-        endDate?: Date;
+        endTerm?: Date;
         isRegular?: boolean;
         location?: string;
         locationEn?: string;
@@ -224,8 +224,8 @@ export class MeetingRepository {
       if (body.startDate !== undefined) {
         meetingUpdates.startDate = body.startDate;
       }
-      if (body.endDate !== undefined) {
-        meetingUpdates.endDate = body.endDate;
+      if (body.endTerm !== undefined) {
+        meetingUpdates.endTerm = body.endTerm;
       }
       if (body.isRegular !== undefined) {
         meetingUpdates.isRegular = body.isRegular;
@@ -303,7 +303,7 @@ export class MeetingRepository {
   async selectExecutiveMeetingNextDegree(query: { meetingEnumId: number }) {
     const thisYear = getKSTDate().getFullYear();
     const startDate = new Date(thisYear, 0, 1);
-    const endDate = new Date(thisYear + 1, 0, 1);
+    const endTerm = new Date(thisYear + 1, 0, 1);
 
     const result = await this.db
       .select()
@@ -312,7 +312,7 @@ export class MeetingRepository {
         and(
           eq(Meeting.meetingEnumId, query.meetingEnumId),
           gte(Meeting.startDate, startDate),
-          lt(Meeting.startDate, endDate),
+          lt(Meeting.startDate, endTerm),
         ),
       );
 

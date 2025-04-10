@@ -37,7 +37,7 @@ const mockupMyRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -64,7 +64,7 @@ const mockupMyRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -91,7 +91,7 @@ const mockupMyRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -118,7 +118,7 @@ const mockupMyRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
   ],

@@ -142,7 +142,7 @@ export function periodicScheduleMake(
   startTime: number,
   endTime: number,
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
 ): TermList[] {
   const schedule: TermList[] = [];
 
@@ -159,24 +159,24 @@ export function periodicScheduleMake(
   currentStartDate.setUTCDate(currentStartDate.getUTCDate() + startOffset);
   currentStartDate.setUTCHours(startHour, 0, 0, 0);
 
-  const currentEndDate = getKSTDate(startDate);
+  const currentendTerm = getKSTDate(startDate);
   let endOffset = endWeekday - currentStartDate.getUTCDay() + 1;
   if (endOffset < 0) {
     endOffset += 7;
   }
-  currentEndDate.setUTCDate(currentEndDate.getUTCDate() + endOffset);
-  currentEndDate.setUTCHours(endHour, 0, 0, 0);
-  while (currentEndDate <= endDate) {
+  currentendTerm.setUTCDate(currentendTerm.getUTCDate() + endOffset);
+  currentendTerm.setUTCHours(endHour, 0, 0, 0);
+  while (currentendTerm <= endTerm) {
     schedule.push({
       commonSpaceId,
       clubId,
       chargeStudentId,
       studentPhoneNumber,
       startTerm: getKSTDate(currentStartDate),
-      endTerm: getKSTDate(currentEndDate),
+      endTerm: getKSTDate(currentendTerm),
     });
     currentStartDate.setUTCDate(currentStartDate.getUTCDate() + 7);
-    currentEndDate.setUTCDate(currentEndDate.getUTCDate() + 7);
+    currentendTerm.setUTCDate(currentendTerm.getUTCDate() + 7);
   }
   return schedule;
 }

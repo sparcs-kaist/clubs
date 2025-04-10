@@ -15,13 +15,13 @@ import { mockupMyCms } from "./_mock/mockMyClub";
 
 export const useGetMyCommonSpace = (
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
   pageOffset: number,
   itemCount: number,
 ) => {
   const requestQuery: ApiCms007RequestQuery = {
     startDate,
-    endDate,
+    endTerm,
     pageOffset,
     itemCount,
   };

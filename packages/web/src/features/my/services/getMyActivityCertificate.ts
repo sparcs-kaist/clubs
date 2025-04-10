@@ -15,13 +15,13 @@ import { mockupMyAcf } from "./_mock/mockMyClub";
 
 export const useGetMyActivityCertificate = (
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
   pageOffset: number,
   itemCount: number,
 ) => {
   const requestQuery: ApiAcf007RequestQuery = {
     startDate,
-    endDate,
+    endTerm,
     pageOffset,
     itemCount,
   };
