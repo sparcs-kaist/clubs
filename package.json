@@ -9,7 +9,7 @@
     "web": "pnpm -F web",
     "api": "dotenv -- pnpm -F api",
     "interface": "pnpm -F interface",
-    "dev": "dotenv -- pnpm -r --stream --parallel dev",
+    "dev": "TZ=UTC dotenv -- pnpm -r --stream --parallel dev",
     "dev:no-db": "dotenv -- pnpm -r --stream --parallel dev:no-db",
     "mock:front": "NEXT_PUBLIC_API_MOCK_MODE=1 dotenv -- pnpm -r --stream --parallel mock:front",
     "mock:back": "NEXT_PUBLIC_API_MOCK_MODE=1 dotenv -- pnpm -r --stream --parallel mock:back",
