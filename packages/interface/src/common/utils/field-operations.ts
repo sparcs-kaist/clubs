@@ -110,6 +110,7 @@ export function getExcludedFields(
  * @param data 필터링할 객체
  * @param operation 작업 타입
  * @returns 필터링된 객체
+ * @warning plain object로 반환하기에 차후 method나 prototype chain을 사용할 수 없음
  */
 export function filterExcludedFields<T extends object>(
   data: T,
