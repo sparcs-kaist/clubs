@@ -13,7 +13,7 @@ const newFundingListSectionTitle = "신규 지원금 신청";
 const newFundingListSectionInfoText = (data?: ApiFnd007ResponseOk) => {
   const targetDuration = data?.targetDuration;
   const status = fundingDeadlineEnumToString(data?.deadline.deadlineEnum);
-  const endDate = data?.deadline.endDate;
+  const endDate = data?.deadline.endTerm;
   return `현재는 ${targetDuration?.year}년 ${targetDuration?.name}학기 지원금 ${status} 기간입니다 (${status} 마감 : ${endDate ? formatSimpleDateTime(subSeconds(endDate, 1)) : "-"})`;
 };
 
