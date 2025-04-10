@@ -10,6 +10,11 @@ import {
   MEntity,
   MySqlColumnType,
 } from "@sparcs-clubs/api/common/model/entity.model";
+import {
+  adjustModelTimezoneFromDb,
+  adjustModelTimezoneToDb,
+  DateField,
+} from "@sparcs-clubs/api/common/util/decorators/time-decorator";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type SemesterFromDb = InferSelectModel<typeof SemesterD>;
@@ -32,8 +37,13 @@ export class MSemester extends MEntity implements ISemester {
   static modelName = "Semester";
 
   name: ISemester["name"];
+
+  @DateField()
   startTerm: ISemester["startTerm"];
+
+  @DateField()
   endTerm: ISemester["endTerm"];
+
   year: ISemester["year"];
 
   constructor(data: ISemester) {
@@ -43,23 +53,25 @@ export class MSemester extends MEntity implements ISemester {
 
   to(operation: OperationType): SemesterToDb {
     const filtered = filterExcludedFields(this, operation);
-
+    const adjusted = adjustModelTimezoneToDb(filtered);
     return {
-      name: filtered.name,
-      startTerm: filtered.startTerm,
-      endTerm: filtered.endTerm,
-      year: filtered.year,
+      name: adjusted.name,
+      startTerm: adjusted.startTerm,
+      endTerm: adjusted.endTerm,
+      year: adjusted.year,
     };
   }
 
   static from(result: SemesterFromDb): MSemester {
-    return new MSemester({
-      id: result.id,
-      name: result.name,
-      startTerm: result.startTerm,
-      endTerm: result.endTerm,
-      year: result.year,
-    });
+    return adjustModelTimezoneFromDb(
+      new MSemester({
+        id: result.id,
+        name: result.name,
+        startTerm: result.startTerm,
+        endTerm: result.endTerm,
+        year: result.year,
+      }),
+    );
   }
 
   static fieldMap(field: keyof SemesterQuery): MySqlColumnType {

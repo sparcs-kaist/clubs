@@ -22,14 +22,15 @@ export class SemesterService {
     query: ApiSem001RequestQuery;
   }): Promise<ApiSem001ResponseOK> {
     const { pageOffset, itemCount } = param.query;
-
+    const today = new Date();
     const semesters = await this.semesterRepository.find({
+      date: today,
       pagination: {
-        offset: pageOffset ?? 0,
-        itemCount: itemCount ?? 9999,
+        offset: pageOffset,
+        itemCount,
       },
       orderBy: {
-        startTerm: OrderByTypeEnum.DESC,
+        endTerm: OrderByTypeEnum.DESC,
       },
     });
 

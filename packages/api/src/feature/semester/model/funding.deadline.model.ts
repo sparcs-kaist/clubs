@@ -24,6 +24,8 @@ export type FundingDeadlineQuery = {
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
+  startTerm?: Date;
+  endTerm?: Date;
 };
 export class MFundingDeadline extends MEntity implements IFundingDeadline {
   static modelName = "FundingDeadline";
@@ -62,6 +64,8 @@ export class MFundingDeadline extends MEntity implements IFundingDeadline {
       semesterId: FundingDeadlineD.semesterId,
       duration: null,
       date: null,
+      startTerm: FundingDeadlineD.startTerm,
+      endTerm: FundingDeadlineD.endTerm,
     };
 
     if (!(field in fieldMappings)) {

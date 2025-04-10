@@ -42,13 +42,12 @@ export class SemesterRepository extends BaseRepository<
     // date: date를 startTerm, endTerm에 포함하는 지 확인
     if (param.date) {
       whereClause.push(
-        this.processNestedQuery(
-          {
+        this.processNestedQuery({
+          and: {
             startTerm: { lte: param.date },
             endTerm: { gt: param.date },
           },
-          "and",
-        ),
+        }),
       );
     }
 
