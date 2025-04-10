@@ -7,6 +7,10 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { Duration } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import { formatDotDate } from "@sparcs-clubs/web/utils/Date/formatDate";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import ActivityTermRow from "./_atomic/ActivityTermRow";
 
@@ -105,8 +109,8 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
 
     onConfirm(
       activityTermList.map(term => ({
-        startTerm: new Date(`${term.startDate.replaceAll(".", "-")}T00:00:00Z`),
-        endTerm: new Date(`${term.endDate.replaceAll(".", "-")}T00:00:00Z`),
+        startTerm: getLocalDateOnly(term.startDate),
+        endTerm: getLocalDateLastTime(term.endDate),
       })),
     );
   }, [activityTermList, isEmpty, isSomethingEmpty, checkError, onConfirm]);
