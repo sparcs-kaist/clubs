@@ -574,7 +574,7 @@ export class MemberRegistrationService {
         deadline.startTerm <= today && today <= deadline.endTerm
           ? {
               startDate: deadline.startTerm,
-              endDate: deadline.endTerm,
+              endTerm: deadline.endTerm,
             }
           : null,
     };
@@ -591,8 +591,8 @@ export class MemberRegistrationService {
 //     .from(RegistrationDeadlineD)
 //     .where(
 //       and(
-//         isNotNull(RegistrationDeadlineD.endDate),
-//         gt(RegistrationDeadlineD.endDate, cur),
+//         isNotNull(RegistrationDeadlineD.endTerm),
+//         gt(RegistrationDeadlineD.endTerm, cur),
 //         lt(RegistrationDeadlineD.startDate, cur),
 //         eq(
 //           RegistrationDeadlineD.registrationDeadlineEnumId,

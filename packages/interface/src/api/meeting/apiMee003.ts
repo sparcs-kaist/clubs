@@ -23,7 +23,7 @@ const requestBody = z.object({
   announcementTitle: z.coerce.string().optional(),
   announcementContent: z.coerce.string().optional(),
   startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
+  endTerm: z.coerce.date().optional(),
   isRegular: z.coerce.boolean().optional(),
   location: z.coerce.string().optional(),
   locationEn: z.coerce.string().optional(),

@@ -34,7 +34,7 @@ const responseBodyMap = {
     deadline: z
       .object({
         startDate: z.date(),
-        endDate: z.date(),
+        endTerm: z.date(),
       })
       .nullable(),
   }),

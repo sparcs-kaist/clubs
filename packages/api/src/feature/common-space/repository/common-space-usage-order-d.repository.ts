@@ -45,7 +45,7 @@ export class CommonSpaceUsageOrderDRepository {
     spaceId: number,
     clubId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
   ) {
     const result = await this.db
       .select({
@@ -58,8 +58,8 @@ export class CommonSpaceUsageOrderDRepository {
           eq(CommonSpaceUsageOrderD.commonSpaceId, spaceId),
           eq(CommonSpaceUsageOrderD.clubId, clubId),
           or(
-            between(CommonSpaceUsageOrderD.startTerm, startDate, endDate),
-            between(CommonSpaceUsageOrderD.endTerm, startDate, endDate),
+            between(CommonSpaceUsageOrderD.startTerm, startDate, endTerm),
+            between(CommonSpaceUsageOrderD.endTerm, startDate, endTerm),
           ),
           isNull(CommonSpaceUsageOrderD.deletedAt),
         ),

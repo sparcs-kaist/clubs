@@ -16,7 +16,7 @@ import ActivityTermRow from "./_atomic/ActivityTermRow";
 
 export interface ActivityTermProps {
   startDate: string;
-  endDate: string;
+  endTerm: string;
 }
 
 interface EditActivityTermModalProps {
@@ -35,7 +35,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   const [activityTermList, setActivityTermList] = useState<ActivityTermProps[]>(
     initialData.map(d => ({
       startDate: formatDotDate(d.startTerm),
-      endDate: formatDotDate(d.endTerm),
+      endTerm: formatDotDate(d.endTerm),
     })),
   );
   const [hasErrorList, setHasErrorList] = useState<boolean[]>(
@@ -45,7 +45,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   const addRow = useCallback(() => {
     setActivityTermList(prevList => [
       ...prevList,
-      { startDate: "", endDate: "" },
+      { startDate: "", endTerm: "" },
     ]);
     setHasErrorList(prevList => [...prevList, false]);
   }, []);
@@ -63,7 +63,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   const handleDateChange = useCallback(
     (index: number, start: string, end: string) => {
       const updatedTerms = activityTermList.map((term, i) =>
-        i === index ? { startDate: start, endDate: end } : term,
+        i === index ? { startDate: start, endTerm: end } : term,
       );
       setActivityTermList(updatedTerms);
     },
@@ -95,7 +95,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
       return false;
     }
     return activityTermList.some(
-      term => term.startDate === "" || term.endDate === "",
+      term => term.startDate === "" || term.endTerm === "",
     );
   }, [activityTermList]);
 
@@ -110,7 +110,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
     onConfirm(
       activityTermList.map(term => ({
         startTerm: getLocalDateOnly(term.startDate),
-        endTerm: getLocalDateLastTime(term.endDate),
+        endTerm: getLocalDateLastTime(term.endTerm),
       })),
     );
   }, [activityTermList, isEmpty, isSomethingEmpty, checkError, onConfirm]);
@@ -128,7 +128,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
               key={index}
               index={index}
               startDate={term.startDate}
-              endDate={term.endDate}
+              endTerm={term.endTerm}
               onDateChange={handleDateChange}
               onDelete={handleDelete}
               onError={handleHasErrorList}

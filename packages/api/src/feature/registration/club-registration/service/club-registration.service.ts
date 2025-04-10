@@ -993,7 +993,7 @@ export class ClubRegistrationService {
         deadline.startTerm <= today && today <= deadline.endTerm
           ? {
               startDate: deadline.startTerm,
-              endDate: deadline.endTerm,
+              endTerm: deadline.endTerm,
             }
           : null,
     };

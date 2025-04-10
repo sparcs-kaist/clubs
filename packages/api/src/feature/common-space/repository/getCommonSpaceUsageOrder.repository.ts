@@ -15,7 +15,7 @@ export class GetCommonSpaceUsageOrderRepository {
   async findBySpaceIdAndStartTermBetweenAndEndTermBetween(
     spaceId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
   ): Promise<ApiCms002ResponseOK> {
     const result = await this.db
       .select({
@@ -31,8 +31,8 @@ export class GetCommonSpaceUsageOrderRepository {
         and(
           eq(CommonSpaceUsageOrderD.commonSpaceId, spaceId),
           or(
-            between(CommonSpaceUsageOrderD.startTerm, startDate, endDate),
-            between(CommonSpaceUsageOrderD.endTerm, startDate, endDate),
+            between(CommonSpaceUsageOrderD.startTerm, startDate, endTerm),
+            between(CommonSpaceUsageOrderD.endTerm, startDate, endTerm),
           ),
           isNull(CommonSpaceUsageOrderD.deletedAt),
         ),

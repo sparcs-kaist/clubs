@@ -60,7 +60,7 @@ export class AnnouncementService {
       announcementTitle: meetingAnnouncement.announcementTitle,
       announcementContent: meetingAnnouncement.announcementContent,
       startDate: meeting.startDate,
-      endDate: meeting.endDate,
+      endTerm: meeting.endTerm,
       isRegular: meeting.isRegular,
       location: meeting.location,
       locationEn: meeting.locationEn,

@@ -46,14 +46,14 @@ export class CommonSpaceService {
   async getCommonSpaceUsageOrder(
     spaceId,
     startDate,
-    endDate,
+    endTerm,
   ): Promise<ApiCms002ResponseOK> {
     // await this.commonSpaceRepository.findCommonSpaceById(spaceId);
     const result =
       await this.getCommonSpaceUsageOrderRepository.findBySpaceIdAndStartTermBetweenAndEndTermBetween(
         spaceId,
         startDate,
-        endDate,
+        endTerm,
       );
     return result;
   }
@@ -95,13 +95,13 @@ export class CommonSpaceService {
     }
 
     const startDateforPrevSearch = getWeekRange(startTerm).weekStart;
-    const endDateforPrevSearch = getWeekRange(endTerm).weekEnd;
+    const endTermforPrevSearch = getWeekRange(endTerm).weekEnd;
     const prevReservation: Reservation[] =
       await this.commonSpaceUsageOrderDRepository.findBySpaceIdAndClubIdAndStartTermBetweenAndEndTermBetween(
         spaceId,
         clubId,
         startDateforPrevSearch,
-        endDateforPrevSearch,
+        endTermforPrevSearch,
       );
     const isAvailable = canMakeReservation(
       startTerm,
@@ -193,7 +193,7 @@ export class CommonSpaceService {
     studentId: number,
     clubId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
     pageOffset: number,
     itemCount: number,
   ): Promise<ApiCms006ResponseOk> {
@@ -212,7 +212,7 @@ export class CommonSpaceService {
       await this.getCommonSpacesUsageOrderRepository.getStudentCommonSpacesUsageOrder(
         clubId,
         startDate,
-        endDate,
+        endTerm,
         pageOffset - 1,
         itemCount,
       );
@@ -222,7 +222,7 @@ export class CommonSpaceService {
   async getStudentCommonSpacesUsageOrderMy(
     studentId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
     pageOffset: number,
     itemCount: number,
   ): Promise<ApiCms007ResponseOk> {
@@ -230,7 +230,7 @@ export class CommonSpaceService {
       await this.getCommonSpacesUsageOrderMyRepository.getStudentCommonSpacesUsageOrderMy(
         studentId,
         startDate,
-        endDate,
+        endTerm,
         pageOffset - 1,
         itemCount,
       );

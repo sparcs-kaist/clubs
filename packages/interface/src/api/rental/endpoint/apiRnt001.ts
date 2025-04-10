@@ -13,7 +13,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
+  endTerm: z.coerce.date(),
 });
 
 const requestBody = z.object({});

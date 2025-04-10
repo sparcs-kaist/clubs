@@ -116,7 +116,7 @@ const RegisterClubAuthFrame: React.FC<{
   return (
     <RegisterClubMainFrame
       type={type}
-      deadline={clubDeadline.deadline.endDate}
+      deadline={clubDeadline.deadline.endTerm}
     />
   );
 };

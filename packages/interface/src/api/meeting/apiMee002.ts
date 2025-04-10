@@ -26,7 +26,7 @@ const responseBodyMap = {
     announcementTitle: z.coerce.string(),
     announcementContent: z.coerce.string(),
     startDate: z.coerce.date(),
-    endDate: z.coerce.date().optional(),
+    endTerm: z.coerce.date().optional(),
     isRegular: z.coerce.boolean(),
     location: z.coerce.string(),
     locationEn: z.coerce.string(),

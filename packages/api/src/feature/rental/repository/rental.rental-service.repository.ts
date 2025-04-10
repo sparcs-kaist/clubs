@@ -203,7 +203,7 @@ export class RentalServiceRepository {
     return result;
   }
 
-  async getRentals(clubId, page, pageSize, startDate?: Date, endDate?: Date) {
+  async getRentals(clubId, page, pageSize, startDate?: Date, endTerm?: Date) {
     const orders = await this.db
       .select({
         id: RentalOrder.id,
@@ -225,7 +225,7 @@ export class RentalServiceRepository {
         and(
           eq(RentalOrder.clubId, clubId),
           startDate && gte(RentalOrder.desiredStart, startDate),
-          endDate && lte(RentalOrder.desiredEnd, endDate),
+          endTerm && lte(RentalOrder.desiredEnd, endTerm),
         ),
       )
       .groupBy(
@@ -256,7 +256,7 @@ export class RentalServiceRepository {
     page: number,
     pageSize: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ) {
     const myOrders = await this.db
       .select({
@@ -285,7 +285,7 @@ export class RentalServiceRepository {
         and(
           eq(RentalOrder.studentId, 1),
           startDate && gte(RentalOrder.desiredStart, startDate),
-          endDate && lte(RentalOrder.desiredEnd, endDate),
+          endTerm && lte(RentalOrder.desiredEnd, endTerm),
         ),
       );
 

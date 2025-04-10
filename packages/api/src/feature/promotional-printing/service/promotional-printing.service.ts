@@ -38,7 +38,7 @@ export class PromotionalPrintingService {
     const numberOfOrders =
       await this.promotionalPrintingOrderRepository.countByCreatedAtIn(
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const orders =
@@ -47,7 +47,7 @@ export class PromotionalPrintingService {
         query.pageOffset,
         query.itemCount,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const ordersWithSizes = await Promise.all(
@@ -166,7 +166,7 @@ export class PromotionalPrintingService {
       await this.promotionalPrintingOrderRepository.countByStudentIdAndCreatedAtIn(
         1,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const orders =
@@ -175,7 +175,7 @@ export class PromotionalPrintingService {
         query.pageOffset,
         query.itemCount,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const ordersWithSizes = await Promise.all(

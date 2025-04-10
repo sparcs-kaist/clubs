@@ -18,7 +18,7 @@ export class ActivityCertificateRepository {
   async countActivityCertificatesByClubIdAndCreatedAtIn(
     clubId: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<number> {
     const numberOfOrders = (
       await this.db
@@ -30,8 +30,8 @@ export class ActivityCertificateRepository {
             startDate !== undefined
               ? gte(ActivityCertificate.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(ActivityCertificate.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(ActivityCertificate.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -43,7 +43,7 @@ export class ActivityCertificateRepository {
   async countActivityCertificatesByStudentIdAndCreatedAtIn(
     StudentId: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<number> {
     const numberOfOrders = (
       await this.db
@@ -55,8 +55,8 @@ export class ActivityCertificateRepository {
             startDate !== undefined
               ? gte(ActivityCertificate.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(ActivityCertificate.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(ActivityCertificate.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -79,8 +79,8 @@ export class ActivityCertificateRepository {
           query.startDate !== undefined
             ? gte(ActivityCertificate.createdAt, query.startDate)
             : undefined,
-          query.endDate !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endDate)
+          query.endTerm !== undefined
+            ? lte(ActivityCertificate.createdAt, query.endTerm)
             : undefined,
         ),
       )
@@ -106,8 +106,8 @@ export class ActivityCertificateRepository {
           query.startDate !== undefined
             ? gte(ActivityCertificate.createdAt, query.startDate)
             : undefined,
-          query.endDate !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endDate)
+          query.endTerm !== undefined
+            ? lte(ActivityCertificate.createdAt, query.endTerm)
             : undefined,
         ),
       )
