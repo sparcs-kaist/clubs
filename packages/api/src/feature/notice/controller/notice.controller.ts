@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UsePipes } from "@nestjs/common";
+import { Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
 
 import type {
   ApiNtc001RequestQuery,
@@ -10,7 +10,7 @@ import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import logger from "@sparcs-clubs/api/common/util/logger";
 
-import { NoticeService } from "../service/notice.service";
+import { NoticeService, PostCrawlResult } from "../service/notice.service";
 
 @Controller()
 export class NoticeController {
@@ -30,5 +30,24 @@ export class NoticeController {
       query.itemCount,
     );
     return notices;
+  }
+
+  @Public()
+  @Get("/notices/fetch")
+  async crawlNotices(): Promise<PostCrawlResult[]> {
+    return this.noticesService.crawlNotices();
+  }
+
+  @Public()
+  @Get("/notices/selectall")
+  async selectAll(): Promise<unknown[]> {
+    return this.noticesService.getAllNotices();
+  }
+
+  @Public()
+  @Post("/notices/update")
+  async updateNotices(): Promise<unknown[]> {
+    this.noticesService.updateNotices();
+    return [];
   }
 }

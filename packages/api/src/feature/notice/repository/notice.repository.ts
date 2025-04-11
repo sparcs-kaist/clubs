@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { and, count, eq, inArray, isNull, SQL } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, like, SQL } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
@@ -27,6 +27,7 @@ type INoticeQuery = {
     offset: number;
     itemCount: number;
   };
+  titleLike?: string;
   orderBy?: INoticeOrderBy;
 };
 
@@ -51,6 +52,9 @@ export class NoticeRepository {
     }
     if (param.title) {
       whereClause.push(eq(Notice.title, param.title));
+    }
+    if (param.titleLike) {
+      whereClause.push(like(Notice.title, param.title));
     }
     if (param.author) {
       whereClause.push(eq(Notice.author, param.author));
@@ -116,7 +120,13 @@ export class NoticeRepository {
   async updateTx(tx: DrizzleTransaction, param: INoticeUpdate): Promise<void> {
     const [result] = await tx
       .update(Notice)
-      .set({ id: param.id })
+      .set({
+        date: param.date,
+        title: param.title,
+        author: param.author,
+        createdAt: param.createdAt,
+        link: param.link,
+      })
       .where(and(eq(Notice.id, param.id), isNull(Notice.deletedAt)));
     if (result.affectedRows === 0) {
       throw new HttpException("Failed to update", HttpStatus.BAD_REQUEST);
