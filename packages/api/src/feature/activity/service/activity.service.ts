@@ -73,7 +73,7 @@ import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
-import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.duration.repository";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -90,7 +90,7 @@ export default class ActivityService {
     private activityDeadlineRepository: ActivityDeadlineRepository,
     private clubPublicService: ClubPublicService,
     private filePublicService: FilePublicService,
-    private clubRegistrationPublicService: ClubRegistrationPublicService,
+    private registrationPublicService: RegistrationPublicService,
     private clubTRepository: ClubTRepository,
     private userPublicService: UserPublicService,
   ) {}
@@ -655,9 +655,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.clubRegistrationPublicService.resetClubRegistrationStatusEnum(
-      body.clubId,
-    );
+    this.registrationPublicService.resetClubRegistrationStatusEnum(body.clubId);
   }
 
   async putStudentActivityProvisional(
@@ -724,7 +722,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.clubRegistrationPublicService.resetClubRegistrationStatusEnum(
+    this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.clubId,
     );
   }

@@ -9,7 +9,7 @@ import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester
 import {
   MemberRegistrationQuery,
   MMemberRegistration,
-} from "@sparcs-clubs/api/feature/registration/member-registration/model/member.registration.model";
+} from "@sparcs-clubs/api/feature/registration/model/member.registration.model";
 
 type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
 
