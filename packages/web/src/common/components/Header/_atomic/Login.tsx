@@ -1,6 +1,7 @@
 "use client";
 
 import { jwtDecode } from "jwt-decode";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -33,6 +34,7 @@ const Login = () => {
   const [userName, setUserName] = useState("");
   const [type, setType] = useState("");
   const [selectedToken, setSelectedToken] = useState<string>("");
+  const t = useTranslations();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -58,7 +60,7 @@ const Login = () => {
       ) : (
         <LoginInner onClick={login}>
           <Icon type="login" size={16} />
-          로그인
+          {t("path.로그인")}
         </LoginInner>
       )}
       {isMenuOpen && (
