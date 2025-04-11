@@ -20,14 +20,15 @@ export type SemesterFromDb = InferSelectModel<typeof SemesterD>;
 export type SemesterToDb = InferInsertModel<typeof SemesterD>;
 
 export type SemesterQuery = {
+  startTerm?: Date;
+  endTerm?: Date;
+
   // specialKeys
   duration?: {
     startTerm: Date;
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
-  startTerm?: Date;
-  endTerm?: Date;
 };
 
 export type SemesterOrderBy = ["startTerm", "endTerm", "year"][number];
@@ -52,10 +53,7 @@ export class MSemester extends MEntity implements ISemester {
     const filtered = filterExcludedFields(this, operation);
     const adjusted = makeObjectPropsToDBTimezone(filtered);
     return {
-      name: adjusted.name,
-      startTerm: adjusted.startTerm,
-      endTerm: adjusted.endTerm,
-      year: adjusted.year,
+      ...adjusted,
     };
   }
 

@@ -10,6 +10,10 @@ import {
   MEntity,
   MySqlColumnType,
 } from "@sparcs-clubs/api/common/model/entity.model";
+import {
+  makeObjectPropsFromDBTimezone,
+  makeObjectPropsToDBTimezone,
+} from "@sparcs-clubs/api/common/util/util";
 import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type RegistrationDeadlineFromDb = InferSelectModel<
@@ -22,6 +26,8 @@ export type RegistrationDeadlineToDb = InferInsertModel<
 export type RegistrationDeadlineQuery = {
   deadlineEnum?: number;
   semesterId?: number;
+  startTerm?: Date;
+  endTerm?: Date;
   // specialKeys
   duration?: {
     startTerm: Date;
@@ -48,20 +54,21 @@ export class MRegistrationDeadline
 
   to(operation: OperationType): RegistrationDeadlineToDb {
     const filtered = filterExcludedFields(this, operation);
-
+    const adjusted = makeObjectPropsToDBTimezone(filtered);
     return {
-      registrationDeadlineEnum: filtered.deadlineEnum,
-      semesterId: filtered.semester.id,
-      startTerm: filtered.startTerm,
-      endTerm: filtered.endTerm,
+      ...adjusted,
+      registrationDeadlineEnum: adjusted.deadlineEnum,
     };
   }
 
   static from(data: RegistrationDeadlineFromDb): MRegistrationDeadline {
+    const adjusted = makeObjectPropsFromDBTimezone(data);
     return new MRegistrationDeadline({
-      ...data,
-      deadlineEnum: data.registrationDeadlineEnum,
-      semester: { id: data.semesterId },
+      id: adjusted.id,
+      startTerm: adjusted.startTerm,
+      endTerm: adjusted.endTerm,
+      deadlineEnum: adjusted.registrationDeadlineEnum,
+      semester: { id: adjusted.semesterId },
     });
   }
 
@@ -74,6 +81,8 @@ export class MRegistrationDeadline
       semesterId: RegistrationDeadlineD.semesterId,
       duration: null,
       date: null,
+      startTerm: RegistrationDeadlineD.startTerm,
+      endTerm: RegistrationDeadlineD.endTerm,
     };
 
     if (!(field in fieldMappings)) {

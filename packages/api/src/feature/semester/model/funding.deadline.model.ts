@@ -10,6 +10,7 @@ import {
   MEntity,
   MySqlColumnType,
 } from "@sparcs-clubs/api/common/model/entity.model";
+import { makeObjectPropsToDBTimezone } from "@sparcs-clubs/api/common/util/util";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type FundingDeadlineFromDb = InferSelectModel<typeof FundingDeadlineD>;
@@ -42,12 +43,10 @@ export class MFundingDeadline extends MEntity implements IFundingDeadline {
 
   to(operation: OperationType): FundingDeadlineToDb {
     const filtered = filterExcludedFields(this, operation);
-
+    const adjusted = makeObjectPropsToDBTimezone(filtered);
     return {
-      deadlineEnum: filtered.deadlineEnum,
-      semesterId: filtered.semester.id,
-      startTerm: filtered.startTerm,
-      endTerm: filtered.endTerm,
+      ...adjusted,
+      semesterId: adjusted.semester.id,
     };
   }
 
