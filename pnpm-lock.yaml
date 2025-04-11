@@ -230,6 +230,12 @@ importers:
         specifier: ^5.1.3
         version: 5.4.2
 
+  packages/domain:
+    dependencies:
+      zod:
+        specifier: ^3.21.4
+        version: 3.22.4
+
   packages/interface:
     dependencies:
       '@asteasolutions/zod-to-openapi':
