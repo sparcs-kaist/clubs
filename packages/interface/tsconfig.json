@@ -1,13 +1,14 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@clubs/typescript-config/rest-api.json",
   "compilerOptions": {
-    "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./",
     "paths": {
-      "@sparcs-clubs/interface/*": ["./*"]
+      "@sparcs-clubs/interface/*": ["./src/*"]
     }
   },
-  "include": ["./src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

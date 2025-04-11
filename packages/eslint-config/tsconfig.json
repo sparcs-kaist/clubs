@@ -1,0 +1,5 @@
+{
+  "extends": "@clubs/typescript-config/base.json",
+  "include": ["*.ts", "**/*.mjs"],
+  "exclude": ["node_modules"]
+}

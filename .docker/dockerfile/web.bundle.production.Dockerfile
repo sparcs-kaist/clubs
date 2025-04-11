@@ -1,45 +1,52 @@
-# Next14 + pnpm + Monorepo Dockerfile by night (jihopark7777@gmail.com)
-# To be frank, I really don't like how this script turned out.
-# There's a lot of room for improvement, either in image size or build time.
-# Feel free to improve!
+# 시험공부하기 싫은 hama@sparcs.org의 빌드 개조
+# turbo 편하네요
+# 참고자료
+# - https://hanyunseong-log.dev/post/build-and-run-nextjs-monorepo-with-docker
 
-# Base image with node + pnpm
-# TODO: bump pnpm to 9 (must change 'engine' field in package.json)
 FROM node:22-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate
-WORKDIR /app
 
-# Build to output .next build directory
-FROM base AS build
+
+
+FROM base AS prunner
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+WORKDIR /app
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune --scope=web --docker
+
+
+
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+WORKDIR /app
+COPY --from=prunner /app/out/json/ .
+COPY --from=prunner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=prunner /app/out/full/ .
+RUN corepack enable
+RUN pnpm install
+
 ENV NEXT_PUBLIC_API_URL=https://clubs.sparcs.org/api
 ENV NEXT_PUBLIC_APP_MODE=production
 ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
-COPY pnpm-lock.yaml .
-RUN pnpm fetch
-COPY . .
-# Build dependencies
-RUN pnpm install -r --offline
-# Build web
-RUN pnpm --filter=web build
-
-# Only include production dependencies (Did not make much of a difference in image size)
-# FROM base AS production-deps
-# COPY pnpm-lock.yaml .
-# RUN pnpm fetch --prod
-# COPY . .
-# RUN pnpm install -r --offline --prod
+RUN pnpm dlx turbo run build --filter=web
 
 
-# Final image (only include runtime files)
-FROM base
-# COPY --from=production-deps /app/node_modules /app/node_modules
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/packages/web /app/packages/web
-COPY --from=build /app/packages/interface /app/packages/interface
-WORKDIR /app/packages/web
 
-EXPOSE 3000
-CMD [ "pnpm", "start" ]
+FROM base AS runner
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
+
+COPY --from=builder /app/packages/web/next.config.mjs .
+COPY --from=builder /app/packages/web/package.json .
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/static ./packages/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/public ./packages/web/public
+
+CMD [ "node", "packages/web/server.js" ]
