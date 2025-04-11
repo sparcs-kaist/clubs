@@ -87,12 +87,16 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
   }, {} as T);
 };
 
+type ModelInstance = { constructor: { modelName: string } };
+
 /**
  * @description take function 에러 메시지에 띄울 name 만드는 함수
  */
-const getModelName = (name?: string, model?: { modelName?: string }[]) =>
+const getModelName = (name?: string, model?: ModelInstance[] | null) =>
   name ??
-  (Array.isArray(model) && model.length > 0 ? model[0].modelName : "Model");
+  (Array.isArray(model) && model.length > 0
+    ? model[0].constructor.modelName
+    : "Model");
 
 /**
  * @description 두 배열의 차이를 반환하는 함수
@@ -126,7 +130,9 @@ export const takeOne = <T>(values: T[]): T | null => {
  * @throws 배열이 비어있으면 NotFoundException 던짐
  * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
  */
-export function takeOnlyOne<T>(name?: string): (array: T[]) => T {
+export function takeOnlyOne<T extends ModelInstance>(
+  name?: string,
+): (array: T[]) => T {
   return (array: T[]) => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
@@ -155,7 +161,7 @@ export function getUniqueArray<
  * @description fetchAll에서 사용
  */
 export function takeAll<
-  M extends { id: Id; modelName?: string },
+  M extends { id: Id } & ModelInstance,
   Id extends IdType,
 >(ids: Id[], name?: string): (array: M[]) => M[] {
   return (array: M[]) => {
@@ -172,7 +178,7 @@ export function takeAll<
 /**
  * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
  */
-export function takeExist<M extends { modelName?: string }>(
+export function takeExist<M extends ModelInstance>(
   name?: string,
 ): (array: M[]) => M[] {
   return (array: M[]) => {
