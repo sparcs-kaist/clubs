@@ -7,6 +7,11 @@ import { DB_TIMEZONE } from "./decorators/time-decorator";
 export const isEmptyObject = obj =>
   obj && Object.keys(obj).length === 0 && obj.constructor === Object;
 
+/**
+ * @deprecated 예전 시간대 조정을 위해 사용했던 함수로, 차차 삭제해나가야 함
+ * @description 주어진 날짜를 KST 기준으로 변환
+ */
+
 export function getKSTDate(input?: string | Date): Date {
   let date: Date;
 
@@ -82,6 +87,18 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
   }, {} as T);
 };
 
+/**
+ * @description take function 에러 메시지에 띄울 name 만드는 함수
+ */
+const getModelName = (name?: string, model?: { modelName?: string }[]) =>
+  name ??
+  (Array.isArray(model) && model.length > 0 ? model[0].modelName : "Model");
+
+/**
+ * @description 두 배열의 차이를 반환하는 함수
+ * @description 중복되는 요소는 제외
+ * @returns 합집합 - 교집합
+ */
 export function getArrayDiff<T extends string | number>(
   arr1: T[],
   arr2: T[],
@@ -93,6 +110,10 @@ export function getArrayDiff<T extends string | number>(
   return Array.from(union).filter(x => !intersection.has(x));
 }
 
+/**
+ * @description 배열에서 하나만 가져오는 함수
+ * @description 배열이 비어있으면 null을 반환
+ */
 export const takeOne = <T>(values: T[]): T | null => {
   // 하나를 가져올 때 쓰는 함수
   // 배열이 비어있으면 null을 반환
@@ -100,57 +121,63 @@ export const takeOne = <T>(values: T[]): T | null => {
   return values[0];
 };
 
+/**
+ * @description 길이가 1인 배열에서 하나만 가져오는 함수
+ * @throws 배열이 비어있으면 NotFoundException 던짐
+ * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
+ */
 export function takeOnlyOne<T>(name?: string): (array: T[]) => T {
   return (array: T[]) => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
     if (array.length === 0)
-      throw new NotFoundException(`${name ?? "array"} is empty`);
+      throw new NotFoundException(`${getModelName(name, array)} is empty`);
     if (array.length > 1)
-      throw new BadRequestException(`${name ?? "array"} is not only one`);
+      throw new BadRequestException(
+        `${getModelName(name, array)} is not only one`,
+      );
     return array[0];
   };
 }
 
+/**
+ * @description 중복을 제외하고 배열을 반환하는 함수
+ * @description JS 기본 자료형에 대해 잘 작동
+ */
 export function getUniqueArray<
   T extends string | number | boolean | symbol | null | undefined | bigint,
 >(array: T[]): T[] {
-  // 중복을 제외하고 배열을 반환하는 함수
-  // JS 기본 자료형에 대해 잘 작동할듯??
   return [...new Set(array)];
 }
 
-export function checkContainAllId<T, K extends IdType>(
-  ids: K[],
-  array: T[],
-  name?: string,
-): asserts array is T[] & { [key in K]: T } {
-  // 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
-  const uniqueIds = getUniqueArray(ids);
-  if (ids.some(id => !uniqueIds.includes(id))) {
-    throw new NotFoundException(
-      `The length of ${name ?? "array"} does not match | id length: ${uniqueIds.length} || array length: ${array.length}`,
-    );
-  }
-}
-
-export function takeAll<T extends { id: K }, K extends IdType>(
-  ids: K[],
-  name?: string,
-): (array: T[]) => T[] {
-  // 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
-  // ex) 다른 모듈에서 club ids 로 find해서 모든 값이 있는 지 확인
-  return (array: T[]) => {
-    checkContainAllId(ids, array, name);
+/**
+ * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
+ * @description fetchAll에서 사용
+ */
+export function takeAll<
+  M extends { id: Id; modelName?: string },
+  Id extends IdType,
+>(ids: Id[], name?: string): (array: M[]) => M[] {
+  return (array: M[]) => {
+    const uniqueIds = getUniqueArray(ids);
+    if (ids.some(id => !uniqueIds.includes(id))) {
+      throw new NotFoundException(
+        `The length of ${getModelName(name, array)} array does not match | id length: ${uniqueIds.length} || array length: ${array.length}`,
+      );
+    }
     return array;
   };
 }
 
-export function takeExist<T>(name?: string): (array: T[]) => T[] {
-  // 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
-  return (array: T[]) => {
+/**
+ * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
+ */
+export function takeExist<M extends { modelName?: string }>(
+  name?: string,
+): (array: M[]) => M[] {
+  return (array: M[]) => {
     if (array.length === 0)
-      throw new NotFoundException(`${name ?? "array"} is empty`);
+      throw new NotFoundException(`${getModelName(name, array)} is empty`);
     return array;
   };
 }
