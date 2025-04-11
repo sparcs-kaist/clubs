@@ -7,7 +7,7 @@ import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 
 @Injectable()
-export class ClubRegistrationPublicService {
+export class RegistrationPublicService {
   constructor(
     private readonly clubRegistrationRepository: ClubRegistrationRepository,
   ) {}

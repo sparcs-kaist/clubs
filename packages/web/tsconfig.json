@@ -1,4 +1,5 @@
 {
+  "extends": "@clubs/typescript-config/next-js.json",
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,

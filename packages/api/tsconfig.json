@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@clubs/typescript-config/nest-js.json",
   "compilerOptions": {
     "declaration": true,
     "removeComments": true,

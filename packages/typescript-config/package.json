@@ -1,0 +1,8 @@
+{
+  "name": "@clubs/typescript-config",
+  "description": "clubs 프로젝트의 typescript 설정을 공유하는 패키지입니다.",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}

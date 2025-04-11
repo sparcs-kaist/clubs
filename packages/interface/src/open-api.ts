@@ -12,7 +12,7 @@ export function generateOpenAPI(): ReturnType<
     openapi: "3.1.0",
     info: {
       title: "Clubs API",
-      version: "0.1",
+      version: "0.1.1",
       description: "API for SPARCS Clubs",
     },
     tags: [

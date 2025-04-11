@@ -27,8 +27,9 @@ export type ActivityDurationQuery = {
   semesterId?: number;
   startTerm?: Date;
   endTerm?: Date;
-  year?: number;
   activityDurationTypeEnum?: ActivityDurationTypeEnum;
+
+  // specialKeys
   duration?: {
     startTerm: Date;
     endTerm: Date;
@@ -87,7 +88,6 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
         semesterId: ActivityD.semesterId,
         startTerm: ActivityD.startTerm,
         endTerm: ActivityD.endTerm,
-        year: ActivityD.year,
         activityDurationTypeEnum: ActivityD.activityDurationTypeEnum,
         duration: null,
         date: null,

@@ -16,7 +16,7 @@ import FundingModule from "./feature/funding/funding.module";
 import { MeetingModule } from "./feature/meeting/meeting.module";
 import { NoticeModule } from "./feature/notice/notice.module";
 import { PromotionalPrintingModule } from "./feature/promotional-printing/promotional-printing.module";
-import { RegistrationModule } from "./feature/registration/registration.module";
+import RegistrationModule from "./feature/registration/registration.module";
 import { RentalModule } from "./feature/rental/rental.module";
 import SemesterModule from "./feature/semester/semester.module";
 import UserModule from "./feature/user/user.module";
