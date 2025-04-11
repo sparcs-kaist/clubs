@@ -9,7 +9,7 @@ FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate 
+RUN corepack prepare pnpm@9.14.4 --activate
 WORKDIR /app
 
 # Build to output .next build directory
@@ -18,7 +18,7 @@ COPY pnpm-lock.yaml .
 RUN pnpm fetch
 COPY . .
 # Build dependencies
-RUN pnpm install -r --offline
+RUN pnpm --filter=api install --offline --prod
 # Build web
 RUN pnpm --filter=api build
 

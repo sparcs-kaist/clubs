@@ -21,7 +21,7 @@ COPY pnpm-lock.yaml .
 RUN pnpm fetch
 COPY . .
 # Build dependencies
-RUN pnpm install -r --offline
+RUN pnpm --filter=web install --offline --prod
 # Build web
 RUN pnpm --filter=web build
 
