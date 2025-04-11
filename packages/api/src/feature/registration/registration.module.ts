@@ -29,4 +29,4 @@ import { RegistrationService } from "./service/registration.service";
   ],
   exports: [RegistrationPublicService],
 })
-export class RegistrationModule {}
+export default class RegistrationModule {}
