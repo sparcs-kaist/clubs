@@ -18,7 +18,7 @@ ENV NEXT_PUBLIC_API_URL=https://clubs.stage.sparcs.org/api
 ENV NEXT_PUBLIC_APP_MODE=stage
 ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
 
-COPY pnpm-lock.yaml .
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch --filter=web
 
 COPY . .
