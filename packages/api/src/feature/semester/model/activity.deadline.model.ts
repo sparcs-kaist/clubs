@@ -19,14 +19,15 @@ export type ActivityDeadlineToDb = InferInsertModel<typeof ActivityDeadlineD>;
 export type ActivityDeadlineQuery = {
   deadlineEnum?: number;
   semesterId?: number;
+  startTerm?: Date;
+  endTerm?: Date;
+
   // specialKeys
   duration?: {
     startTerm: Date;
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
-  startTerm?: Date;
-  endTerm?: Date;
 };
 
 export class MActivityDeadline extends MEntity implements IActivityDeadline {
@@ -50,7 +51,7 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
       deadlineEnum: filtered.deadlineEnum,
       startTerm: filtered.startTerm,
       endTerm: filtered.endTerm,
-    } as ActivityDeadlineToDb;
+    };
   }
 
   static from(data: ActivityDeadlineFromDb): MActivityDeadline {
