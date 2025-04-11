@@ -30,7 +30,7 @@ RUN corepack enable
 RUN pnpm install
 
 ENV NEXT_PUBLIC_API_URL=https://clubs.stage.sparcs.org/api
-ENV NEXT_PUBLIC_APP_MODE=production
+ENV NEXT_PUBLIC_APP_MODE=stage
 ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
 RUN pnpm dlx turbo run build --filter=web
 
