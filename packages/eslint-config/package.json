@@ -1,0 +1,31 @@
+{
+  "name": "@clubs/eslint-config",
+  "description": "clubs 프로젝트의 eslint 설정을 공유하는 패키지입니다.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./nest-js": "./nest-js.mjs",
+    "./next-js": "./next-js.mjs",
+    "./rest-api": "./rest-api.mjs"
+  },
+  "dependencies": {
+    "@clubs/typescript-config": "workspace:*",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.24.0",
+    "@next/eslint-plugin-next": "^14.2.28",
+    "@stylistic/eslint-plugin": "^3.1.0",
+    "dotenv-cli": "^7.4.4",
+    "eslint": "^9.24.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.11.0",
+    "eslint-plugin-prettier": "^5.2.6",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^15.15.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.23.0"
+  }
+}

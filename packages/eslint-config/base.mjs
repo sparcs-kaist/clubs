@@ -27,7 +27,7 @@ const compat = new FlatCompat({}); // 👴
 /** 이 설정 파일도 ts server를 통해 검사하기 위해,
  * typescript-eslint에서 권장하는 tseslint.config()를 통해 flat config를 생성합니다.
  */
-export default tseslint.config(
+export const baseConfig = tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
   eslintPluginPrettierRecommended, // prettier는 없애고 stylistic으로 통합합니다.
@@ -56,7 +56,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: ["./tsconfig.json", "./packages/*/tsconfig.json"],
+        project: "./tsconfig.json",
       },
     },
     rules: {

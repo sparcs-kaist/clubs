@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:no-db": "next dev",
+    "dev": "dotenv -e ../../.env next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint",
     "build-start": "next build && next start",
     "mock:front": "pnpm dev",
     "mock:back": "echo \"In mock:back mode, the 'web' package will not be run. Exiting.\"",
@@ -70,6 +69,8 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.2",
+    "@clubs/eslint-config": "workspace:*",
+    "@clubs/typescript-config": "workspace:*",
     "@sparcs-clubs/interface": "workspace:*",
     "@storybook/addon-actions": "^8.4.5",
     "@storybook/addon-essentials": "^8.4.5",
@@ -85,6 +86,9 @@
     "@types/react": "^18",
     "@types/react-datepicker": "^7.0.0",
     "@types/react-dom": "^18",
+    "dotenv-cli": "^7.4.4",
+    "eslint": "^9.24.0",
+    "eslint-config-next": "15.3.0",
     "storybook": "^8.4.5",
     "typescript": "^5"
   },
