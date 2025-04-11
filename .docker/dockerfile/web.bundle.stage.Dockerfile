@@ -22,7 +22,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch --filter=web
 
 COPY . .
-RUN pnpm --filter=web install -r --prod
+RUN pnpm --filter=web install -r --prod --ignore-scripts
 RUN pnpm --filter=web build
 
 # Only include production dependencies (Did not make much of a difference in image size)
