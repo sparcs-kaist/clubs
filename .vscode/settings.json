@@ -1,7 +1,16 @@
 {
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnSave": true,
     "files.eol": "\n",
     "eslint.useFlatConfig": true,
     "eslint.format.enable": true,
+    "eslint.workingDirectories": [
+        {
+            "pattern": "./packages/*/"
+        }
+    ],
+    "eslint.debug": true,
 }

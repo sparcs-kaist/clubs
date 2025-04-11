@@ -1,44 +1,52 @@
-# Next14 + pnpm + Monorepo Dockerfile by night (jihopark7777@gmail.com)
-# To be frank, I really don't like how this script turned out.
-# There's a lot of room for improvement, either in image size or build time.
-# Feel free to improve!
+# 시험공부하기 싫은 hama@sparcs.org의 빌드 개조
+# turbo 편하네요
+# 참고자료
+# - https://hanyunseong-log.dev/post/build-and-run-nextjs-monorepo-with-docker
 
-# Base image with node + pnpm
-# TODO: bump pnpm to 9 (must change 'engine' field in package.json)
 FROM node:22-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+
+
+
+FROM base AS prunner
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+WORKDIR /app
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune --scope=web --docker
+
+
+
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+WORKDIR /app
+COPY --from=prunner /app/out/json/ .
+COPY --from=prunner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=prunner /app/out/full/ .
 RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate
+RUN pnpm install
+
+ENV NEXT_PUBLIC_API_URL=https://clubs.stage.sparcs.org/api
+ENV NEXT_PUBLIC_APP_MODE=production
+ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
+RUN pnpm dlx turbo run build --filter=web
+
+
+
+FROM base AS runner
 WORKDIR /app
 
-# Build to output .next build directory
-FROM base AS build
-ENV NEXT_PUBLIC_API_URL=https://clubs.stage.sparcs.org/api
-ENV NEXT_PUBLIC_APP_MODE=stage
-ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm fetch --filter=web
+COPY --from=builder /app/packages/web/next.config.mjs .
+COPY --from=builder /app/packages/web/package.json .
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/static ./packages/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/public ./packages/web/public
 
-COPY . .
-RUN pnpm --filter=web install -r --prod --ignore-scripts
-RUN pnpm --filter=web build
-
-# Only include production dependencies (Did not make much of a difference in image size)
-# FROM base AS production-deps
-# COPY pnpm-lock.yaml .
-# RUN pnpm fetch --prod
-# COPY . .
-# RUN pnpm install -r --offline --prod
-
-
-# Final image (only include runtime files)
-FROM base
-COPY --from=build /app/packages/web /app/packages/web
-COPY --from=build /app/packages/interface /app/packages/interface
-COPY --from=build /app/packages/web/node_modules /app/packages/web/node_modules
-
-WORKDIR /app/packages/web
-EXPOSE 3000
-CMD [ "pnpm", "start" ]
+CMD [ "node", "packages/web/server.js" ]

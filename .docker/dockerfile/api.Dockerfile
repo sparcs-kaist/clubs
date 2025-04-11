@@ -1,42 +1,39 @@
-# Next14 + pnpm + Monorepo Dockerfile by night (jihopark7777@gmail.com)
-# To be frank, I really don't like how this script turned out.
-# There's a lot of room for improvement, either in image size or build time.
-# Feel free to improve!
+# 시험공부하기 싫은 hama@sparcs.org의 빌드 개조
+# turbo 편하네요
 
-# Base image with node + pnpm
-# TODO: bump pnpm to 9 (must change 'engine' field in package.json)
-FROM node:22-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate
+FROM node:22-alpine AS base
+
+
+
+FROM base AS prunner
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
 WORKDIR /app
-
-# Build to output .next build directory
-FROM base AS build
-COPY pnpm-lock.yaml .
-RUN pnpm fetch
+RUN npm install -g turbo
 COPY . .
-# Build dependencies
-RUN pnpm --filter=api install --offline --prod
-# Build web
-RUN pnpm --filter=api build
-
-# Only include production dependencies (Did not make much of a difference in image size)
-# FROM base AS production-deps
-# COPY pnpm-lock.yaml .
-# RUN pnpm fetch --prod
-# COPY . .
-# RUN pnpm install -r --offline --prod
+RUN turbo prune --scope=api --docker
 
 
-# Final image (only include runtime files)
-FROM base
-# COPY --from=production-deps /app/node_modules /app/node_modules
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/packages/api /app/packages/api
-COPY --from=build /app/packages/interface /app/packages/interface
+
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
+RUN apk update
+
+WORKDIR /app
+COPY --from=prunner /app/out/json/ .
+COPY --from=prunner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=prunner /app/out/full/ .
+RUN corepack enable
+RUN pnpm install
+RUN pnpm dlx turbo run build --filter=api
+
+
+
+FROM base AS runner
+
+WORKDIR /app
+COPY --from=builder /app/ .
+
 WORKDIR /app/packages/api
-
-EXPOSE 3000
-CMD [ "pnpm", "start:prod" ]
+CMD [ "node", "dist/main" ]
