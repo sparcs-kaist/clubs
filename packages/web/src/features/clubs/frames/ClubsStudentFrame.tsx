@@ -22,7 +22,7 @@ const ClubsStudentFrame: React.FC = () => {
         {data?.deadline && (
           <Info
             text={registerMemberDeadlineInfoText(
-              data.deadline.endDate,
+              data.deadline.endTerm,
               data.semester,
             )}
           />

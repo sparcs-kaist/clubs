@@ -48,9 +48,9 @@ import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import { File } from "@sparcs-clubs/api/drizzle/schema/file.schema";
 import {
   Registration,
-  RegistrationDeadlineD,
   RegistrationExecutiveComment,
 } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Professor,
   ProfessorT,
@@ -71,9 +71,9 @@ export class ClubRegistrationRepository {
       .from(RegistrationDeadlineD)
       .where(
         and(
-          lte(RegistrationDeadlineD.startDate, date),
-          gt(RegistrationDeadlineD.endDate, date),
-          inArray(RegistrationDeadlineD.registrationDeadlineEnumId, enums),
+          lte(RegistrationDeadlineD.startTerm, date),
+          gt(RegistrationDeadlineD.endTerm, date),
+          inArray(RegistrationDeadlineD.registrationDeadlineEnum, enums),
           isNull(RegistrationDeadlineD.deletedAt),
         ),
       );
@@ -1149,7 +1149,7 @@ export class ClubRegistrationRepository {
         and(
           eq(RegistrationDeadlineD.semesterId, param.semesterId),
           eq(
-            RegistrationDeadlineD.registrationDeadlineEnumId,
+            RegistrationDeadlineD.registrationDeadlineEnum,
             RegistrationDeadlineEnum.ClubRegistrationApplication,
           ),
           isNull(RegistrationDeadlineD.deletedAt),

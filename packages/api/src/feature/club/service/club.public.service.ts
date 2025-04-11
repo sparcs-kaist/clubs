@@ -5,7 +5,7 @@ import {
   IClubSummaryResponse,
   IDivisionSummary,
 } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ISemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
 

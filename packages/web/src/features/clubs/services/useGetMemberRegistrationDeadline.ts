@@ -34,7 +34,7 @@ defineAxiosMock(mock => {
       },
       deadline: {
         startDate: new Date(),
-        endDate: new Date(),
+        endTerm: new Date(),
       },
     },
   ]);

@@ -11,7 +11,7 @@ export const meetingType = "[[MEETING_TYPE]]]";
 export const isRegular = "[[[IS_REGULAR]]]";
 export const dateTime = "[[[DATE]]] [[[TIME]]]";
 export const startDate = "[[[START_DATE]]]";
-export const endDate = "[[[END_DATE]]]";
+export const endTerm = "[[[END_DATE]]]";
 export const location = "[[[LOCATION_KR]]]";
 export const locationEn = "[[[LOCATION_EN]]]";
 
@@ -84,7 +84,7 @@ Thank you.`;
       content: `안녕하세요, 부회장입니다.
 
 ${now.getMonth()}월 분과회의 기간을 다음과 같이 공고합니다.
-${startDate} ~ ${endDate}
+${startDate} ~ ${endTerm}
 
 감사합니다.`,
     };

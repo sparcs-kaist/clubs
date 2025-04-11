@@ -143,7 +143,7 @@ export const ExecutiveRegisterMember: React.FC = () => {
       items: rows,
       offset: data.offset,
     };
-  }, [data, searchText, convertedCategories, currentPage]);
+  }, [data, searchText, convertedCategories]);
 
   useEffect(() => {
     if (categories[1].content.length === 0 && divisionData) {

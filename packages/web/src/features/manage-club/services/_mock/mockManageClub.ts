@@ -24,7 +24,7 @@ export interface Activity {
   name: string;
   type: number;
   startDate: Date;
-  endDate: Date;
+  endTerm: Date;
 }
 
 export interface Funding {
@@ -301,7 +301,7 @@ const mockupManageReport: Activity[] = [
     name: "개발개발한 어떠한 활동",
     type: 1,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
   {
     id: 2,
@@ -310,7 +310,7 @@ const mockupManageReport: Activity[] = [
     name: "개발개발한 어떠한 활동",
     type: 1,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
   {
     id: 3,
@@ -319,7 +319,7 @@ const mockupManageReport: Activity[] = [
     name: "개발개발한 어떠한 활동",
     type: 2,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
   {
     id: 4,
@@ -328,7 +328,7 @@ const mockupManageReport: Activity[] = [
     name: "개발개발한 어떠한 활동",
     type: 2,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
   {
     id: 5,
@@ -337,7 +337,7 @@ const mockupManageReport: Activity[] = [
     name: "개발개발한 어떠한 활동",
     type: 1,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
   {
     id: 6,
@@ -346,7 +346,7 @@ const mockupManageReport: Activity[] = [
     name: "2024년도 봄학기 MT",
     type: 3,
     startDate: new Date("2024-03-11"),
-    endDate: new Date("2024-03-18"),
+    endTerm: new Date("2024-03-18"),
   },
 ];
 
@@ -376,7 +376,7 @@ const mockupManageRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -403,7 +403,7 @@ const mockupManageRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -430,7 +430,7 @@ const mockupManageRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
     {
@@ -457,7 +457,7 @@ const mockupManageRental: ApiRnt003ResponseOK = {
       desiredStart: new Date(),
       desiredEnd: new Date(),
       startDate: new Date(),
-      endDate: new Date(),
+      endTerm: new Date(),
       createdAt: new Date(),
     },
   ],

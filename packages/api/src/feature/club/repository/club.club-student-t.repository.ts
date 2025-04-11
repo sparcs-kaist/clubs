@@ -19,12 +19,12 @@ import {
   Club,
   ClubDelegateD,
   ClubStudentT,
-  SemesterD,
 } from "src/drizzle/schema/club.schema";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 import { MStudent } from "@sparcs-clubs/api/feature/user/model/student.model";
 

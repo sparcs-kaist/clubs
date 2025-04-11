@@ -5,15 +5,18 @@
 
 # Base image with node + pnpm
 # TODO: bump pnpm to 9 (must change 'engine' field in package.json)
-FROM node:22-slim AS base
+FROM node:22-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@9.14.4 --activate 
+RUN corepack prepare pnpm@9.14.4 --activate
 WORKDIR /app
 
 # Build to output .next build directory
 FROM base AS build
+ENV NEXT_PUBLIC_API_URL=https://clubs.stage.sparcs.org/api
+ENV NEXT_PUBLIC_APP_MODE=stage
+ENV NEXT_PUBLIC_FLAGS_VERSION=1.0.0
 COPY pnpm-lock.yaml .
 RUN pnpm fetch
 COPY . .

@@ -63,7 +63,7 @@ export class ActivityCertificateService {
       await this.activityCertificateRepository.countActivityCertificatesByClubIdAndCreatedAtIn(
         query.clubId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const items = await Promise.all(
@@ -98,7 +98,7 @@ export class ActivityCertificateService {
       await this.activityCertificateRepository.countActivityCertificatesByStudentIdAndCreatedAtIn(
         tempStudentId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const items = await Promise.all(

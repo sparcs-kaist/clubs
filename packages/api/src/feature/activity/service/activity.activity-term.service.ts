@@ -12,15 +12,15 @@ import type {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import { ActivityDurationRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.duration.repository";
 
-import ActivityActivityTermRepository from "../repository/activity.activity-term.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()
 export default class ActivityActivityTermService {
   constructor(
     private activityRepository: ActivityRepository,
-    private activityActivityTermRepository: ActivityActivityTermRepository,
+    private activityActivityTermRepository: ActivityDurationRepository,
     private clubPublicService: ClubPublicService,
   ) {}
 
@@ -50,10 +50,9 @@ export default class ActivityActivityTermService {
    * @returns 해당 날짜를 포함하는 활동 기간 정보를 리턴합니다.
    */
   private async getActivityD(param: { date: Date }) {
-    const activityDs =
-      await this.activityActivityTermRepository.selectActivityDByDate(
-        param.date,
-      );
+    const activityDs = await this.activityActivityTermRepository.find({
+      date: param.date,
+    });
     logger.debug(
       `date is ${param.date.toDateString()}, activityDs is ${activityDs.toString()}`,
     );

@@ -1,10 +1,4 @@
-import {
-  ColumnBaseConfig,
-  ColumnDataType,
-  InferInsertModel,
-  InferSelectModel,
-} from "drizzle-orm";
-import { MySqlColumn } from "drizzle-orm/mysql-core";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
 import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
@@ -14,7 +8,10 @@ import {
   OperationType,
 } from "@sparcs-clubs/interface/common/utils/field-operations";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import {
+  MEntity,
+  MySqlColumnType,
+} from "@sparcs-clubs/api/common/model/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
 export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
@@ -79,12 +76,10 @@ export class MMemberRegistration
     } as ToDb;
   }
 
-  static fieldMap(
-    field: keyof MemberRegistrationQuery,
-  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
+  static fieldMap(field: keyof MemberRegistrationQuery): MySqlColumnType {
     const fieldMappings: Record<
       keyof MemberRegistrationQuery,
-      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
+      MySqlColumnType
     > = {
       studentId: RegistrationApplicationStudent.studentId,
       clubId: RegistrationApplicationStudent.clubId,

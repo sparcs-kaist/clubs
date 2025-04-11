@@ -6,11 +6,11 @@ import ClubTRepository from "../club/repository/club.club-t.repository";
 import DivisionModule from "../division/division.module";
 import FileModule from "../file/file.module";
 import { ClubRegistrationModule } from "../registration/club-registration/club-registration.module";
+import SemesterModule from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import ActivityActivityTermController from "./controller/activity.activity-term.controller";
 import ActivityController from "./controller/activity.controller";
 import ActivityClubChargedExecutiveRepository from "./repository/activity.activity-club-charged-executive.repository";
-import ActivityActivityTermRepository from "./repository/activity.activity-term.repository";
 import ActivityRepository from "./repository/activity.repository";
 import ActivityActivityTermService from "./service/activity.activity-term.service";
 import ActivityPublicService from "./service/activity.public.service";
@@ -24,11 +24,11 @@ import ActivityService from "./service/activity.service";
     FileModule,
     ClubRegistrationModule,
     UserModule,
+    SemesterModule,
   ],
   controllers: [ActivityController, ActivityActivityTermController],
   providers: [
     ActivityRepository,
-    ActivityActivityTermRepository,
     ActivityClubChargedExecutiveRepository,
     ActivityService,
     ActivityActivityTermService,

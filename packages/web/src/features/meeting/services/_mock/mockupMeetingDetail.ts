@@ -16,7 +16,7 @@ export const mockupMeetingDetail: ApiMee002ResponseOk = {
   isRegular: false,
   meetingEnumId: meetingType,
   startDate: new Date(),
-  endDate: new Date(),
+  endTerm: new Date(),
   location: "장소",
   locationEn: "location",
   tag: "tag",
