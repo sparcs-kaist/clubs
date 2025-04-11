@@ -23,7 +23,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - dockerfile: ./.docker/dockerfile/web.bundle.Dockerfile
+          - dockerfile: ./.docker/dockerfile/web.bundle.stage.Dockerfile
             image: ghcr.io/sparcs-kaist/clubs-stage-web
           - dockerfile: ./.docker/dockerfile/api.Dockerfile
             image: ghcr.io/sparcs-kaist/clubs-stage-api
