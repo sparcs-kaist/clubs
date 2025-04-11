@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
-import { IdType } from "../model/entity.model";
+import { IdType, MEntity } from "../model/entity.model";
 import { DB_TIMEZONE } from "./decorators/time-decorator";
 
 export const isEmptyObject = obj =>
@@ -87,15 +87,18 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
   }, {} as T);
 };
 
-type ModelInstance = { constructor: { modelName: string } };
+type ModelInstance<Id extends IdType> = InstanceType<typeof MEntity<Id>>;
 
 /**
  * @description take function 에러 메시지에 띄울 name 만드는 함수
  */
-const getModelName = (name?: string, model?: ModelInstance[] | null) =>
+const getModelName = <Id extends IdType>(
+  name?: string,
+  model?: ModelInstance<Id>[] | null,
+) =>
   name ??
   (Array.isArray(model) && model.length > 0
-    ? model[0].constructor.modelName
+    ? (model[0].constructor as typeof MEntity).modelName
     : "Model");
 
 /**
@@ -118,7 +121,9 @@ export function getArrayDiff<T extends string | number>(
  * @description 배열에서 하나만 가져오는 함수
  * @description 배열이 비어있으면 null을 반환
  */
-export const takeOne = <T>(values: T[]): T | null => {
+export const takeOne = <M extends ModelInstance<Id>, Id extends IdType>(
+  values: M[],
+): M | null => {
   // 하나를 가져올 때 쓰는 함수
   // 배열이 비어있으면 null을 반환
   if (values.length === 0) return null;
@@ -130,10 +135,10 @@ export const takeOne = <T>(values: T[]): T | null => {
  * @throws 배열이 비어있으면 NotFoundException 던짐
  * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
  */
-export function takeOnlyOne<T extends ModelInstance>(
+export function takeOnlyOne<M extends ModelInstance<Id>, Id extends IdType>(
   name?: string,
-): (array: T[]) => T {
-  return (array: T[]) => {
+): (array: M[]) => M {
+  return (array: M[]): M => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
     if (array.length === 0)
@@ -160,11 +165,11 @@ export function getUniqueArray<
  * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
  * @description fetchAll에서 사용
  */
-export function takeAll<
-  M extends { id: Id } & ModelInstance,
-  Id extends IdType,
->(ids: Id[], name?: string): (array: M[]) => M[] {
-  return (array: M[]) => {
+export function takeAll<M extends ModelInstance<Id>, Id extends IdType>(
+  ids: Id[],
+  name?: string,
+): (array: M[]) => M[] {
+  return (array: M[]): M[] => {
     const uniqueIds = getUniqueArray(ids);
     if (ids.some(id => !uniqueIds.includes(id))) {
       throw new NotFoundException(
@@ -178,7 +183,7 @@ export function takeAll<
 /**
  * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
  */
-export function takeExist<M extends ModelInstance>(
+export function takeExist<M extends ModelInstance<IdType>>(
   name?: string,
 ): (array: M[]) => M[] {
   return (array: M[]) => {
