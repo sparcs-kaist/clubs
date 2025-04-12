@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import type {
   ApiSem001RequestQuery,
   ApiSem001ResponseOK,
-} from "@sparcs-clubs/interface/api/semester/apiSem001";
+} from "@clubs/interface/api/semester/apiSem001";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 

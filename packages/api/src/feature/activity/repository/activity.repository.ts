@@ -8,11 +8,11 @@ import {
 import { and, asc, desc, eq, exists, inArray, isNull, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";

@@ -1,14 +1,14 @@
-import type { ApiAcf003ResponseOk } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
-import type { ApiCms006ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms006";
-import type { ApiPrt001ResponseOk } from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt001";
-import type { ApiRnt003ResponseOK } from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt003";
-import { ActivityCertificateOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/activityCertificate.enum";
-import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
+import type { ApiAcf003ResponseOk } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+import type { ApiCms006ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms006";
+import type { ApiPrt001ResponseOk } from "@clubs/interface/api/promotional-printing/endpoint/apiPrt001";
+import type { ApiRnt003ResponseOK } from "@clubs/interface/api/rental/endpoint/apiRnt003";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
+import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
 import {
   PromotionalPrintingOrderStatusEnum,
   PromotionalPrintingSizeEnum,
-} from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+} from "@clubs/interface/common/enum/promotionalPrinting.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 // TODO: studentName -> clubName
 const mockupMyRental: ApiRnt003ResponseOK = {

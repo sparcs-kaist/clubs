@@ -6,13 +6,13 @@ import {
 } from "drizzle-orm";
 import { MySqlColumn } from "drizzle-orm/mysql-core";
 
-import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 import {
   Exclude,
   filterExcludedFields,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";

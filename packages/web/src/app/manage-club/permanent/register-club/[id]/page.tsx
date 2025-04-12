@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";

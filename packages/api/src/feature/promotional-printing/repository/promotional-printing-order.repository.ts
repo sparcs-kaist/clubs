@@ -7,7 +7,7 @@ import {
   PromotionalPrintingOrderSize,
 } from "src/drizzle/schema/promotional-printing.schema";
 
-import { PromotionalPrintingOrderStatusEnum as Status } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+import { PromotionalPrintingOrderStatusEnum as Status } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";

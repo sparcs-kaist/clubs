@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
-import { zFundingDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
+import { zActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
+import { zFundingDeadline } from "@clubs/interface/api/semester/type/deadline.type";
 
 /**
  * @version v0.1

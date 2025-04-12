@@ -1,6 +1,6 @@
 import apiUsr004, {
   ApiUsr004ResponseCreated,
-} from "@sparcs-clubs/interface/api/user/endpoint/apiUsr004";
+} from "@clubs/interface/api/user/endpoint/apiUsr004";
 
 import {
   axiosClientWithAuth,

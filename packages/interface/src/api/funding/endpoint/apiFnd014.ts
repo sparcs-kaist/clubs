@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zExecutive } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { zExecutive } from "@clubs/interface/api/user/type/user.type";
 
 import { zFunding } from "../type/funding.type";
 

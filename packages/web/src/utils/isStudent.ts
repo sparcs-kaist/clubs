@@ -1,4 +1,4 @@
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { Profile } from "../common/providers/AuthContext";
 

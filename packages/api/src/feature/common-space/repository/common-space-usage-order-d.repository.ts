@@ -2,8 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, between, eq, isNull, or, sql } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import type { ApiCms003ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
-import type { ApiCms005ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms005";
+import type { ApiCms003ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms003";
+import type { ApiCms005ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms005";
 
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";

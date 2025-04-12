@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import type { ApiNtc001ResponseOK } from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
+import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 
 import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
 

@@ -2,8 +2,8 @@ import { Divider } from "@mui/material";
 import React from "react";
 import styled from "styled-components";
 
-import { ApiAct024ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

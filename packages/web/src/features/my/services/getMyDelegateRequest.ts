@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { ApiClb013ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
-import apiClb013 from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
+import apiClb013 from "@clubs/interface/api/club/endpoint/apiClb013";
 
 import {
   axiosClientWithAuth,

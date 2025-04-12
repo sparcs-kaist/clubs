@@ -3,20 +3,20 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiPrt001RequestQuery,
   ApiPrt001ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt001";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt001";
 import type {
   ApiPrt002RequestBody,
   ApiPrt002RequestParam,
   ApiPrt002ResponseCreated,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
 import type {
   ApiPrt003RequestParam,
   ApiPrt003ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt003";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt003";
 import type {
   ApiPrt005RequestQuery,
   ApiPrt005ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";

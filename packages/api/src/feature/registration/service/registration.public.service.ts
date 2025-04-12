@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 

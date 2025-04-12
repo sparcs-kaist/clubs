@@ -1,4 +1,4 @@
-import { ApiAcf002ResponseOk } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf002";
+import { ApiAcf002ResponseOk } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf002";
 
 const mockupUserClubs: ApiAcf002ResponseOk = {
   clubs: [

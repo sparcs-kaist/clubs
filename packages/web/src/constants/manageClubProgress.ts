@@ -1,7 +1,7 @@
-import { ActivityCertificateOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/activityCertificate.enum";
-import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
-import { PromotionalPrintingOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
+import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
+import { PromotionalPrintingOrderStatusEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 import {
   ProgressCheckSectionStatusEnum,

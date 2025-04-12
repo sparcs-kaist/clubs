@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { CommonSpaceEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
+import { CommonSpaceEnum } from "@clubs/interface/common/enum/commonSpace.enum";
 
 /**
  * @version v0.1

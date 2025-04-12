@@ -1,12 +1,12 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
 
-import { zMemberRegistration } from "../type/member.registration.type";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zDivision } from "@clubs/interface/api/division/type/division.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { registry } from "@clubs/interface/open-api";
 
 const url = () => `/student/registrations/member-registrations/my`;
 const method = "GET";

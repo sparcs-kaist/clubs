@@ -9,7 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { Activity } from "./activity.schema";
 import { Club } from "./club.schema";

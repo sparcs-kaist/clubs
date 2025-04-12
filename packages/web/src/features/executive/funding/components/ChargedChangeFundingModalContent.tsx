@@ -3,9 +3,9 @@ import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useEffect, useState } from "react";
 
-import apiFnd008 from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
-import apiFnd009 from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd009";
-import apiFnd010 from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
+import apiFnd008 from "@clubs/interface/api/funding/endpoint/apiFnd008";
+import apiFnd009 from "@clubs/interface/api/funding/endpoint/apiFnd009";
+import apiFnd010 from "@clubs/interface/api/funding/endpoint/apiFnd010";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

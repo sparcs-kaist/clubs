@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import type { ApiClb004ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+import type { ApiClb004ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb004";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";

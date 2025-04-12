@@ -4,10 +4,10 @@ import {
   IClubSummary,
   IClubSummaryResponse,
   IDivisionSummary,
-} from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/api/club/type/club.type";
+import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import DivisionRepository from "@sparcs-clubs/api/feature/division/repository/division.repository";

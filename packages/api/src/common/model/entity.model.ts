@@ -4,7 +4,7 @@ import { MySqlColumn } from "drizzle-orm/mysql-core";
 import {
   Exclude,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 export type MySqlColumnType = MySqlColumn<
   ColumnBaseConfig<ColumnDataType, string>

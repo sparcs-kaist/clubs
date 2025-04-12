@@ -2,8 +2,8 @@ import type {
   ApiRnt002RequestBody,
   ApiRnt002RequestQuery,
   ApiRnt002ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt002";
-import apiRnt002 from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt002";
+} from "@clubs/interface/api/rental/endpoint/apiRnt002";
+import apiRnt002 from "@clubs/interface/api/rental/endpoint/apiRnt002";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

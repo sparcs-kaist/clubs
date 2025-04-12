@@ -4,13 +4,13 @@ import type {
   ApiAct006RequestParam,
   ApiAct006RequestQuery,
   ApiAct006ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
-import apiAct006 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
+} from "@clubs/interface/api/activity/endpoint/apiAct006";
+import apiAct006 from "@clubs/interface/api/activity/endpoint/apiAct006";
 import type {
   ApiAct009RequestQuery,
   ApiAct009ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct009";
-import apiAct009 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct009";
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
+import apiAct009 from "@clubs/interface/api/activity/endpoint/apiAct009";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

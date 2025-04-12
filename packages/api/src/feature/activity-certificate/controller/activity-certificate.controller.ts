@@ -3,20 +3,20 @@ import { Body, Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
 import apiAcf001, {
   ApiAcf001RequestBody,
   ApiAcf001ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf001";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf001";
 import apiAcf002, {
   ApiAcf002ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf002";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf002";
 import type {
   ApiAcf003RequestQuery,
   ApiAcf003ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
-import apiAcf003 from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+import apiAcf003 from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
 import type {
   ApiAcf007RequestQuery,
   ApiAcf007ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
-import apiAcf007 from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+import apiAcf007 from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

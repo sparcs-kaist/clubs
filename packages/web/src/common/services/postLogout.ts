@@ -1,6 +1,6 @@
 import apiAut003, {
   ApiAut003ResponseOk,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
+} from "@clubs/interface/api/auth/endpoint/apiAut003";
 
 import {
   axiosClientWithAuth,

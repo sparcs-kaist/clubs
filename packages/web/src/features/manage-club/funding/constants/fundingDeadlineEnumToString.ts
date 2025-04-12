@@ -1,4 +1,4 @@
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 export const fundingDeadlineEnumToString = (deadline?: FundingDeadlineEnum) => {
   switch (deadline) {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
-import apiNtc001 from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
+import apiNtc001 from "@clubs/interface/api/notice/endpoint/apiNtc001";
 
 import mockupNoticeList from "@sparcs-clubs/web/features/notices/services/_mock/mockupNoticeList";
 import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";

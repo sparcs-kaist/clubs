@@ -6,7 +6,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@sparcs-clubs/interface/*": ["./src/*"]
+      "@clubs/interface/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -7,7 +7,7 @@ import {
 import React, { useState } from "react";
 import styled from "styled-components";
 
-import { ApiClb010ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
+import { ApiClb010ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb010";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FoldUnfoldButton from "@sparcs-clubs/web/common/components/Buttons/FoldUnfoldButton";

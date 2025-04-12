@@ -5,8 +5,8 @@ import {
 } from "@tanstack/react-table";
 import React, { useMemo } from "react";
 
-import { ApiFnd010ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { ApiFnd010ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd010";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";

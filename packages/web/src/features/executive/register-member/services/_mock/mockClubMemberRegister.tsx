@@ -1,5 +1,5 @@
-import { ApiReg020ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { ApiReg020ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg020";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 const registerState = [
   RegistrationApplicationStudentStatusEnum.Approved,

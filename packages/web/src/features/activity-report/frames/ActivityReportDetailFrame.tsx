@@ -5,7 +5,7 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";

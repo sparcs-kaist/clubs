@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
 
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";

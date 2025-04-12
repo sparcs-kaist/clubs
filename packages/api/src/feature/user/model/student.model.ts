@@ -1,4 +1,4 @@
-import { IStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IStudent } from "@clubs/interface/api/user/type/user.type";
 
 export class MStudent implements IStudent {
   id: number;

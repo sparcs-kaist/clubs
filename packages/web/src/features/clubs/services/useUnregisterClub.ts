@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import apiReg006 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
+import apiReg006 from "@clubs/interface/api/registration/endpoint/apiReg006";
 import type {
   ApiReg013RequestParam,
   ApiReg013ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
-import apiReg013 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
-import apiReg026 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
+} from "@clubs/interface/api/registration/endpoint/apiReg013";
+import apiReg013 from "@clubs/interface/api/registration/endpoint/apiReg013";
+import apiReg026 from "@clubs/interface/api/registration/endpoint/apiReg026";
 
 import {
   axiosClientWithAuth,

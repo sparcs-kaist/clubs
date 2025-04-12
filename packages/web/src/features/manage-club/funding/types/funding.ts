@@ -1,11 +1,11 @@
-import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
   FundingStatusEnum,
   TransportationEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 import { FileDetail } from "@sparcs-clubs/web/common/components/File/attachment";
 

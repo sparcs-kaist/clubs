@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
-import apiAct008 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct008";
+import apiAct008 from "@clubs/interface/api/activity/endpoint/apiAct008";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
