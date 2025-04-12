@@ -89,27 +89,46 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
 
 type ModelInstance<Id extends IdType> = InstanceType<typeof MEntity<Id>>;
 
+type ModelClass<T extends MEntity<Id>, Id extends IdType, D = {}> = {
+  prototype: T;
+  modelName: string;
+  new (data: D): T;
+};
 /**
- * @description take function 에러 메시지에 띄울 name 만드는 함수
+ * @description 모델의 에러 메시지에 사용할 이름을 반환하는 함수
+ * @param name 직접 지정한 모델 이름 또는 모델 생성자
+ * @param model 모델 인스턴스 배열
+ * @returns 표시할 모델 이름
  */
-const getModelName = <Id extends IdType>(
-  name?: string,
+const getModelName = <Id extends IdType, D = {}>(
+  name?: string | ModelClass<MEntity<Id>, Id, D>,
   model?: ModelInstance<Id>[] | null,
-) =>
-  name ??
-  (Array.isArray(model) && model.length > 0
-    ? (model[0].constructor as typeof MEntity).modelName
-    : "Model");
+): string => {
+  // 직접 지정된 이름이 있으면 사용
+  if (typeof name === "string") {
+    return name;
+  }
+
+  // ModelClass가 전달된 경우
+  if (name?.modelName) {
+    return name.modelName;
+  }
+
+  // 모델 인스턴스 배열에서 이름 추출 시도
+  if (Array.isArray(model) && model.length > 0) {
+    return (model[0].constructor as typeof MEntity).modelName;
+  }
+
+  // 기본값 반환
+  return "Model"; // 배열 길이가 0인 경우는 어차피 알 수 없음...
+};
 
 /**
  * @description 두 배열의 차이를 반환하는 함수
  * @description 중복되는 요소는 제외
  * @returns 합집합 - 교집합
  */
-export function getArrayDiff<T extends string | number>(
-  arr1: T[],
-  arr2: T[],
-): T[] {
+export function getArrayDiff<T extends IdType>(arr1: T[], arr2: T[]): T[] {
   const union = new Set([...arr1, ...arr2]); // 합집합
   const intersection = new Set(arr1.filter(x => arr2.includes(x))); // 교집합
 
@@ -121,11 +140,7 @@ export function getArrayDiff<T extends string | number>(
  * @description 배열에서 하나만 가져오는 함수
  * @description 배열이 비어있으면 null을 반환
  */
-export const takeOne = <M extends ModelInstance<Id>, Id extends IdType>(
-  values: M[],
-): M | null => {
-  // 하나를 가져올 때 쓰는 함수
-  // 배열이 비어있으면 null을 반환
+export const takeOne = <M>(values: M[]): M | null => {
   if (values.length === 0) return null;
   return values[0];
 };
@@ -135,8 +150,8 @@ export const takeOne = <M extends ModelInstance<Id>, Id extends IdType>(
  * @throws 배열이 비어있으면 NotFoundException 던짐
  * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
  */
-export function takeOnlyOne<M extends ModelInstance<Id>, Id extends IdType>(
-  name?: string,
+export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType, D = {}>(
+  name?: string | ModelClass<M, Id, D>,
 ): (array: M[]) => M {
   return (array: M[]): M => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
@@ -165,9 +180,9 @@ export function getUniqueArray<
  * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
  * @description fetchAll에서 사용
  */
-export function takeAll<M extends ModelInstance<Id>, Id extends IdType>(
+export function takeAll<M extends MEntity<Id>, Id extends IdType, D = {}>(
   ids: Id[],
-  name?: string,
+  name?: string | ModelClass<M, Id, D>,
 ): (array: M[]) => M[] {
   return (array: M[]): M[] => {
     const uniqueIds = getUniqueArray(ids);
@@ -183,12 +198,27 @@ export function takeAll<M extends ModelInstance<Id>, Id extends IdType>(
 /**
  * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
  */
-export function takeExist<M extends ModelInstance<IdType>>(
-  name?: string,
+export function takeExist<M extends MEntity<Id>, Id extends IdType, D = {}>(
+  name?: string | ModelClass<M, Id, D>,
 ): (array: M[]) => M[] {
   return (array: M[]) => {
     if (array.length === 0)
       throw new NotFoundException(`${getModelName(name, array)} is empty`);
     return array;
   };
+}
+
+/**
+ * @description Data/배열 에서 id를 추출하는 함수
+ * @description 배열이면 배열로 반환, 단일 객체면 단일 id만 반환
+ * @deprecated 타입 추론이 명확하게 되지 않고 unknown 타입으로 반환되는 문제가 있어 폐기, 그냥 e=>e.id 쓰세용
+ * @deprecated 저같은 실수를 반복하지 말라는 의미로 남겨는 둡니다
+ */
+export function takeId<M extends { id: T }, T>(data: M[]): T[];
+export function takeId<M extends { id: T }, T>(data: M): T;
+export function takeId<M extends { id: T }, T>(data: M | M[]): T | T[] {
+  if (Array.isArray(data)) {
+    return data.map(e => e.id);
+  }
+  return data.id;
 }
