@@ -5,7 +5,7 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "dev": "TZ=UTC turbo run dev --parallel",
+    "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "start": "turbo run start",
     "clean": "turbo run clean",
