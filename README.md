@@ -1,4 +1,4 @@
-# [ Academic Relations #002 ] SPARCS Clubs
+# SPARCS Clubs
 
 ```
   ____  ____   _    ____   ____ ____     ____ _    _   _ ____ ____  
