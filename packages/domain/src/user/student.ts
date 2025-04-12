@@ -1,7 +1,10 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
+
+extendZodWithOpenApi(z);
 
 export enum StudentStatusEnum {
   Attending = 1, // 재학

@@ -1,9 +1,12 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import { zClub } from "@clubs/domain/club/club";
 import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
 import { zStudent } from "@clubs/domain/user/student";
+
+extendZodWithOpenApi(z);
 
 export enum RegistrationApplicationStudentStatusEnum {
   Pending = 1, // 대기중

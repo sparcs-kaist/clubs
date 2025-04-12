@@ -1,6 +1,9 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import { zId } from "@clubs/domain/common/id";
+
+extendZodWithOpenApi(z);
 
 export const zUser = z
   .object({

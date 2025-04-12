@@ -1,3 +1,4 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import {
@@ -10,6 +11,8 @@ import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
 import { zProfessor } from "@clubs/domain/user/professor";
 import { zStudent } from "@clubs/domain/user/student";
+
+extendZodWithOpenApi(z);
 
 export enum ClubTypeEnum {
   Regular = 1, // 정동아리

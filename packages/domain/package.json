@@ -2,14 +2,12 @@
   "name": "@clubs/domain",
   "version": "0.0.1",
   "description": "Clubs 서비스에서 통용되는 동아리연합회 도메인 모델을 정의합니다",
-  "main": "dist/index.js",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
   "scripts": {
-    "build": "tsc",
     "lint": "eslint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.0",
     "zod": "^3.21.4"

@@ -29,6 +29,9 @@
     ],
     "./packages/interface/**/*.ts": [
       "pnpm --filter=interface lint"
+    ],
+    "./packages/domain/**/*.ts": [
+      "pnpm --filter=domain lint"
     ]
   },
   "devDependencies": {

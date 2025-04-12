@@ -1,7 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zMemberRegistration } from "@clubs/interface/api/registration/type/member.registration.type";
+import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
+
 import { registry } from "@clubs/interface/open-api";
 
 const url = (applyId: string) =>
