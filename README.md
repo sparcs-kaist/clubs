@@ -36,4 +36,4 @@ pnpm generate
 pnpm dev
 ```
 
-학술협력팀 최고! :)
+Clubs 최고! :)
