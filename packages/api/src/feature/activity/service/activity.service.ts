@@ -7,6 +7,11 @@ import type {
   ApiAct003RequestParam,
 } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct003";
 import type { ApiAct005ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
+import type {
+  ApiAct006RequestParam,
+  ApiAct006RequestQuery,
+  ApiAct006ResponseOk,
+} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
 import type { ApiAct007RequestBody } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct007";
 import type {
   ApiAct008RequestBody,
@@ -76,6 +81,7 @@ import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.publi
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.duration.repository";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
@@ -93,6 +99,7 @@ export default class ActivityService {
     private registrationPublicService: RegistrationPublicService,
     private clubTRepository: ClubTRepository,
     private userPublicService: UserPublicService,
+    private semesterPublicService: SemesterPublicService,
   ) {}
 
   /**
@@ -129,19 +136,6 @@ export default class ActivityService {
       );
 
     return activityDs[0];
-  }
-
-  /**
-   * @returns 현재 활동보고서를 작성해야 하는 직전학기 정보를 리턴합니다.
-   * ex. 현재 겨울학기일 경우, 여름-가을학기 활동기간을 리턴해야 합니다.
-   */
-  // TODO IN 113: Semester Module 로 이동
-  async getLastActivityD() {
-    const today = getKSTDate();
-    const [activityD] = await this.activityActivityTermRepository.find({
-      date: today,
-    });
-    return activityD;
   }
 
   /**
@@ -216,7 +210,9 @@ export default class ActivityService {
     clubId: number;
     executiveId: number;
   }) {
-    const activityDId = await this.getLastActivityD().then(e => e.id);
+    const activityDId = await this.semesterPublicService
+      .getActivityDuration()
+      .then(e => e.id);
     const prevChargedExecutiveId =
       await this.activityClubChargedExecutiveRepository.selectActivityClubChargedExecutiveByClubId(
         { activityDId, clubId: param.clubId },
@@ -278,7 +274,9 @@ export default class ActivityService {
     const activityDId =
       param.activityDId !== undefined
         ? param.activityDId
-        : await this.getLastActivityD().then(e => e.id);
+        : await this.semesterPublicService
+            .getActivityDuration()
+            .then(e => e.id);
 
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
@@ -318,7 +316,7 @@ export default class ActivityService {
 
     // const today = getKSTDate();
     // const activityD = await this.getActivityD({ date: today });
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.semesterPublicService.getActivityDuration();
 
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
@@ -476,7 +474,7 @@ export default class ActivityService {
       );
     }
     // QUESTION: 신청내용중 startTerm과 endTerm이 이번 학기의 활동기간에 맞는지 검사해야 할까요?.
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.semesterPublicService.getActivityDuration();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     // TODO: 현재학기 뿐만 아니라 직전학기 동아리원도 활동 참가자로 포함될 수 있어야 합니다.
     // const participantIds = await Promise.all(
@@ -531,7 +529,8 @@ export default class ActivityService {
       ],
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
-    const lastActivityD = await this.getLastActivityD();
+    const lastActivityD =
+      await this.semesterPublicService.getActivityDuration();
     if (activity.activityDId !== lastActivityD.id)
       throw new HttpException(
         "The activity is not the activity of the last activity duration ",
@@ -609,7 +608,7 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
 
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.semesterPublicService.getActivityDuration();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -733,7 +732,7 @@ export default class ActivityService {
    * @returns 해당 동아리가 작성한 모든 활동을 REG-011의 리턴 타입에 맞추어 가져옵니다.
    */
   private async getProvisionalActivities(param: { clubId: number }) {
-    const activityDId = await this.getLastActivityD();
+    const activityDId = await this.semesterPublicService.getActivityDuration();
     const result =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         param.clubId,
@@ -1028,7 +1027,7 @@ export default class ActivityService {
   async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
     const today = getKSTDate();
 
-    const term = await this.getLastActivityD();
+    const term = await this.semesterPublicService.getActivityDuration();
     const todayDeadline = await this.activityDeadlineRepository
       .find({
         date: today,
@@ -1065,7 +1064,7 @@ export default class ActivityService {
   ): Promise<ApiAct019ResponseOk> {
     await this.checkIsProfessor({ professorId, clubId });
 
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.semesterPublicService.getActivityDuration();
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         clubId,
@@ -1116,7 +1115,9 @@ export default class ActivityService {
   }
 
   async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const activityDId = await this.getLastActivityD().then(e => e.id);
+    const activityDId = await this.semesterPublicService
+      .getActivityDuration()
+      .then(e => e.id);
     const clubs = await this.clubPublicService.getAtivatedClubs();
 
     const clubinfos = await this.activityRepository.getExecutiveActivitiesClubs(
@@ -1242,7 +1243,9 @@ export default class ActivityService {
     const activities = await this.getActivities({ clubId: param.query.clubId });
     const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
       .selectActivityClubChargedExecutiveByClubId({
-        activityDId: await this.getLastActivityD().then(e => e.id),
+        activityDId: await this.semesterPublicService
+          .getActivityDuration()
+          .then(e => e.id),
         clubId: param.query.clubId,
       })
       .then(arr => {
@@ -1399,7 +1402,7 @@ export default class ActivityService {
       );
     }
 
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.semesterPublicService.getActivityDuration();
     const activities = await this.activityRepository.fetchAvailableSummaries(
       clubId,
       activityD.id,
@@ -1492,6 +1495,45 @@ export default class ActivityService {
       })),
       evidenceFiles,
       participants,
+    };
+  }
+
+  async getStudentActivitiesActivityTerm(
+    param: ApiAct006RequestParam,
+    query: ApiAct006RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct006ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.checkIsStudentDelegate({ studentId, clubId: query.clubId });
+    const activities =
+      await this.activityRepository.selectActivityByClubIdAndActivityDId(
+        query.clubId,
+        param.activityTermId,
+      );
+    const result = await Promise.all(
+      activities.map(async row => {
+        const duration =
+          await this.activityRepository.selectDurationByActivityId(row.id);
+        return {
+          id: row.id,
+          name: row.name,
+          activityTypeEnumId: row.activityTypeEnumId,
+          durations: duration.sort((a, b) =>
+            a.startTerm.getTime() === b.startTerm.getTime()
+              ? a.endTerm.getTime() - b.endTerm.getTime()
+              : a.startTerm.getTime() - b.startTerm.getTime(),
+          ),
+        };
+      }),
+    );
+    return {
+      activities: result.sort((a, b) =>
+        a.durations[0].startTerm.getTime() ===
+        b.durations[0].startTerm.getTime()
+          ? a.durations[0].endTerm.getTime() - b.durations[0].endTerm.getTime()
+          : a.durations[0].startTerm.getTime() -
+            b.durations[0].startTerm.getTime(),
+      ),
     };
   }
 }

@@ -63,6 +63,7 @@ import {
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
@@ -84,6 +85,7 @@ export class RegistrationService {
     private registrationPublicService: RegistrationPublicService,
     private userPublicService: UserPublicService,
     private readonly memberRegistrationRepository: MemberRegistrationRepository,
+    private readonly semesterPublicService: SemesterPublicService,
   ) {}
 
   /**
@@ -1003,13 +1005,13 @@ export class RegistrationService {
   }
 
   async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
-    const today = getKSTDate();
+    const today = new Date();
     const semester = await this.clubPublicService.fetchSemester();
-    const deadline = await this.clubRegistrationRepository
-      .selectClubRegistrationDeadline({
-        semesterId: semester.id,
-      })
-      .then(takeOnlyOne("ClubRegistrationDeadline"));
+    // TODO: 현재는 정규 기간만 제시함. 나중에 late도 구현할 경우 수정
+    const deadline = await this.semesterPublicService.getRegistrationDeadline(
+      RegistrationDeadlineEnum.ClubRegistrationApplication,
+      today,
+    );
 
     return {
       semester: {
@@ -1539,13 +1541,13 @@ export class RegistrationService {
   }
 
   async getMemberRegistrationDeadline(): Promise<ApiReg028ResponseOk> {
-    const today = getKSTDate();
+    const today = new Date();
     const semester = await this.clubPublicService.fetchSemester();
-    const deadline = await this.memberRegistrationRepository
-      .selectMemberRegistrationDeadline({
-        semesterId: semester.id,
-      })
-      .then(takeOnlyOne("MemberRegistrationDeadline"));
+    // TODO: 현재는 정규 기간만 제시함. 나중에 late도 받도록 구현할 경우 수정
+    const deadline = await this.semesterPublicService.getRegistrationDeadline(
+      RegistrationDeadlineEnum.StudentRegistrationApplication,
+      today,
+    );
     return {
       semester: {
         id: semester.id,

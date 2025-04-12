@@ -166,8 +166,13 @@ export default class ClubPublicService {
     return semesters;
   }
 
-  // 학생(studentId)이 현재 학기 동아리(clubId)의 대표자 중 1명인지 확인합니다.
-  // studentId와 clubId가 유효한지 검사하지 않습니다.
+  /**
+   * @description 학생이 동아리의 대표자인지 확인합니다.
+   * @param studentId 학생 id
+   * @param clubId 동아리 id
+   * @returns boolean
+   */
+
   async isStudentDelegate(studentId: number, clubId: number): Promise<boolean> {
     const representatives =
       await this.clubDelegateDRepository.findRepresentativeIdListByClubId(
@@ -182,7 +187,13 @@ export default class ClubPublicService {
     return true;
   }
 
-  async checkStudentDelegate(studentId: number, clubId: number) {
+  /**
+   * @description 학생이 동아리의 대표자인지 체크하여, 아닌 경우 FORBIDDEN 에러를 발생시킵니다.
+   * @param studentId 학생 id
+   * @param clubId 동아리 id
+   * @returns void
+   */
+  async checkStudentDelegate(studentId: number, clubId: number): Promise<void> {
     if (!(await this.isStudentDelegate(studentId, clubId))) {
       throw new HttpException(
         "It seems that you are not the delegate of the club.",

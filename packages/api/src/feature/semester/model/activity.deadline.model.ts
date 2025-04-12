@@ -2,6 +2,7 @@ import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IActivityDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
 import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
 import {
   filterExcludedFields,
   OperationType,
@@ -28,6 +29,7 @@ export type ActivityDeadlineQuery = {
     endTerm: Date;
   };
   date?: Date; // 특정 시점으로 쿼리할 수 있게 함. specialKeys로 처리
+  deadlineEnums?: ActivityDeadlineEnum[];
 };
 
 export class MActivityDeadline extends MEntity implements IActivityDeadline {
@@ -66,6 +68,7 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
     const fieldMappings: Record<keyof ActivityDeadlineQuery, MySqlColumnType> =
       {
         deadlineEnum: ActivityDeadlineD.deadlineEnum,
+        deadlineEnums: ActivityDeadlineD.deadlineEnum,
         semesterId: ActivityDeadlineD.semesterId,
         duration: null,
         date: null,

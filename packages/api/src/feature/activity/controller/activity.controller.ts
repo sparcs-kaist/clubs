@@ -37,6 +37,12 @@ import type {
   ApiAct005ResponseOk,
 } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
 import apiAct005 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
+import type {
+  ApiAct006RequestParam,
+  ApiAct006RequestQuery,
+  ApiAct006ResponseOk,
+} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
+import apiAct006 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
 import apiAct007, {
   ApiAct007RequestBody,
   ApiAct007ResponseCreated,
@@ -530,5 +536,21 @@ export default class ActivityController {
     @Param() param: ApiAct029RequestParam,
   ): Promise<ApiAct029ResponseOk> {
     return this.activityService.getStudentActivityProvisional(param.activityId);
+  }
+
+  @Student()
+  @Get("/student/activities/activity-terms/activity-term/:activityTermId")
+  @UsePipes(new ZodPipe(apiAct006))
+  async getStudentActivitiesActivityTerm(
+    @GetStudent() user: GetStudent,
+    @Param() param: ApiAct006RequestParam,
+    @Query() query: ApiAct006RequestQuery,
+  ): Promise<ApiAct006ResponseOk> {
+    const result = await this.activityService.getStudentActivitiesActivityTerm(
+      param,
+      query,
+      user.studentId,
+    );
+    return result;
   }
 }

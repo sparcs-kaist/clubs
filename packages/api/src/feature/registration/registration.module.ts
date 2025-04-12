@@ -4,6 +4,7 @@ import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 import ClubModule from "@sparcs-clubs/api/feature/club/club.module";
 import DivisionModule from "@sparcs-clubs/api/feature/division/division.module";
 import FileModule from "@sparcs-clubs/api/feature/file/file.module";
+import SemesterModule from "@sparcs-clubs/api/feature/semester/semester.module";
 import UserModule from "@sparcs-clubs/api/feature/user/user.module";
 
 import { RegistrationController } from "./controller/registration.controller";
@@ -19,6 +20,7 @@ import { RegistrationService } from "./service/registration.service";
     DivisionModule,
     FileModule,
     UserModule,
+    SemesterModule,
   ],
   controllers: [RegistrationController],
   providers: [
