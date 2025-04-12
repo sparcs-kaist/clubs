@@ -42,6 +42,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.609.0
         version: 3.609.0
+      '@clubs/interface':
+        specifier: workspace:*
+        version: link:../interface
       '@nestjs/common':
         specifier: ^10.0.0
         version: 10.3.3(reflect-metadata@0.2.1)(rxjs@7.8.1)
@@ -63,9 +66,6 @@ importers:
       '@nestjs/websockets':
         specifier: ^10.3.10
         version: 10.3.10(@nestjs/common@10.3.3(reflect-metadata@0.2.1)(rxjs@7.8.1))(@nestjs/core@10.3.3)(@nestjs/platform-socket.io@10.3.10)(reflect-metadata@0.2.1)(rxjs@7.8.1)
-      '@clubs/interface':
-        specifier: workspace:*
-        version: link:../interface
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -184,10 +184,19 @@ importers:
 
   packages/domain:
     dependencies:
+      '@asteasolutions/zod-to-openapi':
+        specifier: ^7.3.0
+        version: 7.3.0(zod@3.22.4)
       zod:
         specifier: ^3.21.4
         version: 3.22.4
     devDependencies:
+      '@clubs/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@clubs/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -447,12 +456,12 @@ importers:
       '@clubs/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@clubs/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@clubs/interface':
         specifier: workspace:*
         version: link:../interface
+      '@clubs/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       '@storybook/addon-actions':
         specifier: ^8.4.5
         version: 8.4.5(storybook@8.4.5(prettier@3.4.2))
