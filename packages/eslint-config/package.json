@@ -8,7 +8,7 @@
     "./next-js": "./next-js.mjs",
     "./rest-api": "./rest-api.mjs"
   },
-  "dependencies": {
+  "devDependencies": {
     "@clubs/typescript-config": "workspace:*",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.24.0",
