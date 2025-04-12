@@ -6,14 +6,14 @@ import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeI
 
 const ActivityTermRow: React.FC<{
   startDate: string;
-  endDate: string;
+  endTerm: string;
   onDateChange: (index: number, start: string, end: string) => void;
   onDelete: (index: number) => void;
   onError: (index: number, hasError: boolean) => void;
   index: number;
-}> = ({ startDate, endDate, onDateChange, onDelete, onError, index }) => {
+}> = ({ startDate, endTerm, onDateChange, onDelete, onError, index }) => {
   const [startMonth, setStartMonth] = useState<string>(startDate);
-  const [endMonth, setEndMonth] = useState<string>(endDate);
+  const [endMonth, setEndMonth] = useState<string>(endTerm);
 
   const handleDateChange = (monthString: string) => {
     const start = monthString.split("|")[0];

@@ -60,11 +60,19 @@ export class AuthController {
     @Query() query: ApiAut004RequestQuery,
     @Session() session: Request["session"],
   ) {
-    const { next, token } = await this.authService.getAuthSignInCallback(
-      query,
-      session,
-    );
+    const { next, token, isKaistIamLogin } =
+      await this.authService.getAuthSignInCallback(query, session);
 
+    if (!isKaistIamLogin) {
+      const iamErrorRedirectionUrl =
+        process.env.NODE_ENV === "local"
+          ? "http://localhost:3000/errors/not-iam-login"
+          : "https://clubs.sparcs.org/errors/not-iam-login";
+      logger.info(
+        `Can't find kaist iam info. Redirecting to ${iamErrorRedirectionUrl}`,
+      );
+      return res.redirect(iamErrorRedirectionUrl);
+    }
     res.cookie("refreshToken", token.refreshToken, {
       expires: token.refreshTokenExpiresAt,
       httpOnly: true,

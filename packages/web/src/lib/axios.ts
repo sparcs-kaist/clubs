@@ -1,11 +1,63 @@
 import axios, { AxiosError } from "axios";
 import MockAdapter from "axios-mock-adapter";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import qs from "qs";
 
 import { env } from "@sparcs-clubs/web/env";
 
 import tokenInterceptor from "./_axios/axiosAuthTokenInterceptor";
 import errorInterceptor from "./_axios/axiosErrorInterceptor";
 import mockInterceptor from "./_axios/axiosMockInterceptor";
+
+// Timezone 설정
+const TIMEZONE = "Asia/Seoul";
+
+function parseKST(data: unknown): unknown {
+  if (typeof data !== "string") return data;
+
+  try {
+    return JSON.parse(data, (key, value) => {
+      if (
+        typeof value === "string" &&
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)
+      ) {
+        const parsedDate = new Date(value);
+        const toZoneTime = toZonedTime(parsedDate, TIMEZONE);
+        return toZoneTime;
+      }
+      return value;
+    });
+  } catch (_err) {
+    return data;
+  }
+}
+
+/**
+ * 주어진 객체의 Date 프로퍼티들을 모두 DB에 넣을 수 있도록 KST 기준으로 변환
+ * Query 객체에 사용
+ * @param obj
+ */
+export const makeObjectPropsToKST = (obj: unknown): unknown => {
+  if (obj === null || obj === undefined) return obj;
+
+  if (obj instanceof Date) {
+    return fromZonedTime(obj, TIMEZONE);
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => makeObjectPropsToKST(item));
+  }
+
+  if (typeof obj === "object") {
+    const result: Record<string, unknown> = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      result[key] = makeObjectPropsToKST(value);
+    });
+    return result;
+  }
+
+  return obj;
+};
 
 /**
  * @name axiosClient
@@ -14,6 +66,17 @@ import mockInterceptor from "./_axios/axiosMockInterceptor";
  */
 export const axiosClient = axios.create({
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  transformRequest: [data => JSON.stringify(makeObjectPropsToKST(data))],
+  transformResponse: [data => parseKST(data)],
+  paramsSerializer: {
+    serialize: params =>
+      qs.stringify(makeObjectPropsToKST(params), {
+        arrayFormat: "repeat", // TODO: 나중에 arrayFormat:bracket으로 변경 (len(1) 인 배열 넘기는 경우 해결)
+      }),
+  },
 });
 
 // Defines middleware for axiosClient
@@ -35,6 +98,20 @@ axiosClient.interceptors.response.use(
 
 export const axiosClientWithAuth = axios.create({
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  transformRequest: [data => JSON.stringify(makeObjectPropsToKST(data))],
+  transformResponse: [data => parseKST(data)],
+  paramsSerializer: {
+    serialize: params => {
+      const changedParam = makeObjectPropsToKST(params);
+      const res = qs.stringify(changedParam, {
+        arrayFormat: "repeat", // TODO: 나중에 arrayFormat:bracket으로 변경 (len(1) 인 배열 넘기는 경우 해결)
+      });
+      return res;
+    },
+  },
 });
 
 axiosClientWithAuth.interceptors.request.use(

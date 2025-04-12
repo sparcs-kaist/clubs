@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { IActivityDuration } from "@sparcs-clubs/interface/api/activity/type/activity.duration.type";
 import { IFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
 import {
   ApiFnd001RequestBody,
@@ -52,14 +51,12 @@ import {
   ApiFnd016RequestQuery,
   ApiFnd016ResponseOk,
 } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
-import {
-  IFundingComment,
-  IFundingCommentRequest,
-} from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
+import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
   IFundingResponse,
 } from "@sparcs-clubs/interface/api/funding/type/funding.type";
+import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
 import {
   IExecutive,
   IStudent,
@@ -70,15 +67,16 @@ import {
 } from "@sparcs-clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
+import { FundingDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/funding.deadline.repository";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
 import FundingCommentRepository from "../repository/funding.comment.repository";
-import FundingDeadlineRepository from "../repository/funding.deadline.repository";
 import FundingRepository from "../repository/funding.repository";
 
 @Injectable()
@@ -90,7 +88,8 @@ export default class FundingService {
     private readonly userPublicService: UserPublicService,
     private readonly clubPublicService: ClubPublicService,
     private readonly activityPublicService: ActivityPublicService,
-    private fundingDeadlineRepository: FundingDeadlineRepository,
+    private readonly semesterPublicService: SemesterPublicService,
+    private readonly fundingDeadlineRepository: FundingDeadlineRepository,
   ) {}
 
   async postStudentFunding(
@@ -229,7 +228,9 @@ export default class FundingService {
       );
     }
 
-    const comments = await this.fundingCommentRepository.fetchAll(funding.id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
 
     const commentedExecutive =
       await this.userPublicService.fetchExecutiveSummaries(
@@ -260,7 +261,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -382,7 +385,7 @@ export default class FundingService {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
 
@@ -411,7 +414,7 @@ export default class FundingService {
     );
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
     await this.fundingRepository.delete(param.id);
@@ -506,7 +509,9 @@ export default class FundingService {
 
     const [targetDuration, deadline] = await Promise.all([
       this.activityPublicService.fetchLastActivityD(),
-      this.fundingDeadlineRepository.fetch(today),
+      this.fundingDeadlineRepository
+        .find({ date: today })
+        .then(takeOnlyOne("FundingDeadline")),
     ]);
 
     return {
@@ -725,9 +730,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -818,9 +823,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -904,7 +909,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -978,13 +985,13 @@ export default class FundingService {
 
     const fundingComment = await this.fundingCommentRepository.withTransaction(
       async tx => {
-        const comment = await this.fundingCommentRepository.insertTx(tx, {
+        const comment = await this.fundingCommentRepository.createTx(tx, {
           fundingStatusEnum,
           approvedAmount,
           funding: { id },
           executive: { id: executiveId },
           content,
-        } as IFundingCommentRequest);
+        });
         const funding = await this.fundingRepository.patchStatusTx(tx, {
           id,
           fundingStatusEnum,
@@ -1083,7 +1090,9 @@ export default class FundingService {
 
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
     const today = getKSTDate();
-    const todayDeadline = await this.fundingDeadlineRepository.fetch(today);
+    const todayDeadline = await this.fundingDeadlineRepository
+      .find({ date: today })
+      .then(takeOnlyOne("FundingDeadline"));
     if (enums.find(e => Number(e) === todayDeadline.deadlineEnum) === undefined)
       throw new HttpException(
         "Today is not a day for funding",

@@ -4,12 +4,12 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 import {
   ProfessorEnum,
   StudentStatusEnum,
 } from "@sparcs-clubs/interface/common/enum/user.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 extendZodWithOpenApi(z);
 

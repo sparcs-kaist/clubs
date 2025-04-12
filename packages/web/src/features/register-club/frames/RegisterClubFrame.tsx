@@ -138,7 +138,7 @@ const RegisterClubFrame: React.FC = () => {
         {clubDeadline?.deadline ? (
           <Info
             text={registerClubDeadlineInfoText(
-              clubDeadline.deadline.endDate,
+              clubDeadline.deadline.endTerm,
               clubDeadline.semester,
             )}
           />

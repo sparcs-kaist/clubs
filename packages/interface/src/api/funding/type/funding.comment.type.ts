@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { zExecutiveSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 import { zFunding } from "./funding.type";
 
@@ -20,11 +20,5 @@ export const zFundingCommentResponse = zFundingComment.extend({
   executive: zExecutiveSummary,
 });
 
-export const zFundingCommentRequest = zFundingComment.omit({
-  id: true,
-  createdAt: true,
-});
-
 export type IFundingComment = z.infer<typeof zFundingComment>;
 export type IFundingCommentResponse = z.infer<typeof zFundingCommentResponse>;
-export type IFundingCommentRequest = z.infer<typeof zFundingCommentRequest>;

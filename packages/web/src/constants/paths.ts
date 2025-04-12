@@ -41,6 +41,7 @@ export const productionReadyPaths: {
     "/clubs",
     "/notice",
     "/credits",
+    "/errors/not-iam-login",
     // 마이페이지
     "/my/clubs",
     // 대표 동아리 관리

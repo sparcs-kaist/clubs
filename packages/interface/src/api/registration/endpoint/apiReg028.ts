@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
 import { registry } from "@sparcs-clubs/interface/open-api";
 
 /**
@@ -34,7 +34,7 @@ const responseBodyMap = {
     deadline: z
       .object({
         startDate: z.date(),
-        endDate: z.date(),
+        endTerm: z.date(),
       })
       .nullable(),
   }),

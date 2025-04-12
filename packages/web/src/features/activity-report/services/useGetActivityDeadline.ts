@@ -34,7 +34,7 @@ defineAxiosMock(mock => {
         endTerm: new Date("2024-12-30"),
       },
       deadline: {
-        activityDeadlineEnum: ActivityDeadlineEnum.Upload,
+        activityDeadlineEnum: ActivityDeadlineEnum.Writing,
         duration: {
           startTerm: new Date("2024-08-01"),
           endTerm: new Date("2024-08-31"),

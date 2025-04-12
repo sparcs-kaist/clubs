@@ -45,7 +45,7 @@ export class RentalController {
     const availableObjects =
       await this.rentalService.getRentalsObjectsAvailable(
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
     return { objects: availableObjects };
   }

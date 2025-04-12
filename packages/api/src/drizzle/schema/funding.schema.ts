@@ -11,8 +11,9 @@ import {
 
 import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
 
-import { Activity, ActivityD } from "./activity.schema";
+import { Activity } from "./activity.schema";
 import { Club } from "./club.schema";
+import { ActivityD } from "./semester.schema";
 import { Executive, StudentT } from "./user.schema";
 
 export const Funding = mysqlTable(
@@ -402,12 +403,3 @@ export const FundingFeedback = mysqlTable(
     }),
   }),
 );
-
-export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
-  id: int("id").autoincrement().primaryKey().notNull(),
-  deadlineEnum: int("deadline_enum").notNull(),
-  startDate: datetime("start_date").notNull(),
-  endDate: datetime("end_date").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});

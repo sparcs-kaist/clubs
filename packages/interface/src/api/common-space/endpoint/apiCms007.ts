@@ -16,20 +16,20 @@ const requestParam = z.object({});
 const requestQuery = z
   .object({
     startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
+    endTerm: z.coerce.date().optional(),
     pageOffset: z.coerce.number().min(1),
     itemCount: z.coerce.number().min(1),
   })
   .refine(
     data => {
-      if (data.startDate && data.endDate) {
-        return data.startDate <= data.endDate;
+      if (data.startDate && data.endTerm) {
+        return data.startDate <= data.endTerm;
       }
       return true;
     },
     {
-      message: "startDate must be same or earlier than endDate",
-      path: ["startDate", "endDate"],
+      message: "startDate must be same or earlier than endTerm",
+      path: ["startDate", "endTerm"],
     },
   );
 

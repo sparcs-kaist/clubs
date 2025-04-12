@@ -9,14 +9,16 @@ export const activityDeadlineEnumToString = (
   deadline?: ActivityDeadlineEnum,
 ) => {
   switch (deadline) {
-    case ActivityDeadlineEnum.Activity:
-      return "활동";
-    case ActivityDeadlineEnum.Upload:
+    case ActivityDeadlineEnum.Writing:
       return "작성";
+    case ActivityDeadlineEnum.Late:
+      return "지연 제출";
     case ActivityDeadlineEnum.Modification:
       return "수정";
-    default:
+    case ActivityDeadlineEnum.Exception:
       return "예외";
+    default:
+      throw new Error("Invalid activity deadline enum");
   }
 };
 

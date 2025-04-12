@@ -117,7 +117,7 @@ interface MockUpDataType {
   desiredStart: Date;
   desiredEnd: Date;
   startDate: Date;
-  endDate: Date;
+  endTerm: Date;
   createdAt: Date;
 }
 

@@ -16,7 +16,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({
   clubId: z.coerce.number().int().min(1),
   startDate: z.optional(z.coerce.date()),
-  endDate: z.optional(z.coerce.date()),
+  endTerm: z.optional(z.coerce.date()),
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
 });

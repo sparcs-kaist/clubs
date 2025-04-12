@@ -73,11 +73,12 @@ import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
-import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
+import { ActivityDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.deadline.repository";
+import { ActivityDurationRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.duration.repository";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
-import ActivityActivityTermRepository from "../repository/activity.activity-term.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()
@@ -85,10 +86,11 @@ export default class ActivityService {
   constructor(
     private activityRepository: ActivityRepository,
     private activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
-    private activityActivityTermRepository: ActivityActivityTermRepository,
+    private activityActivityTermRepository: ActivityDurationRepository,
+    private activityDeadlineRepository: ActivityDeadlineRepository,
     private clubPublicService: ClubPublicService,
     private filePublicService: FilePublicService,
-    private clubRegistrationPublicService: ClubRegistrationPublicService,
+    private registrationPublicService: RegistrationPublicService,
     private clubTRepository: ClubTRepository,
     private userPublicService: UserPublicService,
   ) {}
@@ -115,10 +117,9 @@ export default class ActivityService {
    * @returns 해당 날짜를 포함하는 활동 기간 정보를 리턴합니다.
    */
   private async getActivityD(param: { date: Date }) {
-    const activityDs =
-      await this.activityActivityTermRepository.selectActivityDByDate(
-        param.date,
-      );
+    const activityDs = await this.activityActivityTermRepository.find({
+      date: param.date,
+    });
     if (activityDs.length > 1)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
     if (activityDs.length === 0)
@@ -134,12 +135,12 @@ export default class ActivityService {
    * @returns 현재 활동보고서를 작성해야 하는 직전학기 정보를 리턴합니다.
    * ex. 현재 겨울학기일 경우, 여름-가을학기 활동기간을 리턴해야 합니다.
    */
+  // TODO IN 113: Semester Module 로 이동
   async getLastActivityD() {
     const today = getKSTDate();
-    const [activityD] =
-      await this.activityActivityTermRepository.selectLastActivityDByDate(
-        today,
-      );
+    const [activityD] = await this.activityActivityTermRepository.find({
+      date: today,
+    });
     return activityD;
   }
 
@@ -184,8 +185,8 @@ export default class ActivityService {
    */
   private async checkDeadline(param: { enums: Array<ActivityDeadlineEnum> }) {
     const today = getKSTDate();
-    const todayDeadline = await this.activityRepository
-      .selectDeadlineByDate(today)
+    const todayDeadline = await this.activityDeadlineRepository
+      .find({ date: today })
       .then(arr => {
         if (arr.length === 0)
           throw new HttpException(
@@ -195,7 +196,7 @@ export default class ActivityService {
         return arr[0];
       });
     if (
-      param.enums.find(e => Number(e) === todayDeadline.deadlineEnumId) ===
+      param.enums.find(e => Number(e) === todayDeadline.deadlineEnum) ===
       undefined
     )
       throw new HttpException(
@@ -294,9 +295,9 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
       enums: [
-        ActivityDeadlineEnum.Upload,
+        ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
-        ActivityDeadlineEnum.Exceptional,
+        ActivityDeadlineEnum.Exception,
       ],
     });
 
@@ -464,7 +465,7 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
-      enums: [ActivityDeadlineEnum.Upload, ActivityDeadlineEnum.Exceptional],
+      enums: [ActivityDeadlineEnum.Writing, ActivityDeadlineEnum.Exception],
     });
 
     const activities = await this.getActivities({ clubId: body.clubId });
@@ -524,9 +525,9 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.checkDeadline({
       enums: [
-        ActivityDeadlineEnum.Upload,
+        ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
-        ActivityDeadlineEnum.Exceptional,
+        ActivityDeadlineEnum.Exception,
       ],
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
@@ -654,9 +655,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.clubRegistrationPublicService.resetClubRegistrationStatusEnum(
-      body.clubId,
-    );
+    this.registrationPublicService.resetClubRegistrationStatusEnum(body.clubId);
   }
 
   async putStudentActivityProvisional(
@@ -723,7 +722,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.clubRegistrationPublicService.resetClubRegistrationStatusEnum(
+    this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.clubId,
     );
   }
@@ -1030,8 +1029,10 @@ export default class ActivityService {
     const today = getKSTDate();
 
     const term = await this.getLastActivityD();
-    const todayDeadline = await this.activityRepository
-      .selectDeadlineByDate(today)
+    const todayDeadline = await this.activityDeadlineRepository
+      .find({
+        date: today,
+      })
       .then(arr => {
         if (arr.length === 0)
           throw new HttpException(
@@ -1049,10 +1050,10 @@ export default class ActivityService {
         year: term.year,
       },
       deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnumId,
+        activityDeadlineEnum: todayDeadline.deadlineEnum,
         duration: {
-          startTerm: todayDeadline.startDate,
-          endTerm: todayDeadline.endDate,
+          startTerm: todayDeadline.startTerm,
+          endTerm: todayDeadline.endTerm,
         },
       },
     };

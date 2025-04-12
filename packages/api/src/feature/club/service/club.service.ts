@@ -34,7 +34,7 @@ import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/re
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
-import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import ClubStudentTRepository from "../repository/club.club-student-t.repository";
@@ -57,7 +57,7 @@ export class ClubService {
     private clubGetStudentClubBrief: ClubGetStudentClubBrief,
     private clubPutStudentClubBrief: ClubPutStudentClubBrief,
     private clubPublicService: ClubPublicService,
-    private clubRegistrationPublicService: ClubRegistrationPublicService,
+    private registrationPublicService: RegistrationPublicService,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -82,7 +82,7 @@ export class ClubService {
     const currentSemester = await this.clubPublicService.fetchSemester(today);
     let targetSemesterId = currentSemester.id;
     try {
-      await this.clubRegistrationPublicService.checkDeadline({
+      await this.registrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;

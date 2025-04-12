@@ -15,13 +15,13 @@ import { mockupMyPrint } from "./_mock/mockMyClub";
 
 export const useGetMyPrinting = (
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
   pageOffset: number,
   itemCount: number,
 ) => {
   const requestQuery: ApiPrt005RequestQuery = {
     startDate,
-    endDate,
+    endTerm,
     pageOffset,
     itemCount,
   };

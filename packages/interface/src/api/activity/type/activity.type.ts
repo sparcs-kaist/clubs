@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { zClubSummary } from "@sparcs-clubs/interface/api/club/type/club.type";
 import { zFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
+import { zActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
 import {
   zExecutiveSummary,
   zStudentSummary,
@@ -10,9 +11,7 @@ import {
   ActivityStatusEnum,
   ActivityTypeEnum,
 } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
-
-import { zActivityDuration } from "./activity.duration.type";
+import { zId } from "@sparcs-clubs/interface/common/type/id.type";
 
 // TODO: 수정 필요
 export const zActivity = z.object({
