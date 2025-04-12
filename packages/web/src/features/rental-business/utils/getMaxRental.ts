@@ -1,4 +1,4 @@
-import { ApiRnt001ResponseOK } from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt001";
+import { ApiRnt001ResponseOK } from "@clubs/interface/api/rental/endpoint/apiRnt001";
 
 export const getMaxRental = (
   availableRentals: ApiRnt001ResponseOK,

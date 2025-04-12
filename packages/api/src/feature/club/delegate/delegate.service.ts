@@ -3,29 +3,29 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiClb006RequestParam,
   ApiClb006ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
+} from "@clubs/interface/api/club/endpoint/apiClb006";
 import type {
   ApiClb008RequestParam,
   ApiClb008ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb008";
+} from "@clubs/interface/api/club/endpoint/apiClb008";
 import type {
   ApiClb011RequestParam,
   ApiClb011ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb011";
-import type { ApiClb012RequestParam } from "@sparcs-clubs/interface/api/club/endpoint/apiClb012";
-import type { ApiClb013ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
+} from "@clubs/interface/api/club/endpoint/apiClb011";
+import type { ApiClb012RequestParam } from "@clubs/interface/api/club/endpoint/apiClb012";
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
 import type {
   ApiClb014RequestBody,
   ApiClb014RequestParam,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb014";
+} from "@clubs/interface/api/club/endpoint/apiClb014";
 import type {
   ApiClb015ResponseNoContent,
   ApiClb015ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
+} from "@clubs/interface/api/club/endpoint/apiClb015";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";

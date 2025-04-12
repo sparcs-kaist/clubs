@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

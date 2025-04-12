@@ -6,12 +6,12 @@ import {
   SQL,
 } from "drizzle-orm";
 
-import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
-import { ActivityDurationTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { IActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
+import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   filterExcludedFields,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import {

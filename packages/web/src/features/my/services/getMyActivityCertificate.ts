@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   ApiAcf007RequestQuery,
   ApiAcf007ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
-import apiAcf007 from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+import apiAcf007 from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 
 import {
   axiosClientWithAuth,

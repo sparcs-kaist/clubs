@@ -20,13 +20,13 @@ import { union } from "drizzle-orm/mysql-core";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
-import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
-import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
+import { IDivision } from "@clubs/interface/api/division/type/division.type";
+import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
 import {
   ClubDelegateEnum,
   ClubTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {

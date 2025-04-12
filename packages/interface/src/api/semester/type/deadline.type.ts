@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 import { zSemester } from "./semester.type";
 

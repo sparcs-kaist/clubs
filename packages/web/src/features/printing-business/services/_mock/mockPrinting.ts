@@ -1,7 +1,7 @@
 import {
   PromotionalPrintingOrderStatusEnum,
   PromotionalPrintingSizeEnum,
-} from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+} from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 // 상태 리스트 정의
 const statuses = [

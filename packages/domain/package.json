@@ -1,5 +1,5 @@
 {
-  "name": "@sparcs-clubs/domain",
+  "name": "@clubs/domain",
   "version": "0.0.1",
   "description": "Clubs 서비스에서 통용되는 동아리연합회 도메인 모델을 정의합니다",
   "main": "dist/index.js",
@@ -11,5 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
   }
 }

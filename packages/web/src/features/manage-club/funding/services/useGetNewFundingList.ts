@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiFnd005, {
   ApiFnd005RequestQuery,
   ApiFnd005ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd005";
+} from "@clubs/interface/api/funding/endpoint/apiFnd005";
 
 import { mockupManageFunding } from "@sparcs-clubs/web/features/manage-club/services/_mock/mockManageClub";
 import {

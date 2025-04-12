@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

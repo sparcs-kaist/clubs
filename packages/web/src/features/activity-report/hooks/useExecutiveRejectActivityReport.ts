@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import apiAct024 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import apiAct024 from "@clubs/interface/api/activity/endpoint/apiAct024";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import usePatchActivityExecutiveSendBack from "../services/patchActivityExecutiveSendBack";
 import { activityReportDetailQueryKey } from "../services/useGetActivityReport";

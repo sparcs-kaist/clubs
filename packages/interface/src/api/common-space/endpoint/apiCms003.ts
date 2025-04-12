@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { getKSTDate } from "@sparcs-clubs/interface/common/util";
+import { getKSTDate } from "@clubs/interface/common/util";
 
 /**
  * @version v0.1

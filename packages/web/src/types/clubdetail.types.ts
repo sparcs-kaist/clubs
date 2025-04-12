@@ -1,4 +1,4 @@
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import type { TagColor } from "@sparcs-clubs/web/common/components/Tag";
 

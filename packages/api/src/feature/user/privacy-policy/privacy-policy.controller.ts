@@ -1,9 +1,9 @@
 import { Controller, Get, Post, UsePipes } from "@nestjs/common";
 
-import type { ApiUsr004ResponseCreated } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr004";
-import apiUsr004 from "@sparcs-clubs/interface/api/user/endpoint/apiUsr004";
-import type { ApiUsr005ResponseOk } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr005";
-import apiUsr005 from "@sparcs-clubs/interface/api/user/endpoint/apiUsr005";
+import type { ApiUsr004ResponseCreated } from "@clubs/interface/api/user/endpoint/apiUsr004";
+import apiUsr004 from "@clubs/interface/api/user/endpoint/apiUsr004";
+import type { ApiUsr005ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr005";
+import apiUsr005 from "@clubs/interface/api/user/endpoint/apiUsr005";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { GetUser } from "@sparcs-clubs/api/common/util/decorators/param-decorator";

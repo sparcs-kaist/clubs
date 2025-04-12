@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 
-import { IFundingResponse } from "@sparcs-clubs/interface/api/funding/type/funding.type";
-import { FixtureClassEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { IFundingResponse } from "@clubs/interface/api/funding/type/funding.type";
+import { FixtureClassEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import ThumbnailPreviewList from "@sparcs-clubs/web/common/components/File/ThumbnailPreviewList";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

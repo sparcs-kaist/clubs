@@ -1,7 +1,7 @@
 import {
   ProfessorEnum,
   UserTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/user.enum";
+} from "@clubs/interface/common/enum/user.enum";
 
 export const getUserType = (type: UserTypeEnum | string) => {
   switch (type) {

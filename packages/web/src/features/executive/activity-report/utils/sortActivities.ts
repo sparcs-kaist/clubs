@@ -1,6 +1,6 @@
-import { ApiAct024ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
-import { ApiAct028ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct028";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
+import { ApiAct028ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct028";
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 const statusOrder = {
   [ActivityStatusEnum.Applied]: 0,

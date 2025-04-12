@@ -1,6 +1,6 @@
 import { subSeconds } from "date-fns";
 
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { Semester } from "@sparcs-clubs/web/types/semester";
 import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";

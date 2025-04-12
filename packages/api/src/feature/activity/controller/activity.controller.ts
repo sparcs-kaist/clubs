@@ -14,131 +14,131 @@ import {
 import type {
   ApiAct001RequestBody,
   ApiAct001ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct001";
-import apiAct001 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct001";
+} from "@clubs/interface/api/activity/endpoint/apiAct001";
+import apiAct001 from "@clubs/interface/api/activity/endpoint/apiAct001";
 import type {
   ApiAct002RequestParam,
   ApiAct002ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct002";
-import apiAct002 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct002";
+} from "@clubs/interface/api/activity/endpoint/apiAct002";
+import apiAct002 from "@clubs/interface/api/activity/endpoint/apiAct002";
 import type {
   ApiAct003RequestBody,
   ApiAct003RequestParam,
   ApiAct003ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct003";
-import apiAct003 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct003";
+} from "@clubs/interface/api/activity/endpoint/apiAct003";
+import apiAct003 from "@clubs/interface/api/activity/endpoint/apiAct003";
 import type {
   ApiAct004RequestParam,
   ApiAct004ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct004";
-import apiAct004 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct004";
+} from "@clubs/interface/api/activity/endpoint/apiAct004";
+import apiAct004 from "@clubs/interface/api/activity/endpoint/apiAct004";
 import type {
   ApiAct005RequestQuery,
   ApiAct005ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
-import apiAct005 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
+} from "@clubs/interface/api/activity/endpoint/apiAct005";
+import apiAct005 from "@clubs/interface/api/activity/endpoint/apiAct005";
 import apiAct007, {
   ApiAct007RequestBody,
   ApiAct007ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct007";
+} from "@clubs/interface/api/activity/endpoint/apiAct007";
 import apiAct008, {
   ApiAct008RequestBody,
   ApiAct008RequestParam,
   ApiAct008ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct008";
+} from "@clubs/interface/api/activity/endpoint/apiAct008";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct010";
-import apiAct010 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct010";
+} from "@clubs/interface/api/activity/endpoint/apiAct010";
+import apiAct010 from "@clubs/interface/api/activity/endpoint/apiAct010";
 import type {
   ApiAct011RequestQuery,
   ApiAct011ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
+} from "@clubs/interface/api/activity/endpoint/apiAct011";
+import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
 import type {
   ApiAct012RequestQuery,
   ApiAct012ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct012";
-import apiAct012 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct012";
+} from "@clubs/interface/api/activity/endpoint/apiAct012";
+import apiAct012 from "@clubs/interface/api/activity/endpoint/apiAct012";
 import type {
   ApiAct013RequestQuery,
   ApiAct013ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct013";
-import apiAct013 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct013";
+} from "@clubs/interface/api/activity/endpoint/apiAct013";
+import apiAct013 from "@clubs/interface/api/activity/endpoint/apiAct013";
 import type {
   ApiAct014RequestParam,
   ApiAct014ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct014";
-import apiAct014 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct014";
+} from "@clubs/interface/api/activity/endpoint/apiAct014";
+import apiAct014 from "@clubs/interface/api/activity/endpoint/apiAct014";
 import type {
   ApiAct015RequestParam,
   ApiAct015ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct015";
-import apiAct015 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct015";
+} from "@clubs/interface/api/activity/endpoint/apiAct015";
+import apiAct015 from "@clubs/interface/api/activity/endpoint/apiAct015";
 import type {
   ApiAct016RequestParam,
   ApiAct016ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct016";
-import apiAct016 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct016";
+} from "@clubs/interface/api/activity/endpoint/apiAct016";
+import apiAct016 from "@clubs/interface/api/activity/endpoint/apiAct016";
 import type {
   ApiAct017RequestBody,
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
-import apiAct017 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
-import apiAct018 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
+} from "@clubs/interface/api/activity/endpoint/apiAct017";
+import apiAct017 from "@clubs/interface/api/activity/endpoint/apiAct017";
+import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
+import apiAct018 from "@clubs/interface/api/activity/endpoint/apiAct018";
 import apiAct019, {
   ApiAct019RequestQuery,
   ApiAct019ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct019";
+} from "@clubs/interface/api/activity/endpoint/apiAct019";
 import apiAct020, {
   ApiAct020RequestBody,
   ApiAct020ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct020";
+} from "@clubs/interface/api/activity/endpoint/apiAct020";
 import apiAct021, {
   type ApiAct021RequestQuery,
   ApiAct021RequestUrl,
   type ApiAct021ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct021";
+} from "@clubs/interface/api/activity/endpoint/apiAct021";
 import apiAct022, {
   ApiAct022RequestParam,
   ApiAct022RequestUrl,
   type ApiAct022ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct022";
-import type { ApiAct023ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
-import apiAct023 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
+} from "@clubs/interface/api/activity/endpoint/apiAct022";
+import type { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
+import apiAct023 from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
   ApiAct024RequestQuery,
   ApiAct024ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
-import apiAct024 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
+} from "@clubs/interface/api/activity/endpoint/apiAct024";
+import apiAct024 from "@clubs/interface/api/activity/endpoint/apiAct024";
 import type {
   ApiAct025RequestBody,
   ApiAct025ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct025";
-import apiAct025 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct025";
+} from "@clubs/interface/api/activity/endpoint/apiAct025";
+import apiAct025 from "@clubs/interface/api/activity/endpoint/apiAct025";
 import type {
   ApiAct026RequestBody,
   ApiAct026ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
-import apiAct026 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
+} from "@clubs/interface/api/activity/endpoint/apiAct026";
+import apiAct026 from "@clubs/interface/api/activity/endpoint/apiAct026";
 import apiAct027, {
   type ApiAct027RequestQuery,
   ApiAct027RequestUrl,
   type ApiAct027ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct027";
+} from "@clubs/interface/api/activity/endpoint/apiAct027";
 import apiAct028, {
   ApiAct028RequestParam,
   ApiAct028RequestUrl,
   type ApiAct028ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct028";
+} from "@clubs/interface/api/activity/endpoint/apiAct028";
 import apiAct029, {
   ApiAct029RequestParam,
   ApiAct029RequestUrl,
   ApiAct029ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct029";
+} from "@clubs/interface/api/activity/endpoint/apiAct029";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {

@@ -1,6 +1,6 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IDistrict } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { IDistrict } from "@clubs/interface/api/division/type/division.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { District } from "@sparcs-clubs/api/drizzle/schema/division.schema";

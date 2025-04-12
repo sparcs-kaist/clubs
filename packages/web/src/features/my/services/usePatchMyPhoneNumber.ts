@@ -1,6 +1,6 @@
 import apiUsr003, {
   ApiUsr003RequestBody,
-} from "@sparcs-clubs/interface/api/user/endpoint/apiUsr003";
+} from "@clubs/interface/api/user/endpoint/apiUsr003";
 
 import {
   axiosClientWithAuth,

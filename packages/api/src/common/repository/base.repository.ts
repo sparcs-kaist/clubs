@@ -24,7 +24,7 @@ import {
 import { MySqlColumn, MySqlTable } from "drizzle-orm/mysql-core";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { OperationType } from "@sparcs-clubs/interface/common/utils/field-operations";
+import { OperationType } from "@clubs/interface/common/utils/field-operations";
 
 import {
   DrizzleAsyncProvider,

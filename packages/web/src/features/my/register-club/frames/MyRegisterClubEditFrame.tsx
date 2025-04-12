@@ -6,8 +6,8 @@ import styled from "styled-components";
 
 import apiReg011, {
   ApiReg011ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

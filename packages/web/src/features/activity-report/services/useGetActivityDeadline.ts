@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiAct018, {
   ApiAct018ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/api/activity/endpoint/apiAct018";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import {
   axiosClientWithAuth,

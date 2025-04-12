@@ -3,12 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import apiFnd006, {
   ApiFnd006RequestQuery,
   ApiFnd006ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd006";
+} from "@clubs/interface/api/funding/endpoint/apiFnd006";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/activity.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import {
   axiosClientWithAuth,

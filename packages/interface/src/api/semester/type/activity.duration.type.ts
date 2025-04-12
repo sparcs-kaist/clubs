@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { ActivityDurationTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
+import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 import { zSemester } from "./semester.type";
 

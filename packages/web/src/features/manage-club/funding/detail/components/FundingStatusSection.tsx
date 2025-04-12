@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 
-import { IFundingCommentResponse } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { IFundingCommentResponse } from "@clubs/interface/api/funding/type/funding.comment.type";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import ProgressStatus from "@sparcs-clubs/web/common/components/ProgressStatus";
 import CommentToast from "@sparcs-clubs/web/common/components/Toast/CommentToast";

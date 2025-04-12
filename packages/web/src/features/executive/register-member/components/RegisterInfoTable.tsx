@@ -1,4 +1,4 @@
-// import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+// import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import { ApiReg020ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
+import { ApiReg020ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg020";
 
 // import styled from "styled-components";
 // import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FormController from "@sparcs-clubs/web/common/components/FormController";

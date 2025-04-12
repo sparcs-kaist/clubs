@@ -2,9 +2,9 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zStudent } from "@clubs/interface/api/user/type/user.type";
+import { registry } from "@clubs/interface/open-api";
 
 extendZodWithOpenApi(z);
 

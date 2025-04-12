@@ -71,7 +71,7 @@
     "@chromatic-com/storybook": "^3.2.2",
     "@clubs/eslint-config": "workspace:*",
     "@clubs/typescript-config": "workspace:*",
-    "@sparcs-clubs/interface": "workspace:*",
+    "@clubs/interface": "workspace:*",
     "@storybook/addon-actions": "^8.4.5",
     "@storybook/addon-essentials": "^8.4.5",
     "@storybook/addon-interactions": "^8.4.5",

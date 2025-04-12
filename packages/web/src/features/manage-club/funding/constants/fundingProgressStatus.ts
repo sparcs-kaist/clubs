@@ -1,4 +1,4 @@
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import {
   ProgressCheckSectionStatusEnum,

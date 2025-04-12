@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { ApiUsr002ResponseOk } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr002";
+import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
 
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";

@@ -1,4 +1,4 @@
-import { PromotionalPrintingSizeEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+import { PromotionalPrintingSizeEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 const getPrintSize = (type: PromotionalPrintingSizeEnum): string => {
   switch (type) {

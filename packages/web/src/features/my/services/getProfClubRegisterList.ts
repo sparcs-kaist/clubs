@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiReg021, {
   ApiReg021ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg021";
+} from "@clubs/interface/api/registration/endpoint/apiReg021";
 
 import {
   axiosClientWithAuth,

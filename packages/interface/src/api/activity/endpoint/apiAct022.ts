@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { zStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 /**
  * @version v0.1

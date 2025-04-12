@@ -4,8 +4,8 @@ import type {
   ApiCms002RequestParam,
   ApiCms002RequestQuery,
   ApiCms002ResponseOK,
-} from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
-import apiCms002 from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
+} from "@clubs/interface/api/common-space/endpoint/apiCms002";
+import apiCms002 from "@clubs/interface/api/common-space/endpoint/apiCms002";
 
 import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";
 

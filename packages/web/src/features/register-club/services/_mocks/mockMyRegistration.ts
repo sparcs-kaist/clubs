@@ -1,8 +1,8 @@
-import { ApiReg012ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
+import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 export const mockMyRegistration: ApiReg012ResponseOk = {
   registrations: [

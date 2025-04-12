@@ -4,7 +4,7 @@ import apiFnd013, {
   ApiFnd013RequestBody,
   ApiFnd013RequestParam,
   ApiFnd013ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd013";
+} from "@clubs/interface/api/funding/endpoint/apiFnd013";
 
 import {
   axiosClientWithAuth,

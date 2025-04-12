@@ -111,7 +111,7 @@ export const baseConfig = tseslint.config(
             // 외부 패키지들을 가장 먼저 import합니다.
             ["^"],
             // interface, web, api 순으로 import합니다.
-            ["^@sparcs-clubs/interface"],
+            ["^@clubs/interface"],
             ["^@sparcs-clubs/web"],
             ["^@sparcs-clubs/api"],
             // 상대경로로 import합니다.

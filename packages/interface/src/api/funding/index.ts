@@ -1,4 +1,4 @@
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { registry } from "@clubs/interface/open-api";
 
 export * from "./endpoint/apiFnd001";
 export { default as apiFnd001 } from "./endpoint/apiFnd001";

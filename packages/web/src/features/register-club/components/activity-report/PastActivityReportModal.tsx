@@ -2,9 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { overlay } from "overlay-kit";
 import React, { useEffect, useState } from "react";
 
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

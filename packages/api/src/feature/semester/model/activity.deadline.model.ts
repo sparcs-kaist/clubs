@@ -1,11 +1,11 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IActivityDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
-import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import { IActivityDeadline } from "@clubs/interface/api/semester/type/deadline.type";
+import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
 import {
   filterExcludedFields,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 import {
   MEntity,

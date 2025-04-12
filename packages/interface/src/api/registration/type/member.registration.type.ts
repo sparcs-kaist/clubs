@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import { zStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
+import { zStudent } from "@clubs/interface/api/user/type/user.type";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
+import { registry } from "@clubs/interface/open-api";
 
 export const zMemberRegistration = z.object({
   id: zId.openapi({ description: "가입 신청 ID", examples: [1, 2, 3] }),
