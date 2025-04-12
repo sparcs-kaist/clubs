@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IMemberRegistration } from "@clubs/interface/api/registration/type/member.registration.type";
+import { IMemberRegistration } from "@clubs/domain/member-registration/member-registration";
+
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 import {
   Exclude,
