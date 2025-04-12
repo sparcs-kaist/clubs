@@ -1,6 +1,7 @@
 {
   "extends": "@clubs/typescript-config/rest-api.json",
   "compilerOptions": {
+    "strict": true,
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
