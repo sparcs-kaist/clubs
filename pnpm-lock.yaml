@@ -42,9 +42,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.609.0
         version: 3.609.0
-      '@clubs/domain':
-        specifier: workspace:*
-        version: link:../domain
       '@clubs/interface':
         specifier: workspace:*
         version: link:../interface
