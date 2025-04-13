@@ -222,3 +222,13 @@ export function takeId<M extends { id: T }, T>(data: M | M[]): T | T[] {
   }
   return data.id;
 }
+
+/**
+ * @description 단수 | 배열 오버로딩을 돕기 위해, 단수이면 배열로 만들어 주는 함수
+ */
+export const takeToArray = <T>(data: T | T[]): T[] => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  return [data];
+};
