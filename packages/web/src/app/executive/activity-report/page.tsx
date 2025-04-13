@@ -10,7 +10,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ExecutiveActivityReportFrame from "@sparcs-clubs/web/features/activity-report/executive/frames/ExecutiveActivityReportFrame";
+import ExecutiveActivityReportFrame from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportFrame";
 
 const ExecutiveActivityReport = () => {
   const { isLoggedIn, login, profile } = useAuth();
