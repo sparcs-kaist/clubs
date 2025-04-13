@@ -16,10 +16,9 @@ import CheckboxCenterPlacerStopPropagation from "@sparcs-clubs/web/common/compon
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { ActStatusTagList } from "@sparcs-clubs/web/constants/tableTagList";
+import { sortActivitiesByStatusAndActivityId } from "@sparcs-clubs/web/features/activity-report/utils/sortActivities";
 import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
-
-import { sortActivitiesByStatusAndActivityId } from "../utils/sortActivities";
 
 interface ExecutiveClubActivitiesTableProps {
   data: ApiAct024ResponseOk;

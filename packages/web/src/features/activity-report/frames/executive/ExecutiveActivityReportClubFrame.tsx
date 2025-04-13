@@ -7,12 +7,11 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
-
-import ActivityReportStatistic from "../components/ActivityReportStatistic";
-import ChargedChangeActivityModalContent from "../components/ChargedChangeActivityModalContent";
-import { ChargedChangeActivityProps } from "../components/ChargedChangeActivityModalTable";
-import ExecutiveClubActivitiesTable from "../components/ExecutiveClubActivitiesTable";
-import useGetExecutiveClubActivities from "../services/useGetExecutiveClubActivities";
+import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
+import ChargedChangeActivityModalContent from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeActivityModalContent";
+import { ChargedChangeActivityProps } from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeActivityModalTable";
+import ExecutiveClubActivitiesTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveClubActivitiesTable";
+import useGetExecutiveClubActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveClubActivities";
 
 const ExecutiveActivityReportClubFrame: React.FC<{ clubId: string }> = ({
   clubId,

@@ -6,11 +6,10 @@ import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
-
-import ActivityReportChargedClubTable from "../components/ActivityReportChargedClubTable";
-import ActivityReportChargedOtherTable from "../components/ActivityReportChargedOtherTable";
-import ActivityReportStatistic from "../components/ActivityReportStatistic";
-import useGetExecutiveChargedActivities from "../services/useGetExecutiveChargedActivities";
+import ActivityReportChargedClubTable from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportChargedClubTable";
+import ActivityReportChargedOtherTable from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportChargedOtherTable";
+import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
+import useGetExecutiveChargedActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveChargedActivities";
 
 const ExecutiveActivityReportChargedFrame: React.FC = () => {
   const { id: executiveId } = useParams();
