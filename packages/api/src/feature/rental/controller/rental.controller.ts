@@ -11,23 +11,23 @@ import {
 import apiRnt001, {
   ApiRnt001RequestQuery,
   ApiRnt001ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt001";
+} from "@clubs/interface/api/rental/endpoint/apiRnt001";
 import apiRnt002, {
   ApiRnt002RequestBody,
   ApiRnt002RequestQuery,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt002";
+} from "@clubs/interface/api/rental/endpoint/apiRnt002";
 import apiRnt003, {
   ApiRnt003RequestQuery,
   ApiRnt003ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt003";
+} from "@clubs/interface/api/rental/endpoint/apiRnt003";
 import apiRnt004, {
   ApiRnt004RequestParam,
   ApiRnt004ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt004";
+} from "@clubs/interface/api/rental/endpoint/apiRnt004";
 import apiRnt006, {
   ApiRnt006RequestQuery,
   ApiRnt006ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt006";
+} from "@clubs/interface/api/rental/endpoint/apiRnt006";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 

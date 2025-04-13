@@ -26,7 +26,7 @@ import { Student } from "src/drizzle/schema/user.schema";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 

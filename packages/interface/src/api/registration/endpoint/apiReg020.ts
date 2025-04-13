@@ -1,12 +1,12 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zUserName } from "@sparcs-clubs/interface/common/commonString";
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
 
-import { zMemberRegistration } from "../type/member.registration.type";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zUserName } from "@clubs/interface/common/commonString";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1

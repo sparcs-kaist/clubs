@@ -3,9 +3,8 @@ import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
-import apiReg011, {
-  ApiReg011ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
+import apiReg011 from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

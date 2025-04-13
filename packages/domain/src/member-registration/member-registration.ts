@@ -1,11 +1,18 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import { zStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zClub } from "@clubs/domain/club/club";
+import { zId } from "@clubs/domain/common/id";
+import { zSemester } from "@clubs/domain/semester/semester";
+import { zStudent } from "@clubs/domain/user/student";
+
+extendZodWithOpenApi(z);
+
+export enum RegistrationApplicationStudentStatusEnum {
+  Pending = 1, // 대기중
+  Approved, // 승인됨
+  Rejected, // 반려됨
+}
 
 export const zMemberRegistration = z.object({
   id: zId.openapi({ description: "가입 신청 ID", examples: [1, 2, 3] }),
@@ -22,8 +29,6 @@ export const zMemberRegistration = z.object({
   }),
 });
 
-registry.register("MemberRegistration", zMemberRegistration); // 아래 schema에 표시함
-
 // 외부 entity의 값을 전부 받아온 형태.
 export const zMemberRegistrationResponse = zMemberRegistration.extend({
   student: zStudent,
@@ -35,5 +40,3 @@ export type IMemberRegistration = z.infer<typeof zMemberRegistration>;
 export type IMemberRegistrationResponse = z.infer<
   typeof zMemberRegistrationResponse
 >;
-
-// let a: IMemberRegistration;

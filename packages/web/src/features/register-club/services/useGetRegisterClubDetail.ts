@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ApiReg011RequestParam,
   ApiReg011ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+} from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

@@ -4,8 +4,8 @@ import { overlay } from "overlay-kit";
 import React, { useMemo } from "react";
 import styled from "styled-components";
 
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";

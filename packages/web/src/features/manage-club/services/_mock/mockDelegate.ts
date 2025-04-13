@@ -1,10 +1,10 @@
-import { ApiClb006ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
-import { ApiClb008ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb008";
-import { ApiClb011ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb011";
+import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
+import { ApiClb008ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb008";
+import { ApiClb011ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb011";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 export const mockClubDelegates: ApiClb006ResponseOK = {
   delegates: [

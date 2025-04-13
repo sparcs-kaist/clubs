@@ -1,4 +1,4 @@
-import { ApiCms002ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
+import { ApiCms002ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms002";
 
 export const mockUsageOrders: ApiCms002ResponseOK = {
   usageOrders: [

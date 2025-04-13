@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1

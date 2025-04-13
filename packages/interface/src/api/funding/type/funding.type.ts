@@ -3,23 +3,20 @@ import { z } from "zod";
 import {
   zActivityD,
   zActivitySummary,
-} from "@sparcs-clubs/interface/api/activity/type/activity.type";
-import {
-  zClub,
-  zClubSummary,
-} from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
+} from "@clubs/interface/api/activity/type/activity.type";
+import { zClub, zClubSummary } from "@clubs/interface/api/club/type/club.type";
+import { zFileSummary } from "@clubs/interface/api/file/type/file.type";
 import {
   zExecutiveSummary,
   zStudentSummary,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/user/type/user.type";
 import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
   FundingStatusEnum,
   TransportationEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
+} from "@clubs/interface/common/enum/funding.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 export const zClubSupplies = z.object({
   name: z.string().max(255).optional(),

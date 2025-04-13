@@ -11,24 +11,24 @@ import {
 import type {
   ApiPrt001RequestQuery,
   ApiPrt001ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt001";
-import apiPrt001 from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt001";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt001";
+import apiPrt001 from "@clubs/interface/api/promotional-printing/endpoint/apiPrt001";
 import type {
   ApiPrt002RequestBody,
   ApiPrt002RequestParam,
   ApiPrt002ResponseCreated,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
-import apiPrt002 from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+import apiPrt002 from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
 import type {
   ApiPrt003RequestParam,
   ApiPrt003ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt003";
-import apiPrt003 from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt003";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt003";
+import apiPrt003 from "@clubs/interface/api/promotional-printing/endpoint/apiPrt003";
 import type {
   ApiPrt005RequestQuery,
   ApiPrt005ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
-import apiPrt005 from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+import apiPrt005 from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { GetStudent } from "@sparcs-clubs/api/common/util/decorators/param-decorator";

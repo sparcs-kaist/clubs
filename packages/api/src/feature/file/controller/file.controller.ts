@@ -12,18 +12,18 @@ import { Request } from "express";
 import type {
   ApiFil001RequestBody,
   ApiFil001ResponseCreated,
-} from "@sparcs-clubs/interface/api/file/apiFil001";
-import apiFil001 from "@sparcs-clubs/interface/api/file/apiFil001";
+} from "@clubs/interface/api/file/apiFil001";
+import apiFil001 from "@clubs/interface/api/file/apiFil001";
 import type {
   ApiFil002RequestBody,
   ApiFil002ResponseOk,
-} from "@sparcs-clubs/interface/api/file/apiFil002";
-import apiFil002 from "@sparcs-clubs/interface/api/file/apiFil002";
+} from "@clubs/interface/api/file/apiFil002";
+import apiFil002 from "@clubs/interface/api/file/apiFil002";
 import type {
   ApiFil003RequestBody,
   ApiFil003ResponseOk,
-} from "@sparcs-clubs/interface/api/file/apiFil003";
-import apiFil003 from "@sparcs-clubs/interface/api/file/apiFil003";
+} from "@clubs/interface/api/file/apiFil003";
+import apiFil003 from "@clubs/interface/api/file/apiFil003";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import logger from "@sparcs-clubs/api/common/util/logger";

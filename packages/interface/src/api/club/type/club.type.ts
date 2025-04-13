@@ -5,18 +5,15 @@ import {
   zDivisionResponse,
   zDivisionSummary,
   zDivisionSummaryResponse,
-} from "@sparcs-clubs/interface/api/division/type/division.type";
-import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import {
-  zProfessor,
-  zStudent,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/division/type/division.type";
+import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
+import { zProfessor, zStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   ClubBuildingEnum,
   ClubDelegateEnum,
   ClubTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
+} from "@clubs/interface/common/enum/club.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 const zClubRoom = z.object({
   id: zId,

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
 
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";

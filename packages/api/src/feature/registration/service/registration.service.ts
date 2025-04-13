@@ -3,55 +3,55 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiReg001RequestBody,
   ApiReg001ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg001";
-import type { ApiReg002ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg002";
-import type { ApiReg003ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg003";
-import { ApiReg005ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
+} from "@clubs/interface/api/registration/endpoint/apiReg001";
+import type { ApiReg002ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg002";
+import type { ApiReg003ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg003";
+import { ApiReg005ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg005";
 import {
   ApiReg006ResponseNoContent,
   ApiReg006ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import { ApiReg007ResponseNoContent } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg007";
-import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
+} from "@clubs/interface/api/registration/endpoint/apiReg006";
+import { ApiReg007ResponseNoContent } from "@clubs/interface/api/registration/endpoint/apiReg007";
+import { ApiReg008ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg008";
 import type {
   ApiReg009RequestBody,
   ApiReg009ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg009";
-import type { ApiReg010ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg010";
-import type { ApiReg011ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import type { ApiReg012ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
-import { ApiReg013ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg013";
-import type { ApiReg014ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
-import type { ApiReg015ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
-import type { ApiReg016ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg016";
-import type { ApiReg017ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg017";
-import type { ApiReg018ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg018";
+} from "@clubs/interface/api/registration/endpoint/apiReg009";
+import type { ApiReg010ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg010";
+import type { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
+import type { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
+import { ApiReg013ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg013";
+import type { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
+import type { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
+import type { ApiReg016ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg016";
+import type { ApiReg017ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg017";
+import type { ApiReg018ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg018";
 import type {
   ApiReg019RequestQuery,
   ApiReg019ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg019";
+} from "@clubs/interface/api/registration/endpoint/apiReg019";
 import type {
   ApiReg020RequestQuery,
   ApiReg020ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg020";
-import type { ApiReg021ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg021";
-import type { ApiReg022ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg022";
+} from "@clubs/interface/api/registration/endpoint/apiReg020";
+import type { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg021";
+import type { ApiReg022ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg022";
 import type {
   ApiReg023RequestParam,
   ApiReg023ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg023";
-import type { ApiReg024ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg024";
-import { ApiReg025ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg025";
-import { ApiReg026ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
-import { ApiReg027ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg027";
-import { ApiReg028ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg028";
-import { IStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/api/registration/endpoint/apiReg023";
+import type { ApiReg024ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg024";
+import { ApiReg025ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg025";
+import { ApiReg026ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg026";
+import { ApiReg027ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg027";
+import { ApiReg028ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg028";
+import { IStudent } from "@clubs/interface/api/user/type/user.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationApplicationStudentStatusEnum,
   RegistrationDeadlineEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
@@ -1287,6 +1287,7 @@ export class RegistrationService {
         applyStatusEnumId: registration.registrationApplicationStudentEnum,
         createdAt: registration.createdAt,
         student: await this.userPublicService.getStudentById(
+          // @ts-expect-error TODO: remove isClubOperatingThisSemester
           registration.student,
         ),
       })),
@@ -1339,6 +1340,7 @@ export class RegistrationService {
         createdAt: registration.createdAt,
         student: {
           ...(await this.userPublicService.getStudentById(
+            // @ts-expect-error TODO: remove this and on strict
             registration.student,
           )),
           StudentEnumId:

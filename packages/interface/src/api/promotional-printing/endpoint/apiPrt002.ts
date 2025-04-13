@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { PromotionalPrintingSizeEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { PromotionalPrintingSizeEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 /**
  * @version v0.1

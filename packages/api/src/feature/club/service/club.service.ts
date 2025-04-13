@@ -5,31 +5,31 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
+import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
   ApiClb002RequestParam,
   ApiClb002ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
-import type { ApiClb003ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb003";
+} from "@clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb003ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb003";
 import type {
   ApiClb004RequestParam,
   ApiClb004ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+} from "@clubs/interface/api/club/endpoint/apiClb004";
 import type {
   ApiClb005RequestBody,
   ApiClb005RequestParam,
   ApiClb005ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb005";
+} from "@clubs/interface/api/club/endpoint/apiClb005";
 import {
   ApiClb009RequestParam,
   ApiClb009ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb009";
+} from "@clubs/interface/api/club/endpoint/apiClb009";
 import {
   ApiClb010RequestParam,
   ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
-import type { ApiClb016ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb016";
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/api/club/endpoint/apiClb010";
+import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { env } from "@sparcs-clubs/api/env";

@@ -1,10 +1,10 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@sparcs-clubs/interface/common/commonString";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { zClubName } from "@clubs/interface/common/commonString";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 import registrationTypeEnumChecker from "../utils/registrationTypeEnumChecker";
 

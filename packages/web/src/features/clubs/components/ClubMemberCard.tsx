@@ -3,7 +3,7 @@
 import React from "react";
 import styled from "styled-components";
 
-import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

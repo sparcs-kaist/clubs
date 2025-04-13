@@ -1,4 +1,4 @@
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 const mockupMyExeRnt = {
   items: [

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { ClubDelegateChangeRequestStatusEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+// import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 import styled from "styled-components";
 
 import Button from "@sparcs-clubs/web/common/components/Button";

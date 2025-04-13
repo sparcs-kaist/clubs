@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 /**
  * @version v0.1

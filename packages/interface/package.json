@@ -1,5 +1,5 @@
 {
-  "name": "@sparcs-clubs/interface",
+  "name": "@clubs/interface",
   "version": "1.0.0",
   "license": "MIT",
   "files": [
@@ -16,6 +16,7 @@
     "./*": "./dist/*.js"
   },
   "dependencies": {
+    "@clubs/domain": "workspace:*",
     "@asteasolutions/zod-to-openapi": "^7.3.0",
     "axios": "^1.6.7"
   },

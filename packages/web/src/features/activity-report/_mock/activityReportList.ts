@@ -1,7 +1,7 @@
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 
 import { ActivityProfessorApprovalEnum } from "@sparcs-clubs/web/features/manage-club/services/_mock/mockManageClub";
 

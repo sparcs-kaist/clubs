@@ -1,12 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import type { ApiCms001ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms001";
-import type { ApiCms002ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
-import type { ApiCms003ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
-import type { ApiCms004ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms004";
-import type { ApiCms005ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms005";
-import type { ApiCms006ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms006";
-import type { ApiCms007ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms007";
+import type { ApiCms001ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms001";
+import type { ApiCms002ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms002";
+import type { ApiCms003ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms003";
+import type { ApiCms004ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms004";
+import type { ApiCms005ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms005";
+import type { ApiCms006ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms006";
+import type { ApiCms007ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms007";
 
 import { getKSTDate, isEmptyObject } from "@sparcs-clubs/api/common/util/util";
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";

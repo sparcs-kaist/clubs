@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { isParticipantsRequired } from "@sparcs-clubs/web/utils/isTransportation";
 

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiReg014, {
   ApiReg014RequestQuery,
   ApiReg014ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
+} from "@clubs/interface/api/registration/endpoint/apiReg014";
 
 import { mockRegisterClub } from "@sparcs-clubs/web/features/executive/register-club/services/_mock/mockRegisterClub";
 import {

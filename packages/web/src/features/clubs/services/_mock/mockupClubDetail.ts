@@ -1,4 +1,4 @@
-import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
 
 const mockupData: ApiClb002ResponseOK = {
   id: 1,

@@ -1,9 +1,9 @@
-import { ActivityTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+} from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { MyClubRegistrationDetail } from "@sparcs-clubs/web/features/my/types/myClubRegistration";
 

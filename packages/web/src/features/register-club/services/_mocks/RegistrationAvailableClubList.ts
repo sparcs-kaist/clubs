@@ -1,4 +1,4 @@
-import { ProfessorEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { ClubRegistrationInfo } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { ApiAct023ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
+import { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
 
 import ActivityReportStatisticContent from "./_atomic/ActivityReportStatisticContent";
 

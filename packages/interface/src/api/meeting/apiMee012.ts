@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   MeetingEnum,
   MeetingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/meeting.enum";
+} from "@clubs/interface/common/enum/meeting.enum";
 
 /**
  * @version v0.1

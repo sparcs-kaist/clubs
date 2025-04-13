@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import apiReg014 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
-import apiReg015 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
-import { RegistrationStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import apiReg014 from "@clubs/interface/api/registration/endpoint/apiReg014";
+import apiReg015 from "@clubs/interface/api/registration/endpoint/apiReg015";
+import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

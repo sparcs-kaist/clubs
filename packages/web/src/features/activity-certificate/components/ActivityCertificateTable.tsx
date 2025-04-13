@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import type { ApiAcf003ResponseOk } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+import type { ApiAcf003ResponseOk } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";

@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 
 /**
  * @version v0.1

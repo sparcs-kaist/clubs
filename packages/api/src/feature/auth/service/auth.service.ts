@@ -1,10 +1,10 @@
 import { HttpException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import { ApiAut001RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut001";
-import { ApiAut002ResponseCreated } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut002";
-import { ApiAut003ResponseOk } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
-import { ApiAut004RequestQuery } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut004";
+import { ApiAut001RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut001";
+import { ApiAut002ResponseCreated } from "@clubs/interface/api/auth/endpoint/apiAut002";
+import { ApiAut003ResponseOk } from "@clubs/interface/api/auth/endpoint/apiAut003";
+import { ApiAut004RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut004";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getSsoConfig } from "@sparcs-clubs/api/env";

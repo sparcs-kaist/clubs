@@ -4,11 +4,11 @@ import type {
   ApiAct006RequestParam,
   ApiAct006RequestQuery,
   ApiAct006ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct006";
+} from "@clubs/interface/api/activity/endpoint/apiAct006";
 import type {
   ApiAct009RequestQuery,
   ApiAct009ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct009";
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";

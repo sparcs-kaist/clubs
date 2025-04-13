@@ -1,4 +1,4 @@
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 /**
  * @description 인터페이스에서의 RegistrationTypeEnum에 따른 clubId와 clubRuleFileId 존재 여부 검사 규칙입니다.

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { IFundingResponse } from "@sparcs-clubs/interface/api/funding/type/funding.type";
+import { IFundingResponse } from "@clubs/interface/api/funding/type/funding.type";
 
 import ThumbnailPreviewList from "@sparcs-clubs/web/common/components/File/ThumbnailPreviewList";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

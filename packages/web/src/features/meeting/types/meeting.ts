@@ -1,7 +1,7 @@
 import {
   MeetingEnum,
   MeetingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/meeting.enum";
+} from "@clubs/interface/common/enum/meeting.enum";
 
 export interface MeetingAnnouncementModel {
   meetingEnumId: MeetingEnum;

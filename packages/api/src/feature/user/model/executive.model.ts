@@ -1,4 +1,4 @@
-import { IExecutive } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IExecutive } from "@clubs/interface/api/user/type/user.type";
 
 export class MExecutive implements IExecutive {
   id: number;

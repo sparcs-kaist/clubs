@@ -1,4 +1,4 @@
-import { TransportationEnum as E } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { TransportationEnum as E } from "@clubs/interface/common/enum/funding.enum";
 
 const isParticipantsRequired = (transportation: E | undefined) =>
   transportation === E.Taxi ||

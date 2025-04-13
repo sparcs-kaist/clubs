@@ -1,4 +1,4 @@
-import type { ApiRnt001ResponseOK } from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt001";
+import type { ApiRnt001ResponseOK } from "@clubs/interface/api/rental/endpoint/apiRnt001";
 
 const mockupAvailableRental: ApiRnt001ResponseOK = {
   objects: [

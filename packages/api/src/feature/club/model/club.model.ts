@@ -1,7 +1,7 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { IClub } from "@clubs/interface/api/club/type/club.type";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 import {
   Club,

@@ -1,4 +1,4 @@
-import { MeetingStatusEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingStatusEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 const mockUpMeetingNotice = {
   items: [

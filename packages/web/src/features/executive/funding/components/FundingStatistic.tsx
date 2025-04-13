@@ -1,4 +1,4 @@
-import { ApiFnd008ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
+import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 
 import FundingStatisticContent from "./_atomic/FundingStatisticContent";
 
