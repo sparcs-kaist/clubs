@@ -14,6 +14,7 @@ interface ActivityReportStatisticProps {
   approvedTotalCount: number;
   rejectedTotalCount: number;
   chargedExecutiveName?: string;
+  withChargedExecutive?: boolean;
   withApprovedRate?: boolean;
 }
 
@@ -29,6 +30,7 @@ const ActivityReportStatistic: React.FC<ActivityReportStatisticProps> = ({
   approvedTotalCount,
   rejectedTotalCount,
   chargedExecutiveName = "-",
+  withChargedExecutive = false,
   withApprovedRate = false,
 }) => {
   const statisticTypes = [
@@ -46,18 +48,20 @@ const ActivityReportStatistic: React.FC<ActivityReportStatisticProps> = ({
       <Toggle label={<Typography>활동 보고서 통계</Typography>}>
         <FlexWrapper direction="column" gap={8} style={{ width: "100%" }}>
           <FlexWrapper direction="row" gap={40}>
-            <StatisticWrapper>
-              <Typography fw="MEDIUM" fs={16} lh={20}>
-                담당자
-              </Typography>
-              <Typography
-                fs={16}
-                lh={20}
-                style={{ flex: 1, textAlign: "center" }}
-              >
-                {chargedExecutiveName}
-              </Typography>
-            </StatisticWrapper>
+            {withChargedExecutive && (
+              <StatisticWrapper>
+                <Typography fw="MEDIUM" fs={16} lh={20}>
+                  담당자
+                </Typography>
+                <Typography
+                  fs={16}
+                  lh={20}
+                  style={{ flex: 1, textAlign: "center" }}
+                >
+                  {chargedExecutiveName}
+                </Typography>
+              </StatisticWrapper>
+            )}
             <FlexWrapper direction="row" gap={20}>
               <Typography fw="MEDIUM" fs={16} lh={20}>
                 검토율

@@ -71,6 +71,8 @@ const ExecutiveActivityReportClubFrame: React.FC<{ clubId: string }> = ({
           ).length ?? 0
         }
         withApprovedRate
+        chargedExecutiveName={data?.chargedExecutive?.name}
+        withChargedExecutive
       />
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
