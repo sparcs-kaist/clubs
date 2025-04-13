@@ -1287,7 +1287,6 @@ export class RegistrationService {
         applyStatusEnumId: registration.registrationApplicationStudentEnum,
         createdAt: registration.createdAt,
         student: await this.userPublicService.getStudentById(
-          // @ts-expect-error TODO: remove isClubOperatingThisSemester
           registration.student,
         ),
       })),
@@ -1340,7 +1339,6 @@ export class RegistrationService {
         createdAt: registration.createdAt,
         student: {
           ...(await this.userPublicService.getStudentById(
-            // @ts-expect-error TODO: remove this and on strict
             registration.student,
           )),
           StudentEnumId:
