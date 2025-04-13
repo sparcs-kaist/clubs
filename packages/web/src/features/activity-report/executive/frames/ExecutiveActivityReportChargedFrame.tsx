@@ -1,13 +1,15 @@
 import { useParams } from "next/navigation";
 import React from "react";
 
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 
 import ActivityReportChargedClubTable from "../components/ActivityReportChargedClubTable";
 import ActivityReportChargedOtherTable from "../components/ActivityReportChargedOtherTable";
-import ActivityReportChargedStatistic from "../components/ActivityReportChargedStatistic";
+import ActivityReportStatistic from "../components/ActivityReportStatistic";
 import useGetExecutiveChargedActivities from "../services/useGetExecutiveChargedActivities";
 
 const ExecutiveActivityReportChargedFrame: React.FC = () => {
@@ -55,7 +57,26 @@ const ExecutiveActivityReportChargedFrame: React.FC = () => {
           title={`활동 보고서 검토 내역 (${data?.chargedExecutive.name.trim()})`}
           enableLast
         />
-        <ActivityReportChargedStatistic activities={data?.activities ?? []} />
+        <ActivityReportStatistic
+          pendingTotalCount={
+            data?.activities.filter(
+              activity =>
+                activity.activityStatusEnum === ActivityStatusEnum.Applied,
+            ).length ?? 0
+          }
+          approvedTotalCount={
+            data?.activities.filter(
+              activity =>
+                activity.activityStatusEnum === ActivityStatusEnum.Approved,
+            ).length ?? 0
+          }
+          rejectedTotalCount={
+            data?.activities.filter(
+              activity =>
+                activity.activityStatusEnum === ActivityStatusEnum.Rejected,
+            ).length ?? 0
+          }
+        />
         {clubsActivities &&
           Object.entries(clubsActivities).map(([clubId, activities]) => (
             <ActivityReportChargedClubTable

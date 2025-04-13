@@ -58,7 +58,24 @@ const ExecutiveActivityReportFrame = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <ActivityReportStatistic
-        activities={data ?? { items: [], executiveProgresses: [] }}
+        pendingTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.pendingActivitiesCount,
+            0,
+          ) ?? 0
+        }
+        approvedTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.approvedActivitiesCount,
+            0,
+          ) ?? 0
+        }
+        rejectedTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.rejectedActivitiesCount,
+            0,
+          ) ?? 0
+        }
       />
       <FlexWrapper direction="row" gap={12}>
         <Button
