@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
+import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
