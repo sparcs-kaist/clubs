@@ -173,6 +173,9 @@ export abstract class BaseRepository<
 
             // 배열인 경우 IN 연산자 사용
             if (Array.isArray(value)) {
+              if (value.length === 0) {
+                throw new Error(`Value Array is empty: ${key} ${value}`);
+              }
               whereClause.push(inArray(tableField, value));
             }
             // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)

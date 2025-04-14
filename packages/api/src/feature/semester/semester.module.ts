@@ -2,6 +2,9 @@ import { Module } from "@nestjs/common";
 import { DrizzleModule } from "src/drizzle/drizzle.module";
 
 import { SemesterController } from "./controller/semester.controller";
+import { ActivityDeadlinePublicService } from "./publicService/activity.deadline.public.service";
+import { FundingDeadlinePublicService } from "./publicService/funding.deadline.public.service";
+import { RegistrationDeadlinePublicService } from "./publicService/registration.deadline.public.service";
 import { ActivityDeadlineRepository } from "./repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "./repository/activity.duration.repository";
 import { FundingDeadlineRepository } from "./repository/funding.deadline.repository";
@@ -16,6 +19,9 @@ import { SemesterService } from "./service/semester.service";
   providers: [
     SemesterService,
     SemesterPublicService,
+    ActivityDeadlinePublicService,
+    FundingDeadlinePublicService,
+    RegistrationDeadlinePublicService,
     SemesterRepository,
     RegistrationDeadlineRepository,
     FundingDeadlineRepository,
@@ -24,12 +30,9 @@ import { SemesterService } from "./service/semester.service";
   ],
   exports: [
     SemesterPublicService,
-    // TODO:Repository 외부 의존성 삭제
-    RegistrationDeadlineRepository,
-    FundingDeadlineRepository,
-    ActivityDeadlineRepository,
-    ActivityDurationRepository,
-    SemesterRepository,
+    ActivityDeadlinePublicService,
+    FundingDeadlinePublicService,
+    RegistrationDeadlinePublicService,
   ],
 })
 export default class SemesterModule {}
