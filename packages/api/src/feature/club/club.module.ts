@@ -4,7 +4,7 @@ import { DrizzleModule } from "src/drizzle/drizzle.module";
 import DivisionModule from "../division/division.module";
 import DivisionRepository from "../division/repository/division.repository";
 import RegistrationModule from "../registration/registration.module";
-import SemesterModule from "../semester/semester.module";
+import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import { ClubController } from "./controller/club.controller";
 import { ClubDelegateDRepository } from "./delegate/club.club-delegate-d.repository";

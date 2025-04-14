@@ -86,6 +86,7 @@ export class ActivityDurationPublicService extends BasePublicService<
     const res = await super.load({
       ...query,
       semesterId: semesterIdParam,
+      durationEnum: query?.durationEnum ?? ActivityDurationTypeEnum.Regular,
     });
     return res;
   }

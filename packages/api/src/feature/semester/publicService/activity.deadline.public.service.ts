@@ -19,7 +19,7 @@ type ActivityDeadlineSearchQuery = {
 type ActivityDeadlineLoadQuery = {
   semesterId?: number;
   date?: Date;
-  deadlineEnum?: ActivityDeadlineEnum;
+  deadlineEnum: ActivityDeadlineEnum;
 };
 type ActivityDeadlineIsQuery = {
   semesterId?: number;
@@ -32,9 +32,9 @@ type ActivityDeadlineIsQuery = {
 export class ActivityDeadlinePublicService extends BasePublicService<
   MActivityDeadline,
   ActivityDeadlineQuery,
-  ActivityDeadlineLoadQuery,
+  ActivityDeadlineSearchQuery,
   ActivityDeadlineIsQuery,
-  ActivityDeadlineSearchQuery
+  ActivityDeadlineLoadQuery
 > {
   constructor(
     private readonly activityDeadlineRepository: ActivityDeadlineRepository,
@@ -103,11 +103,9 @@ export class ActivityDeadlinePublicService extends BasePublicService<
   async load(query: ActivityDeadlineLoadQuery): Promise<MActivityDeadline> {
     const semesterIdParam =
       query.semesterId ??
-      (
-        await this.semesterPublicService.load({
-          date: query.date ?? new Date(),
-        })
-      ).id;
+      (await this.semesterPublicService.loadId({
+        date: query.date ?? new Date(),
+      }));
 
     const res = await super.load({
       ...query,

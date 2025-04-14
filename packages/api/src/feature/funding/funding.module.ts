@@ -4,7 +4,7 @@ import { DrizzleModule } from "src/drizzle/drizzle.module";
 import ActivityModule from "../activity/activity.module";
 import ClubModule from "../club/club.module";
 import FileModule from "../file/file.module";
-import SemesterModule from "../semester/semester.module";
+import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import FundingController from "./controller/funding.controller";
 import FundingCommentRepository from "./repository/funding.comment.repository";

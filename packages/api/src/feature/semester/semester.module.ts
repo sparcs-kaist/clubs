@@ -3,6 +3,7 @@ import { DrizzleModule } from "src/drizzle/drizzle.module";
 
 import { SemesterController } from "./controller/semester.controller";
 import { ActivityDeadlinePublicService } from "./publicService/activity.deadline.public.service";
+import { ActivityDurationPublicService } from "./publicService/activity.duration.public.service";
 import { FundingDeadlinePublicService } from "./publicService/funding.deadline.public.service";
 import { RegistrationDeadlinePublicService } from "./publicService/registration.deadline.public.service";
 import { SemesterPublicService } from "./publicService/semester.public.service";
@@ -19,20 +20,22 @@ import { SemesterService } from "./service/semester.service";
   providers: [
     SemesterService,
     SemesterPublicService,
+    ActivityDurationPublicService,
     ActivityDeadlinePublicService,
     FundingDeadlinePublicService,
     RegistrationDeadlinePublicService,
     SemesterRepository,
-    RegistrationDeadlineRepository,
-    FundingDeadlineRepository,
-    ActivityDeadlineRepository,
     ActivityDurationRepository,
+    ActivityDeadlineRepository,
+    FundingDeadlineRepository,
+    RegistrationDeadlineRepository,
   ],
   exports: [
     SemesterPublicService,
+    ActivityDurationPublicService,
     ActivityDeadlinePublicService,
     FundingDeadlinePublicService,
     RegistrationDeadlinePublicService,
   ],
 })
-export default class SemesterModule {}
+export class SemesterModule {}

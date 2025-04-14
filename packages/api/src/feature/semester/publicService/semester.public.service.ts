@@ -6,8 +6,8 @@ import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.ser
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import { MSemester, SemesterQuery } from "../model/semester.model";
+import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
 import { SemesterRepository } from "../repository/semester.repository";
-import { RegistrationDeadlinePublicService } from "./registration.deadline.public.service";
 
 type SemesterSearchQuery = {};
 
@@ -30,7 +30,7 @@ export class SemesterPublicService extends BasePublicService<
 > {
   constructor(
     private readonly semesterRepository: SemesterRepository,
-    private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private readonly registrationDeadlineRepository: RegistrationDeadlineRepository,
   ) {
     super(semesterRepository, MSemester);
   }
@@ -97,11 +97,12 @@ export class SemesterPublicService extends BasePublicService<
   async loadCheckRegistrationDeadline(): Promise<MSemester> {
     const today = new Date();
     const semester = await this.load();
-    const checkFlag = await this.registrationDeadlinePublicService.is({
+    const checkFlag = await this.registrationDeadlineRepository.count({
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
       date: today,
     });
-    if (checkFlag) {
+    if (checkFlag > 0) {
+      // 지금이 동아리 등록 제출 기간일 경우
       const previousSemester = await this.semesterRepository
         .find({
           endTerm: semester.startTerm,
