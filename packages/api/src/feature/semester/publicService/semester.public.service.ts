@@ -1,9 +1,13 @@
 import { Injectable } from "@nestjs/common";
 
+import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
+import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import { MSemester, SemesterQuery } from "../model/semester.model";
 import { SemesterRepository } from "../repository/semester.repository";
+import { RegistrationDeadlinePublicService } from "./registration.deadline.public.service";
 
 type SemesterSearchQuery = {};
 
@@ -24,7 +28,10 @@ export class SemesterPublicService extends BasePublicService<
   SemesterIsQuery,
   SemesterSearchQuery
 > {
-  constructor(private readonly semesterRepository: SemesterRepository) {
+  constructor(
+    private readonly semesterRepository: SemesterRepository,
+    private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+  ) {
     super(semesterRepository, MSemester);
   }
 
@@ -77,6 +84,43 @@ export class SemesterPublicService extends BasePublicService<
    */
   async loadId(query?: SemesterLoadQuery): Promise<number> {
     const semester = await this.load(query);
+    return semester.id;
+  }
+
+  // TODO: 아래 두 함수 적용해야 할 곳 (등록기간에 이전 학기 정보로 표기되어야 하는 곳들)에 적용해야 함
+  /**
+   * @description 만약 지금이 동아리 등록 제출 기간일 경우 이전 학기를, 그렇지 않으면 현재 학기를 반환합니다.
+   * @param date? Date, 기본값: 현재 시간
+   * @returns MSemester
+   * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
+   */
+  async loadCheckRegistrationDeadline(): Promise<MSemester> {
+    const today = new Date();
+    const semester = await this.load();
+    const checkFlag = await this.registrationDeadlinePublicService.is({
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+      date: today,
+    });
+    if (checkFlag) {
+      const previousSemester = await this.semesterRepository
+        .find({
+          endTerm: semester.startTerm,
+        })
+        .then(takeOnlyOne());
+      return previousSemester;
+    }
+    return semester;
+  }
+
+  /**
+   * @description 만약 지금이 동아리 등록 제출 기간일 경우 이전 학기를, 그렇지 않으면 현재 학기를 반환합니다.
+   * @description 위 조건의 id를 반환합니다.
+   * @param date? Date, 기본값: 현재 시간
+   * @returns id of the semester
+   * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
+   */
+  async loadIdCheckRegistrationDeadline(): Promise<number> {
+    const semester = await this.loadCheckRegistrationDeadline();
     return semester.id;
   }
 }
