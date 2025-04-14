@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { IActivityResponseSummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivityResponseSummary } from "@clubs/interface/api/activity/type/activity.type";
 
 import ActivityRepository from "@sparcs-clubs/api/feature/activity/repository/activity.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";

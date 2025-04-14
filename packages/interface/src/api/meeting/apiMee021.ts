@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { MeetingAgendaEntityTypeEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
-import { zId } from "@sparcs-clubs/interface/common/type/id.type";
+import { MeetingAgendaEntityTypeEnum } from "@clubs/interface/common/enum/meeting.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
  * @version v0.1

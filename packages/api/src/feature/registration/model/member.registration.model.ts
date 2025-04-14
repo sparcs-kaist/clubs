@@ -1,12 +1,13 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { IMemberRegistration } from "@clubs/domain/member-registration/member-registration";
+
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 import {
   Exclude,
   filterExcludedFields,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 import {
   MEntity,

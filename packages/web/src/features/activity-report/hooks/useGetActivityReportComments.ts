@@ -1,4 +1,4 @@
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import { Comment } from "@sparcs-clubs/web/types/comment";

@@ -1,7 +1,7 @@
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 export interface RegisterClubList {
   items: RegisterClub[];

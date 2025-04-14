@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@sparcs-clubs/interface/common/commonString";
+import { zClubName } from "@clubs/interface/common/commonString";
 
 /**
  * @version v0.1

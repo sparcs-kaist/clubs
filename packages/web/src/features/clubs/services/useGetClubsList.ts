@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiClb001, {
   ApiClb001ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
+} from "@clubs/interface/api/club/endpoint/apiClb001";
 
 import mockupData from "@sparcs-clubs/web/features/clubs/services/_mock/mockupClubData";
 import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";

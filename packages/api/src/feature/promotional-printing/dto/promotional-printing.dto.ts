@@ -1,9 +1,9 @@
-import type { ApiPrt001ResponseOk } from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt001";
+import type { ApiPrt001ResponseOk } from "@clubs/interface/api/promotional-printing/endpoint/apiPrt001";
 import type {
   ApiPrt002RequestBody,
   ApiPrt002RequestParam,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
-import type { ApiPrt005ResponseOk } from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+import type { ApiPrt005ResponseOk } from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
 
 export type GetStudentPromotionalPrintingsOrdersReturn = Array<
   Pick<

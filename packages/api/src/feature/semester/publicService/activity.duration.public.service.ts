@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { ActivityDurationTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 

@@ -7,7 +7,7 @@ import session from "express-session";
 import * as swaggerUi from "swagger-ui-express";
 import { ZodError } from "zod";
 
-import { generateOpenAPI } from "@sparcs-clubs/interface/open-api";
+import { generateOpenAPI } from "@clubs/interface/open-api";
 
 import { env } from "@sparcs-clubs/api/env";
 

@@ -1,4 +1,4 @@
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 import { getFullSemester } from "@sparcs-clubs/web/utils/getSemester";
 

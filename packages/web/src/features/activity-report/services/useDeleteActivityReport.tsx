@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import apiAct004, {
   ApiAct004RequestParam,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct004";
+} from "@clubs/interface/api/activity/endpoint/apiAct004";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

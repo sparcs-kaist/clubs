@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import type { ApiUsr004ResponseCreated } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr004";
-import type { ApiUsr005ResponseOk } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr005";
+import type { ApiUsr004ResponseCreated } from "@clubs/interface/api/user/endpoint/apiUsr004";
+import type { ApiUsr005ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr005";
 
 import PrivacyPolicyRepository from "./privacy-policy.repository";
 

@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   ApiClb004RequestParam,
   ApiClb004ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
-import apiClb004 from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+} from "@clubs/interface/api/club/endpoint/apiClb004";
+import apiClb004 from "@clubs/interface/api/club/endpoint/apiClb004";
 
 import {
   axiosClientWithAuth,

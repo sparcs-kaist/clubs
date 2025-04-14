@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useHasAdvisor from "@sparcs-clubs/web/features/clubs/hooks/useHasAdvisor";

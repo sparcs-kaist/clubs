@@ -1,5 +1,5 @@
-import type { ApiReg016RequestParam } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg016";
-import apiReg016 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg016";
+import type { ApiReg016RequestParam } from "@clubs/interface/api/registration/endpoint/apiReg016";
+import apiReg016 from "@clubs/interface/api/registration/endpoint/apiReg016";
 
 import {
   axiosClientWithAuth,

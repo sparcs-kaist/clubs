@@ -1,4 +1,4 @@
-import { RegistrationStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import {
   ProgressCheckSectionStatusEnum,

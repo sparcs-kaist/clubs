@@ -3,7 +3,7 @@ import { Controller, Get, Query, UsePipes } from "@nestjs/common";
 import apiMee005, {
   ApiMee005RequestQuery,
   ApiMee005ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee005";
+} from "@clubs/interface/api/meeting/apiMee005";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

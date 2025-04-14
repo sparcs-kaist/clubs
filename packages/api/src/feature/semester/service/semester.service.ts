@@ -3,10 +3,10 @@ import { Injectable } from "@nestjs/common";
 import type {
   ApiSem001RequestQuery,
   ApiSem001ResponseOK,
-} from "@sparcs-clubs/interface/api/semester/apiSem001";
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/api/semester/apiSem001";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";

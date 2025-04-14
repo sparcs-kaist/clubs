@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";

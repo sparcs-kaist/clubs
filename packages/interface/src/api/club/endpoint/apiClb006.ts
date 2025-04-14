@@ -1,9 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zUserName } from "@sparcs-clubs/interface/common/commonString";
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { zUserName } from "@clubs/interface/common/commonString";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 /**
  * @version v0.1

@@ -11,7 +11,7 @@ import {
 } from "src/drizzle/schema/rental.schema";
 import { Student } from "src/drizzle/schema/user.schema";
 
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 interface Period {
   desiredStart?: Date;

@@ -4,8 +4,8 @@ import { AxiosError } from "axios";
 import type {
   ApiClb015ResponseNoContent,
   ApiClb015ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
-import apiClb015 from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
+} from "@clubs/interface/api/club/endpoint/apiClb015";
+import apiClb015 from "@clubs/interface/api/club/endpoint/apiClb015";
 
 import {
   axiosClientWithAuth,

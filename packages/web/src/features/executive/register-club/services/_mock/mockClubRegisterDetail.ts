@@ -1,5 +1,5 @@
-// import { ApiReg015ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+// import { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { ProgressCheckSectionStatusEnum } from "@sparcs-clubs/web/common/components/ProgressStatus/_atomic/progressCheckStationStatus";
 

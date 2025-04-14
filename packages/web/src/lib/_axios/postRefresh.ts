@@ -2,7 +2,7 @@ import axios from "axios";
 
 import apiAut002, {
   ApiAut002ResponseCreated,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut002";
+} from "@clubs/interface/api/auth/endpoint/apiAut002";
 
 import { env } from "@sparcs-clubs/web/env";
 

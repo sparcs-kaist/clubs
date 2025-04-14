@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 

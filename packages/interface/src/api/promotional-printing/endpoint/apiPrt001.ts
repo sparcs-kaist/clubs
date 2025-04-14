@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   PromotionalPrintingOrderStatusEnum,
   PromotionalPrintingSizeEnum,
-} from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+} from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 /**
  * @version v0.1

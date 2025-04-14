@@ -1,4 +1,4 @@
-# [ Academic Relations #002 ] SPARCS Clubs
+# SPARCS Clubs
 
 ```
   ____  ____   _    ____   ____ ____     ____ _    _   _ ____ ____  
@@ -36,4 +36,4 @@ pnpm generate
 pnpm dev
 ```
 
-학술협력팀 최고! :)
+Clubs 최고! :)

@@ -3,9 +3,10 @@
   "globalDependencies": [".env"],
   "tasks": {
     "dev": {
-      "dependsOn": ["@sparcs-clubs/interface#build"],
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "build": {
       "dependsOn": ["^build"]

@@ -14,42 +14,42 @@ import { Response } from "express";
 import type {
   ApiClb006RequestParam,
   ApiClb006ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
-import apiClb006 from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
+} from "@clubs/interface/api/club/endpoint/apiClb006";
+import apiClb006 from "@clubs/interface/api/club/endpoint/apiClb006";
 import type {
   ApiClb007RequestBody,
   ApiClb007RequestParam,
   ApiClb007ResponseCreated,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb007";
-import apiClb007 from "@sparcs-clubs/interface/api/club/endpoint/apiClb007";
+} from "@clubs/interface/api/club/endpoint/apiClb007";
+import apiClb007 from "@clubs/interface/api/club/endpoint/apiClb007";
 import type {
   ApiClb008RequestParam,
   ApiClb008ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb008";
-import apiClb008 from "@sparcs-clubs/interface/api/club/endpoint/apiClb008";
+} from "@clubs/interface/api/club/endpoint/apiClb008";
+import apiClb008 from "@clubs/interface/api/club/endpoint/apiClb008";
 import type {
   ApiClb011RequestParam,
   ApiClb011ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb011";
-import apiClb011 from "@sparcs-clubs/interface/api/club/endpoint/apiClb011";
+} from "@clubs/interface/api/club/endpoint/apiClb011";
+import apiClb011 from "@clubs/interface/api/club/endpoint/apiClb011";
 import type {
   ApiClb012RequestParam,
   ApiClb012ResponseCreated,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb012";
-import apiClb012 from "@sparcs-clubs/interface/api/club/endpoint/apiClb012";
-import type { ApiClb013ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
-import apiClb013 from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
+} from "@clubs/interface/api/club/endpoint/apiClb012";
+import apiClb012 from "@clubs/interface/api/club/endpoint/apiClb012";
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
+import apiClb013 from "@clubs/interface/api/club/endpoint/apiClb013";
 import type {
   ApiClb014RequestBody,
   ApiClb014RequestParam,
   ApiClb014ResponseCreated,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb014";
-import apiClb014 from "@sparcs-clubs/interface/api/club/endpoint/apiClb014";
+} from "@clubs/interface/api/club/endpoint/apiClb014";
+import apiClb014 from "@clubs/interface/api/club/endpoint/apiClb014";
 import type {
   ApiClb015ResponseNoContent,
   ApiClb015ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
-import apiClb015 from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
+} from "@clubs/interface/api/club/endpoint/apiClb015";
+import apiClb015 from "@clubs/interface/api/club/endpoint/apiClb015";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

@@ -3,10 +3,10 @@ import { overlay } from "overlay-kit";
 import React, { useState } from "react";
 import styled from "styled-components";
 
-import { IFundingCommentResponse } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-import { IFundingResponse } from "@sparcs-clubs/interface/api/funding/type/funding.type";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { IFundingCommentResponse } from "@clubs/interface/api/funding/type/funding.comment.type";
+import { IFundingResponse } from "@clubs/interface/api/funding/type/funding.type";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";

@@ -1,11 +1,11 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IFundingDeadline } from "@sparcs-clubs/interface/api/semester/type/deadline.type";
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { IFundingDeadline } from "@clubs/interface/api/semester/type/deadline.type";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 import {
   filterExcludedFields,
   OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+} from "@clubs/interface/common/utils/field-operations";
 
 import {
   MEntity,

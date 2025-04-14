@@ -1,10 +1,10 @@
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationApplicationStudentStatusEnum,
   RegistrationDeadlineEnum,
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 const mockClubRegister = {
   registrations: [

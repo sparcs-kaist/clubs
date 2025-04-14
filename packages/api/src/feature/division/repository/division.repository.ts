@@ -2,8 +2,8 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { IDivisionSummary } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { IDivisionSummary } from "@clubs/interface/api/club/type/club.type";
+import { IDivision } from "@clubs/interface/api/division/type/division.type";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {

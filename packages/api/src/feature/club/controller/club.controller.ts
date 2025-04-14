@@ -11,38 +11,38 @@ import {
 import type {
   ApiAct009RequestQuery,
   ApiAct009ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct009";
-import apiAct009 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct009";
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
+import apiAct009 from "@clubs/interface/api/activity/endpoint/apiAct009";
 import apiClb001, {
   ApiClb001ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
+} from "@clubs/interface/api/club/endpoint/apiClb001";
 import apiClb002, {
   ApiClb002RequestParam,
   ApiClb002ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
+} from "@clubs/interface/api/club/endpoint/apiClb002";
 import apiClb003, {
   ApiClb003ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb003";
+} from "@clubs/interface/api/club/endpoint/apiClb003";
 import apiClb004, {
   ApiClb004RequestParam,
   ApiClb004ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+} from "@clubs/interface/api/club/endpoint/apiClb004";
 import apiClb005, {
   ApiClb005RequestBody,
   ApiClb005RequestParam,
   ApiClb005ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb005";
+} from "@clubs/interface/api/club/endpoint/apiClb005";
 import apiClb009, {
   ApiClb009RequestParam,
   ApiClb009ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb009";
+} from "@clubs/interface/api/club/endpoint/apiClb009";
 import apiClb010, {
   ApiClb010RequestParam,
   ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
+} from "@clubs/interface/api/club/endpoint/apiClb010";
 import apiClb016, {
   ApiClb016ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb016";
+} from "@clubs/interface/api/club/endpoint/apiClb016";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {

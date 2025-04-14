@@ -1,70 +1,67 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { IFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
+import { IFileSummary } from "@clubs/interface/api/file/type/file.type";
 import {
   ApiFnd001RequestBody,
   ApiFnd001ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd001";
+} from "@clubs/interface/api/funding/endpoint/apiFnd001";
 import {
   ApiFnd002RequestParam,
   ApiFnd002ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd002";
+} from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import {
   ApiFnd003RequestBody,
   ApiFnd003RequestParam,
   ApiFnd003ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd003";
+} from "@clubs/interface/api/funding/endpoint/apiFnd003";
 import {
   ApiFnd004RequestParam,
   ApiFnd004ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd004";
+} from "@clubs/interface/api/funding/endpoint/apiFnd004";
 import {
   ApiFnd005RequestQuery,
   ApiFnd005ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd005";
+} from "@clubs/interface/api/funding/endpoint/apiFnd005";
 import {
   ApiFnd006RequestParam,
   ApiFnd006RequestQuery,
   ApiFnd006ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd006";
-import { ApiFnd007ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd007";
-import { ApiFnd008ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
+} from "@clubs/interface/api/funding/endpoint/apiFnd006";
+import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
+import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import {
   ApiFnd009RequestParam,
   ApiFnd009ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd009";
+} from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import {
   ApiFnd010RequestParam,
   ApiFnd010ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
-import { ApiFnd012ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd012";
-import { ApiFnd013ResponseCreated } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd013";
+} from "@clubs/interface/api/funding/endpoint/apiFnd010";
+import { ApiFnd012ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd012";
+import { ApiFnd013ResponseCreated } from "@clubs/interface/api/funding/endpoint/apiFnd013";
 import {
   ApiFnd014RequestBody,
   ApiFnd014ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd014";
+} from "@clubs/interface/api/funding/endpoint/apiFnd014";
 import {
   ApiFnd015RequestBody,
   ApiFnd015ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd015";
+} from "@clubs/interface/api/funding/endpoint/apiFnd015";
 import {
   ApiFnd016RequestQuery,
   ApiFnd016ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
-import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
+} from "@clubs/interface/api/funding/endpoint/apiFnd016";
+import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
   IFundingResponse,
-} from "@sparcs-clubs/interface/api/funding/type/funding.type";
-import { IActivityDuration } from "@sparcs-clubs/interface/api/semester/type/activity.duration.type";
-import {
-  IExecutive,
-  IStudent,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/funding/type/funding.type";
+import { IActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
+import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   FundingDeadlineEnum,
   FundingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";

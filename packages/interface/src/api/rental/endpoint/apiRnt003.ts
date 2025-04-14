@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 /**
  * @version v0.1

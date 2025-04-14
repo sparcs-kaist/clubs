@@ -1,8 +1,8 @@
 import type {
   ApiReg017RequestBody,
   ApiReg017RequestParam,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg017";
-import apiReg017 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg017";
+} from "@clubs/interface/api/registration/endpoint/apiReg017";
+import apiReg017 from "@clubs/interface/api/registration/endpoint/apiReg017";
 
 import {
   axiosClientWithAuth,

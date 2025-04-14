@@ -17,70 +17,70 @@ import { Response } from "express";
 import apiReg001, {
   ApiReg001RequestBody,
   ApiReg001ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg001";
+} from "@clubs/interface/api/registration/endpoint/apiReg001";
 import apiReg002, {
   ApiReg002ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg002";
+} from "@clubs/interface/api/registration/endpoint/apiReg002";
 import apiReg003, {
   ApiReg003ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg003";
+} from "@clubs/interface/api/registration/endpoint/apiReg003";
 import apiReg009, {
   ApiReg009RequestBody,
   ApiReg009RequestParam,
   ApiReg009ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg009";
+} from "@clubs/interface/api/registration/endpoint/apiReg009";
 import apiReg010, {
   ApiReg010RequestParam,
   ApiReg010ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg010";
+} from "@clubs/interface/api/registration/endpoint/apiReg010";
 import apiReg011, {
   ApiReg011RequestParam,
   ApiReg011ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import { ApiReg012ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
+} from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg014, {
   ApiReg014RequestQuery,
   ApiReg014ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
+} from "@clubs/interface/api/registration/endpoint/apiReg014";
 import apiReg015, {
   ApiReg015RequestParam,
   ApiReg015ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
+} from "@clubs/interface/api/registration/endpoint/apiReg015";
 import apiReg016, {
   ApiReg016RequestParam,
   ApiReg016ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg016";
+} from "@clubs/interface/api/registration/endpoint/apiReg016";
 import apiReg017, {
   ApiReg017RequestBody,
   ApiReg017RequestParam,
   ApiReg017ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg017";
+} from "@clubs/interface/api/registration/endpoint/apiReg017";
 import apiReg018, {
   ApiReg018ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg018";
-import type { ApiReg021ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg021";
+} from "@clubs/interface/api/registration/endpoint/apiReg018";
+import type { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg021";
 import type {
   ApiReg022RequestParam,
   ApiReg022ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg022";
-import apiReg022 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg022";
+} from "@clubs/interface/api/registration/endpoint/apiReg022";
+import apiReg022 from "@clubs/interface/api/registration/endpoint/apiReg022";
 import type {
   ApiReg023RequestParam,
   ApiReg023ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg023";
-import apiReg023 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg023";
+} from "@clubs/interface/api/registration/endpoint/apiReg023";
+import apiReg023 from "@clubs/interface/api/registration/endpoint/apiReg023";
 import apiReg024, {
   ApiReg024RequestQuery,
   ApiReg024ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg024";
+} from "@clubs/interface/api/registration/endpoint/apiReg024";
 import apiReg025, {
   ApiReg025RequestUrl,
   ApiReg025ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg025";
+} from "@clubs/interface/api/registration/endpoint/apiReg025";
 import apiReg027, {
   ApiReg027RequestUrl,
   ApiReg027ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg027";
+} from "@clubs/interface/api/registration/endpoint/apiReg027";
 import {
   apiReg005,
   ApiReg005RequestBody,
@@ -111,7 +111,7 @@ import {
   apiReg028,
   ApiReg028RequestUrl,
   ApiReg028ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/index";
+} from "@clubs/interface/api/registration/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
