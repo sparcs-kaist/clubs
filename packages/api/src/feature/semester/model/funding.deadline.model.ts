@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IFundingDeadline } from "@clubs/interface/api/semester/type/deadline.type";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 import {
   filterExcludedFields,
   OperationType,
@@ -17,7 +18,8 @@ export type FundingDeadlineFromDb = InferSelectModel<typeof FundingDeadlineD>;
 export type FundingDeadlineToDb = InferInsertModel<typeof FundingDeadlineD>;
 
 export type FundingDeadlineQuery = {
-  deadlineEnum?: number;
+  deadlineEnum?: FundingDeadlineEnum;
+  deadlineEnums?: FundingDeadlineEnum[];
   semesterId?: number;
   // specialKeys
   duration?: {
@@ -60,6 +62,7 @@ export class MFundingDeadline extends MEntity implements IFundingDeadline {
   static fieldMap(field: keyof FundingDeadlineQuery): MySqlColumnType {
     const fieldMappings: Record<keyof FundingDeadlineQuery, MySqlColumnType> = {
       deadlineEnum: FundingDeadlineD.deadlineEnum,
+      deadlineEnums: FundingDeadlineD.deadlineEnum,
       semesterId: FundingDeadlineD.semesterId,
       duration: null,
       date: null,

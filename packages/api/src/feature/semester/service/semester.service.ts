@@ -6,7 +6,9 @@ import type {
 } from "@clubs/interface/api/semester/apiSem001";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
+import { MSemester } from "../model/semester.model";
 import { SemesterRepository } from "../repository/semester.repository";
 
 @Injectable()
@@ -22,23 +24,24 @@ export class SemesterService {
     query: ApiSem001RequestQuery;
   }): Promise<ApiSem001ResponseOK> {
     const { pageOffset, itemCount } = param.query;
-    const today = new Date();
-    const semesters = await this.semesterRepository.find({
-      date: today,
-      pagination: {
-        offset: pageOffset,
-        itemCount,
-      },
-      orderBy: {
-        endTerm: OrderByTypeEnum.DESC,
-      },
-    });
+    const semesters = await this.semesterRepository
+      .find({
+        date: new Date(),
+        pagination: {
+          offset: pageOffset,
+          itemCount,
+        },
+        orderBy: {
+          endTerm: OrderByTypeEnum.DESC,
+        },
+      })
+      .then(takeOnlyOne(MSemester));
 
     const total = await this.semesterRepository.find({});
     const totalCount = total.length;
 
     return {
-      semesters,
+      semesters: [semesters],
       total: totalCount,
       offset: param.query.pageOffset,
     };

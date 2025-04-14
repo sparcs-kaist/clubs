@@ -173,6 +173,9 @@ export abstract class BaseRepository<
 
             // 배열인 경우 IN 연산자 사용
             if (Array.isArray(value)) {
+              if (value.length === 0) {
+                throw new Error(`Value Array is empty: ${key} ${value}`);
+              }
               whereClause.push(inArray(tableField, value));
             }
             // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
@@ -363,7 +366,7 @@ export abstract class BaseRepository<
   // 고급 연산자 처리 (gt, lt, gte, lte, like 등)
   protected processAdvancedOperators(
     queryField: keyof Query,
-    conditions: Record<MysqlQueryConditionOperators, unknown>,
+    conditions: Partial<Record<MysqlQueryConditionOperators, unknown>>,
   ): SQL {
     // Query 필드를 테이블 필드로 변환
     const tableField = this.getTableField(queryField);
@@ -494,9 +497,7 @@ export abstract class BaseRepository<
 
   async fetchTx(tx: DrizzleTransaction, id: Id): Promise<Model> {
     const param = { id } as BaseRepositoryQuery<Query, Id>;
-    return this.findTx(tx, param).then(
-      takeOnlyOne<Model>(this.modelClass.modelName),
-    );
+    return this.findTx(tx, param).then(takeOnlyOne(this.modelClass.modelName));
   }
 
   // id(ids) 로 쿼리하는 함수들

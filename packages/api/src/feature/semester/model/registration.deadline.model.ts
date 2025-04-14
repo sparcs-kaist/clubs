@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { IRegistrationDeadline } from "@clubs/interface/api/semester/type/deadline.type";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 import {
   filterExcludedFields,
   OperationType,
@@ -24,7 +25,8 @@ export type RegistrationDeadlineToDb = InferInsertModel<
 >;
 
 export type RegistrationDeadlineQuery = {
-  deadlineEnum?: number;
+  deadlineEnum?: RegistrationDeadlineEnum;
+  deadlineEnums?: RegistrationDeadlineEnum[];
   semesterId?: number;
   startTerm?: Date;
   endTerm?: Date;
@@ -78,6 +80,7 @@ export class MRegistrationDeadline
       MySqlColumnType
     > = {
       deadlineEnum: RegistrationDeadlineD.registrationDeadlineEnum,
+      deadlineEnums: RegistrationDeadlineD.registrationDeadlineEnum,
       semesterId: RegistrationDeadlineD.semesterId,
       duration: null,
       date: null,

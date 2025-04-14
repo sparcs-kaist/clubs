@@ -30,6 +30,7 @@ import {
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "./club.club-delegate-d.repository";
@@ -44,6 +45,7 @@ export default class ClubDelegateService {
     private clubDelegateDRepository: ClubDelegateDRepository,
     private userPublicService: UserPublicService,
     private clubPublicService: ClubPublicService,
+    private semesterPublicService: SemesterPublicService,
   ) {}
 
   /**
@@ -556,8 +558,7 @@ export default class ClubDelegateService {
         );
     }
 
-    const semesterId =
-      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     logger.debug(semesterId);
     const result =
       await this.clubDelegateDRepository.selectDelegateCandidatesByClubId({

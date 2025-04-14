@@ -7,6 +7,11 @@ import type {
   ApiAct003RequestParam,
 } from "@clubs/interface/api/activity/endpoint/apiAct003";
 import type { ApiAct005ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct005";
+import type {
+  ApiAct006RequestParam,
+  ApiAct006RequestQuery,
+  ApiAct006ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct006";
 import type { ApiAct007RequestBody } from "@clubs/interface/api/activity/endpoint/apiAct007";
 import type {
   ApiAct008RequestBody,
@@ -69,13 +74,14 @@ import {
 } from "@clubs/interface/common/enum/activity.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
-import { ActivityDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.deadline.repository";
-import { ActivityDurationRepository } from "@sparcs-clubs/api/feature/semester/repository/activity.duration.repository";
+import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
+import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
@@ -86,13 +92,14 @@ export default class ActivityService {
   constructor(
     private activityRepository: ActivityRepository,
     private activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
-    private activityActivityTermRepository: ActivityDurationRepository,
-    private activityDeadlineRepository: ActivityDeadlineRepository,
     private clubPublicService: ClubPublicService,
     private filePublicService: FilePublicService,
     private registrationPublicService: RegistrationPublicService,
     private clubTRepository: ClubTRepository,
     private userPublicService: UserPublicService,
+    private semesterPublicService: SemesterPublicService,
+    private activityDeadlinePublicService: ActivityDeadlinePublicService,
+    private activityDurationPublicService: ActivityDurationPublicService,
   ) {}
 
   /**
@@ -110,38 +117,6 @@ export default class ActivityService {
       throw new HttpException("No such activity", HttpStatus.NOT_FOUND);
 
     return activities[0];
-  }
-
-  /**
-   * @param date 조회하고 싶은 활동기간 내부의 임의 날짜
-   * @returns 해당 날짜를 포함하는 활동 기간 정보를 리턴합니다.
-   */
-  private async getActivityD(param: { date: Date }) {
-    const activityDs = await this.activityActivityTermRepository.find({
-      date: param.date,
-    });
-    if (activityDs.length > 1)
-      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
-    if (activityDs.length === 0)
-      throw new HttpException(
-        "ActivityD is not set for today",
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-
-    return activityDs[0];
-  }
-
-  /**
-   * @returns 현재 활동보고서를 작성해야 하는 직전학기 정보를 리턴합니다.
-   * ex. 현재 겨울학기일 경우, 여름-가을학기 활동기간을 리턴해야 합니다.
-   */
-  // TODO IN 113: Semester Module 로 이동
-  async getLastActivityD() {
-    const today = getKSTDate();
-    const [activityD] = await this.activityActivityTermRepository.find({
-      date: today,
-    });
-    return activityD;
   }
 
   /**
@@ -179,34 +154,6 @@ export default class ActivityService {
 
   /**
    *
-   * @param enums: ActivityDeadlineEnum의 배열을 받습니다.
-   * @description 오늘이 해당하는 deadlineEnum이 enums에 포함되어있지 않으면 400 exception을 throw
-   * @returns void
-   */
-  private async checkDeadline(param: { enums: Array<ActivityDeadlineEnum> }) {
-    const today = getKSTDate();
-    const todayDeadline = await this.activityDeadlineRepository
-      .find({ date: today })
-      .then(arr => {
-        if (arr.length === 0)
-          throw new HttpException(
-            "Today is not in the range of deadline",
-            HttpStatus.BAD_REQUEST,
-          );
-        return arr[0];
-      });
-    if (
-      param.enums.find(e => Number(e) === todayDeadline.deadlineEnum) ===
-      undefined
-    )
-      throw new HttpException(
-        "Today is not a day for activity deletion",
-        HttpStatus.BAD_REQUEST,
-      );
-  }
-
-  /**
-   *
    * @param clubId
    * @param executiveId
    * @description 동아리의 담당 집행부원을 변경합니다.
@@ -216,7 +163,7 @@ export default class ActivityService {
     clubId: number;
     executiveId: number;
   }) {
-    const activityDId = await this.getLastActivityD().then(e => e.id);
+    const activityDId = await this.activityDurationPublicService.loadId();
     const prevChargedExecutiveId =
       await this.activityClubChargedExecutiveRepository.selectActivityClubChargedExecutiveByClubId(
         { activityDId, clubId: param.clubId },
@@ -276,9 +223,7 @@ export default class ActivityService {
     clubId: number;
   }) {
     const activityDId =
-      param.activityDId !== undefined
-        ? param.activityDId
-        : await this.getLastActivityD().then(e => e.id);
+      param.activityDId ?? (await this.activityDurationPublicService.loadId());
 
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
@@ -293,8 +238,9 @@ export default class ActivityService {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
-    await this.checkDeadline({
-      enums: [
+    await this.activityDeadlinePublicService.search({
+      date: new Date(),
+      deadlineEnums: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
         ActivityDeadlineEnum.Exception,
@@ -316,14 +262,12 @@ export default class ActivityService {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId });
 
-    // const today = getKSTDate();
-    // const activityD = await this.getActivityD({ date: today });
-    const activityD = await this.getLastActivityD();
+    const activityD = await this.activityDurationPublicService.loadId();
 
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         clubId,
-        activityD.id,
+        activityD,
       );
 
     const result = await Promise.all(
@@ -464,9 +408,15 @@ export default class ActivityService {
     await this.checkIsStudentDelegate({ studentId, clubId: body.clubId });
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
-    await this.checkDeadline({
-      enums: [ActivityDeadlineEnum.Writing, ActivityDeadlineEnum.Exception],
-    });
+    await this.activityDeadlinePublicService
+      .search({
+        date: new Date(),
+        deadlineEnums: [
+          ActivityDeadlineEnum.Writing,
+          ActivityDeadlineEnum.Exception,
+        ],
+      })
+      .then(takeExist());
 
     const activities = await this.getActivities({ clubId: body.clubId });
     if (activities.length >= 20) {
@@ -476,24 +426,10 @@ export default class ActivityService {
       );
     }
     // QUESTION: 신청내용중 startTerm과 endTerm이 이번 학기의 활동기간에 맞는지 검사해야 할까요?.
-    const activityD = await this.getLastActivityD();
+    // Answer: 네!!!
+    const activityDId = await this.activityDurationPublicService.loadId();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     // TODO: 현재학기 뿐만 아니라 직전학기 동아리원도 활동 참가자로 포함될 수 있어야 합니다.
-    // const participantIds = await Promise.all(
-    //   body.participants.map(async e => {
-    //     if (
-    //       !(await this.clubPublicService.isStudentBelongsTo(
-    //         e.studentId,
-    //         body.clubId,
-    //       ))
-    //     )
-    //       throw new HttpException(
-    //         "Some student is not belonged to the club",
-    //         HttpStatus.BAD_REQUEST,
-    //       );
-    //     return e.studentId;
-    //   }),
-    // );
     const participantIds = await Promise.all(
       body.participants.map(async e => e.studentId),
     );
@@ -504,7 +440,7 @@ export default class ActivityService {
       ...body,
       evidenceFileIds: body.evidenceFiles.map(row => row.uid),
       participantIds,
-      activityDId: activityD.id,
+      activityDId,
     });
 
     if (!isInsertionSucceed)
@@ -523,16 +459,17 @@ export default class ActivityService {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
-    await this.checkDeadline({
-      enums: [
+    await this.activityDeadlinePublicService.search({
+      date: new Date(),
+      deadlineEnums: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
         ActivityDeadlineEnum.Exception,
       ],
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
-    const lastActivityD = await this.getLastActivityD();
-    if (activity.activityDId !== lastActivityD.id)
+    const activityD = await this.activityDurationPublicService.load();
+    if (activity.activityDId !== activityD.id)
       throw new HttpException(
         "The activity is not the activity of the last activity duration ",
         HttpStatus.BAD_REQUEST,
@@ -540,8 +477,8 @@ export default class ActivityService {
     // 제출한 활동 기간들이 지난 활동기간 이내인지 확인합니다.
     body.durations.forEach(duration => {
       if (
-        lastActivityD.startTerm <= duration.startTerm &&
-        duration.endTerm <= lastActivityD.endTerm
+        activityD.startTerm <= duration.startTerm &&
+        duration.endTerm <= activityD.endTerm
       ) {
         return duration;
       }
@@ -552,19 +489,20 @@ export default class ActivityService {
     });
     // 파일 uuid의 유효성을 검사하지 않습니다.
     // 참여 학생이 지난 활동기간 동아리의 소속원이였는지 확인합니다.
-    const activityDStartSemester =
-      await this.clubPublicService.dateToSemesterId(lastActivityD.startTerm);
-    const activityDEndSemester = await this.clubPublicService.dateToSemesterId(
-      lastActivityD.endTerm,
-    );
+    const activityDStartSemesterId = await this.semesterPublicService.loadId({
+      date: activityD.startTerm,
+    });
+    const activityDEndSemesterId = await this.semesterPublicService.loadId({
+      date: activityD.endTerm,
+    });
     const members = (
       await this.clubPublicService.getMemberFromSemester({
-        semesterId: activityDStartSemester,
+        semesterId: activityDStartSemesterId,
         clubId: activity.clubId,
       })
     ).concat(
       await this.clubPublicService.getMemberFromSemester({
-        semesterId: activityDEndSemester,
+        semesterId: activityDEndSemesterId,
         clubId: activity.clubId,
       }),
     );
@@ -609,7 +547,7 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
 
-    const activityD = await this.getLastActivityD();
+    const activityDId = await this.activityDurationPublicService.loadId();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -645,7 +583,7 @@ export default class ActivityService {
       ...body,
       evidenceFileIds: evidenceFiles.map(row => row.id),
       participantIds,
-      activityDId: activityD.id,
+      activityDId,
       duration: body.durations,
     });
 
@@ -733,11 +671,11 @@ export default class ActivityService {
    * @returns 해당 동아리가 작성한 모든 활동을 REG-011의 리턴 타입에 맞추어 가져옵니다.
    */
   private async getProvisionalActivities(param: { clubId: number }) {
-    const activityDId = await this.getLastActivityD();
+    const activityDId = await this.activityDurationPublicService.loadId();
     const result =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         param.clubId,
-        activityDId.id,
+        activityDId,
       );
     const activities = await Promise.all(
       result.map(async activity => {
@@ -1026,21 +964,18 @@ export default class ActivityService {
    * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
    */
   async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const today = getKSTDate();
-
-    const term = await this.getLastActivityD();
-    const todayDeadline = await this.activityDeadlineRepository
-      .find({
-        date: today,
+    const term = await this.activityDurationPublicService.load();
+    const todayDeadline = await this.activityDeadlinePublicService
+      .search({
+        date: new Date(),
+        deadlineEnums: [
+          ActivityDeadlineEnum.Writing,
+          ActivityDeadlineEnum.Late,
+          ActivityDeadlineEnum.Modification,
+        ],
       })
-      .then(arr => {
-        if (arr.length === 0)
-          throw new HttpException(
-            "Today is not in the range of deadline",
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        return arr[0];
-      });
+      .then(takeExist())
+      .then(takeOne);
     return {
       targetTerm: {
         id: term.id,
@@ -1065,11 +1000,11 @@ export default class ActivityService {
   ): Promise<ApiAct019ResponseOk> {
     await this.checkIsProfessor({ professorId, clubId });
 
-    const activityD = await this.getLastActivityD();
+    const activityDId = await this.activityDurationPublicService.loadId();
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         clubId,
-        activityD.id,
+        activityDId,
       );
 
     const result = await Promise.all(
@@ -1116,12 +1051,12 @@ export default class ActivityService {
   }
 
   async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const activityDId = await this.getLastActivityD().then(e => e.id);
+    const activityDId = await this.activityDurationPublicService.loadId();
     const clubs = await this.clubPublicService.getAtivatedClubs();
 
     const clubinfos = await this.activityRepository.getExecutiveActivitiesClubs(
       {
-        semesterId: await this.clubPublicService.dateToSemesterId(getKSTDate()),
+        semesterId: await this.semesterPublicService.loadId(),
         activityDId,
         clubsList: clubs.map(e => e.club.id),
       },
@@ -1242,7 +1177,7 @@ export default class ActivityService {
     const activities = await this.getActivities({ clubId: param.query.clubId });
     const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
       .selectActivityClubChargedExecutiveByClubId({
-        activityDId: await this.getLastActivityD().then(e => e.id),
+        activityDId: await this.activityDurationPublicService.loadId(),
         clubId: param.query.clubId,
       })
       .then(arr => {
@@ -1368,13 +1303,12 @@ export default class ActivityService {
   async getExecutiveActivitiesClubChargeAvailableExecutives(
     query: ApiAct027RequestQuery,
   ): Promise<ApiAct027ResponseOk> {
-    const nowKST = getKSTDate();
-    const semester = await this.clubPublicService.fetchSemester(nowKST);
+    const semesterId = await this.semesterPublicService.loadId();
     const { clubIds } = query;
 
     // TODO: 지금은 entity로 불러오는데, id만 들고 오는 public service 및 repository 를 만들어서 한다면 좀더 효율이 높아질 수 있음
     const [clubMembers, executives] = await Promise.all([
-      this.clubPublicService.getUnionMemberSummaries(semester.id, clubIds),
+      this.clubPublicService.getUnionMemberSummaries(semesterId, clubIds),
       this.userPublicService.getCurrentExecutiveSummaries(),
     ]);
 
@@ -1399,10 +1333,10 @@ export default class ActivityService {
       );
     }
 
-    const activityD = await this.getLastActivityD();
+    const activityDId = await this.activityDurationPublicService.loadId();
     const activities = await this.activityRepository.fetchAvailableSummaries(
       clubId,
-      activityD.id,
+      activityDId,
     );
 
     return {
@@ -1492,6 +1426,45 @@ export default class ActivityService {
       })),
       evidenceFiles,
       participants,
+    };
+  }
+
+  async getStudentActivitiesActivityTerm(
+    param: ApiAct006RequestParam,
+    query: ApiAct006RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct006ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.checkIsStudentDelegate({ studentId, clubId: query.clubId });
+    const activities =
+      await this.activityRepository.selectActivityByClubIdAndActivityDId(
+        query.clubId,
+        param.activityTermId,
+      );
+    const result = await Promise.all(
+      activities.map(async row => {
+        const duration =
+          await this.activityRepository.selectDurationByActivityId(row.id);
+        return {
+          id: row.id,
+          name: row.name,
+          activityTypeEnumId: row.activityTypeEnumId,
+          durations: duration.sort((a, b) =>
+            a.startTerm.getTime() === b.startTerm.getTime()
+              ? a.endTerm.getTime() - b.endTerm.getTime()
+              : a.startTerm.getTime() - b.startTerm.getTime(),
+          ),
+        };
+      }),
+    );
+    return {
+      activities: result.sort((a, b) =>
+        a.durations[0].startTerm.getTime() ===
+        b.durations[0].startTerm.getTime()
+          ? a.durations[0].endTerm.getTime() - b.durations[0].endTerm.getTime()
+          : a.durations[0].startTerm.getTime() -
+            b.durations[0].startTerm.getTime(),
+      ),
     };
   }
 }
