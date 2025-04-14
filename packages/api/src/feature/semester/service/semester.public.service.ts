@@ -7,7 +7,7 @@ import {
 import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
-import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
+import { takeOnlyOne, takeToArray } from "@sparcs-clubs/api/common/util/util";
 
 import { MActivityDeadline } from "../model/activity.deadline.model";
 import { MActivityDuration } from "../model/activity.duration.model";
@@ -35,27 +35,13 @@ export class SemesterPublicService {
 
   /**
    * @description id를 통해 semester를 조회합니다.
-   * @overload loadSemester(): 현재 시간이 속한 semester 기준으로 조회합니다.
-   * @overload loadSemester(id: number): date(or now)를 포함하는 semester
-   * @overload loadSemester(date: Date): id에 따른 semester
    * @param id
    * @returns
    * @throws 만약 id에 따른 semester가 없으면 404 에러를 던집니다.
    */
-  async loadSemester(): Promise<MSemester>;
-  async loadSemester(id?: number): Promise<MSemester>;
-  async loadSemester(date?: Date): Promise<MSemester>;
-  async loadSemester(arg1?: Date | number): Promise<MSemester> {
-    let semester: MSemester;
 
-    if (typeof arg1 === "number") {
-      semester = await this.semesterRepository.fetch(arg1);
-    } else {
-      const dateParam = arg1 ?? new Date();
-      semester = await this.semesterRepository
-        .find({ date: dateParam })
-        .then(takeOnlyOne());
-    }
+  async getSemesterById(id: number): Promise<MSemester> {
+    const semester = await this.semesterRepository.fetch(id);
     return semester;
   }
 
@@ -65,8 +51,25 @@ export class SemesterPublicService {
    * @returns ids에 따른 모든 semester
    * 만약 모든 id에 대해 조회되지 않는 semester가 있으면 404 에러를 던집니다.
    */
-  async loadSemesterAll(ids: number[]): Promise<MSemester[]> {
-    const semester = await this.semesterRepository.fetchAll(ids);
+  async getSemestersByIds(ids: number[]): Promise<MSemester[]> {
+    const semesters = await this.semesterRepository.fetchAll(ids);
+    return semesters;
+  }
+
+  /**
+   * @description id를 통해 semester를 조회합니다.
+   * @overload loadSemester(): 현재 시간이 속한 semester 기준으로 조회합니다.
+   * @overload loadSemester(date: Date): id에 따른 semester
+   * @returns
+   * @throws 만약 id에 따른 semester가 없으면 404 에러를 던집니다.
+   */
+
+  async loadSemester(date?: Date): Promise<MSemester> {
+    const dateParam = date ?? new Date();
+    const semester = await this.semesterRepository
+      .find({ date: dateParam })
+      .then(takeOnlyOne());
+
     return semester;
   }
 
@@ -77,18 +80,51 @@ export class SemesterPublicService {
    * @param date?
    * @returns date 를 포함하는 semester or 동아리 등록 기간 중엔 이전 semester
    */
-  async findSemesterCheckClubRegistrationDeadline(
+  async loadSemesterCheckClubRegistrationDeadline(
     date?: Date,
   ): Promise<MSemester> {
     const dateParam = date ?? new Date();
 
-    const semester = await this.loadSemester(dateParam);
+    const isClubRegistration = await this.isRegistrationDeadline(
+      RegistrationDeadlineEnum.ClubRegistrationApplication,
+      dateParam,
+    );
+
+    const semester = await this.semesterRepository
+      .find({
+        date: dateParam,
+      })
+      .then(takeOnlyOne());
+
+    if (isClubRegistration) {
+      const previousSemester = await this.semesterRepository.fetch(
+        semester.id - 1,
+      );
+      return previousSemester;
+    }
 
     return semester;
   }
 
   ///////////////////////////////////////////////////
   // ActivityDuration
+
+  async getActivityDurationById(id: number): Promise<MActivityDuration> {
+    const activityDuration = await this.activityDurationRepository.fetch(id);
+    return activityDuration;
+  }
+
+  /**
+   * @description ids를 통해 activityDuration를 조회합니다.
+   * @param ids
+   * @returns ids에 따른 모든 activityDuration
+   * 만약 모든 id에 대해 조회되지 않는 semester가 있으면 404 에러를 던집니다.
+   */
+  async getActivityDurationsByIds(ids: number[]): Promise<MActivityDuration[]> {
+    const activityDurations =
+      await this.activityDurationRepository.fetchAll(ids);
+    return activityDurations;
+  }
 
   /**
    * @description 해당 기간(or semester)에 속한 MActivityDuration을 조회합니다.
@@ -99,14 +135,13 @@ export class SemesterPublicService {
    * @returns {MActivityDuration} 해당 날짜를 포함하는 활동 기간 정보를 리턴합니다.
    */
 
-  async loadActivityDuration(): Promise<MActivityDuration>;
-  async loadActivityDuration(date?: Date): Promise<MActivityDuration>;
-  async loadActivityDuration(semesterId?: number): Promise<MActivityDuration>;
-  async loadActivityDuration(arg1?: Date | number): Promise<MActivityDuration> {
+  async loadActivityDuration(query: {
+    date?: Date;
+    semesterId?: number;
+  }): Promise<MActivityDuration> {
     const semesterId =
-      typeof arg1 === "number"
-        ? arg1
-        : await this.loadSemester(arg1).then(e => e.id);
+      query.semesterId ??
+      (await this.loadSemester(query.date ?? new Date()).then(e => e.id));
     const res = await this.activityDurationRepository
       .find({
         semesterId,
@@ -157,10 +192,10 @@ export class SemesterPublicService {
    * @returns date 를 포함하는 ActivityDeadline
    */
 
-  async loadActivityDeadline(
+  async searchActivityDeadline(
     deadlineEnum: ActivityDeadlineEnum,
     date?: Date,
-  ): Promise<MActivityDeadline> {
+  ): Promise<MActivityDeadline | null> {
     const dateParam = date ?? new Date();
 
     const activityDeadline = await this.activityDeadlineRepository
@@ -220,7 +255,7 @@ export class SemesterPublicService {
    * @returns date 를 포함하는 FundingDeadline
    */
 
-  async loadFundingDeadline(date?: Date): Promise<MFundingDeadline> {
+  async searchFundingDeadline(date?: Date): Promise<MFundingDeadline | null> {
     const dateParam = date ?? new Date();
 
     const fundingDeadline = await this.fundingDeadlineRepository
@@ -238,12 +273,12 @@ export class SemesterPublicService {
    */
 
   async isFundingDeadline(
-    deadlineEnum: FundingDeadlineEnum,
+    deadlineEnums: FundingDeadlineEnum | FundingDeadlineEnum[],
     date?: Date,
   ): Promise<boolean> {
     const dateParam = date ?? new Date();
     const fundingDeadlineCount = await this.fundingDeadlineRepository.count({
-      deadlineEnums: [deadlineEnum],
+      deadlineEnums: takeToArray(deadlineEnums),
       date: dateParam,
     });
     return fundingDeadlineCount > 0;
@@ -256,14 +291,15 @@ export class SemesterPublicService {
    * @returns void
    */
 
-  async validateFundingDeadline(
-    deadlineEnum: FundingDeadlineEnum,
-    date?: Date,
-  ): Promise<void> {
-    const isDeadline = await this.isFundingDeadline(deadlineEnum, date);
+  async validateFundingDeadline(query: {
+    deadlineEnums: FundingDeadlineEnum | FundingDeadlineEnum[];
+    date?: Date;
+  }): Promise<void> {
+    const { deadlineEnums, date } = query;
+    const isDeadline = await this.isFundingDeadline(deadlineEnums, date);
     if (!isDeadline) {
       throw new BadRequestException(
-        `${date} is not funding deadline ${deadlineEnum} period`,
+        `${date} is not funding deadline ${deadlineEnums} period`,
       );
     }
   }
@@ -278,10 +314,10 @@ export class SemesterPublicService {
    * @returns date 를 포함하는 RegistrationDeadline
    */
 
-  async loadRegistrationDeadline(
+  async searchRegistrationDeadline(
     registrationDeadlineEnum: RegistrationDeadlineEnum, // TODO: 나중에 여러개 추가할 수 있도록 배열로 받도록 수정
     date?: Date,
-  ): Promise<MRegistrationDeadline> {
+  ): Promise<MRegistrationDeadline | null> {
     const dateParam = date ?? new Date();
 
     const registrationDeadline = await this.registrationDeadlineRepository
@@ -296,7 +332,9 @@ export class SemesterPublicService {
 
   /**
    * @description 해당 date(now)가 해당 RegistrationDeadlineEnum 기간인지 확인합니다.
-   * @param registrationDeadlineEnum
+   * @overload isRegistrationDeadline(registrationDeadlineEnum: RegistrationDeadlineEnum, date?: Date): Promise<boolean>
+   * @overload isRegistrationDeadline(registrationDeadlineEnums: RegistrationDeadlineEnum[], date?: Date): Promise<boolean>
+   * @param registrationDeadlineEnumOrEnums
    * @param date?
    * @returns boolean
    */
@@ -304,8 +342,19 @@ export class SemesterPublicService {
   async isRegistrationDeadline(
     deadlineEnums: RegistrationDeadlineEnum[],
     date?: Date,
+  ): Promise<boolean>;
+  async isRegistrationDeadline(
+    deadlineEnum: RegistrationDeadlineEnum,
+    date?: Date,
+  ): Promise<boolean>;
+  async isRegistrationDeadline(
+    registrationDeadlineEnumOrEnums:
+      | RegistrationDeadlineEnum
+      | RegistrationDeadlineEnum[],
+    date?: Date,
   ): Promise<boolean> {
     const dateParam = date ?? new Date();
+    const deadlineEnums = takeToArray(registrationDeadlineEnumOrEnums);
     const count = await this.registrationDeadlineRepository.count({
       deadlineEnums,
       date: dateParam,
@@ -323,9 +372,22 @@ export class SemesterPublicService {
    */
 
   async validateRegistrationDeadline(
+    registrationDeadlineEnum: RegistrationDeadlineEnum,
+    date?: Date,
+  ): Promise<void>;
+  async validateRegistrationDeadline(
     registrationDeadlineEnums: RegistrationDeadlineEnum[],
     date?: Date,
+  ): Promise<void>;
+  async validateRegistrationDeadline(
+    registrationDeadlineEnumOrEnums:
+      | RegistrationDeadlineEnum
+      | RegistrationDeadlineEnum[],
+    date?: Date,
   ): Promise<void> {
+    const registrationDeadlineEnums = takeToArray(
+      registrationDeadlineEnumOrEnums,
+    );
     const isDeadline = await this.isRegistrationDeadline(
       registrationDeadlineEnums,
       date,
