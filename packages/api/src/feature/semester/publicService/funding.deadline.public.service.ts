@@ -9,8 +9,7 @@ import {
   MFundingDeadline,
 } from "../model/funding.deadline.model";
 import { FundingDeadlineRepository } from "../repository/funding.deadline.repository";
-import { SemesterRepository } from "../repository/semester.repository";
-import { SemesterPublicService } from "../service/semester.public.service";
+import { SemesterPublicService } from "./semester.public.service";
 
 type FundingDeadlineSearchQuery = {};
 type FundingDeadlineLoadQuery = {
@@ -34,7 +33,6 @@ export class FundingDeadlinePublicService extends BasePublicService<
   FundingDeadlineSearchQuery
 > {
   constructor(
-    private readonly semesterRepository: SemesterRepository,
     private readonly fundingDeadlineRepository: FundingDeadlineRepository,
     private readonly semesterPublicService: SemesterPublicService,
   ) {

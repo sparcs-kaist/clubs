@@ -9,7 +9,7 @@ import {
   RegistrationDeadlineQuery,
 } from "../model/registration.deadline.model";
 import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
-import { SemesterPublicService } from "../service/semester.public.service";
+import { SemesterPublicService } from "./semester.public.service";
 
 type RegistrationDeadlineSearchQuery = {};
 type RegistrationDeadlineLoadQuery = {

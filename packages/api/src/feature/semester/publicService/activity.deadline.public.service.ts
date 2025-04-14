@@ -9,7 +9,7 @@ import {
   MActivityDeadline,
 } from "../model/activity.deadline.model";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
-import { SemesterPublicService } from "../service/semester.public.service";
+import { SemesterPublicService } from "./semester.public.service";
 
 type ActivityDeadlineSearchQuery = {};
 type ActivityDeadlineLoadQuery = {

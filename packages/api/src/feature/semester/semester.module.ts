@@ -5,12 +5,12 @@ import { SemesterController } from "./controller/semester.controller";
 import { ActivityDeadlinePublicService } from "./publicService/activity.deadline.public.service";
 import { FundingDeadlinePublicService } from "./publicService/funding.deadline.public.service";
 import { RegistrationDeadlinePublicService } from "./publicService/registration.deadline.public.service";
+import { SemesterPublicService } from "./publicService/semester.public.service";
 import { ActivityDeadlineRepository } from "./repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "./repository/activity.duration.repository";
 import { FundingDeadlineRepository } from "./repository/funding.deadline.repository";
 import { RegistrationDeadlineRepository } from "./repository/registration.deadline.repository";
 import { SemesterRepository } from "./repository/semester.repository";
-import { SemesterPublicService } from "./service/semester.public.service";
 import { SemesterService } from "./service/semester.service";
 
 @Module({

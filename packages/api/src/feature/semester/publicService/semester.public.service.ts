@@ -402,5 +402,8 @@ export class SemesterPublicService {
 
 // backlogs
 // updated: 25.04.13
-// 1. DeadlineEnum / EnumsArray 오버로딩 (with util takeToArray)
 // 2. deadline exception 모듈화하기
+
+// completed
+// 1. DeadlineEnum / EnumsArray 오버로딩 (with util takeToArray)
+// 3. 모델별 public service 만들기
