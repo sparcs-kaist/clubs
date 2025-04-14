@@ -35,7 +35,6 @@ export abstract class BasePublicService<
     protected modelClass: ModelClass, // 모델엔티티 생성자가 들어가는 부분, static 프로퍼티 사용을 위해서
   ) {}
 
-  // 고민:
   /**
    * @description 모델의 id를 받아서 모델을 반환합니다.
    * @param id 모델의 id

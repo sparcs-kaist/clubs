@@ -55,17 +55,28 @@ export class SemesterPublicService extends BasePublicService<
   }
 
   /**
-   * @description 해당 학기의 활동 마감 기한을 반환합니다.
+   * @description 해당 date를 포함하는 학기를 반환합니다.
    * @param date? Date, 기본값: 현재 시간
    * @returns MSemester of the semester
    * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
    */
-  async load(query: SemesterLoadQuery): Promise<MSemester> {
-    const dateParam = query.date ?? new Date();
+  async load(query?: SemesterLoadQuery): Promise<MSemester> {
+    const dateParam = query?.date ?? new Date();
 
     const res = await super.load({
       date: dateParam,
     });
     return res;
+  }
+
+  /**
+   * @description 해당 학기의 활동 마감 기한의 ID를 반환합니다.
+   * @param date? Date, 기본값: 현재 시간
+   * @returns MSemester of the semester
+   * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
+   */
+  async loadId(query?: SemesterLoadQuery): Promise<number> {
+    const semester = await this.load(query);
+    return semester.id;
   }
 }

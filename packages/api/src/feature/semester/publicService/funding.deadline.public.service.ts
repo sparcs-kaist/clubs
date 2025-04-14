@@ -40,6 +40,18 @@ export class FundingDeadlinePublicService extends BasePublicService<
   }
 
   /**
+   * @description FundingDeadline을 조회합니다.
+   * @param [query.date]? 조회 날짜
+   * @param [query.semesterId]? 학기 ID
+   * @param [query.deadlineEnums]? FundingDeadlineEnum
+   * @returns 조회 날짜가 활동 마감 기한인지 여부
+   */
+  async search(query: FundingDeadlineSearchQuery): Promise<MFundingDeadline[]> {
+    const res = await super.search(query);
+    return res;
+  }
+
+  /**
    * @description 조회 날짜가 해당 FundingDeadline 기한인지 여부를 반환합니다.
    * @param date? 조회 날짜 (비울 경우 현재 시간)
    * @param semesterId 학기 ID

@@ -55,15 +55,12 @@ import {
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
-import {
-  getKSTDate,
-  takeOne,
-  takeOnlyOne,
-} from "@sparcs-clubs/api/common/util/util";
+import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
-import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
+import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
@@ -86,6 +83,7 @@ export class RegistrationService {
     private userPublicService: UserPublicService,
     private readonly memberRegistrationRepository: MemberRegistrationRepository,
     private readonly semesterPublicService: SemesterPublicService,
+    private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
   ) {}
 
   /**
@@ -108,8 +106,7 @@ export class RegistrationService {
     // 위 검사는 REG-001 인터페이스에서 검사합니다
     // - 이미 해당 동아리 id로 신청이 진행중일 경우 신청이 불가합니다.
 
-    const cur = getKSTDate();
-    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     const clubRegistrationList =
       await this.clubRegistrationRepository.findByClubAndSemesterId(
         body.clubId,
@@ -185,7 +182,7 @@ export class RegistrationService {
     const clubTemp =
       await this.clubPublicService.findStudentClubDelegate(studentId);
 
-    const semester = await this.clubPublicService.fetchSemester();
+    const semester = await this.semesterPublicService.load();
 
     // delegate 인 동아리가 없을 경우
     if (!clubTemp) return { clubs: [] };
@@ -279,7 +276,7 @@ export class RegistrationService {
     // student 가 delegate 인 동아리 가져오기
     const clubTmp =
       await this.clubPublicService.findStudentClubDelegate(studentId);
-    const semester = await this.clubPublicService.fetchSemester();
+    const semester = await this.semesterPublicService.load();
     // 없을 경우 return null
     if (!clubTmp) return { clubs: [] };
 
@@ -581,8 +578,7 @@ export class RegistrationService {
     //   ],
     // });
 
-    const cur = getKSTDate();
-    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
 
     const result =
       await this.clubRegistrationRepository.getStudentRegistrationsClubRegistrationsMy(
@@ -898,7 +894,7 @@ export class RegistrationService {
     await this.clubRegistrationRepository.updateRegistrationProfessorApprovedAt(
       {
         registrationId: param.param.applyId,
-        approvedAt: getKSTDate(),
+        approvedAt: new Date(),
       },
     );
 
@@ -911,7 +907,7 @@ export class RegistrationService {
     // student 가 delegate 인 동아리 가져오기
     const clubTmp =
       await this.clubPublicService.findStudentClubDelegate(studentId);
-    const semester = await this.clubPublicService.fetchSemester();
+    const semester = await this.semesterPublicService.load();
     // 없을 경우 return null
     if (!clubTmp) return { club: null };
 
@@ -1006,12 +1002,12 @@ export class RegistrationService {
 
   async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
     const today = new Date();
-    const semester = await this.clubPublicService.fetchSemester();
+    const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 구현할 경우 수정
-    const deadline = await this.semesterPublicService.getRegistrationDeadline(
-      RegistrationDeadlineEnum.ClubRegistrationApplication,
-      today,
-    );
+    const deadline = await this.registrationDeadlinePublicService.load({
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+      date: today,
+    });
 
     return {
       semester: {
@@ -1036,12 +1032,12 @@ export class RegistrationService {
     clubId: number,
   ): Promise<ApiReg005ResponseCreated> {
     // 현재 회원등록 신청 기간인지 확인하기
-    //todo: 기간 확인 로직 구현 필요.
-    const cur = getKSTDate();
-    // await this.validateMemberRegistrationDate();
+    await this.registrationDeadlinePublicService.validate({
+      deadlineEnum: RegistrationDeadlineEnum.StudentRegistrationApplication,
+    });
 
     // 해당 학생이 신청 자격이 존재하는지 확인하기
-    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     if (semesterId === undefined)
       throw new HttpException(
         "Semester Error",
@@ -1107,8 +1103,7 @@ export class RegistrationService {
     //   await this.memberRegistrationRepository.isMemberRegistrationEvent();
     // if (!ismemberRegistrationEvent)
     //   return { status: HttpStatus.NO_CONTENT, data: { applies: [] } };
-    const cur = getKSTDate();
-    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     if (semesterId === undefined)
       throw new HttpException(
         "Semester Error",
@@ -1272,8 +1267,7 @@ export class RegistrationService {
     //     "Not a member registration event duration",
     //     HttpStatus.BAD_REQUEST,
     //   );
-    const cur = getKSTDate();
-    const semesterId = await this.clubPublicService.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     if (semesterId === undefined)
       throw new HttpException(
         "Semester Error",
@@ -1313,8 +1307,7 @@ export class RegistrationService {
     executiveId: number;
     query: ApiReg020RequestQuery;
   }): Promise<ApiReg020ResponseOk> {
-    const semesterId =
-      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     // logger.debug(semesterId);
     const [registrations, total] = await Promise.all([
       this.memberRegistrationRepository.find({
@@ -1417,8 +1410,7 @@ export class RegistrationService {
     executiveId: number;
     query: ApiReg019RequestQuery;
   }): Promise<ApiReg019ResponseOk> {
-    const semesterId =
-      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       semesterId,
@@ -1527,8 +1519,7 @@ export class RegistrationService {
     clubId: number,
   ): Promise<ApiReg026ResponseOk> {
     // 기간 확인 해야 하나? 일단 스킵
-    const semesterId =
-      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     const result = await this.memberRegistrationRepository.count({
       clubId,
       semesterId,
@@ -1542,12 +1533,12 @@ export class RegistrationService {
 
   async getMemberRegistrationDeadline(): Promise<ApiReg028ResponseOk> {
     const today = new Date();
-    const semester = await this.clubPublicService.fetchSemester();
+    const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 받도록 구현할 경우 수정
-    const deadline = await this.semesterPublicService.getRegistrationDeadline(
-      RegistrationDeadlineEnum.StudentRegistrationApplication,
-      today,
-    );
+    const deadline = await this.registrationDeadlinePublicService.load({
+      deadlineEnum: RegistrationDeadlineEnum.StudentRegistrationApplication,
+      date: today,
+    });
     return {
       semester: {
         id: semester.id,

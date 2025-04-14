@@ -14,7 +14,7 @@ import { SemesterPublicService } from "./semester.public.service";
 type ActivityDurationSearchQuery = {};
 
 type ActivityDurationLoadQuery = {
-  semesterId: number;
+  semesterId?: number;
   date?: Date;
   durationEnum?: ActivityDurationTypeEnum;
 };
@@ -69,17 +69,17 @@ export class ActivityDurationPublicService extends BasePublicService<
    * @description 해당 학기의 활동 마감 기한을 반환합니다.
    * @param semesterId Semester ID
    * @param date? Date, 기본값: 현재 시간
-   * @param durationEnum ActivityDurationTypeEnum, 기본값: ActivityDurationTypeEnum.Regular
+   * @param durationEnum? ActivityDurationTypeEnum, 기본값: ActivityDurationTypeEnum.Regular
    * @returns MActivityDuration of the semester
    * @throws NotFoundException 해당 학기의 해당 enum인 ActivityDuration이 존재하지 않을 경우
    * @warning date를 넘겼더라도 반환된 duration이 해당 기간을 반드시 포함하지 않을 수 있습니다.
    */
-  async load(query: ActivityDurationLoadQuery): Promise<MActivityDuration> {
+  async load(query?: ActivityDurationLoadQuery): Promise<MActivityDuration> {
     const semesterIdParam =
-      query.semesterId ??
+      query?.semesterId ??
       (
         await this.semesterPublicService.load({
-          date: query.date ?? new Date(),
+          date: query?.date ?? new Date(),
         })
       ).id;
 
@@ -88,5 +88,19 @@ export class ActivityDurationPublicService extends BasePublicService<
       semesterId: semesterIdParam,
     });
     return res;
+  }
+
+  /**
+   * @description 해당 학기의 활동 마감 기한을 반환합니다.
+   * @param semesterId Semester ID
+   * @param date? Date, 기본값: 현재 시간
+   * @param durationEnum? ActivityDurationTypeEnum, 기본값: ActivityDurationTypeEnum.Regular
+   * @returns MActivityDuration of the semester
+   * @throws NotFoundException 해당 학기의 해당 enum인 ActivityDuration이 존재하지 않을 경우
+   * @warning date를 넘겼더라도 반환된 duration이 해당 기간을 반드시 포함하지 않을 수 있습니다.
+   */
+  async loadId(query?: ActivityDurationLoadQuery): Promise<number> {
+    const duration = await this.load(query);
+    return duration.id;
   }
 }

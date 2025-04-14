@@ -18,7 +18,7 @@ type RegistrationDeadlineLoadQuery = {
   deadlineEnum?: RegistrationDeadlineEnum;
 };
 type RegistrationDeadlineIsQuery = {
-  semesterId: number;
+  semesterId?: number;
   date?: Date;
   deadlineEnum?: RegistrationDeadlineEnum;
   deadlineEnums?: RegistrationDeadlineEnum[];
@@ -42,7 +42,7 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
   /**
    * @description 조회 날짜가 해당 RegistrationDeadline 기한인지 여부를 반환합니다.
    * @param date? 조회 날짜 (비울 경우 현재 시간)
-   * @param semesterId 학기 ID
+   * @param semesterId? 학기 ID
    * @param deadlineEnum(s)? RegistrationDeadlineEnum
    * @returns 조회 날짜가 활동 마감 기한인지 여부
    */

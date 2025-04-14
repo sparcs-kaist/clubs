@@ -67,12 +67,13 @@ import {
 } from "@sparcs-clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
+import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
-import { FundingDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/funding.deadline.repository";
-import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
+import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { FundingDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/funding.deadline.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
@@ -89,7 +90,8 @@ export default class FundingService {
     private readonly clubPublicService: ClubPublicService,
     private readonly activityPublicService: ActivityPublicService,
     private readonly semesterPublicService: SemesterPublicService,
-    private readonly fundingDeadlineRepository: FundingDeadlineRepository,
+    private readonly activityDurationPublicService: ActivityDurationPublicService,
+    private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
   ) {}
 
   async postStudentFunding(
@@ -102,9 +104,7 @@ export default class FundingService {
       FundingDeadlineEnum.Exception,
     ]);
 
-    const now = getKSTDate();
-    const activityD = await this.activityPublicService.fetchLastActivityD(now);
-    await this.validateExpenditureDate(body.expenditureDate, activityD);
+    const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -389,9 +389,7 @@ export default class FundingService {
       FundingDeadlineEnum.Exception,
     ]);
 
-    const now = getKSTDate();
-    const activityD = await this.activityPublicService.fetchLastActivityD(now);
-    await this.validateExpenditureDate(body.expenditureDate, activityD);
+    const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -430,7 +428,7 @@ export default class FundingService {
       throw new HttpException("Student not found", HttpStatus.NOT_FOUND);
     }
 
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       query.clubId,
@@ -505,13 +503,14 @@ export default class FundingService {
    * @returns 현재 시점의 지원금 신청 마감 기한과 대상 활동 기간을 리턴합니다.
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
-    const today = getKSTDate();
-
     const [targetDuration, deadline] = await Promise.all([
-      this.activityPublicService.fetchLastActivityD(),
-      this.fundingDeadlineRepository
-        .find({ date: today })
-        .then(takeOnlyOne("FundingDeadline")),
+      this.activityDurationPublicService.load(),
+      this.fundingDeadlinePublicService
+        .search({
+          date: new Date(),
+        })
+        .then(takeExist())
+        .then(takeOne),
     ]);
 
     return {
@@ -525,7 +524,7 @@ export default class FundingService {
   ): Promise<ApiFnd008ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
     const fundings = await this.fundingRepository.fetchSummaries(activityD.id);
 
     const clubs = await this.clubPublicService.fetchSummaries(
@@ -699,7 +698,7 @@ export default class FundingService {
     param: ApiFnd009RequestParam,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       param.clubId,
@@ -1044,8 +1043,7 @@ export default class FundingService {
     await this.userPublicService.checkCurrentExecutive(executiveId);
     await this.userPublicService.checkCurrentExecutive(body.executiveId);
 
-    const activityDId = (await this.activityPublicService.fetchLastActivityD())
-      .id;
+    const activityDId = await this.activityDurationPublicService.loadId();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       body.clubIds,
@@ -1071,8 +1069,7 @@ export default class FundingService {
   ): Promise<ApiFnd016ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const nowKST = getKSTDate();
-    const semester = await this.clubPublicService.fetchSemester(nowKST);
+    const semester = await this.semesterPublicService.load();
     const { clubIds } = query;
 
     // TODO: 지금은 entity로 불러오는데, id만 들고 오는 public service 및 repository 를 만들어서 한다면 좀더 효율이 높아질 수 있음
@@ -1089,21 +1086,22 @@ export default class FundingService {
   }
 
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
-    const today = getKSTDate();
-    const todayDeadline = await this.fundingDeadlineRepository
-      .find({ date: today })
-      .then(takeOnlyOne("FundingDeadline"));
-    if (enums.find(e => Number(e) === todayDeadline.deadlineEnum) === undefined)
-      throw new HttpException(
-        "Today is not a day for funding",
-        HttpStatus.BAD_REQUEST,
-      );
+    await this.fundingDeadlinePublicService
+      .search({
+        date: new Date(),
+        deadlineEnum: enums,
+      })
+      .then(takeExist());
   }
 
+  /**
+   * @description 지출 날짜가 현재 activityD 의 기간 내에 있는지 확인합니다.
+   * @returns 현재 activityD 의 id를 리턴합니다.
+   */
   private async validateExpenditureDate(
     expenditureDate: Date,
-    activityD: IActivityDuration,
-  ) {
+  ): Promise<IActivityDuration> {
+    const activityD = await this.activityDurationPublicService.load();
     if (
       expenditureDate < activityD.startTerm ||
       expenditureDate > activityD.endTerm
@@ -1113,5 +1111,6 @@ export default class FundingService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    return activityD;
   }
 }

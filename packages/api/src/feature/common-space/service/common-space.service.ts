@@ -10,7 +10,7 @@ import type { ApiCms007ResponseOk } from "@sparcs-clubs/interface/api/common-spa
 
 import { getKSTDate, isEmptyObject } from "@sparcs-clubs/api/common/util/util";
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";
-import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { Reservation, TermList } from "../dto/common-space.dto";
@@ -34,7 +34,7 @@ export class CommonSpaceService {
     private readonly clubStudentTRepository: ClubStudentTRepository,
     private readonly userPublicService: UserPublicService,
     private readonly getCommonSpacesUsageOrderRepository: GetCommonSpacesUsageOrderRepository,
-    private readonly clubPublicService: ClubPublicService,
+    private readonly semesterPublicService: SemesterPublicService,
     private readonly getCommonSpacesUsageOrderMyRepository: GetCommonSpacesUsageOrderMyRepository,
   ) {}
 
@@ -169,8 +169,7 @@ export class CommonSpaceService {
     const chargeStudent = await this.userPublicService.getStudentById({
       id: studentId,
     });
-    const semester =
-      await this.clubPublicService.findSemesterBetweenstartTermAndendTerm();
+    const semester = await this.semesterPublicService.load();
     const current = getKSTDate();
     const schedule: TermList[] = periodicScheduleMake(
       spaceId,

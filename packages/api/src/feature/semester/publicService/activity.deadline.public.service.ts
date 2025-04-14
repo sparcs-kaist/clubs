@@ -11,14 +11,18 @@ import {
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
-type ActivityDeadlineSearchQuery = {};
+type ActivityDeadlineSearchQuery = {
+  semesterId?: number;
+  date?: Date;
+  deadlineEnums?: ActivityDeadlineEnum[];
+};
 type ActivityDeadlineLoadQuery = {
   semesterId?: number;
   date?: Date;
   deadlineEnum?: ActivityDeadlineEnum;
 };
 type ActivityDeadlineIsQuery = {
-  semesterId: number;
+  semesterId?: number;
   date?: Date;
   deadlineEnum?: ActivityDeadlineEnum;
   deadlineEnums?: ActivityDeadlineEnum[];
@@ -40,10 +44,30 @@ export class ActivityDeadlinePublicService extends BasePublicService<
   }
 
   /**
+   * @description ActivityDeadline 기한을 조회합니다.
+   * @param [query] 비울 경우 현재 시간을 기준으로 조회합니다.
+   * @param [query.date] 조회 날짜
+   * @param [query.semesterId] 학기 ID
+   * @param [query.deadlineEnums] ActivityDeadlineEnum[] 조회할 deadline enum
+   * @returns ActivityDeadline[]
+   */
+  async search(
+    query?: ActivityDeadlineSearchQuery,
+  ): Promise<MActivityDeadline[]> {
+    const queryParam = {
+      ...query,
+      date: !query ? new Date() : query.date,
+    };
+
+    const res = await super.search(queryParam);
+    return res;
+  }
+
+  /**
    * @description 조회 날짜가 해당 ActivityDeadline 기한인지 여부를 반환합니다.
-   * @param date? 조회 날짜 (비울 경우 현재 시간)
-   * @param semesterId 학기 ID
-   * @param deadlineEnum(s)? ActivityDeadlineEnum
+   * @param [query.date] 조회 날짜, default: 현재 시간
+   * @param [query.semesterId] 학기 ID
+   * @param [query.deadlineEnums] ActivityDeadlineEnum[]
    * @returns 조회 날짜가 활동 마감 기한인지 여부
    */
   async is(query: ActivityDeadlineIsQuery): Promise<boolean> {
@@ -58,9 +82,9 @@ export class ActivityDeadlinePublicService extends BasePublicService<
 
   /**
    * @description 조회 날짜가 해당 ActivityDeadline 기한인지 확인하여 기한이 아니라면 예외를 발생시킵니다.
-   * @param date? 조회 날짜 (비울 경우 현재 시간)
-   * @param semesterId 학기 ID
-   * @param deadlineEnum(s)? ActivityDeadlineEnum
+   * @param [query.date] 조회 날짜, default: 현재 시간
+   * @param [query.semesterId] 학기 ID
+   * @param [query.deadlineEnums] ActivityDeadlineEnum[]
    * @throws BadRequestException 조회 날짜가 해당 ActivityDeadline 기한이 아님
    */
   async validate(query: ActivityDeadlineIsQuery): Promise<void> {
@@ -69,9 +93,9 @@ export class ActivityDeadlinePublicService extends BasePublicService<
 
   /**
    * @description 해당 학기의 활동 마감 기한을 반환합니다.
-   * @param semesterId? 학기 ID
-   * @param date? 조회 날짜 (비울 경우 현재 시간)의 Semester ID에서 탐색
-   * @param deadlineEnum ActivityDeadlineEnum
+   * @param [query.semesterId] 학기 ID
+   * @param [query.date] 조회 날짜, default: 현재 시간 을 기준으로 semesterId를 탐색
+   * @param [query.deadlineEnum] ActivityDeadlineEnum
    * @returns 해당 학기의 활동 마감 기한
    * @throws NotFoundException 해당 학기의 해당 enum인 ActivityDeadline이 존재하지 않을 경우
    * @warning date를 넘겼더라도 반환된 deadline이 해당 기간을 반드시 포함하지 않을 수 있습니다.

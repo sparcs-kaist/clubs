@@ -16,7 +16,6 @@ import { DivisionPermanentClubDRepository } from "./repository/club.division-per
 import { ClubGetStudentClubBrief } from "./repository/club.get-student-club-brief";
 import { ClubPutStudentClubBrief } from "./repository/club.put-student-club-brief";
 import ClubRepository from "./repository/club.repository";
-import SemesterDRepository from "./repository/club.semester-d.repository";
 import ClubPublicService from "./service/club.public.service";
 import { ClubService } from "./service/club.service";
 
@@ -38,7 +37,6 @@ import { ClubService } from "./service/club.service";
     ClubTRepository,
     ClubStudentTRepository,
     DivisionPermanentClubDRepository,
-    SemesterDRepository,
     ClubPublicService,
     ClubGetStudentClubBrief,
     ClubPutStudentClubBrief,

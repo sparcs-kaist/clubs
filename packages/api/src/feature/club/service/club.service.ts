@@ -35,11 +35,11 @@ import {
 import type { ApiClb016ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb016";
 import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
-import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/service/semester.public.service";
+import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import ClubStudentTRepository from "../repository/club.club-student-t.repository";
@@ -64,6 +64,7 @@ export class ClubService {
     private clubPublicService: ClubPublicService,
     private registrationPublicService: RegistrationPublicService,
     private readonly semesterPublicService: SemesterPublicService,
+    private readonly activityDurationPublicService: ActivityDurationPublicService,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -84,8 +85,7 @@ export class ClubService {
 
   async getClub(param: ApiClb002RequestParam): Promise<ApiClb002ResponseOK> {
     const { clubId } = param;
-    const today = getKSTDate();
-    const currentSemester = await this.clubPublicService.fetchSemester(today);
+    const currentSemester = await this.semesterPublicService.load();
     let targetSemesterId = currentSemester.id;
     try {
       await this.registrationPublicService.checkDeadline({
@@ -379,14 +379,14 @@ export class ClubService {
     const activityTerms: ApiAct009ResponseOk["terms"] = [];
     await Promise.all(
       semesters.map(async semester => {
-        const startActivityTerm =
-          await this.semesterPublicService.getActivityDuration(
-            semester.startTerm,
-          );
-        const endActivityTerm =
-          await this.semesterPublicService.getActivityDuration(
-            semester.endTerm,
-          );
+        const startActivityTerm = await this.activityDurationPublicService.load(
+          {
+            date: semester.startTerm,
+          },
+        );
+        const endActivityTerm = await this.activityDurationPublicService.load({
+          date: semester.endTerm,
+        });
         if (
           activityTerms.find(e => e.id === startActivityTerm.id) ===
             undefined &&
