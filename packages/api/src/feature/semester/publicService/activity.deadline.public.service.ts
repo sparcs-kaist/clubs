@@ -16,11 +16,13 @@ type ActivityDeadlineSearchQuery = {
   date?: Date;
   deadlineEnums?: ActivityDeadlineEnum[];
 };
+
 type ActivityDeadlineLoadQuery = {
   semesterId?: number;
   date?: Date;
   deadlineEnum: ActivityDeadlineEnum;
 };
+
 type ActivityDeadlineIsQuery = {
   semesterId?: number;
   date?: Date;
@@ -101,15 +103,15 @@ export class ActivityDeadlinePublicService extends BasePublicService<
    * @warning date를 넘겼더라도 반환된 deadline이 해당 기간을 반드시 포함하지 않을 수 있습니다.
    */
   async load(query: ActivityDeadlineLoadQuery): Promise<MActivityDeadline> {
-    const semesterIdParam =
+    const semesterId =
       query.semesterId ??
       (await this.semesterPublicService.loadId({
         date: query.date ?? new Date(),
       }));
 
     const res = await super.load({
-      ...query,
-      semesterId: semesterIdParam,
+      deadlineEnum: query.deadlineEnum,
+      semesterId,
     });
     return res;
   }

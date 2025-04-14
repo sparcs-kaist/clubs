@@ -12,11 +12,13 @@ import { RegistrationDeadlineRepository } from "../repository/registration.deadl
 import { SemesterPublicService } from "./semester.public.service";
 
 type RegistrationDeadlineSearchQuery = {};
+
 type RegistrationDeadlineLoadQuery = {
   semesterId?: number;
   date?: Date;
   deadlineEnum?: RegistrationDeadlineEnum;
 };
+
 type RegistrationDeadlineIsQuery = {
   semesterId?: number;
   date?: Date;
@@ -28,9 +30,9 @@ type RegistrationDeadlineIsQuery = {
 export class RegistrationDeadlinePublicService extends BasePublicService<
   MRegistrationDeadline,
   RegistrationDeadlineQuery,
-  RegistrationDeadlineLoadQuery,
+  RegistrationDeadlineSearchQuery,
   RegistrationDeadlineIsQuery,
-  RegistrationDeadlineSearchQuery
+  RegistrationDeadlineLoadQuery
 > {
   constructor(
     private readonly registrationDeadlineRepository: RegistrationDeadlineRepository,
@@ -79,17 +81,15 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
   async load(
     query: RegistrationDeadlineLoadQuery,
   ): Promise<MRegistrationDeadline> {
-    const semesterIdParam =
+    const semesterId =
       query.semesterId ??
-      (
-        await this.semesterPublicService.load({
-          date: query.date ?? new Date(),
-        })
-      ).id;
+      (await this.semesterPublicService.loadId({
+        date: query.date ?? new Date(),
+      }));
 
     const res = await super.load({
-      ...query,
-      semesterId: semesterIdParam,
+      deadlineEnum: query.deadlineEnum,
+      semesterId,
     });
     return res;
   }

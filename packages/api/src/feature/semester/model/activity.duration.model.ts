@@ -18,6 +18,10 @@ import {
   MEntity,
   MySqlColumnType,
 } from "@sparcs-clubs/api/common/model/entity.model";
+import {
+  makeObjectPropsFromDBTimezone,
+  makeObjectPropsToDBTimezone,
+} from "@sparcs-clubs/api/common/util/util";
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type ActivityDurationFromDb = InferSelectModel<typeof ActivityD>;
@@ -64,22 +68,24 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
 
   to(operation: OperationType): ActivityDurationToDb {
     const filtered = filterExcludedFields(this, operation);
-
+    const adjusted = makeObjectPropsToDBTimezone(filtered);
     return {
-      semesterId: filtered.semester.id,
-      year: filtered.year,
-      name: filtered.name,
-      startTerm: filtered.startTerm,
-      endTerm: filtered.endTerm,
-      activityDurationTypeEnum: filtered.activityDurationTypeEnum,
+      semesterId: adjusted.semester.id,
+      year: adjusted.year,
+      name: adjusted.name,
+      startTerm: adjusted.startTerm,
+      endTerm: adjusted.endTerm,
+      activityDurationTypeEnum: adjusted.activityDurationTypeEnum,
     };
   }
 
   static from(data: ActivityDurationFromDb): MActivityDuration {
-    return new MActivityDuration({
-      ...data,
-      semester: { id: data.semesterId },
-    });
+    return new MActivityDuration(
+      makeObjectPropsFromDBTimezone({
+        ...data,
+        semester: { id: data.semesterId },
+      }),
+    );
   }
 
   static fieldMap(field: keyof ActivityDurationQuery): MySqlColumnType {

@@ -55,21 +55,29 @@ export class SemesterService {
     const total = await this.semesterRepository.find({});
     const totalCount = total.length;
 
-    console.log(await this.activityDurationPublicService.load());
+    console.log("###Semester###");
     console.log(
-      await this.activityDeadlinePublicService.load({
+      await this.semesterPublicService.loadCheckRegistrationDeadline(),
+    );
+    console.log("###Activity Duration###");
+    console.log(await this.activityDurationPublicService.load());
+    console.log("###Activity Deadline###");
+    console.log(
+      await this.activityDeadlinePublicService.validate({
         date: new Date(),
         deadlineEnum: ActivityDeadlineEnum.Writing,
       }),
     );
+    console.log("###Funding Deadline###");
     console.log(
-      await this.fundingDeadlinePublicService.load({
+      await this.fundingDeadlinePublicService.validate({
         date: new Date(),
         deadlineEnum: FundingDeadlineEnum.Writing,
       }),
     );
+    console.log("###Registration Deadline###");
     console.log(
-      await this.registrationDeadlinePublicService.load({
+      await this.registrationDeadlinePublicService.validate({
         date: new Date(),
         deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
       }),

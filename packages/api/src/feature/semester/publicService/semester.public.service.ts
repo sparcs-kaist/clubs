@@ -24,9 +24,9 @@ type SemesterIsQuery = {
 export class SemesterPublicService extends BasePublicService<
   MSemester,
   SemesterQuery,
-  SemesterLoadQuery,
+  SemesterSearchQuery,
   SemesterIsQuery,
-  SemesterSearchQuery
+  SemesterLoadQuery
 > {
   constructor(
     private readonly semesterRepository: SemesterRepository,
@@ -68,10 +68,10 @@ export class SemesterPublicService extends BasePublicService<
    * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
    */
   async load(query?: SemesterLoadQuery): Promise<MSemester> {
-    const dateParam = query?.date ?? new Date();
+    const date = query?.date ?? new Date();
 
     const res = await super.load({
-      date: dateParam,
+      date,
     });
     return res;
   }
