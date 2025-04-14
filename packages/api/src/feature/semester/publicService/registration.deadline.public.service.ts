@@ -81,8 +81,11 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
   ): Promise<MRegistrationDeadline> {
     const semesterIdParam =
       query.semesterId ??
-      (await this.semesterPublicService.loadSemester(query.date ?? new Date()))
-        .id;
+      (
+        await this.semesterPublicService.load({
+          date: query.date ?? new Date(),
+        })
+      ).id;
 
     const res = await super.load({
       ...query,

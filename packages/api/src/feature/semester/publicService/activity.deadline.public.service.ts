@@ -79,8 +79,11 @@ export class ActivityDeadlinePublicService extends BasePublicService<
   async load(query: ActivityDeadlineLoadQuery): Promise<MActivityDeadline> {
     const semesterIdParam =
       query.semesterId ??
-      (await this.semesterPublicService.loadSemester(query.date ?? new Date()))
-        .id;
+      (
+        await this.semesterPublicService.load({
+          date: query.date ?? new Date(),
+        })
+      ).id;
 
     const res = await super.load({
       ...query,

@@ -77,8 +77,11 @@ export class ActivityDurationPublicService extends BasePublicService<
   async load(query: ActivityDurationLoadQuery): Promise<MActivityDuration> {
     const semesterIdParam =
       query.semesterId ??
-      (await this.semesterPublicService.loadSemester(query.date ?? new Date()))
-        .id;
+      (
+        await this.semesterPublicService.load({
+          date: query.date ?? new Date(),
+        })
+      ).id;
 
     const res = await super.load({
       ...query,
