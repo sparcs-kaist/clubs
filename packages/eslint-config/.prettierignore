@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+**/dist
+deployment/**/*.yaml
+.github/**/*.yml
+**/*.md
+
+# NextJS
+**/.next
