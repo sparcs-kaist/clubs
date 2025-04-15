@@ -1,8 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import { zClub } from "@clubs/interface/api/club/type/club.type";
-import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
 import { registry } from "@clubs/interface/open-api";
 
 /**

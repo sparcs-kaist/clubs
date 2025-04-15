@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import {
   filterExcludedFields,
   OperationType,
