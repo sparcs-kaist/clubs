@@ -80,7 +80,7 @@ const ExecutiveActivityReportChargedFrame: React.FC = () => {
           Object.entries(clubsActivities).map(([clubId, activities]) => (
             <ActivityReportChargedClubTable
               key={clubId}
-              activities={activities ?? []}
+              activities={activities}
             />
           ))}
         {otherActivities && otherActivities.length > 0 && (
