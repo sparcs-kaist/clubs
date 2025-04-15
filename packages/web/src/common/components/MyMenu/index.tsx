@@ -1,4 +1,5 @@
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -60,6 +61,8 @@ const MyMenu: React.FC<MyMenuProps> = ({
     setIsMenuOpen(false);
   };
 
+  const t = useTranslations();
+
   const parsedToken = JSON.parse(localStorage.getItem("responseToken") || "{}");
 
   const profiles = Object.keys(parsedToken).map(type => ({
@@ -83,7 +86,7 @@ const MyMenu: React.FC<MyMenuProps> = ({
           style={{ gap: "4px", color: colors.BLACK }}
         >
           <Icon type="person" size={16} />
-          마이페이지
+          {t("path.마이페이지")}
         </Button>
         <Button
           type="outlined"
@@ -91,7 +94,7 @@ const MyMenu: React.FC<MyMenuProps> = ({
           style={{ gap: "4px", color: colors.BLACK }}
         >
           <Icon type="logout" size={16} />
-          로그아웃
+          {t("path.로그아웃")}
         </Button>
       </FlexWrapper>
     </MyMenuWrapper>
