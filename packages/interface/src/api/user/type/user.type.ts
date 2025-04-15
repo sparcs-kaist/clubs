@@ -4,7 +4,8 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import {
   ProfessorEnum,
   StudentStatusEnum,

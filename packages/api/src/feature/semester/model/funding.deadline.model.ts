@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IFundingDeadline } from "@clubs/interface/api/semester/type/deadline.type";
+import { IFundingDeadline } from "@clubs/domain/semester/deadline";
+
 import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 import {
   filterExcludedFields,

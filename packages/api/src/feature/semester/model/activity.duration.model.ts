@@ -6,7 +6,8 @@ import {
   SQL,
 } from "drizzle-orm";
 
-import { IActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
+import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   filterExcludedFields,

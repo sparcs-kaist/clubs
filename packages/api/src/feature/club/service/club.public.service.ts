@@ -1,11 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import {
   IClubSummary,
   IClubSummaryResponse,
   IDivisionSummary,
 } from "@clubs/interface/api/club/type/club.type";
-import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 

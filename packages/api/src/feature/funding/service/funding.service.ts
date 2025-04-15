@@ -1,5 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import { IFileSummary } from "@clubs/interface/api/file/type/file.type";
 import {
   ApiFnd001RequestBody,
@@ -56,7 +58,6 @@ import {
   IFunding,
   IFundingResponse,
 } from "@clubs/interface/api/funding/type/funding.type";
-import { IActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
 import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   FundingDeadlineEnum,

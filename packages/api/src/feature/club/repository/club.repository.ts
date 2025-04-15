@@ -20,9 +20,10 @@ import { union } from "drizzle-orm/mysql-core";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import { IDivision } from "@clubs/interface/api/division/type/division.type";
-import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
 import {
   ClubDelegateEnum,
   ClubTypeEnum,

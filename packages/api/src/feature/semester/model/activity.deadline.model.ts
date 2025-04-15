@@ -1,7 +1,8 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IActivityDeadline } from "@clubs/interface/api/semester/type/deadline.type";
-import { ISemester } from "@clubs/interface/api/semester/type/semester.type";
+import { IActivityDeadline } from "@clubs/domain/semester/deadline";
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   filterExcludedFields,
