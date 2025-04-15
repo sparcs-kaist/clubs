@@ -30,7 +30,7 @@ export const zSemester = z.object({
     examples: ["2023-03-01", "2024-09-01"],
   }),
   endTerm: z.coerce.date().openapi({
-    description: "학기 종료일",
+    description: "학기 종료일 = 다음 학기 시작일",
     examples: ["2023-06-30", "2024-12-31"],
   }),
 });

@@ -17,14 +17,14 @@ export enum ActivityDeadlineEnum {
 
 export const zActivityDeadline = z.object({
   id: zId.openapi({
-    description: "활동보고서 관련 기간 ID",
+    description: "활동보고서 업무 관련 기간 ID",
   }),
   semester: z.object({ id: zSemester.shape.id }).openapi({
     description: "이 기간과 연관된 학기",
     examples: [{ id: 15 }, { id: 16 }, { id: 17 }],
   }),
   deadlineEnum: z.nativeEnum(ActivityDeadlineEnum).openapi({
-    description: `활동보고서 관련 기간 종류
+    description: `활동보고서 업무 관련 기간 종류
     1: 작성(Writing)
     2: 지연 제출(Late)
     3: 수정 제출(Modification)
@@ -32,11 +32,11 @@ export const zActivityDeadline = z.object({
     examples: [1, 2, 3, 4],
   }),
   startTerm: z.coerce.date().openapi({
-    description: "활동보고서 관련 기간 시작일",
+    description: "활동보고서 업무 관련 기간 시작일",
     examples: ["2023-03-01", "2024-09-01"],
   }),
   endTerm: z.coerce.date().openapi({
-    description: "활동보고서 관련 기간 종료일",
+    description: "활동보고서 업무 관련 기간 종료일",
     examples: ["2023-03-15", "2024-09-15"],
   }),
 });
@@ -50,14 +50,14 @@ export enum FundingDeadlineEnum {
 
 export const zFundingDeadline = z.object({
   id: zId.openapi({
-    description: "지원금 관련 기간 ID",
+    description: "지원금 업무 관련 기간 ID",
   }),
   semester: z.object({ id: zSemester.shape.id }).openapi({
     description: "이 기간과 연관된 학기",
     examples: [{ id: 15 }, { id: 16 }, { id: 17 }],
   }),
   deadlineEnum: z.nativeEnum(FundingDeadlineEnum).openapi({
-    description: `지원금 관련 기간 분류
+    description: `지원금 업무 관련 기간 분류
     1: 작성(Writing)
     2: 지연 제출(Late)
     3: 수정(Modification)
@@ -65,11 +65,11 @@ export const zFundingDeadline = z.object({
     examples: [1, 2, 3, 4],
   }),
   startTerm: z.coerce.date().openapi({
-    description: "지원금 관련 기간 시작일",
+    description: "지원금 업무 관련 기간 시작일",
     examples: ["2023-03-01", "2024-09-01"],
   }),
   endTerm: z.coerce.date().openapi({
-    description: "지원금 관련 기간 종료일",
+    description: "지원금 업무 관련 기간 종료일",
     examples: ["2023-03-15", "2024-09-15"],
   }),
 });
@@ -83,14 +83,14 @@ export enum RegistrationDeadlineEnum {
 
 export const zRegistrationDeadline = z.object({
   id: zId.openapi({
-    description: "등록 관련 기간 ID",
+    description: "등록 업무 관련 기간 ID",
   }),
   semester: z.object({ id: zSemester.shape.id }).openapi({
     description: "이 기간과 연관된 학기",
     examples: [{ id: 15 }, { id: 16 }, { id: 17 }],
   }),
   deadlineEnum: z.nativeEnum(RegistrationDeadlineEnum).openapi({
-    description: `등록 관련 기간 분류
+    description: `등록 업무 관련 기간 분류
     1: 작성(ClubRegistrationApplication)
     2: 지연 제출(ClubRegistrationLate)
     3: 수정(StudentRegistrationApplication)
@@ -98,11 +98,11 @@ export const zRegistrationDeadline = z.object({
     examples: [1, 2, 3, 4],
   }),
   startTerm: z.coerce.date().openapi({
-    description: "등록 관련 기간 시작일",
+    description: "등록 업무 관련 기간 시작일",
     examples: ["2023-03-01", "2024-09-01"],
   }),
   endTerm: z.coerce.date().openapi({
-    description: "등록 관련 기간 종료일",
+    description: "등록 업무 관련 기간 종료일",
     examples: ["2023-03-15", "2024-09-15"],
   }),
 });

@@ -13,17 +13,17 @@ export enum ActivityDurationTypeEnum {
 
 export const zActivityDuration = z.object({
   id: zId.openapi({
-    description: "활동기간 ID",
+    description: "활동반기 ID",
     examples: [1, 2, 3],
   }),
   semester: z.object({ id: zSemester.shape.id }).openapi({
-    description: "이 기간과 연관된 학기",
+    description: "이 활동반기와 연관된 학기",
     examples: [{ id: 15 }, { id: 16 }, { id: 17 }],
   }),
   activityDurationTypeEnum: z.nativeEnum(ActivityDurationTypeEnum).openapi({
-    description: `활동기간 분류
-    1: 정규 활동 보고서에 들어가는 활동기간(Regular)
-    2: 신규등록 신청용 활동 보고서에 들어가는 활동기간(Registration)
+    description: `활동반기 분류
+    1: 정규 활동 보고서에 들어가는 활동반기(Regular)
+    2: 신규등록 신청용 활동 보고서에 들어가는 활동반기(Registration)
     `,
     examples: [1, 2],
   }),
@@ -40,16 +40,18 @@ export const zActivityDuration = z.object({
     .max(10)
     .min(1)
     .openapi({
-      description: "활동기간명",
-      examples: ["겨울봄", "여름가을"],
+      description: "활동반기명",
+      examples: ["겨울-봄", "여름-가을", "봄 신규등록", "가을 신규등록"],
     }),
   startTerm: z.coerce.date().openapi({
-    description: "활동기간 시작일",
-    examples: ["2023-01-01", "2024-08-01"],
+    description:
+      "활동반기 시작일. 정규: 계절학기 시작일, 신규등록: 전년도 정규학기 시작일",
+    examples: ["2024-06-15", "2024-02-23"],
   }),
   endTerm: z.coerce.date().openapi({
-    description: "활동기간 종료일",
-    examples: ["2023-07-30", "2024-12-31"],
+    description:
+      "활동반기 종료일. 정규: 다음 반기 계절학기 시작일, 신규등록: 해당연도 정규학기 시작일",
+    examples: ["2024-12-20", "2025-02-25"],
   }),
 });
 
