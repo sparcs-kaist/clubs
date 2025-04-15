@@ -14,7 +14,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ClubRegisterApproveFrame from "@sparcs-clubs/web/features/executive/register-club/frames/ClubRegisterApproveFrame";
-import RegisterClubDetailFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailFrame";
+import RegisterClubDetailAuthFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailAuthFrame";
 
 const RegisterClubDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -50,7 +50,7 @@ const RegisterClubDetail: React.FC = () => {
         title="동아리 등록 신청 내역"
         enableLast
       />
-      <RegisterClubDetailFrame
+      <RegisterClubDetailAuthFrame
         applyId={+applyId}
         profile={UserTypeEnum.Executive}
       />
