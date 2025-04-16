@@ -45,12 +45,17 @@ export const Activity = mysqlTable(
     activityStatusEnumId: int("activity_status_enum_id")
       .notNull()
       .references(() => ActivityStatusEnum.id),
+    // 비정규화 메모 칼럼들
     chargedExecutiveId: int("charged_executive_id").references(
       () => Executive.id,
     ),
     professorApprovedAt: timestamp("professor_approved_at"),
-    editedAt: timestamp("edited_at").defaultNow().notNull(),
     commentedAt: timestamp("commented_at"),
+    commentedExecutiveId: int("commented_executive_id").references(
+      () => Executive.id,
+    ),
+    // DB레벨 시간 칼럼들
+    editedAt: timestamp("edited_at").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
     deletedAt: timestamp("deleted_at"),

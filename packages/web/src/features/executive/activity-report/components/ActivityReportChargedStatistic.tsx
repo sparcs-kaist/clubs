@@ -1,7 +1,8 @@
 import React from "react";
 
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
 import { ApiAct028ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct028";
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import ActivityReportStatisticContent from "./_atomic/ActivityReportStatisticContent";
 

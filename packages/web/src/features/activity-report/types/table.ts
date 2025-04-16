@@ -1,4 +1,4 @@
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
 import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
