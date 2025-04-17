@@ -9,10 +9,8 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
 export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
@@ -27,7 +25,7 @@ export type MemberRegistrationQuery = {
 };
 
 export class MMemberRegistration
-  extends MEntity
+  extends MEntity<IMemberRegistration>
   implements IMemberRegistration
 {
   static modelName = "member_registration";
@@ -46,8 +44,7 @@ export class MMemberRegistration
   createdAt: IMemberRegistration["createdAt"];
 
   constructor(data: IMemberRegistration) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   static from(result: FromDb): MMemberRegistration {

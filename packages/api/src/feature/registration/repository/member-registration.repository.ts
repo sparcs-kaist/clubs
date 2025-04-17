@@ -3,7 +3,7 @@ import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
 
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
+import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {

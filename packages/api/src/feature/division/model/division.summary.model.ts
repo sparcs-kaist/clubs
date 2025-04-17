@@ -2,7 +2,7 @@ import { InferSelectModel } from "drizzle-orm";
 
 import { IDivisionSummary } from "@clubs/interface/api/division/type/division.type";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
 import { MDivision } from "./division.model";

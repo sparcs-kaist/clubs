@@ -8,10 +8,8 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import {
   makeObjectPropsFromDBTimezone,
   makeObjectPropsToDBTimezone,
@@ -40,7 +38,7 @@ export type RegistrationDeadlineQuery = {
 };
 
 export class MRegistrationDeadline
-  extends MEntity
+  extends MEntity<IRegistrationDeadline>
   implements IRegistrationDeadline
 {
   static modelName = "RegistrationDeadline";
@@ -51,8 +49,7 @@ export class MRegistrationDeadline
   endTerm: IRegistrationDeadline["endTerm"];
 
   constructor(data: IRegistrationDeadline) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   to(operation: OperationType): RegistrationDeadlineToDb {

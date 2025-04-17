@@ -14,11 +14,9 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
 import {
   makeObjectPropsFromDBTimezone,
   makeObjectPropsToDBTimezone,
@@ -52,7 +50,10 @@ export type IActivityDurationOrderBy = Partial<{
   [key in keyof typeof orderByFieldMap]: OrderByTypeEnum;
 }>;
 
-export class MActivityDuration extends MEntity implements IActivityDuration {
+export class MActivityDuration
+  extends MEntity<IActivityDuration>
+  implements IActivityDuration
+{
   static modelName = "ActivityDuration";
 
   year: IActivityDuration["year"];
@@ -63,8 +64,7 @@ export class MActivityDuration extends MEntity implements IActivityDuration {
   activityDurationTypeEnum: IActivityDuration["activityDurationTypeEnum"];
 
   constructor(data: IActivityDuration) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   to(operation: OperationType): ActivityDurationToDb {

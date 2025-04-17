@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 
-import { IdType, MEntity } from "../model/entity.model";
+import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+
 import { takeOne, takeOnlyOne } from "../util/util";
+import { IdType, IEntity, MEntity } from "./entity.model";
 
 type ModelClass = { modelName: string };
 
@@ -11,7 +13,7 @@ type RepositoryQuery<
 > = Partial<ModelQuery> & Partial<{ id: Id }>;
 
 interface IBaseRepository<
-  Model extends MEntity<Id>,
+  Model extends MEntity<IEntity<Id>, Id>,
   ModelQuery extends Record<string, unknown>,
   Id extends IdType = number,
 > {
@@ -19,11 +21,13 @@ interface IBaseRepository<
   fetchAll(ids: Id[]): Promise<Model[]>;
   find(query: RepositoryQuery<ModelQuery, Id>): Promise<Model[]>;
   count(query: RepositoryQuery<ModelQuery, Id>): Promise<number>;
+  getLockKey(): string;
+  acquireLock(tx: DrizzleTransaction, query: ModelQuery): Promise<void>;
 }
 
 @Injectable()
 export abstract class BasePublicService<
-  Model extends MEntity<Id>,
+  Model extends MEntity<IEntity<Id>, Id>,
   ModelQuery extends Record<string, unknown> = {},
   SearchQuery extends Partial<ModelQuery> = {},
   IsQuery extends RepositoryQuery<ModelQuery, Id> = {},
@@ -34,6 +38,14 @@ export abstract class BasePublicService<
     protected repository: IBaseRepository<Model, ModelQuery, Id>, // Repository 생성자가 들어가는 부분. 그런데 실제 구현 시에 DI로 inject해야 함
     protected modelClass: ModelClass, // 모델엔티티 생성자가 들어가는 부분, static 프로퍼티 사용을 위해서
   ) {}
+
+  getLockKey(): string {
+    return this.repository.getLockKey();
+  }
+
+  acquireLock(tx: DrizzleTransaction, query: ModelQuery): Promise<void> {
+    return this.repository.acquireLock(tx, query); // 타입이 맞으면 그냥 넘기면 됨!
+  }
 
   /**
    * @description 모델의 id를 받아서 모델을 반환합니다.

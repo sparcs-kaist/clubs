@@ -9,10 +9,8 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 export type ActivityDeadlineFromDb = InferSelectModel<typeof ActivityDeadlineD>;
@@ -33,7 +31,10 @@ export type ActivityDeadlineQuery = {
   deadlineEnums?: ActivityDeadlineEnum[];
 };
 
-export class MActivityDeadline extends MEntity implements IActivityDeadline {
+export class MActivityDeadline
+  extends MEntity<IActivityDeadline>
+  implements IActivityDeadline
+{
   static modelName = "ActivityDeadline";
 
   semester: ISemester;
@@ -42,8 +43,7 @@ export class MActivityDeadline extends MEntity implements IActivityDeadline {
   endTerm: IActivityDeadline["endTerm"];
 
   constructor(data: IActivityDeadline) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   to(operation: OperationType): ActivityDeadlineToDb {

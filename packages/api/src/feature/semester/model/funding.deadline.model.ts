@@ -8,10 +8,8 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { makeObjectPropsToDBTimezone } from "@sparcs-clubs/api/common/util/util";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
@@ -31,7 +29,10 @@ export type FundingDeadlineQuery = {
   startTerm?: Date;
   endTerm?: Date;
 };
-export class MFundingDeadline extends MEntity implements IFundingDeadline {
+export class MFundingDeadline
+  extends MEntity<IFundingDeadline>
+  implements IFundingDeadline
+{
   static modelName = "FundingDeadline";
 
   semester: IFundingDeadline["semester"];
@@ -40,8 +41,7 @@ export class MFundingDeadline extends MEntity implements IFundingDeadline {
   endTerm: IFundingDeadline["endTerm"];
 
   constructor(data: IFundingDeadline) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   to(operation: OperationType): FundingDeadlineToDb {

@@ -7,10 +7,8 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { MySqlColumnType } from "@sparcs-clubs/api/common/base/base.repository";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import {
   makeObjectPropsFromDBTimezone,
   makeObjectPropsToDBTimezone,
@@ -41,7 +39,7 @@ export type SemesterOrderBy = ["startTerm", "endTerm", "year"][number];
  * @description 현재 구현상 학기 추가 시 학기 추가 전 학기의 끝날짜와 새로 추가되는 학기의 시작날짜가 같아야 합니다.
  */
 
-export class MSemester extends MEntity implements ISemester {
+export class MSemester extends MEntity<ISemester> implements ISemester {
   static modelName = "Semester";
 
   name: ISemester["name"];
@@ -53,8 +51,7 @@ export class MSemester extends MEntity implements ISemester {
   year: ISemester["year"];
 
   constructor(data: ISemester) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   to(operation: OperationType): SemesterToDb {

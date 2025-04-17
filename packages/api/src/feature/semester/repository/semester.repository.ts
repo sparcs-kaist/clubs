@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { gte, lte, not, or, SQL } from "drizzle-orm";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
+import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
 import {

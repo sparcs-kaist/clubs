@@ -14,7 +14,7 @@ import {
   OperationType,
 } from "@clubs/interface/common/utils/field-operations";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 
 import { MFunding } from "./funding.model";
@@ -28,7 +28,7 @@ export type FundingCommentQuery = {
 };
 
 export class MFundingComment
-  extends MEntity<number>
+  extends MEntity<IFundingComment, number>
   implements IFundingComment
 {
   static modelName = "fundingComment";
@@ -49,8 +49,7 @@ export class MFundingComment
   createdAt: Date;
 
   constructor(data: IFundingComment) {
-    super();
-    Object.assign(this, data);
+    super(data);
   }
 
   isFinalComment(funding: VFundingSummary | MFunding): boolean {
@@ -104,5 +103,9 @@ export class MFundingComment
     }
 
     return fieldMappings[field];
+  }
+
+  static patch(original: MFundingComment): MFundingComment {
+    return original;
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
+import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import {
   FromDb,
