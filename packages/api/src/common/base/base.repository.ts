@@ -272,6 +272,22 @@ export abstract class BaseRepository<
     return column;
   }
 
+  /**
+   * @override 해야 함
+   * @description 특수한 조건을 처리하는 메서드
+   * @description 모델 필드에는 없는 조건으로 처리하고자 할 때 구현하기
+   * @description 여기에 속하는 필드는 fieldMap에서 null로 처리되어야 함
+   * @description 예시: duration, date 등
+   * @description value의 타입은 상속할때 명시할 것
+   * @description 예시: { duration: { startTerm: new Date(), endTerm: new Date() } }, {date: new Date("2025-04-18T00:00:00.000Z")}
+   */
+  private processSpecialCondition(
+    key: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
+    value: unknown,
+  ): SQL {
+    throw new Error(`Invalid special condition: ${String(key)} ${value}`);
+  }
+
   // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
   async findTx(
     tx: DrizzleTransaction,
@@ -421,9 +437,12 @@ export abstract class BaseRepository<
     key:
       | BaseWhereQueryKeys<Query, QuerySupport, Id>
       | NestedQueryWrappingOperators,
-    value: BaseWhereQuery<Query, QuerySupport, Id>,
+    value:
+      | BaseWhereQuery<Query, QuerySupport, Id>
+      | PrimitiveConditionValue
+      | AdvancedConditionalValue<PrimitiveConditionValue>,
   ): SQL {
-    if (this.isNestedQueryWrapper(key)) {
+    if (this.isNestedQueryWrapper(String(key))) {
       // key가 and or not 인 경우 중첩 쿼리 처리
       return this.processNestedQuery(
         key as NestedQueryWrappingOperators,
@@ -447,39 +466,17 @@ export abstract class BaseRepository<
     throw new Error(`Invalid condition: ${String(key)} ${value}`);
   }
 
-  protected processBaseQuery(param: BaseRepositoryQuery<Query, Id>): SQL {
-    return this.makeWhereClause(param);
-  }
-
-  /**
-   * @description 특수한 조건을 처리하는 메서드
-   * @description 모델 필드에는 없는 조건으로 처리하고자 할 때 구현하기
-   * @description 여기에 속하는 필드는 fieldMap에서 null로 처리되어야 함
-   * @description 예시: duration, date 등
-   * @description value의 타입은 상속할때 명시할 것
-   * @description 예시: { duration: { startTerm: new Date(), endTerm: new Date() } }, {date: new Date("2025-04-18T00:00:00.000Z")}
-   */
-  private processSpecialCondition(
-    key: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
-    value: unknown,
-  ): SQL {
-    throw new Error(`Invalid special condition: ${String(key)} ${value}`);
-  }
-
   /**
    * @description 중첩 쿼리 오브젝트를 처리하는 메서드
    * @description 중첩인 and, or, not 쿼리를 다시 makeWhereClause와 processAdvancedOperators로 처리
    */
 
-  protected processNestedQuery(
+  private processNestedQuery(
     wrapper: NestedQueryWrappingOperators,
-    conditions:
-      | BaseWhereQuery<Query, QuerySupport, Id>
-      | PrimitiveConditionValue
-      | AdvancedConditionalValue<PrimitiveConditionValue>,
+    conditions: BaseWhereQuery<Query, QuerySupport, Id>,
   ): SQL {
     if (!this.isNestedQueryWrapper(wrapper)) {
-      throw new Error(`Invalid condition : ${wrapper} ${conditions}`);
+      throw new Error(`Invalid wrapper condition : ${wrapper} ${conditions}`);
     }
 
     const whereClause = Object.entries(conditions).map(
@@ -489,6 +486,9 @@ export abstract class BaseRepository<
           value as BaseWhereQuery<Query, QuerySupport, Id>,
         ),
     );
+    if (whereClause.length === 0) {
+      throw new Error(`Where clause is empty for conditions: ${conditions}`);
+    }
     if (wrapper === "and") {
       return and(...whereClause);
     }
@@ -498,7 +498,7 @@ export abstract class BaseRepository<
     if (wrapper === "not") {
       if (whereClause.length !== 1) {
         throw new Error(
-          "Not operator can only be used with a single condition",
+          `Not operator can only be used with a single condition: ${conditions}`,
         );
       }
       return not(whereClause[0]);
@@ -507,7 +507,7 @@ export abstract class BaseRepository<
   }
 
   private isNestedQueryWrapper(
-    wrapper: unknown,
+    wrapper: string,
   ): wrapper is NestedQueryWrappingOperators {
     return (
       typeof wrapper === "string" &&
@@ -532,6 +532,8 @@ export abstract class BaseRepository<
 
     const column = this.getTableField(key);
     if (column === null) {
+      // getTableField가 null인 경우 SpecialCondition에서 처리
+      // getTableField가 null인 경우 === 모델 필드에 없는 특수 조건
       return this.processSpecialCondition(key, value);
     }
 
