@@ -30,6 +30,7 @@ import {
   DrizzleTransaction,
 } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
+  Lockable,
   REPOSITORY_LOCK_ORDER_META_KEY,
   TransactionManagerService,
 } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
@@ -98,40 +99,102 @@ type NestedQueryWrappingOperators =
 // 기본적인 쿼리 파라미터들
 
 // Query에 대해 Id Field를 확장.
-type BaseQuery<Query extends PlainObject, Id extends IdType> = Query & {
+type BaseQuery<
+  Query extends PlainObject,
+  Id extends IdType = number,
+> = Query & {
   id?: Id;
 };
 
 // 2. 필드 타입을 배열 및 복합쿼리로 확장
 // 필드 타입을 배열 및 복합쿼리로 확장
-type QueryFieldTypes<T> =
+type AdvancedQueryValueTypes<T> =
   | T
   | T[]
   | Partial<Record<MysqlQueryConditionOperators, T>>;
 
 // 주어진 Query Object의 필드 타입을 배열 및 복합쿼리로 확장
 // WhereClause를 만들기 위해 사용
-export type BaseWhereQuery<Query extends PlainObject> = {
-  [K in keyof Query]?: QueryFieldTypes<Query[K]>;
+type AdvancedQuery<Query extends PlainObject> = {
+  [K in keyof Query]?: AdvancedQueryValueTypes<Query[K]>;
 };
 
-// id, ids, pagination, orderBy 등을 기본으로 지원하기 위함
-interface PaginationAndOrderbyFields<OrderByKeys extends string> {
+// processAdvancedOperators의 param 타입
+type AdvancedConditionalValue<T extends PrimitiveConditionValue> = Partial<
+  Record<MysqlQueryConditionOperators, T>
+>;
+
+// 중첩 쿼리 타입
+// 쿼리에 and or not으로 감싼 조건이 추가되게 함
+type NestedQuery<Query extends PlainObject> = Query & {
+  and?: NestedQuery<Query>;
+  or?: NestedQuery<Query>;
+  not?: NestedQuery<Query>;
+};
+
+type PrimitiveConditionValue =
+  | number
+  | string
+  | boolean
+  | Date
+  | Array<unknown>
+  | null;
+
+// 중첩과 복합 쿼리를 도입
+// 결과: { id: 1, and: { id:2, or: { name: "test", name: {like:"test"} } } }
+type BaseNestedAdvancedQuery<
+  Query extends PlainObject,
+  QuerySupport extends PlainObject = {},
+  Id extends IdType = number,
+> = NestedQuery<AdvancedQuery<BaseQuery<Query, Id> & QuerySupport>>;
+
+// Pagination & OrderBy
+type OrderByQuery<OrderByKeys extends string = "id"> = Partial<
+  Record<OrderByKeys, OrderByTypeEnum>
+>;
+
+type PaginationAndOrderbyFields<OrderByKeys extends string = "id"> = {
   pagination?: {
     offset: number;
     itemCount: number;
   };
-  orderBy?: Record<OrderByKeys, OrderByTypeEnum>;
-}
+  orderBy?: OrderByQuery<OrderByKeys>;
+};
 
 // 3. 쿼리가 주어지면 필드 확장 후 각 값들에 대해 래핑 및 타입 확장
-// find에 사용
+// 기본 레포지토리 메서드 파라미터 쿼리: count, find, put, patch, delete, lock 등의 where 외부로 향하는 where 절에 사용함
 export type BaseRepositoryQuery<
   Query extends PlainObject,
-  Id extends IdType,
-  OrderByKeys extends string,
-> = BaseWhereQuery<BaseQuery<Query, Id>> &
+  Id extends IdType = number,
+> = BaseNestedAdvancedQuery<Query, {}, Id>;
+
+// Pagination & OrderBy 추가: find에 사용
+export type BaseRepositoryFindQuery<
+  Query extends PlainObject,
+  OrderByKeys extends string = "id",
+  Id extends IdType = number,
+> = BaseNestedAdvancedQuery<Query, {}, Id> &
   PaginationAndOrderbyFields<OrderByKeys>;
+
+// QuerySupport 타입을 추가한 내부 where clause 메이커 함수용 타입
+export type BaseWhereQuery<
+  Query extends PlainObject,
+  QuerySupport extends PlainObject = {},
+  Id extends IdType = number,
+> = BaseNestedAdvancedQuery<Query, QuerySupport, Id>;
+
+// 4. 테이블 칼럼 <-> 모델 필드 매핑 필드 키 타입
+export type BaseTableFieldMapKeys<
+  Query extends PlainObject,
+  OrderByKeys extends string = "id",
+  QuerySupport extends PlainObject = {},
+> = keyof Query | OrderByKeys | keyof QuerySupport | "id";
+
+type BaseWhereQueryKeys<
+  Query extends PlainObject,
+  QuerySupport extends PlainObject = {},
+  Id extends IdType = number,
+> = keyof (BaseQuery<Query, Id> & QuerySupport);
 
 ///////////////////////////////////////////////////////////////////////////////
 // 베이스 레포지토리 추상클래스
@@ -149,10 +212,11 @@ export abstract class BaseRepository<
   DbUpdate,
   Table extends MySqlTable & TableWithIdAndDeletedAt, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
-  QuerySupport extends PlainObject,
-  OrderByKeys extends string,
+  OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
+  QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date
   Id extends IdType = number,
-> {
+> implements Lockable<BaseRepositoryQuery<Query, Id>>
+{
   @Inject(DrizzleAsyncProvider) protected db: MySql2Database;
   @Inject(TransactionManagerService)
   protected txManager: TransactionManagerService;
@@ -187,12 +251,10 @@ export abstract class BaseRepository<
    * @description getTableField에서 wrapping 해서 사용
    * @returns 테이블 필드 또는 null (정상 작동)
    * @returns 기본 값으로 undefined를 리턴시켜야 함 (존재하지 않는 필드인 경우)
-   * @warning 구현만 하고, 직접 사용하지 말 것
+   * @warning 구현만 하고, 상속 레포지토리 클래스 내부에서 직접 사용하지 말 것
    */
   abstract fieldMap(
-    field:
-      | keyof BaseRepositoryQuery<Query, Id, OrderByKeys>
-      | keyof QuerySupport,
+    field: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
   ): MySqlColumn | null | undefined;
 
   /**
@@ -201,9 +263,7 @@ export abstract class BaseRepository<
    * @description makeWhereClause에서 사용
    */
   getTableField(
-    field:
-      | keyof BaseRepositoryQuery<Query, Id, OrderByKeys>
-      | keyof QuerySupport,
+    field: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
   ): MySqlColumn | null {
     const column = this.fieldMap(field);
     if (column === undefined) {
@@ -215,7 +275,7 @@ export abstract class BaseRepository<
   // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
   async findTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, Id, OrderByKeys>,
+    param: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
   ): Promise<Model[]> {
     let query = tx
       .select()
@@ -241,7 +301,7 @@ export abstract class BaseRepository<
 
   async countTx(
     tx: DrizzleTransaction,
-    param: BaseRepositoryQuery<Query, Id, OrderByKeys>,
+    param: BaseRepositoryQuery<Query, Id>,
   ): Promise<number> {
     const [result] = await tx
       .select({ count: count() })
@@ -300,13 +360,22 @@ export abstract class BaseRepository<
     return this.db.transaction(callback);
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  // transaction manager에서 lock을 찾고 얻는 데 사용하는 함수
+  getLockKey(): string {
+    return (
+      Reflect.getMetadata(REPOSITORY_LOCK_ORDER_META_KEY, this.constructor) ??
+      "zzz"
+    );
+  }
+
   /**
    * @description 트랜잭션에 락을 잡아주는 메서드
    * @description 상속할 떄 super.lockByQuery(tx, query, mode) 로 기본적인 쿼리 생성 (id 등)
    */
-  async acquireLockByQuery(
+  async acquireLock(
     tx: DrizzleTransaction,
-    query: BaseRepositoryQuery<Query, Id, OrderByKeys>,
+    query: BaseRepositoryQuery<Query, Id>,
     mode: "update" | "read" = "update",
   ) {
     const whereClause = this.makeWhereClause(query);
@@ -318,116 +387,83 @@ export abstract class BaseRepository<
   }
 
   ///////////////////////////////////////////////////////////////////////////////
-  // transaction manager에서 lock을 찾고 얻는 데 사용하는 함수
-  getLockKey(): string {
-    return (
-      Reflect.getMetadata(REPOSITORY_LOCK_ORDER_META_KEY, this.constructor) ??
-      "zzz"
-    );
-  }
-
-  async lockByQuery(
-    tx: DrizzleTransaction,
-    query: BaseWhereQuery<BaseQuery<Query, Id>>,
-    mode: "update" | "read" = "update",
-  ): Promise<void> {
-    const where = this.makeWhereClause(query);
-    const lockMode = mode === "read" ? "LOCK IN SHARE MODE" : "FOR UPDATE";
-    await tx.execute(
-      sql`SELECT 1 FROM ${this.table} WHERE ${where} ${sql.raw(lockMode)}`,
-    );
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////
   // 이 아래는 바꿀 필요 없음
 
   /**
    * @description where 절을 생성하는 메서드
    * @description find와 count에서 사용
-   * @description 상속할 떄 super.makeWhereClause(param) 로 기본적인 쿼리 생성해서 사용해야 함 (id 등)
    * @description 기본적으로, eq 및 inArray 조건을 처리함
    * @description 이외의 경우 processAdvancedOperators와 processNestedQuery 메서드로 처리
    */
-  protected makeWhereClause(
-    param: BaseRepositoryQuery<Query, Id, OrderByKeys>,
-    specialKeys?: string[], // 제외할 키들 ex) duration ...
-  ): SQL {
+  protected makeWhereClause(param: BaseRepositoryQuery<Query, Id>): SQL {
     const whereClause: SQL[] = [];
 
     whereClause.push(isNull(this.table.deletedAt));
 
     // Query 타입의 모든 키를 순회하면서 파라미터에 해당 값이 있는지 확인
     const defaultKeys = ["pagination", "orderBy"];
-    if (specialKeys) {
-      defaultKeys.push(...specialKeys);
-    }
 
-    Object.keys(param)
-      .filter(key => !defaultKeys.includes(key)) // 기본 키는 제외
-      .forEach(key => {
-        if (this.isNestedQueryWrapper(key)) {
-          whereClause.push(
-            this.processNestedQuery({
-              [key]: param[key],
-            }),
-          );
-        } else {
-          // 파라미터 값이 존재하는 경우
-          const value = param[key];
-          if (value !== undefined) {
-            // Query 필드를 테이블 필드로 변환
-            // 복잡한 쿼리의 경우 specialKeys에 추가하여 이 메서드에서는 무시하고, 상속받은 메서드에서 처리
-            const tableField = this.getTableField(key as keyof Query);
-            if (!tableField) {
-              // tableField가 null: date, duration 등 특수한 경우
-              throw new Error(
-                `You should add this field to the SpecialKeys: ${key}`,
-              );
-            }
-
-            // 배열인 경우 IN 연산자 사용
-            if (Array.isArray(value)) {
-              if (value.length === 0) {
-                throw new Error(`Value Array is empty: ${key} ${value}`);
-              }
-              whereClause.push(inArray(tableField, value));
-            }
-            // null 인 경우 isNull 연산자 사용
-            else if (value === null) {
-              whereClause.push(isNull(tableField));
-            }
-            // 단일 값인 경우 eq 연산자 사용
-            else if (
-              typeof value === "string" ||
-              typeof value === "number" ||
-              typeof value === "boolean" ||
-              value instanceof Date
-            ) {
-              whereClause.push(eq(tableField, value));
-            }
-            // 복합 조건 객체인 경우 복합 조건 처리 (gt, lt, gte, lte 등)
-            // 예시: { between: [10, 20] }, { gt: 10 }
-            else if (
-              typeof value === "object" &&
-              Object.keys(value).length > 0 && // date인 경우 keys가 []임
-              Object.keys(value).every(k =>
-                mysqlQueryConditionOperators.includes(
-                  k as MysqlQueryConditionOperators,
-                ),
-              )
-            ) {
-              whereClause.push(
-                this.processAdvancedOperators(key as keyof Query, value),
-              );
-            } else {
-              // 예상치 못한 값이나 undefined가 전달된 경우
-              throw new Error(`Invalid key value: ${key} ${value}`);
-            }
-          }
-        }
+    Object.entries(param)
+      .filter(([key, _]) => !defaultKeys.includes(key)) // 기본 키는 제외
+      .forEach(([key, value]) => {
+        whereClause.push(
+          this.processQuery(
+            key,
+            value as BaseWhereQuery<Query, QuerySupport, Id>,
+          ),
+        );
       });
 
     return whereClause.length > 1 ? and(...whereClause) : whereClause[0];
+  }
+
+  private processQuery(
+    key:
+      | BaseWhereQueryKeys<Query, QuerySupport, Id>
+      | NestedQueryWrappingOperators,
+    value: BaseWhereQuery<Query, QuerySupport, Id>,
+  ): SQL {
+    if (this.isNestedQueryWrapper(key)) {
+      // key가 and or not 인 경우 중첩 쿼리 처리
+      return this.processNestedQuery(
+        key as NestedQueryWrappingOperators,
+        value as BaseWhereQuery<Query, QuerySupport, Id>,
+      );
+    }
+    if (this.isPrimitiveCondition(value)) {
+      // value가 값 or 배열 or null 인 경우 단순 조건 처리
+      return this.processPrimitiveCondition(
+        key as BaseWhereQueryKeys<Query, QuerySupport, Id>,
+        value as PrimitiveConditionValue,
+      );
+    }
+    if (this.isAdvancedCondition(value)) {
+      // value가 고급 쿼리 오브젝트 인 경우 고급 연산자 처리
+      return this.processAdvancedCondition(
+        key as BaseWhereQueryKeys<Query, QuerySupport, Id>,
+        value as AdvancedConditionalValue<PrimitiveConditionValue>,
+      );
+    }
+    throw new Error(`Invalid condition: ${String(key)} ${value}`);
+  }
+
+  protected processBaseQuery(param: BaseRepositoryQuery<Query, Id>): SQL {
+    return this.makeWhereClause(param);
+  }
+
+  /**
+   * @description 특수한 조건을 처리하는 메서드
+   * @description 모델 필드에는 없는 조건으로 처리하고자 할 때 구현하기
+   * @description 여기에 속하는 필드는 fieldMap에서 null로 처리되어야 함
+   * @description 예시: duration, date 등
+   * @description value의 타입은 상속할때 명시할 것
+   * @description 예시: { duration: { startTerm: new Date(), endTerm: new Date() } }, {date: new Date("2025-04-18T00:00:00.000Z")}
+   */
+  private processSpecialCondition(
+    key: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
+    value: unknown,
+  ): SQL {
+    throw new Error(`Invalid special condition: ${String(key)} ${value}`);
   }
 
   /**
@@ -435,27 +471,24 @@ export abstract class BaseRepository<
    * @description 중첩인 and, or, not 쿼리를 다시 makeWhereClause와 processAdvancedOperators로 처리
    */
 
-  protected processNestedQuery(condition: {
-    and?: Record<string, object>;
-    or?: Record<string, object>;
-    not?: Record<string, object>;
-  }): SQL {
-    if (Object.keys(condition).length !== 1) {
-      throw new Error("Invalid condition");
+  protected processNestedQuery(
+    wrapper: NestedQueryWrappingOperators,
+    conditions:
+      | BaseWhereQuery<Query, QuerySupport, Id>
+      | PrimitiveConditionValue
+      | AdvancedConditionalValue<PrimitiveConditionValue>,
+  ): SQL {
+    if (!this.isNestedQueryWrapper(wrapper)) {
+      throw new Error(`Invalid condition : ${wrapper} ${conditions}`);
     }
-    const [wrapper, conditions] = Object.entries(condition)[0];
 
-    const whereClause = Object.entries(conditions).map(([key, value]): SQL => {
-      if (this.isNestedQueryWrapper(key)) {
-        return this.processNestedQuery({
-          [key]: value as Record<string, object>,
-        });
-      }
-      return this.processAdvancedOperators(
-        key as keyof Query,
-        value as Record<MysqlQueryConditionOperators, unknown>,
-      );
-    });
+    const whereClause = Object.entries(conditions).map(
+      ([key, value]): SQL =>
+        this.processQuery(
+          key,
+          value as BaseWhereQuery<Query, QuerySupport, Id>,
+        ),
+    );
     if (wrapper === "and") {
       return and(...whereClause);
     }
@@ -474,22 +507,89 @@ export abstract class BaseRepository<
   }
 
   private isNestedQueryWrapper(
-    key: string,
-  ): key is NestedQueryWrappingOperators {
-    return nestedQueryWrappingOperators.includes(
-      key as NestedQueryWrappingOperators,
+    wrapper: unknown,
+  ): wrapper is NestedQueryWrappingOperators {
+    return (
+      typeof wrapper === "string" &&
+      nestedQueryWrappingOperators.includes(
+        wrapper as NestedQueryWrappingOperators,
+      )
     );
   }
+
+  /**
+   * @description 단순 조건 (eq, inArray, null) 이 들어온 경우 처리
+   * @description 예시: { id: 10 }, { id: [10, 20] }, { endTerm: null }
+   */
+  private processPrimitiveCondition(
+    key: BaseWhereQueryKeys<Query, QuerySupport, Id>,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (!this.isPrimitiveCondition(value)) {
+      // 방지 함수
+      throw new Error(`Invalid primitive condition: ${String(key)} ${value}`);
+    }
+
+    const column = this.getTableField(key);
+    if (column === null) {
+      return this.processSpecialCondition(key, value);
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        throw new Error(`Value Array is empty: ${String(key)} ${value}`);
+      }
+      return inArray(column, value);
+    }
+    if (value === null) {
+      return isNull(column);
+    }
+    if (value instanceof Date) {
+      return eq(column, value);
+    }
+    if (
+      typeof value === "boolean" ||
+      typeof value === "number" ||
+      typeof value === "string"
+    ) {
+      return eq(column, value);
+    }
+
+    throw new Error(`Invalid query key - value: { ${String(key)}: ${value} }`);
+  }
+
+  private isPrimitiveCondition(
+    value: unknown,
+  ): value is PrimitiveConditionValue {
+    if (
+      Array.isArray(value) ||
+      value === null ||
+      value instanceof Date ||
+      typeof value === "boolean" ||
+      typeof value === "number" ||
+      typeof value === "string"
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * @description 고급 연산자 오브젝트를 처리하는 메서드
    * @description 처리 가능 연산자: gt, gte, lt, lte, like, isNotNull, between, startsWith, endsWith
    */
-  protected processAdvancedOperators(
-    queryField: keyof Query,
-    conditions: Partial<Record<MysqlQueryConditionOperators, unknown>>,
+  protected processAdvancedCondition<T extends PrimitiveConditionValue>(
+    queryField: BaseWhereQueryKeys<Query, QuerySupport, Id>,
+    conditions: AdvancedConditionalValue<T>,
   ): SQL {
+    if (!this.isAdvancedCondition(conditions)) {
+      throw new Error(
+        `Invalid advanced condition: ${String(queryField)} ${conditions}`,
+      );
+    }
     // Query 필드를 테이블 필드로 변환
-    const tableField = this.fieldMap(queryField);
+    const tableField = this.getTableField(queryField);
     if (!tableField) {
       throw new Error(`Invalid query field: ${String(queryField)}`);
     }
@@ -549,9 +649,27 @@ export abstract class BaseRepository<
     return whereClause.length > 1 ? and(...whereClause) : whereClause[0];
   }
 
+  private isAdvancedCondition<T extends PrimitiveConditionValue>(
+    value: unknown,
+  ): value is AdvancedConditionalValue<T> {
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      Object.keys(value).length > 0 &&
+      Object.keys(value).every(k =>
+        mysqlQueryConditionOperators.includes(
+          k as MysqlQueryConditionOperators,
+        ),
+      )
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   // 여러 필드에 대한 정렬을 지원하는 구현
   // find에서 사용
-  protected makeOrderBy(order: Record<string, OrderByTypeEnum>): SQL[] {
+  protected makeOrderBy(order: OrderByQuery<OrderByKeys>): SQL[] {
     const orderClauses: SQL[] = [];
 
     // 객체의 키-값 쌍을 순회하며 정렬 조건 생성
@@ -580,14 +698,12 @@ export abstract class BaseRepository<
   // TX 메서드만 구현하면 자동 반영
 
   async find(
-    param: BaseRepositoryQuery<Query, Id, OrderByKeys>,
+    param: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
   ): Promise<Model[]> {
     return this.withTransaction(async tx => this.findTx(tx, param));
   }
 
-  async count(
-    param: BaseRepositoryQuery<Query, Id, OrderByKeys>,
-  ): Promise<number> {
+  async count(param: BaseRepositoryQuery<Query, Id>): Promise<number> {
     return this.withTransaction(async tx => this.countTx(tx, param));
   }
 
@@ -610,7 +726,7 @@ export abstract class BaseRepository<
   }
 
   async fetchTx(tx: DrizzleTransaction, id: Id): Promise<Model> {
-    const param = { id } as BaseRepositoryQuery<Query, Id, OrderByKeys>;
+    const param = { id } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>;
     return this.findTx(tx, param).then(
       takeOnlyOne<Model, Id>(this.modelConstructor.modelName),
     );
@@ -622,10 +738,10 @@ export abstract class BaseRepository<
     return this.txManager.runInTransaction(async tx => this.fetchTx(tx, id));
   }
 
-  async fetchAllTx(tx: DrizzleTransaction, ids: Id[]): Promise<Model[]> {
-    const param = { ids } as BaseRepositoryQuery<Query, Id, OrderByKeys>;
+  async fetchAllTx(tx: DrizzleTransaction, id: Id[]): Promise<Model[]> {
+    const param = { id } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>;
     return this.findTx(tx, param).then(
-      takeAll<Model, Id>(ids, this.modelConstructor.modelName),
+      takeAll<Model, Id>(id, this.modelConstructor.modelName),
     );
   }
 

@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { PlainObject } from "../common/base/base.repository";
 import { runSequentially } from "../common/util/util";
 import { DrizzleTransaction } from "./drizzle.provider";
 
@@ -9,20 +8,19 @@ export const REPOSITORY_LOCK_ORDER_META_KEY = Symbol(
   "REPOSITORY_LOCK_ORDER_KEY",
 );
 
+// 레포지토리에서 래핑해서 사용할, 레포지토리 락 우선순위 값 뽑아 주는 함수
 export function getLockableKey(
   constructor: new (...args: unknown[]) => unknown,
 ): string {
+  if (!Reflect.getMetadata(REPOSITORY_LOCK_ORDER_META_KEY, constructor)) {
+    throw new Error(
+      `REPOSITORY_LOCK_ORDER_META_KEY가 없습니다. ${constructor.name}`,
+    );
+  }
   return (
     Reflect.getMetadata(REPOSITORY_LOCK_ORDER_META_KEY, constructor) ?? "zzz"
-  ); // 기본값으로 밀림
+  ); // 기본값 zzz로 설정 (맨 마지막)
 }
-
-export type DatabaseLockConfig = {
-  service: {
-    lock: (tx: DrizzleTransaction, query: PlainObject) => Promise<void>;
-  };
-  query: PlainObject;
-};
 
 export interface Lockable<Query = unknown> {
   getLockKey(): string;

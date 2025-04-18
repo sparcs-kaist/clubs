@@ -91,14 +91,10 @@ type ModelInstance<Id extends IdType> = InstanceType<
   typeof MEntity<IEntity<Id>, Id>
 >;
 
-type ModelClass<
-  T extends MEntity<IEntity<Id>, Id>,
-  Id extends IdType,
-  D = {},
-> = {
+type ModelClass<T extends MEntity<IEntity<Id>, Id>, Id extends IdType> = {
   prototype: T;
   modelName: string;
-  new (data: D): T;
+  new (data: unknown): T;
 };
 /**
  * @description 모델의 에러 메시지에 사용할 이름을 반환하는 함수
@@ -106,8 +102,8 @@ type ModelClass<
  * @param model 모델 인스턴스 배열
  * @returns 표시할 모델 이름
  */
-const getModelName = <Id extends IdType, D = {}>(
-  name?: string | ModelClass<MEntity<IEntity<Id>, Id>, Id, D>,
+const getModelName = <Id extends IdType>(
+  name?: string | ModelClass<MEntity<IEntity<Id>, Id>, Id>,
   model?: ModelInstance<Id>[] | null,
 ): string => {
   // 직접 지정된 이름이 있으면 사용
@@ -159,8 +155,7 @@ export const takeOne = <M>(values: M[]): M | null => {
 export function takeOnlyOne<
   M extends MEntity<IEntity<Id>, Id>,
   Id extends IdType,
-  D = {},
->(name?: string | ModelClass<M, Id, D>): (array: M[]) => M {
+>(name?: string | ModelClass<M, Id>): (array: M[]) => M {
   return (array: M[]): M => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
@@ -188,11 +183,10 @@ export function getUniqueArray<
  * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
  * @description fetchAll에서 사용
  */
-export function takeAll<
-  M extends MEntity<IEntity<Id>, Id>,
-  Id extends IdType,
-  D = {},
->(ids: Id[], name?: string | ModelClass<M, Id, D>): (array: M[]) => M[] {
+export function takeAll<M extends MEntity<IEntity<Id>, Id>, Id extends IdType>(
+  ids: Id[],
+  name?: string | ModelClass<M, Id>,
+): (array: M[]) => M[] {
   return (array: M[]): M[] => {
     const uniqueIds = getUniqueArray(ids);
     if (ids.some(id => !uniqueIds.includes(id))) {
@@ -210,8 +204,7 @@ export function takeAll<
 export function takeExist<
   M extends MEntity<IEntity<Id>, Id>,
   Id extends IdType,
-  D = {},
->(name?: string | ModelClass<M, Id, D>): (array: M[]) => M[] {
+>(name?: string | ModelClass<M, Id>): (array: M[]) => M[] {
   return (array: M[]) => {
     if (array.length === 0)
       throw new NotFoundException(`${getModelName(name, array)} is empty`);
