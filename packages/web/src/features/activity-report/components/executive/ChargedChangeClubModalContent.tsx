@@ -9,12 +9,11 @@ import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-
-import { putClubActivitiesChargedExecutive } from "../services/putClubActivitiesChargedExecutive";
-import useGetActivityClubChargeAvailableExecutives from "../services/useGetActivityClubChargeAvailableExecutives";
 import ChargedChangeClubModalTable, {
   ChargedChangeClubProps,
-} from "./ChargedChangeClubModalTable";
+} from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalTable";
+import { putClubActivitiesChargedExecutive } from "@sparcs-clubs/web/features/activity-report/services/executive/putClubActivitiesChargedExecutive";
+import useGetActivityClubChargeAvailableExecutives from "@sparcs-clubs/web/features/activity-report/services/executive/useGetActivityClubChargeAvailableExecutives";
 
 interface ChargedChangeClubModalContentProps {
   isOpen: boolean;

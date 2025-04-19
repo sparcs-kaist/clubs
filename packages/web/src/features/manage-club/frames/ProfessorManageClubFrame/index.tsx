@@ -11,7 +11,6 @@ import { useGetProfessorManageClubList } from "@sparcs-clubs/web/hooks/getManage
 
 import ClubActivitySection from "./ClubActivitySection";
 import ClubInfoSection from "./ClubInfoSection";
-// import ClubMemberSection from "./ClubMemberSection";
 
 const ProfessorManageClubFrame: React.FC = () => {
   const {
@@ -60,7 +59,6 @@ const ProfessorManageClubFrame: React.FC = () => {
         {clubId !== null && <ClubActivitySection clubId={clubId} />}
 
         {/* TODO: (@dora) 동아리 회원 명단 추가 */}
-        {/* {clubId !== null && <ClubMemberSection clubId={clubId} />} */}
       </AsyncBoundary>
     </FlexWrapper>
   );
