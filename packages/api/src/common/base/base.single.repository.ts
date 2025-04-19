@@ -25,10 +25,10 @@ import {
 export abstract class BaseSingleTableRepository<
   Model extends MEntity<IModel, Id>,
   IModel extends IEntity<Id>,
+  Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   DbSelect extends Table["$inferSelect"],
   DbInsert extends Table["$inferInsert"],
   DbUpdate extends Partial<Table["$inferInsert"]>,
-  Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
   QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date

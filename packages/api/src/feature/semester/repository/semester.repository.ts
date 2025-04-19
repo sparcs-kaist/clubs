@@ -1,56 +1,105 @@
 import { Injectable } from "@nestjs/common";
-import { gte, lte, not, or, SQL } from "drizzle-orm";
+import {
+  and,
+  gte,
+  InferInsertModel,
+  InferSelectModel,
+  lt,
+  SQL,
+} from "drizzle-orm";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { ISemester } from "@clubs/domain/semester/semester";
 
 import {
-  MSemester,
-  SemesterFromDb,
+  BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { MSemester } from "@sparcs-clubs/api/feature/semester/model/semester.model";
+
+type SemesterQuery = {
+  date: Date;
+  startTerm: Date;
+  endTerm: Date;
+};
+
+type SemesterOrderByKeys = "id";
+type SemesterQuerySupport = {};
+
+type SemesterTable = typeof SemesterD;
+type SemesterDbSelect = InferSelectModel<SemesterTable>;
+type SemesterDbInsert = InferInsertModel<SemesterTable>;
+type SemesterDbUpdate = Partial<SemesterDbInsert>;
+
+type SemesterFieldMapKeys = BaseTableFieldMapKeys<
   SemesterQuery,
-} from "../model/semester.model";
+  SemesterOrderByKeys,
+  SemesterQuerySupport
+>;
 
 @Injectable()
-export class SemesterRepository extends BaseRepository<
+export default class SemesterRepository extends BaseSingleTableRepository<
   MSemester,
-  SemesterFromDb,
-  typeof SemesterD,
-  SemesterQuery
+  ISemester,
+  SemesterTable,
+  SemesterDbSelect,
+  SemesterDbInsert,
+  SemesterDbUpdate,
+  SemesterQuery,
+  SemesterOrderByKeys,
+  SemesterQuerySupport
 > {
   constructor() {
     super(SemesterD, MSemester);
   }
 
-  protected makeWhereClause(param: SemesterQuery): SQL[] {
-    const whereClause: SQL[] = super.makeWhereClause(param, [
-      "duration",
-      "date",
-    ]);
+  protected dbToModelMapping(result: SemesterDbSelect): MSemester {
+    return new MSemester({
+      id: result.id,
+      year: result.year,
+      name: result.name,
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
+    });
+  }
 
-    if (param.duration) {
-      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
-      whereClause.push(
-        not(
-          or(
-            lte(SemesterD.endTerm, param.duration.startTerm),
-            gte(SemesterD.startTerm, param.duration.endTerm),
-          ),
-        ),
-      );
+  protected modelToDBMapping(model: MSemester): SemesterDbUpdate {
+    return {
+      id: model.id,
+      year: model.year,
+      name: model.name,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected fieldMap(
+    field: SemesterFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<SemesterFieldMapKeys, TableWithID | null> = {
+      id: SemesterD,
+      startTerm: SemesterD,
+      endTerm: SemesterD,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
     }
 
-    // date: date를 startTerm, endTerm에 포함하는 지 확인
-    if (param.date) {
-      whereClause.push(
-        this.processNestedQuery({
-          and: {
-            startTerm: { lte: param.date },
-            endTerm: { gt: param.date },
-          },
-        }),
-      );
+    return fieldMappings[field];
+  }
+
+  protected processSpecialCondition(
+    key: SemesterFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return and(gte(SemesterD.startTerm, value), lt(SemesterD.endTerm, value));
     }
 
-    return whereClause;
+    throw new Error(`Invalid key: ${key}`);
   }
 }

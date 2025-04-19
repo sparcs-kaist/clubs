@@ -1,56 +1,121 @@
 import { Injectable } from "@nestjs/common";
-import { gte, lte, not, or, SQL } from "drizzle-orm";
-
-import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
-import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import {
+  and,
+  gte,
+  InferInsertModel,
+  InferSelectModel,
+  lt,
+  SQL,
+} from "drizzle-orm";
 
 import {
-  FundingDeadlineFromDb,
+  FundingDeadlineEnum,
+  IFundingDeadline,
+} from "@clubs/domain/semester/deadline";
+
+import {
+  BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { MFundingDeadline } from "@sparcs-clubs/api/feature/semester/model/funding.deadline.model";
+
+type FundingDeadlineQuery = {
+  semesterId: number;
+  date: Date;
+  deadlineEnum: FundingDeadlineEnum;
+};
+
+type FundingDeadlineOrderByKeys = "id";
+type FundingDeadlineQuerySupport = {
+  startTerm: string;
+  endTerm: string;
+};
+
+type FundingDeadlineTable = typeof FundingDeadlineD;
+type FundingDeadlineDbSelect = InferSelectModel<FundingDeadlineTable>;
+type FundingDeadlineDbInsert = InferInsertModel<FundingDeadlineTable>;
+type FundingDeadlineDbUpdate = Partial<FundingDeadlineDbInsert>;
+
+type FundingDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   FundingDeadlineQuery,
-  MFundingDeadline,
-} from "../model/funding.deadline.model";
+  FundingDeadlineOrderByKeys,
+  FundingDeadlineQuerySupport
+>;
 
 @Injectable()
-export class FundingDeadlineRepository extends BaseRepository<
+export default class FundingDeadlineRepository extends BaseSingleTableRepository<
   MFundingDeadline,
-  FundingDeadlineFromDb,
-  typeof FundingDeadlineD,
-  FundingDeadlineQuery
+  IFundingDeadline,
+  FundingDeadlineTable,
+  FundingDeadlineDbSelect,
+  FundingDeadlineDbInsert,
+  FundingDeadlineDbUpdate,
+  FundingDeadlineQuery,
+  FundingDeadlineOrderByKeys,
+  FundingDeadlineQuerySupport
 > {
   constructor() {
     super(FundingDeadlineD, MFundingDeadline);
   }
 
-  protected makeWhereClause(param: FundingDeadlineQuery): SQL[] {
-    const whereClause: SQL[] = super.makeWhereClause(param, [
-      "duration",
-      "date",
-    ]);
+  protected dbToModelMapping(
+    result: FundingDeadlineDbSelect,
+  ): MFundingDeadline {
+    return new MFundingDeadline({
+      id: result.id,
+      semester: { id: result.semesterId },
+      deadlineEnum: result.deadlineEnum,
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
+    });
+  }
 
-    if (param.duration) {
-      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
-      whereClause.push(
-        not(
-          or(
-            lte(FundingDeadlineD.endTerm, param.duration.startTerm),
-            gte(FundingDeadlineD.startTerm, param.duration.endTerm),
-          ),
-        ),
+  protected modelToDBMapping(model: MFundingDeadline): FundingDeadlineDbUpdate {
+    return {
+      id: model.id,
+      semesterId: model.semester.id,
+      deadlineEnum: model.deadlineEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected fieldMap(
+    field: FundingDeadlineFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      FundingDeadlineFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: FundingDeadlineD,
+      semesterId: FundingDeadlineD,
+      deadlineEnum: FundingDeadlineD,
+      startTerm: FundingDeadlineD,
+      endTerm: FundingDeadlineD,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
+  }
+
+  protected processSpecialCondition(
+    key: FundingDeadlineFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return and(
+        gte(FundingDeadlineD.startTerm, value),
+        lt(FundingDeadlineD.endTerm, value),
       );
     }
 
-    // date: date를 startTerm, endTerm에 포함하는 지 확인
-    if (param.date) {
-      whereClause.push(
-        this.processNestedQuery({
-          and: {
-            startTerm: { lte: param.date },
-            endTerm: { gt: param.date },
-          },
-        }),
-      );
-    }
-
-    return whereClause;
+    throw new Error(`Invalid key: ${key}`);
   }
 }

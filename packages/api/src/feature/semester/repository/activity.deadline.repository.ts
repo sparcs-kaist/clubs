@@ -1,56 +1,123 @@
 import { Injectable } from "@nestjs/common";
-import { gte, lte, not, or, SQL } from "drizzle-orm";
-
-import { BaseRepository } from "@sparcs-clubs/api/common/base/base.repository";
-import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import {
+  and,
+  gte,
+  InferInsertModel,
+  InferSelectModel,
+  lt,
+  SQL,
+} from "drizzle-orm";
 
 import {
-  ActivityDeadlineFromDb,
+  ActivityDeadlineEnum,
+  IActivityDeadline,
+} from "@clubs/domain/semester/deadline";
+
+import {
+  BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { MActivityDeadline } from "@sparcs-clubs/api/feature/semester/model/activity.deadline.model";
+
+type ActivityDeadlineQuery = {
+  semesterId: number;
+  date: Date;
+  deadlineEnum: ActivityDeadlineEnum;
+};
+
+type ActivityDeadlineOrderByKeys = "id";
+type ActivityDeadlineQuerySupport = {
+  startTerm: string;
+  endTerm: string;
+};
+
+type ActivityDeadlineTable = typeof ActivityDeadlineD;
+type ActivityDeadlineDbSelect = InferSelectModel<ActivityDeadlineTable>;
+type ActivityDeadlineDbInsert = InferInsertModel<ActivityDeadlineTable>;
+type ActivityDeadlineDbUpdate = Partial<ActivityDeadlineDbInsert>;
+
+type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   ActivityDeadlineQuery,
-  MActivityDeadline,
-} from "../model/activity.deadline.model";
+  ActivityDeadlineOrderByKeys,
+  ActivityDeadlineQuerySupport
+>;
 
 @Injectable()
-export class ActivityDeadlineRepository extends BaseRepository<
+export default class ActivityDeadlineRepository extends BaseSingleTableRepository<
   MActivityDeadline,
-  ActivityDeadlineFromDb,
-  typeof ActivityDeadlineD,
-  ActivityDeadlineQuery
+  IActivityDeadline,
+  ActivityDeadlineTable,
+  ActivityDeadlineDbSelect,
+  ActivityDeadlineDbInsert,
+  ActivityDeadlineDbUpdate,
+  ActivityDeadlineQuery,
+  ActivityDeadlineOrderByKeys,
+  ActivityDeadlineQuerySupport
 > {
   constructor() {
     super(ActivityDeadlineD, MActivityDeadline);
   }
 
-  protected makeWhereClause(param: ActivityDeadlineQuery): SQL[] {
-    const whereClause: SQL[] = super.makeWhereClause(param, [
-      "duration",
-      "date",
-    ]);
+  protected dbToModelMapping(
+    result: ActivityDeadlineDbSelect,
+  ): MActivityDeadline {
+    return new MActivityDeadline({
+      id: result.id,
+      semester: { id: result.semesterId },
+      deadlineEnum: result.deadlineEnum,
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
+    });
+  }
 
-    if (param.duration) {
-      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
-      whereClause.push(
-        not(
-          or(
-            lte(ActivityDeadlineD.endTerm, param.duration.startTerm),
-            gte(ActivityDeadlineD.startTerm, param.duration.endTerm),
-          ),
-        ),
+  protected modelToDBMapping(
+    model: MActivityDeadline,
+  ): ActivityDeadlineDbUpdate {
+    return {
+      id: model.id,
+      semesterId: model.semester.id,
+      deadlineEnum: model.deadlineEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected fieldMap(
+    field: ActivityDeadlineFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      ActivityDeadlineFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: ActivityDeadlineD,
+      semesterId: ActivityDeadlineD,
+      deadlineEnum: ActivityDeadlineD,
+      startTerm: ActivityDeadlineD,
+      endTerm: ActivityDeadlineD,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
+  }
+
+  protected processSpecialCondition(
+    key: ActivityDeadlineFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return and(
+        gte(ActivityDeadlineD.startTerm, value),
+        lt(ActivityDeadlineD.endTerm, value),
       );
     }
 
-    // date: date를 startTerm, endTerm에 포함하는 지 확인
-    if (param.date) {
-      whereClause.push(
-        this.processNestedQuery({
-          and: {
-            startTerm: { lte: param.date },
-            endTerm: { gt: param.date },
-          },
-        }),
-      );
-    }
-
-    return whereClause;
+    throw new Error(`Invalid key: ${key}`);
   }
 }

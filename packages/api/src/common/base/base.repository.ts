@@ -54,23 +54,28 @@ export type MySqlColumnType = MySqlColumn<
   ColumnBaseConfig<ColumnDataType, string>
 >;
 
-type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, "id"> & {
-  notNull: true;
-  hasDefault: true;
-  primaryKey: true;
-};
+// type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, "id"> & {
+//   notNull: true;
+//   hasDefault: true;
+//   primaryKey: true;
+// };
 
-export type TableWithID = MySqlTable<{
-  name: string;
-  schema: string | undefined;
-  dialect: "mysql";
-  columns: {
-    id: MySqlColumn<ColumnBaseWithAutoPK>;
-    deletedAt: MySqlColumnType;
-  } & {
-    [key: string]: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
-  };
-}> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
+// export type TableWithID = MySqlTable<{
+//   name: string;
+//   schema: string | undefined;
+//   dialect: "mysql";
+//   columns: {
+//     id: MySqlColumn<ColumnBaseWithAutoPK>;
+//     deletedAt: MySqlColumnType;
+//   } & {
+//     [key: string]: MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>;
+//   };
+// }> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
+
+export type TableWithID = MySqlTable & {
+  id: MySqlColumnType;
+  deletedAt: MySqlColumnType;
+};
 
 // MEntity 의 생성자
 // static 메서드 및 인스턴스 생성자를 constructor 로 받을 수 있도록 선언한 타입
@@ -81,7 +86,7 @@ export interface ModelConstructor<
   Id extends IdType,
 > {
   modelName: string;
-  constructor: new (entity: IModel) => Model;
+  new (entity: IModel): Model;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
