@@ -241,7 +241,7 @@ export const takeToArray = <T>(data: T | T[]): T[] => {
  * @description 배열의 요소를 순서대로 실행하는 함수
  * @description async 함수를 순서대로 실행하는 것이 중요하다면 사용
  */
-export async function runSequentially<T>(
+export async function forEachAsyncSequentially<T>(
   items: T[],
   runner: (item: T, index?: number) => Promise<void>,
 ): Promise<void> {
