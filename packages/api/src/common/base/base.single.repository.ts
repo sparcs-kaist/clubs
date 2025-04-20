@@ -120,14 +120,31 @@ export abstract class BaseSingleTableRepository<
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
-    const ids = await Promise.all(
-      data.map(async d => {
-        const [result] = await tx.insert(this.table).values(d);
-        return result.insertId as Id;
-      }),
+    // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
+    // 원래 계획: insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
+    const insert = tx.insert(this.table).values(data) as unknown as {
+      $returningId: () => Promise<{ id: Id }[]>;
+    };
+    const ids = await insert
+      .$returningId()
+      .then(e => e.map(idObject => idObject.id));
+
+    //지금은 returningId가 제네릭에서 인식이 안돼서 이렇게 하나씩 넣고 쿼리
+    // 참고: base.repository.ts 의 TableWithID 위 주석처리 부분
+
+    // const ids = await Promise.all(
+    //   data.map(async d => {
+    //     const [result] = await tx.insert(this.table).values(d);
+    //     return result.insertId as Id;
+    //   }),
+    // );
+
+    const results = await this.find(
+      { id: ids } as BaseRepositoryQuery<Query, Id>,
+      tx,
     );
 
-    return this.find({ id: ids } as BaseRepositoryQuery<Query, Id>, tx);
+    return results;
   }
 
   protected async putImplementation(
