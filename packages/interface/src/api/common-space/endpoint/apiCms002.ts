@@ -18,11 +18,11 @@ const requestParam = z.object({
 const requestQuery = z
   .object({
     startDate: z.coerce.date(), // startDate는 날짜여야 합니다.
-    endDate: z.coerce.date(), // endDate는 날짜여야 합니다.
+    endTerm: z.coerce.date(), // endTerm는 날짜여야 합니다.
   })
-  .refine(data => data.startDate <= data.endDate, {
-    message: "startDate must be same or earlier than endDate",
-    path: ["startDate", "endDate"],
+  .refine(data => data.startDate <= data.endTerm, {
+    message: "startDate must be same or earlier than endTerm",
+    path: ["startDate", "endTerm"],
   });
 
 const requestBody = z.object({});

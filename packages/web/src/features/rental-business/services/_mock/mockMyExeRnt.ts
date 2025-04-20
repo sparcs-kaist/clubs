@@ -1,4 +1,4 @@
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 const mockupMyExeRnt = {
   items: [
@@ -28,7 +28,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -57,7 +57,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -86,7 +86,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -115,7 +115,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -144,7 +144,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -173,7 +173,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -202,7 +202,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -231,7 +231,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -260,7 +260,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -289,7 +289,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -318,7 +318,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -347,7 +347,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -376,7 +376,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -405,7 +405,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -434,7 +434,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -463,7 +463,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -492,7 +492,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -521,7 +521,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -550,7 +550,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -579,7 +579,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -608,7 +608,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -637,7 +637,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -666,7 +666,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -695,7 +695,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -724,7 +724,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -753,7 +753,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -782,7 +782,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -811,7 +811,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -840,7 +840,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
     {
@@ -869,7 +869,7 @@ const mockupMyExeRnt = {
       desiredStart: new Date("2024-03-11"),
       desiredEnd: new Date("2024-03-18"),
       startDate: new Date("2024-01-01"),
-      endDate: new Date("2024-01-01"),
+      endTerm: new Date("2024-01-01"),
       createdAt: new Date("2024-01-01"),
     },
   ],

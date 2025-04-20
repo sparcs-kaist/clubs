@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 export const zDistrict = z.object({
   id: zId,

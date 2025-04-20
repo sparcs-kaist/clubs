@@ -1,7 +1,6 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@clubs/typescript-config/nest-js.json",
   "compilerOptions": {
-    "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -18,5 +17,7 @@
     "paths": {
       "@sparcs-clubs/api/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["**/*.ts", "eslint.config.mjs"],
+  "exclude": ["node_modules"]
 }

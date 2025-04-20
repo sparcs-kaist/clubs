@@ -1,5 +1,5 @@
-import { ApiClb013ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
-import { ClubDelegateChangeRequestStatusEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
+import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 export const mockMyDelegateChange: ApiClb013ResponseOk = {
   requests: [

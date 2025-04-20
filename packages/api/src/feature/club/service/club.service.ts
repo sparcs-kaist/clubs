@@ -5,36 +5,41 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
+import type {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
+import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
   ApiClb002RequestParam,
   ApiClb002ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
-import type { ApiClb003ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb003";
+} from "@clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb003ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb003";
 import type {
   ApiClb004RequestParam,
   ApiClb004ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+} from "@clubs/interface/api/club/endpoint/apiClb004";
 import type {
   ApiClb005RequestBody,
   ApiClb005RequestParam,
   ApiClb005ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb005";
+} from "@clubs/interface/api/club/endpoint/apiClb005";
 import {
   ApiClb009RequestParam,
   ApiClb009ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb009";
+} from "@clubs/interface/api/club/endpoint/apiClb009";
 import {
   ApiClb010RequestParam,
   ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
-import type { ApiClb016ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb016";
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/api/club/endpoint/apiClb010";
+import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
-import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
+import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import ClubStudentTRepository from "../repository/club.club-student-t.repository";
@@ -57,7 +62,9 @@ export class ClubService {
     private clubGetStudentClubBrief: ClubGetStudentClubBrief,
     private clubPutStudentClubBrief: ClubPutStudentClubBrief,
     private clubPublicService: ClubPublicService,
-    private clubRegistrationPublicService: ClubRegistrationPublicService,
+    private registrationPublicService: RegistrationPublicService,
+    private readonly semesterPublicService: SemesterPublicService,
+    private readonly activityDurationPublicService: ActivityDurationPublicService,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -78,11 +85,10 @@ export class ClubService {
 
   async getClub(param: ApiClb002RequestParam): Promise<ApiClb002ResponseOK> {
     const { clubId } = param;
-    const today = getKSTDate();
-    const currentSemester = await this.clubPublicService.fetchSemester(today);
+    const currentSemester = await this.semesterPublicService.load();
     let targetSemesterId = currentSemester.id;
     try {
-      await this.clubRegistrationPublicService.checkDeadline({
+      await this.registrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;
@@ -358,5 +364,59 @@ export class ClubService {
     }, []);
 
     return { semesters: uniqueSemesters };
+  }
+
+  async getStudentActivitiesActivityTerms(
+    query: ApiAct009RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct009ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
+    const semesters = await this.clubPublicService.getClubsExistedSemesters({
+      clubId: query.clubId,
+    });
+    const activityTerms: ApiAct009ResponseOk["terms"] = [];
+    await Promise.all(
+      semesters.map(async semester => {
+        const startActivityTerm = await this.activityDurationPublicService.load(
+          {
+            date: semester.startTerm,
+          },
+        );
+        const endActivityTerm = await this.activityDurationPublicService.load({
+          date: semester.endTerm,
+        });
+        if (
+          activityTerms.find(e => e.id === startActivityTerm.id) ===
+            undefined &&
+          startActivityTerm.endTerm < new Date()
+        )
+          activityTerms.push({
+            id: startActivityTerm.id,
+            year: startActivityTerm.year,
+            name: startActivityTerm.name,
+            startTerm: startActivityTerm.startTerm,
+            endTerm: startActivityTerm.endTerm,
+          });
+        if (
+          activityTerms.find(e => e.id === endActivityTerm.id) === undefined &&
+          endActivityTerm.endTerm < new Date()
+        )
+          activityTerms.push({
+            id: endActivityTerm.id,
+            year: endActivityTerm.year,
+            name: endActivityTerm.name,
+            startTerm: endActivityTerm.startTerm,
+            endTerm: endActivityTerm.endTerm,
+          });
+      }),
+    );
+
+    return {
+      terms: activityTerms.sort(
+        (a, b) => a.startTerm.getTime() - b.startTerm.getTime(),
+      ),
+    };
   }
 }

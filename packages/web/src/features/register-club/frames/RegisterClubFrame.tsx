@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -138,7 +138,7 @@ const RegisterClubFrame: React.FC = () => {
         {clubDeadline?.deadline ? (
           <Info
             text={registerClubDeadlineInfoText(
-              clubDeadline.deadline.endDate,
+              clubDeadline.deadline.endTerm,
               clubDeadline.semester,
             )}
           />

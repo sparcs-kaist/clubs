@@ -87,18 +87,21 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
     <MobileNavMenuInner className={className}>
       {keys.map(key => {
         const subPath = (paths[key] as Path).sub;
+        const haveSubPath = subPath && subPath.length > 0;
 
         return (
           <>
             <MobileNavItem
               key={key}
-              isExpanded={isSelected(key)}
+              isExpanded={haveSubPath ? isSelected(key) : false}
               {...paths[key]}
               onClick={() => {
-                if (isSelected(key)) {
-                  setSelectedMenu(null);
-                } else {
-                  setSelectedMenu(key);
+                if (haveSubPath) {
+                  if (isSelected(key)) {
+                    setSelectedMenu(null);
+                  } else {
+                    setSelectedMenu(key);
+                  }
                 }
               }}
             />

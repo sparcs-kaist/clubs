@@ -31,9 +31,7 @@ jobs:
         with:
           version: ${{ matrix.pnpm-version }}
           run_install: true
-      - name: Check types
-        run: pnpm typecheck
-      # - name: Check coding styles and formatting
-      #   run: pnpm lint
+      - name: Check coding styles and formatting
+        run: pnpm lint
       - name: Check build passing
         run: pnpm build

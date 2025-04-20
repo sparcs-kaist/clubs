@@ -9,7 +9,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import Checkbox from "@sparcs-clubs/web/common/components/Checkbox";

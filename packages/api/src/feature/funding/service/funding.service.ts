@@ -1,84 +1,81 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { IActivityDuration } from "@sparcs-clubs/interface/api/activity/type/activity.duration.type";
-import { IFileSummary } from "@sparcs-clubs/interface/api/file/type/file.type";
+import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
+
+import { IFileSummary } from "@clubs/interface/api/file/type/file.type";
 import {
   ApiFnd001RequestBody,
   ApiFnd001ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd001";
+} from "@clubs/interface/api/funding/endpoint/apiFnd001";
 import {
   ApiFnd002RequestParam,
   ApiFnd002ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd002";
+} from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import {
   ApiFnd003RequestBody,
   ApiFnd003RequestParam,
   ApiFnd003ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd003";
+} from "@clubs/interface/api/funding/endpoint/apiFnd003";
 import {
   ApiFnd004RequestParam,
   ApiFnd004ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd004";
+} from "@clubs/interface/api/funding/endpoint/apiFnd004";
 import {
   ApiFnd005RequestQuery,
   ApiFnd005ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd005";
+} from "@clubs/interface/api/funding/endpoint/apiFnd005";
 import {
   ApiFnd006RequestParam,
   ApiFnd006RequestQuery,
   ApiFnd006ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd006";
-import { ApiFnd007ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd007";
-import { ApiFnd008ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
+} from "@clubs/interface/api/funding/endpoint/apiFnd006";
+import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
+import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import {
   ApiFnd009RequestParam,
   ApiFnd009ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd009";
+} from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import {
   ApiFnd010RequestParam,
   ApiFnd010ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
-import { ApiFnd012ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd012";
-import { ApiFnd013ResponseCreated } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd013";
+} from "@clubs/interface/api/funding/endpoint/apiFnd010";
+import { ApiFnd012ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd012";
+import { ApiFnd013ResponseCreated } from "@clubs/interface/api/funding/endpoint/apiFnd013";
 import {
   ApiFnd014RequestBody,
   ApiFnd014ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd014";
+} from "@clubs/interface/api/funding/endpoint/apiFnd014";
 import {
   ApiFnd015RequestBody,
   ApiFnd015ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd015";
+} from "@clubs/interface/api/funding/endpoint/apiFnd015";
 import {
   ApiFnd016RequestQuery,
   ApiFnd016ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
-import {
-  IFundingComment,
-  IFundingCommentRequest,
-} from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
+} from "@clubs/interface/api/funding/endpoint/apiFnd016";
+import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
   IFundingResponse,
-} from "@sparcs-clubs/interface/api/funding/type/funding.type";
-import {
-  IExecutive,
-  IStudent,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/funding/type/funding.type";
+import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   FundingDeadlineEnum,
   FundingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
+import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { FundingDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/funding.deadline.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
 import FundingCommentRepository from "../repository/funding.comment.repository";
-import FundingDeadlineRepository from "../repository/funding.deadline.repository";
 import FundingRepository from "../repository/funding.repository";
 
 @Injectable()
@@ -90,7 +87,9 @@ export default class FundingService {
     private readonly userPublicService: UserPublicService,
     private readonly clubPublicService: ClubPublicService,
     private readonly activityPublicService: ActivityPublicService,
-    private fundingDeadlineRepository: FundingDeadlineRepository,
+    private readonly semesterPublicService: SemesterPublicService,
+    private readonly activityDurationPublicService: ActivityDurationPublicService,
+    private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
   ) {}
 
   async postStudentFunding(
@@ -103,9 +102,7 @@ export default class FundingService {
       FundingDeadlineEnum.Exception,
     ]);
 
-    const now = getKSTDate();
-    const activityD = await this.activityPublicService.fetchLastActivityD(now);
-    await this.validateExpenditureDate(body.expenditureDate, activityD);
+    const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -229,7 +226,9 @@ export default class FundingService {
       );
     }
 
-    const comments = await this.fundingCommentRepository.fetchAll(funding.id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
 
     const commentedExecutive =
       await this.userPublicService.fetchExecutiveSummaries(
@@ -260,7 +259,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -382,13 +383,11 @@ export default class FundingService {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
 
-    const now = getKSTDate();
-    const activityD = await this.activityPublicService.fetchLastActivityD(now);
-    await this.validateExpenditureDate(body.expenditureDate, activityD);
+    const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -411,7 +410,7 @@ export default class FundingService {
     );
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Revision,
+      FundingDeadlineEnum.Modification,
       FundingDeadlineEnum.Exception,
     ]);
     await this.fundingRepository.delete(param.id);
@@ -427,7 +426,7 @@ export default class FundingService {
       throw new HttpException("Student not found", HttpStatus.NOT_FOUND);
     }
 
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       query.clubId,
@@ -502,11 +501,14 @@ export default class FundingService {
    * @returns 현재 시점의 지원금 신청 마감 기한과 대상 활동 기간을 리턴합니다.
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
-    const today = getKSTDate();
-
     const [targetDuration, deadline] = await Promise.all([
-      this.activityPublicService.fetchLastActivityD(),
-      this.fundingDeadlineRepository.fetch(today),
+      this.activityDurationPublicService.load(),
+      this.fundingDeadlinePublicService
+        .search({
+          date: new Date(),
+        })
+        .then(takeExist())
+        .then(takeOne),
     ]);
 
     return {
@@ -520,7 +522,7 @@ export default class FundingService {
   ): Promise<ApiFnd008ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
     const fundings = await this.fundingRepository.fetchSummaries(activityD.id);
 
     const clubs = await this.clubPublicService.fetchSummaries(
@@ -694,7 +696,7 @@ export default class FundingService {
     param: ApiFnd009RequestParam,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
-    const activityD = await this.activityPublicService.fetchLastActivityD();
+    const activityD = await this.activityDurationPublicService.load();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       param.clubId,
@@ -725,9 +727,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -818,9 +820,9 @@ export default class FundingService {
 
     const fundingsWithCommentedExecutive = await Promise.all(
       fundings.map(async funding => {
-        const comments = await this.fundingCommentRepository.fetchAll(
-          funding.id,
-        );
+        const comments = await this.fundingCommentRepository.find({
+          fundingId: funding.id,
+        });
         return {
           ...funding,
           commentedExecutive: comments[0]?.executive,
@@ -904,7 +906,9 @@ export default class FundingService {
     const funding = await this.fundingRepository.fetch(id);
 
     const fundingResponse = await this.buildFundingResponse(funding);
-    const comments = await this.fundingCommentRepository.fetchAll(id);
+    const comments = await this.fundingCommentRepository.find({
+      fundingId: funding.id,
+    });
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
@@ -978,13 +982,13 @@ export default class FundingService {
 
     const fundingComment = await this.fundingCommentRepository.withTransaction(
       async tx => {
-        const comment = await this.fundingCommentRepository.insertTx(tx, {
+        const comment = await this.fundingCommentRepository.createTx(tx, {
           fundingStatusEnum,
           approvedAmount,
           funding: { id },
           executive: { id: executiveId },
           content,
-        } as IFundingCommentRequest);
+        });
         const funding = await this.fundingRepository.patchStatusTx(tx, {
           id,
           fundingStatusEnum,
@@ -1037,8 +1041,7 @@ export default class FundingService {
     await this.userPublicService.checkCurrentExecutive(executiveId);
     await this.userPublicService.checkCurrentExecutive(body.executiveId);
 
-    const activityDId = (await this.activityPublicService.fetchLastActivityD())
-      .id;
+    const activityDId = await this.activityDurationPublicService.loadId();
 
     const fundings = await this.fundingRepository.fetchSummaries(
       body.clubIds,
@@ -1064,8 +1067,7 @@ export default class FundingService {
   ): Promise<ApiFnd016ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const nowKST = getKSTDate();
-    const semester = await this.clubPublicService.fetchSemester(nowKST);
+    const semester = await this.semesterPublicService.load();
     const { clubIds } = query;
 
     // TODO: 지금은 entity로 불러오는데, id만 들고 오는 public service 및 repository 를 만들어서 한다면 좀더 효율이 높아질 수 있음
@@ -1082,19 +1084,22 @@ export default class FundingService {
   }
 
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
-    const today = getKSTDate();
-    const todayDeadline = await this.fundingDeadlineRepository.fetch(today);
-    if (enums.find(e => Number(e) === todayDeadline.deadlineEnum) === undefined)
-      throw new HttpException(
-        "Today is not a day for funding",
-        HttpStatus.BAD_REQUEST,
-      );
+    await this.fundingDeadlinePublicService
+      .search({
+        date: new Date(),
+        deadlineEnum: enums,
+      })
+      .then(takeExist());
   }
 
+  /**
+   * @description 지출 날짜가 현재 activityD 의 기간 내에 있는지 확인합니다.
+   * @returns 현재 activityD 의 id를 리턴합니다.
+   */
   private async validateExpenditureDate(
     expenditureDate: Date,
-    activityD: IActivityDuration,
-  ) {
+  ): Promise<IActivityDuration> {
+    const activityD = await this.activityDurationPublicService.load();
     if (
       expenditureDate < activityD.startTerm ||
       expenditureDate > activityD.endTerm
@@ -1104,5 +1109,6 @@ export default class FundingService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    return activityD;
   }
 }

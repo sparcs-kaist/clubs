@@ -2,7 +2,7 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
 
-import { TransportationEnum as E } from "@sparcs-clubs/interface/common/enum/funding.enum";
+import { TransportationEnum as E } from "@clubs/interface/common/enum/funding.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";

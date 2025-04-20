@@ -4,7 +4,7 @@ import {
   IExecutiveSummary,
   IProfessor,
   IStudentSummary,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";

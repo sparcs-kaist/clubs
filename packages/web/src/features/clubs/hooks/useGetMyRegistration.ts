@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { useGetMyMemberRegistration } from "../services/useGetMyMemberRegistration";
 

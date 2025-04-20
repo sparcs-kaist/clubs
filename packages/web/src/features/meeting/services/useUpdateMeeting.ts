@@ -4,7 +4,7 @@ import apiMee003, {
   ApiMee003RequestBody,
   ApiMee003RequestParam,
   ApiMee003ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee003";
+} from "@clubs/interface/api/meeting/apiMee003";
 
 import {
   axiosClientWithAuth,

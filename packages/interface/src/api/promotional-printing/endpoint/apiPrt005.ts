@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   PromotionalPrintingOrderStatusEnum,
   PromotionalPrintingSizeEnum,
-} from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+} from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 /**
  * @version v0.1
@@ -18,7 +18,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
+  endTerm: z.coerce.date().optional(),
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
 });

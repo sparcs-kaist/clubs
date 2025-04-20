@@ -5,59 +5,50 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky install",
-    "web": "pnpm -F web",
-    "api": "dotenv -- pnpm -F api",
-    "interface": "pnpm -F interface",
-    "dev": "dotenv -- pnpm -r --stream --parallel dev",
-    "dev:no-db": "dotenv -- pnpm -r --stream --parallel dev:no-db",
+    "dev": "turbo watch dev -- --parallel",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "clean": "turbo run clean",
+    "lint": "turbo run lint",
     "mock:front": "NEXT_PUBLIC_API_MOCK_MODE=1 dotenv -- pnpm -r --stream --parallel mock:front",
-    "mock:back": "NEXT_PUBLIC_API_MOCK_MODE=1 dotenv -- pnpm -r --stream --parallel mock:back",
     "storybook": "pnpm -r storybook",
     "build-storybook": "pnpm -r build-storybook",
     "db": "dotenv -- pnpm -F api db",
     "generate": "dotenv -- pnpm -F api generate",
-    "pull": "dotenv -- pnpm -F api pull",
-    "migrate": "dotenv -- pnpm -F api migrate",
-    "migrate:dev": "dotenv -- pnpm -F api migrate:dev",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm eslint . && pnpm prettier --config ./.prettierrc --check -u .",
-    "build": "pnpm -r build",
-    "clean": "pnpm -r clean"
+    "prepare": "husky install"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "pnpm eslint",
-      "prettier --config ./.prettierrc --write -u"
+    "./packages/api/**/*.ts": [
+      "pnpm --filter=api lint"
+    ],
+    "./packages/web/**/*.ts": [
+      "pnpm --filter=web lint"
+    ],
+    "./packages/web/**/*.tsx": [
+      "pnpm --filter=web lint"
+    ],
+    "./packages/interface/**/*.ts": [
+      "pnpm --filter=interface lint"
+    ],
+    "./packages/domain/**/*.ts": [
+      "pnpm --filter=domain lint"
     ]
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",
     "@commitlint/config-conventional": "^17.4.2",
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.19.0",
-    "@next/eslint-plugin-next": "^14.2.3",
-    "@stylistic/eslint-plugin": "^3.0.1",
-    "dotenv-cli": "^7.2.1",
-    "eslint": "^9.19.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-airbnb-typescript": "^18.0.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jest": "^28.11.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "globals": "^15.14.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "prettier": "^3.0.3",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.23.0"
+    "turbo": "^2.5.0"
   },
   "engines": {
     "node": "^22.12.0",
     "pnpm": "^9.14.4"
   },
-  "packageManager": "pnpm@9.14.4"
+  "packageManager": "pnpm@9.14.4",
+  "dependencies": {
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0"
+  }
 }

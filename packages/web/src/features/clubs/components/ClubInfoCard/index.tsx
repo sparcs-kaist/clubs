@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
 
-import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";

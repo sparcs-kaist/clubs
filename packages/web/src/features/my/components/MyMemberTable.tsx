@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
+import { ApiReg006ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg006";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";

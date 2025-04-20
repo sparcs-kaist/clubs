@@ -1,14 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import type { ApiAcf001RequestBody } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf001";
+import type { ApiAcf001RequestBody } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf001";
 import type {
   ApiAcf003RequestQuery,
   ApiAcf003ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
 import type {
   ApiAcf007RequestQuery,
   ApiAcf007ResponseOk,
-} from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+} from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 
 import { ClubDelegateDRepository } from "@sparcs-clubs/api/feature/club/delegate/club.club-delegate-d.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -63,7 +63,7 @@ export class ActivityCertificateService {
       await this.activityCertificateRepository.countActivityCertificatesByClubIdAndCreatedAtIn(
         query.clubId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const items = await Promise.all(
@@ -98,7 +98,7 @@ export class ActivityCertificateService {
       await this.activityCertificateRepository.countActivityCertificatesByStudentIdAndCreatedAtIn(
         tempStudentId,
         query.startDate,
-        query.endDate,
+        query.endTerm,
       );
 
     const items = await Promise.all(

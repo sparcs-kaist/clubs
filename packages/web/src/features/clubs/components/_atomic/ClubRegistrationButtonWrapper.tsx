@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import useGetMyRegistration from "@sparcs-clubs/web/features/clubs/hooks/useGetMyRegistration";

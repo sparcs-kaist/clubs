@@ -5,8 +5,8 @@ import {
   createErrorResponse,
   PaginationRequest,
   PaginationResponse,
-} from "@sparcs-clubs/interface/common/api";
-import { IApiObject } from "@sparcs-clubs/interface/type";
+} from "@clubs/interface/common/api";
+import { IApiObject } from "@clubs/interface/type";
 
 /**
  * @version v0.1

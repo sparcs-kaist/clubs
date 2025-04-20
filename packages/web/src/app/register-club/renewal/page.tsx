@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";

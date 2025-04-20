@@ -1,5 +1,5 @@
-import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { ApiReg008ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg008";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { Semester } from "@sparcs-clubs/web/types/semester";
 

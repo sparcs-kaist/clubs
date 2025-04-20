@@ -41,6 +41,7 @@ export const productionReadyPaths: {
     "/clubs",
     "/notice",
     "/credits",
+    "/errors/not-iam-login",
     // 마이페이지
     "/my/clubs",
     // 대표 동아리 관리
@@ -66,35 +67,35 @@ export const productionReadyPaths: {
 const paths = {
   HOME: { name: "홈", path: "/", featureFlag: "DEFAULT", authority: ["all"] },
   NOTICE: {
-    name: "공지사항",
+    name: "path.공지사항",
     path: "/notice",
     authority: ["all"],
     featureFlag: "DEFAULT",
   },
   CLUBS: {
-    name: "동아리",
+    name: "path.동아리",
     featureFlag: "DEFAULT",
     sub: [
       {
-        name: "동아리 목록",
+        name: "path.동아리 목록",
         path: "/clubs",
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "나의 동아리",
+        name: "path.나의 동아리",
         path: "/my/clubs",
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "동아리 등록 신청",
+        name: "path.동아리 등록 신청",
         path: "/register-club",
         authority: ["all"],
         featureFlag: "REGISTER_CLUB",
       },
       {
-        name: "대표 동아리 관리",
+        name: "path.대표 동아리 관리",
         path: "/manage-club",
         authority: ["all"],
         featureFlag: "DEFAULT",
@@ -103,7 +104,7 @@ const paths = {
     authority: ["all"],
   },
   VOTING: {
-    name: "의결기구",
+    name: "path.의결기구",
     featureFlag: "DEFAULT",
     sub: [
       // {
@@ -112,28 +113,28 @@ const paths = {
       //   featureFlag: "DEFAULT",
       // },
       {
-        name: "전동대회",
+        name: "path.전동대회",
         // path: MEETING_PATH(MeetingEnum.clubRepresentativesCouncilMeeting),
         path: externalLinks.allClubRepresentativeMeeting,
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "확대운영위원회",
+        name: "path.확대운영위원회",
         // path: MEETING_PATH(MeetingEnum.expansiveOperativeCommittee),
         path: externalLinks.expandedOperatingCommittee,
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "운영위원회",
+        name: "path.운영위원회",
         // path: MEETING_PATH(MeetingEnum.operativeCommittee),
         path: externalLinks.operatingCommittee,
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "분과회의",
+        name: "path.분과회의",
         // path: MEETING_PATH(MeetingEnum.divisionMeeting),
         path: externalLinks.divisionMeeting,
         authority: ["all"],
@@ -143,7 +144,7 @@ const paths = {
     authority: ["all"],
   },
   COMMUNITY: {
-    name: "소통",
+    name: "path.소통",
     featureFlag: "DEFAULT",
     // TODO: 임시 링크
     sub: [
@@ -153,13 +154,13 @@ const paths = {
       //   featureFlag: "NO_RELEASE",
       // },
       {
-        name: "카카오톡 문의하기",
+        name: "path.카카오톡 문의하기",
         path: externalLinks.kakaotalk,
         authority: ["all"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "동아리연합회칙",
+        name: "path.동아리연합회칙",
         path: externalLinks.rules,
         authority: ["all"],
         featureFlag: "DEFAULT",
@@ -168,29 +169,29 @@ const paths = {
     authority: ["all"],
   },
   SERVICE: {
-    name: "서비스 신청",
+    name: "path.서비스 신청",
     featureFlag: "NO_RELEASE",
     sub: [
       {
-        name: "대여 사업",
+        name: "path.대여 사업",
         path: "/rental-business",
         authority: ["all"],
         featureFlag: "NO_RELEASE",
       },
       {
-        name: "홍보물 인쇄",
+        name: "path.홍보물 인쇄",
         path: "/printing-business",
         authority: ["all"],
         featureFlag: "NO_RELEASE",
       },
       {
-        name: "활동확인서 발급",
+        name: "path.활동확인서 발급",
         path: "/activity-certificate",
         authority: ["all"],
         featureFlag: "NO_RELEASE",
       },
       {
-        name: "공용공간 비정기사용",
+        name: "path.공용공간 비정기사용",
         path: "/common-space",
         authority: ["all"],
         featureFlag: "NO_RELEASE",
@@ -199,29 +200,29 @@ const paths = {
     authority: ["all"],
   },
   EXECUTIVE: {
-    name: "집행부",
+    name: "path.집행부",
     featureFlag: "DEFAULT",
     sub: [
       {
-        name: "동아리 등록 신청",
+        name: "path.동아리 등록 신청",
         path: "/executive/register-club",
         authority: ["executive"],
         featureFlag: "REGISTER_CLUB",
       },
       {
-        name: "회원 등록 신청",
+        name: "path.회원 등록 신청",
         path: "/executive/register-member",
         authority: ["executive"],
         featureFlag: "REGISTER_MEMBER",
       },
       {
-        name: "활동 보고서",
+        name: "path.활동 보고서",
         path: "/executive/activity-report",
         authority: ["executive"],
         featureFlag: "DEFAULT",
       },
       {
-        name: "지원금",
+        name: "path.지원금",
         path: "/executive/funding",
         authority: ["executive"],
         featureFlag: "DEFAULT",
@@ -231,25 +232,25 @@ const paths = {
   },
   // TODO: 임시 링크
   MADE_BY: {
-    name: "만든 사람들",
+    name: "path.만든 사람들",
     path: "/credits",
     featureFlag: "DEFAULT",
     authority: ["executive"],
   },
   LICENSE: {
-    name: "라이센스",
+    name: "path.라이센스",
     path: "/",
     featureFlag: "DEFAULT",
     authority: ["executive"],
   },
   TERMS_OF_SERVICE: {
-    name: "이용 약관",
+    name: "path.이용 약관",
     path: "/",
     featureFlag: "DEFAULT",
     authority: ["executive"],
   },
   LOGIN: {
-    name: "로그인",
+    name: "path.로그인",
     path: "/",
     featureFlag: "DEFAULT",
     authority: ["all"],

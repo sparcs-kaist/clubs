@@ -2,7 +2,7 @@ import { Divider } from "@mui/material";
 import React from "react";
 import styled from "styled-components";
 
-import { ApiFnd010ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
+import { ApiFnd010ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd010";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

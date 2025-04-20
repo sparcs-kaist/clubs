@@ -2,8 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, count, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { StudentStatusEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
+import { StudentStatusEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";

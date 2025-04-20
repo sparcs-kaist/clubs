@@ -1,4 +1,4 @@
-import type { ApiUsr001ResponseOK } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr001";
+import type { ApiUsr001ResponseOK } from "@clubs/interface/api/user/endpoint/apiUsr001";
 
 const mockupUserProfile: ApiUsr001ResponseOK = {
   id: 1234,

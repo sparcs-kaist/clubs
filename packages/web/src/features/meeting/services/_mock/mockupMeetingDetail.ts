@@ -1,5 +1,5 @@
-import { ApiMee002ResponseOk } from "@sparcs-clubs/interface/api/meeting/apiMee002";
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { ApiMee002ResponseOk } from "@clubs/interface/api/meeting/apiMee002";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 import { MeetingTemplate } from "@sparcs-clubs/web/features/meeting/constants/meetingTemplate";
 
@@ -16,7 +16,7 @@ export const mockupMeetingDetail: ApiMee002ResponseOk = {
   isRegular: false,
   meetingEnumId: meetingType,
   startDate: new Date(),
-  endDate: new Date(),
+  endTerm: new Date(),
   location: "장소",
   locationEn: "location",
   tag: "tag",

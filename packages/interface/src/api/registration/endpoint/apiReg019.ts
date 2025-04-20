@@ -1,8 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zDivision } from "@clubs/interface/api/division/type/division.type";
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -68,3 +69,32 @@ export type {
   ApiReg019RequestBody,
   ApiReg019ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(),
+  description: `
+  # REG-019
+
+  동아리별 회원 등록 신청의 간략한 상태를 확인합니다.
+
+  집행부원만 이용 가능합니다.
+  `,
+  summary:
+    "REG-019: 집행부원이 동아리별 회원 등록 신청의 간략한 상태를 확인합니다.",
+  request: {
+    query: requestQuery,
+  },
+  responses: {
+    200: {
+      description:
+        "성공적으로 동아리별 회원 등록 신청의 간략한 상태를 확인했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

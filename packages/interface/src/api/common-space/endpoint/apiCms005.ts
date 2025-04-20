@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zWeekTime } from "@sparcs-clubs/interface/common/type/time.type";
+import { zWeekTime } from "@clubs/interface/common/type/time.type";
 
 /**
  * @version v0.1

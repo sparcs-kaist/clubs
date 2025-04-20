@@ -1,6 +1,6 @@
 import React from "react";
 
-import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
+import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ProgressStatus from "@sparcs-clubs/web/common/components/ProgressStatus";

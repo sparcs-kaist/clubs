@@ -1,16 +1,12 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
 
-import { zMemberRegistration } from "../type/member.registration.type";
-
-/**
- * @version v0.1
- * @description 자신의 동아리 신청 내역과 그 상태를 전부 조회합니다.
- */
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zDivision } from "@clubs/interface/api/division/type/division.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { registry } from "@clubs/interface/open-api";
 
 const url = () => `/student/registrations/member-registrations/my`;
 const method = "GET";
@@ -53,6 +49,36 @@ const responseBodyMap = {
 };
 
 const responseErrorMap = {};
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(),
+  description: `
+  # REG-006
+
+  자신의 동아리 신청 내역과 그 상태를 전부 조회합니다.
+  `,
+  summary: "REG-006: 학생이 자신의 동아리 신청 내역을 조회합니다.",
+  responses: {
+    200: {
+      description: "성공적으로 신청 내역을 조회했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+    204: {
+      description: "신청 내역이 없습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[204],
+        },
+      },
+    },
+  },
+});
 
 const apiReg006 = {
   url,

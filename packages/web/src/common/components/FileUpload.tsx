@@ -2,7 +2,7 @@ import { overlay } from "overlay-kit";
 import React, { useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { ApiFil001RequestBody } from "@sparcs-clubs/interface/api/file/apiFil001";
+import { ApiFil001RequestBody } from "@clubs/interface/api/file/apiFil001";
 
 import Icon from "@sparcs-clubs/web/common/components/Icon";
 

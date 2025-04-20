@@ -1,0 +1,27 @@
+{
+  "name": "@clubs/domain",
+  "version": "0.0.1",
+  "description": "Clubs 서비스에서 통용되는 동아리연합회 도메인 모델을 정의합니다",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.0",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@clubs/eslint-config": "workspace:*",
+    "@clubs/typescript-config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

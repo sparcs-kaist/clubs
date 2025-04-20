@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 /**
  * @version v0.1

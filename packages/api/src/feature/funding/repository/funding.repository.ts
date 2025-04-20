@@ -7,7 +7,7 @@ import {
   IFundingExtra,
   IFundingRequest,
   IFundingSummary,
-} from "@sparcs-clubs/interface/api/funding/type/funding.type";
+} from "@clubs/interface/api/funding/type/funding.type";
 
 import {
   DrizzleAsyncProvider,

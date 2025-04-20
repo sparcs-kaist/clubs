@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zExecutive } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zExecutive } from "@clubs/interface/api/user/type/user.type";
 
 /**
  * @version v0.1

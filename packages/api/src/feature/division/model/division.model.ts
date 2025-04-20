@@ -1,6 +1,6 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { IDivision } from "@clubs/interface/api/division/type/division.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
@@ -8,7 +8,7 @@ import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
 export class MDivision extends MEntity implements IDivision {
-  // id: IDivision["id"];
+  static modelName = "division";
 
   name: IDivision["name"];
 
@@ -23,7 +23,7 @@ export class MDivision extends MEntity implements IDivision {
     Object.assign(this, data);
   }
 
-  static fromDB(result: DivisionDBResult): MDivision {
+  static from(result: DivisionDBResult): MDivision {
     return new MDivision({
       ...result,
       district: {

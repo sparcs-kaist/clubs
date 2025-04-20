@@ -1,12 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
+import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
 
-/**
- * @version v0.1
- * @description 동아리 가입 신청을 취소합니다.
- */
+import { registry } from "@clubs/interface/open-api";
 
 const url = (applyId: string) =>
   `/student/registrations/member-registrations/member-registration/${applyId}`;
@@ -49,3 +46,28 @@ export type {
   ApiReg013RequestBody,
   ApiReg013ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "delete",
+  path: url(":applyId"),
+  description: `
+  # REG-013
+
+  동아리 가입 신청을 취소합니다.
+  `,
+  summary: "REG-013: 학생이 동아리 가입 신청을 취소합니다.",
+  request: {
+    params: requestParam,
+  },
+  responses: {
+    200: {
+      description: "성공적으로 신청이 취소되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

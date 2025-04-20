@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiAct018, {
   ApiAct018ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/api/activity/endpoint/apiAct018";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import {
   axiosClientWithAuth,
@@ -34,7 +34,7 @@ defineAxiosMock(mock => {
         endTerm: new Date("2024-12-30"),
       },
       deadline: {
-        activityDeadlineEnum: ActivityDeadlineEnum.Upload,
+        activityDeadlineEnum: ActivityDeadlineEnum.Writing,
         duration: {
           startTerm: new Date("2024-08-01"),
           endTerm: new Date("2024-08-31"),

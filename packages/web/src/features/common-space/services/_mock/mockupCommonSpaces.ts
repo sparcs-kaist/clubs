@@ -1,5 +1,5 @@
-import { ApiCms001ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms001";
-import { CommonSpaceEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
+import { ApiCms001ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms001";
+import { CommonSpaceEnum } from "@clubs/interface/common/enum/commonSpace.enum";
 
 const mockupCommonSpaces: ApiCms001ResponseOK = {
   commonSpaces: [

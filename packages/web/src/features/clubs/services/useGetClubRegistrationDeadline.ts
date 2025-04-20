@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiReg027, {
   ApiReg027ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg027";
+} from "@clubs/interface/api/registration/endpoint/apiReg027";
 
 import {
   axiosClientWithAuth,
@@ -34,7 +34,7 @@ defineAxiosMock(mock => {
       },
       deadline: {
         startDate: new Date(),
-        endDate: new Date(),
+        endTerm: new Date(),
       },
     },
   ]);

@@ -40,7 +40,7 @@ export const Meeting = mysqlTable(
     location: varchar("location_kr", { length: 255 }),
     locationEn: varchar("location_en", { length: 255 }),
     startDate: datetime("start_datetime").notNull(),
-    endDate: datetime("end_datetime"),
+    endTerm: datetime("end_datetime"),
     tag: varchar("meeting_group_tag", { length: 255 }).notNull(),
     statusEnumId: int("meeting_status_enum").notNull().default(1), // CHACHA : NEW!
     createdAt: timestamp("created_at").defaultNow(),

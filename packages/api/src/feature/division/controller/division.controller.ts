@@ -2,11 +2,11 @@ import { Controller, Get, UsePipes } from "@nestjs/common";
 
 import apiDiv001, {
   ApiDiv001ResponseOk,
-} from "@sparcs-clubs/interface/api/division/endpoint/apiDiv001";
+} from "@clubs/interface/api/division/endpoint/apiDiv001";
 import apiDiv002, {
   ApiDiv002RequestUrl,
   ApiDiv002ResponseOk,
-} from "@sparcs-clubs/interface/api/division/endpoint/apiDiv002";
+} from "@clubs/interface/api/division/endpoint/apiDiv002";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
