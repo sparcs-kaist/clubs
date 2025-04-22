@@ -148,10 +148,7 @@ export abstract class BaseSingleTableRepository<
     //   }),
     // );
 
-    const results = await this.find(
-      { id: ids } as BaseRepositoryQuery<Query, Id>,
-      tx,
-    );
+    const results = await this.fetchAll(ids, tx);
 
     return results;
   }

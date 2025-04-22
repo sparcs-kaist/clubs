@@ -238,20 +238,47 @@ export abstract class BaseMultiTableRepository<
     data: MultiInsertModel<Table>[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
-    // TODO: bulk로 보내고 $returningId로 동작하게 수정
-    // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
-    // 원래 계획: insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
+    // 메인 테이블 삽입
+    const processedData = await Promise.all(
+      data.map(async model => {
+        const [result] = await tx.insert(this.table.main).values(model.main);
+        const id = result.insertId;
+        return { ...model, id } as MultiInsertModel<Table> & { id: Id };
+      }),
+    );
 
-    const insert = await tx.insert(this.table.main).values(data).$returningId();
-
-    if (!Array.isArray(insert)) {
-      throw new Error(`insert is not an array : ${JSON.stringify(insert)}`);
+    if (!Array.isArray(processedData)) {
+      throw new Error(
+        `processedData is not an array : ${JSON.stringify(processedData)}`,
+      );
     }
 
-    const ids = insert.map(idObject => (idObject as { id: Id }).id) as Id[];
+    if (processedData.length !== data.length) {
+      throw new Error(
+        `processedData length is not equal to data length : ${processedData.length} !== ${data.length}, ${JSON.stringify(processedData)}`,
+      );
+    }
 
-    const results = await this.find(
-      { id: ids } as BaseRepositoryQuery<Query, Id>,
+    const arrayData = this.insertModelArrayToTableArrayResult(processedData);
+
+    // 메인 테이블 id를 기반으로 서브 테이블 삽입
+    // problem: 서브 테이블 삽입 시 메인 테이블 id를 알 수 없음
+
+    await Promise.all(
+      Object.entries(this.table.oneToOne).map(async ([key, table]) => {
+        await tx.insert(table).values(arrayData.oneToOne[key]);
+      }),
+    );
+
+    await Promise.all(
+      Object.entries(this.table.oneToMany).map(async ([key, table]) => {
+        await tx.insert(table).values(arrayData.oneToMany[key]);
+      }),
+    );
+
+    // insert 한 결과 반환
+    const results = await this.fetchAll(
+      processedData.map(m => m.id),
       tx,
     );
 
@@ -425,18 +452,22 @@ export abstract class BaseMultiTableRepository<
   }
 
   private insertModelArrayToTableArrayResult(
-    models: MultiInsertModel<Table>[],
+    models: (MultiInsertModel<Table> & { id: Id })[],
   ): MultiModelInsertTableArray<Table> {
+    if (models.length === 0) throw new Error("model array is empty");
     return {
       main: models.map(m => m.main),
       oneToOne: Object.fromEntries(
-        Object.keys(models[0]?.oneToOne || {}).map(key => [
+        Object.keys(this.table.oneToOne).map(key => [
           key,
-          models.map(m => m.oneToOne[key as keyof typeof m.oneToOne]),
+          models.map(m => ({
+            ...m.oneToOne[key as keyof typeof m.oneToOne],
+            [this.mainTableIdName]: m.id,
+          })),
         ]),
       ) as unknown as MultiModelInsertTableArray<Table>["oneToOne"],
       oneToMany: Object.fromEntries(
-        Object.keys(models[0]?.oneToMany || {}).map(key => [
+        Object.keys(this.table.oneToMany).map(key => [
           key,
           models.flatMap(m => m.oneToMany[key as keyof typeof m.oneToMany]),
         ]),
