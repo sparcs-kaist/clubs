@@ -1,5 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { and, count, SQL, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  InferInsertModel,
+  InferSelectModel,
+  SQL,
+  sql,
+} from "drizzle-orm";
 
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
@@ -26,9 +34,9 @@ export abstract class BaseSingleTableRepository<
   Model extends MEntity<IModel, Id>,
   IModel extends IEntity<Id>,
   Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
-  DbSelect extends Table["$inferSelect"],
-  DbInsert extends Table["$inferInsert"],
-  DbUpdate extends Partial<Table["$inferInsert"]>,
+  DbSelect extends InferSelectModel<Table>,
+  DbInsert extends InferInsertModel<Table>,
+  DbUpdate extends Partial<DbSelect>,
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
   QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date
@@ -78,39 +86,39 @@ export abstract class BaseSingleTableRepository<
 
   // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
   protected async findImplementation(
-    param: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
+    query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
-    let query = tx
+    let selectQuery = tx
       .select()
       .from(this.table)
-      .where(this.makeWhereClause(param))
+      .where(this.makeWhereClause(query))
       .$dynamic();
 
-    if (param.pagination) {
-      query = query.limit(param.pagination.itemCount);
-      query = query.offset(
-        (param.pagination.offset - 1) * param.pagination.itemCount,
+    if (query.pagination) {
+      selectQuery = selectQuery.limit(query.pagination.itemCount);
+      selectQuery = selectQuery.offset(
+        (query.pagination.offset - 1) * query.pagination.itemCount,
       );
     }
 
-    if (param.orderBy) {
-      query = query.orderBy(...this.makeOrderBy(param.orderBy));
+    if (query.orderBy) {
+      selectQuery = selectQuery.orderBy(...this.makeOrderBy(query.orderBy));
     }
 
-    const result = await query.execute();
+    const result = await selectQuery.execute();
 
     return result.map(row => this.dbToModel(row as DbSelect));
   }
 
   protected async countImplementation(
-    param: BaseRepositoryQuery<Query, Id>,
+    query: BaseRepositoryQuery<Query, Id>,
     tx: DrizzleTransaction,
   ): Promise<number> {
     const [result] = await tx
       .select({ count: count() })
       .from(this.table)
-      .where(this.makeWhereClause(param));
+      .where(this.makeWhereClause(query));
 
     return result.count;
   }
@@ -122,13 +130,13 @@ export abstract class BaseSingleTableRepository<
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
     // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
     // 원래 계획: insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
-    const insert = tx.insert(this.table).values(data) as unknown as {
-      $returningId: () => Promise<{ id: Id }[]>;
-    };
-    const ids = await insert
-      .$returningId()
-      .then(e => e.map(idObject => idObject.id));
+    const insert = await tx.insert(this.table).values(data).$returningId();
 
+    if (!Array.isArray(insert)) {
+      throw new Error(`insert is not an array : ${JSON.stringify(insert)}`);
+    }
+
+    const ids = insert.map(idObject => idObject.id) as Id[];
     //지금은 returningId가 제네릭에서 인식이 안돼서 이렇게 하나씩 넣고 쿼리
     // 참고: base.repository.ts 의 TableWithID 위 주석처리 부분
 
@@ -148,17 +156,17 @@ export abstract class BaseSingleTableRepository<
   }
 
   protected async putImplementation(
-    query: BaseRepositoryQuery<Query, Id>,
-    param: DbUpdate,
+    model: Model,
     tx: DrizzleTransaction,
-  ): Promise<Model[]> {
+  ): Promise<Model> {
+    const data = this.modelToDB(model);
     await tx
       .update(this.table)
-      .set(param)
-      .where(this.makeWhereClause(query))
+      .set(data)
+      .where(eq(this.table.id, model.id))
       .execute();
 
-    return this.find(query, tx);
+    return this.fetch(model.id, tx);
   }
 
   protected async patchImplementation(
@@ -183,7 +191,7 @@ export abstract class BaseSingleTableRepository<
   ): Promise<boolean> {
     await tx
       .update(this.table)
-      .set({ deletedAt: new Date() })
+      .set({ deletedAt: new Date() } as unknown as DbUpdate)
       .where(this.makeWhereClause(query))
       .execute();
     return true;

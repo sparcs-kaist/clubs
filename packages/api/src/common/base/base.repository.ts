@@ -54,11 +54,27 @@ export type MySqlColumnType = MySqlColumn<
   ColumnBaseConfig<ColumnDataType, string>
 >;
 
-// type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, "id"> & {
-//   notNull: true;
-//   hasDefault: true;
-//   primaryKey: true;
-// };
+type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, "id"> & {
+  notNull: true;
+  hasDefault: true;
+  primaryKey: true;
+};
+
+export type TableWithID = MySqlTable<{
+  name: string;
+  schema: string | undefined;
+  dialect: "mysql";
+  columns: {
+    id: MySqlColumn<ColumnBaseWithAutoPK>;
+    deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, "deletedAt">>;
+  } & Record<string, MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>>;
+}> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
+
+export type MultiTableWithID = {
+  main: TableWithID;
+  oneToOne: Record<string, TableWithID>;
+  oneToMany: Record<string, TableWithID>;
+};
 
 // export type TableWithID = MySqlTable<{
 //   name: string;
@@ -72,10 +88,10 @@ export type MySqlColumnType = MySqlColumn<
 //   };
 // }> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
 
-export type TableWithID = MySqlTable & {
-  id: MySqlColumnType;
-  deletedAt: MySqlColumnType;
-};
+// export type TableWithID = MySqlTable & {
+//   id: MySqlColumnType;
+//   deletedAt: MySqlColumnType;
+// };
 
 // MEntity 의 생성자
 // static 메서드 및 인스턴스 생성자를 constructor 로 받을 수 있도록 선언한 타입
@@ -245,12 +261,7 @@ export abstract class BaseRepository<
       IModel,
       Id
     >, // 모델엔티티 넣으면 됨
-    protected readonly tables:
-      | TableWithID
-      | {
-          mainTable: TableWithID;
-          subTables: TableWithID[];
-        },
+    protected readonly table: TableWithID | MultiTableWithID,
   ) {
     Reflect.defineMetadata(
       REPOSITORY_LOCK_ORDER_META_KEY,
@@ -299,12 +310,12 @@ export abstract class BaseRepository<
 
   // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
   protected abstract findImplementation(
-    param: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
+    query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]>;
 
   protected abstract countImplementation(
-    param: BaseRepositoryQuery<Query, Id>,
+    query: BaseRepositoryQuery<Query, Id>,
     tx: DrizzleTransaction,
   ): Promise<number>;
 
@@ -314,10 +325,9 @@ export abstract class BaseRepository<
   ): Promise<Model[]>;
 
   protected abstract putImplementation(
-    query: BaseRepositoryQuery<Query, Id>,
-    param: DbUpdate,
+    model: Model,
     tx: DrizzleTransaction,
-  ): Promise<Model[]>;
+  ): Promise<Model>;
 
   protected abstract patchImplementation(
     query: BaseRepositoryQuery<Query, Id>,
@@ -430,12 +440,25 @@ export abstract class BaseRepository<
     return column;
   }
 
+  private isMultiTable(): boolean {
+    return (
+      "main" in this.table &&
+      "oneToOne" in this.table &&
+      "oneToMany" in this.table
+    );
+  }
+
   // 속한 모델의 테이블들을 flat한 배열로 반환해주는 함수
   private getTables(): TableWithID[] {
-    if ("mainTable" in this.tables) {
-      return [this.tables.mainTable, ...this.tables.subTables];
+    if (this.isMultiTable()) {
+      const tables = this.table as MultiTableWithID;
+      return [
+        tables.main,
+        ...Object.values(tables.oneToOne),
+        ...Object.values(tables.oneToMany),
+      ];
     }
-    return [this.tables];
+    return [this.table as TableWithID];
   }
 
   private processQuery(
@@ -724,24 +747,24 @@ export abstract class BaseRepository<
   // TX 메서드만 구현하면 자동 반영
 
   async find(
-    param: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
+    query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
     return tx
-      ? this.findImplementation(param, tx)
+      ? this.findImplementation(query, tx)
       : this.txManager.runInTransaction(async tsx =>
-          this.findImplementation(param, tsx),
+          this.findImplementation(query, tsx),
         );
   }
 
   async count(
-    param: BaseRepositoryQuery<Query, Id>,
+    query: BaseRepositoryQuery<Query, Id>,
     tx?: DrizzleTransaction,
   ): Promise<number> {
     return tx
-      ? this.countImplementation(param, tx)
+      ? this.countImplementation(query, tx)
       : this.txManager.runInTransaction(async tsx =>
-          this.countImplementation(param, tsx),
+          this.countImplementation(query, tsx),
         );
   }
   async create(data: DbInsert[], tx?: DrizzleTransaction): Promise<Model[]> {
@@ -752,15 +775,11 @@ export abstract class BaseRepository<
         );
   }
 
-  async put(
-    id: Id,
-    param: DbUpdate,
-    tx?: DrizzleTransaction,
-  ): Promise<Model[]> {
+  async put(model: Model, tx?: DrizzleTransaction): Promise<Model> {
     return tx
-      ? this.putImplementation(id, param, tx)
+      ? this.putImplementation(model, tx)
       : this.txManager.runInTransaction(async tsx =>
-          this.putImplementation(id, param, tsx),
+          this.putImplementation(model, tsx),
         );
   }
 
