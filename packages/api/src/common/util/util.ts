@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
-import { IdType, IEntity, MEntity } from "../base/entity.model";
+import { IdType, MEntity } from "../base/entity.model";
 import { DB_TIMEZONE } from "./decorators/time-decorator";
 
 export const isEmptyObject = obj =>
@@ -94,11 +94,9 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
 export const getDeletedAtObject = (): { deletedAt: Date } =>
   makeObjectPropsToDBTimezone({ deletedAt: new Date() });
 
-type ModelInstance<Id extends IdType> = InstanceType<
-  typeof MEntity<IEntity<Id>, Id>
->;
+type ModelInstance<Id extends IdType> = InstanceType<typeof MEntity<Id>>;
 
-type ModelClass<T extends MEntity<IEntity<Id>, Id>, Id extends IdType> = {
+type ModelClass<T extends MEntity<Id>, Id extends IdType> = {
   prototype: T;
   modelName: string;
   new (data: unknown): T;
@@ -110,7 +108,7 @@ type ModelClass<T extends MEntity<IEntity<Id>, Id>, Id extends IdType> = {
  * @returns 표시할 모델 이름
  */
 const getModelName = <Id extends IdType>(
-  name?: string | ModelClass<MEntity<IEntity<Id>, Id>, Id>,
+  name?: string | ModelClass<MEntity<Id>, Id>,
   model?: ModelInstance<Id>[] | null,
 ): string => {
   // 직접 지정된 이름이 있으면 사용
@@ -159,10 +157,9 @@ export const takeOne = <M>(values: M[]): M | null => {
  * @throws 배열이 비어있으면 NotFoundException 던짐
  * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
  */
-export function takeOnlyOne<
-  M extends MEntity<IEntity<Id>, Id>,
-  Id extends IdType,
->(name?: string | ModelClass<M, Id>): (array: M[]) => M {
+export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType>(
+  name?: string | ModelClass<M, Id>,
+): (array: M[]) => M {
   return (array: M[]): M => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
@@ -190,7 +187,7 @@ export function getUniqueArray<
  * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
  * @description fetchAll에서 사용
  */
-export function takeAll<M extends MEntity<IEntity<Id>, Id>, Id extends IdType>(
+export function takeAll<M extends MEntity<Id>, Id extends IdType>(
   ids: Id[],
   name?: string | ModelClass<M, Id>,
 ): (array: M[]) => M[] {
@@ -208,10 +205,9 @@ export function takeAll<M extends MEntity<IEntity<Id>, Id>, Id extends IdType>(
 /**
  * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
  */
-export function takeExist<
-  M extends MEntity<IEntity<Id>, Id>,
-  Id extends IdType,
->(name?: string | ModelClass<M, Id>): (array: M[]) => M[] {
+export function takeExist<M extends MEntity<Id>, Id extends IdType>(
+  name?: string | ModelClass<M, Id>,
+): (array: M[]) => M[] {
   return (array: M[]) => {
     if (array.length === 0)
       throw new NotFoundException(`${getModelName(name, array)} is empty`);

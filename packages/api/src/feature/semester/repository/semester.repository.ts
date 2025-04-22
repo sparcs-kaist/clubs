@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
-
-import { ISemester } from "@clubs/domain/semester/semester";
+import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
@@ -12,7 +10,7 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { MSemester } from "@sparcs-clubs/api/feature/semester/model/semester.model";
 
-type SemesterQuery = { date: Date };
+export type SemesterQuery = { date: Date; endTerm: Date };
 
 type SemesterOrderByKeys = "id" | "year" | "name" | "startTerm" | "endTerm";
 type SemesterQuerySupport = {
@@ -31,9 +29,8 @@ type SemesterFieldMapKeys = BaseTableFieldMapKeys<
 >;
 
 @Injectable()
-export default class SemesterRepository extends BaseSingleTableRepository<
+export class SemesterRepository extends BaseSingleTableRepository<
   MSemester,
-  ISemester,
   SemesterTable,
   SemesterQuery,
   SemesterOrderByKeys,
@@ -72,7 +69,7 @@ export default class SemesterRepository extends BaseSingleTableRepository<
       name: SemesterD,
       startTerm: SemesterD,
       endTerm: SemesterD,
-      date: SemesterD,
+      date: null,
     };
 
     if (!(field in fieldMappings)) {
@@ -87,7 +84,7 @@ export default class SemesterRepository extends BaseSingleTableRepository<
     value: PrimitiveConditionValue,
   ): SQL {
     if (key === "date" && value instanceof Date) {
-      return and(gte(SemesterD.startTerm, value), lt(SemesterD.endTerm, value));
+      return and(lte(SemesterD.startTerm, value), gt(SemesterD.endTerm, value));
     }
 
     throw new Error(`Invalid key: ${key}`);

@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { PlainObject } from "../common/base/base.repository";
 import { forEachAsyncSequentially } from "../common/util/util";
-import { DrizzleTransaction } from "./drizzle.provider";
+import { DrizzleAsyncProvider, DrizzleTransaction } from "./drizzle.provider";
 
 export const REPOSITORY_LOCK_ORDER_META_KEY = Symbol(
   "REPOSITORY_LOCK_ORDER_KEY",
@@ -35,7 +35,9 @@ export type LockRequest<Query = PlainObject> = {
 
 @Injectable()
 export class TransactionManagerService {
-  constructor(private readonly db: MySql2Database) {}
+  constructor(
+    @Inject(DrizzleAsyncProvider) private readonly db: MySql2Database,
+  ) {}
 
   async runInTransaction<Result>(
     callback: (tx: DrizzleTransaction) => Promise<Result>,

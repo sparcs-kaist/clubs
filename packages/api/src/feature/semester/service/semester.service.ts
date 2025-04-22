@@ -8,7 +8,6 @@ import type {
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
-import { MSemester } from "../model/semester.model";
 import { SemesterRepository } from "../repository/semester.repository";
 
 @Injectable()
@@ -35,14 +34,13 @@ export class SemesterService {
           endTerm: OrderByTypeEnum.DESC,
         },
       })
-      .then(takeOnlyOne(MSemester));
+      .then(takeOnlyOne());
 
-    const total = await this.semesterRepository.find({});
-    const totalCount = total.length;
+    const total = await this.semesterRepository.count({});
 
     return {
       semesters: [semesters],
-      total: totalCount,
+      total,
       offset: param.query.pageOffset,
     };
   }

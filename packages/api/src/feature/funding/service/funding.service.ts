@@ -65,7 +65,12 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
+import {
+  takeExist,
+  takeOne,
+  takeOnlyOne,
+} from "@sparcs-clubs/api/common/util/util";
+import { TransactionManagerService } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -75,7 +80,7 @@ import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/public
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MFunding } from "../model/funding.model";
-import FundingCommentRepository from "../repository/funding.comment.repository";
+import { FundingCommentRepository } from "../repository/funding.comment.repository";
 import FundingRepository from "../repository/funding.repository";
 
 @Injectable()
@@ -90,6 +95,7 @@ export default class FundingService {
     private readonly semesterPublicService: SemesterPublicService,
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
+    private readonly txManager: TransactionManagerService,
   ) {}
 
   async postStudentFunding(
@@ -980,33 +986,36 @@ export default class FundingService {
       );
     }
 
-    const fundingComment = await this.fundingCommentRepository.withTransaction(
-      async tx => {
-        const comment = await this.fundingCommentRepository.createTx(tx, {
-          fundingStatusEnum,
-          approvedAmount,
-          funding: { id },
-          executive: { id: executiveId },
-          content,
-        });
-        const funding = await this.fundingRepository.patchStatusTx(tx, {
-          id,
-          fundingStatusEnum,
-          approvedAmount,
-          commentedAt: comment.createdAt,
-        });
+    const fundingComment = await this.txManager.runInTransaction(async tx => {
+      const comment = await this.fundingCommentRepository
+        .create(
+          {
+            fundingStatusEnum,
+            approvedAmount,
+            fundingId: id,
+            executiveId,
+            content,
+          },
+          tx,
+        )
+        .then(takeOnlyOne());
+      const funding = await this.fundingRepository.patchStatusTx(tx, {
+        id,
+        fundingStatusEnum,
+        approvedAmount,
+        commentedAt: new Date(),
+      });
 
-        // funding 이랑 comment 의 값들이 다르면 에러
-        if (!comment.isFinalComment(funding)) {
-          throw new HttpException(
-            "Funding and Comment Has Different Value",
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        }
+      // funding 이랑 comment 의 값들이 다르면 에러
+      if (!comment.isFinalComment(funding)) {
+        throw new HttpException(
+          "Funding and Comment Has Different Value",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
 
-        return comment;
-      },
-    );
+      return comment;
+    });
 
     return fundingComment;
   }

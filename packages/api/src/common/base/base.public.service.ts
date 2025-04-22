@@ -3,7 +3,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { takeOne, takeOnlyOne } from "../util/util";
-import { IdType, IEntity, MEntity } from "./entity.model";
+import { IdType, MEntity } from "./entity.model";
 
 type ModelClass = { modelName: string };
 
@@ -13,7 +13,7 @@ type RepositoryQuery<
 > = Partial<ModelQuery> & Partial<{ id: Id }>;
 
 interface IBaseRepository<
-  Model extends MEntity<IEntity<Id>, Id>,
+  Model extends MEntity<Id>,
   ModelQuery extends Record<string, unknown>,
   Id extends IdType = number,
 > {
@@ -27,7 +27,7 @@ interface IBaseRepository<
 
 @Injectable()
 export abstract class BasePublicService<
-  Model extends MEntity<IEntity<Id>, Id>,
+  Model extends MEntity<Id>,
   ModelQuery extends Record<string, unknown> = {},
   SearchQuery extends Partial<ModelQuery> = {},
   IsQuery extends RepositoryQuery<ModelQuery, Id> = {},

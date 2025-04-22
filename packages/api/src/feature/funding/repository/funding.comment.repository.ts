@@ -1,8 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InferSelectModel } from "drizzle-orm";
 
-import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
-
 import {
   BaseTableFieldMapKeys,
   TableWithID,
@@ -11,7 +9,7 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import { MFundingComment } from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
 
-type FundingCommentQuery = {
+export type FundingCommentQuery = {
   fundingId: number;
 };
 
@@ -22,9 +20,8 @@ type FundingCommentDbUpdate = Partial<FundingCommentDbSelect>;
 type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
 
 @Injectable()
-export default class FundingCommentRepository extends BaseSingleTableRepository<
+export class FundingCommentRepository extends BaseSingleTableRepository<
   MFundingComment,
-  IFundingComment,
   FundingCommentTable,
   FundingCommentQuery
 > {

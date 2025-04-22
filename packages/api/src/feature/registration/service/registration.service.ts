@@ -63,6 +63,7 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
 import { RegistrationPublicService } from "./registration.public.service";
@@ -1088,11 +1089,15 @@ export class RegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.memberRegistrationRepository.create({
-      student: { id: studentId },
-      club: { id: clubId },
-      semester: { id: semesterId },
-    });
+    await this.memberRegistrationRepository.create([
+      {
+        studentId,
+        clubId,
+        semesterId,
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Pending,
+      },
+    ]);
     return {};
   }
 
@@ -1113,6 +1118,10 @@ export class RegistrationService {
       studentId,
       semesterId,
     });
+
+    console.log(
+      `getMemberRegistrationsMy registrations ${JSON.stringify(registrations)}`,
+    );
     const result = await Promise.all(
       registrations.map(async registration => {
         const club = await this.clubPublicService.fetchSummary(
@@ -1168,7 +1177,7 @@ export class RegistrationService {
       );
     }
 
-    await this.memberRegistrationRepository.delete(applyId);
+    await this.memberRegistrationRepository.delete({ id: applyId });
     return {};
   }
 
@@ -1242,10 +1251,13 @@ export class RegistrationService {
           clubId,
         );
     }
-    await this.memberRegistrationRepository.patch(applyId, newbie =>
-      newbie.set({
-        registrationApplicationStudentEnum: applyStatusEnumId,
-      }),
+    await this.memberRegistrationRepository.patch(
+      { id: applyId },
+      newbie =>
+        new MMemberRegistration({
+          ...newbie,
+          registrationApplicationStudentEnum: applyStatusEnumId,
+        }),
     );
     return {};
   }

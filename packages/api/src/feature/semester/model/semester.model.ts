@@ -9,7 +9,7 @@ import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
  * @description 현재 구현상 학기 추가 시 학기 추가 전 학기의 끝날짜와 새로 추가되는 학기의 시작날짜가 같아야 합니다.
  */
 
-export class MSemester extends MEntity<ISemester> implements ISemester {
+export class MSemester extends MEntity implements ISemester {
   static modelName = "Semester";
 
   name: ISemester["name"];
@@ -21,6 +21,7 @@ export class MSemester extends MEntity<ISemester> implements ISemester {
   year: ISemester["year"];
 
   constructor(data: ISemester) {
-    super(data);
+    super();
+    Object.assign(this, data);
   }
 }

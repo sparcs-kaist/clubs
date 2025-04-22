@@ -10,7 +10,7 @@ import {
 
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
-import { IdType, IEntity, MEntity } from "../base/entity.model";
+import { IdType, MEntity } from "../base/entity.model";
 import { forEachAsyncSequentially, getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
@@ -129,8 +129,7 @@ export type MultiModelInsertTableArray<MultiTable extends MultiTableWithID> = {
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseMultiTableRepository<
-  Model extends MEntity<IModel, Id>,
-  IModel extends IEntity<Id>,
+  Model extends MEntity<Id>,
   Table extends MultiTableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
@@ -138,7 +137,6 @@ export abstract class BaseMultiTableRepository<
   Id extends IdType = number,
 > extends BaseRepository<
   Model,
-  IModel,
   MultiSelectModel<Table>,
   MultiInsertModel<Table>,
   MultiUpdateModel<Table>,
@@ -149,7 +147,7 @@ export abstract class BaseMultiTableRepository<
 > {
   constructor(
     protected table: Table,
-    protected readonly modelConstructor: ModelConstructor<Model, IModel, Id>, // 모델엔티티 넣으면 됨
+    protected readonly modelConstructor: ModelConstructor<Model, Id>, // 모델엔티티 넣으면 됨
     protected readonly mainTableIdName: string, // 서브 테이블에서 메인 테이블을 나타내는 id. ex) activityId
   ) {
     super(modelConstructor, table);

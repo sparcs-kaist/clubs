@@ -3,10 +3,7 @@ import { ISemester } from "@clubs/domain/semester/semester";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
-export class MActivityDeadline
-  extends MEntity<IActivityDeadline>
-  implements IActivityDeadline
-{
+export class MActivityDeadline extends MEntity implements IActivityDeadline {
   static modelName = "ActivityDeadline";
 
   semester: ISemester;
@@ -15,6 +12,7 @@ export class MActivityDeadline
   endTerm: IActivityDeadline["endTerm"];
 
   constructor(data: IActivityDeadline) {
-    super(data);
+    super();
+    Object.assign(this, data);
   }
 }

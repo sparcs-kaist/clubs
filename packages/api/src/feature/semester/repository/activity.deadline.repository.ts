@@ -1,10 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
+import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
 
-import {
-  ActivityDeadlineEnum,
-  IActivityDeadline,
-} from "@clubs/domain/semester/deadline";
+import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 import {
   BaseTableFieldMapKeys,
@@ -15,7 +12,7 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { MActivityDeadline } from "@sparcs-clubs/api/feature/semester/model/activity.deadline.model";
 
-type ActivityDeadlineQuery = {
+export type ActivityDeadlineQuery = {
   semesterId: number;
   date: Date;
   deadlineEnum: ActivityDeadlineEnum;
@@ -38,9 +35,8 @@ type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 >;
 
 @Injectable()
-export default class ActivityDeadlineRepository extends BaseSingleTableRepository<
+export class ActivityDeadlineRepository extends BaseSingleTableRepository<
   MActivityDeadline,
-  IActivityDeadline,
   ActivityDeadlineTable,
   ActivityDeadlineQuery,
   ActivityDeadlineOrderByKeys,
@@ -102,8 +98,8 @@ export default class ActivityDeadlineRepository extends BaseSingleTableRepositor
   ): SQL {
     if (key === "date" && value instanceof Date) {
       return and(
-        gte(ActivityDeadlineD.startTerm, value),
-        lt(ActivityDeadlineD.endTerm, value),
+        lte(ActivityDeadlineD.startTerm, value),
+        gt(ActivityDeadlineD.endTerm, value),
       );
     }
 

@@ -34,7 +34,7 @@ import {
   TransactionManagerService,
 } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
 
-import { IdType, IEntity, MEntity } from "../base/entity.model";
+import { IdType, MEntity } from "../base/entity.model";
 import { OrderByTypeEnum } from "../enums";
 import {
   makeObjectPropsFromDBTimezone,
@@ -97,12 +97,11 @@ export type MultiTableWithID = {
 // static 메서드 및 인스턴스 생성자를 constructor 로 받을 수 있도록 선언한 타입
 // 실제 repository 에서는 이 인터페이스를 사용 및 구현할 필요 없음
 export interface ModelConstructor<
-  Model extends MEntity<IModel, Id>,
-  IModel extends IEntity<Id>,
+  Model extends MEntity<Id>,
   Id extends IdType,
 > {
   modelName: string;
-  new (entity: IModel): Model;
+  new (entity: Model): Model;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -240,8 +239,7 @@ export type BaseWhereQueryKeys<
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseRepository<
-  Model extends MEntity<IModel, Id>,
-  IModel extends IEntity<Id>,
+  Model extends MEntity<Id>,
   DbSelect,
   DbInsert,
   DbUpdate,
@@ -256,11 +254,7 @@ export abstract class BaseRepository<
   protected txManager: TransactionManagerService;
 
   constructor(
-    protected readonly mainModelConstructor: ModelConstructor<
-      Model,
-      IModel,
-      Id
-    >, // 모델엔티티 넣으면 됨
+    protected readonly mainModelConstructor: ModelConstructor<Model, Id>, // 모델엔티티 넣으면 됨
     protected readonly table: TableWithID | MultiTableWithID,
   ) {
     Reflect.defineMetadata(
@@ -470,6 +464,7 @@ export abstract class BaseRepository<
       | PrimitiveConditionValue
       | AdvancedConditionalValue<PrimitiveConditionValue>,
   ): SQL {
+    console.log(`processQuery key ${String(key)} value ${value}`);
     if (this.isNestedQueryWrapper(String(key))) {
       // key가 and or not 인 경우 중첩 쿼리 처리
       return this.processNestedQuery(
@@ -506,7 +501,11 @@ export abstract class BaseRepository<
     if (!this.isNestedQueryWrapper(wrapper)) {
       throw new Error(`Invalid wrapper condition : ${wrapper} ${conditions}`);
     }
-
+    console.log(
+      `processNestedQuery : ${wrapper} ${conditions} ${JSON.stringify(
+        Object.entries(conditions),
+      )}`,
+    );
     const whereClause = Object.entries(conditions).map(
       ([key, value]): SQL =>
         this.processQuery(
@@ -557,14 +556,15 @@ export abstract class BaseRepository<
       // 방지 함수
       throw new Error(`Invalid primitive condition: ${String(key)} ${value}`);
     }
-
-    const column = this.getTableOfField(key);
-    if (column === null) {
+    console.log(`processPrimitiveCondition : ${String(key)} ${value}`);
+    const table = this.getTableOfField(key);
+    if (table === null) {
       // getTableOfField가 null인 경우 SpecialCondition에서 처리
       // getTableOfField가 null인 경우 === 모델 필드에 없는 특수 조건
+      console.log(`processSpecialCondition : ${String(key)} ${value} ${table}`);
       return this.processSpecialCondition(key, value);
     }
-
+    const column = table[key as keyof typeof table] as MySqlColumnType;
     if (Array.isArray(value)) {
       if (value.length === 0) {
         throw new Error(`Value Array is empty: ${String(key)} ${value}`);
@@ -619,7 +619,9 @@ export abstract class BaseRepository<
       );
     }
     // Query 필드를 테이블 필드로 변환
-
+    console.log(
+      `processAdvancedCondition : ${String(queryField)} ${conditions}`,
+    );
     const table = this.getTableOfField(queryField);
     if (table === null) {
       throw new Error(
@@ -715,26 +717,22 @@ export abstract class BaseRepository<
     // 객체의 키-값 쌍을 순회하며 정렬 조건 생성
     Object.entries(order).forEach(([field, direction]) => {
       // Query 필드를 테이블 필드로 변환
-      const tableField = this.getTableOfField(field as keyof Query);
-      if (tableField === null) {
+      const table = this.getTableOfField(field as keyof Query);
+      if (table === null) {
         throw new Error(`Invalid order field for table: ${field}`);
       }
-      const column = tableField[
-        field as keyof typeof tableField
-      ] as MySqlColumnType;
+      const column = table[field as keyof typeof table] as MySqlColumnType;
 
       // 테이블에 해당 필드가 존재하는지 확인
       if (column) {
         // direction에 따라 asc() 또는 desc() 호출
         if (direction === OrderByTypeEnum.ASC) {
-          orderClauses.push(asc(tableField));
+          orderClauses.push(asc(column));
         } else {
-          orderClauses.push(desc(tableField));
+          orderClauses.push(desc(column));
         }
       } else {
-        throw new Error(
-          `Invalid order field for table: ${tableField} ${field}`,
-        );
+        throw new Error(`Invalid order field for table: ${table} ${field}`);
       }
     });
 
@@ -750,37 +748,54 @@ export abstract class BaseRepository<
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
-    return tx
+    const resPromise = tx
       ? this.findImplementation(query, tx)
-      : this.txManager.runInTransaction(async tsx =>
+      : this.txManager.runInTransaction(tsx =>
           this.findImplementation(query, tsx),
         );
+    const res = await resPromise;
+    console.log(`find res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async count(
     query: BaseRepositoryQuery<Query, Id>,
     tx?: DrizzleTransaction,
   ): Promise<number> {
-    return tx
+    const resPromise = tx
       ? this.countImplementation(query, tx)
-      : this.txManager.runInTransaction(async tsx =>
+      : this.txManager.runInTransaction(tsx =>
           this.countImplementation(query, tsx),
         );
+    const res = await resPromise;
+    console.log(`count res ${JSON.stringify(res)}`);
+    return res;
   }
-  async create(data: DbInsert[], tx?: DrizzleTransaction): Promise<Model[]> {
-    return tx
-      ? this.createImplementation(data, tx)
+
+  async create(
+    data: DbInsert[] | DbInsert,
+    tx?: DrizzleTransaction,
+  ): Promise<Model[]> {
+    const insertData = Array.isArray(data) ? data : [data];
+    const resPromise = tx
+      ? this.createImplementation(insertData, tx)
       : this.txManager.runInTransaction(async tsx =>
-          this.createImplementation(data, tsx),
+          this.createImplementation(insertData, tsx),
         );
+    const res = await resPromise;
+    console.log(`create res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async put(model: Model, tx?: DrizzleTransaction): Promise<Model> {
-    return tx
+    const resPromise = tx
       ? this.putImplementation(model, tx)
       : this.txManager.runInTransaction(async tsx =>
           this.putImplementation(model, tsx),
         );
+    const res = await resPromise;
+    console.log(`put res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async patch(
@@ -788,26 +803,32 @@ export abstract class BaseRepository<
     consumer: (oldbie: Model) => Model,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
-    return tx
+    const resPromise = tx
       ? this.patchImplementation(query, consumer, tx)
       : this.txManager.runInTransaction(async tsx =>
           this.patchImplementation(query, consumer, tsx),
         );
+    const res = await resPromise;
+    console.log(`patch res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async delete(
     query: BaseRepositoryQuery<Query, Id>,
     tx?: DrizzleTransaction,
   ): Promise<boolean> {
-    return tx
+    const resPromise = tx
       ? this.deleteImplementation(query, tx)
       : this.txManager.runInTransaction(async tsx =>
           this.deleteImplementation(query, tsx),
         );
+    const res = await resPromise;
+    console.log(`delete res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async fetch(id: Id, tx?: DrizzleTransaction): Promise<Model> {
-    return tx
+    const resPromise = tx
       ? this.findImplementation(
           { id } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
           tx,
@@ -818,10 +839,13 @@ export abstract class BaseRepository<
             tsx,
           ).then(takeOnlyOne()),
         );
+    const res = await resPromise;
+    console.log(`fetch res ${JSON.stringify(res)}`);
+    return res;
   }
 
   async fetchAll(ids: Id[], tx?: DrizzleTransaction): Promise<Model[]> {
-    return tx
+    const resPromise = tx
       ? this.findImplementation(
           { id: ids } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
           tx,
@@ -832,6 +856,9 @@ export abstract class BaseRepository<
             tsx,
           ).then(takeAll(ids)),
         );
+    const res = await resPromise;
+    console.log(`fetchAll res ${JSON.stringify(res)}`);
+    return res;
   }
 }
 

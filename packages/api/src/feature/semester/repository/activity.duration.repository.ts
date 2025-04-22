@@ -1,10 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
+import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
 
-import {
-  ActivityDurationTypeEnum,
-  IActivityDuration,
-} from "@clubs/domain/semester/activity-duration";
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
 import {
   BaseTableFieldMapKeys,
@@ -15,7 +12,7 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { MActivityDuration } from "@sparcs-clubs/api/feature/semester/model/activity.duration.model";
 
-type ActivityDurationQuery = {
+export type ActivityDurationQuery = {
   semesterId: number;
   date: Date;
   activityDurationTypeEnum: ActivityDurationTypeEnum;
@@ -43,9 +40,8 @@ type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
 >;
 
 @Injectable()
-export default class ActivityDurationRepository extends BaseSingleTableRepository<
+export class ActivityDurationRepository extends BaseSingleTableRepository<
   MActivityDuration,
-  IActivityDuration,
   ActivityDurationTable,
   ActivityDurationQuery,
   ActivityDurationOrderByKeys,
@@ -104,7 +100,7 @@ export default class ActivityDurationRepository extends BaseSingleTableRepositor
     value: PrimitiveConditionValue,
   ): SQL {
     if (key === "date" && value instanceof Date) {
-      return and(gte(ActivityD.startTerm, value), lt(ActivityD.endTerm, value));
+      return and(lte(ActivityD.startTerm, value), gt(ActivityD.endTerm, value));
     }
 
     throw new Error(`Invalid key: ${key}`);

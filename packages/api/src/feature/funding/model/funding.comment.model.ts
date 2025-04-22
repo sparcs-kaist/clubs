@@ -12,10 +12,7 @@ import { VFundingSummary } from "./funding.summary.model";
 export type FromDb = InferSelectModel<typeof FundingFeedback>;
 export type ToDb = InferInsertModel<typeof FundingFeedback>;
 
-export class MFundingComment
-  extends MEntity<IFundingComment, number>
-  implements IFundingComment
-{
+export class MFundingComment extends MEntity implements IFundingComment {
   static modelName = "fundingComment";
 
   funding: { id: number };
@@ -33,7 +30,8 @@ export class MFundingComment
   createdAt: Date;
 
   constructor(data: IFundingComment) {
-    super(data);
+    super();
+    Object.assign(this, data);
   }
 
   isFinalComment(funding: VFundingSummary | MFunding): boolean {

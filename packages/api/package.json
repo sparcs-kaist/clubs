@@ -29,7 +29,7 @@
     "@types/uuid": "^10.0.0",
     "axios": "^1.6.7",
     "cookie-parser": "^1.4.6",
-    "drizzle-orm": "^0.32.2",
+    "drizzle-orm": "^0.30.9",
     "express": "^4.21.2",
     "express-session": "^1.18.0",
     "mysql2": "^3.9.7",

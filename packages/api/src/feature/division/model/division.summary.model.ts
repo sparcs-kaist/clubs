@@ -9,7 +9,10 @@ import { MDivision } from "./division.model";
 
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
-export class VDivisionSummary extends MEntity implements IDivisionSummary {
+export class VDivisionSummary
+  extends MEntity<number>
+  implements IDivisionSummary
+{
   static modelName = "divisionSummary";
 
   name: IDivisionSummary["name"];
@@ -22,12 +25,7 @@ export class VDivisionSummary extends MEntity implements IDivisionSummary {
 
   constructor(param: IDivisionSummary | MDivision) {
     super();
-    if (param instanceof MDivision) {
-      this.id = param.id;
-      this.name = param.name;
-    } else {
-      Object.assign(this, param);
-    }
+    Object.assign(this, param);
   }
 
   static from(result: DivisionDBResult): VDivisionSummary {

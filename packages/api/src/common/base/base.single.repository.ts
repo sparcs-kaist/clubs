@@ -11,7 +11,7 @@ import {
 
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
-import { IdType, IEntity, MEntity } from "../base/entity.model";
+import { IdType, MEntity } from "../base/entity.model";
 import { getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
@@ -32,8 +32,7 @@ import {
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseSingleTableRepository<
-  Model extends MEntity<IModel, Id>,
-  IModel extends IEntity<Id>,
+  Model extends MEntity<Id>,
   Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
@@ -41,7 +40,6 @@ export abstract class BaseSingleTableRepository<
   Id extends IdType = number,
 > extends BaseRepository<
   Model,
-  IModel,
   InferSelectModel<Table>,
   InferInsertModel<Table>,
   Partial<InferSelectModel<Table>>,
@@ -52,7 +50,7 @@ export abstract class BaseSingleTableRepository<
 > {
   constructor(
     protected table: Table,
-    protected readonly modelConstructor: ModelConstructor<Model, IModel, Id>, // 모델엔티티 넣으면 됨
+    protected readonly modelConstructor: ModelConstructor<Model, Id>, // 모델엔티티 넣으면 됨
   ) {
     super(modelConstructor, table);
   }
@@ -89,6 +87,8 @@ export abstract class BaseSingleTableRepository<
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
+    console.log(`findImplementation query ${JSON.stringify(query)}`);
+
     let selectQuery = tx
       .select()
       .from(this.table)
@@ -108,7 +108,9 @@ export abstract class BaseSingleTableRepository<
 
     const result = await selectQuery.execute();
 
-    return result.map(row => this.dbToModel(row as InferSelectModel<Table>));
+    const ret = result.map(row => this.dbToModel(row));
+    console.log(`findImplementation ret ${JSON.stringify(ret)}`);
+    return ret;
   }
 
   protected async countImplementation(
@@ -129,23 +131,25 @@ export abstract class BaseSingleTableRepository<
   ): Promise<Model[]> {
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
     // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
-    // 원래 계획: insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
-    const insert = await tx.insert(this.table).values(data).$returningId();
+    // 원래 계획: $returningId를 사용해 insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
+    // 아래 코드는 작동하나, drizzle 0.32 (returningId가 생긴 버전) 에서는 strictNullChecks가 true 여야 작동하는 버그가 존재함.
+    // 나중에 strictNullChecks가 true 인 버전으로 바꾼 후 변경 필요
+    // const insert = await tx.insert(this.table).values(data).$returningId();
 
-    if (!Array.isArray(insert)) {
-      throw new Error(`insert is not an array : ${JSON.stringify(insert)}`);
-    }
+    // if (!Array.isArray(insert)) {
+    //   throw new Error(`insert is not an array : ${JSON.stringify(insert)}`);
+    // }
 
-    const ids = insert.map(idObject => idObject.id) as Id[];
+    // const ids = insert.map(idObject => idObject.id) as Id[];
     //지금은 returningId가 제네릭에서 인식이 안돼서 이렇게 하나씩 넣고 쿼리
     // 참고: base.repository.ts 의 TableWithID 위 주석처리 부분
 
-    // const ids = await Promise.all(
-    //   data.map(async d => {
-    //     const [result] = await tx.insert(this.table).values(d);
-    //     return result.insertId as Id;
-    //   }),
-    // );
+    const ids = await Promise.all(
+      data.map(async d => {
+        const [result] = await tx.insert(this.table).values(d);
+        return result.insertId as Id;
+      }),
+    );
 
     const results = await this.fetchAll(ids, tx);
 

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InferSelectModel } from "drizzle-orm";
 
-import { IMemberRegistration } from "@clubs/interface/api/registration/type/member.registration.type";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import {
   BaseTableFieldMapKeys,
@@ -11,25 +11,29 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import { MMemberRegistration } from "@sparcs-clubs/api/feature/registration/model/member.registration.model";
 
-type MemberRegistrationQuery = {
+export type MemberRegistrationQuery = {
   studentId: number;
   clubId: number;
   semesterId: number;
+  registrationApplicationStudentEnum: RegistrationApplicationStudentStatusEnum;
 };
+type MemberRegistrationOrderByKeys = "id" | "createdAt";
 
 type MemberRegistrationTable = typeof RegistrationApplicationStudent;
 type MemberRegistrationDbSelect = InferSelectModel<MemberRegistrationTable>;
 type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbSelect>;
 
-type MemberRegistrationFieldMapKeys =
-  BaseTableFieldMapKeys<MemberRegistrationQuery>;
+type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
+  MemberRegistrationQuery,
+  MemberRegistrationOrderByKeys
+>;
 
 @Injectable()
-export default class MemberRegistrationRepository extends BaseSingleTableRepository<
+export class MemberRegistrationRepository extends BaseSingleTableRepository<
   MMemberRegistration,
-  IMemberRegistration,
   MemberRegistrationTable,
-  MemberRegistrationQuery
+  MemberRegistrationQuery,
+  MemberRegistrationOrderByKeys
 > {
   constructor() {
     super(RegistrationApplicationStudent, MMemberRegistration);
@@ -38,7 +42,8 @@ export default class MemberRegistrationRepository extends BaseSingleTableReposit
   protected dbToModelMapping(
     result: MemberRegistrationDbSelect,
   ): MMemberRegistration {
-    return new MMemberRegistration({
+    console.log(`dbToModelMapping result ${JSON.stringify(result)}`);
+    const res = new MMemberRegistration({
       id: result.id,
       student: { id: result.studentId },
       club: { id: result.clubId },
@@ -47,6 +52,8 @@ export default class MemberRegistrationRepository extends BaseSingleTableReposit
         result.registrationApplicationStudentEnum,
       createdAt: result.createdAt,
     });
+    console.log(`dbToModelMapping res ${JSON.stringify(res)}`);
+    return res;
   }
 
   protected modelToDBMapping(
@@ -74,6 +81,8 @@ export default class MemberRegistrationRepository extends BaseSingleTableReposit
       studentId: RegistrationApplicationStudent,
       clubId: RegistrationApplicationStudent,
       semesterId: RegistrationApplicationStudent,
+      registrationApplicationStudentEnum: RegistrationApplicationStudent,
+      createdAt: RegistrationApplicationStudent,
     };
 
     if (!(field in fieldMappings)) {
