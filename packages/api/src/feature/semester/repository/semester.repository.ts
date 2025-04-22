@@ -1,12 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gte,
-  InferInsertModel,
-  InferSelectModel,
-  lt,
-  SQL,
-} from "drizzle-orm";
+import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -19,19 +12,17 @@ import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.si
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { MSemester } from "@sparcs-clubs/api/feature/semester/model/semester.model";
 
-type SemesterQuery = {
-  date: Date;
-  startTerm: Date;
-  endTerm: Date;
-};
+type SemesterQuery = { date: Date };
 
-type SemesterOrderByKeys = "id";
-type SemesterQuerySupport = {};
+type SemesterOrderByKeys = "id" | "year" | "name" | "startTerm" | "endTerm";
+type SemesterQuerySupport = {
+  startTerm: string;
+  endTerm: string;
+};
 
 type SemesterTable = typeof SemesterD;
 type SemesterDbSelect = InferSelectModel<SemesterTable>;
-type SemesterDbInsert = InferInsertModel<SemesterTable>;
-type SemesterDbUpdate = Partial<SemesterDbInsert>;
+type SemesterDbUpdate = Partial<SemesterDbSelect>;
 
 type SemesterFieldMapKeys = BaseTableFieldMapKeys<
   SemesterQuery,
@@ -44,9 +35,6 @@ export default class SemesterRepository extends BaseSingleTableRepository<
   MSemester,
   ISemester,
   SemesterTable,
-  SemesterDbSelect,
-  SemesterDbInsert,
-  SemesterDbUpdate,
   SemesterQuery,
   SemesterOrderByKeys,
   SemesterQuerySupport
@@ -80,9 +68,11 @@ export default class SemesterRepository extends BaseSingleTableRepository<
   ): TableWithID | null | undefined {
     const fieldMappings: Record<SemesterFieldMapKeys, TableWithID | null> = {
       id: SemesterD,
+      year: SemesterD,
+      name: SemesterD,
       startTerm: SemesterD,
       endTerm: SemesterD,
-      date: null,
+      date: SemesterD,
     };
 
     if (!(field in fieldMappings)) {

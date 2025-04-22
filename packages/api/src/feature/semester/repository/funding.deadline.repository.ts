@@ -1,12 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gte,
-  InferInsertModel,
-  InferSelectModel,
-  lt,
-  SQL,
-} from "drizzle-orm";
+import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
 
 import {
   FundingDeadlineEnum,
@@ -28,7 +21,7 @@ type FundingDeadlineQuery = {
   deadlineEnum: FundingDeadlineEnum;
 };
 
-type FundingDeadlineOrderByKeys = "id";
+type FundingDeadlineOrderByKeys = "id" | "startTerm" | "endTerm";
 type FundingDeadlineQuerySupport = {
   startTerm: string;
   endTerm: string;
@@ -36,8 +29,7 @@ type FundingDeadlineQuerySupport = {
 
 type FundingDeadlineTable = typeof FundingDeadlineD;
 type FundingDeadlineDbSelect = InferSelectModel<FundingDeadlineTable>;
-type FundingDeadlineDbInsert = InferInsertModel<FundingDeadlineTable>;
-type FundingDeadlineDbUpdate = Partial<FundingDeadlineDbInsert>;
+type FundingDeadlineDbUpdate = Partial<FundingDeadlineDbSelect>;
 
 type FundingDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   FundingDeadlineQuery,
@@ -50,9 +42,6 @@ export default class FundingDeadlineRepository extends BaseSingleTableRepository
   MFundingDeadline,
   IFundingDeadline,
   FundingDeadlineTable,
-  FundingDeadlineDbSelect,
-  FundingDeadlineDbInsert,
-  FundingDeadlineDbUpdate,
   FundingDeadlineQuery,
   FundingDeadlineOrderByKeys,
   FundingDeadlineQuerySupport

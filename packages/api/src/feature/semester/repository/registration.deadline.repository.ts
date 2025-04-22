@@ -1,12 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gte,
-  InferInsertModel,
-  InferSelectModel,
-  lt,
-  SQL,
-} from "drizzle-orm";
+import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
 
 import {
   IRegistrationDeadline,
@@ -28,7 +21,7 @@ type RegistrationDeadlineQuery = {
   deadlineEnum: RegistrationDeadlineEnum;
 };
 
-type RegistrationDeadlineOrderByKeys = "id";
+type RegistrationDeadlineOrderByKeys = "id" | "startTerm" | "endTerm";
 type RegistrationDeadlineQuerySupport = {
   startTerm: string;
   endTerm: string;
@@ -36,8 +29,7 @@ type RegistrationDeadlineQuerySupport = {
 
 type RegistrationDeadlineTable = typeof RegistrationDeadlineD;
 type RegistrationDeadlineDbSelect = InferSelectModel<RegistrationDeadlineTable>;
-type RegistrationDeadlineDbInsert = InferInsertModel<RegistrationDeadlineTable>;
-type RegistrationDeadlineDbUpdate = Partial<RegistrationDeadlineDbInsert>;
+type RegistrationDeadlineDbUpdate = Partial<RegistrationDeadlineDbSelect>;
 
 type RegistrationDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   RegistrationDeadlineQuery,
@@ -50,9 +42,6 @@ export default class RegistrationDeadlineRepository extends BaseSingleTableRepos
   MRegistrationDeadline,
   IRegistrationDeadline,
   RegistrationDeadlineTable,
-  RegistrationDeadlineDbSelect,
-  RegistrationDeadlineDbInsert,
-  RegistrationDeadlineDbUpdate,
   RegistrationDeadlineQuery,
   RegistrationDeadlineOrderByKeys,
   RegistrationDeadlineQuerySupport

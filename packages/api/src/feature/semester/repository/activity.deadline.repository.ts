@@ -1,12 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gte,
-  InferInsertModel,
-  InferSelectModel,
-  lt,
-  SQL,
-} from "drizzle-orm";
+import { and, gte, InferSelectModel, lt, SQL } from "drizzle-orm";
 
 import {
   ActivityDeadlineEnum,
@@ -28,7 +21,7 @@ type ActivityDeadlineQuery = {
   deadlineEnum: ActivityDeadlineEnum;
 };
 
-type ActivityDeadlineOrderByKeys = "id";
+type ActivityDeadlineOrderByKeys = "id" | "startTerm" | "endTerm";
 type ActivityDeadlineQuerySupport = {
   startTerm: string;
   endTerm: string;
@@ -36,8 +29,7 @@ type ActivityDeadlineQuerySupport = {
 
 type ActivityDeadlineTable = typeof ActivityDeadlineD;
 type ActivityDeadlineDbSelect = InferSelectModel<ActivityDeadlineTable>;
-type ActivityDeadlineDbInsert = InferInsertModel<ActivityDeadlineTable>;
-type ActivityDeadlineDbUpdate = Partial<ActivityDeadlineDbInsert>;
+type ActivityDeadlineDbUpdate = Partial<ActivityDeadlineDbSelect>;
 
 type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   ActivityDeadlineQuery,
@@ -50,9 +42,6 @@ export default class ActivityDeadlineRepository extends BaseSingleTableRepositor
   MActivityDeadline,
   IActivityDeadline,
   ActivityDeadlineTable,
-  ActivityDeadlineDbSelect,
-  ActivityDeadlineDbInsert,
-  ActivityDeadlineDbUpdate,
   ActivityDeadlineQuery,
   ActivityDeadlineOrderByKeys,
   ActivityDeadlineQuerySupport

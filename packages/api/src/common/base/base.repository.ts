@@ -54,27 +54,21 @@ export type MySqlColumnType = MySqlColumn<
   ColumnBaseConfig<ColumnDataType, string>
 >;
 
-type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, "id"> & {
-  notNull: true;
-  hasDefault: true;
-  primaryKey: true;
-};
+// type ColumnBaseWithAutoPK = ColumnBaseConfig<ColumnDataType, string> & {
+//   notNull: true;
+//   hasDefault: true;
+//   primaryKey: true;
+// };
 
-export type TableWithID = MySqlTable<{
-  name: string;
-  schema: string | undefined;
-  dialect: "mysql";
-  columns: {
-    id: MySqlColumn<ColumnBaseWithAutoPK>;
-    deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, "deletedAt">>;
-  } & Record<string, MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>>;
-}> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
-
-export type MultiTableWithID = {
-  main: TableWithID;
-  oneToOne: Record<string, TableWithID>;
-  oneToMany: Record<string, TableWithID>;
-};
+// export type TableWithID = MySqlTable<{
+//   name: string;
+//   schema: string | undefined;
+//   dialect: "mysql";
+//   columns: {
+//     id: MySqlColumn<ColumnBaseWithAutoPK>;
+//     deletedAt: MySqlColumn<ColumnBaseConfig<ColumnDataType, "deletedAt">>;
+//   } & Record<string, MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>>;
+// }> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
 
 // export type TableWithID = MySqlTable<{
 //   name: string;
@@ -88,10 +82,16 @@ export type MultiTableWithID = {
 //   };
 // }> & { id: MySqlColumnType; deletedAt: MySqlColumnType };
 
-// export type TableWithID = MySqlTable & {
-//   id: MySqlColumnType;
-//   deletedAt: MySqlColumnType;
-// };
+export type TableWithID = MySqlTable & {
+  id: MySqlColumnType;
+  deletedAt: MySqlColumnType;
+};
+
+export type MultiTableWithID = {
+  main: TableWithID;
+  oneToOne: Record<string, TableWithID>;
+  oneToMany: Record<string, TableWithID>;
+};
 
 // MEntity 의 생성자
 // static 메서드 및 인스턴스 생성자를 constructor 로 받을 수 있도록 선언한 타입

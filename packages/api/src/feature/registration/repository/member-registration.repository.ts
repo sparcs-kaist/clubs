@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { InferSelectModel } from "drizzle-orm";
 
 import { IMemberRegistration } from "@clubs/interface/api/registration/type/member.registration.type";
 
@@ -19,8 +19,7 @@ type MemberRegistrationQuery = {
 
 type MemberRegistrationTable = typeof RegistrationApplicationStudent;
 type MemberRegistrationDbSelect = InferSelectModel<MemberRegistrationTable>;
-type MemberRegistrationDbInsert = InferInsertModel<MemberRegistrationTable>;
-type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbInsert>;
+type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbSelect>;
 
 type MemberRegistrationFieldMapKeys =
   BaseTableFieldMapKeys<MemberRegistrationQuery>;
@@ -30,9 +29,6 @@ export default class MemberRegistrationRepository extends BaseSingleTableReposit
   MMemberRegistration,
   IMemberRegistration,
   MemberRegistrationTable,
-  MemberRegistrationDbSelect,
-  MemberRegistrationDbInsert,
-  MemberRegistrationDbUpdate,
   MemberRegistrationQuery
 > {
   constructor() {

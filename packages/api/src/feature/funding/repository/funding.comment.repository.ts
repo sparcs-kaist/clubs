@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { InferSelectModel } from "drizzle-orm";
 
 import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 
@@ -17,8 +17,7 @@ type FundingCommentQuery = {
 
 type FundingCommentTable = typeof FundingFeedback;
 type FundingCommentDbSelect = InferSelectModel<FundingCommentTable>;
-type FundingCommentDbInsert = InferInsertModel<FundingCommentTable>;
-type FundingCommentDbUpdate = Partial<FundingCommentDbInsert>;
+type FundingCommentDbUpdate = Partial<FundingCommentDbSelect>;
 
 type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
 
@@ -27,9 +26,6 @@ export default class FundingCommentRepository extends BaseSingleTableRepository<
   MFundingComment,
   IFundingComment,
   FundingCommentTable,
-  FundingCommentDbSelect,
-  FundingCommentDbInsert,
-  FundingCommentDbUpdate,
   FundingCommentQuery
 > {
   constructor() {
