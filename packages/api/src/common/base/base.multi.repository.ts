@@ -11,10 +11,7 @@ import {
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { IdType, IEntity, MEntity } from "../base/entity.model";
-import {
-  forEachAsyncSequentially,
-  makeObjectPropsToDBTimezone,
-} from "../util/util";
+import { forEachAsyncSequentially, getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
   BaseRepositoryFindQuery,
@@ -90,6 +87,7 @@ export type MultiInsertModel<MultiTable extends MultiTableWithID> =
 export type MultiUpdateModel<MultiTable extends MultiTableWithID> =
   MultiTableInfer<MultiTable, "update">;
 
+// DB에 넣기 직전 상태
 export type MultiModelSelectTableArray<MultiTable extends MultiTableWithID> = {
   main: TableToInferArray<MultiTable["main"], "select">;
   oneToOne: {
@@ -105,8 +103,6 @@ export type MultiModelSelectTableArray<MultiTable extends MultiTableWithID> = {
     >;
   };
 };
-
-// DB에 넣기 직전 상태
 
 export type MultiModelInsertTableArray<MultiTable extends MultiTableWithID> = {
   main: TableToInferArray<MultiTable["main"], "insert">;
@@ -124,22 +120,6 @@ export type MultiModelInsertTableArray<MultiTable extends MultiTableWithID> = {
   };
 };
 
-export type MultiModelUpdateTableArray<MultiTable extends MultiTableWithID> = {
-  main: TableToInferArray<MultiTable["main"], "update">;
-  oneToOne: {
-    [K in keyof MultiTable["oneToOne"]]: TableToInferArray<
-      MultiTable["oneToOne"][K],
-      "update"
-    >;
-  };
-  oneToMany: {
-    [K in keyof MultiTable["oneToMany"]]: TableToInferArray<
-      MultiTable["oneToMany"][K],
-      "update"
-    >;
-  };
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 // 베이스 레포지토리 추상클래스
 // 사용 방법
@@ -152,9 +132,6 @@ export abstract class BaseMultiTableRepository<
   Model extends MEntity<IModel, Id>,
   IModel extends IEntity<Id>,
   Table extends MultiTableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
-  DbSelect extends MultiSelectModel<Table>,
-  DbInsert extends MultiInsertModel<Table>,
-  DbUpdate extends MultiUpdateModel<Table>,
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
   QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date
@@ -162,9 +139,9 @@ export abstract class BaseMultiTableRepository<
 > extends BaseRepository<
   Model,
   IModel,
-  DbSelect,
-  DbInsert,
-  DbUpdate,
+  MultiSelectModel<Table>,
+  MultiInsertModel<Table>,
+  MultiUpdateModel<Table>,
   Query,
   OrderByKeys,
   QuerySupport,
@@ -183,14 +160,14 @@ export abstract class BaseMultiTableRepository<
    * @description DB Result를 Model 인스턴스로 변환하는 작업
    * @description find에서 사용
    */
-  protected abstract dbToModelMapping(result: DbSelect): Model;
+  protected abstract dbToModelMapping(result: MultiSelectModel<Table>): Model;
 
   /**
    * @description Model -> DB
    * @description Model 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
    * @description update에서 사용
    */
-  protected abstract modelToDBMapping(model: Model): DbUpdate;
+  protected abstract modelToDBMapping(model: Model): MultiUpdateModel<Table>;
 
   /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
@@ -246,7 +223,7 @@ export abstract class BaseMultiTableRepository<
       oneToMany,
     } as MultiModelSelectTableArray<Table>) as MultiSelectModel<Table>[];
 
-    return dbSelect.map(row => this.dbToModel(row as DbSelect));
+    return dbSelect.map(row => this.dbToModel(row));
   }
 
   protected async countImplementation(
@@ -258,7 +235,7 @@ export abstract class BaseMultiTableRepository<
   }
 
   protected async createImplementation(
-    data: DbInsert[],
+    data: MultiInsertModel<Table>[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
@@ -294,23 +271,23 @@ export abstract class BaseMultiTableRepository<
 
     // oneToOne 업데이트
     await Promise.all(
-      Object.entries(data.oneToOne).map(([key, value]) =>
+      Object.entries(data.oneToOne).map(([key, table]) =>
         tx
-          .update(this.table.oneToOne[key])
-          .set(value)
-          .where(eq(this.table.oneToOne[key][this.mainTableIdName], model.id)),
+          .update(table)
+          .set(data.oneToOne[key])
+          .where(eq(table[this.mainTableIdName], model.id)),
       ),
     );
 
     // oneToMany 업데이트: delete and insert
     await Promise.all(
-      Object.entries(data.oneToMany).map(async ([key, value]) => {
+      Object.entries(this.table.oneToMany).map(async ([key, table]) => {
         await tx
-          .update(this.table.oneToMany[key])
-          .set(makeObjectPropsToDBTimezone({ deletedAt: new Date() }))
-          .where(eq(this.table.oneToMany[key][this.mainTableIdName], model.id));
+          .update(table)
+          .set(getDeletedAtObject())
+          .where(eq(table[this.mainTableIdName], model.id));
 
-        await tx.insert(this.table.oneToMany[key]).values(value);
+        await tx.insert(table).values(data.oneToMany[key]);
       }),
     );
 
@@ -323,14 +300,13 @@ export abstract class BaseMultiTableRepository<
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     const data = await this.find(query, tx);
-    const updated = data.map(consumer).map(this.modelToDB);
-    await tx
-      .update(this.table.main)
-      .set(updated)
-      .where(this.makeWhereClause(query))
-      .execute();
+    const updated = data.map(consumer);
 
-    return this.find(query, tx);
+    const result = await Promise.all(
+      updated.map(model => this.putImplementation(model, tx)),
+    );
+
+    return result;
   }
 
   protected async deleteImplementation(
@@ -339,11 +315,31 @@ export abstract class BaseMultiTableRepository<
   ): Promise<boolean> {
     const mainIds = await this.fetchMainTableIds(query, tx);
 
+    // main 업데이트
     await tx
       .update(this.table.main)
-      .set({ deletedAt: new Date() } as unknown as DbUpdate)
-      .where(inArray(this.table.main.id, mainIds))
-      .execute();
+      .set(getDeletedAtObject())
+      .where(inArray(this.table.main.id, mainIds));
+
+    // oneToOne 업데이트
+    await Promise.all(
+      Object.values(this.table.oneToOne).map(table =>
+        tx
+          .update(table)
+          .set(getDeletedAtObject())
+          .where(eq(table[this.mainTableIdName], mainIds)),
+      ),
+    );
+
+    // oneToMany 업데이트: delete and insert
+    await Promise.all(
+      Object.values(this.table.oneToMany).map(async table => {
+        await tx
+          .update(table)
+          .set(getDeletedAtObject())
+          .where(eq(table[this.mainTableIdName], mainIds));
+      }),
+    );
     return true;
   }
 
@@ -445,37 +441,6 @@ export abstract class BaseMultiTableRepository<
           models.flatMap(m => m.oneToMany[key as keyof typeof m.oneToMany]),
         ]),
       ) as unknown as MultiModelInsertTableArray<Table>["oneToMany"],
-    };
-  }
-
-  private updateModelArrayToTableArrayResult(
-    models: MultiUpdateModel<Table>[],
-  ): MultiModelUpdateTableArray<Table> {
-    if (models.length === 0) {
-      return {
-        main: [],
-        oneToOne: Object.fromEntries(
-          Object.keys(this.table.oneToOne).map(key => [key, []]),
-        ) as unknown as MultiModelUpdateTableArray<Table>["oneToOne"],
-        oneToMany: Object.fromEntries(
-          Object.keys(this.table.oneToMany).map(key => [key, []]),
-        ) as unknown as MultiModelUpdateTableArray<Table>["oneToMany"],
-      };
-    }
-    return {
-      main: models.map(m => m.main),
-      oneToOne: Object.fromEntries(
-        Object.keys(models[0].oneToOne).map(key => [
-          key,
-          models.map(m => m.oneToOne[key as keyof typeof m.oneToOne]),
-        ]),
-      ) as MultiModelUpdateTableArray<Table>["oneToOne"],
-      oneToMany: Object.fromEntries(
-        Object.keys(models[0].oneToMany).map(key => [
-          key,
-          models.flatMap(m => m.oneToMany[key as keyof typeof m.oneToMany]),
-        ]),
-      ) as MultiModelUpdateTableArray<Table>["oneToMany"],
     };
   }
 

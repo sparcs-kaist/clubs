@@ -12,6 +12,7 @@ import {
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { IdType, IEntity, MEntity } from "../base/entity.model";
+import { getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
   BaseRepositoryFindQuery,
@@ -175,14 +176,11 @@ export abstract class BaseSingleTableRepository<
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     const data = await this.find(query, tx);
-    const updated = data.map(consumer).map(this.modelToDB);
-    await tx
-      .update(this.table)
-      .set(updated)
-      .where(this.makeWhereClause(query))
-      .execute();
-
-    return this.find(query, tx);
+    const updated = data.map(consumer);
+    const result = await Promise.all(
+      updated.map(model => this.putImplementation(model, tx)),
+    );
+    return result;
   }
 
   protected async deleteImplementation(
@@ -191,7 +189,7 @@ export abstract class BaseSingleTableRepository<
   ): Promise<boolean> {
     await tx
       .update(this.table)
-      .set({ deletedAt: new Date() } as unknown as DbUpdate)
+      .set(getDeletedAtObject())
       .where(this.makeWhereClause(query))
       .execute();
     return true;

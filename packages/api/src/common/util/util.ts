@@ -87,6 +87,13 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
   }, {} as T);
 };
 
+/**
+ * @description: deletedAt:new Date() 를 시긴대 조정해서 반환
+ * @description: delete 쿼리에서 사용
+ */
+export const getDeletedAtObject = (): { deletedAt: Date } =>
+  makeObjectPropsToDBTimezone({ deletedAt: new Date() });
+
 type ModelInstance<Id extends IdType> = InstanceType<
   typeof MEntity<IEntity<Id>, Id>
 >;
