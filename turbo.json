@@ -4,9 +4,16 @@
   "tasks": {
     "dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "cache": false,
+      "cache": false
+    },
+    "api#dev": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true,
       "interruptible": true
+    },
+    "web#dev": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "persistent": true
     },
     "build": {
       "dependsOn": ["^build"]
