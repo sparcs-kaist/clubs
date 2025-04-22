@@ -35,9 +35,6 @@ export abstract class BaseSingleTableRepository<
   Model extends MEntity<IModel, Id>,
   IModel extends IEntity<Id>,
   Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
-  DbSelect extends InferSelectModel<Table>,
-  DbInsert extends InferInsertModel<Table>,
-  DbUpdate extends Partial<DbSelect>,
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
   QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date
@@ -45,9 +42,9 @@ export abstract class BaseSingleTableRepository<
 > extends BaseRepository<
   Model,
   IModel,
-  DbSelect,
-  DbInsert,
-  DbUpdate,
+  InferSelectModel<Table>,
+  InferInsertModel<Table>,
+  Partial<InferSelectModel<Table>>,
   Query,
   OrderByKeys,
   QuerySupport,
@@ -65,14 +62,16 @@ export abstract class BaseSingleTableRepository<
    * @description DB Result를 Model 인스턴스로 변환하는 작업
    * @description find에서 사용
    */
-  protected abstract dbToModelMapping(result: DbSelect): Model;
+  protected abstract dbToModelMapping(result: InferSelectModel<Table>): Model;
 
   /**
    * @description Model -> DB
    * @description Model 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
    * @description update에서 사용
    */
-  protected abstract modelToDBMapping(model: Model): DbUpdate;
+  protected abstract modelToDBMapping(
+    model: Model,
+  ): Partial<InferSelectModel<Table>>;
 
   /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
@@ -109,7 +108,7 @@ export abstract class BaseSingleTableRepository<
 
     const result = await selectQuery.execute();
 
-    return result.map(row => this.dbToModel(row as DbSelect));
+    return result.map(row => this.dbToModel(row as InferSelectModel<Table>));
   }
 
   protected async countImplementation(
@@ -125,7 +124,7 @@ export abstract class BaseSingleTableRepository<
   }
 
   protected async createImplementation(
-    data: DbInsert[],
+    data: InferInsertModel<Table>[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
@@ -160,7 +159,7 @@ export abstract class BaseSingleTableRepository<
     const data = this.modelToDB(model);
     await tx
       .update(this.table)
-      .set(data)
+      .set(data as Record<string, unknown>)
       .where(eq(this.table.id, model.id))
       .execute();
 

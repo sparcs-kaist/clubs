@@ -404,6 +404,11 @@ export abstract class BaseMultiTableRepository<
     );
   }
 
+  /**
+   * @description 쿼리에 해당하는 메인 테이블의 id를 가져오는 메서드
+   * @description find 와 count 에서 사용
+   * @description 쿼리가 id 기반일 경우 early return 최적화 처리됨
+   */
   private async fetchMainTableIds(
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx: DrizzleTransaction,
@@ -430,11 +435,15 @@ export abstract class BaseMultiTableRepository<
 
     const queryIds = distinctIdResult.map(r => r.id as Id);
 
+    if (queryIds.length === 0) return [];
+    if (!query.orderBy && !query.pagination) return queryIds;
+
     let selectQuery = tx
       .select()
       .from(this.table.main)
       .where(inArray(this.table.main.id, queryIds))
       .$dynamic();
+
     if (query.pagination) {
       selectQuery = selectQuery.limit(query.pagination.itemCount);
       selectQuery = selectQuery.offset(
@@ -450,6 +459,11 @@ export abstract class BaseMultiTableRepository<
 
     return result.map(row => row.id) as Id[];
   }
+
+  /**
+   * @description insert 의 파라미터로 들어온 배열을 테이블 별 어레이로 변환
+   * @description 이미 메인 테이블에 insert를 통해서 id를 받아온 후에 사용해야 함
+   */
 
   private insertModelArrayToTableArrayResult(
     models: (MultiInsertModel<Table> & { id: Id })[],
@@ -475,6 +489,10 @@ export abstract class BaseMultiTableRepository<
     };
   }
 
+  /**
+   * @description Select 결과를 모델로 변환할 수 있는 형태로 변환하는 메서드
+   * @description 각 테이블에서 쿼리해온 결과를 모델 전구체 어레이로 변환
+   */
   private selectTableArrayResultToModelArray(
     tableResult: MultiModelSelectTableArray<Table>,
   ): MultiSelectModel<Table>[] {
