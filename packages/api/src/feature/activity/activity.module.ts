@@ -10,6 +10,7 @@ import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import ActivityController from "./controller/activity.controller";
 import ActivityClubChargedExecutiveRepository from "./repository/activity.activity-club-charged-executive.repository";
+import { ActivityNewRepository } from "./repository/activity.new.repository";
 import ActivityRepository from "./repository/activity.repository";
 import ActivityPublicService from "./service/activity.public.service";
 import ActivityService from "./service/activity.service";
@@ -31,6 +32,7 @@ import ActivityService from "./service/activity.service";
     ActivityService,
     ActivityPublicService,
     ClubTRepository,
+    ActivityNewRepository,
   ],
   exports: [ActivityPublicService],
 })

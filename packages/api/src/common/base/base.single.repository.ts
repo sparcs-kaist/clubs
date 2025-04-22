@@ -107,7 +107,7 @@ export abstract class BaseSingleTableRepository<
     }
 
     const result = await selectQuery.execute();
-
+    console.log(`findImplementation query result ${JSON.stringify(result)}`);
     const ret = result.map(row => this.dbToModel(row));
     console.log(`findImplementation ret ${JSON.stringify(ret)}`);
     return ret;

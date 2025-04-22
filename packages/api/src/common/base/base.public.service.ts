@@ -7,10 +7,15 @@ import { IdType, MEntity } from "./entity.model";
 
 type ModelClass = { modelName: string };
 
+type FieldWithArray<T> = T | T[];
+type QueryWithArray<Query> = {
+  [K in keyof Query]: FieldWithArray<Query[K]>;
+};
+
 type RepositoryQuery<
   ModelQuery extends Record<string, unknown>,
   Id extends IdType = number,
-> = Partial<ModelQuery> & Partial<{ id: Id }>;
+> = Partial<QueryWithArray<ModelQuery>> & Partial<QueryWithArray<{ id: Id }>>;
 
 interface IBaseRepository<
   Model extends MEntity<Id>,
@@ -29,9 +34,9 @@ interface IBaseRepository<
 export abstract class BasePublicService<
   Model extends MEntity<Id>,
   ModelQuery extends Record<string, unknown> = {},
-  SearchQuery extends Partial<ModelQuery> = {},
+  SearchQuery extends Partial<QueryWithArray<ModelQuery>> = {},
   IsQuery extends RepositoryQuery<ModelQuery, Id> = {},
-  LoadQuery extends Partial<ModelQuery> = {},
+  LoadQuery extends Partial<QueryWithArray<ModelQuery>> = {},
   Id extends IdType = number,
 > {
   constructor(

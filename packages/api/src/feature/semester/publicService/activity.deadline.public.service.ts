@@ -14,7 +14,7 @@ import { SemesterPublicService } from "./semester.public.service";
 type ActivityDeadlineSearchQuery = {
   semesterId?: number;
   date?: Date;
-  deadlineEnums?: ActivityDeadlineEnum[];
+  deadlineEnum?: ActivityDeadlineEnum | ActivityDeadlineEnum[];
 };
 
 type ActivityDeadlineLoadQuery = {
@@ -27,7 +27,6 @@ type ActivityDeadlineIsQuery = {
   semesterId?: number;
   date?: Date;
   deadlineEnum?: ActivityDeadlineEnum;
-  deadlineEnums?: ActivityDeadlineEnum[];
 };
 
 @Injectable()

@@ -288,10 +288,11 @@ export abstract class BaseMultiTableRepository<
     tx: DrizzleTransaction,
   ): Promise<Model> {
     const data = this.modelToDB(model);
+    console.log(`putImplementation data ${JSON.stringify(data)}`);
     // main 업데이트
     await tx
       .update(this.table.main)
-      .set(data)
+      .set(data.main)
       .where(eq(this.table.main.id, model.id));
 
     // oneToOne 업데이트
