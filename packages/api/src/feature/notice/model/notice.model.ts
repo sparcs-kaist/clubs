@@ -2,8 +2,8 @@ import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
 
 import { INotice } from "@clubs/interface/api/notice/type/notice.type";
 
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { Notice } from "@sparcs-clubs/api/drizzle/schema/notice.schema";
 
 type NoticeDbResult = InferSelectModel<typeof Notice>;

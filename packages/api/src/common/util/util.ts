@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
-import { IdType, MEntity } from "../model/entity.model";
+import { IdType, MEntity } from "../base/entity.model";
 import { DB_TIMEZONE } from "./decorators/time-decorator";
 
 export const isEmptyObject = obj =>
@@ -87,12 +87,19 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
   }, {} as T);
 };
 
+/**
+ * @description: deletedAt:new Date() 를 시긴대 조정해서 반환
+ * @description: delete 쿼리에서 사용
+ */
+export const getDeletedAtObject = (): { deletedAt: Date } =>
+  makeObjectPropsToDBTimezone({ deletedAt: new Date() });
+
 type ModelInstance<Id extends IdType> = InstanceType<typeof MEntity<Id>>;
 
-type ModelClass<T extends MEntity<Id>, Id extends IdType, D = {}> = {
+type ModelClass<T extends MEntity<Id>, Id extends IdType> = {
   prototype: T;
   modelName: string;
-  new (data: D): T;
+  new (data: unknown): T;
 };
 /**
  * @description 모델의 에러 메시지에 사용할 이름을 반환하는 함수
@@ -100,8 +107,8 @@ type ModelClass<T extends MEntity<Id>, Id extends IdType, D = {}> = {
  * @param model 모델 인스턴스 배열
  * @returns 표시할 모델 이름
  */
-const getModelName = <Id extends IdType, D = {}>(
-  name?: string | ModelClass<MEntity<Id>, Id, D>,
+const getModelName = <Id extends IdType>(
+  name?: string | ModelClass<MEntity<Id>, Id>,
   model?: ModelInstance<Id>[] | null,
 ): string => {
   // 직접 지정된 이름이 있으면 사용
@@ -150,8 +157,8 @@ export const takeOne = <M>(values: M[]): M | null => {
  * @throws 배열이 비어있으면 NotFoundException 던짐
  * @throws 배열의 요소가 하나가 아니면 BadRequestException 던짐
  */
-export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType, D = {}>(
-  name?: string | ModelClass<M, Id, D>,
+export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType>(
+  name?: string | ModelClass<M, Id>,
 ): (array: M[]) => M {
   return (array: M[]): M => {
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
@@ -180,9 +187,9 @@ export function getUniqueArray<
  * @description 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
  * @description fetchAll에서 사용
  */
-export function takeAll<M extends MEntity<Id>, Id extends IdType, D = {}>(
+export function takeAll<M extends MEntity<Id>, Id extends IdType>(
   ids: Id[],
-  name?: string | ModelClass<M, Id, D>,
+  name?: string | ModelClass<M, Id>,
 ): (array: M[]) => M[] {
   return (array: M[]): M[] => {
     const uniqueIds = getUniqueArray(ids);
@@ -198,8 +205,8 @@ export function takeAll<M extends MEntity<Id>, Id extends IdType, D = {}>(
 /**
  * @description 모델 배열이 비어있는 지 확인하고, 비어있으면 예외를 던지고, 비어있지 않으면 배열을 반환하는 함수
  */
-export function takeExist<M extends MEntity<Id>, Id extends IdType, D = {}>(
-  name?: string | ModelClass<M, Id, D>,
+export function takeExist<M extends MEntity<Id>, Id extends IdType>(
+  name?: string | ModelClass<M, Id>,
 ): (array: M[]) => M[] {
   return (array: M[]) => {
     if (array.length === 0)
@@ -232,3 +239,17 @@ export const takeToArray = <T>(data: T | T[]): T[] => {
   }
   return [data];
 };
+
+/**
+ * @description 배열의 요소를 순서대로 실행하는 함수
+ * @description async 함수를 순서대로 실행하는 것이 중요하다면 사용
+ */
+export async function forEachAsyncSequentially<T>(
+  items: T[],
+  runner: (item: T, index?: number) => Promise<void>,
+): Promise<void> {
+  await items.reduce(async (prev, item, idx) => {
+    await prev;
+    return runner(item, idx);
+  }, Promise.resolve());
+}

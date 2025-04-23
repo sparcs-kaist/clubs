@@ -155,7 +155,7 @@ export const RegistrationApplicationStudent = mysqlTable(
       .notNull()
       .references(() => Club.id),
     semesterId: int("semester_d_id").references(() => SemesterD.id),
-    registrationApplicationStudentEnumId: int(
+    registrationApplicationStudentEnum: int(
       "registration_application_student_status_enum",
     ).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -163,7 +163,7 @@ export const RegistrationApplicationStudent = mysqlTable(
   },
   table => ({
     registrationStudentStatusEnumFk: foreignKey({
-      columns: [table.registrationApplicationStudentEnumId],
+      columns: [table.registrationApplicationStudentEnum],
       foreignColumns: [RegistrationApplicationStudentStatusEnum.enumId],
       name: "registration_application_student_status_enum_id_fk",
     }),

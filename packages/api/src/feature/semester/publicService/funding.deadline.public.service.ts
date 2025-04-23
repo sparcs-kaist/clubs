@@ -4,11 +4,11 @@ import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 
+import { MFundingDeadline } from "../model/funding.deadline.model";
 import {
   FundingDeadlineQuery,
-  MFundingDeadline,
-} from "../model/funding.deadline.model";
-import { FundingDeadlineRepository } from "../repository/funding.deadline.repository";
+  FundingDeadlineRepository,
+} from "../repository/funding.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
 type FundingDeadlineSearchQuery = {};
