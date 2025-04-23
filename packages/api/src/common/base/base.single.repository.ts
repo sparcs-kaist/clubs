@@ -11,17 +11,22 @@ import {
 
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
-import { IdType, MEntity } from "../base/entity.model";
+import { IdType, MEntity, ModelPatchFunction } from "../base/entity.model";
 import { getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
+  InferUpdateModel,
   ModelConstructor,
   PlainObject,
   TableWithID,
 } from "./base.repository";
+
+type SelectModel<Table extends TableWithID> = InferSelectModel<Table>;
+type InsertModel<Table extends TableWithID> = InferInsertModel<Table>;
+type UpdateModel<Table extends TableWithID> = InferUpdateModel<Table>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // 베이스 레포지토리 추상클래스
@@ -32,7 +37,8 @@ import {
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseSingleTableRepository<
-  Model extends MEntity<Id>,
+  Model extends MEntity<Id> & IModelCreate,
+  IModelCreate, // single table 에서는 IModelCreate == InsertModel<Table> 을 보장
   Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
@@ -40,9 +46,10 @@ export abstract class BaseSingleTableRepository<
   Id extends IdType = number,
 > extends BaseRepository<
   Model,
-  InferSelectModel<Table>,
-  InferInsertModel<Table>,
-  Partial<InferSelectModel<Table>>,
+  IModelCreate,
+  SelectModel<Table>,
+  InsertModel<Table>,
+  UpdateModel<Table>,
   Query,
   OrderByKeys,
   QuerySupport,
@@ -60,16 +67,23 @@ export abstract class BaseSingleTableRepository<
    * @description DB Result를 Model 인스턴스로 변환하는 작업
    * @description find에서 사용
    */
-  protected abstract dbToModelMapping(result: InferSelectModel<Table>): Model;
+  protected abstract dbToModelMapping(result: SelectModel<Table>): Model;
 
   /**
    * @description Model -> DB
    * @description Model 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
    * @description update에서 사용
    */
-  protected abstract modelToDBMapping(
-    model: Model,
-  ): Partial<InferSelectModel<Table>>;
+  protected abstract modelToDBMapping(model: Model): UpdateModel<Table>;
+
+  /**
+   * @description ModelCreate -> DB
+   * @description ModelCreate 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
+   * @description create에서 사용
+   */
+  protected createToDBMapping(model: IModelCreate): InsertModel<Table> {
+    return model as InsertModel<Table>;
+  }
 
   /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
@@ -87,8 +101,6 @@ export abstract class BaseSingleTableRepository<
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
-    console.log(`findImplementation query ${JSON.stringify(query)}`);
-
     let selectQuery = tx
       .select()
       .from(this.table)
@@ -107,9 +119,7 @@ export abstract class BaseSingleTableRepository<
     }
 
     const result = await selectQuery.execute();
-    console.log(`findImplementation query result ${JSON.stringify(result)}`);
     const ret = result.map(row => this.dbToModel(row));
-    console.log(`findImplementation ret ${JSON.stringify(ret)}`);
     return ret;
   }
 
@@ -126,9 +136,10 @@ export abstract class BaseSingleTableRepository<
   }
 
   protected async createImplementation(
-    data: InferInsertModel<Table>[],
+    data: IModelCreate[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
+    const dbData = data.map(d => this.createToDBMapping(d));
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
     // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
     // 원래 계획: $returningId를 사용해 insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
@@ -145,7 +156,7 @@ export abstract class BaseSingleTableRepository<
     // 참고: base.repository.ts 의 TableWithID 위 주석처리 부분
 
     const ids = await Promise.all(
-      data.map(async d => {
+      dbData.map(async d => {
         const [result] = await tx.insert(this.table).values(d);
         return result.insertId as Id;
       }),
@@ -172,11 +183,11 @@ export abstract class BaseSingleTableRepository<
 
   protected async patchImplementation(
     query: BaseRepositoryQuery<Query, Id>,
-    consumer: (original: Model) => Model,
+    patchFunction: ModelPatchFunction<Model, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     const data = await this.find(query, tx);
-    const updated = data.map(consumer);
+    const updated = data.map(patchFunction);
     const result = await Promise.all(
       updated.map(model => this.putImplementation(model, tx)),
     );

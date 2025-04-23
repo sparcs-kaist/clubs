@@ -992,8 +992,8 @@ export default class FundingService {
           {
             fundingStatusEnum,
             approvedAmount,
-            fundingId: id,
-            executiveId,
+            funding: { id },
+            executive: { id: executiveId },
             content,
           },
           tx,

@@ -7,6 +7,7 @@ import {
 
 import {
   BaseMultiTableRepository,
+  MultiInsertModel,
   MultiSelectModel,
   MultiUpdateModel,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
@@ -20,7 +21,10 @@ import {
   ActivityParticipant,
   ActivityT,
 } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
-import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
+import {
+  IActivityCreate,
+  MActivity,
+} from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 
 export type ActivityQuery = {
   clubId: number;
@@ -43,6 +47,7 @@ type ActivityTable = {
 };
 type ActivityDbSelect = MultiSelectModel<ActivityTable>;
 type ActivityDbUpdate = MultiUpdateModel<ActivityTable>;
+type ActivityDbInsert = MultiInsertModel<ActivityTable, "activityId">;
 
 type ActivityFieldMapKeys = BaseTableFieldMapKeys<
   ActivityQuery,
@@ -53,6 +58,8 @@ type ActivityFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class ActivityNewRepository extends BaseMultiTableRepository<
   MActivity,
+  IActivityCreate,
+  "activityId",
   ActivityTable,
   ActivityQuery,
   ActivityOrderByKeys,
@@ -132,6 +139,36 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         })),
         activityParticipant: model.participants.map(participant => ({
           activityId: model.id,
+          studentId: participant.id,
+        })),
+      },
+    };
+  }
+
+  protected createToDBMapping(model: IActivityCreate): ActivityDbInsert {
+    return {
+      main: {
+        clubId: model.club.id,
+        originalName: model.name,
+        name: model.name,
+        activityTypeEnumId: model.activityTypeEnum,
+        activityStatusEnumId: model.activityStatusEnum,
+        activityDId: model.activityDuration.id,
+        location: model.location,
+        purpose: model.purpose,
+        detail: model.detail,
+        evidence: model.evidence,
+      },
+      oneToOne: {},
+      oneToMany: {
+        activityT: model.durations.map(duration => ({
+          startTerm: duration.startTerm,
+          endTerm: duration.endTerm,
+        })),
+        activityEvidenceFile: model.evidenceFiles.map(evidenceFile => ({
+          fileId: evidenceFile.id,
+        })),
+        activityParticipant: model.participants.map(participant => ({
           studentId: participant.id,
         })),
       },

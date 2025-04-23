@@ -7,7 +7,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
-import { MFundingComment } from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
+import {
+  IFundingCommentCreate,
+  MFundingComment,
+} from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
 
 export type FundingCommentQuery = {
   fundingId: number;
@@ -22,6 +25,7 @@ type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
 @Injectable()
 export class FundingCommentRepository extends BaseSingleTableRepository<
   MFundingComment,
+  IFundingCommentCreate,
   FundingCommentTable,
   FundingCommentQuery
 > {

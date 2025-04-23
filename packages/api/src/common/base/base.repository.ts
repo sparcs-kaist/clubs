@@ -10,6 +10,7 @@ import {
   gt,
   gte,
   inArray,
+  InferSelectModel,
   isNotNull,
   isNull,
   like,
@@ -34,7 +35,7 @@ import {
   TransactionManagerService,
 } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
 
-import { IdType, MEntity } from "../base/entity.model";
+import { IdType, MEntity, ModelPatchFunction } from "../base/entity.model";
 import { OrderByTypeEnum } from "../enums";
 import {
   makeObjectPropsFromDBTimezone,
@@ -92,6 +93,10 @@ export type MultiTableWithID = {
   oneToOne: Record<string, TableWithID>;
   oneToMany: Record<string, TableWithID>;
 };
+
+export type InferUpdateModel<Table extends TableWithID> = Partial<
+  InferSelectModel<Table>
+>;
 
 // MEntity 의 생성자
 // static 메서드 및 인스턴스 생성자를 constructor 로 받을 수 있도록 선언한 타입
@@ -239,7 +244,8 @@ export type BaseWhereQueryKeys<
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseRepository<
-  Model extends MEntity<Id>,
+  Model extends MEntity<Id> & IModelCreate,
+  IModelCreate,
   DbSelect,
   DbInsert,
   DbUpdate,
@@ -279,6 +285,13 @@ export abstract class BaseRepository<
   protected abstract modelToDBMapping(model: Model): DbUpdate;
 
   /**
+   * @description ModelCreate -> DB
+   * @description ModelCreate 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
+   * @description create에서 사용
+   */
+  protected abstract createToDBMapping(model: IModelCreate): DbInsert;
+
+  /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
    * @description getTableOfField에서 wrapping 해서 사용
    * @returns 테이블 필드 또는 null (정상 작동)
@@ -314,7 +327,7 @@ export abstract class BaseRepository<
   ): Promise<number>;
 
   protected abstract createImplementation(
-    data: DbInsert[],
+    data: IModelCreate[],
     tx: DrizzleTransaction,
   ): Promise<Model[]>;
 
@@ -325,7 +338,7 @@ export abstract class BaseRepository<
 
   protected abstract patchImplementation(
     query: BaseRepositoryQuery<Query, Id>,
-    consumer: (original: Model) => Model,
+    patchFunction: ModelPatchFunction<Model, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]>;
 
@@ -464,7 +477,6 @@ export abstract class BaseRepository<
       | PrimitiveConditionValue
       | AdvancedConditionalValue<PrimitiveConditionValue>,
   ): SQL {
-    console.log(`processQuery key ${String(key)} value ${value}`);
     if (this.isNestedQueryWrapper(String(key))) {
       // key가 and or not 인 경우 중첩 쿼리 처리
       return this.processNestedQuery(
@@ -501,11 +513,6 @@ export abstract class BaseRepository<
     if (!this.isNestedQueryWrapper(wrapper)) {
       throw new Error(`Invalid wrapper condition : ${wrapper} ${conditions}`);
     }
-    console.log(
-      `processNestedQuery : ${wrapper} ${conditions} ${JSON.stringify(
-        Object.entries(conditions),
-      )}`,
-    );
     const whereClause = Object.entries(conditions).map(
       ([key, value]): SQL =>
         this.processQuery(
@@ -556,12 +563,10 @@ export abstract class BaseRepository<
       // 방지 함수
       throw new Error(`Invalid primitive condition: ${String(key)} ${value}`);
     }
-    console.log(`processPrimitiveCondition : ${String(key)} ${value}`);
     const table = this.getTableOfField(key);
     if (table === null) {
       // getTableOfField가 null인 경우 SpecialCondition에서 처리
       // getTableOfField가 null인 경우 === 모델 필드에 없는 특수 조건
-      console.log(`processSpecialCondition : ${String(key)} ${value} ${table}`);
       return this.processSpecialCondition(key, value);
     }
     const column = table[key as keyof typeof table] as MySqlColumnType;
@@ -619,9 +624,6 @@ export abstract class BaseRepository<
       );
     }
     // Query 필드를 테이블 필드로 변환
-    console.log(
-      `processAdvancedCondition : ${String(queryField)} ${conditions}`,
-    );
     const table = this.getTableOfField(queryField);
     if (table === null) {
       throw new Error(
@@ -754,7 +756,6 @@ export abstract class BaseRepository<
           this.findImplementation(query, tsx),
         );
     const res = await resPromise;
-    console.log(`find res ${JSON.stringify(res)}`);
     return res;
   }
 
@@ -768,12 +769,11 @@ export abstract class BaseRepository<
           this.countImplementation(query, tsx),
         );
     const res = await resPromise;
-    console.log(`count res ${JSON.stringify(res)}`);
     return res;
   }
 
   async create(
-    data: DbInsert[] | DbInsert,
+    data: IModelCreate[] | IModelCreate,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
     const insertData = Array.isArray(data) ? data : [data];
@@ -783,7 +783,6 @@ export abstract class BaseRepository<
           this.createImplementation(insertData, tsx),
         );
     const res = await resPromise;
-    console.log(`create res ${JSON.stringify(res)}`);
     return res;
   }
 
@@ -794,22 +793,20 @@ export abstract class BaseRepository<
           this.putImplementation(model, tsx),
         );
     const res = await resPromise;
-    console.log(`put res ${JSON.stringify(res)}`);
     return res;
   }
 
   async patch(
     query: BaseRepositoryQuery<Query, Id>,
-    consumer: (oldbie: Model) => Model,
+    patchFunction: ModelPatchFunction<Model, Id>,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
     const resPromise = tx
-      ? this.patchImplementation(query, consumer, tx)
+      ? this.patchImplementation(query, patchFunction, tx)
       : this.txManager.runInTransaction(async tsx =>
-          this.patchImplementation(query, consumer, tsx),
+          this.patchImplementation(query, patchFunction, tsx),
         );
     const res = await resPromise;
-    console.log(`patch res ${JSON.stringify(res)}`);
     return res;
   }
 
@@ -823,7 +820,6 @@ export abstract class BaseRepository<
           this.deleteImplementation(query, tsx),
         );
     const res = await resPromise;
-    console.log(`delete res ${JSON.stringify(res)}`);
     return res;
   }
 
@@ -840,7 +836,6 @@ export abstract class BaseRepository<
           ).then(takeOnlyOne()),
         );
     const res = await resPromise;
-    console.log(`fetch res ${JSON.stringify(res)}`);
     return res;
   }
 
@@ -857,7 +852,6 @@ export abstract class BaseRepository<
           ).then(takeAll(ids)),
         );
     const res = await resPromise;
-    console.log(`fetchAll res ${JSON.stringify(res)}`);
     return res;
   }
 }

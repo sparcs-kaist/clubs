@@ -10,7 +10,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { MActivityDuration } from "@sparcs-clubs/api/feature/semester/model/activity.duration.model";
+import {
+  IActivityDurationCreate,
+  MActivityDuration,
+} from "@sparcs-clubs/api/feature/semester/model/activity.duration.model";
 
 export type ActivityDurationQuery = {
   semesterId: number;
@@ -42,6 +45,7 @@ type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class ActivityDurationRepository extends BaseSingleTableRepository<
   MActivityDuration,
+  IActivityDurationCreate,
   ActivityDurationTable,
   ActivityDurationQuery,
   ActivityDurationOrderByKeys,

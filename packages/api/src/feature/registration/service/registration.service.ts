@@ -1091,9 +1091,9 @@ export class RegistrationService {
     // 동아리 가입 신청
     await this.memberRegistrationRepository.create([
       {
-        studentId,
-        clubId,
-        semesterId,
+        student: { id: studentId },
+        club: { id: clubId },
+        semester: { id: semesterId },
         registrationApplicationStudentEnum:
           RegistrationApplicationStudentStatusEnum.Pending,
       },
@@ -1119,9 +1119,6 @@ export class RegistrationService {
       semesterId,
     });
 
-    console.log(
-      `getMemberRegistrationsMy registrations ${JSON.stringify(registrations)}`,
-    );
     const result = await Promise.all(
       registrations.map(async registration => {
         const club = await this.clubPublicService.fetchSummary(

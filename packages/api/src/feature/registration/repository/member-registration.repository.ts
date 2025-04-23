@@ -9,7 +9,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
-import { MMemberRegistration } from "@sparcs-clubs/api/feature/registration/model/member.registration.model";
+import {
+  IMemberRegistrationCreate,
+  MMemberRegistration,
+} from "@sparcs-clubs/api/feature/registration/model/member.registration.model";
 
 export type MemberRegistrationQuery = {
   studentId: number;
@@ -31,6 +34,7 @@ type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class MemberRegistrationRepository extends BaseSingleTableRepository<
   MMemberRegistration,
+  IMemberRegistrationCreate,
   MemberRegistrationTable,
   MemberRegistrationQuery,
   MemberRegistrationOrderByKeys
@@ -42,7 +46,6 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
   protected dbToModelMapping(
     result: MemberRegistrationDbSelect,
   ): MMemberRegistration {
-    console.log(`dbToModelMapping result ${JSON.stringify(result)}`);
     const res = new MMemberRegistration({
       id: result.id,
       student: { id: result.studentId },
@@ -52,7 +55,7 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
         result.registrationApplicationStudentEnum,
       createdAt: result.createdAt,
     });
-    console.log(`dbToModelMapping res ${JSON.stringify(res)}`);
+
     return res;
   }
 

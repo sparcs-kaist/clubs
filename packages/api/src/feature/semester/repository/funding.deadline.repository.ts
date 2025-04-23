@@ -10,7 +10,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { MFundingDeadline } from "@sparcs-clubs/api/feature/semester/model/funding.deadline.model";
+import {
+  IFundingDeadlineCreate,
+  MFundingDeadline,
+} from "@sparcs-clubs/api/feature/semester/model/funding.deadline.model";
 
 export type FundingDeadlineQuery = {
   semesterId: number;
@@ -37,6 +40,7 @@ type FundingDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class FundingDeadlineRepository extends BaseSingleTableRepository<
   MFundingDeadline,
+  IFundingDeadlineCreate,
   FundingDeadlineTable,
   FundingDeadlineQuery,
   FundingDeadlineOrderByKeys,

@@ -10,7 +10,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { MRegistrationDeadline } from "@sparcs-clubs/api/feature/semester/model/registration.deadline.model";
+import {
+  IRegistrationDeadlineCreate,
+  MRegistrationDeadline,
+} from "@sparcs-clubs/api/feature/semester/model/registration.deadline.model";
 
 export type RegistrationDeadlineQuery = {
   semesterId: number;
@@ -37,6 +40,7 @@ type RegistrationDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
   MRegistrationDeadline,
+  IRegistrationDeadlineCreate,
   RegistrationDeadlineTable,
   RegistrationDeadlineQuery,
   RegistrationDeadlineOrderByKeys,

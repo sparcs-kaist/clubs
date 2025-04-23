@@ -8,7 +8,10 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { MSemester } from "@sparcs-clubs/api/feature/semester/model/semester.model";
+import {
+  ISemesterCreate,
+  MSemester,
+} from "@sparcs-clubs/api/feature/semester/model/semester.model";
 
 export type SemesterQuery = { date: Date; endTerm: Date };
 
@@ -31,6 +34,7 @@ type SemesterFieldMapKeys = BaseTableFieldMapKeys<
 @Injectable()
 export class SemesterRepository extends BaseSingleTableRepository<
   MSemester,
+  ISemesterCreate,
   SemesterTable,
   SemesterQuery,
   SemesterOrderByKeys,

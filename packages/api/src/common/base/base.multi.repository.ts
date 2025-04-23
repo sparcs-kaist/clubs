@@ -10,22 +10,19 @@ import {
 
 import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
-import { IdType, MEntity } from "../base/entity.model";
+import { IdType, MEntity, ModelPatchFunction } from "../base/entity.model";
 import { forEachAsyncSequentially, getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
+  InferUpdateModel,
   ModelConstructor,
   MultiTableWithID,
   PlainObject,
   TableWithID,
 } from "./base.repository";
-
-type InferUpdateModel<Table extends TableWithID> = Partial<
-  InferSelectModel<Table>
->;
 
 type TableToInfer<
   Table extends TableWithID,
@@ -36,6 +33,55 @@ type TableToInfer<
     ? InferInsertModel<Table>
     : InferUpdateModel<Table>;
 
+type RecordToInferOne<
+  R extends Record<string, TableWithID>,
+  Mode extends "select" | "insert" | "update",
+  MainIdKey extends string = "mainId",
+> = {
+  [key in keyof R]: Mode extends "select"
+    ? InferSelectModel<R[key]>
+    : Mode extends "insert"
+      ? Omit<InferInsertModel<R[key]>, MainIdKey> // 메인 테이블 id를 들고 있지 않음
+      : InferUpdateModel<R[key]>;
+};
+
+type RecordToInferMany<
+  R extends Record<string, TableWithID>,
+  Mode extends "select" | "insert" | "update",
+  MainIdKey extends string = "mainId",
+> = {
+  [key in keyof R]: Mode extends "select"
+    ? InferSelectModel<R[key]>[]
+    : Mode extends "insert"
+      ? Omit<InferInsertModel<R[key]>, MainIdKey>[] // 메인 테이블 id를 들고 있지 않음
+      : InferUpdateModel<R[key]>[];
+};
+
+type MultiTableInfer<
+  MultiTable extends MultiTableWithID,
+  Mode extends "select" | "insert" | "update",
+  MainIdKey extends string = "mainId",
+> = {
+  main: TableToInfer<MultiTable["main"], Mode>;
+  oneToOne: RecordToInferOne<MultiTable["oneToOne"], Mode, MainIdKey>;
+  oneToMany: RecordToInferMany<MultiTable["oneToMany"], Mode, MainIdKey>;
+};
+
+// 모델을 테이블로 변환한 상태: mainId가 없음
+
+export type MultiSelectModel<MultiTable extends MultiTableWithID> =
+  MultiTableInfer<MultiTable, "select">;
+
+export type MultiInsertModel<
+  MultiTable extends MultiTableWithID,
+  MainIdKey extends string,
+> = MultiTableInfer<MultiTable, "insert", MainIdKey>;
+
+export type MultiUpdateModel<MultiTable extends MultiTableWithID> =
+  MultiTableInfer<MultiTable, "update">;
+
+// DB에 넣기 직전 상태: mainId를 들고 있음
+
 type TableToInferArray<
   Table extends TableWithID,
   Mode extends "select" | "insert" | "update",
@@ -45,49 +91,6 @@ type TableToInferArray<
     ? InferInsertModel<Table>[]
     : InferUpdateModel<Table>[];
 
-type RecordToInferOne<
-  R extends Record<string, TableWithID>,
-  Mode extends "select" | "insert" | "update",
-> = {
-  [key in keyof R]: Mode extends "select"
-    ? InferSelectModel<R[key]>
-    : Mode extends "insert"
-      ? InferInsertModel<R[key]>
-      : InferUpdateModel<R[key]>;
-};
-
-type RecordToInferMany<
-  R extends Record<string, TableWithID>,
-  Mode extends "select" | "insert" | "update",
-> = {
-  [key in keyof R]: Mode extends "select"
-    ? InferSelectModel<R[key]>[]
-    : Mode extends "insert"
-      ? InferInsertModel<R[key]>[]
-      : InferUpdateModel<R[key]>[];
-};
-
-type MultiTableInfer<
-  MultiTable extends MultiTableWithID,
-  Mode extends "select" | "insert" | "update",
-> = {
-  main: TableToInfer<MultiTable["main"], Mode>;
-  oneToOne: RecordToInferOne<MultiTable["oneToOne"], Mode>;
-  oneToMany: RecordToInferMany<MultiTable["oneToMany"], Mode>;
-};
-
-// 모델을 테이블로 변환한 상태
-
-export type MultiSelectModel<MultiTable extends MultiTableWithID> =
-  MultiTableInfer<MultiTable, "select">;
-
-export type MultiInsertModel<MultiTable extends MultiTableWithID> =
-  MultiTableInfer<MultiTable, "insert">;
-
-export type MultiUpdateModel<MultiTable extends MultiTableWithID> =
-  MultiTableInfer<MultiTable, "update">;
-
-// DB에 넣기 직전 상태
 export type MultiModelSelectTableArray<MultiTable extends MultiTableWithID> = {
   main: TableToInferArray<MultiTable["main"], "select">;
   oneToOne: {
@@ -129,7 +132,9 @@ export type MultiModelInsertTableArray<MultiTable extends MultiTableWithID> = {
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()
 export abstract class BaseMultiTableRepository<
-  Model extends MEntity<Id>,
+  Model extends MEntity<Id> & IModelCreate,
+  IModelCreate,
+  MainIdKey extends string,
   Table extends MultiTableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
   Query extends PlainObject,
   OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
@@ -137,8 +142,9 @@ export abstract class BaseMultiTableRepository<
   Id extends IdType = number,
 > extends BaseRepository<
   Model,
+  IModelCreate,
   MultiSelectModel<Table>,
-  MultiInsertModel<Table>,
+  MultiInsertModel<Table, MainIdKey>,
   MultiUpdateModel<Table>,
   Query,
   OrderByKeys,
@@ -166,6 +172,15 @@ export abstract class BaseMultiTableRepository<
    * @description update에서 사용
    */
   protected abstract modelToDBMapping(model: Model): MultiUpdateModel<Table>;
+
+  /**
+   * @description ModelCreate -> DB
+   * @description ModelCreate 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
+   * @description create에서 사용
+   */
+  protected abstract createToDBMapping(
+    model: IModelCreate,
+  ): MultiInsertModel<Table, MainIdKey>;
 
   /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
@@ -233,15 +248,19 @@ export abstract class BaseMultiTableRepository<
   }
 
   protected async createImplementation(
-    data: MultiInsertModel<Table>[],
+    data: IModelCreate[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
+    const dbFormattedData = data.map(d => this.createToDBMapping(d));
+
     // 메인 테이블 삽입
     const processedData = await Promise.all(
-      data.map(async model => {
+      dbFormattedData.map(async model => {
         const [result] = await tx.insert(this.table.main).values(model.main);
         const id = result.insertId;
-        return { ...model, id } as MultiInsertModel<Table> & { id: Id };
+        return { ...model, id } as MultiInsertModel<Table, MainIdKey> & {
+          id: Id;
+        };
       }),
     );
 
@@ -288,7 +307,6 @@ export abstract class BaseMultiTableRepository<
     tx: DrizzleTransaction,
   ): Promise<Model> {
     const data = this.modelToDB(model);
-    console.log(`putImplementation data ${JSON.stringify(data)}`);
     // main 업데이트
     await tx
       .update(this.table.main)
@@ -322,11 +340,11 @@ export abstract class BaseMultiTableRepository<
 
   protected async patchImplementation(
     query: BaseRepositoryQuery<Query, Id>,
-    consumer: (original: Model) => Model,
+    patchFunction: ModelPatchFunction<Model, Id>,
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
     const data = await this.find(query, tx);
-    const updated = data.map(consumer);
+    const updated = data.map(patchFunction);
 
     const result = await Promise.all(
       updated.map(model => this.putImplementation(model, tx)),
@@ -462,10 +480,11 @@ export abstract class BaseMultiTableRepository<
   /**
    * @description insert 의 파라미터로 들어온 배열을 테이블 별 어레이로 변환
    * @description 이미 메인 테이블에 insert를 통해서 id를 받아온 후에 사용해야 함
+   * @description 메인 테이블 id를 들고 있지 않은 테이블에 대해서는 메인 테이블 id를 추가해줘야 함
    */
 
   private insertModelArrayToTableArrayResult(
-    models: (MultiInsertModel<Table> & { id: Id })[],
+    models: (MultiInsertModel<Table, MainIdKey> & { id: Id })[],
   ): MultiModelInsertTableArray<Table> {
     if (models.length === 0) throw new Error("model array is empty");
     return {

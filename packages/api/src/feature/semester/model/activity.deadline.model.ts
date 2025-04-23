@@ -3,6 +3,13 @@ import { ISemester } from "@clubs/domain/semester/semester";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
+export interface IActivityDeadlineCreate {
+  semester: IActivityDeadline["semester"];
+  deadlineEnum: IActivityDeadline["deadlineEnum"];
+  startTerm: IActivityDeadline["startTerm"];
+  endTerm: IActivityDeadline["endTerm"];
+}
+
 export class MActivityDeadline extends MEntity implements IActivityDeadline {
   static modelName = "ActivityDeadline";
 
