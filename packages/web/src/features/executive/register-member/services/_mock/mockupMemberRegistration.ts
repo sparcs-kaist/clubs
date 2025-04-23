@@ -1,5 +1,5 @@
-import { ApiReg019ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg019";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ApiReg019ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg019";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 const divisionName = [
   "생활문화",

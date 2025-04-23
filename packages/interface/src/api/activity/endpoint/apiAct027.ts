@@ -1,9 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zExecutiveSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
-// import { zPickElement } from "@sparcs-clubs/interface/common/zodUtil";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
+// import { zPickElement } from "@clubs/interface/common/zodUtil";
 
 /**
  * @version v0.1

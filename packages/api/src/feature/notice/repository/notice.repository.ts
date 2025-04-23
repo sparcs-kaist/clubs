@@ -5,7 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import {
   INoticeCreate,
   INoticeUpdate,
-} from "@sparcs-clubs/interface/api/notice/type/notice.type";
+} from "@clubs/interface/api/notice/type/notice.type";
 
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import {

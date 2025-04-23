@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, between, desc, eq, isNull, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import type { ApiCms007ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms007";
+import type { ApiCms007ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms007";
 
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
@@ -18,7 +18,7 @@ export class GetCommonSpacesUsageOrderMyRepository {
   async getStudentCommonSpacesUsageOrderMy(
     studentId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
     offset: number,
     total: number,
   ): Promise<ApiCms007ResponseOk> {
@@ -36,8 +36,8 @@ export class GetCommonSpacesUsageOrderMyRepository {
         and(
           eq(CommonSpaceUsageOrderD.chargeStudentId, studentId),
           or(
-            between(CommonSpaceUsageOrderD.startTerm, startDate, endDate),
-            between(CommonSpaceUsageOrderD.endTerm, startDate, endDate),
+            between(CommonSpaceUsageOrderD.startTerm, startDate, endTerm),
+            between(CommonSpaceUsageOrderD.endTerm, startDate, endTerm),
           ),
           isNull(CommonSpaceUsageOrderD.deletedAt),
         ),

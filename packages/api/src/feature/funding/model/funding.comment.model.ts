@@ -1,20 +1,8 @@
-import {
-  ColumnBaseConfig,
-  ColumnDataType,
-  InferInsertModel,
-  InferSelectModel,
-} from "drizzle-orm";
-import { MySqlColumn } from "drizzle-orm/mysql-core";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IFundingComment } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import {
-  Exclude,
-  filterExcludedFields,
-  OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 
 import { MFunding } from "./funding.model";
@@ -23,30 +11,28 @@ import { VFundingSummary } from "./funding.summary.model";
 export type FromDb = InferSelectModel<typeof FundingFeedback>;
 export type ToDb = InferInsertModel<typeof FundingFeedback>;
 
-export type FundingCommentQuery = {
-  fundingId: number;
-};
+export interface IFundingCommentCreate {
+  funding: IFundingComment["funding"];
+  executive: IFundingComment["executive"];
+  content: IFundingComment["content"];
+  fundingStatusEnum: IFundingComment["fundingStatusEnum"];
+  approvedAmount: IFundingComment["approvedAmount"];
+}
 
-export class MFundingComment
-  extends MEntity<number>
-  implements IFundingComment
-{
+export class MFundingComment extends MEntity implements IFundingComment {
   static modelName = "fundingComment";
 
-  funding: { id: number };
+  funding: IFundingComment["funding"];
 
-  executive: {
-    id: number;
-  };
+  executive: IFundingComment["executive"];
 
-  content: string;
+  content: IFundingComment["content"];
 
-  fundingStatusEnum: FundingStatusEnum;
+  fundingStatusEnum: IFundingComment["fundingStatusEnum"];
 
-  approvedAmount: number;
+  approvedAmount: IFundingComment["approvedAmount"];
 
-  @Exclude(OperationType.CREATE)
-  createdAt: Date;
+  createdAt: IFundingComment["createdAt"];
 
   constructor(data: IFundingComment) {
     super();
@@ -59,50 +45,5 @@ export class MFundingComment
       funding.fundingStatusEnum === this.fundingStatusEnum &&
       funding.id === this.funding.id
     );
-  }
-
-  static from(result: FromDb): MFundingComment {
-    return new MFundingComment({
-      id: result.id,
-      funding: { id: result.fundingId },
-      executive: {
-        id: result.executiveId,
-      },
-      fundingStatusEnum: result.fundingStatusEnum,
-      approvedAmount: result.approvedAmount,
-      content: result.feedback,
-      createdAt: result.createdAt,
-    });
-  }
-
-  to(operation: OperationType): ToDb {
-    const filtered = filterExcludedFields(this, operation);
-
-    return {
-      id: filtered.id ?? undefined,
-      fundingId: filtered.funding?.id,
-      executiveId: filtered.executive?.id,
-      feedback: filtered.content,
-      fundingStatusEnum: filtered.fundingStatusEnum,
-      approvedAmount: filtered.approvedAmount,
-      createdAt: filtered.createdAt,
-    };
-  }
-
-  static fieldMap(
-    field: keyof FundingCommentQuery,
-  ): MySqlColumn<ColumnBaseConfig<ColumnDataType, string>> {
-    const fieldMappings: Record<
-      keyof FundingCommentQuery,
-      MySqlColumn<ColumnBaseConfig<ColumnDataType, string>>
-    > = {
-      fundingId: FundingFeedback.fundingId,
-    };
-
-    if (!(field in fieldMappings)) {
-      throw new Error(`Invalid field: ${String(field)}`);
-    }
-
-    return fieldMappings[field];
   }
 }

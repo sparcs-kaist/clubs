@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, between, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import type { ApiCms002ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
+import type { ApiCms002ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms002";
 
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { CommonSpaceUsageOrderD } from "@sparcs-clubs/api/drizzle/schema/common-space.schema";
@@ -15,7 +15,7 @@ export class GetCommonSpaceUsageOrderRepository {
   async findBySpaceIdAndStartTermBetweenAndEndTermBetween(
     spaceId: number,
     startDate: Date,
-    endDate: Date,
+    endTerm: Date,
   ): Promise<ApiCms002ResponseOK> {
     const result = await this.db
       .select({
@@ -31,8 +31,8 @@ export class GetCommonSpaceUsageOrderRepository {
         and(
           eq(CommonSpaceUsageOrderD.commonSpaceId, spaceId),
           or(
-            between(CommonSpaceUsageOrderD.startTerm, startDate, endDate),
-            between(CommonSpaceUsageOrderD.endTerm, startDate, endDate),
+            between(CommonSpaceUsageOrderD.startTerm, startDate, endTerm),
+            between(CommonSpaceUsageOrderD.endTerm, startDate, endTerm),
           ),
           isNull(CommonSpaceUsageOrderD.deletedAt),
         ),

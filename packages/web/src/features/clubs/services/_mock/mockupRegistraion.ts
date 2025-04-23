@@ -1,6 +1,6 @@
-import type { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import type { ApiReg006ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg006";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 /* API 문서에는 AppliedStatusEum으로 명명되어 있는데 관련 enum이 없어서 RegistraionStatusEum으로 구현함 */
 

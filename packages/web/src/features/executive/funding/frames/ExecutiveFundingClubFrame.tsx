@@ -2,7 +2,7 @@ import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import { useEffect, useState } from "react";
 
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

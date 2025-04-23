@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
 
-import { ApiAct024ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
+import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
 
 import Checkbox from "@sparcs-clubs/web/common/components/Checkbox";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

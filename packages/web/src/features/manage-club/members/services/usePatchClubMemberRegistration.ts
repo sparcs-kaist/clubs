@@ -4,9 +4,9 @@ import type {
   ApiReg007RequestBody,
   ApiReg007RequestParam,
   ApiReg007ResponseNoContent,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg007";
-import apiReg007 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg007";
-import apiReg008 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
+} from "@clubs/interface/api/registration/endpoint/apiReg007";
+import apiReg007 from "@clubs/interface/api/registration/endpoint/apiReg007";
+import apiReg008 from "@clubs/interface/api/registration/endpoint/apiReg008";
 
 import {
   axiosClientWithAuth,

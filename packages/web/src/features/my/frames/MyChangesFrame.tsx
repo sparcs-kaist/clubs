@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
-import { ClubDelegateChangeRequestStatusEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import useGetUserProfile from "@sparcs-clubs/web/common/services/getUserProfile";

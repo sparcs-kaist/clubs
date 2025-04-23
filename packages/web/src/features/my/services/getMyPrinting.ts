@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   ApiPrt005RequestQuery,
   ApiPrt005ResponseOk,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
-import apiPrt005 from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
+import apiPrt005 from "@clubs/interface/api/promotional-printing/endpoint/apiPrt005";
 
 import {
   axiosClientWithAuth,
@@ -15,13 +15,13 @@ import { mockupMyPrint } from "./_mock/mockMyClub";
 
 export const useGetMyPrinting = (
   startDate: Date,
-  endDate: Date,
+  endTerm: Date,
   pageOffset: number,
   itemCount: number,
 ) => {
   const requestQuery: ApiPrt005RequestQuery = {
     startDate,
-    endDate,
+    endTerm,
     pageOffset,
     itemCount,
   };

@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/mysql-core";
 
 import { Division } from "./division.schema";
+import { SemesterD } from "./semester.schema";
 import { Professor, Student } from "./user.schema";
 
 export const Club = mysqlTable("club", {
@@ -29,16 +30,6 @@ export const Club = mysqlTable("club", {
 export const ClubStatusEnum = mysqlTable("club_status_enum", {
   id: int("id").autoincrement().primaryKey(),
   statusName: varchar("status_name", { length: 30 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  deletedAt: timestamp("deleted_at"),
-});
-
-export const SemesterD = mysqlTable("semester_d", {
-  id: int("id").autoincrement().primaryKey(),
-  year: int("year"),
-  name: varchar("name", { length: 10 }),
-  startTerm: date("start_term"),
-  endTerm: date("end_term"),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });

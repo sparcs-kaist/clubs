@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 /**
  * @version v0.1
@@ -26,7 +26,7 @@ const responseBodyMap = {
     announcementTitle: z.coerce.string(),
     announcementContent: z.coerce.string(),
     startDate: z.coerce.date(),
-    endDate: z.coerce.date().optional(),
+    endTerm: z.coerce.date().optional(),
     isRegular: z.coerce.boolean(),
     location: z.coerce.string(),
     locationEn: z.coerce.string(),

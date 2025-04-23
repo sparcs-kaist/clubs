@@ -1,15 +1,18 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IDivisionSummary } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { IDivisionSummary } from "@clubs/interface/api/division/type/division.type";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
 import { MDivision } from "./division.model";
 
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
-export class VDivisionSummary extends MEntity implements IDivisionSummary {
+export class VDivisionSummary
+  extends MEntity<number>
+  implements IDivisionSummary
+{
   static modelName = "divisionSummary";
 
   name: IDivisionSummary["name"];
@@ -22,12 +25,7 @@ export class VDivisionSummary extends MEntity implements IDivisionSummary {
 
   constructor(param: IDivisionSummary | MDivision) {
     super();
-    if (param instanceof MDivision) {
-      this.id = param.id;
-      this.name = param.name;
-    } else {
-      Object.assign(this, param);
-    }
+    Object.assign(this, param);
   }
 
   static from(result: DivisionDBResult): VDivisionSummary {

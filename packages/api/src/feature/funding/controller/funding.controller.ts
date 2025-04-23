@@ -14,73 +14,73 @@ import {
 import apiFnd002, {
   ApiFnd002RequestParam,
   ApiFnd002ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd002";
+} from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import apiFnd003, {
   ApiFnd003RequestBody,
   ApiFnd003RequestParam,
   ApiFnd003ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd003";
+} from "@clubs/interface/api/funding/endpoint/apiFnd003";
 import apiFnd004, {
   ApiFnd004RequestParam,
   ApiFnd004ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd004";
+} from "@clubs/interface/api/funding/endpoint/apiFnd004";
 import apiFnd005, {
   ApiFnd005RequestQuery,
   ApiFnd005ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd005";
+} from "@clubs/interface/api/funding/endpoint/apiFnd005";
 import apiFnd006, {
   ApiFnd006RequestParam,
   ApiFnd006RequestQuery,
   ApiFnd006ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd006";
+} from "@clubs/interface/api/funding/endpoint/apiFnd006";
 import apiFnd007, {
   ApiFnd007ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd007";
+} from "@clubs/interface/api/funding/endpoint/apiFnd007";
 import apiFnd008, {
   ApiFnd008RequestUrl,
   ApiFnd008ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
+} from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import apiFnd009, {
   ApiFnd009RequestParam,
   ApiFnd009RequestUrl,
   ApiFnd009ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd009";
+} from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import apiFnd010, {
   ApiFnd010RequestParam,
   ApiFnd010RequestUrl,
   ApiFnd010ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd010";
+} from "@clubs/interface/api/funding/endpoint/apiFnd010";
 import apiFnd012, {
   ApiFnd012RequestParam,
   ApiFnd012RequestUrl,
   ApiFnd012ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd012";
+} from "@clubs/interface/api/funding/endpoint/apiFnd012";
 import apiFnd013, {
   ApiFnd013RequestBody,
   ApiFnd013RequestParam,
   ApiFnd013RequestUrl,
   ApiFnd013ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd013";
+} from "@clubs/interface/api/funding/endpoint/apiFnd013";
 import apiFnd014, {
   ApiFnd014RequestBody,
   ApiFnd014RequestUrl,
   ApiFnd014ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd014";
+} from "@clubs/interface/api/funding/endpoint/apiFnd014";
 import apiFnd015, {
   ApiFnd015RequestBody,
   ApiFnd015RequestUrl,
   ApiFnd015ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd015";
+} from "@clubs/interface/api/funding/endpoint/apiFnd015";
 import apiFnd016, {
   ApiFnd016RequestQuery,
   ApiFnd016RequestUrl,
   ApiFnd016ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
+} from "@clubs/interface/api/funding/endpoint/apiFnd016";
 import {
   apiFnd001,
   ApiFnd001RequestBody,
   ApiFnd001ResponseCreated,
-} from "@sparcs-clubs/interface/api/funding/index";
+} from "@clubs/interface/api/funding/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {

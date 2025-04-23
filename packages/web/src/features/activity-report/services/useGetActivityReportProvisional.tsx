@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { ApiAct029ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct029";
+import { ApiAct029ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct029";
 
 import { activityReportProvisionalGet } from "@sparcs-clubs/web/features/register-club/services/_atomic/actApiList";
 import {

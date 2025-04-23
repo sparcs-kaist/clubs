@@ -4,7 +4,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";

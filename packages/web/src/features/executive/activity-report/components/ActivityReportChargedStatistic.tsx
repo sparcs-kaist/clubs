@@ -1,7 +1,7 @@
 import React from "react";
 
-import { ApiAct028ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct028";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ApiAct028ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct028";
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import ActivityReportStatisticContent from "./_atomic/ActivityReportStatisticContent";
 

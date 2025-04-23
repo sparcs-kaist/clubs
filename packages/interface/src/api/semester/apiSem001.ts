@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 /**
  * @version v0.1
  * @description 학기 목록을 가져옵니다.
@@ -24,11 +26,11 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     semesters: z.array(
       z.object({
-        id: z.number().int().min(1),
-        year: z.number().int(),
-        name: z.string().max(10),
-        startTerm: z.date(),
-        endTerm: z.date(),
+        id: zSemester.shape.id,
+        year: zSemester.shape.year,
+        name: zSemester.shape.name,
+        startTerm: zSemester.shape.startTerm,
+        endTerm: zSemester.shape.endTerm,
       }),
     ),
     total: z.number().int().min(0),

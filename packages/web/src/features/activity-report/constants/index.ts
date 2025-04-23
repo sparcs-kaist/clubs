@@ -1,7 +1,7 @@
 import { getDate, getMonth, getYear } from "date-fns";
 
-import { ApiAct018ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 export const MAX_ACTIVITY_REPORT_COUNT = 20;
 
@@ -9,14 +9,16 @@ export const activityDeadlineEnumToString = (
   deadline?: ActivityDeadlineEnum,
 ) => {
   switch (deadline) {
-    case ActivityDeadlineEnum.Activity:
-      return "활동";
-    case ActivityDeadlineEnum.Upload:
+    case ActivityDeadlineEnum.Writing:
       return "작성";
+    case ActivityDeadlineEnum.Late:
+      return "지연 제출";
     case ActivityDeadlineEnum.Modification:
       return "수정";
-    default:
+    case ActivityDeadlineEnum.Exception:
       return "예외";
+    default:
+      throw new Error("Invalid activity deadline enum");
   }
 };
 

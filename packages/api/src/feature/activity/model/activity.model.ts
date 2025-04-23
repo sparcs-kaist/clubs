@@ -1,6 +1,6 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IActivity } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivity } from "@clubs/interface/api/activity/type/activity.type";
 
 import {
   Activity,

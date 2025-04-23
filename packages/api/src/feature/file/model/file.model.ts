@@ -1,4 +1,4 @@
-import { IFile } from "@sparcs-clubs/interface/api/file/type/file.type";
+import { IFile } from "@clubs/interface/api/file/type/file.type";
 
 export class MFile implements IFile {
   id: string;

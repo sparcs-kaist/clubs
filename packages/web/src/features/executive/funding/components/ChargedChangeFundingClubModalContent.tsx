@@ -2,8 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { overlay } from "overlay-kit";
 import { useCallback, useEffect, useState } from "react";
 
-import apiFnd008 from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
-import { ApiFnd016ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
+import apiFnd008 from "@clubs/interface/api/funding/endpoint/apiFnd008";
+import { ApiFnd016ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd016";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

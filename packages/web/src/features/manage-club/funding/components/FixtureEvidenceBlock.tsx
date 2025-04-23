@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form";
 import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FileUpload from "@sparcs-clubs/web/common/components/FileUpload";

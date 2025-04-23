@@ -1,4 +1,4 @@
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 import { MStudent } from "./student.model";
 

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiAct021, {
   ApiAct021RequestQuery,
   ApiAct021ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct021";
+} from "@clubs/interface/api/activity/endpoint/apiAct021";
 
 import {
   axiosClientWithAuth,

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
-import type { ApiDiv001ResponseOk } from "@sparcs-clubs/interface/api/division/endpoint/apiDiv001";
-import type { ApiDiv002ResponseOk } from "@sparcs-clubs/interface/api/division/endpoint/apiDiv002";
+import type { ApiDiv001ResponseOk } from "@clubs/interface/api/division/endpoint/apiDiv001";
+import type { ApiDiv002ResponseOk } from "@clubs/interface/api/division/endpoint/apiDiv002";
 
 import DivisionRepository from "../repository/division.repository";
 

@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import axios from "axios";
 import jsdom from "jsdom";
 
-import type { ApiNtc001ResponseOK } from "@sparcs-clubs/interface/api/notice/endpoint/apiNtc001";
+import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";

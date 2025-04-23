@@ -1,33 +1,31 @@
 {
-  "name": "@sparcs-clubs/interface",
+  "name": "@clubs/interface",
   "version": "1.0.0",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "src/index.ts",
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "tsc-alias": "^1.8.7",
-    "zod": "^3.21.4"
-  },
   "files": [
     "dist",
     "src"
   ],
   "scripts": {
-    "prepare": "pnpm build",
-    "dev": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
-    "mock:front": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
-    "mock:back": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
-    "typecheck": "tsc",
-    "build": "tsc && tsc-alias",
-    "clean": "rm -rf dist"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint"
   },
   "exports": {
     ".": "./dist/index.js",
     "./*": "./dist/*.js"
   },
   "dependencies": {
+    "@clubs/domain": "workspace:*",
     "@asteasolutions/zod-to-openapi": "^7.3.0",
     "axios": "^1.6.7"
+  },
+  "devDependencies": {
+    "@clubs/eslint-config": "workspace:*",
+    "@clubs/typescript-config": "workspace:*",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.24.0",
+    "typescript": "^5.8.3",
+    "zod": "^3.21.4"
   }
 }

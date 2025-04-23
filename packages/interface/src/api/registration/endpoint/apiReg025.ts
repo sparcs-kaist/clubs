@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubSummaryResponse } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { zClubSummaryResponse } from "@clubs/interface/api/club/type/club.type";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 /**
  * @version v0.1

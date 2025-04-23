@@ -2,9 +2,9 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import type { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
-import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import type { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
+import { ApiReg006ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg006";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

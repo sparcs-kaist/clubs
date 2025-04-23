@@ -3,8 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import type {
   ApiFnd015RequestBody,
   ApiFnd015ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd015";
-import apiFnd015 from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd015";
+} from "@clubs/interface/api/funding/endpoint/apiFnd015";
+import apiFnd015 from "@clubs/interface/api/funding/endpoint/apiFnd015";
 
 import {
   axiosClientWithAuth,
