@@ -11,8 +11,7 @@
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
-    "storybook": "pnpm -r storybook",
-    "build-storybook": "pnpm -r build-storybook",
+    "storybook": "turbo watch storybook",
     "db": "dotenv -- pnpm -F api db",
     "generate": "dotenv -- pnpm -F api generate",
     "prepare": "husky install"
