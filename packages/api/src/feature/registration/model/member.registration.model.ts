@@ -5,7 +5,6 @@ import { IMemberRegistration } from "@clubs/domain/member-registration/member-re
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
-import { ExcludeInCreate } from "@sparcs-clubs/api/common/util/decorators/model-property-decorator";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
 export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
@@ -42,7 +41,6 @@ export class MMemberRegistration
 
   semester: IMemberRegistration["semester"];
 
-  @ExcludeInCreate()
   createdAt: IMemberRegistration["createdAt"];
 
   constructor(data: IMemberRegistration) {

@@ -1,5 +1,3 @@
-import { ExcludeInCreate } from "../util/decorators/model-property-decorator";
-
 export type IdType = number | string;
 
 /**
@@ -11,7 +9,6 @@ export type ModelPatchFunction<
 > = (original: Model) => Model;
 
 export abstract class MEntity<Id extends IdType = number> {
-  @ExcludeInCreate()
   id: Id;
 
   static modelName: string;

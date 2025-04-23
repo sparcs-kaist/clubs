@@ -3,7 +3,6 @@ import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
-import { ExcludeInCreate } from "@sparcs-clubs/api/common/util/decorators/model-property-decorator";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 
 import { MFunding } from "./funding.model";
@@ -33,7 +32,6 @@ export class MFundingComment extends MEntity implements IFundingComment {
 
   approvedAmount: IFundingComment["approvedAmount"];
 
-  @ExcludeInCreate()
   createdAt: IFundingComment["createdAt"];
 
   constructor(data: IFundingComment) {
