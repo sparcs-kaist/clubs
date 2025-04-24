@@ -32,9 +32,13 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
     isError,
   } = useGetRegisterClubDetail(profile, { applyId: +id });
 
+  if (!clubDetail) {
+    return null;
+  }
+
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <RegisterClubDetailFrame profile={profile} clubDetail={clubDetail!} />
+      <RegisterClubDetailFrame profile={profile} clubDetail={clubDetail} />
       <ButtonWrapper>
         <Button
           style={{ width: "max-content" }}
@@ -45,7 +49,7 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
           목록으로 돌아가기
         </Button>
         {isProfessor ? (
-          <ProfessorRegisterClubDetailButton clubDetail={clubDetail!} />
+          <ProfessorRegisterClubDetailButton clubDetail={clubDetail} />
         ) : (
           <StudentRegisterClubDetailButton />
         )}

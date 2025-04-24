@@ -23,9 +23,13 @@ const RegisterClubDetailAuthFrame = ({
     { applyId },
   );
 
+  if (!clubDetail) {
+    return null;
+  }
+
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <RegisterClubDetailFrame profile={profile} clubDetail={clubDetail!} />
+      <RegisterClubDetailFrame profile={profile} clubDetail={clubDetail} />
     </AsyncBoundary>
   );
 };
