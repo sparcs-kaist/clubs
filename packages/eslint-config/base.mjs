@@ -55,7 +55,7 @@ export const baseConfig = tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: "./tsconfig.json",
+        project: true,
       },
     },
     rules: {

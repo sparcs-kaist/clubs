@@ -1,8 +1,9 @@
 import { z } from "zod";
 
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import { zClubSummary } from "@clubs/interface/api/club/type/club.type";
 import { zFileSummary } from "@clubs/interface/api/file/type/file.type";
-import { zActivityDuration } from "@clubs/interface/api/semester/type/activity.duration.type";
 import {
   zExecutiveSummary,
   zStudentSummary,
@@ -23,7 +24,6 @@ export const zActivity = z.object({
   activityDuration: zActivityDuration.pick({ id: true }),
   durations: z.array(
     z.object({
-      id: zId,
       startTerm: z.coerce.date(),
       endTerm: z.coerce.date(),
     }),

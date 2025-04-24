@@ -384,7 +384,7 @@ export const FundingFeedback = mysqlTable(
     id: int("id").autoincrement().primaryKey().notNull(),
     fundingId: int("funding_id").notNull(),
     executiveId: int("executive_id").notNull(),
-    feedback: text("feedback").notNull(),
+    content: text("feedback").notNull(),
     fundingStatusEnum: int("funding_status_enum").notNull(), // Funding 에서 이관
     approvedAmount: int("approved_amount").notNull(), // Funding 에서 이관
     createdAt: timestamp("created_at").defaultNow().notNull(),

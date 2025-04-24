@@ -1,12 +1,13 @@
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import {
   zDivision,
   zDivisionResponse,
   zDivisionSummary,
   zDivisionSummaryResponse,
 } from "@clubs/interface/api/division/type/division.type";
-import { zSemester } from "@clubs/interface/api/semester/type/semester.type";
 import { zProfessor, zStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   ClubBuildingEnum,

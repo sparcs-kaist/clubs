@@ -1,5 +1,18 @@
-import { Body, Controller, Get, Param, Put, UsePipes } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Put,
+  Query,
+  UsePipes,
+} from "@nestjs/common";
 
+import type {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
+import apiAct009 from "@clubs/interface/api/activity/endpoint/apiAct009";
 import apiClb001, {
   ApiClb001ResponseOK,
 } from "@clubs/interface/api/club/endpoint/apiClb001";
@@ -143,6 +156,20 @@ export class ClubController {
     @GetProfessor() user: GetProfessor,
   ): Promise<ApiClb016ResponseOk> {
     const result = await this.clubService.getProfessorClubsMy(user.professorId);
+    return result;
+  }
+
+  @Student()
+  @Get("/student/activities/activity-terms")
+  @UsePipes(new ZodPipe(apiAct009))
+  async getStudentActivitiesActivityTerms(
+    @GetStudent() user: GetStudent,
+    @Query() query: ApiAct009RequestQuery,
+  ): Promise<ApiAct009ResponseOk> {
+    const result = await this.clubService.getStudentActivitiesActivityTerms(
+      query,
+      user.studentId,
+    );
     return result;
   }
 }

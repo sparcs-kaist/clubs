@@ -2,8 +2,8 @@ import { asc, desc, InferSelectModel, SQL } from "drizzle-orm";
 
 import { INotice } from "@clubs/interface/api/notice/type/notice.type";
 
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
 import { Notice } from "@sparcs-clubs/api/drizzle/schema/notice.schema";
 
 type NoticeDbResult = InferSelectModel<typeof Notice>;
@@ -22,6 +22,7 @@ export class MNotice extends MEntity implements INotice {
   date: INotice["date"];
   link: INotice["link"];
   createdAt: INotice["createdAt"];
+  articleId: INotice["articleId"];
   constructor(data: INotice) {
     super();
     Object.assign(this, data);
@@ -35,6 +36,7 @@ export class MNotice extends MEntity implements INotice {
       date: result.date,
       link: result.link,
       createdAt: result.createdAt,
+      articleId: result.articleId,
     });
   }
 
