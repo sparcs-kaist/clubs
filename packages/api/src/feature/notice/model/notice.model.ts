@@ -22,6 +22,7 @@ export class MNotice extends MEntity implements INotice {
   date: INotice["date"];
   link: INotice["link"];
   createdAt: INotice["createdAt"];
+  articleId: INotice["articleId"];
   constructor(data: INotice) {
     super();
     Object.assign(this, data);
@@ -35,6 +36,7 @@ export class MNotice extends MEntity implements INotice {
       date: result.date,
       link: result.link,
       createdAt: result.createdAt,
+      articleId: result.articleId,
     });
   }
 
