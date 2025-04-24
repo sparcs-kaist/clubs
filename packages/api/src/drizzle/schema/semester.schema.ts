@@ -51,7 +51,7 @@ export const FundingDeadlineD = mysqlTable("funding_deadline_d", {
 export const RegistrationDeadlineD = mysqlTable("registration_deadline_d", {
   id: int("id").autoincrement().primaryKey(),
   semesterId: int("semester_d_id").references(() => SemesterD.id),
-  registrationDeadlineEnum: int("registration_deadline_enum_id").notNull(),
+  deadlineEnum: int("registration_deadline_enum_id").notNull(),
   startTerm: date("start_term").notNull(),
   endTerm: date("end_term").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

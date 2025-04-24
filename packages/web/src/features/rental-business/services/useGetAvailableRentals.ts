@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   ApiRnt001RequestQuery,
   ApiRnt001ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt001";
-import apiRnt001 from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt001";
+} from "@clubs/interface/api/rental/endpoint/apiRnt001";
+import apiRnt001 from "@clubs/interface/api/rental/endpoint/apiRnt001";
 
 import mockupAvailableRental from "@sparcs-clubs/web/features/rental-business/services/_mock/mockAvailableRental";
 import {

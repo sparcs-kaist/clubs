@@ -5,14 +5,13 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "dev": "TZ=UTC turbo run dev --parallel",
+    "dev": "turbo watch dev",
+    "dev-mock": "turbo watch dev-mock",
     "build": "turbo run build",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
-    "mock:front": "NEXT_PUBLIC_API_MOCK_MODE=1 dotenv -- pnpm -r --stream --parallel mock:front",
-    "storybook": "pnpm -r storybook",
-    "build-storybook": "pnpm -r build-storybook",
+    "storybook": "turbo watch storybook",
     "db": "dotenv -- pnpm -F api db",
     "generate": "dotenv -- pnpm -F api generate",
     "prepare": "husky install"
@@ -29,6 +28,9 @@
     ],
     "./packages/interface/**/*.ts": [
       "pnpm --filter=interface lint"
+    ],
+    "./packages/domain/**/*.ts": [
+      "pnpm --filter=domain lint"
     ]
   },
   "devDependencies": {

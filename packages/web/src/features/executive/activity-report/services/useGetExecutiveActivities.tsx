@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiAct023, {
   ApiAct023ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
+} from "@clubs/interface/api/activity/endpoint/apiAct023";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

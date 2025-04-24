@@ -16,7 +16,6 @@ import { FlatCompat } from "@eslint/eslintrc"; // 👴
 import eslint from "@eslint/js";
 // 스타일과 관련된 레거시 전부 없애기 위함
 import eslintPluginStylistic from "@stylistic/eslint-plugin";
-import eslintPluginJest from "eslint-plugin-jest";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended"; //
 import eslintPluginSimpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
@@ -56,7 +55,7 @@ export const baseConfig = tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: "./tsconfig.json",
+        project: true,
       },
     },
     rules: {
@@ -88,7 +87,7 @@ export const baseConfig = tseslint.config(
   },
   {
     name: "import order settings for every packages",
-    files: ["**/*.ts", "**/*.tsx", "eslint.config.mjs"],
+    files: ["**/*.ts", "**/*.tsx", "*.mjs"],
     plugins: { "simple-import-sort": eslintPluginSimpleImportSort },
     rules: {
       "import/order": "off",
@@ -110,8 +109,9 @@ export const baseConfig = tseslint.config(
           groups: [
             // 외부 패키지들을 가장 먼저 import합니다.
             ["^"],
-            // interface, web, api 순으로 import합니다.
-            ["^@sparcs-clubs/interface"],
+            // domain, interface, web, api 순으로 import합니다.
+            ["^@clubs/domain"],
+            ["^@clubs/interface"],
             ["^@sparcs-clubs/web"],
             ["^@sparcs-clubs/api"],
             // 상대경로로 import합니다.
@@ -119,63 +119,6 @@ export const baseConfig = tseslint.config(
           ],
         },
       ],
-    },
-  },
-  {
-    name: "react settings for web package",
-    files: ["**/*.tsx"],
-    rules: {
-      "react/jsx-filename-extension": ["error", { extensions: [".tsx"] }],
-      "react/jsx-props-no-spreading": "off",
-      "react/react-in-jsx-scope": "off",
-      "react/require-default-props": "off",
-      "react/function-component-definition": [
-        "error",
-        {
-          namedComponents: "arrow-function",
-          unnamedComponents: "arrow-function",
-        },
-      ],
-      "react/no-array-index-key": "off",
-      "react/jsx-no-useless-fragment": [
-        "error",
-        {
-          // this allows <>{value}</> syntax, where value is a string or a number
-          allowExpressions: true,
-        },
-      ],
-      "react/jsx-uses-react": "off",
-      "react/no-unknown-property": [
-        "error",
-        {
-          ignore: ["css"],
-        },
-      ],
-    },
-    settings: {
-      react: {
-        version: "18.2.0",
-      },
-    },
-  },
-  {
-    name: "nestJS settings",
-    files: ["**/*.ts"],
-    plugins: { jest: eslintPluginJest },
-    languageOptions: {
-      globals: eslintPluginJest.environments.globals.globals,
-    },
-    rules: {
-      "max-classes-per-file": "off",
-      "no-useless-constructor": "off",
-      "no-empty-function": "off",
-      "no-dupe-class-members": "off",
-      "class-methods-use-this": "off",
-      "jest/no-disabled-tests": "warn",
-      "jest/no-focused-tests": "error",
-      "jest/no-identical-title": "error",
-      "jest/prefer-to-have-length": "warn",
-      "jest/valid-expect": "error",
     },
   },
 );

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { PromotionalPrintingOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+import { PromotionalPrintingOrderStatusEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ProgressStatus from "@sparcs-clubs/web/common/components/ProgressStatus";

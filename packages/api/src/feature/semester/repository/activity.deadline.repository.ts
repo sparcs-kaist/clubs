@@ -1,56 +1,112 @@
 import { Injectable } from "@nestjs/common";
-import { gte, lte, not, or, SQL } from "drizzle-orm";
+import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 import {
-  ActivityDeadlineFromDb,
-  ActivityDeadlineQuery,
+  BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import {
+  IActivityDeadlineCreate,
   MActivityDeadline,
-} from "../model/activity.deadline.model";
+} from "@sparcs-clubs/api/feature/semester/model/activity.deadline.model";
+
+export type ActivityDeadlineQuery = {
+  semesterId: number;
+  date: Date;
+  deadlineEnum: ActivityDeadlineEnum;
+};
+
+type ActivityDeadlineOrderByKeys = "id" | "startTerm" | "endTerm";
+type ActivityDeadlineQuerySupport = {
+  startTerm: string;
+  endTerm: string;
+};
+
+type ActivityDeadlineTable = typeof ActivityDeadlineD;
+type ActivityDeadlineDbSelect = InferSelectModel<ActivityDeadlineTable>;
+type ActivityDeadlineDbUpdate = Partial<ActivityDeadlineDbSelect>;
+
+type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
+  ActivityDeadlineQuery,
+  ActivityDeadlineOrderByKeys,
+  ActivityDeadlineQuerySupport
+>;
 
 @Injectable()
-export class ActivityDeadlineRepository extends BaseRepository<
+export class ActivityDeadlineRepository extends BaseSingleTableRepository<
   MActivityDeadline,
-  ActivityDeadlineFromDb,
-  typeof ActivityDeadlineD,
-  ActivityDeadlineQuery
+  IActivityDeadlineCreate,
+  ActivityDeadlineTable,
+  ActivityDeadlineQuery,
+  ActivityDeadlineOrderByKeys,
+  ActivityDeadlineQuerySupport
 > {
   constructor() {
     super(ActivityDeadlineD, MActivityDeadline);
   }
 
-  protected makeWhereClause(param: ActivityDeadlineQuery): SQL[] {
-    const whereClause: SQL[] = super.makeWhereClause(param, [
-      "duration",
-      "date",
-    ]);
+  protected dbToModelMapping(
+    result: ActivityDeadlineDbSelect,
+  ): MActivityDeadline {
+    return new MActivityDeadline({
+      id: result.id,
+      semester: { id: result.semesterId },
+      deadlineEnum: result.deadlineEnum,
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
+    });
+  }
 
-    if (param.duration) {
-      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
-      whereClause.push(
-        not(
-          or(
-            lte(ActivityDeadlineD.endTerm, param.duration.startTerm),
-            gte(ActivityDeadlineD.startTerm, param.duration.endTerm),
-          ),
-        ),
+  protected modelToDBMapping(
+    model: MActivityDeadline,
+  ): ActivityDeadlineDbUpdate {
+    return {
+      id: model.id,
+      semesterId: model.semester.id,
+      deadlineEnum: model.deadlineEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected fieldMap(
+    field: ActivityDeadlineFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      ActivityDeadlineFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: ActivityDeadlineD,
+      semesterId: ActivityDeadlineD,
+      deadlineEnum: ActivityDeadlineD,
+      startTerm: ActivityDeadlineD,
+      endTerm: ActivityDeadlineD,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
+  }
+
+  protected processSpecialCondition(
+    key: ActivityDeadlineFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return and(
+        lte(ActivityDeadlineD.startTerm, value),
+        gt(ActivityDeadlineD.endTerm, value),
       );
     }
 
-    // date: date를 startTerm, endTerm에 포함하는 지 확인
-    if (param.date) {
-      whereClause.push(
-        this.processNestedQuery({
-          and: {
-            startTerm: { lte: param.date },
-            endTerm: { gt: param.date },
-          },
-        }),
-      );
-    }
-
-    return whereClause;
+    throw new Error(`Invalid key: ${key}`);
   }
 }

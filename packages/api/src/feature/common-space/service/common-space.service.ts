@@ -1,16 +1,16 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import type { ApiCms001ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms001";
-import type { ApiCms002ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
-import type { ApiCms003ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
-import type { ApiCms004ResponseOK } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms004";
-import type { ApiCms005ResponseCreated } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms005";
-import type { ApiCms006ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms006";
-import type { ApiCms007ResponseOk } from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms007";
+import type { ApiCms001ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms001";
+import type { ApiCms002ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms002";
+import type { ApiCms003ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms003";
+import type { ApiCms004ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms004";
+import type { ApiCms005ResponseCreated } from "@clubs/interface/api/common-space/endpoint/apiCms005";
+import type { ApiCms006ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms006";
+import type { ApiCms007ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms007";
 
 import { getKSTDate, isEmptyObject } from "@sparcs-clubs/api/common/util/util";
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";
-import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { Reservation, TermList } from "../dto/common-space.dto";
@@ -34,7 +34,7 @@ export class CommonSpaceService {
     private readonly clubStudentTRepository: ClubStudentTRepository,
     private readonly userPublicService: UserPublicService,
     private readonly getCommonSpacesUsageOrderRepository: GetCommonSpacesUsageOrderRepository,
-    private readonly clubPublicService: ClubPublicService,
+    private readonly semesterPublicService: SemesterPublicService,
     private readonly getCommonSpacesUsageOrderMyRepository: GetCommonSpacesUsageOrderMyRepository,
   ) {}
 
@@ -169,8 +169,7 @@ export class CommonSpaceService {
     const chargeStudent = await this.userPublicService.getStudentById({
       id: studentId,
     });
-    const semester =
-      await this.clubPublicService.findSemesterBetweenstartTermAndendTerm();
+    const semester = await this.semesterPublicService.load();
     const current = getKSTDate();
     const schedule: TermList[] = periodicScheduleMake(
       spaceId,

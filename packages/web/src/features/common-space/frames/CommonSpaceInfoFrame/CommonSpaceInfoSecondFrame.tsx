@@ -9,7 +9,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import styled from "styled-components";
 import { z } from "zod";
 
-import apiCms002 from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms002";
+import apiCms002 from "@clubs/interface/api/common-space/endpoint/apiCms002";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

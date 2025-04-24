@@ -1,6 +1,6 @@
 import React from "react";
 
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ProgressStatus from "@sparcs-clubs/web/common/components/ProgressStatus";

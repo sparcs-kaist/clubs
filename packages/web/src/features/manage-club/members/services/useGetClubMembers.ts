@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import apiClb010, {
   ApiClb010RequestParam,
   ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
+} from "@clubs/interface/api/club/endpoint/apiClb010";
 
 import {
   axiosClientWithAuth,

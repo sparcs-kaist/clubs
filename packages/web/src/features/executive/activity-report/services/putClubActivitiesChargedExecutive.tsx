@@ -1,5 +1,5 @@
-import type { ApiAct026RequestBody } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
-import apiAct026 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
+import type { ApiAct026RequestBody } from "@clubs/interface/api/activity/endpoint/apiAct026";
+import apiAct026 from "@clubs/interface/api/activity/endpoint/apiAct026";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

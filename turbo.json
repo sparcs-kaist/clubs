@@ -3,8 +3,23 @@
   "globalDependencies": [".env"],
   "tasks": {
     "dev": {
-      "dependsOn": ["@sparcs-clubs/interface#build"],
-      "cache": false,
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "cache": false
+    },
+    "api#dev": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "persistent": true,
+      "interruptible": true
+    },
+    "web#dev": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "persistent": true
+    },
+    "web#dev-mock": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "persistent": true
+    },
+    "web#storybook": {
       "persistent": true
     },
     "build": {

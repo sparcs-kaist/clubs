@@ -1,44 +1,97 @@
 import { Injectable } from "@nestjs/common";
-import { and, eq, InferSelectModel, isNull } from "drizzle-orm";
+import { InferSelectModel } from "drizzle-orm";
 
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
-import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
-  MemberRegistrationQuery,
+  BaseTableFieldMapKeys,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
+import {
+  IMemberRegistrationCreate,
   MMemberRegistration,
 } from "@sparcs-clubs/api/feature/registration/model/member.registration.model";
 
-type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
+export type MemberRegistrationQuery = {
+  studentId: number;
+  clubId: number;
+  semesterId: number;
+  registrationApplicationStudentEnum: RegistrationApplicationStudentStatusEnum;
+};
+type MemberRegistrationOrderByKeys = "id" | "createdAt";
+
+type MemberRegistrationTable = typeof RegistrationApplicationStudent;
+type MemberRegistrationDbSelect = InferSelectModel<MemberRegistrationTable>;
+type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbSelect>;
+
+type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
+  MemberRegistrationQuery,
+  MemberRegistrationOrderByKeys
+>;
 
 @Injectable()
-export class MemberRegistrationRepository extends BaseRepository<
+export class MemberRegistrationRepository extends BaseSingleTableRepository<
   MMemberRegistration,
-  FromDb,
-  typeof RegistrationApplicationStudent,
-  MemberRegistrationQuery
+  IMemberRegistrationCreate,
+  MemberRegistrationTable,
+  MemberRegistrationQuery,
+  MemberRegistrationOrderByKeys
 > {
   constructor() {
     super(RegistrationApplicationStudent, MMemberRegistration);
   }
 
-  // 별도 레포지토리로 분리해야 함
-  async selectMemberRegistrationDeadline(param: { semesterId: number }) {
-    const result = await this.db
-      .select()
-      .from(RegistrationDeadlineD)
-      .where(
-        and(
-          eq(RegistrationDeadlineD.semesterId, param.semesterId),
-          eq(
-            RegistrationDeadlineD.registrationDeadlineEnum,
-            RegistrationDeadlineEnum.StudentRegistrationApplication,
-          ),
-          isNull(RegistrationDeadlineD.deletedAt),
-        ),
-      );
-    return result;
+  protected dbToModelMapping(
+    result: MemberRegistrationDbSelect,
+  ): MMemberRegistration {
+    const res = new MMemberRegistration({
+      id: result.id,
+      student: { id: result.studentId },
+      club: { id: result.clubId },
+      semester: { id: result.semesterId },
+      registrationApplicationStudentEnum:
+        result.registrationApplicationStudentEnum,
+      createdAt: result.createdAt,
+    });
+
+    return res;
+  }
+
+  protected modelToDBMapping(
+    model: MMemberRegistration,
+  ): MemberRegistrationDbUpdate {
+    return {
+      id: model.id,
+      studentId: model.student.id,
+      clubId: model.club.id,
+      semesterId: model.semester.id,
+      registrationApplicationStudentEnum:
+        model.registrationApplicationStudentEnum,
+      createdAt: model.createdAt,
+    };
+  }
+
+  protected fieldMap(
+    field: MemberRegistrationFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      MemberRegistrationFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: RegistrationApplicationStudent,
+      studentId: RegistrationApplicationStudent,
+      clubId: RegistrationApplicationStudent,
+      semesterId: RegistrationApplicationStudent,
+      registrationApplicationStudentEnum: RegistrationApplicationStudent,
+      createdAt: RegistrationApplicationStudent,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
   }
 }

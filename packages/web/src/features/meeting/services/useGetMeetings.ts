@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiMee012, {
   ApiMee012RequestQuery,
   ApiMee012ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee012";
+} from "@clubs/interface/api/meeting/apiMee012";
 
 import {
   axiosClientWithAuth,

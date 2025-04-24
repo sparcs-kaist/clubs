@@ -4,7 +4,7 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import { ApiReg006ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
+import { ApiReg006ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg006";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Modal from "@sparcs-clubs/web/common/components/Modal";

@@ -18,24 +18,24 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import {
   ApiReg001RequestBody,
   ApiReg001ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg001";
+} from "@clubs/interface/api/registration/endpoint/apiReg001";
 import {
   ApiReg009RequestBody,
   ApiReg009ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg009";
-import { ApiReg010ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg010";
-import { ApiReg011ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import { ApiReg012ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
-import { ApiReg014ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg014";
-import { ApiReg015ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg015";
-import { ApiReg016ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg016";
-import { ApiReg017ResponseCreated } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg017";
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/api/registration/endpoint/apiReg009";
+import { ApiReg010ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg010";
+import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
+import { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
+import { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
+import { ApiReg016ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg016";
+import { ApiReg017ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg017";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationDeadlineEnum,
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
@@ -73,7 +73,7 @@ export class ClubRegistrationRepository {
         and(
           lte(RegistrationDeadlineD.startTerm, date),
           gt(RegistrationDeadlineD.endTerm, date),
-          inArray(RegistrationDeadlineD.registrationDeadlineEnum, enums),
+          inArray(RegistrationDeadlineD.deadlineEnum, enums),
           isNull(RegistrationDeadlineD.deletedAt),
         ),
       );
@@ -1149,7 +1149,7 @@ export class ClubRegistrationRepository {
         and(
           eq(RegistrationDeadlineD.semesterId, param.semesterId),
           eq(
-            RegistrationDeadlineD.registrationDeadlineEnum,
+            RegistrationDeadlineD.deadlineEnum,
             RegistrationDeadlineEnum.ClubRegistrationApplication,
           ),
           isNull(RegistrationDeadlineD.deletedAt),

@@ -3,8 +3,8 @@ import type {
   ApiCms003RequestBody,
   ApiCms003RequestParam,
   ApiCms003ResponseCreated,
-} from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
-import apiCms003 from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
+} from "@clubs/interface/api/common-space/endpoint/apiCms003";
+import apiCms003 from "@clubs/interface/api/common-space/endpoint/apiCms003";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

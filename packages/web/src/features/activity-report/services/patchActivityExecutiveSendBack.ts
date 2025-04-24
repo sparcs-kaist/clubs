@@ -4,8 +4,8 @@ import type {
   ApiAct017RequestBody,
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
-import apiAct017 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
+} from "@clubs/interface/api/activity/endpoint/apiAct017";
+import apiAct017 from "@clubs/interface/api/activity/endpoint/apiAct017";
 
 import {
   axiosClientWithAuth,

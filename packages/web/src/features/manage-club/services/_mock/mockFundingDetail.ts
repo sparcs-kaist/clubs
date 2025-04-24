@@ -1,14 +1,14 @@
-import { ApiFnd002ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd002";
+import { ApiFnd002ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
   FundingStatusEnum,
   TransportationEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 const mockFundingDetail: ApiFnd002ResponseOk = {
   funding: {

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 
-import apiAct023 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
+import apiAct023 from "@clubs/interface/api/activity/endpoint/apiAct023";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

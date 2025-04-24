@@ -6,8 +6,8 @@ import React, { useEffect, useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import styled from "styled-components";
 
-import apiMee002 from "@sparcs-clubs/interface/api/meeting/apiMee002";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import apiMee002 from "@clubs/interface/api/meeting/apiMee002";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";

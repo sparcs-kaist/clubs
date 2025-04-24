@@ -5,9 +5,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import styled from "styled-components";
 
-import apiReg012 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
-import apiReg025 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg025";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import apiReg012 from "@clubs/interface/api/registration/endpoint/apiReg012";
+import apiReg025 from "@clubs/interface/api/registration/endpoint/apiReg025";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

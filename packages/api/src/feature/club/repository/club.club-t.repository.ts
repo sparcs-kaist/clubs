@@ -74,6 +74,8 @@ export default class ClubTRepository {
         id: SemesterD.id,
         name: SemesterD.name,
         year: SemesterD.year,
+        startTerm: SemesterD.startTerm,
+        endTerm: SemesterD.endTerm,
       })
       .from(SemesterD)
       .innerJoin(ClubT, eq(SemesterD.id, ClubT.semesterId))
@@ -84,6 +86,8 @@ export default class ClubTRepository {
           id: row.id,
           year: row.year,
           name: row.name,
+          startTerm: row.startTerm,
+          endTerm: row.endTerm,
         })),
       );
   }

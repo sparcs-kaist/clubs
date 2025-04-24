@@ -4,7 +4,7 @@ import { z } from "zod";
 import apiReg009, {
   ApiReg009RequestBody,
   ApiReg009RequestParam,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg009";
+} from "@clubs/interface/api/registration/endpoint/apiReg009";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

@@ -2,7 +2,7 @@ import { overlay } from "overlay-kit";
 import { useCallback, useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
-import { ApiClb004ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+import { ApiClb004ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb004";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";

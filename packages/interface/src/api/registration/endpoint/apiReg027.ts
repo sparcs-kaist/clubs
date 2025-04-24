@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 /**
  * @version v0.1

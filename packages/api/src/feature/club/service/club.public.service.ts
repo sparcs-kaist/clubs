@@ -1,17 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import {
   IClubSummary,
   IClubSummaryResponse,
   IDivisionSummary,
-} from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ISemester } from "@sparcs-clubs/interface/api/semester/type/semester.type";
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/api/club/type/club.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import DivisionRepository from "@sparcs-clubs/api/feature/division/repository/division.repository";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
@@ -20,7 +21,6 @@ import ClubStudentTRepository from "../repository/club.club-student-t.repository
 import ClubTRepository from "../repository/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
 import ClubRepository from "../repository/club.repository";
-import SemesterDRepository from "../repository/club.semester-d.repository";
 
 @Injectable()
 export default class ClubPublicService {
@@ -29,33 +29,17 @@ export default class ClubPublicService {
     private clubRepository: ClubRepository,
     private clubTRepository: ClubTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
-    private semesterDRepository: SemesterDRepository,
     private divisionRepository: DivisionRepository,
     private divisionPublicService: DivisionPublicService,
     private divisionPermanentClubDRepository: DivisionPermanentClubDRepository,
     private userPublicService: UserPublicService,
+    private semesterPublicService: SemesterPublicService,
   ) {}
-
-  // semester common repositoryf를 제거하는 과정에서 발생한 프록시입니다. 사용하지 않는 것을 권장합니다.
-  async findSemesterBetweenstartTermAndendTerm() {
-    return this.semesterDRepository.findSemesterBetweenstartTermAndendTerm();
-  }
-
-  // date를 포함하고 있는 학기의 semesterId를 리턴합니다.
-  // 만약 해당하는 semester가 존재하지 않을 경우, undefined를 리턴합니다.
-  async dateToSemesterId(date: Date): Promise<number | undefined> {
-    const result = await this.semesterDRepository.findByDate(date);
-
-    if (result.length !== 1) {
-      return undefined;
-    }
-    return result[0].id;
-  }
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.
   // studentId와 clubId가 유효한지 검사하지 않습니다.
   async isStudentBelongsTo(studentId: number, clubId: number) {
-    const semesterId = await this.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.load().then(e => e.id);
     if (semesterId === undefined)
       throw new HttpException(
         "Today is not in semester",
@@ -75,7 +59,7 @@ export default class ClubPublicService {
    * @returns 이번 학기 활동중인 동아리 목록을 리턴합니다.
    */
   async getAtivatedClubs() {
-    const semesterId = await this.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     if (semesterId === undefined)
       throw new HttpException(
         "Today is not in semester",
@@ -162,12 +146,19 @@ export default class ClubPublicService {
    * @returns 동아리가 등록되었던 학기 정보들을 리턴합니다.
    */
   async getClubsExistedSemesters(param: { clubId: number }) {
-    const semesters = await this.semesterDRepository.selectByClubId(param);
+    const semesters = await this.clubTRepository.findSemesterByClubId(
+      param.clubId,
+    );
     return semesters;
   }
 
-  // 학생(studentId)이 현재 학기 동아리(clubId)의 대표자 중 1명인지 확인합니다.
-  // studentId와 clubId가 유효한지 검사하지 않습니다.
+  /**
+   * @description 학생이 동아리의 대표자인지 확인합니다.
+   * @param studentId 학생 id
+   * @param clubId 동아리 id
+   * @returns boolean
+   */
+
   async isStudentDelegate(studentId: number, clubId: number): Promise<boolean> {
     const representatives =
       await this.clubDelegateDRepository.findRepresentativeIdListByClubId(
@@ -182,7 +173,13 @@ export default class ClubPublicService {
     return true;
   }
 
-  async checkStudentDelegate(studentId: number, clubId: number) {
+  /**
+   * @description 학생이 동아리의 대표자인지 체크하여, 아닌 경우 FORBIDDEN 에러를 발생시킵니다.
+   * @param studentId 학생 id
+   * @param clubId 동아리 id
+   * @returns void
+   */
+  async checkStudentDelegate(studentId: number, clubId: number): Promise<void> {
     if (!(await this.isStudentDelegate(studentId, clubId))) {
       throw new HttpException(
         "It seems that you are not the delegate of the club.",
@@ -252,9 +249,7 @@ export default class ClubPublicService {
    */
 
   async addStudentToClub(studentId: number, clubId: number): Promise<void> {
-    const cur = getKSTDate(); // 현재 KST 시간을 가져옴
-
-    const semesterId = await this.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     if (!semesterId) {
       throw new HttpException(
         "No current semester found.",
@@ -297,9 +292,7 @@ export default class ClubPublicService {
     studentId: number,
     clubId: number,
   ): Promise<void> {
-    const cur = getKSTDate(); // 현재 KST 시간을 가져옴
-
-    const semesterId = await this.dateToSemesterId(cur);
+    const semesterId = await this.semesterPublicService.loadId();
     if (!semesterId) {
       throw new HttpException(
         "No current semester found.",
@@ -340,14 +333,6 @@ export default class ClubPublicService {
       );
 
     return result;
-  }
-
-  // date를 포함하고 있는 학기의 semesterId를 리턴합니다.
-  // 만약 해당하는 semester가 존재하지 않을 경우, 404에러를 throw 하니 예외처리를 하지 않아도 됩니다.
-  // date를 넣지 않으면 현재 날짜를 기준으로 합니다.
-  async fetchSemester(date?: Date): Promise<ISemester> {
-    const targetDate = date || getKSTDate();
-    return this.semesterDRepository.fetch(targetDate);
   }
 
   async fetchSummary(id: number): Promise<IClubSummary> {
@@ -405,7 +390,7 @@ export default class ClubPublicService {
     const semesterParam =
       "endTerm" in semester
         ? semester
-        : await this.semesterDRepository.fetch(semester.id);
+        : await this.semesterPublicService.getById(semester.id);
     const result = await this.clubRepository.fetch(clubId, semesterParam, date);
     return result;
   }
@@ -418,7 +403,7 @@ export default class ClubPublicService {
     const semesterParam =
       "endTerm" in semester
         ? semester
-        : await this.semesterDRepository.fetch(semester.id);
+        : await this.semesterPublicService.getById(semester.id);
     const result = await this.clubRepository.findOne(
       clubId,
       semesterParam,

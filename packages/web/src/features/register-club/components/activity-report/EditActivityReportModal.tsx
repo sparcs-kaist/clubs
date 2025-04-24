@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback } from "react";
 
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

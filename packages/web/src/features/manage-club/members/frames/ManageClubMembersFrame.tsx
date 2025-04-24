@@ -2,7 +2,7 @@
 
 import React from "react";
 
-import { ApiClb015ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
+import { ApiClb015ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb015";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

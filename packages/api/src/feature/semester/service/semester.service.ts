@@ -3,9 +3,10 @@ import { Injectable } from "@nestjs/common";
 import type {
   ApiSem001RequestQuery,
   ApiSem001ResponseOK,
-} from "@sparcs-clubs/interface/api/semester/apiSem001";
+} from "@clubs/interface/api/semester/apiSem001";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import { SemesterRepository } from "../repository/semester.repository";
 
@@ -22,24 +23,24 @@ export class SemesterService {
     query: ApiSem001RequestQuery;
   }): Promise<ApiSem001ResponseOK> {
     const { pageOffset, itemCount } = param.query;
-    const today = new Date();
-    const semesters = await this.semesterRepository.find({
-      date: today,
-      pagination: {
-        offset: pageOffset,
-        itemCount,
-      },
-      orderBy: {
-        endTerm: OrderByTypeEnum.DESC,
-      },
-    });
+    const semesters = await this.semesterRepository
+      .find({
+        date: new Date(),
+        pagination: {
+          offset: pageOffset,
+          itemCount,
+        },
+        orderBy: {
+          endTerm: OrderByTypeEnum.DESC,
+        },
+      })
+      .then(takeOnlyOne());
 
-    const total = await this.semesterRepository.find({});
-    const totalCount = total.length;
+    const total = await this.semesterRepository.count({});
 
     return {
-      semesters,
-      total: totalCount,
+      semesters: [semesters],
+      total,
       offset: param.query.pageOffset,
     };
   }

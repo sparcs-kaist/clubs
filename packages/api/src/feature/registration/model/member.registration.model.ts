@@ -1,17 +1,10 @@
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
-import { RegistrationApplicationStudentStatusEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import {
-  Exclude,
-  filterExcludedFields,
-  OperationType,
-} from "@sparcs-clubs/interface/common/utils/field-operations";
+import { IMemberRegistration } from "@clubs/domain/member-registration/member-registration";
 
-import {
-  MEntity,
-  MySqlColumnType,
-} from "@sparcs-clubs/api/common/model/entity.model";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
+
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
 export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
@@ -21,9 +14,18 @@ export type MemberRegistrationQuery = {
   studentId: number;
   clubId: number;
   semesterId: number;
-  registrationApplicationStudentEnumId: number;
+  registrationApplicationStudentEnum: RegistrationApplicationStudentStatusEnum;
   createdAt: Date;
 };
+export interface IMemberRegistrationCreate {
+  student: IMemberRegistration["student"];
+
+  club: IMemberRegistration["club"];
+
+  semester: IMemberRegistration["semester"];
+
+  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
+}
 
 export class MMemberRegistration
   extends MEntity
@@ -35,64 +37,14 @@ export class MMemberRegistration
 
   club: IMemberRegistration["club"];
 
-  @Exclude(OperationType.CREATE, OperationType.PUT)
-  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"] =
-    RegistrationApplicationStudentStatusEnum.Pending;
+  registrationApplicationStudentEnum: IMemberRegistration["registrationApplicationStudentEnum"];
 
   semester: IMemberRegistration["semester"];
 
-  @Exclude(OperationType.CREATE)
   createdAt: IMemberRegistration["createdAt"];
 
   constructor(data: IMemberRegistration) {
     super();
     Object.assign(this, data);
-  }
-
-  static from(result: FromDb): MMemberRegistration {
-    return new MMemberRegistration({
-      id: result.id,
-      student: { id: result.studentId },
-      club: { id: result.clubId },
-      semester: { id: result.semesterId },
-      registrationApplicationStudentEnum:
-        result.registrationApplicationStudentEnumId,
-      createdAt: result.createdAt,
-    });
-  }
-
-  to(operation: OperationType): ToDb {
-    const filtered = filterExcludedFields(this, operation);
-
-    return {
-      id: filtered.id ?? undefined,
-      studentId: filtered.student?.id,
-      clubId: filtered.club?.id,
-      semesterId: filtered.semester?.id,
-      registrationApplicationStudentEnumId:
-        filtered.registrationApplicationStudentEnum ??
-        RegistrationApplicationStudentStatusEnum.Pending,
-      createdAt: filtered.createdAt ?? undefined,
-    } as ToDb;
-  }
-
-  static fieldMap(field: keyof MemberRegistrationQuery): MySqlColumnType {
-    const fieldMappings: Record<
-      keyof MemberRegistrationQuery,
-      MySqlColumnType
-    > = {
-      studentId: RegistrationApplicationStudent.studentId,
-      clubId: RegistrationApplicationStudent.clubId,
-      semesterId: RegistrationApplicationStudent.semesterId,
-      registrationApplicationStudentEnumId:
-        RegistrationApplicationStudent.registrationApplicationStudentEnumId,
-      createdAt: RegistrationApplicationStudent.createdAt,
-    };
-
-    if (!(field in fieldMappings)) {
-      throw new Error(`Invalid field: ${String(field)}`);
-    }
-
-    return fieldMappings[field];
   }
 }
