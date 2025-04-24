@@ -6,7 +6,11 @@ import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/a
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import {
+  forEachAsyncSequentially,
+  // forEachAsyncSequentially,
+  getKSTDate,
+} from "@sparcs-clubs/api/common/util/util";
 import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
 
 const urlPrefix = "https://cafe.naver.com/kaistclubs";
@@ -35,7 +39,7 @@ export class NoticeService {
   async getAllNotices() {
     return this.noticeRepository.find({
       orderBy: {
-        id: OrderByTypeEnum.ASC,
+        articleId: OrderByTypeEnum.DESC,
       },
     });
   }
@@ -47,7 +51,7 @@ export class NoticeService {
         itemCount,
       },
       orderBy: {
-        id: OrderByTypeEnum.ASC,
+        articleId: OrderByTypeEnum.DESC,
       },
     });
 
@@ -214,27 +218,28 @@ export class NoticeService {
       });
     }
 
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const post of inserts) {
-      await this.noticeRepository.insert({
+    await forEachAsyncSequentially(inserts, async post => {
+      await this.noticeRepository.create({
         title: post.title,
         link: post.link,
         date: new Date(post.date),
         author: post.author,
+        articleId: post.articleId,
+        // id: post.id,
       });
-    }
+    });
 
-    // eslint-disable-next-line no-restricted-syntax
-    for await (const post of updates) {
-      await this.noticeRepository.update({
+    await forEachAsyncSequentially(updates, async post => {
+      await this.noticeRepository.put({
         id: post.id,
         title: post.title,
         link: post.link,
         date: new Date(post.date),
         author: post.author,
         createdAt: post.createdAt,
+        articleId: post.articleId,
       });
-    }
+    });
 
     // TODO: 쿼리 한번에 처리하기
   }

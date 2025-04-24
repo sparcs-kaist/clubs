@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
+import { Controller, Get, Query, UsePipes } from "@nestjs/common";
 
 import type {
   ApiNtc001RequestQuery,
@@ -45,7 +45,7 @@ export class NoticeController {
   }
 
   @Public()
-  @Post("/notices/update")
+  @Get("/notices/update")
   async updateNotices(): Promise<unknown[]> {
     this.noticesService.updateNotices();
     return [];
