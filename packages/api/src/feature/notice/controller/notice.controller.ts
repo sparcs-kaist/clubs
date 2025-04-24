@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
+import { Controller, Get, Query, UsePipes } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
 
 import type {
   ApiNtc001RequestQuery,
@@ -9,8 +10,7 @@ import apiNtc001 from "@clubs/interface/api/notice/endpoint/apiNtc001";
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import logger from "@sparcs-clubs/api/common/util/logger";
-
-import { NoticeService, PostCrawlResult } from "../service/notice.service";
+import { NoticeService } from "@sparcs-clubs/api/feature/notice/service/notice.service";
 
 @Controller()
 export class NoticeController {
@@ -32,22 +32,12 @@ export class NoticeController {
     return notices;
   }
 
-  @Public()
-  @Get("/notices/fetch")
-  async crawlNotices(): Promise<PostCrawlResult[]> {
-    return this.noticesService.crawlNotices();
-  }
-
-  @Public()
-  @Get("/notices/selectall")
-  async selectAll(): Promise<unknown[]> {
-    return this.noticesService.getAllNotices();
-  }
-
-  @Public()
-  @Post("/notices/update")
-  async updateNotices(): Promise<unknown[]> {
-    this.noticesService.updateNotices();
-    return [];
+  @Cron(CronExpression.EVERY_5_MINUTES, {
+    name: "crawlNotices",
+    timeZone: "Asia/Seoul",
+  })
+  async updateRecentNotices(): Promise<void> {
+    const crawlRange = new Date().getMinutes() % 10 > 5;
+    await this.noticesService.updateNotices(crawlRange ? 3 : Infinity);
   }
 }

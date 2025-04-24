@@ -133,32 +133,51 @@ export class NoticeService {
     return posts;
   }
 
-  private determinePagesToCrawl(_totalCount: number): number[] {
-    // const totalPages = Math.ceil(totalCount / userDisplay);
+  private determinePagesToCrawl(
+    totalCount: number,
+    maxPages: number,
+  ): number[] {
+    const totalPages = Math.ceil(totalCount / userDisplay);
+    const untilPage = Math.min(totalPages, maxPages);
     const result = [];
     // 모든 페이지 크롤링
-    // for (let page = 2; page < totalPages; page += 1) {
-    for (let page = 2; page < 4; page += 1) {
+    for (let page = 2; page <= untilPage; page += 1) {
       result.push(page);
     }
     return result;
   }
 
-  async crawlNotices(): Promise<PostCrawlResult[]> {
+  async crawlNotices(maxPages: number): Promise<PostCrawlResult[]> {
     try {
+      let pagenum = 1;
       // 1페이지는 항상 크롤링
-      const html = await this.tryFetch(1);
+      const html = await this.tryFetch(pagenum);
       // 공지가 총 몇 개 있는지
-      const totalCount = Number.parseInt(
+      let totalCount = Number.parseInt(
         html
           .match(/search\.totalCount=[0-9]+(?=&)/)[0]
           .replace("search.totalCount=", ""),
       );
-
       const posts = this.getPostsFromHTML(html);
 
+      // 1페이지에서는 공지개수가 짤려서 나옴
+      // 501개, 1001개처럼 500n+1 형태
+      // 마지막 페이지까지 가봐야 함
+      while (totalCount % 500 === 1) {
+        pagenum += 10;
+        if (pagenum > maxPages) {
+          break;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const nextPage = await this.tryFetch(pagenum);
+        totalCount = Number.parseInt(
+          nextPage
+            .match(/search\.totalCount=[0-9]+(?=&)/)[0]
+            .replace("search.totalCount=", ""),
+        );
+      }
       const postOfPages = await Promise.all(
-        this.determinePagesToCrawl(totalCount).map(page =>
+        this.determinePagesToCrawl(totalCount, maxPages).map(page =>
           this.tryFetch(page).then(this.getPostsFromHTML),
         ),
       );
@@ -178,7 +197,7 @@ export class NoticeService {
     return [];
   }
 
-  async updateNotices() {
+  async updateNotices(maxPages: number) {
     const noticesFromDB = (await this.noticeRepository.find({})).map(e => ({
       createdAt: e.createdAt,
       author: e.author,
@@ -188,7 +207,7 @@ export class NoticeService {
       id: e.id,
       articleId: findArticleId(e.link),
     }));
-    const crawlResults = await this.crawlNotices();
+    const crawlResults = await this.crawlNotices(maxPages);
 
     const updates = [];
     const inserts = [];
@@ -225,7 +244,6 @@ export class NoticeService {
         date: new Date(post.date),
         author: post.author,
         articleId: post.articleId,
-        // id: post.id,
       });
     });
 
@@ -240,7 +258,5 @@ export class NoticeService {
         articleId: post.articleId,
       });
     });
-
-    // TODO: 쿼리 한번에 처리하기
   }
 }
