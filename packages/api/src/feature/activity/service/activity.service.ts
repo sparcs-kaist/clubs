@@ -707,11 +707,10 @@ export default class ActivityService {
    */
   private async getProvisionalActivities(param: { clubId: number }) {
     const activityDId = await this.activityDurationPublicService.loadId();
-    const result =
-      await this.activityRepository.selectActivityByClubIdAndActivityDId(
-        param.clubId,
-        activityDId,
-      );
+    const result = await this.activityNewRepository.find({
+      clubId: param.clubId,
+      activityDId,
+    });
     const activities = await Promise.all(
       result.map(async activity => {
         const durations = (
@@ -730,8 +729,8 @@ export default class ActivityService {
         return {
           id: activity.id,
           name: activity.name,
-          activityTypeEnumId: activity.activityTypeEnumId,
-          activityStatusEnumId: activity.activityStatusEnumId,
+          activityTypeEnumId: activity.activityTypeEnum,
+          activityStatusEnumId: activity.activityStatusEnum,
           durations,
           earliestStartTerm, // 추후 정렬을 위해 추가
           latestEndTerm, // 추후 정렬을 위해 추가
