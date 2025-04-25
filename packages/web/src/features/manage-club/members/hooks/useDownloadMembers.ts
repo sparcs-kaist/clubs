@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiClb010ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
+import { ApiClb010ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb010";
 
 import downloadExcel from "@sparcs-clubs/web/utils/downloadExcel";
 
