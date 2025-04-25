@@ -39,7 +39,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
       z.object({
-        orderId: z.number().int().min(1),
+        orderId: z.coerce.number().int().min(1),
         statusEnum: z.nativeEnum(CommonSpaceUsageOrderStatusEnum),
         spaceName: z.string(),
         chargeStudentName: z.string().max(255),
@@ -48,8 +48,8 @@ const responseBodyMap = {
         createdAt: z.coerce.date(), // Assuming createdAt is a datetime
       }),
     ),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(1),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(1),
   }),
 };
 

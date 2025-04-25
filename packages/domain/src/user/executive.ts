@@ -4,8 +4,8 @@ import { z } from "zod";
 extendZodWithOpenApi(z);
 
 export const zExecutive = z.object({
-  id: z.number(),
-  userId: z.number().optional(),
+  id: z.coerce.number(),
+  userId: z.coerce.number().optional(),
   studentNumber: z.string(),
   name: z.string(),
   email: z.string().optional(),

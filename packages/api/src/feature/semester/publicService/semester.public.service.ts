@@ -5,9 +5,12 @@ import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registrat
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
-import { MSemester, SemesterQuery } from "../model/semester.model";
+import { MSemester } from "../model/semester.model";
 import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
-import { SemesterRepository } from "../repository/semester.repository";
+import {
+  SemesterQuery,
+  SemesterRepository,
+} from "../repository/semester.repository";
 
 type SemesterSearchQuery = {};
 

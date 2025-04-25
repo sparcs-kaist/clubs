@@ -2,7 +2,7 @@ import { InferSelectModel } from "drizzle-orm";
 
 import { IDistrict } from "@clubs/interface/api/division/type/division.type";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { District } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
 export type DistrictDBResult = InferSelectModel<typeof District>;

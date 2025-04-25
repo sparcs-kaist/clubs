@@ -17,11 +17,11 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  clubId: z.number().min(1),
+  clubId: z.coerce.number().min(1),
   startDate: z.date().optional(),
   endTerm: z.date().optional(),
-  pageOffset: z.number().min(1),
-  itemCount: z.number().min(1),
+  pageOffset: z.coerce.number().min(1),
+  itemCount: z.coerce.number().min(1),
 });
 
 const requestBody = z.object({});
@@ -30,7 +30,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
       z.object({
-        id: z.number().int().min(1),
+        id: z.coerce.number().int().min(1),
         studentName: z.string(),
         status: z.nativeEnum(PromotionalPrintingOrderStatusEnum),
         orders: z.array(
@@ -38,7 +38,7 @@ const responseBodyMap = {
             promotionalPrintingSizeEnum: z.nativeEnum(
               PromotionalPrintingSizeEnum,
             ),
-            numberOfPrints: z.number().min(1),
+            numberOfPrints: z.coerce.number().min(1),
           }),
         ),
         desiredPickUpDate: z.date(),
@@ -46,8 +46,8 @@ const responseBodyMap = {
         createdAt: z.date(),
       }),
     ),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(1),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(1),
   }),
 };
 

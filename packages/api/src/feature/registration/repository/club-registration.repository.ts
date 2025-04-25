@@ -73,7 +73,7 @@ export class ClubRegistrationRepository {
         and(
           lte(RegistrationDeadlineD.startTerm, date),
           gt(RegistrationDeadlineD.endTerm, date),
-          inArray(RegistrationDeadlineD.registrationDeadlineEnum, enums),
+          inArray(RegistrationDeadlineD.deadlineEnum, enums),
           isNull(RegistrationDeadlineD.deletedAt),
         ),
       );
@@ -1149,7 +1149,7 @@ export class ClubRegistrationRepository {
         and(
           eq(RegistrationDeadlineD.semesterId, param.semesterId),
           eq(
-            RegistrationDeadlineD.registrationDeadlineEnum,
+            RegistrationDeadlineD.deadlineEnum,
             RegistrationDeadlineEnum.ClubRegistrationApplication,
           ),
           isNull(RegistrationDeadlineD.deletedAt),

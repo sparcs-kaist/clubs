@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e ../../.env next dev",
+    "dev-mock": "NEXT_PUBLIC_API_MOCK_MODE=1 pnpm dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "build-start": "next build && next start",
-    "mock:front": "pnpm dev",
-    "mock:back": "echo \"In mock:back mode, the 'web' package will not be run. Exiting.\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

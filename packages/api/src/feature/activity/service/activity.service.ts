@@ -70,8 +70,10 @@ import {
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
 import {
   ActivityDeadlineEnum,
+  ActivityDurationTypeEnum,
   ActivityStatusEnum,
 } from "@clubs/interface/common/enum/activity.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
@@ -81,10 +83,13 @@ import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.publi
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { MActivity } from "../model/activity.model.new";
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
+import { ActivityNewRepository } from "../repository/activity.new.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()
@@ -100,6 +105,8 @@ export default class ActivityService {
     private semesterPublicService: SemesterPublicService,
     private activityDeadlinePublicService: ActivityDeadlinePublicService,
     private activityDurationPublicService: ActivityDurationPublicService,
+    private activityNewRepository: ActivityNewRepository,
+    private registrationDeadlinePublicService: RegistrationDeadlinePublicService,
   ) {}
 
   /**
@@ -108,9 +115,12 @@ export default class ActivityService {
    * 존재하지 않을 경우 not found exception을 throw합니다.`
    */
   private async getActivity(param: { activityId: number }) {
-    const activities = await this.activityRepository.selectActivityByActivityId(
-      param.activityId,
-    );
+    // const activities = await this.activityRepository.selectActivityByActivityId(
+    //   param.activityId,
+    // );
+    const activities = await this.activityNewRepository.find({
+      id: param.activityId,
+    });
     if (activities.length > 1)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
     if (activities.length === 0)
@@ -236,18 +246,19 @@ export default class ActivityService {
   async deleteStudentActivity(activityId: number, studentId: number) {
     const activity = await this.getActivity({ activityId });
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
       date: new Date(),
-      deadlineEnums: [
+      deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
         ActivityDeadlineEnum.Exception,
       ],
     });
 
-    if (!(await this.activityRepository.deleteActivity({ activityId }))) {
+    //if (!(await this.activityRepository.deleteActivity({ activityId }))) {
+    if (!(await this.activityNewRepository.delete({ id: activityId }))) {
       throw new HttpException(
         "Something got wrong...",
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -370,10 +381,10 @@ export default class ActivityService {
       });
 
     return {
-      clubId: activity.clubId,
+      clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.originalName,
-      activityTypeEnumId: activity.activityTypeEnumId,
+      originalName: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,
       detail: activity.detail,
@@ -388,13 +399,13 @@ export default class ActivityService {
         startTerm: e.startTerm,
         endTerm: e.endTerm,
       })),
-      activityStatusEnumId: activity.activityStatusEnumId,
+      activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
         content: e.comment,
         createdAt: e.createdAt,
       })),
       updatedAt: activity.updatedAt,
-      professorApprovedAt: activity.professorApprovedAt,
+      professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -411,7 +422,7 @@ export default class ActivityService {
     await this.activityDeadlinePublicService
       .search({
         date: new Date(),
-        deadlineEnums: [
+        deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Exception,
         ],
@@ -457,11 +468,11 @@ export default class ActivityService {
   ): Promise<void> {
     const activity = await this.getActivity({ activityId: param.activityId });
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
       date: new Date(),
-      deadlineEnums: [
+      deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
         ActivityDeadlineEnum.Exception,
@@ -469,7 +480,7 @@ export default class ActivityService {
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
     const activityD = await this.activityDurationPublicService.load();
-    if (activity.activityDId !== activityD.id)
+    if (activity.activityDuration.id !== activityD.id)
       throw new HttpException(
         "The activity is not the activity of the last activity duration ",
         HttpStatus.BAD_REQUEST,
@@ -498,12 +509,12 @@ export default class ActivityService {
     const members = (
       await this.clubPublicService.getMemberFromSemester({
         semesterId: activityDStartSemesterId,
-        clubId: activity.clubId,
+        clubId: activity.club.id,
       })
     ).concat(
       await this.clubPublicService.getMemberFromSemester({
         semesterId: activityDEndSemesterId,
-        clubId: activity.clubId,
+        clubId: activity.club.id,
       }),
     );
     body.participants.forEach(participant => {
@@ -516,21 +527,49 @@ export default class ActivityService {
         );
     });
 
-    // PUT 처리를 시작합니다.
-    const isUpdateSucceed = this.activityRepository.updateActivity({
-      activityId: param.activityId,
-      name: body.name,
-      activityTypeEnumId: body.activityTypeEnumId,
-      duration: body.durations,
-      location: body.location,
-      purpose: body.purpose,
-      detail: body.detail,
-      evidence: body.evidence,
-      evidenceFileIds: body.evidenceFiles.map(e => e.fileId),
-      participantIds: body.participants.map(e => e.studentId),
-      activityDId: activity.activityDId,
-      activityStatusEnumId: ActivityStatusEnum.Applied,
-    });
+    // // PUT 처리를 시작합니다.
+    // const isUpdateSucceed = this.activityRepository.updateActivity({
+    //   activityId: param.activityId,
+    //   name: body.name,
+    //   activityTypeEnumId: body.activityTypeEnumId,
+    //   duration: body.durations,
+    //   location: body.location,
+    //   purpose: body.purpose,
+    //   detail: body.detail,
+    //   evidence: body.evidence,
+    //   evidenceFileIds: body.evidenceFiles.map(e => e.fileId),
+    //   participantIds: body.participants.map(e => e.studentId),
+    //   activityDId: activity.activityDuration.id,
+    //   activityStatusEnumId: ActivityStatusEnum.Applied,
+    // });
+
+    const isUpdateSucceed = await this.activityNewRepository.put(
+      new MActivity({
+        id: param.activityId,
+        name: body.name,
+        activityTypeEnum: body.activityTypeEnumId,
+        durations: body.durations,
+        location: body.location,
+        purpose: body.purpose,
+        detail: body.detail,
+        evidence: body.evidence,
+        evidenceFiles: body.evidenceFiles.map(e => ({
+          id: e.fileId,
+        })),
+        participants: body.participants.map(e => ({
+          id: e.studentId,
+        })),
+        chargedExecutive: { id: activity.chargedExecutive?.id },
+        activityDuration: { id: activity.activityDuration.id },
+        activityStatusEnum: ActivityStatusEnum.Applied,
+        club: { id: activity.club.id },
+        updatedAt: new Date(),
+        editedAt: new Date(),
+        commentedAt: new Date(),
+        commentedExecutive: undefined,
+      }),
+    );
+
     if (!isUpdateSucceed)
       throw new HttpException(
         "Failed to update",
@@ -547,7 +586,10 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
 
-    const activityDId = await this.activityDurationPublicService.loadId();
+    const activityDId = await this.activityDurationPublicService.loadId({
+      date: new Date(),
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -603,7 +645,7 @@ export default class ActivityService {
   ): Promise<void> {
     const activity = await this.getActivity({ activityId: param.activityId });
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
 
@@ -651,7 +693,7 @@ export default class ActivityService {
       evidence: body.evidence,
       evidenceFileIds: evidenceFiles.map(e => e.id),
       participantIds: body.participants.map(e => e.studentId),
-      activityDId: activity.activityDId,
+      activityDId: activity.activityDuration.id,
       activityStatusEnumId: ActivityStatusEnum.Applied,
     });
     if (!isUpdateSucceed)
@@ -661,7 +703,7 @@ export default class ActivityService {
       );
 
     this.registrationPublicService.resetClubRegistrationStatusEnum(
-      activity.clubId,
+      activity.club.id,
     );
   }
 
@@ -671,12 +713,31 @@ export default class ActivityService {
    * @returns 해당 동아리가 작성한 모든 활동을 REG-011의 리턴 타입에 맞추어 가져옵니다.
    */
   private async getProvisionalActivities(param: { clubId: number }) {
-    const activityDId = await this.activityDurationPublicService.loadId();
-    const result =
+    const activityDId = await this.activityDurationPublicService.loadId({
+      date: new Date(),
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    const resultNow =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         param.clubId,
         activityDId,
       );
+    // 25 봄 한정. TODO: 25봄 등록 이후 삭제 필요
+    // Ascend 의 이전 학기 등록 시 활보를 가져오기 위해 이전 학기의 목록을 가져옵니다.
+    const prevActivityDId = await this.activityDurationPublicService.loadId({
+      semesterId:
+        (await this.semesterPublicService.loadId({
+          date: new Date(),
+        })) - 1,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    const prevActivities =
+      await this.activityRepository.selectActivityByClubIdAndActivityDId(
+        param.clubId,
+        prevActivityDId,
+      );
+    const result = [...resultNow, ...prevActivities];
+    // Ascend 특별처리 End
     const activities = await Promise.all(
       result.map(async activity => {
         const durations = (
@@ -728,7 +789,14 @@ export default class ActivityService {
   ) {
     const activity = await this.getActivity({ activityId });
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    // 이거 맞나? 등록 기간용 따로 파야 할 수도
+    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
+
+    // 현재가 동아리 등록 기간인지 확인합니다
+    await this.registrationDeadlinePublicService.validate({
+      date: new Date(),
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
 
     if (!(await this.activityRepository.deleteActivity({ activityId }))) {
       throw new HttpException(
@@ -809,10 +877,10 @@ export default class ActivityService {
       });
 
     return {
-      clubId: activity.clubId,
+      clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.originalName,
-      activityTypeEnumId: activity.activityTypeEnumId,
+      originalName: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,
       detail: activity.detail,
@@ -827,13 +895,13 @@ export default class ActivityService {
         startTerm: e.startTerm,
         endTerm: e.endTerm,
       })),
-      activityStatusEnumId: activity.activityStatusEnumId,
+      activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
         content: e.comment,
         createdAt: e.createdAt,
       })),
       updatedAt: activity.updatedAt,
-      professorApprovedAt: activity.professorApprovedAt,
+      professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -845,7 +913,7 @@ export default class ActivityService {
   ): Promise<ApiAct002ResponseOk> {
     const activity = await this.getActivity({ activityId });
 
-    await this.checkIsProfessor({ professorId, clubId: activity.clubId });
+    await this.checkIsProfessor({ professorId, clubId: activity.club.id });
 
     const evidence = await this.activityRepository.selectFileByActivityId(
       activity.id,
@@ -872,10 +940,10 @@ export default class ActivityService {
       });
 
     return {
-      clubId: activity.clubId,
+      clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.originalName,
-      activityTypeEnumId: activity.activityTypeEnumId,
+      originalName: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,
       detail: activity.detail,
@@ -890,13 +958,13 @@ export default class ActivityService {
         startTerm: e.startTerm,
         endTerm: e.endTerm,
       })),
-      activityStatusEnumId: activity.activityStatusEnumId,
+      activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
         content: e.comment,
         createdAt: e.createdAt,
       })),
       updatedAt: activity.updatedAt,
-      professorApprovedAt: activity.professorApprovedAt,
+      professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -968,11 +1036,7 @@ export default class ActivityService {
     const todayDeadline = await this.activityDeadlinePublicService
       .search({
         date: new Date(),
-        deadlineEnums: [
-          ActivityDeadlineEnum.Writing,
-          ActivityDeadlineEnum.Late,
-          ActivityDeadlineEnum.Modification,
-        ],
+        deadlineEnum: ActivityDeadlineEnum.Writing,
       })
       .then(takeExist())
       .then(takeOne);

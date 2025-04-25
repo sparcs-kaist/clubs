@@ -2,7 +2,7 @@ import React from "react";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
-import ProfessorActivityReportTable from "@sparcs-clubs/web/features/activity-report/components/tables/ProfessorActivityReportTable";
+import ProfessorActivityReportTable from "@sparcs-clubs/web/features/activity-report/components/professor/ProfessorActivityReportTable";
 
 interface ClubActivitySectionProps {
   clubId: number;

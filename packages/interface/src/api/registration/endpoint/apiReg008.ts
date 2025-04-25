@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zMemberRegistration } from "@clubs/domain/member-registration/member-registration";
+import { zMemberRegistration } from "@clubs/domain/registration/member-registration";
 
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zUserName } from "@clubs/interface/common/commonString";

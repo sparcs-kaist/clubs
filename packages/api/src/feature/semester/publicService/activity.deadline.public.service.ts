@@ -4,17 +4,17 @@ import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 
+import { MActivityDeadline } from "../model/activity.deadline.model";
 import {
   ActivityDeadlineQuery,
-  MActivityDeadline,
-} from "../model/activity.deadline.model";
-import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
+  ActivityDeadlineRepository,
+} from "../repository/activity.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
 type ActivityDeadlineSearchQuery = {
   semesterId?: number;
   date?: Date;
-  deadlineEnums?: ActivityDeadlineEnum[];
+  deadlineEnum?: ActivityDeadlineEnum | ActivityDeadlineEnum[];
 };
 
 type ActivityDeadlineLoadQuery = {
@@ -27,7 +27,6 @@ type ActivityDeadlineIsQuery = {
   semesterId?: number;
   date?: Date;
   deadlineEnum?: ActivityDeadlineEnum;
-  deadlineEnums?: ActivityDeadlineEnum[];
 };
 
 @Injectable()

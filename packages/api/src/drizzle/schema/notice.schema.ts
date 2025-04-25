@@ -13,5 +13,6 @@ export const Notice = mysqlTable("notice", {
   date: date("date").notNull(),
   link: varchar("link", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  articleId: int("article_id"),
   deletedAt: timestamp("deleted_at"),
 });

@@ -9,6 +9,7 @@ export const zNotice = z.object({
   date: z.date(),
   link: z.string(),
   createdAt: z.date(),
+  articleId: z.coerce.number(),
 });
 
 export const zNoticeResponse = zNotice;

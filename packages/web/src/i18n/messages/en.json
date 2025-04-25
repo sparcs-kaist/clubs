@@ -26,6 +26,8 @@
         "대여 사업": "Rental Business",
         "홍보물 인쇄": "Printing Business",
         "활동확인서 발급": "Activity Certificate",
-        "공용공간 비정기사용": "Common Space"
+        "공용공간 비정기사용": "Common Space",
+        "마이페이지": "My Page",
+        "로그아웃": "Logout"
     }
 }
