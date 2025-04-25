@@ -19,6 +19,9 @@ const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    isWritable: z.boolean().optional(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 작성 가능 여부
+    isEditable: z.boolean().optional(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 수정, 삭제 가능 여부
+    canApprove: z.boolean().optional(), // 집행부원, 지도교수님이 현재 기간(activityDeadlineEnum)에 대해 활동보고서 승인 가능 여부
     targetTerm: z.object({
       id: z.coerce.number().int().min(1),
       year: z.coerce.number().int().min(1900),
@@ -61,8 +64,8 @@ type ApiAct018ResponseOk = z.infer<(typeof apiAct018.responseBodyMap)[200]>;
 export default apiAct018;
 
 export type {
+  ApiAct018RequestBody,
   ApiAct018RequestParam,
   ApiAct018RequestQuery,
-  ApiAct018RequestBody,
   ApiAct018ResponseOk,
 };
