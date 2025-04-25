@@ -1,16 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { InferSelectModel } from "drizzle-orm";
 
-import { INoticeCreate } from "@clubs/interface/api/notice/type/notice.type";
-
 import {
   BaseTableFieldMapKeys,
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { Notice } from "@sparcs-clubs/api/drizzle/schema/notice.schema";
-
-import { MNotice } from "../model/notice.model";
+import {
+  INoticeCreate,
+  MNotice,
+} from "@sparcs-clubs/api/feature/notice/model/notice.model";
 
 export type NoticeQuery = {
   id: number;

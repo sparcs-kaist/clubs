@@ -1,9 +1,8 @@
-import { INotice } from "@clubs/interface/api/notice/type/notice.type";
+import { INotice } from "@clubs/domain/notice/notice";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
 export interface INoticeCreate {
-  id: INotice["id"]; // ArticleId를 넘겨주기 위해서
   createdAt: INotice["createdAt"];
   author: INotice["author"];
   title: INotice["title"];

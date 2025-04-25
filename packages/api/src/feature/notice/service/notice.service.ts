@@ -6,17 +6,12 @@ import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/a
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
-import {
-  forEachAsyncSequentially,
-  // forEachAsyncSequentially,
-  getKSTDate,
-} from "@sparcs-clubs/api/common/util/util";
+import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
 import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
 
 const urlPrefix = "https://cafe.naver.com/kaistclubs";
 const maxAttempts = 10;
 const userDisplay = 50;
-export const crawlPeriod = 10 * 60 * 1000; // 10분
 
 export interface PostCrawlResult {
   articleId: number;
@@ -118,7 +113,7 @@ export class NoticeService {
 
         // 시간만 제공되는 경우 오늘 날짜로 설정
         if (date.includes(":")) {
-          const kstDate = getKSTDate();
+          const kstDate = new Date();
           const mm = kstDate.getMonth() + 1;
           const dd = kstDate.getDate();
           date = `${kstDate.getFullYear()}.${(mm > 9 ? "" : "0") + mm}.${(dd > 9 ? "" : "0") + dd}.`;
@@ -244,6 +239,7 @@ export class NoticeService {
         date: new Date(post.date),
         author: post.author,
         articleId: post.articleId,
+        createdAt: new Date(),
       });
     });
 
