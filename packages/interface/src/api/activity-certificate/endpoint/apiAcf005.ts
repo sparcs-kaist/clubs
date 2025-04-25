@@ -11,7 +11,7 @@ const url = (id: number) =>
 const method = "DELETE";
 
 const requestParam = z.object({
-  id: z.number().int().min(1),
+  id: z.coerce.number().int().min(1),
 });
 
 const requestBody = z.object({});

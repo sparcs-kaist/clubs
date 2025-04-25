@@ -4,7 +4,7 @@ export const zFile = z.object({
   id: z.string().max(128),
   name: z.string().max(255),
   extension: z.string().max(30),
-  size: z.number(),
+  size: z.coerce.number(),
   url: z.string(),
   userId: z.coerce.number().min(1),
 });

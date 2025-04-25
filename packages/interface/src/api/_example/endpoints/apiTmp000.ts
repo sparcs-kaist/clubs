@@ -26,18 +26,18 @@ const requestQuery = PaginationRequest.extend({
 
 const requestBody = z.object({
   name: z.string().max(20),
-  age: z.number().int().positive().max(20),
+  age: z.coerce.number().int().positive().max(20),
 });
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: PaginationResponse.extend({
     name: z.string().max(20),
-    age: z.number().int().min(20).max(30),
+    age: z.coerce.number().int().min(20).max(30),
     // 중략 ㅎㅎ
   }),
   [HttpStatusCode.Created]: PaginationResponse.extend({
     name: z.string().max(20),
-    age: z.number().int().min(20).max(30),
+    age: z.coerce.number().int().min(20).max(30),
     createdAt: z.date(),
     // 중략 ㅎㅎ
   }),

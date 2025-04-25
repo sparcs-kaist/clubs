@@ -33,8 +33,8 @@ const responseBodyMap = {
         endTerm: zSemester.shape.endTerm,
       }),
     ),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(1),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(1),
   }),
 };
 
