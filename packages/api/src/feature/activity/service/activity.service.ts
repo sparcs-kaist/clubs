@@ -717,11 +717,27 @@ export default class ActivityService {
       date: new Date(),
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
     });
-    const result =
+    const resultNow =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         param.clubId,
         activityDId,
       );
+    // 25 봄 한정. TODO: 25봄 등록 이후 삭제 필요
+    // Ascend 의 이전 학기 등록 시 활보를 가져오기 위해 이전 학기의 목록을 가져옵니다.
+    const prevActivityDId = await this.activityDurationPublicService.loadId({
+      semesterId:
+        (await this.semesterPublicService.loadId({
+          date: new Date(),
+        })) - 1,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    const prevActivities =
+      await this.activityRepository.selectActivityByClubIdAndActivityDId(
+        param.clubId,
+        prevActivityDId,
+      );
+    const result = [...resultNow, ...prevActivities];
+    // Ascend 특별처리 End
     const activities = await Promise.all(
       result.map(async activity => {
         const durations = (
