@@ -529,7 +529,9 @@ export default class FundingService {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
     const activityD = await this.activityDurationPublicService.load();
-    const fundings = await this.fundingRepository.fetchSummaries(activityD.id);
+    const fundings = await this.fundingRepository.fetchSummaries(
+      activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
+    );
 
     const clubs = await this.clubPublicService.fetchSummaries(
       fundings.map(funding => funding.club.id),
@@ -706,7 +708,7 @@ export default class FundingService {
 
     const fundings = await this.fundingRepository.fetchSummaries(
       param.clubId,
-      activityD.id,
+      activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
     );
 
     const club = await this.clubPublicService.fetchSummary(param.clubId);

@@ -8,25 +8,29 @@ import React, { useMemo } from "react";
 import { ApiAct028ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct028";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 import {
   ActStatusTagList,
   ActTypeTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
+import { sortActivitiesByStatusAndCommentedDate } from "@sparcs-clubs/web/features/activity-report/utils/sortActivities";
 import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
-
-import { sortActivitiesByStatusAndCommentedDate } from "../utils/sortActivities";
 
 const columnHelper =
   createColumnHelper<ApiAct028ResponseOk["activities"][number]>();
 const columns = [
+  columnHelper.accessor("club.name", {
+    header: "동아리",
+    cell: info => info.getValue(),
+    size: 200,
+  }),
   columnHelper.accessor("name", {
     header: "활동명",
     cell: info => info.getValue(),
-    size: 400,
+    size: 252,
   }),
   columnHelper.accessor("activityTypeEnum", {
     header: "활동 분류",
@@ -44,9 +48,14 @@ const columns = [
     },
     size: 220,
   }),
-  columnHelper.accessor(row => row.commentedExecutive?.name, {
-    header: "최종 검토자",
-    cell: info => info.getValue() || "-",
+  columnHelper.accessor(row => row.chargedExecutive?.name, {
+    header: "담당자",
+    cell: info =>
+      info.getValue() || (
+        <Typography color="GRAY.300" fs={16} lh={24}>
+          (미정)
+        </Typography>
+      ),
     size: 120,
   }),
   columnHelper.accessor("activityStatusEnum", {
@@ -59,7 +68,7 @@ const columns = [
   }),
 ];
 
-const ActivityReportChargedClubTable: React.FC<{
+const ActivityReportChargedOtherTable: React.FC<{
   activities: ApiAct028ResponseOk["activities"];
 }> = ({ activities }) => {
   const { length } = activities;
@@ -78,11 +87,9 @@ const ActivityReportChargedClubTable: React.FC<{
 
   return (
     <FlexWrapper direction="column" gap={16}>
-      <MoreDetailTitle
-        title={`${activities[0]?.club?.name || ""} (${length}개)`}
-        moreDetail="내역 더보기"
-        moreDetailPath={`/executive/activity-report/club/${activities[0]?.club?.id}`}
-      />
+      <Typography fs={20} lh={24} fw="MEDIUM">
+        담당자가 아님 ({length}개)
+      </Typography>
       <Table
         table={table}
         rowLink={row => `/executive/activity-report/${row.id}`}
@@ -91,4 +98,4 @@ const ActivityReportChargedClubTable: React.FC<{
   );
 };
 
-export default ActivityReportChargedClubTable;
+export default ActivityReportChargedOtherTable;

@@ -1,16 +1,17 @@
 import { overlay } from "overlay-kit";
 import React, { useEffect, useState } from "react";
 
+import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
-
-import ActivityReportClubStatistic from "../components/ActivityReportClubStatistic";
-import ChargedChangeActivityModalContent from "../components/ChargedChangeActivityModalContent";
-import { ChargedChangeActivityProps } from "../components/ChargedChangeActivityModalTable";
-import ExecutiveClubActivitiesTable from "../components/ExecutiveClubActivitiesTable";
-import useGetExecutiveClubActivities from "../services/useGetExecutiveClubActivities";
+import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
+import ChargedChangeActivityModalContent from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeActivityModalContent";
+import { ChargedChangeActivityProps } from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeActivityModalTable";
+import ExecutiveClubActivitiesTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveClubActivitiesTable";
+import useGetExecutiveClubActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveClubActivities";
 
 const ExecutiveActivityReportClubFrame: React.FC<{ clubId: string }> = ({
   clubId,
@@ -52,7 +53,26 @@ const ExecutiveActivityReportClubFrame: React.FC<{ clubId: string }> = ({
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <ActivityReportClubStatistic data={data ?? { items: [] }} />
+      <ActivityReportStatistic
+        pendingTotalCount={
+          data?.items.filter(
+            item => item.activityStatusEnum === ActivityStatusEnum.Applied,
+          ).length ?? 0
+        }
+        approvedTotalCount={
+          data?.items.filter(
+            item => item.activityStatusEnum === ActivityStatusEnum.Approved,
+          ).length ?? 0
+        }
+        rejectedTotalCount={
+          data?.items.filter(
+            item => item.activityStatusEnum === ActivityStatusEnum.Rejected,
+          ).length ?? 0
+        }
+        withApprovedRate
+        chargedExecutiveName={data?.chargedExecutive?.name}
+        withChargedExecutive
+      />
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
           searchText={searchText}

@@ -5,13 +5,12 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
-
-import ActivityReportStatistic from "../components/ActivityReportStatistic";
-import ChargedChangeClubModalContent from "../components/ChargedChangeClubModalContent";
-import { ChargedChangeClubProps } from "../components/ChargedChangeClubModalTable";
-import ExecutiveActivityChargedTable from "../components/ExecutiveActivityChargedTable";
-import ExecutiveActivityClubTable from "../components/ExecutiveActivityClubTable";
-import useGetExecutiveActivities from "../services/useGetExecutiveActivities";
+import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
+import ChargedChangeClubModalContent from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalContent";
+import { ChargedChangeClubProps } from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalTable";
+import ExecutiveActivityChargedTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveActivityChargedTable";
+import ExecutiveActivityClubTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveActivityClubTable";
+import useGetExecutiveActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveActivities";
 
 const ExecutiveActivityReportFrame = () => {
   const [isClubView, setIsClubView] = useState<boolean>(
@@ -58,7 +57,24 @@ const ExecutiveActivityReportFrame = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <ActivityReportStatistic
-        activities={data ?? { items: [], executiveProgresses: [] }}
+        pendingTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.pendingActivitiesCount,
+            0,
+          ) ?? 0
+        }
+        approvedTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.approvedActivitiesCount,
+            0,
+          ) ?? 0
+        }
+        rejectedTotalCount={
+          data?.items.reduce(
+            (acc, item) => acc + item.rejectedActivitiesCount,
+            0,
+          ) ?? 0
+        }
       />
       <FlexWrapper direction="row" gap={12}>
         <Button
