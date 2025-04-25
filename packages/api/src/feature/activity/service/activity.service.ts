@@ -756,8 +756,8 @@ export default class ActivityService {
         return {
           id: activity.id,
           name: activity.name,
-          activityTypeEnumId: activity.activityTypeEnum,
-          activityStatusEnumId: activity.activityStatusEnum,
+          activityTypeEnumId: activity.activityTypeEnumId,
+          activityStatusEnumId: activity.activityStatusEnumId,
           durations,
           earliestStartTerm, // 추후 정렬을 위해 추가
           latestEndTerm, // 추후 정렬을 위해 추가
