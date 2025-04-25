@@ -9,7 +9,10 @@ import { zDivision } from "./division";
 extendZodWithOpenApi(z);
 
 export const zClubDivisionHistory = z.object({
-  id: zId,
+  id: zId.openapi({
+    description: "동아리 분과 이력 ID",
+    examples: [1, 2, 3],
+  }),
   club: z.object({ id: zClub.shape.id }),
   division: z.object({ id: zDivision.shape.id }),
   startTerm: z.date(),

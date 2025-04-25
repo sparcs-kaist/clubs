@@ -19,7 +19,7 @@ const requestQuery = z.object({
 const requestBody = z.object({});
 
 const zNotice = z.object({
-  id: z.number().int().positive(),
+  id: z.coerce.number().int().positive(),
   title: z.string().max(512),
   author: z.string().max(20),
   date: z.coerce.date(),
@@ -29,8 +29,8 @@ const zNotice = z.object({
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     notices: zNotice.array(),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(0),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(0),
   }),
 };
 

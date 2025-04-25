@@ -19,9 +19,17 @@ export const zClubDelegateChangeRequest = z.object({
   club: z.object({ id: zClub.shape.id }),
   prevStudent: z.object({ id: zStudent.shape.id }),
   student: z.object({ id: zStudent.shape.id }),
-  clubDelegateChangeRequestStatusEnum: z.nativeEnum(
-    ClubDelegateChangeRequestStatusEnum,
-  ),
+  clubDelegateChangeRequestStatusEnum: z
+    .nativeEnum(ClubDelegateChangeRequestStatusEnum)
+    .openapi({
+      description:
+        "동아리 대표자 변경 요청의 상태입니다. 1: 제출, 2: 승인, 3: 반려",
+      examples: [
+        ClubDelegateChangeRequestStatusEnum.Applied,
+        ClubDelegateChangeRequestStatusEnum.Approved,
+        ClubDelegateChangeRequestStatusEnum.Rejected,
+      ],
+    }),
 });
 
 export type IClubDelegateChangeRequest = z.infer<

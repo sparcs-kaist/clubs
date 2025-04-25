@@ -21,11 +21,11 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     commonSpaces: z.array(
       z.object({
-        id: z.number().int(),
+        id: z.coerce.number().int(),
         commonSpaceEnum: z.nativeEnum(CommonSpaceEnum),
         name: z.string().max(30),
-        availableHoursPerWeek: z.number().int().min(0).max(24),
-        availableHoursPerDay: z.number().int().min(0).max(24),
+        availableHoursPerWeek: z.coerce.number().int().min(0).max(24),
+        availableHoursPerDay: z.coerce.number().int().min(0).max(24),
       }),
     ),
   }),

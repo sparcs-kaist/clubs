@@ -13,9 +13,19 @@ export enum ClubDelegateEnum {
 }
 
 export const zClubDelegate = z.object({
-  id: zId,
-  student: zStudent.pick({ id: true }),
-  clubDelegateEnum: z.nativeEnum(ClubDelegateEnum),
+  id: zId.openapi({
+    description: "동아리 대표자 상태 ID",
+    examples: [1, 2, 3],
+  }),
+  student: z.object({ id: zStudent.shape.id }),
+  clubDelegateEnum: z.nativeEnum(ClubDelegateEnum).openapi({
+    description: "동아리 대표자의 지위 종류 1: 대표자 2: 대의원1 3: 대의원2",
+    examples: [
+      ClubDelegateEnum.Representative,
+      ClubDelegateEnum.Delegate1,
+      ClubDelegateEnum.Delegate2,
+    ],
+  }),
   startTerm: z.date(),
   endTerm: z.date().nullable(),
 });

@@ -1,9 +1,10 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
+import { zClub } from "@clubs/domain/club/club";
 import { zId } from "@clubs/domain/common/id";
-
-import { zSemester } from "../semester/semester";
+import { zSemester } from "@clubs/domain/semester/semester";
+import { zStudent } from "@clubs/domain/user/student";
 
 extendZodWithOpenApi(z);
 
@@ -13,11 +14,17 @@ export enum ClubMemberTypeEnum {
 }
 
 export const zClubMember = z.object({
-  id: zId,
-  clubId: zId,
-  studentId: zId,
+  id: zId.openapi({
+    description: "동아리 소속 멤버 상태 ID",
+    examples: [1, 2, 3],
+  }),
+  clubId: zClub.shape.id,
+  studentId: zStudent.shape.id,
   semester: z.object({ id: zSemester.shape.id }),
-  clubMemberTypeEnum: z.nativeEnum(ClubMemberTypeEnum), // 비즈니스 로직으로 추가할 것
+  clubMemberTypeEnum: z.nativeEnum(ClubMemberTypeEnum).openapi({
+    description: "회원의 상태 1: 정회원 2: 준회원",
+    examples: [ClubMemberTypeEnum.Regular, ClubMemberTypeEnum.Associate],
+  }), // 비즈니스 로직으로 추가할 것
 });
 
 export type IClubMember = z.infer<typeof zClubMember>;

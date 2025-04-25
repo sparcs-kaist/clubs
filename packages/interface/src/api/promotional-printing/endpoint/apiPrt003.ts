@@ -26,15 +26,15 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     order: z.object({
-      clubId: z.number().int().min(1),
-      studentId: z.number().int().min(1),
+      clubId: z.coerce.number().int().min(1),
+      studentId: z.coerce.number().int().min(1),
       status: z.nativeEnum(PromotionalPrintingOrderStatusEnum),
       orders: z.array(
         z.object({
           promotionalPrintingSizeEnum: z.nativeEnum(
             PromotionalPrintingSizeEnum,
           ),
-          numberOfPrints: z.number().int().min(1), // 0보다 큰 정수
+          numberOfPrints: z.coerce.number().int().min(1), // 0보다 큰 정수
         }),
       ),
       isColorPrint: z.boolean(),
