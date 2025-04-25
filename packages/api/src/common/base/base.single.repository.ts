@@ -81,9 +81,7 @@ export abstract class BaseSingleTableRepository<
    * @description ModelCreate 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
    * @description create에서 사용
    */
-  protected createToDBMapping(model: IModelCreate): InsertModel<Table> {
-    return model as InsertModel<Table>;
-  }
+  protected abstract createToDBMapping(model: IModelCreate): InsertModel<Table>;
 
   /**
    * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
