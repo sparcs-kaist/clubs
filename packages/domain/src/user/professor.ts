@@ -9,13 +9,13 @@ export enum ProfessorEnum {
 }
 
 export const zProfessor = z.object({
-  id: z.number(),
-  userId: z.number().nullable(),
+  id: z.coerce.number(),
+  userId: z.coerce.number().nullable(),
   name: z.string(),
   email: z.string(),
   phoneNumber: z.string().optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),
-  department: z.number(),
+  department: z.coerce.number(),
 });
 
 export type IProfessor = z.infer<typeof zProfessor>;

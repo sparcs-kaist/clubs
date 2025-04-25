@@ -29,14 +29,4 @@ export const zMemberRegistration = z.object({
   }),
 });
 
-// 외부 entity의 값을 전부 받아온 형태.
-export const zMemberRegistrationResponse = zMemberRegistration.extend({
-  student: zStudent,
-  club: zClub,
-  semester: zSemester,
-});
-
 export type IMemberRegistration = z.infer<typeof zMemberRegistration>;
-export type IMemberRegistrationResponse = z.infer<
-  typeof zMemberRegistrationResponse
->;

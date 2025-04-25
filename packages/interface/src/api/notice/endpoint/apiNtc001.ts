@@ -31,8 +31,8 @@ const responseBodyMap = {
         link: z.string().max(200),
       })
       .array(),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(0),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(0),
   }),
 };
 
