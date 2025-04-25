@@ -41,6 +41,8 @@ export const zActivity = z.object({
   evidence: z.string(),
   evidenceFiles: z.array(zExtractId(zFile)),
   participants: z.array(zExtractId(zStudent)),
+
+  // 비정규화 메모 필드
   chargedExecutive: zExtractId(zExecutive).nullable(),
   editedAt: z.coerce.date(),
   professorApprovedAt: z.coerce.date().nullable(),
