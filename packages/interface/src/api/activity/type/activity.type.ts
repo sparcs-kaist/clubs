@@ -24,7 +24,6 @@ export const zActivity = z.object({
   activityDuration: zActivityDuration.pick({ id: true }),
   durations: z.array(
     z.object({
-      id: zId,
       startTerm: z.coerce.date(),
       endTerm: z.coerce.date(),
     }),

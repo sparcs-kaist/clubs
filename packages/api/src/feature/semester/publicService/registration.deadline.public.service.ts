@@ -4,11 +4,11 @@ import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registrat
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 
+import { MRegistrationDeadline } from "../model/registration.deadline.model";
 import {
-  MRegistrationDeadline,
   RegistrationDeadlineQuery,
-} from "../model/registration.deadline.model";
-import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
+  RegistrationDeadlineRepository,
+} from "../repository/registration.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
 type RegistrationDeadlineSearchQuery = {};

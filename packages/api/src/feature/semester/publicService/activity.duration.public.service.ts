@@ -4,11 +4,11 @@ import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
 
+import { MActivityDuration } from "../model/activity.duration.model";
 import {
   ActivityDurationQuery,
-  MActivityDuration,
-} from "../model/activity.duration.model";
-import { ActivityDurationRepository } from "../repository/activity.duration.repository";
+  ActivityDurationRepository,
+} from "../repository/activity.duration.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
 type ActivityDurationSearchQuery = {};

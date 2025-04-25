@@ -1,56 +1,112 @@
 import { Injectable } from "@nestjs/common";
-import { gte, lte, not, or, SQL } from "drizzle-orm";
+import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
 
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
 import {
-  ActivityDurationFromDb,
-  ActivityDurationQuery,
+  BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import {
+  IActivityDurationCreate,
   MActivityDuration,
-} from "../model/activity.duration.model";
+} from "@sparcs-clubs/api/feature/semester/model/activity.duration.model";
+
+export type ActivityDurationQuery = {
+  semesterId: number;
+  date: Date;
+  activityDurationTypeEnum: ActivityDurationTypeEnum;
+};
+
+type ActivityDurationOrderByKeys =
+  | "id"
+  | "semesterId"
+  | "activityDurationTypeEnum"
+  | "startTerm"
+  | "endTerm";
+type ActivityDurationQuerySupport = {
+  startTerm: string;
+  endTerm: string;
+};
+
+type ActivityDurationTable = typeof ActivityD;
+type ActivityDbSelect = InferSelectModel<ActivityDurationTable>;
+type ActivityDbUpdate = Partial<ActivityDbSelect>;
+
+type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
+  ActivityDurationQuery,
+  ActivityDurationOrderByKeys,
+  ActivityDurationQuerySupport
+>;
 
 @Injectable()
-export class ActivityDurationRepository extends BaseRepository<
+export class ActivityDurationRepository extends BaseSingleTableRepository<
   MActivityDuration,
-  ActivityDurationFromDb,
-  typeof ActivityD,
-  ActivityDurationQuery
+  IActivityDurationCreate,
+  ActivityDurationTable,
+  ActivityDurationQuery,
+  ActivityDurationOrderByKeys,
+  ActivityDurationQuerySupport
 > {
   constructor() {
     super(ActivityD, MActivityDuration);
   }
 
-  protected makeWhereClause(param: ActivityDurationQuery): SQL[] {
-    const whereClause: SQL[] = super.makeWhereClause(param, [
-      "duration",
-      "date",
-    ]);
+  protected dbToModelMapping(result: ActivityDbSelect): MActivityDuration {
+    return new MActivityDuration({
+      id: result.id,
+      semester: { id: result.semesterId },
+      activityDurationTypeEnum: result.activityDurationTypeEnum,
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
+      name: result.name,
+      year: result.year,
+    });
+  }
 
-    if (param.duration) {
-      // 기간: startTerm ~ endTerm에 일부라도 포함되는 지 확인
-      whereClause.push(
-        not(
-          or(
-            lte(ActivityD.endTerm, param.duration.startTerm),
-            gte(ActivityD.startTerm, param.duration.endTerm),
-          ),
-        ),
-      );
+  protected modelToDBMapping(model: MActivityDuration): ActivityDbUpdate {
+    return {
+      id: model.id,
+      semesterId: model.semester.id,
+      activityDurationTypeEnum: model.activityDurationTypeEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected fieldMap(
+    field: ActivityDurationFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      ActivityDurationFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: ActivityD,
+      semesterId: ActivityD,
+      activityDurationTypeEnum: ActivityD,
+      startTerm: ActivityD,
+      endTerm: ActivityD,
+      date: null,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
     }
 
-    // date: date를 startTerm, endTerm에 포함하는 지 확인
-    if (param.date) {
-      whereClause.push(
-        this.processNestedQuery({
-          and: {
-            startTerm: { lte: param.date },
-            endTerm: { gt: param.date },
-          },
-        }),
-      );
+    return fieldMappings[field];
+  }
+
+  protected processSpecialCondition(
+    key: ActivityDurationFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return and(lte(ActivityD.startTerm, value), gt(ActivityD.endTerm, value));
     }
 
-    return whereClause;
+    throw new Error(`Invalid key: ${key}`);
   }
 }
