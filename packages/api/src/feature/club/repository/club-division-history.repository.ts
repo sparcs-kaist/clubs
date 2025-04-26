@@ -6,79 +6,95 @@ import {
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Club } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubDivisionHistory } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
-  IClubCreate,
-  MClub,
-} from "@sparcs-clubs/api/feature/club/model/club.model";
+  IClubDivisionHistoryCreate,
+  MClubDivisionHistory,
+} from "@sparcs-clubs/api/feature/club/model/club-division-history.model";
 
-export type ClubQuery = {
+export type ClubDivisionHistoryQuery = {
   // id: number; // id 는 기본 내장
-  nameKr: string;
-  nameEn: string;
+
+  clubId: number;
+  divisionId: number;
+  date: Date;
 };
 
-type ClubOrderByKeys = "id";
-type ClubQuerySupport = {}; // Query Support 용
+type ClubDivisionHistoryOrderByKeys = "id";
+type ClubDivisionHistoryQuerySupport = { startTerm: Date; endTerm: Date }; // Query Support 용
 
-type ClubTable = typeof Club;
-type ClubDbSelect = InferSelectModel<ClubTable>;
-type ClubDbUpdate = Partial<ClubDbSelect>;
-type ClubDbInsert = InferInsertModel<ClubTable>;
+type ClubDivisionHistoryTable = typeof ClubDivisionHistory;
+type ClubDivisionHistoryDbSelect = InferSelectModel<ClubDivisionHistoryTable>;
+type ClubDivisionHistoryDbUpdate = Partial<ClubDivisionHistoryDbSelect>;
+type ClubDivisionHistoryDbInsert = InferInsertModel<ClubDivisionHistoryTable>;
 
-type ClubFieldMapKeys = BaseTableFieldMapKeys<
-  ClubQuery,
-  ClubOrderByKeys,
-  ClubQuerySupport
+type ClubDivisionHistoryFieldMapKeys = BaseTableFieldMapKeys<
+  ClubDivisionHistoryQuery,
+  ClubDivisionHistoryOrderByKeys,
+  ClubDivisionHistoryQuerySupport
 >;
 
 @Injectable()
-export class ClubRepository extends BaseSingleTableRepository<
-  MClub,
-  IClubCreate,
-  ClubTable,
-  ClubQuery,
-  ClubOrderByKeys,
-  ClubQuerySupport
+export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
+  MClubDivisionHistory,
+  IClubDivisionHistoryCreate,
+  ClubDivisionHistoryTable,
+  ClubDivisionHistoryQuery,
+  ClubDivisionHistoryOrderByKeys,
+  ClubDivisionHistoryQuerySupport
 > {
   constructor() {
-    super(Club, MClub);
+    super(ClubDivisionHistory, MClubDivisionHistory);
   }
 
-  protected dbToModelMapping(result: ClubDbSelect): MClub {
-    return new MClub({
+  protected dbToModelMapping(
+    result: ClubDivisionHistoryDbSelect,
+  ): MClubDivisionHistory {
+    return new MClubDivisionHistory({
       id: result.id,
-      nameKr: result.nameKr,
-      nameEn: result.nameEn,
-      description: result.description,
-      foundingYear: result.foundingYear,
+      club: { id: result.clubId },
+      division: { id: result.divisionId },
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
     });
   }
 
-  protected modelToDBMapping(model: MClub): ClubDbUpdate {
+  protected modelToDBMapping(
+    model: MClubDivisionHistory,
+  ): ClubDivisionHistoryDbUpdate {
     return {
       id: model.id,
-      nameKr: model.nameKr,
-      nameEn: model.nameEn,
-      description: model.description,
-      foundingYear: model.foundingYear,
+      clubId: model.club.id,
+      divisionId: model.division.id,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
     };
   }
 
-  protected createToDBMapping(model: IClubCreate): ClubDbInsert {
+  protected createToDBMapping(
+    model: IClubDivisionHistoryCreate,
+  ): ClubDivisionHistoryDbInsert {
     return {
-      nameKr: model.nameKr,
-      nameEn: model.nameEn,
-      description: model.description,
-      foundingYear: model.foundingYear,
+      clubId: model.club.id,
+      divisionId: model.division.id,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
     };
   }
 
-  protected fieldMap(field: ClubFieldMapKeys): TableWithID | null | undefined {
-    const fieldMappings: Record<ClubFieldMapKeys, TableWithID | null> = {
-      id: Club,
-      nameKr: Club,
-      nameEn: Club,
+  protected fieldMap(
+    field: ClubDivisionHistoryFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      ClubDivisionHistoryFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: ClubDivisionHistory,
+      clubId: ClubDivisionHistory,
+      divisionId: ClubDivisionHistory,
+      startTerm: ClubDivisionHistory,
+      endTerm: ClubDivisionHistory,
+      date: null,
     };
 
     if (!(field in fieldMappings)) {

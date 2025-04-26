@@ -67,7 +67,7 @@ export const ClubT = mysqlTable("club_t", {
 });
 
 // 동아리의 분과 변경 이력
-export const ClubDivisionT = mysqlTable("club_division_t", {
+export const ClubDivisionHistory = mysqlTable("club_division_t", {
   id: int("id").autoincrement().primaryKey(),
   clubId: int("club_id")
     .notNull()
