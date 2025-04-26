@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { InferSelectModel } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
@@ -19,6 +19,7 @@ export type FundingCommentQuery = {
 type FundingCommentTable = typeof FundingFeedback;
 type FundingCommentDbSelect = InferSelectModel<FundingCommentTable>;
 type FundingCommentDbUpdate = Partial<FundingCommentDbSelect>;
+type FundingCommentDbInsert = InferInsertModel<FundingCommentTable>;
 
 type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
 
@@ -56,6 +57,18 @@ export class FundingCommentRepository extends BaseSingleTableRepository<
       fundingStatusEnum: model.fundingStatusEnum,
       approvedAmount: model.approvedAmount,
       createdAt: model.createdAt,
+    };
+  }
+
+  protected createToDBMapping(
+    model: IFundingCommentCreate,
+  ): FundingCommentDbInsert {
+    return {
+      fundingId: model.funding.id,
+      executiveId: model.executive.id,
+      content: model.content,
+      fundingStatusEnum: model.fundingStatusEnum,
+      approvedAmount: model.approvedAmount,
     };
   }
 

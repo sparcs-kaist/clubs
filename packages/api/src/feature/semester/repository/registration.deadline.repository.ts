@@ -1,5 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
+import {
+  and,
+  gt,
+  InferInsertModel,
+  InferSelectModel,
+  lte,
+  SQL,
+} from "drizzle-orm";
 
 import { RegistrationDeadlineEnum } from "@clubs/domain/semester/deadline";
 
@@ -30,6 +37,7 @@ type RegistrationDeadlineQuerySupport = {
 type RegistrationDeadlineTable = typeof RegistrationDeadlineD;
 type RegistrationDeadlineDbSelect = InferSelectModel<RegistrationDeadlineTable>;
 type RegistrationDeadlineDbUpdate = Partial<RegistrationDeadlineDbSelect>;
+type RegistrationDeadlineDbInsert = InferInsertModel<RegistrationDeadlineTable>;
 
 type RegistrationDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   RegistrationDeadlineQuery,
@@ -67,6 +75,17 @@ export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
   ): RegistrationDeadlineDbUpdate {
     return {
       id: model.id,
+      semesterId: model.semester.id,
+      deadlineEnum: model.deadlineEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected createToDBMapping(
+    model: IRegistrationDeadlineCreate,
+  ): RegistrationDeadlineDbInsert {
+    return {
       semesterId: model.semester.id,
       deadlineEnum: model.deadlineEnum,
       startTerm: model.startTerm,

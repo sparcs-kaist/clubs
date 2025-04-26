@@ -1,5 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
+import {
+  and,
+  gt,
+  InferInsertModel,
+  InferSelectModel,
+  lte,
+  SQL,
+} from "drizzle-orm";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -35,7 +42,7 @@ type ActivityDurationQuerySupport = {
 type ActivityDurationTable = typeof ActivityD;
 type ActivityDbSelect = InferSelectModel<ActivityDurationTable>;
 type ActivityDbUpdate = Partial<ActivityDbSelect>;
-
+type ActivityDurationDbInsert = InferInsertModel<ActivityDurationTable>;
 type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
   ActivityDurationQuery,
   ActivityDurationOrderByKeys,
@@ -74,6 +81,19 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
       activityDurationTypeEnum: model.activityDurationTypeEnum,
       startTerm: model.startTerm,
       endTerm: model.endTerm,
+    };
+  }
+
+  protected createToDBMapping(
+    model: IActivityDurationCreate,
+  ): ActivityDurationDbInsert {
+    return {
+      semesterId: model.semester.id,
+      activityDurationTypeEnum: model.activityDurationTypeEnum,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+      name: model.name,
+      year: model.year,
     };
   }
 

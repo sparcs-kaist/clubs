@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { InferSelectModel } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -25,6 +25,7 @@ type MemberRegistrationOrderByKeys = "id" | "createdAt";
 type MemberRegistrationTable = typeof RegistrationApplicationStudent;
 type MemberRegistrationDbSelect = InferSelectModel<MemberRegistrationTable>;
 type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbSelect>;
+type MemberRegistrationDbInsert = InferInsertModel<MemberRegistrationTable>;
 
 type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
   MemberRegistrationQuery,
@@ -70,6 +71,18 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
       registrationApplicationStudentEnum:
         model.registrationApplicationStudentEnum,
       createdAt: model.createdAt,
+    };
+  }
+
+  protected createToDBMapping(
+    model: IMemberRegistrationCreate,
+  ): MemberRegistrationDbInsert {
+    return {
+      studentId: model.student.id,
+      clubId: model.club.id,
+      semesterId: model.semester.id,
+      registrationApplicationStudentEnum:
+        model.registrationApplicationStudentEnum,
     };
   }
 

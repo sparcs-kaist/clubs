@@ -1,5 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { and, gt, InferSelectModel, lte, SQL } from "drizzle-orm";
+import {
+  and,
+  gt,
+  InferInsertModel,
+  InferSelectModel,
+  lte,
+  SQL,
+} from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
@@ -24,6 +31,7 @@ type SemesterQuerySupport = {
 type SemesterTable = typeof SemesterD;
 type SemesterDbSelect = InferSelectModel<SemesterTable>;
 type SemesterDbUpdate = Partial<SemesterDbSelect>;
+type SemesterDbInsert = InferInsertModel<SemesterTable>;
 
 type SemesterFieldMapKeys = BaseTableFieldMapKeys<
   SemesterQuery,
@@ -57,6 +65,15 @@ export class SemesterRepository extends BaseSingleTableRepository<
   protected modelToDBMapping(model: MSemester): SemesterDbUpdate {
     return {
       id: model.id,
+      year: model.year,
+      name: model.name,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
+    };
+  }
+
+  protected createToDBMapping(model: ISemesterCreate): SemesterDbInsert {
+    return {
       year: model.year,
       name: model.name,
       startTerm: model.startTerm,
