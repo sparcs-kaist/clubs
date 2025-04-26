@@ -46,7 +46,6 @@ import type {
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
@@ -85,7 +84,6 @@ import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
-import { MActivityDeadline } from "@sparcs-clubs/api/feature/semester/model/activity.deadline.model";
 import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
 import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
@@ -1030,44 +1028,6 @@ export default class ActivityService {
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
-  }
-
-  /**
-   * @description getActivitiesDeadline의 서비스 진입점입니다.
-   * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
-   */
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const now = new Date();
-    const semesterId = await this.semesterPublicService.loadId({ date: now });
-    const term = await this.activityDurationPublicService.load();
-    const thisSemesterDeadlines = await this.activityDeadlinePublicService
-      .search({
-        semesterId,
-      })
-      .then(takeExist(MActivityDeadline));
-    const todayDeadline = thisSemesterDeadlines.find(
-      e => e.startTerm <= now && now < e.endTerm,
-    );
-
-    return {
-      isWritable: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
-      isEditable: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
-      canApprove: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
-      targetTerm: {
-        id: term.id,
-        name: term.name,
-        startTerm: term.startTerm,
-        endTerm: term.endTerm,
-        year: term.year,
-      },
-      deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnum,
-        duration: {
-          startTerm: todayDeadline.startTerm,
-          endTerm: todayDeadline.endTerm,
-        },
-      },
-    };
   }
 
   async getProfessorActivities(
