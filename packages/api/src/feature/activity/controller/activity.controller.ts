@@ -52,6 +52,10 @@ import apiAct008, {
   ApiAct008RequestParam,
   ApiAct008ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct008";
+import apiAct009, {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
@@ -551,6 +555,20 @@ export default class ActivityController {
   ): Promise<ApiAct006ResponseOk> {
     const result = await this.activityService.getStudentActivitiesActivityTerm(
       param,
+      query,
+      user.studentId,
+    );
+    return result;
+  }
+
+  @Student()
+  @Get("/student/activities/activity-terms")
+  @UsePipes(new ZodPipe(apiAct009))
+  async getStudentActivitiesActivityTerms(
+    @GetStudent() user: GetStudent,
+    @Query() query: ApiAct009RequestQuery,
+  ): Promise<ApiAct009ResponseOk> {
+    const result = await this.activityService.getStudentActivitiesActivityTerms(
       query,
       user.studentId,
     );
