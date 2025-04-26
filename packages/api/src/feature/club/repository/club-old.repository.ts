@@ -69,7 +69,7 @@ interface IClubs {
 }
 
 @Injectable()
-export default class ClubRepository {
+export class ClubOldRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
   // clubId가 일치하는 club을 리스트로 가져옵니다.

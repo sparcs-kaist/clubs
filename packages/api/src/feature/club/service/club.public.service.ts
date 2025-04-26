@@ -20,13 +20,13 @@ import { MClubOld } from "../model/club-old.model";
 import ClubStudentTRepository from "../repository/club.club-student-t.repository";
 import ClubTRepository from "../repository/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
-import ClubRepository from "../repository/club.repository";
+import { ClubOldRepository } from "../repository/club-old.repository";
 
 @Injectable()
 export default class ClubPublicService {
   constructor(
     private clubDelegateDRepository: ClubDelegateDRepository,
-    private clubRepository: ClubRepository,
+    private clubOldRepository: ClubOldRepository,
     private clubTRepository: ClubTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
     private divisionRepository: DivisionRepository,
@@ -69,7 +69,7 @@ export default class ClubPublicService {
     const clubTs = await this.clubTRepository.selectBySemesterId(semesterId);
     const result = await Promise.all(
       clubTs.map(async clubT => {
-        const club = await this.clubRepository.findByClubId(clubT.clubId);
+        const club = await this.clubOldRepository.findByClubId(clubT.clubId);
         if (club.length === 0 || club.length > 1)
           throw new HttpException(
             "unreachable",
@@ -129,7 +129,7 @@ export default class ClubPublicService {
    * @returns 해당 학생이 할동한 동아리와 기간을 리턴합니다.
    */
   async getClubBelongDurationOfStudent(param: { studentId: number }) {
-    return this.clubRepository.findClubActivities(param.studentId);
+    return this.clubOldRepository.findClubActivities(param.studentId);
   }
 
   /**
@@ -138,7 +138,7 @@ export default class ClubPublicService {
    * 시스템에 문제가 없다면 리스트이 길이는 0 또는 1 이여야 합니다.
    */
   async getClubByClubId(param: { clubId: number }) {
-    return this.clubRepository.findByClubId(param.clubId);
+    return this.clubOldRepository.findByClubId(param.clubId);
   }
 
   /**
@@ -201,7 +201,7 @@ export default class ClubPublicService {
     clubStatusEnumIds: Array<ClubTypeEnum>,
     semesterId: number,
   ) {
-    const clubList = await this.clubRepository.findClubIdByClubStatusEnumId(
+    const clubList = await this.clubOldRepository.findClubIdByClubStatusEnumId(
       studentId,
       clubStatusEnumIds,
       semesterId,
@@ -218,10 +218,11 @@ export default class ClubPublicService {
    * 2. 최근 3학기 이내 한 번이라도 정동아리였던 동아리
    */
   async getEligibleClubsForRegistration(studentId: number, semesterId: number) {
-    const clubList = await this.clubRepository.findEligibleClubsForRegistration(
-      studentId,
-      semesterId,
-    );
+    const clubList =
+      await this.clubOldRepository.findEligibleClubsForRegistration(
+        studentId,
+        semesterId,
+      );
     return clubList;
   }
 
@@ -336,12 +337,12 @@ export default class ClubPublicService {
   }
 
   async fetchSummary(id: number): Promise<IClubSummary> {
-    const result = await this.clubRepository.fetchSummary(id);
+    const result = await this.clubOldRepository.fetchSummary(id);
     return result;
   }
 
   async fetchSummaries(ids: number[]): Promise<IClubSummary[]> {
-    const results = await this.clubRepository.fetchSummaries(ids);
+    const results = await this.clubOldRepository.fetchSummaries(ids);
     return results;
   }
 
@@ -363,7 +364,7 @@ export default class ClubPublicService {
       await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
 
     if (result.length === 0) return null;
-    const club = await this.clubRepository.fetchSummary(result[0].clubId);
+    const club = await this.clubOldRepository.fetchSummary(result[0].clubId);
     return club;
   }
 
@@ -371,7 +372,9 @@ export default class ClubPublicService {
     club: IClubSummary | { id: IClubSummary["id"] },
   ): Promise<IClubSummaryResponse> {
     const clubParam =
-      "name" in club ? club : await this.clubRepository.fetchSummary(club.id);
+      "name" in club
+        ? club
+        : await this.clubOldRepository.fetchSummary(club.id);
 
     const division = await this.divisionPublicService.getDivisionById({
       id: clubParam.division.id,
@@ -391,7 +394,11 @@ export default class ClubPublicService {
       "endTerm" in semester
         ? semester
         : await this.semesterPublicService.getById(semester.id);
-    const result = await this.clubRepository.fetch(clubId, semesterParam, date);
+    const result = await this.clubOldRepository.fetch(
+      clubId,
+      semesterParam,
+      date,
+    );
     return result;
   }
 
@@ -404,7 +411,7 @@ export default class ClubPublicService {
       "endTerm" in semester
         ? semester
         : await this.semesterPublicService.getById(semester.id);
-    const result = await this.clubRepository.findOne(
+    const result = await this.clubOldRepository.findOne(
       clubId,
       semesterParam,
       date,
@@ -421,7 +428,7 @@ export default class ClubPublicService {
     clubId: number,
     semesterIds: number[],
   ): Promise<IClubSummary[]> {
-    const clubs = await this.clubRepository.fetchSummaries(
+    const clubs = await this.clubOldRepository.fetchSummaries(
       [clubId],
       semesterIds,
     );

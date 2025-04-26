@@ -47,13 +47,13 @@ import ClubTRepository from "../repository/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
 import { ClubGetStudentClubBrief } from "../repository/club.get-student-club-brief";
 import { ClubPutStudentClubBrief } from "../repository/club.put-student-club-brief";
-import ClubRepository from "../repository/club.repository";
+import { ClubOldRepository } from "../repository/club-old.repository";
 import ClubPublicService from "./club.public.service";
 
 @Injectable()
 export class ClubService {
   constructor(
-    private clubRepository: ClubRepository,
+    private clubOldRepository: ClubOldRepository,
     private clubDelegateDRepository: ClubDelegateDRepository,
     private clubRoomTRepository: ClubRoomTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
@@ -71,7 +71,7 @@ export class ClubService {
     env.NODE_ENV === "local" ? [] : [112, 113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getAllClubsGroupedByDivision();
+    const result = await this.clubOldRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
@@ -102,7 +102,7 @@ export class ClubService {
       roomDetails,
       isPermanent,
     ] = await Promise.all([
-      this.clubRepository.findClubDetail(clubId),
+      this.clubOldRepository.findClubDetail(clubId),
       this.clubStudentTRepository.findTotalMemberCnt(clubId, targetSemesterId),
       this.clubDelegateDRepository.findRepresentativeName(clubId),
       this.clubRoomTRepository.findClubLocationById(clubId),
@@ -145,7 +145,7 @@ export class ClubService {
       studentSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,
@@ -308,7 +308,7 @@ export class ClubService {
       professorSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,
