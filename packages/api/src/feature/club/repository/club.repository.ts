@@ -48,8 +48,8 @@ import {
   Student,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
-import { MClub } from "../model/club.model";
 import { VClubSummary } from "../model/club.summary.model";
+import { MClubOld } from "../model/club-old.model";
 
 interface IClubs {
   id: number;
@@ -560,7 +560,7 @@ export default class ClubRepository {
     clubId: number,
     semester: ISemester,
     date?: Date,
-  ): Promise<MClub | null> {
+  ): Promise<MClubOld | null> {
     const day = date ?? getKSTDate(semester.endTerm);
 
     // club 조건
@@ -619,7 +619,7 @@ export default class ClubRepository {
       return null;
     }
 
-    return MClub.fromDBResult({
+    return MClubOld.fromDBResult({
       ...club,
       club_delegate_d: delegateResult,
     });
@@ -633,7 +633,7 @@ export default class ClubRepository {
     clubStatusEnumIds?: ClubTypeEnum[];
     divisionId?: IDivision["id"];
     date?: Date;
-  }): Promise<MClub[]> {
+  }): Promise<MClubOld[]> {
     if (!param.semester) {
       throw new BadRequestException("Semester or date is required");
     }
@@ -697,7 +697,7 @@ export default class ClubRepository {
     ]);
 
     return clubResult.map(club =>
-      MClub.fromDBResult({
+      MClubOld.fromDBResult({
         ...club,
         club_delegate_d: delegateResult.filter(e => e.clubId === club.club.id),
       }),
@@ -708,7 +708,7 @@ export default class ClubRepository {
     clubId: number,
     semester: ISemester,
     date?: Date,
-  ): Promise<MClub> {
+  ): Promise<MClubOld> {
     const result = await this.findOne(clubId, semester, date);
     if (!result) {
       throw new NotFoundException("Club not found");

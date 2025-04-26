@@ -376,6 +376,7 @@ export class ClubService {
     const semesters = await this.clubPublicService.getClubsExistedSemesters({
       clubId: query.clubId,
     });
+
     const activityTerms: ApiAct009ResponseOk["terms"] = [];
     await Promise.all(
       semesters.map(async semester => {
