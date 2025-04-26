@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -12,6 +12,8 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ExecutiveActivityReportClubFrame from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportClubFrame";
+import useGetActivityTerms from "@sparcs-clubs/web/features/activity-report/services/useGetActivityTerms";
+import { ActivityTerm } from "@sparcs-clubs/web/features/activity-report/types/activityTerm";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 
 const ExecutiveActivityReportClub = () => {
@@ -20,7 +22,22 @@ const ExecutiveActivityReportClub = () => {
 
   const { id } = useParams<{ id: string }>();
 
+  const { data: activityTermsData } = useGetActivityTerms({
+    clubId: Number(id),
+  });
   const { data, isLoading, isError } = useGetClubDetail(id as string);
+
+  const activityTermList: ActivityTerm[] = useMemo(
+    () =>
+      activityTermsData?.terms.map(term => ({
+        id: term.id,
+        name: term.name,
+        startTerm: term.startTerm, // 이미 Date 타입이라면 그대로
+        endTerm: term.endTerm,
+        year: term.year,
+      })) ?? [],
+    [activityTermsData],
+  );
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -54,7 +71,10 @@ const ExecutiveActivityReportClub = () => {
           title={`활동 보고서 작성 내역 (${data?.nameKr})`}
           enableLast
         />
-        <ExecutiveActivityReportClubFrame clubId={id} />
+        <ExecutiveActivityReportClubFrame
+          clubId={id}
+          semesters={activityTermList}
+        />
       </FlexWrapper>
     </AsyncBoundary>
   );
