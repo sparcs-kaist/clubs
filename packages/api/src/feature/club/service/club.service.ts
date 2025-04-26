@@ -36,18 +36,18 @@ import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/api
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { env } from "@sparcs-clubs/api/env";
-import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
+import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
-import ClubStudentTRepository from "../repository/club.club-student-t.repository";
-import ClubTRepository from "../repository/club.club-t.repository";
-import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
-import { ClubGetStudentClubBrief } from "../repository/club.get-student-club-brief";
-import { ClubPutStudentClubBrief } from "../repository/club.put-student-club-brief";
-import { ClubOldRepository } from "../repository/club-old.repository";
+import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
+import ClubTRepository from "../repository-old/club.club-t.repository";
+import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
+import { ClubGetStudentClubBrief } from "../repository-old/club.get-student-club-brief";
+import { ClubPutStudentClubBrief } from "../repository-old/club.put-student-club-brief";
+import { ClubOldRepository } from "../repository-old/club-old.repository";
 import ClubPublicService from "./club.public.service";
 
 @Injectable()

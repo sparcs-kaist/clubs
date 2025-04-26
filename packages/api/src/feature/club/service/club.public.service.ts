@@ -17,10 +17,10 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import { MClubOld } from "../model/club-old.model";
-import ClubStudentTRepository from "../repository/club.club-student-t.repository";
-import ClubTRepository from "../repository/club.club-t.repository";
-import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
-import { ClubOldRepository } from "../repository/club-old.repository";
+import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
+import ClubTRepository from "../repository-old/club.club-t.repository";
+import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
+import { ClubOldRepository } from "../repository-old/club-old.repository";
 
 @Injectable()
 export default class ClubPublicService {
