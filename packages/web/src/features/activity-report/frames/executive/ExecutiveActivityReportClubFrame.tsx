@@ -1,6 +1,5 @@
 import { overlay } from "overlay-kit";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityTerm } from "web/src/features/activity-report/types/activityTerm";
 
 import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
@@ -14,6 +13,7 @@ import ChargedChangeActivityModalContent from "@sparcs-clubs/web/features/activi
 import { ChargedChangeActivityProps } from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeActivityModalTable";
 import ExecutiveClubActivitiesTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveClubActivitiesTable";
 import useGetExecutiveClubActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveClubActivities";
+import { ActivityTerm } from "@sparcs-clubs/web/features/activity-report/types/activityTerm";
 
 const ExecutiveActivityReportClubFrame: React.FC<{
   clubId: string;
