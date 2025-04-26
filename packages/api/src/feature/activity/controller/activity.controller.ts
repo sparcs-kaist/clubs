@@ -52,6 +52,10 @@ import apiAct008, {
   ApiAct008RequestParam,
   ApiAct008ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct008";
+import apiAct009, {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
@@ -93,8 +97,6 @@ import type {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
 import apiAct017 from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
-import apiAct018 from "@clubs/interface/api/activity/endpoint/apiAct018";
 import apiAct019, {
   ApiAct019RequestQuery,
   ApiAct019ResponseOk,
@@ -150,7 +152,6 @@ import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
   Professor,
-  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -399,14 +400,6 @@ export default class ActivityController {
     return result;
   }
 
-  @Public()
-  @Get("/public/activities/deadline")
-  @UsePipes(new ZodPipe(apiAct018))
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const result = await this.activityService.getPublicActivitiesDeadline();
-    return result;
-  }
-
   @Professor()
   @Get("/professor/activities")
   @UsePipes(new ZodPipe(apiAct019))
@@ -548,6 +541,20 @@ export default class ActivityController {
   ): Promise<ApiAct006ResponseOk> {
     const result = await this.activityService.getStudentActivitiesActivityTerm(
       param,
+      query,
+      user.studentId,
+    );
+    return result;
+  }
+
+  @Student()
+  @Get("/student/activities/activity-terms")
+  @UsePipes(new ZodPipe(apiAct009))
+  async getStudentActivitiesActivityTerms(
+    @GetStudent() user: GetStudent,
+    @Query() query: ApiAct009RequestQuery,
+  ): Promise<ApiAct009ResponseOk> {
+    const result = await this.activityService.getStudentActivitiesActivityTerms(
       query,
       user.studentId,
     );

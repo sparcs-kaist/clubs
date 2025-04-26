@@ -18,7 +18,7 @@ export const activityDeadlineEnumToString = (
     case ActivityDeadlineEnum.Exception:
       return "예외";
     default:
-      throw new Error("Invalid activity deadline enum");
+      return "";
   }
 };
 

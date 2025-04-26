@@ -47,7 +47,7 @@ const ActivityReportMainFrame: React.FC<ActivityReportMainFrameProps> = ({
     isError: isErrorActivityTerms,
   } = useGetActivityTerms({ clubId: data.clubId });
   const {
-    data: activityDeadline,
+    data: deadline,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
   } = useGetActivityDeadline();
@@ -73,9 +73,7 @@ const ActivityReportMainFrame: React.FC<ActivityReportMainFrameProps> = ({
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FoldableSectionTitle childrenMargin="20px" title="신규 활동 보고서">
           <FlexWrapper direction="column" gap={20}>
-            <Info
-              text={newActivityReportListSectionInfoText(activityDeadline)}
-            />
+            <Info text={newActivityReportListSectionInfoText(deadline)} />
             <FlexWrapper
               direction="row"
               gap={16}
@@ -85,19 +83,21 @@ const ActivityReportMainFrame: React.FC<ActivityReportMainFrameProps> = ({
               <Typography fs={14} lh={20} color="GRAY.300">
                 활동 보고서는 최대 20개까지 작성 가능합니다
               </Typography>
-              <IconButton
-                type={
-                  activityReportList.length >= MAX_ACTIVITY_REPORT_COUNT
-                    ? "disabled"
-                    : "default"
-                }
-                icon="add"
-                onClick={() => {
-                  router.push("/manage-club/activity-report/create");
-                }}
-              >
-                활동 보고서 작성
-              </IconButton>
+              {deadline?.isWritable && (
+                <IconButton
+                  type={
+                    activityReportList.length >= MAX_ACTIVITY_REPORT_COUNT
+                      ? "disabled"
+                      : "default"
+                  }
+                  icon="add"
+                  onClick={() => {
+                    router.push("/manage-club/activity-report/create");
+                  }}
+                >
+                  활동 보고서 작성
+                </IconButton>
+              )}
             </FlexWrapper>
 
             <CurrentActivityReportTable clubId={data.clubId} />
@@ -109,13 +109,14 @@ const ActivityReportMainFrame: React.FC<ActivityReportMainFrameProps> = ({
             {activityTerms.terms
               .toReversed()
               .filter(term => {
-                if (!activityDeadline) return true;
+                if (!deadline) return true;
 
+                // 신규 활동 보고서는 빼고, 과거 활동 보고서만 보여주기
                 return (
                   new Date(term.startTerm).getTime() !==
-                    new Date(activityDeadline.targetTerm.startTerm).getTime() &&
+                    new Date(deadline.targetTerm.startTerm).getTime() &&
                   new Date(term.endTerm).getTime() !==
-                    new Date(activityDeadline.targetTerm.endTerm).getTime()
+                    new Date(deadline.targetTerm.endTerm).getTime()
                 );
               })
               .map(term => (

@@ -35,8 +35,8 @@ export const useGetActivityReportProvisional = (
 //       activity: {
 //         club: {
 //           id: 1,
-//           name: "Club Name",
-//           typeEnum: ClubTypeEnum.Club,
+//           name: "ClubOld Name",
+//           typeEnum: ClubTypeEnum.ClubOld,
 //           division: {
 //             id: 1,
 //           },

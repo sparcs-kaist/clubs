@@ -11,7 +11,12 @@ import {
 } from "../repository/activity.duration.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
-type ActivityDurationSearchQuery = {};
+type ActivityDurationSearchQuery = {
+  semesterId?: number | number[];
+  activityDurationTypeEnum?:
+    | ActivityDurationTypeEnum
+    | ActivityDurationTypeEnum[];
+};
 
 type ActivityDurationLoadQuery = {
   semesterId?: number;
@@ -37,6 +42,16 @@ export class ActivityDurationPublicService extends BasePublicService<
     private readonly semesterPublicService: SemesterPublicService,
   ) {
     super(activityDurationRepository, MActivityDuration);
+  }
+
+  /**
+   * @description 해당 학기의 활동 마감 기한을 반환합니다.
+   */
+  async search(
+    query: ActivityDurationSearchQuery,
+  ): Promise<MActivityDuration[]> {
+    const res = await super.search(query);
+    return res;
   }
 
   /**

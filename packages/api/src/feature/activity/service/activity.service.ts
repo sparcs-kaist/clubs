@@ -17,6 +17,10 @@ import type {
   ApiAct008RequestBody,
   ApiAct008RequestParam,
 } from "@clubs/interface/api/activity/endpoint/apiAct008";
+import {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
@@ -42,7 +46,6 @@ import type {
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
@@ -76,8 +79,8 @@ import {
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
-import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
+import { takeExist } from "@sparcs-clubs/api/common/util/util";
+import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
@@ -1027,37 +1030,6 @@ export default class ActivityService {
     return {};
   }
 
-  /**
-   * @description getActivitiesDeadline의 서비스 진입점입니다.
-   * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
-   */
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const term = await this.activityDurationPublicService.load();
-    const todayDeadline = await this.activityDeadlinePublicService
-      .search({
-        date: new Date(),
-        deadlineEnum: ActivityDeadlineEnum.Writing,
-      })
-      .then(takeExist())
-      .then(takeOne);
-    return {
-      targetTerm: {
-        id: term.id,
-        name: term.name,
-        startTerm: term.startTerm,
-        endTerm: term.endTerm,
-        year: term.year,
-      },
-      deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnum,
-        duration: {
-          startTerm: todayDeadline.startTerm,
-          endTerm: todayDeadline.endTerm,
-        },
-      },
-    };
-  }
-
   async getProfessorActivities(
     clubId: number,
     professorId: number,
@@ -1394,7 +1366,7 @@ export default class ActivityService {
     ]);
     if (!isStudentDelegate) {
       throw new HttpException(
-        `Student ${studentId} is not the delegate of Club ${clubId}`,
+        `Student ${studentId} is not the delegate of ClubOld ${clubId}`,
         HttpStatus.FORBIDDEN,
       );
     }
@@ -1531,6 +1503,43 @@ export default class ActivityService {
           : a.durations[0].startTerm.getTime() -
             b.durations[0].startTerm.getTime(),
       ),
+    };
+  }
+
+  async getStudentActivitiesActivityTerms(
+    query: ApiAct009RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct009ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
+    const semesterIds = await this.clubPublicService.searchSemesterIdsByClubId(
+      query.clubId,
+    );
+    const activityDurations = await this.activityDurationPublicService.search({
+      semesterId: semesterIds,
+    });
+
+    const terms = await Promise.all(
+      activityDurations.map(async e => ({
+        term: e,
+        numActivity: await this.activityNewRepository.count({
+          activityDId: e.id,
+          clubId: query.clubId,
+        }),
+      })),
+    );
+
+    return {
+      terms: terms
+        .filter(e => e.numActivity > 0)
+        .map(e => ({
+          name: e.term.name,
+          id: e.term.id,
+          startTerm: e.term.startTerm,
+          endTerm: e.term.endTerm,
+          year: e.term.year,
+        })),
     };
   }
 }

@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, count, eq, gte, isNull, lte } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import { Club } from "src/drizzle/schema/club.schema";
+import { ClubOld } from "src/drizzle/schema/club.schema";
 import {
   RentalEnum,
   RentalObject,
@@ -271,7 +271,7 @@ export class RentalServiceRepository {
       })
       .from(RentalOrder)
       .leftJoin(Student, eq(RentalOrder.studentId, Student.id))
-      .leftJoin(Club, eq(RentalOrder.clubId, Club.id))
+      .leftJoin(ClubOld, eq(RentalOrder.clubId, ClubOld.id))
       .leftJoin(
         RentalOrderItemD,
         eq(RentalOrder.id, RentalOrderItemD.rentalOrderId),

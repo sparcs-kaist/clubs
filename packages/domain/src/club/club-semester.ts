@@ -5,6 +5,9 @@ import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
 import { zProfessor } from "@clubs/domain/user/professor";
 
+import { zExtractId } from "../common/utils";
+import { zClub } from "./club";
+
 extendZodWithOpenApi(z);
 
 export enum ClubTypeEnum {
@@ -19,12 +22,14 @@ export enum ClubBuildingEnum {
   Sports, // 스포츠컴플렉스(N10)
 }
 
-//TODO: Club Room 관련 Feature 추가 후 별도 모델 파일로 분리
-const zClubRoom = z.object({
+// TODO: ClubOld Room 관련 Feature 추가 후 별도 모델 파일로 분리
+// 영준이 화이팅~
+export const zClubRoom = z.object({
   id: zId.openapi({
     description: "동아리방 ID",
     examples: [1, 2, 3],
   }),
+  semester: zExtractId(zSemester), // Semester 별로 할 지? 아니면 기간별로 할 지 동연에 물어보기
   clubBuildingEnum: z.nativeEnum(ClubBuildingEnum).openapi({
     description:
       "동아리방이 위치한 건물 1: 태울관 2: 매점건물(N12) 3: 우체국건물(N11) 4: 스포츠컴플렉스(N10)",
@@ -49,14 +54,20 @@ const zClubRoom = z.object({
       description: "동아리방 비밀번호",
       examples: ["1234", "5678"],
     }),
-  semester: z.object({ id: zSemester.shape.id }),
+
   startTerm: z.date(),
   endTerm: z.date().nullable(),
 });
 
-export const zClubHistory = z.object({
-  // clubT schema
-  typeEnum: z.nativeEnum(ClubTypeEnum).openapi({
+export const zClubSemester = z.object({
+  // ClubHistory schema
+  id: zId.openapi({
+    description: "동아리 학기별 정보 ID",
+    examples: [1, 2, 3],
+  }),
+  club: zExtractId(zClub),
+  semester: zExtractId(zSemester),
+  clubTypeEnum: z.nativeEnum(ClubTypeEnum).openapi({
     description: "동아리 지위 1: 정동아리 2: 가동아리",
     examples: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
   }),
@@ -66,7 +77,7 @@ export const zClubHistory = z.object({
     .nullable()
     .openapi({
       description: "동아리 성격 국문",
-      examples: ["요리", "서브컬처"],
+      examples: ["요리", "서비스 개발"],
     }),
   characteristicEn: z
     .string()
@@ -74,13 +85,16 @@ export const zClubHistory = z.object({
     .nullable()
     .openapi({
       description: "동아리 성격 영문",
-      examples: ["cooking", "Animation and subculture"],
+      examples: ["cooking", "service development"],
     }),
-  semester: zSemester.pick({ id: true }),
-  clubRoom: zClubRoom.pick({ id: true }).nullable(),
 
   // division schema
-  professor: z.object({ id: zProfessor.shape.id }).nullable(),
+  professor: zExtractId(zProfessor).nullable(),
+
+  // ClubSemester schema
+  // TODO: 나중에 정규화 시에 떼야 함
+  startTerm: z.date(),
+  endTerm: z.date(),
 });
 
-export type IClubHistory = z.infer<typeof zClubHistory>;
+export type IClubSemester = z.infer<typeof zClubSemester>;

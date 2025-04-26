@@ -7,7 +7,7 @@ import type { ApiClb004ResponseOK } from "@clubs/interface/api/club/endpoint/api
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
-  Club,
+  ClubOld,
   ClubRoomT,
   ClubT,
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
@@ -20,11 +20,14 @@ export class ClubGetStudentClubBrief {
     const crt = getKSTDate();
     const result = await this.db
       .select({
-        description: Club.description,
+        description: ClubOld.description,
         roomPassword: ClubRoomT.roomPassword,
       })
       .from(ClubT)
-      .leftJoin(Club, and(eq(ClubT.clubId, Club.id), isNull(Club.deletedAt)))
+      .leftJoin(
+        ClubOld,
+        and(eq(ClubT.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
+      )
       .leftJoin(
         ClubRoomT,
         and(
