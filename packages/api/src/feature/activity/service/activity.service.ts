@@ -17,6 +17,10 @@ import type {
   ApiAct008RequestBody,
   ApiAct008RequestParam,
 } from "@clubs/interface/api/activity/endpoint/apiAct008";
+import {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
@@ -1529,6 +1533,43 @@ export default class ActivityService {
           : a.durations[0].startTerm.getTime() -
             b.durations[0].startTerm.getTime(),
       ),
+    };
+  }
+
+  async getStudentActivitiesActivityTerms(
+    query: ApiAct009RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct009ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
+    const semesterIds = await this.clubPublicService.searchSemesterIdsByClubId(
+      query.clubId,
+    );
+    const activityDurations = await this.activityDurationPublicService.search({
+      semesterId: semesterIds,
+    });
+
+    const terms = await Promise.all(
+      activityDurations.map(async e => ({
+        term: e,
+        numActivity: await this.activityNewRepository.count({
+          activityDId: e.id,
+          clubId: query.clubId,
+        }),
+      })),
+    );
+
+    return {
+      terms: terms
+        .filter(e => e.numActivity > 0)
+        .map(e => ({
+          name: e.term.name,
+          id: e.term.id,
+          startTerm: e.term.startTerm,
+          endTerm: e.term.endTerm,
+          year: e.term.year,
+        })),
     };
   }
 }
