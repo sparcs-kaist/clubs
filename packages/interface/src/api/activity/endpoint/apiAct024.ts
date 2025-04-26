@@ -2,6 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import { zId } from "@clubs/interface/common/type/id.type";
 
@@ -17,6 +18,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   clubId: zId,
+  semesterId: zSemester.shape.id.optional(),
 });
 
 const requestBody = z.object({});
