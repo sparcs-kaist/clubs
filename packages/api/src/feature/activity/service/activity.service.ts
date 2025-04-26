@@ -76,11 +76,12 @@ import {
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
+import { MActivityDeadline } from "@sparcs-clubs/api/feature/semester/model/activity.deadline.model";
 import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
 import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
@@ -1032,15 +1033,22 @@ export default class ActivityService {
    * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
    */
   async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
+    const now = new Date();
+    const semesterId = await this.semesterPublicService.loadId({ date: now });
     const term = await this.activityDurationPublicService.load();
-    const todayDeadline = await this.activityDeadlinePublicService
+    const thisSemesterDeadlines = await this.activityDeadlinePublicService
       .search({
-        date: new Date(),
-        deadlineEnum: ActivityDeadlineEnum.Writing,
+        semesterId,
       })
-      .then(takeExist())
-      .then(takeOne);
+      .then(takeExist(MActivityDeadline));
+    const todayDeadline = thisSemesterDeadlines.find(
+      e => e.startTerm <= now && now < e.endTerm,
+    );
+
     return {
+      isWritable: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
+      isEditable: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
+      canApprove: todayDeadline.deadlineEnum === ActivityDeadlineEnum.Writing,
       targetTerm: {
         id: term.id,
         name: term.name,
