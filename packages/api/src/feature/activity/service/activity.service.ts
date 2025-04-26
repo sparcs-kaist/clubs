@@ -46,7 +46,6 @@ import type {
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
@@ -80,7 +79,7 @@ import {
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -1029,37 +1028,6 @@ export default class ActivityService {
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
-  }
-
-  /**
-   * @description getActivitiesDeadline의 서비스 진입점입니다.
-   * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
-   */
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const term = await this.activityDurationPublicService.load();
-    const todayDeadline = await this.activityDeadlinePublicService
-      .search({
-        date: new Date(),
-        deadlineEnum: ActivityDeadlineEnum.Writing,
-      })
-      .then(takeExist())
-      .then(takeOne);
-    return {
-      targetTerm: {
-        id: term.id,
-        name: term.name,
-        startTerm: term.startTerm,
-        endTerm: term.endTerm,
-        year: term.year,
-      },
-      deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnum,
-        duration: {
-          startTerm: todayDeadline.startTerm,
-          endTerm: todayDeadline.endTerm,
-        },
-      },
-    };
   }
 
   async getProfessorActivities(

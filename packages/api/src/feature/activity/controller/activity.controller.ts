@@ -97,8 +97,6 @@ import type {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
 import apiAct017 from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
-import apiAct018 from "@clubs/interface/api/activity/endpoint/apiAct018";
 import apiAct019, {
   ApiAct019RequestQuery,
   ApiAct019ResponseOk,
@@ -154,7 +152,6 @@ import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
   Professor,
-  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -400,14 +397,6 @@ export default class ActivityController {
       param,
       body,
     });
-    return result;
-  }
-
-  @Public()
-  @Get("/public/activities/deadline")
-  @UsePipes(new ZodPipe(apiAct018))
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const result = await this.activityService.getPublicActivitiesDeadline();
     return result;
   }
 

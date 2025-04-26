@@ -1,5 +1,8 @@
 import { Controller, Get, Query, UsePipes } from "@nestjs/common";
 
+import apiAct018, {
+  ApiAct018ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type {
   ApiSem001RequestQuery,
   ApiSem001ResponseOK,
@@ -22,5 +25,13 @@ export class SemesterController {
     @Query() query: ApiSem001RequestQuery,
   ): Promise<ApiSem001ResponseOK> {
     return this.semesterService.getPublicSemesters({ query });
+  }
+
+  @Public()
+  @Get("/public/activities/deadline")
+  @UsePipes(new ZodPipe(apiAct018))
+  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
+    const result = await this.semesterService.getPublicActivitiesDeadline();
+    return result;
   }
 }
