@@ -112,7 +112,7 @@ export default class ClubDelegateService {
         return {
           name: student.name,
           studentId: student.id,
-          delegateEnumId: e.ClubDelegateEnumId,
+          delegateEnumId: e.clubDelegateEnum,
           studentNumber: student.number,
           phoneNumber:
             student.phoneNumber === null
@@ -153,13 +153,13 @@ export default class ClubDelegateService {
     // if (
     //   studentStatus === undefined ||
     //   (param.clubDelegateEnumId === ClubDelegateEnum.Representative &&
-    //     studentStatus.ClubDelegateEnumId !== ClubDelegateEnum.Representative)
+    //     studentStatus.clubDelegateEnum !== ClubDelegateEnum.Representative)
     // )
     //   throw new HttpException(
     //     "This api is allowed for delegates",
     //     HttpStatus.FORBIDDEN,
     //   );
-    if (studentStatus.ClubDelegateEnumId !== ClubDelegateEnum.Representative)
+    if (studentStatus.clubDelegateEnum !== ClubDelegateEnum.Representative)
       throw new HttpException(
         "This api is allowed for the club representative",
         HttpStatus.FORBIDDEN,
@@ -378,7 +378,7 @@ export default class ClubDelegateService {
     // studentId가 해당 clubId 동아리의 대표자 인지 확인합니다.
     if (
       delegates.find(
-        e => e.studentId === param.studentId && e.ClubDelegateEnumId === 1,
+        e => e.studentId === param.studentId && e.clubDelegateEnum === 1,
       ) === undefined
     )
       throw new HttpException(
@@ -521,7 +521,7 @@ export default class ClubDelegateService {
       status: HttpStatus.OK,
       data: {
         clubId: result[0].clubId,
-        delegateEnumId: result[0].ClubDelegateEnumId,
+        delegateEnumId: result[0].clubDelegateEnum,
       },
     };
   }

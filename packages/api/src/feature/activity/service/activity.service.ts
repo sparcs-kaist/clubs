@@ -77,7 +77,7 @@ import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registrat
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
-import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
+import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
@@ -1392,7 +1392,7 @@ export default class ActivityService {
     ]);
     if (!isStudentDelegate) {
       throw new HttpException(
-        `Student ${studentId} is not the delegate of Club ${clubId}`,
+        `Student ${studentId} is not the delegate of ClubOld ${clubId}`,
         HttpStatus.FORBIDDEN,
       );
     }

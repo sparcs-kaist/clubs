@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { DrizzleModule } from "src/drizzle/drizzle.module";
 
 import ClubModule from "../club/club.module";
-import ClubTRepository from "../club/repository/club.club-t.repository";
+import ClubTRepository from "../club/repository-old/club.club-t.repository";
 import DivisionModule from "../division/division.module";
 import FileModule from "../file/file.module";
 import RegistrationModule from "../registration/registration.module";

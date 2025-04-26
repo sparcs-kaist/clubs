@@ -36,24 +36,24 @@ import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/api
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { env } from "@sparcs-clubs/api/env";
-import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
+import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
-import ClubStudentTRepository from "../repository/club.club-student-t.repository";
-import ClubTRepository from "../repository/club.club-t.repository";
-import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
-import { ClubGetStudentClubBrief } from "../repository/club.get-student-club-brief";
-import { ClubPutStudentClubBrief } from "../repository/club.put-student-club-brief";
-import ClubRepository from "../repository/club.repository";
+import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
+import ClubTRepository from "../repository-old/club.club-t.repository";
+import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
+import { ClubGetStudentClubBrief } from "../repository-old/club.get-student-club-brief";
+import { ClubPutStudentClubBrief } from "../repository-old/club.put-student-club-brief";
+import { ClubOldRepository } from "../repository-old/club-old.repository";
 import ClubPublicService from "./club.public.service";
 
 @Injectable()
 export class ClubService {
   constructor(
-    private clubRepository: ClubRepository,
+    private clubOldRepository: ClubOldRepository,
     private clubDelegateDRepository: ClubDelegateDRepository,
     private clubRoomTRepository: ClubRoomTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
@@ -71,7 +71,7 @@ export class ClubService {
     env.NODE_ENV === "local" ? [] : [112, 113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getAllClubsGroupedByDivision();
+    const result = await this.clubOldRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
@@ -102,7 +102,7 @@ export class ClubService {
       roomDetails,
       isPermanent,
     ] = await Promise.all([
-      this.clubRepository.findClubDetail(clubId),
+      this.clubOldRepository.findClubDetail(clubId),
       this.clubStudentTRepository.findTotalMemberCnt(clubId, targetSemesterId),
       this.clubDelegateDRepository.findRepresentativeName(clubId),
       this.clubRoomTRepository.findClubLocationById(clubId),
@@ -110,7 +110,7 @@ export class ClubService {
     ]);
 
     if (!clubDetails) {
-      throw new NotFoundException(`Club with ID ${clubId} not found.`);
+      throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
     }
     if (!totalMemberCnt || !representative) {
       throw new NotFoundException(
@@ -145,7 +145,7 @@ export class ClubService {
       studentSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,
@@ -210,7 +210,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(
@@ -237,7 +237,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(
@@ -308,7 +308,7 @@ export class ClubService {
       professorSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,
@@ -376,6 +376,7 @@ export class ClubService {
     const semesters = await this.clubPublicService.getClubsExistedSemesters({
       clubId: query.clubId,
     });
+
     const activityTerms: ApiAct009ResponseOk["terms"] = [];
     await Promise.all(
       semesters.map(async semester => {
