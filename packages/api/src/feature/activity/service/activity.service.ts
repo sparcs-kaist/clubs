@@ -1241,7 +1241,9 @@ export default class ActivityService {
     const activities = await this.getActivities({ clubId: param.query.clubId });
     const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
       .selectActivityClubChargedExecutiveByClubId({
-        activityDId: await this.activityDurationPublicService.loadId(),
+        activityDId:
+          param.query.activityDurationId ??
+          (await this.activityDurationPublicService.loadId()),
         clubId: param.query.clubId,
       })
       .then(arr => {

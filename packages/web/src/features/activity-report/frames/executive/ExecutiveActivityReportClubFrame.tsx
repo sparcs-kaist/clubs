@@ -17,31 +17,33 @@ import { ActivityTerm } from "@sparcs-clubs/web/features/activity-report/types/a
 
 const ExecutiveActivityReportClubFrame: React.FC<{
   clubId: string;
-  semesters: ActivityTerm[];
-}> = ({ clubId, semesters }) => {
+  activityTerms: ActivityTerm[];
+}> = ({ clubId, activityTerms }) => {
   const [searchText, setSearchText] = useState<string>("");
-  const semesterDataQueries = semesters.map(s =>
+  const activityDurationDataQueries = activityTerms.map(s =>
     useGetExecutiveClubActivities({
       clubId: Number(clubId),
-      semesterId: s.id,
+      activityDurationId: s.id,
     }),
   );
 
-  const isLoading = semesterDataQueries.some(q => q.isLoading);
-  const isError = semesterDataQueries.some(q => q.isError);
-  const dataList = semesterDataQueries.map(q => q.data ?? { items: [] });
+  const isLoading = activityDurationDataQueries.some(q => q.isLoading);
+  const isError = activityDurationDataQueries.some(q => q.isError);
+  const dataList = activityDurationDataQueries.map(
+    q => q.data ?? { items: [] },
+  );
 
   const [selectedActivityIdsBySemester, setSelectedActivityIdsBySemester] =
     useState<Record<number, number[]>>({});
   const [selectedActivityInfosBySemester, setSelectedActivityInfosBySemester] =
     useState<Record<number, ChargedChangeActivityProps[]>>({});
   useEffect(() => {
-    semesters.forEach((sem, idx) => {
+    activityTerms.forEach((term, idx) => {
       const { items } = dataList[idx];
-      const sel = selectedActivityIdsBySemester[sem.id] ?? [];
+      const sel = selectedActivityIdsBySemester[term.id] ?? [];
       setSelectedActivityInfosBySemester(prev => ({
         ...prev,
-        [sem.id]: items
+        [term.id]: items
           .filter(i => sel.includes(i.activityId))
           .map(i => ({
             activityId: i.activityId,
@@ -50,16 +52,16 @@ const ExecutiveActivityReportClubFrame: React.FC<{
           })),
       }));
     });
-  }, [dataList, selectedActivityIdsBySemester, semesters]);
+  }, [dataList, selectedActivityIdsBySemester, activityTerms]);
 
   const allData = useMemo(() => dataList.flatMap(d => d.items), [dataList]);
 
   const chargedExecutiveName = useMemo(() => {
-    const first = semesterDataQueries.find(
+    const first = activityDurationDataQueries.find(
       q => q.data && q.data.chargedExecutive,
     );
     return first?.data?.chargedExecutive?.name;
-  }, [semesterDataQueries]);
+  }, [activityDurationDataQueries]);
 
   const globalSelectedIds = useMemo(
     () => Object.values(selectedActivityIdsBySemester).flat(),
@@ -116,20 +118,20 @@ const ExecutiveActivityReportClubFrame: React.FC<{
           담당자 변경
         </Button>
       </FlexWrapper>
-      {semesters.map((sem, idx) => (
-        <section key={sem.id} style={{ marginTop: 32 }}>
+      {activityTerms.map((term, idx) => (
+        <section key={term.id} style={{ marginTop: 32 }}>
           <FoldableSection
-            key={sem.id}
-            title={`${sem.year}년 ${sem.name}학기 (총 ${dataList[idx].items.length}개)`}
+            key={term.id}
+            title={`${term.year}년 ${term.name}학기 (총 ${dataList[idx].items.length}개)`}
           >
             <ExecutiveClubActivitiesTable
               data={dataList[idx]}
               searchText={searchText}
-              selectedActivityIds={selectedActivityIdsBySemester[sem.id] ?? []}
+              selectedActivityIds={selectedActivityIdsBySemester[term.id] ?? []}
               setSelectedActivityIds={ids =>
                 setSelectedActivityIdsBySemester(prev => ({
                   ...prev,
-                  [sem.id]: ids,
+                  [term.id]: ids,
                 }))
               }
             />
