@@ -3,7 +3,7 @@ import { count, eq } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
-import { Club } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubOld } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   RentalEnum,
   RentalObject,
@@ -21,8 +21,8 @@ export class RentalOrderRepository {
       .select({
         id: RentalOrder.id,
         clubId: RentalOrder.clubId,
-        clubNameKr: Club.nameKr,
-        clubNameEn: Club.nameEn,
+        clubNameKr: ClubOld.nameKr,
+        clubNameEn: ClubOld.nameEn,
         studentName: Student.name,
         studentPhoneNumber: RentalOrder.studentPhoneNumber,
         purpose: RentalOrder.purpose,
@@ -33,7 +33,7 @@ export class RentalOrderRepository {
       })
       .from(RentalOrder)
       .leftJoin(Student, eq(RentalOrder.studentId, Student.id))
-      .leftJoin(Club, eq(RentalOrder.clubId, Club.id))
+      .leftJoin(ClubOld, eq(RentalOrder.clubId, ClubOld.id))
       .leftJoin(
         RentalOrderItemD,
         eq(RentalOrder.id, RentalOrderItemD.rentalOrderId),

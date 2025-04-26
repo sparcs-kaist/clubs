@@ -41,8 +41,8 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
-  Club,
-  ClubDelegateD,
+  ClubDelegate,
+  ClubOld,
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import { File } from "@sparcs-clubs/api/drizzle/schema/file.schema";
@@ -123,20 +123,17 @@ export class ClubRegistrationRepository {
       if (body.registrationTypeEnumId !== RegistrationTypeEnum.NewProvisional) {
         const delegate = await tx
           .select({
-            clubId: ClubDelegateD.clubId,
-            studentId: ClubDelegateD.studentId,
+            clubId: ClubDelegate.clubId,
+            studentId: ClubDelegate.studentId,
           })
-          .from(ClubDelegateD)
+          .from(ClubDelegate)
           .where(
             and(
-              eq(ClubDelegateD.studentId, studentId),
-              eq(ClubDelegateD.clubId, body.clubId),
-              lte(ClubDelegateD.startTerm, cur),
-              or(
-                gte(ClubDelegateD.endTerm, cur),
-                isNull(ClubDelegateD.endTerm),
-              ),
-              isNull(ClubDelegateD.deletedAt),
+              eq(ClubDelegate.studentId, studentId),
+              eq(ClubDelegate.clubId, body.clubId),
+              lte(ClubDelegate.startTerm, cur),
+              or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
+              isNull(ClubDelegate.deletedAt),
             ),
           )
           .for("share")
@@ -154,16 +151,13 @@ export class ClubRegistrationRepository {
         // TODO: Service layer로 이동 필요
         const delegate = await tx
           .select()
-          .from(ClubDelegateD)
+          .from(ClubDelegate)
           .where(
             and(
-              eq(ClubDelegateD.studentId, studentId),
-              lte(ClubDelegateD.startTerm, cur),
-              or(
-                gte(ClubDelegateD.endTerm, cur),
-                isNull(ClubDelegateD.endTerm),
-              ),
-              isNull(ClubDelegateD.deletedAt),
+              eq(ClubDelegate.studentId, studentId),
+              lte(ClubDelegate.startTerm, cur),
+              or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
+              isNull(ClubDelegate.deletedAt),
             ),
           );
         if (delegate.length > 0) {
@@ -175,7 +169,7 @@ export class ClubRegistrationRepository {
 
         // 동아리 및 대표자를 생성합니다.
         // TODO: Service layer로 이동 및 club & delegate public service 로 이동 필요
-        const result = await tx.insert(Club).values({
+        const result = await tx.insert(ClubOld).values({
           nameKr: body.clubNameKr,
           nameEn: body.clubNameEn,
           divisionId: body.divisionId,
@@ -185,16 +179,16 @@ export class ClubRegistrationRepository {
         clubId = result[0].insertId;
         if (!clubId) {
           throw new HttpException(
-            "Club creation failed",
+            "ClubOld creation failed",
             HttpStatus.BAD_REQUEST,
           );
         }
 
-        const delegateResult = await tx.insert(ClubDelegateD).values({
+        const delegateResult = await tx.insert(ClubDelegate).values({
           studentId,
           startTerm: cur,
           clubId,
-          ClubDelegateEnumId: ClubDelegateEnum.Representative,
+          clubDelegateEnum: ClubDelegateEnum.Representative,
         });
         if (!delegateResult[0].insertId) {
           throw new HttpException(
@@ -428,19 +422,19 @@ export class ClubRegistrationRepository {
       ) {
         const [clubResult, delegateResult] = await Promise.all([
           tx
-            .update(Club)
+            .update(ClubOld)
             .set({ deletedAt: cur })
-            .where(eq(Club.id, registration.clubId)),
+            .where(eq(ClubOld.id, registration.clubId)),
           tx
-            .update(ClubDelegateD)
+            .update(ClubDelegate)
             .set({ deletedAt: cur })
-            .where(eq(ClubDelegateD.clubId, registration.clubId)),
+            .where(eq(ClubDelegate.clubId, registration.clubId)),
         ]);
         if (
           clubResult[0].affectedRows === 0 ||
           delegateResult[0].affectedRows === 0
         ) {
-          throw new HttpException("Club or delegate delete failed", 500);
+          throw new HttpException("ClubOld or delegate delete failed", 500);
         }
       }
       if (result.affectedRows > 1) {
@@ -508,8 +502,8 @@ export class ClubRegistrationRepository {
           registrationStatusEnumId:
             Registration.registrationApplicationStatusEnumId,
           clubId: Registration.clubId,
-          clubNameKr: Club.nameKr,
-          clubNameEn: Club.nameEn,
+          clubNameKr: ClubOld.nameKr,
+          clubNameEn: ClubOld.nameEn,
           newClubNameKr: Registration.clubNameKr,
           newClubNameEn: Registration.clubNameEn,
           representative: {
@@ -545,8 +539,8 @@ export class ClubRegistrationRepository {
           eq(Registration.studentId, representative.id),
         ) // 대표자가 없는 학생이라면 잘못된 신청이라는 의미인것 같아서 innerjoin으로 연결시킴.
         .leftJoin(
-          Club,
-          and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+          ClubOld,
+          and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
         )
         .leftJoin(professor, eq(Registration.professorId, professor.id))
         .leftJoin(
@@ -639,8 +633,8 @@ export class ClubRegistrationRepository {
         id: Registration.id,
         registrationTypeEnum: Registration.registrationApplicationTypeEnumId,
         divisionName: Division.name,
-        clubNameKr: Club.nameKr,
-        clubNameEn: Club.nameEn,
+        clubNameKr: ClubOld.nameKr,
+        clubNameEn: ClubOld.nameEn,
         newClubNameKr: Registration.clubNameKr,
         newClubNameEn: Registration.clubNameEn,
         clubId: Registration.clubId,
@@ -653,8 +647,8 @@ export class ClubRegistrationRepository {
       })
       .from(Registration)
       .leftJoin(
-        Club,
-        and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+        ClubOld,
+        and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
       )
       .leftJoin(
         Division,
@@ -700,8 +694,8 @@ export class ClubRegistrationRepository {
         registrationStatusEnumId:
           Registration.registrationApplicationStatusEnumId,
         divisionId: Registration.divisionId,
-        clubNameKr: Club.nameKr,
-        clubNameEn: Club.nameEn,
+        clubNameKr: ClubOld.nameKr,
+        clubNameEn: ClubOld.nameEn,
         newClubNameKr: Registration.clubNameKr,
         newClubNameEn: Registration.clubNameEn,
         representativeName: Student.name,
@@ -711,8 +705,8 @@ export class ClubRegistrationRepository {
       })
       .from(Registration)
       .leftJoin(
-        Club,
-        and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+        ClubOld,
+        and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
       )
       .innerJoin(
         Student,
@@ -792,8 +786,8 @@ export class ClubRegistrationRepository {
           registrationStatusEnumId:
             Registration.registrationApplicationStatusEnumId,
           clubId: Registration.clubId,
-          clubNameKr: Club.nameKr,
-          clubNameEn: Club.nameEn,
+          clubNameKr: ClubOld.nameKr,
+          clubNameEn: ClubOld.nameEn,
           newClubNameKr: Registration.clubNameKr,
           newClubNameEn: Registration.clubNameEn,
           representative: {
@@ -829,8 +823,8 @@ export class ClubRegistrationRepository {
           eq(Registration.studentId, representative.id),
         ) // 대표자가 없는 학생이라면 잘못된 신청이라는 의미인것 같아서 innerjoin으로 연결시킴.
         .leftJoin(
-          Club,
-          and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+          ClubOld,
+          and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
         )
         .leftJoin(professor, eq(Registration.professorId, professor.id))
         .leftJoin(
@@ -1003,8 +997,8 @@ export class ClubRegistrationRepository {
         ),
       )
       .leftJoin(
-        Club,
-        and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+        ClubOld,
+        and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
       )
       .innerJoin(Student, eq(Registration.studentId, Student.id))
       .innerJoin(
@@ -1079,8 +1073,8 @@ export class ClubRegistrationRepository {
         and(eq(Registration.studentId, Student.id), isNull(Student.deletedAt)),
       )
       .innerJoin(
-        Club,
-        and(eq(Registration.clubId, Club.id), isNull(Club.deletedAt)),
+        ClubOld,
+        and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
       )
       .innerJoin(
         Professor,
