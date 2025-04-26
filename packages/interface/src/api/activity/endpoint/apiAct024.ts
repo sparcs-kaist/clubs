@@ -1,9 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import { zSemester } from "@clubs/domain/semester/semester";
 
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
