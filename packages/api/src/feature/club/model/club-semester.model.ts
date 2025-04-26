@@ -7,11 +7,14 @@ import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
  */
 
 export interface IClubSemesterCreate {
-  typeEnum: IClubSemester["typeEnum"];
+  club: IClubSemester["club"];
+  semester: IClubSemester["semester"];
+  clubTypeEnum: IClubSemester["clubTypeEnum"];
   characteristicKr: IClubSemester["characteristicKr"];
   characteristicEn: IClubSemester["characteristicEn"];
   professor: IClubSemester["professor"];
-  semester: IClubSemester["semester"];
+  startTerm: IClubSemester["startTerm"];
+  endTerm: IClubSemester["endTerm"];
 }
 
 export class MClubSemester
@@ -21,11 +24,15 @@ export class MClubSemester
   club: IClubSemester["club"];
   semester: IClubSemester["semester"];
 
-  typeEnum: IClubSemester["typeEnum"];
+  clubTypeEnum: IClubSemester["clubTypeEnum"];
   characteristicKr: IClubSemester["characteristicKr"];
   characteristicEn: IClubSemester["characteristicEn"];
 
   professor: IClubSemester["professor"];
+
+  // TODO: 나중에 정규화 시에 떼야 함
+  startTerm: IClubSemester["startTerm"];
+  endTerm: IClubSemester["endTerm"];
 
   constructor(data: IClubSemester) {
     super();

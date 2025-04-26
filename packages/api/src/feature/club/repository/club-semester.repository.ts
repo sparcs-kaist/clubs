@@ -1,85 +1,108 @@
 import { Injectable } from "@nestjs/common";
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
+import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
+
 import {
   BaseTableFieldMapKeys,
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Club } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubT as ClubSemester } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
-  IClubCreate,
-  MClub,
-} from "@sparcs-clubs/api/feature/club/model/club.model";
+  IClubSemesterCreate,
+  MClubSemester,
+} from "@sparcs-clubs/api/feature/club/model/club-semester.model";
 
-export type ClubQuery = {
+export type ClubSemesterQuery = {
   // id: number; // id 는 기본 내장
-  nameKr: string;
-  nameEn: string;
+  clubId: number;
+  semesterId: number;
+  clubTypeEnum: ClubTypeEnum;
+  professorId: number;
 };
 
-type ClubOrderByKeys = "id";
-type ClubQuerySupport = {}; // Query Support 용
+type ClubSemesterOrderByKeys = "id";
+type ClubSemesterQuerySupport = {}; // Query Support 용
 
-type ClubTable = typeof Club;
-type ClubDbSelect = InferSelectModel<ClubTable>;
-type ClubDbUpdate = Partial<ClubDbSelect>;
-type ClubDbInsert = InferInsertModel<ClubTable>;
+type ClubSemesterTable = typeof ClubSemester;
+type ClubSemesterDbSelect = InferSelectModel<ClubSemesterTable>;
+type ClubSemesterDbUpdate = Partial<ClubSemesterDbSelect>;
+type ClubSemesterDbInsert = InferInsertModel<ClubSemesterTable>;
 
-type ClubFieldMapKeys = BaseTableFieldMapKeys<
-  ClubQuery,
-  ClubOrderByKeys,
-  ClubQuerySupport
+type ClubSemesterFieldMapKeys = BaseTableFieldMapKeys<
+  ClubSemesterQuery,
+  ClubSemesterOrderByKeys,
+  ClubSemesterQuerySupport
 >;
 
 @Injectable()
-export class ClubRepository extends BaseSingleTableRepository<
-  MClub,
-  IClubCreate,
-  ClubTable,
-  ClubQuery,
-  ClubOrderByKeys,
-  ClubQuerySupport
+export class ClubSemesterRepository extends BaseSingleTableRepository<
+  MClubSemester,
+  IClubSemesterCreate,
+  ClubSemesterTable,
+  ClubSemesterQuery,
+  ClubSemesterOrderByKeys,
+  ClubSemesterQuerySupport
 > {
   constructor() {
-    super(Club, MClub);
+    super(ClubSemester, MClubSemester);
   }
 
-  protected dbToModelMapping(result: ClubDbSelect): MClub {
-    return new MClub({
+  protected dbToModelMapping(result: ClubSemesterDbSelect): MClubSemester {
+    return new MClubSemester({
       id: result.id,
-      nameKr: result.nameKr,
-      nameEn: result.nameEn,
-      description: result.description,
-      foundingYear: result.foundingYear,
+      club: { id: result.clubId },
+      semester: { id: result.semesterId },
+      clubTypeEnum: result.clubStatusEnumId,
+      characteristicKr: result.characteristicKr,
+      characteristicEn: result.characteristicEn,
+      professor: { id: result.professorId },
+      startTerm: result.startTerm,
+      endTerm: result.endTerm,
     });
   }
 
-  protected modelToDBMapping(model: MClub): ClubDbUpdate {
+  protected modelToDBMapping(model: MClubSemester): ClubSemesterDbUpdate {
     return {
       id: model.id,
-      nameKr: model.nameKr,
-      nameEn: model.nameEn,
-      description: model.description,
-      foundingYear: model.foundingYear,
+      clubId: model.club.id,
+      semesterId: model.semester.id,
+      clubStatusEnumId: model.clubTypeEnum,
+      characteristicKr: model.characteristicKr,
+      characteristicEn: model.characteristicEn,
+      professorId: model.professor.id,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
     };
   }
 
-  protected createToDBMapping(model: IClubCreate): ClubDbInsert {
+  protected createToDBMapping(
+    model: IClubSemesterCreate,
+  ): ClubSemesterDbInsert {
     return {
-      nameKr: model.nameKr,
-      nameEn: model.nameEn,
-      description: model.description,
-      foundingYear: model.foundingYear,
+      clubId: model.club.id,
+      semesterId: model.semester.id,
+      clubStatusEnumId: model.clubTypeEnum,
+      characteristicKr: model.characteristicKr,
+      characteristicEn: model.characteristicEn,
+      professorId: model.professor.id,
+      startTerm: model.startTerm,
+      endTerm: model.endTerm,
     };
   }
 
-  protected fieldMap(field: ClubFieldMapKeys): TableWithID | null | undefined {
-    const fieldMappings: Record<ClubFieldMapKeys, TableWithID | null> = {
-      id: Club,
-      nameKr: Club,
-      nameEn: Club,
-    };
+  protected fieldMap(
+    field: ClubSemesterFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<ClubSemesterFieldMapKeys, TableWithID | null> =
+      {
+        id: ClubSemester,
+        clubId: ClubSemester,
+        semesterId: ClubSemester,
+        clubTypeEnum: ClubSemester,
+        professorId: ClubSemester,
+      };
 
     if (!(field in fieldMappings)) {
       return undefined;

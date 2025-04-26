@@ -67,7 +67,7 @@ export const zClubSemester = z.object({
   }),
   club: zExtractId(zClub),
   semester: zExtractId(zSemester),
-  typeEnum: z.nativeEnum(ClubTypeEnum).openapi({
+  clubTypeEnum: z.nativeEnum(ClubTypeEnum).openapi({
     description: "동아리 지위 1: 정동아리 2: 가동아리",
     examples: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
   }),
@@ -90,6 +90,11 @@ export const zClubSemester = z.object({
 
   // division schema
   professor: zExtractId(zProfessor).nullable(),
+
+  // ClubSemester schema
+  // TODO: 나중에 정규화 시에 떼야 함
+  startTerm: z.date(),
+  endTerm: z.date(),
 });
 
 export type IClubSemester = z.infer<typeof zClubSemester>;
