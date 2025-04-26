@@ -1392,7 +1392,7 @@ export default class ActivityService {
     ]);
     if (!isStudentDelegate) {
       throw new HttpException(
-        `Student ${studentId} is not the delegate of Club ${clubId}`,
+        `Student ${studentId} is not the delegate of ClubOld ${clubId}`,
         HttpStatus.FORBIDDEN,
       );
     }

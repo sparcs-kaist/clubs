@@ -4,17 +4,17 @@ import { IClub } from "@clubs/interface/api/club/type/club.type";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 import {
-  Club,
-  ClubDelegateD,
+  ClubDelegate,
+  ClubOld,
   ClubRoomT,
   ClubT,
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 
 type ClubDBResult = {
-  club: InferSelectModel<typeof Club>;
+  club: InferSelectModel<typeof ClubOld>;
   club_t: InferSelectModel<typeof ClubT>;
   club_room_t: InferSelectModel<typeof ClubRoomT>;
-  club_delegate_d: InferSelectModel<typeof ClubDelegateD>[];
+  club_delegate_d: InferSelectModel<typeof ClubDelegate>[];
 };
 
 export class MClubOld implements IClub {
@@ -54,13 +54,13 @@ export class MClubOld implements IClub {
 
   static fromDBResult(result: ClubDBResult): MClubOld {
     const president = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Representative,
+      e => e.clubDelegateEnum === ClubDelegateEnum.Representative,
     );
     const delegate1 = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Delegate1,
+      e => e.clubDelegateEnum === ClubDelegateEnum.Delegate1,
     );
     const delegate2 = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Delegate2,
+      e => e.clubDelegateEnum === ClubDelegateEnum.Delegate2,
     );
 
     return new MClubOld({
@@ -85,7 +85,7 @@ export class MClubOld implements IClub {
         student: {
           id: president.studentId,
         },
-        clubDelegateEnum: president.ClubDelegateEnumId,
+        clubDelegateEnum: president.clubDelegateEnum,
       },
       clubDelegate1: delegate1
         ? {
@@ -93,7 +93,7 @@ export class MClubOld implements IClub {
             student: {
               id: delegate1.studentId,
             },
-            clubDelegateEnum: delegate1.ClubDelegateEnumId,
+            clubDelegateEnum: delegate1.clubDelegateEnum,
           }
         : null,
       clubDelegate2: delegate2
@@ -102,7 +102,7 @@ export class MClubOld implements IClub {
             student: {
               id: delegate2.studentId,
             },
-            clubDelegateEnum: delegate2.ClubDelegateEnumId,
+            clubDelegateEnum: delegate2.clubDelegateEnum,
           }
         : null,
       division: {

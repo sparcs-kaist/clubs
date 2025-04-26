@@ -110,7 +110,7 @@ export class ClubService {
     ]);
 
     if (!clubDetails) {
-      throw new NotFoundException(`Club with ID ${clubId} not found.`);
+      throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
     }
     if (!totalMemberCnt || !representative) {
       throw new NotFoundException(
@@ -210,7 +210,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(
@@ -237,7 +237,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(

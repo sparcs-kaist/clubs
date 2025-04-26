@@ -3,7 +3,7 @@ import { IClub } from "@clubs/domain/club/club";
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
 /**
- * @description Club 중 학기에 따라 불변하는 값을 모은 부분 입니다.
+ * @description ClubOld 중 학기에 따라 불변하는 값을 모은 부분 입니다.
  */
 
 export interface IClubCreate {

@@ -9,7 +9,7 @@ export class ClubException extends HttpException {
   statusCode: number;
 
   constructor(errorString: string, statusCode: number) {
-    super(`[Club]${errorString}`, statusCode);
+    super(`[ClubOld]${errorString}`, statusCode);
     this.errorString = errorString;
     this.statusCode = statusCode;
   }
@@ -18,6 +18,6 @@ export class ClubException extends HttpException {
 // example. 실제로는 club에 specific한 exception만 구현해야함.
 export class ClubNotFoundException extends ClubException {
   constructor() {
-    super("Club not found", 403);
+    super("ClubOld not found", 403);
   }
 }

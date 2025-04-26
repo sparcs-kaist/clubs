@@ -15,7 +15,7 @@ const mockupNoticeList: ApiNtc001ResponseOK = {
     {
       id: 313,
       title:
-        "[사무국] [For everyone / Translated] 2024년 봄학기 등록 절차 / 2024 Spring Club Registration Process",
+        "[사무국] [For everyone / Translated] 2024년 봄학기 등록 절차 / 2024 Spring ClubOld Registration Process",
       author: "황윤호",
       date: z.coerce.date().parse("2024-03-02"),
       link: "https://cafe.naver.com/kaistclubs/ArticleRead.nhn?clubid=26985838&page=1&menuid=1&boardtype=L&articleid=33590&referrerAllArticles=false",
@@ -38,7 +38,7 @@ const mockupNoticeList: ApiNtc001ResponseOK = {
     {
       id: 310,
       title:
-        "[사무국] [For everyone / Translated] 2023가을 동아리 지원금 지급액 확정 안내 / Announcement of the Actual Amount of 2023Fall Club Support Fund Payment",
+        "[사무국] [For everyone / Translated] 2023가을 동아리 지원금 지급액 확정 안내 / Announcement of the Actual Amount of 2023Fall ClubOld Support Fund Payment",
       author: "안희진",
       date: z.coerce.date().parse("2024-02-19"),
       link: "https://cafe.naver.com/kaistclubs/ArticleRead.nhn?clubid=26985838&page=1&menuid=1&boardtype=L&articleid=33566&referrerAllArticles=false",
@@ -67,7 +67,7 @@ const mockupNoticeList: ApiNtc001ResponseOK = {
     {
       id: 309,
       title:
-        "[For everyone / Translated] 전체동아리대표자톡 갱신 / Replacement of the Chatroom of Club Representatives",
+        "[For everyone / Translated] 전체동아리대표자톡 갱신 / Replacement of the Chatroom of ClubOld Representatives",
       author: "황윤호",
       date: z.coerce.date().parse("2024-02-06"),
       link: "https://cafe.naver.com/kaistclubs/ArticleRead.nhn?clubid=26985838&menuid=1&boardtype=L&page=1&specialmenutype=&userDisplay=15&articleid=33559",
@@ -83,7 +83,7 @@ const mockupNoticeList: ApiNtc001ResponseOK = {
     {
       id: 304,
       title:
-        "[For everyone / Translated] 전체동아리대표자톡 갱신 / Replacement of the Chatroom of Club Representatives",
+        "[For everyone / Translated] 전체동아리대표자톡 갱신 / Replacement of the Chatroom of ClubOld Representatives",
       author: "황윤호",
       date: z.coerce.date().parse("2024-02-06"),
       link: "https://cafe.naver.com/kaistclubs/ArticleRead.nhn?clubid=26985838&menuid=1&boardtype=L&page=1&specialmenutype=&userDisplay=15&articleid=33559",

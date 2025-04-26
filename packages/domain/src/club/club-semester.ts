@@ -22,7 +22,7 @@ export enum ClubBuildingEnum {
   Sports, // 스포츠컴플렉스(N10)
 }
 
-// TODO: Club Room 관련 Feature 추가 후 별도 모델 파일로 분리
+// TODO: ClubOld Room 관련 Feature 추가 후 별도 모델 파일로 분리
 // 영준이 화이팅~
 export const zClubRoom = z.object({
   id: zId.openapi({

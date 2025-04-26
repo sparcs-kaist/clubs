@@ -31,8 +31,8 @@ import {
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import {
-  Club,
-  ClubDelegateD,
+  ClubDelegate,
+  ClubOld,
   ClubRoomT,
   ClubStudentT,
   ClubT,
@@ -76,8 +76,8 @@ export class ClubOldRepository {
   async findByClubId(clubId: number) {
     const clubList = await this.db
       .select()
-      .from(Club)
-      .where(eq(Club.id, clubId))
+      .from(ClubOld)
+      .where(eq(ClubOld.id, clubId))
       .limit(1);
 
     return clubList;
@@ -87,21 +87,21 @@ export class ClubOldRepository {
     const crt = getKSTDate();
     const clubInfo = await this.db
       .select({
-        id: Club.id,
-        nameKr: Club.nameKr,
-        nameEn: Club.nameEn,
+        id: ClubOld.id,
+        nameKr: ClubOld.nameKr,
+        nameEn: ClubOld.nameEn,
         type: ClubT.clubStatusEnumId,
         characteristic: ClubT.characteristicKr,
         advisor: Professor.name,
-        description: Club.description,
-        foundingYear: Club.foundingYear,
+        description: ClubOld.description,
+        foundingYear: ClubOld.foundingYear,
       })
-      .from(Club)
-      .leftJoin(ClubT, eq(ClubT.clubId, Club.id))
+      .from(ClubOld)
+      .leftJoin(ClubT, eq(ClubT.clubId, ClubOld.id))
       .leftJoin(Professor, eq(Professor.id, ClubT.professorId))
       .where(
         and(
-          eq(Club.id, clubId),
+          eq(ClubOld.id, clubId),
           or(
             and(isNull(ClubT.endTerm), gte(ClubT.startTerm, crt)),
             gte(ClubT.endTerm, crt),
@@ -114,9 +114,9 @@ export class ClubOldRepository {
 
     const division = await this.db
       .select({ id: Division.id, name: Division.name })
-      .from(Club)
-      .leftJoin(Division, eq(Division.id, Club.divisionId))
-      .where(eq(Club.id, clubId))
+      .from(ClubOld)
+      .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
+      .where(eq(ClubOld.id, clubId))
       .then(takeOne);
     return { ...clubInfo, division };
   }
@@ -130,9 +130,9 @@ export class ClubOldRepository {
         name: Division.name,
         club: {
           type: ClubT.clubStatusEnumId,
-          id: Club.id,
-          nameKr: Club.nameKr,
-          nameEn: Club.nameEn,
+          id: ClubOld.id,
+          nameKr: ClubOld.nameKr,
+          nameEn: ClubOld.nameEn,
           isPermanent: DivisionPermanentClubD.id,
           characteristic: ClubT.characteristicKr,
           representative: Student.name,
@@ -141,11 +141,11 @@ export class ClubOldRepository {
         },
       })
       .from(Division)
-      .leftJoin(Club, eq(Club.divisionId, Division.id))
+      .leftJoin(ClubOld, eq(ClubOld.divisionId, Division.id))
       .innerJoin(
         ClubT,
         and(
-          eq(Club.id, ClubT.clubId),
+          eq(ClubOld.id, ClubT.clubId),
           or(
             and(isNull(ClubT.endTerm), lte(ClubT.startTerm, crt)),
             gte(ClubT.endTerm, crt),
@@ -158,25 +158,25 @@ export class ClubOldRepository {
       .leftJoin(
         ClubStudentT,
         and(
-          eq(Club.id, ClubStudentT.clubId),
+          eq(ClubOld.id, ClubStudentT.clubId),
           lte(ClubStudentT.startTerm, crt),
           or(isNull(ClubStudentT.endTerm), gte(ClubStudentT.endTerm, crt)),
           isNull(ClubStudentT.deletedAt),
         ),
       )
       .leftJoin(
-        ClubDelegateD,
+        ClubDelegate,
         and(
-          eq(Club.id, ClubDelegateD.clubId),
-          eq(ClubDelegateD.ClubDelegateEnumId, 1),
-          or(isNull(ClubDelegateD.endTerm), gte(ClubDelegateD.endTerm, crt)),
+          eq(ClubOld.id, ClubDelegate.clubId),
+          eq(ClubDelegate.clubDelegateEnum, 1),
+          or(isNull(ClubDelegate.endTerm), gte(ClubDelegate.endTerm, crt)),
         ),
       )
-      .leftJoin(Student, eq(ClubDelegateD.studentId, Student.id))
+      .leftJoin(Student, eq(ClubDelegate.studentId, Student.id))
       .leftJoin(
         DivisionPermanentClubD,
         and(
-          eq(DivisionPermanentClubD.clubId, Club.id),
+          eq(DivisionPermanentClubD.clubId, ClubOld.id),
           lte(DivisionPermanentClubD.startTerm, crt),
           or(
             gte(DivisionPermanentClubD.endTerm, crt),
@@ -187,9 +187,9 @@ export class ClubOldRepository {
       .groupBy(
         Division.id,
         Division.name,
-        Club.id,
-        Club.nameKr,
-        Club.nameEn,
+        ClubOld.id,
+        ClubOld.nameKr,
+        ClubOld.nameEn,
         ClubT.clubStatusEnumId,
         ClubT.characteristicKr,
         Student.name,
@@ -247,7 +247,7 @@ export class ClubOldRepository {
     const clubActivities = await this.db
       .select()
       .from(ClubStudentT)
-      .leftJoin(Club, eq(Club.id, ClubStudentT.clubId))
+      .leftJoin(ClubOld, eq(ClubOld.id, ClubStudentT.clubId))
       .where(eq(ClubStudentT.studentId, studentId))
       .then(rows =>
         rows.map(row => ({
@@ -312,9 +312,9 @@ export class ClubOldRepository {
     clubId: number,
   ): Promise<{ nameKr: string; nameEn: string }> {
     return this.db
-      .select({ nameKr: Club.nameKr, nameEn: Club.nameEn })
-      .from(Club)
-      .where(eq(Club.id, clubId))
+      .select({ nameKr: ClubOld.nameKr, nameEn: ClubOld.nameEn })
+      .from(ClubOld)
+      .where(eq(ClubOld.id, clubId))
       .then(result =>
         result[0]
           ? { nameKr: result[0].nameKr, nameEn: result[0].nameEn }
@@ -331,15 +331,15 @@ export class ClubOldRepository {
       const cur = getKSTDate();
       const delegate = tx
         .select({
-          clubId: ClubDelegateD.clubId,
+          clubId: ClubDelegate.clubId,
         })
-        .from(ClubDelegateD)
+        .from(ClubDelegate)
         .where(
           and(
-            eq(ClubDelegateD.studentId, studentId),
-            lte(ClubDelegateD.startTerm, cur),
-            or(gte(ClubDelegateD.endTerm, cur), isNull(ClubDelegateD.endTerm)),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.studentId, studentId),
+            lte(ClubDelegate.startTerm, cur),
+            or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
+            isNull(ClubDelegate.deletedAt),
           ),
         );
       const professor = tx
@@ -363,27 +363,27 @@ export class ClubOldRepository {
         .as("professor");
       const club = await tx
         .selectDistinct({
-          id: Club.id,
-          clubNameKr: Club.nameKr,
-          clubNameEn: Club.nameEn,
+          id: ClubOld.id,
+          clubNameKr: ClubOld.nameKr,
+          clubNameEn: ClubOld.nameEn,
           professor: {
             name: professor.name,
             email: professor.email,
             professorEnumId: professor.professorEnumId,
           },
         })
-        .from(Club)
+        .from(ClubOld)
         .innerJoin(
           ClubT,
           and(
-            eq(Club.id, ClubT.clubId),
+            eq(ClubOld.id, ClubT.clubId),
             eq(ClubT.semesterId, semesterId),
             isNull(ClubT.deletedAt),
             inArray(ClubT.clubStatusEnumId, clubStatusEnumIds),
           ),
         )
         .leftJoin(professor, eq(professor.id, ClubT.professorId))
-        .where(and(inArray(Club.id, delegate), isNull(Club.deletedAt)));
+        .where(and(inArray(ClubOld.id, delegate), isNull(ClubOld.deletedAt)));
       return club;
     });
     return result;
@@ -402,50 +402,50 @@ export class ClubOldRepository {
       const cur = getKSTDate();
       const delegate = tx
         .select({
-          clubId: ClubDelegateD.clubId,
+          clubId: ClubDelegate.clubId,
         })
-        .from(ClubDelegateD)
+        .from(ClubDelegate)
         .where(
           and(
-            eq(ClubDelegateD.studentId, studentId),
-            lte(ClubDelegateD.startTerm, cur),
-            or(gte(ClubDelegateD.endTerm, cur), isNull(ClubDelegateD.endTerm)),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.studentId, studentId),
+            lte(ClubDelegate.startTerm, cur),
+            or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
+            isNull(ClubDelegate.deletedAt),
           ),
         );
       // 최근 2학기 동안 가동아리 상태를 유지한 클럽을 조회
       const provisionalClubs = tx
         .select({
-          id: Club.id,
+          id: ClubOld.id,
         })
-        .from(Club)
-        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .from(ClubOld)
+        .innerJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
         .where(
           and(
             eq(ClubT.clubStatusEnumId, ClubTypeEnum.Provisional), // 가동아리
             inArray(ClubT.semesterId, recentTwoSemesters), // recentTwoSemesters에 포함된 학기 동안
-            inArray(Club.id, delegate),
+            inArray(ClubOld.id, delegate),
             isNull(ClubT.deletedAt),
           ),
         )
-        .groupBy(Club.id)
+        .groupBy(ClubOld.id)
         .having(sql`COUNT(DISTINCT ${ClubT.semesterId}) = ${length}`);
       // 최근 3학기 중 하나라도 정동아리 상태인 클럽을 조회
       const regularClubs = tx
         .select({
-          id: Club.id,
+          id: ClubOld.id,
         })
-        .from(Club)
-        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .from(ClubOld)
+        .innerJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
         .where(
           and(
             eq(ClubT.clubStatusEnumId, ClubTypeEnum.Regular), // 정동아리
             inArray(ClubT.semesterId, recentThreeSemesters), // recentThreeSemesters에 포함된 학기 동안
-            inArray(Club.id, delegate),
+            inArray(ClubOld.id, delegate),
             isNull(ClubT.deletedAt),
           ),
         )
-        .groupBy(Club.id);
+        .groupBy(ClubOld.id);
 
       const professor = tx
         .select({
@@ -470,20 +470,20 @@ export class ClubOldRepository {
       const sq = union(provisionalClubs, regularClubs);
       const response = await tx
         .selectDistinct({
-          id: Club.id,
-          clubNameKr: Club.nameKr,
-          clubNameEn: Club.nameEn,
+          id: ClubOld.id,
+          clubNameKr: ClubOld.nameKr,
+          clubNameEn: ClubOld.nameEn,
           professor: {
             name: professor.name,
             email: professor.email,
             professorEnumId: professor.professorEnumId,
           },
         })
-        .from(Club)
+        .from(ClubOld)
         .innerJoin(
           ClubT,
           and(
-            eq(Club.id, ClubT.clubId),
+            eq(ClubOld.id, ClubT.clubId),
             inArray(ClubT.clubId, sq),
             lte(ClubT.startTerm, cur),
             isNull(ClubT.deletedAt),
@@ -491,7 +491,7 @@ export class ClubOldRepository {
           ),
         )
         .leftJoin(professor, eq(professor.id, ClubT.professorId))
-        .where(isNull(Club.deletedAt));
+        .where(isNull(ClubOld.deletedAt));
       return response;
     });
     return result;
@@ -500,12 +500,12 @@ export class ClubOldRepository {
   async fetchSummary(clubId: number): Promise<VClubSummary> {
     const result = await this.db
       .select()
-      .from(Club)
-      .leftJoin(ClubT, eq(Club.id, ClubT.clubId))
+      .from(ClubOld)
+      .leftJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
       .where(
         and(
-          eq(Club.id, clubId),
-          isNull(Club.deletedAt),
+          eq(ClubOld.id, clubId),
+          isNull(ClubOld.deletedAt),
           isNull(ClubT.deletedAt),
         ),
       )
@@ -513,7 +513,7 @@ export class ClubOldRepository {
       .limit(1);
 
     if (result.length !== 1) {
-      throw new NotFoundException("Club not found");
+      throw new NotFoundException("ClubOld not found");
     }
 
     return VClubSummary.fromDBResult(result[0]);
@@ -530,7 +530,7 @@ export class ClubOldRepository {
     const whereClause = [];
 
     if (clubIds.length > 0) {
-      whereClause.push(inArray(Club.id, clubIds));
+      whereClause.push(inArray(ClubOld.id, clubIds));
     }
 
     if (semesterIds && semesterIds.length > 0) {
@@ -544,13 +544,13 @@ export class ClubOldRepository {
         ),
       );
     }
-    whereClause.push(isNull(Club.deletedAt));
+    whereClause.push(isNull(ClubOld.deletedAt));
     whereClause.push(isNull(ClubT.deletedAt));
 
     const result = await this.db
       .select()
-      .from(Club)
-      .leftJoin(ClubT, eq(Club.id, ClubT.clubId))
+      .from(ClubOld)
+      .leftJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
       .where(and(...whereClause));
 
     return result.map(club => VClubSummary.fromDBResult(club));
@@ -566,7 +566,7 @@ export class ClubOldRepository {
     // club 조건
     const whereClause = [];
 
-    whereClause.push(eq(Club.id, clubId));
+    whereClause.push(eq(ClubOld.id, clubId));
 
     whereClause.push(eq(ClubT.semesterId, semester.id));
 
@@ -575,33 +575,33 @@ export class ClubOldRepository {
     // delegate 조건
     const delegateWhereClause = [];
 
-    delegateWhereClause.push(eq(ClubDelegateD.clubId, clubId));
+    delegateWhereClause.push(eq(ClubDelegate.clubId, clubId));
 
     delegateWhereClause.push(
       and(
-        lte(ClubDelegateD.startTerm, day),
-        or(gte(ClubDelegateD.endTerm, day), isNull(ClubDelegateD.endTerm)),
+        lte(ClubDelegate.startTerm, day),
+        or(gte(ClubDelegate.endTerm, day), isNull(ClubDelegate.endTerm)),
       ),
     );
 
-    delegateWhereClause.push(isNull(ClubDelegateD.deletedAt));
+    delegateWhereClause.push(isNull(ClubDelegate.deletedAt));
 
     const [clubResult, delegateResult] = await Promise.all([
       this.db
         .select()
-        .from(Club)
-        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .from(ClubOld)
+        .innerJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
         .leftJoin(
           ClubRoomT,
           and(
-            eq(Club.id, ClubRoomT.clubId),
+            eq(ClubOld.id, ClubRoomT.clubId),
             eq(ClubT.semesterId, ClubRoomT.semesterId),
           ),
         )
         .where(and(...whereClause)),
       this.db
         .select()
-        .from(ClubDelegateD)
+        .from(ClubDelegate)
         .where(and(...delegateWhereClause)),
     ]);
 
@@ -613,7 +613,7 @@ export class ClubOldRepository {
 
     if (
       !delegateResult.some(
-        e => e.ClubDelegateEnumId === ClubDelegateEnum.Representative,
+        e => e.clubDelegateEnum === ClubDelegateEnum.Representative,
       )
     ) {
       return null;
@@ -641,13 +641,13 @@ export class ClubOldRepository {
     const whereClause = [];
     const delegateWhereClause = [];
     if (param.id) {
-      whereClause.push(eq(Club.id, param.id));
-      delegateWhereClause.push(eq(ClubDelegateD.clubId, param.id));
+      whereClause.push(eq(ClubOld.id, param.id));
+      delegateWhereClause.push(eq(ClubDelegate.clubId, param.id));
     }
 
     if (param.ids) {
-      whereClause.push(inArray(Club.id, param.ids));
-      delegateWhereClause.push(inArray(ClubDelegateD.clubId, param.ids));
+      whereClause.push(inArray(ClubOld.id, param.ids));
+      delegateWhereClause.push(inArray(ClubDelegate.clubId, param.ids));
     }
 
     if (param.semester) {
@@ -664,35 +664,35 @@ export class ClubOldRepository {
       );
     }
     if (param.divisionId) {
-      whereClause.push(eq(Club.divisionId, param.divisionId));
+      whereClause.push(eq(ClubOld.divisionId, param.divisionId));
     }
 
-    whereClause.push(isNull(Club.deletedAt));
+    whereClause.push(isNull(ClubOld.deletedAt));
     whereClause.push(isNull(ClubT.deletedAt));
 
     delegateWhereClause.push(
       and(
-        lte(ClubDelegateD.startTerm, day),
-        or(gte(ClubDelegateD.endTerm, day), isNull(ClubDelegateD.endTerm)),
+        lte(ClubDelegate.startTerm, day),
+        or(gte(ClubDelegate.endTerm, day), isNull(ClubDelegate.endTerm)),
       ),
     );
 
     const [clubResult, delegateResult] = await Promise.all([
       this.db
         .select()
-        .from(Club)
-        .innerJoin(ClubT, eq(Club.id, ClubT.clubId))
+        .from(ClubOld)
+        .innerJoin(ClubT, eq(ClubOld.id, ClubT.clubId))
         .leftJoin(
           ClubRoomT,
           and(
-            eq(Club.id, ClubRoomT.clubId),
+            eq(ClubOld.id, ClubRoomT.clubId),
             eq(ClubT.semesterId, ClubRoomT.semesterId),
           ),
         )
         .where(and(...whereClause)),
       this.db
         .select()
-        .from(ClubDelegateD)
+        .from(ClubDelegate)
         .where(and(...delegateWhereClause)),
     ]);
 
@@ -711,7 +711,7 @@ export class ClubOldRepository {
   ): Promise<MClubOld> {
     const result = await this.findOne(clubId, semester, date);
     if (!result) {
-      throw new NotFoundException("Club not found");
+      throw new NotFoundException("ClubOld not found");
     }
     return result;
   }

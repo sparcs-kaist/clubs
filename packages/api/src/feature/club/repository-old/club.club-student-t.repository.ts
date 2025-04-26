@@ -16,8 +16,8 @@ import {
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 import {
-  Club,
-  ClubDelegateD,
+  ClubDelegate,
+  ClubOld,
   ClubStudentT,
 } from "src/drizzle/schema/club.schema";
 
@@ -139,11 +139,11 @@ export default class ClubStudentTRepository {
     const clubs = await this.db
       .select({
         id: ClubStudentT.clubId,
-        nameKr: Club.nameKr,
-        nameEn: Club.nameEn,
+        nameKr: ClubOld.nameKr,
+        nameEn: ClubOld.nameEn,
       })
       .from(ClubStudentT)
-      .leftJoin(Club, eq(Club.id, ClubStudentT.clubId))
+      .leftJoin(ClubOld, eq(ClubOld.id, ClubStudentT.clubId))
       .where(
         and(
           eq(ClubStudentT.studentId, studentId),
@@ -181,12 +181,12 @@ export default class ClubStudentTRepository {
   ): Promise<void> {
     if (isTargetStudentDelegate)
       await this.db
-        .delete(ClubDelegateD)
+        .delete(ClubDelegate)
         .where(
           and(
-            eq(ClubDelegateD.studentId, studentId),
-            eq(ClubDelegateD.clubId, clubId),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.studentId, studentId),
+            eq(ClubDelegate.clubId, clubId),
+            isNull(ClubDelegate.deletedAt),
           ),
         )
         .execute();
