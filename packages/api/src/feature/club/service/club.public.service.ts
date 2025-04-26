@@ -17,6 +17,7 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import { MClubOld } from "../model/club-old.model";
+import { ClubSemesterRepository } from "../repository/club-semester.repository";
 import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
 import ClubTRepository from "../repository-old/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
@@ -34,6 +35,7 @@ export default class ClubPublicService {
     private divisionPermanentClubDRepository: DivisionPermanentClubDRepository,
     private userPublicService: UserPublicService,
     private semesterPublicService: SemesterPublicService,
+    private clubSemesterRepository: ClubSemesterRepository,
   ) {}
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.
@@ -440,5 +442,16 @@ export default class ClubPublicService {
     const club =
       await this.divisionPermanentClubDRepository.findPermenantClub(clubId);
     return club;
+  }
+
+  /**
+   * @param clubId 동아리 id
+   * @returns 동아리의 등록된 SemesterId목록을 리턴합니다.
+   */
+  async searchSemesterIdsByClubId(clubId: number): Promise<number[]> {
+    const clubSemester = await this.clubSemesterRepository.find({
+      clubId,
+    });
+    return clubSemester.map(c => c.semester.id);
   }
 }
