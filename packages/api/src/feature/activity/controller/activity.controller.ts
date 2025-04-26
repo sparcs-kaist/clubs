@@ -450,6 +450,9 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Query() query: ApiAct024RequestQuery,
   ): Promise<ApiAct024ResponseOk> {
+    if (query.semesterId !== undefined) {
+      console.log("semesterId filter of ACT-024 is not yet implemented");
+    }
     const result = await this.activityService.getExecutiveActivitiesClubBrief({
       query,
     });

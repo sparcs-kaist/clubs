@@ -825,15 +825,15 @@ export abstract class BaseRepository<
 
   async fetch(id: Id, tx?: DrizzleTransaction): Promise<Model> {
     const resPromise = tx
-      ? this.findImplementation(
+      ? this.find(
           { id } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
           tx,
-        ).then(takeOnlyOne())
+        ).then(takeOnlyOne(this.mainModelConstructor.modelName))
       : this.txManager.runInTransaction(async tsx =>
-          this.findImplementation(
+          this.find(
             { id } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
             tsx,
-          ).then(takeOnlyOne()),
+          ).then(takeOnlyOne(this.mainModelConstructor.modelName)),
         );
     const res = await resPromise;
     return res;
@@ -841,15 +841,15 @@ export abstract class BaseRepository<
 
   async fetchAll(ids: Id[], tx?: DrizzleTransaction): Promise<Model[]> {
     const resPromise = tx
-      ? this.findImplementation(
+      ? this.find(
           { id: ids } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
           tx,
-        ).then(takeAll(ids))
+        ).then(takeAll(ids, this.mainModelConstructor.modelName))
       : this.txManager.runInTransaction(async tsx =>
-          this.findImplementation(
+          this.find(
             { id: ids } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
             tsx,
-          ).then(takeAll(ids)),
+          ).then(takeAll(ids, this.mainModelConstructor.modelName)),
         );
     const res = await resPromise;
     return res;

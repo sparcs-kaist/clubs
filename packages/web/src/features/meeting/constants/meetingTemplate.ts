@@ -53,7 +53,7 @@ export class MeetingTemplate {
 
 Hello, this is the vice-president of KAIST Undergraduate Students Clubs Union.
 
-The date and location of the 1st Council of the Club Representatives in 2024 is announced as follows:
+The date and location of the 1st Council of the ClubOld Representatives in 2024 is announced as follows:
 
 Date & Time : ${dateTime}
 Location : ${locationEn}

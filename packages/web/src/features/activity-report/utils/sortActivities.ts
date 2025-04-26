@@ -1,6 +1,7 @@
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
 import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
 import { ApiAct028ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct028";
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 const statusOrder = {
   [ActivityStatusEnum.Applied]: 0,

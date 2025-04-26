@@ -3,11 +3,8 @@ import { z } from "zod";
 
 /**
  * @version v0.1
- * @description 활동보고서의 활동을 추가합니다.
+ * @description 활동보고서의 활동을 삭제합니다.
  * 동아리 대표자로 로그인되어 있어야 합니다.
- * 활동 기간 사이의 중복을 검사하지 않습니다.
- * 파일 uid의 유효성을 검사하지 않습니다.
- * 참여 학생이 이번학기 동아리의 소속원이였는지 확인합니다.
  */
 
 const url = (activityId: number) =>

@@ -448,6 +448,8 @@ export abstract class BaseMultiTableRepository<
       );
     });
 
+    selectIdQuery = selectIdQuery.where(this.makeWhereClause(query));
+
     const distinctIdResult = await selectIdQuery.execute();
 
     const queryIds = distinctIdResult.map(r => r.id as Id);

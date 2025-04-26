@@ -40,7 +40,7 @@ export const zStudent = z.object({
   id: z.coerce
     .number()
     .openapi({ description: "학생 ID, 학번과는 무관합니다.", example: 1 }),
-  userId: z.number().optional().openapi({
+  userId: z.coerce.number().optional().openapi({
     description: "유저 id, User 객체의 ID입니다.",
     example: 2,
   }),
@@ -81,18 +81,18 @@ export const zStudentSummary = zStudent.pick({
 });
 
 export const zProfessor = z.object({
-  id: z.number(),
-  userId: z.number().nullable(),
+  id: z.coerce.number(),
+  userId: z.coerce.number().nullable(),
   name: z.string(),
   email: z.string(),
   phoneNumber: z.string().optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),
-  department: z.number(),
+  department: z.coerce.number(),
 });
 
 export const zExecutive = z.object({
-  id: z.number(),
-  userId: z.number().optional(),
+  id: z.coerce.number(),
+  userId: z.coerce.number().optional(),
   studentNumber: z.string(),
   name: z.string(),
   email: z.string().optional(),

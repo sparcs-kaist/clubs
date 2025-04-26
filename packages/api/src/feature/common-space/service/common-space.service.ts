@@ -9,7 +9,7 @@ import type { ApiCms006ResponseOk } from "@clubs/interface/api/common-space/endp
 import type { ApiCms007ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms007";
 
 import { getKSTDate, isEmptyObject } from "@sparcs-clubs/api/common/util/util";
-import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";
+import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-student-t.repository";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 

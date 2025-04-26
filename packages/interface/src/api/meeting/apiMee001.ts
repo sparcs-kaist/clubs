@@ -28,7 +28,7 @@ const requestBody = z.object({
 
 const responseBodyMap = {
   [HttpStatusCode.Created]: z.object({
-    id: z.number().int().min(1),
+    id: z.coerce.number().int().min(1),
   }),
 };
 
