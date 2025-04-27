@@ -528,10 +528,22 @@ export default class FundingService {
   ): Promise<ApiFnd008ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const activityD = await this.activityDurationPublicService.load();
-    const fundings = await this.fundingRepository.fetchSummaries(
-      activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
-    );
+    const semesterId = await this.semesterPublicService.loadId();
+    const [activityDId1, activityDId2] = await Promise.all([
+      this.activityDurationPublicService.loadId({ semesterId: semesterId - 1 }),
+      this.activityDurationPublicService.loadId({ semesterId: semesterId - 2 }),
+    ]);
+
+    // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
+    const [fundings1, fundings2] = await Promise.all([
+      this.fundingRepository.fetchSummaries(activityDId1),
+      this.fundingRepository.fetchSummaries(activityDId2),
+    ]);
+    const fundings = [...fundings1, ...fundings2];
+    // const activityD = await this.activityDurationPublicService.load();
+    // const fundings = await this.fundingRepository.fetchSummaries(
+    //   activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
+    // );
 
     const clubs = await this.clubPublicService.fetchSummaries(
       fundings.map(funding => funding.club.id),
