@@ -46,7 +46,7 @@ const ClubRegistrationDetail: React.FC = () => {
       />
       <RegisterClubDetailAuthFrame
         applyId={+applyId}
-        profile={UserTypeEnum.Executive}
+        profile={UserTypeEnum.Undergraduate}
       />
       <Link href="/club-registration">
         <Button>목록으로 돌아가기</Button>
