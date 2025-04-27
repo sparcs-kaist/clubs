@@ -12,7 +12,6 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ClubRegisterApproveFrame from "@sparcs-clubs/web/features/executive/register-club/frames/ClubRegisterApproveFrame";
 import RegisterClubDetailAuthFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailAuthFrame";
 
 // TODO. 동아리등록 내역이 심사를 위해 모든 학생이 볼 수 있어야 한다고 해서 잠시 집행부쪽 코드 복붙함,
@@ -41,9 +40,7 @@ const ClubRegistrationDetail: React.FC = () => {
   return (
     <FlexWrapper gap={40} direction="column">
       <PageHead
-        items={[
-          { name: "동아리 등록 신청 내역", path: "/executive/register-club" },
-        ]}
+        items={[{ name: "동아리 등록 신청 내역", path: "/club-registration" }]}
         title="동아리 등록 신청 내역"
         enableLast
       />
@@ -51,8 +48,7 @@ const ClubRegistrationDetail: React.FC = () => {
         applyId={+applyId}
         profile={UserTypeEnum.Executive}
       />
-      <ClubRegisterApproveFrame applyId={+applyId} />
-      <Link href="/executive/register-club">
+      <Link href="/club-registration">
         <Button>목록으로 돌아가기</Button>
       </Link>
     </FlexWrapper>
