@@ -2,9 +2,9 @@
 /**
  * @type {import("eslint").ESLint.Plugin}
  */
-const zodCoerceRule = {
+const eslintPluginZodCoerce = {
   rules: {
-    "no-direct-z-number": {
+    "z-number": {
       meta: {
         type: "problem",
         fixable: "code",
@@ -38,7 +38,7 @@ const zodCoerceRule = {
         };
       },
     },
-  }
+  },
 };
 
-export default zodCoerceRule;
+export default eslintPluginZodCoerce;
