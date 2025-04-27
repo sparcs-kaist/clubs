@@ -11,9 +11,10 @@
     "clean": "rm -rf dist",
     "start": "nest start",
     "lint": "eslint",
-    "test": "dotenv -e ../../.env jest",
-    "test:e2e": "dotenv -e ../../.env -- jest --config ./test/jest-e2e.json",
-    "test:cov": "dotenv -e ../../.env -- jest --coverage",
+    "test": "NODE_ENV=test dotenv -e ../../.env jest && NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-e2e.json",
+    "test:unit": "NODE_ENV=test dotenv -e ../../.env jest",
+    "test:e2e": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-e2e.json",
+    "test:cov": "NODE_ENV=test dotenv -e ../../.env -- jest --coverage",
     "db": "docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs -d",
     "generate": "pnpm db up --wait && pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
   },

@@ -5,6 +5,7 @@ const schema = z.object({
   SERVER_PORT: z.coerce.number(),
   SECRET_KEY: z.string(),
   DATABASE_URL: z.string(),
+  TEST_DATABASE_URL: z.string(),
 });
 
 const getSsoConfig = () => ({
@@ -13,5 +14,8 @@ const getSsoConfig = () => ({
 });
 
 const env = schema.parse(process.env);
+if (env.NODE_ENV === "test") {
+  env.DATABASE_URL = env.TEST_DATABASE_URL;
+}
 
 export { env, getSsoConfig };

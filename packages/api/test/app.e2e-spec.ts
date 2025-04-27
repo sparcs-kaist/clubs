@@ -18,8 +18,10 @@ describe("AppController (e2e)", () => {
     await app.init();
   }, 60000);
 
-  it("/ (GET)", () =>
-    request(app.getHttpServer()).get("/").expect(200).expect("Hello World!"));
+  it("/notices (GET)", () =>
+    request(app.getHttpServer())
+      .get("/notices?pageOffset=1&itemCount=6")
+      .expect(200));
 
   afterAll(async () => {
     // Close database connection
