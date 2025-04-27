@@ -32,12 +32,10 @@ const ClubRegistration = () => {
   return (
     <FlexWrapper direction="column" gap={20}>
       <PageHead
-        items={[
-          { name: "동아리 등록 신청 내역", path: `/executive/register-club` },
-        ]}
+        items={[{ name: "동아리 등록 신청 내역", path: `/clubs-registration` }]}
         title="동아리 등록 신청 내역"
       />
-      <ExecutiveRegistrationClubFrame />
+      <ExecutiveRegistrationClubFrame url="/clubs-registration" />
     </FlexWrapper>
   );
 };
