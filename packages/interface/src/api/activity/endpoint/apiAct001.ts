@@ -16,7 +16,7 @@ const requestQuery = z.object({});
 const requestBody = z.object({
   clubId: zClub.shape.id,
   name: zActivity.shape.name,
-  activityTypeEnumId: zActivity.shape.activityTypeEnum, // ActivityTypeEnum.id는 양의 정수로 가정
+  activityTypeEnumId: zActivity.shape.activityTypeEnum,
   duration: zActivity.shape.durations,
   location: zActivity.shape.location,
   purpose: zActivity.shape.purpose,

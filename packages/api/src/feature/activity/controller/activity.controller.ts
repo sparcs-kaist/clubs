@@ -11,29 +11,6 @@ import {
   UsePipes,
 } from "@nestjs/common";
 
-import apiAct007, {
-  ApiAct007RequestBody,
-  ApiAct007ResponseCreated,
-} from "@clubs/interface/api/activity/endpoint/apiAct007";
-import apiAct008, {
-  ApiAct008RequestBody,
-  ApiAct008RequestParam,
-  ApiAct008ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct008";
-import apiAct009, {
-  ApiAct009RequestQuery,
-  ApiAct009ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct009";
-import type {
-  ApiAct010RequestQuery,
-  ApiAct010ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct010";
-import apiAct010 from "@clubs/interface/api/activity/endpoint/apiAct010";
-import type {
-  ApiAct011RequestQuery,
-  ApiAct011ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct011";
-import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
 import type {
   ApiAct012RequestQuery,
   ApiAct012ResponseOk,
@@ -136,6 +113,22 @@ import {
   type ApiAct006RequestParam,
   type ApiAct006RequestQuery,
   type ApiAct006ResponseOk,
+  apiAct007,
+  type ApiAct007RequestBody,
+  type ApiAct007ResponseCreated,
+  apiAct008,
+  type ApiAct008RequestBody,
+  type ApiAct008RequestParam,
+  type ApiAct008ResponseOk,
+  apiAct009,
+  type ApiAct009RequestQuery,
+  type ApiAct009ResponseOk,
+  apiAct010,
+  type ApiAct010RequestQuery,
+  type ApiAct010ResponseOk,
+  apiAct011,
+  type ApiAct011RequestQuery,
+  type ApiAct011ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
