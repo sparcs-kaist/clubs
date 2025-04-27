@@ -37,7 +37,7 @@ export const nestJsConfig = [
         {
           patterns: [
             {
-              group: ["src/*", "src/**/*"],
+              group: ["src/**/*"],
               message:
                 "Importing directly from the src directory is prohibited. Please use the relative path or path alias defined in `tsconfig.json`.",
             },
