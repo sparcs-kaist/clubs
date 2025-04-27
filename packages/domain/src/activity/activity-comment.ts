@@ -1,9 +1,13 @@
-import z from "zod";
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { z } from "zod";
 
-import { zId } from "../common/id";
-import { zExtractId } from "../common/utils";
-import { zExecutive } from "../user/executive";
+import { zId } from "@clubs/domain/common/id";
+import { zExtractId } from "@clubs/domain/common/utils";
+import { zExecutive } from "@clubs/domain/user/executive";
+
 import { ActivityStatusEnum, zActivity } from "./activity";
+
+extendZodWithOpenApi(z);
 
 export const zActivityComment = z.object({
   id: zId,
