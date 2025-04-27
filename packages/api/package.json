@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "dotenv -e ../../.env nest start --watch",
+    "dev": "dotenv -e ../../.env -- nest start --watch",
     "build": "nest build",
     "clean": "rm -rf dist",
     "start": "nest start",

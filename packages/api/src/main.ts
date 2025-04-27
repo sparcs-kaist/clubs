@@ -17,6 +17,7 @@ import {
   UnexpectedExceptionFilter,
   ZodErrorFilter,
 } from "./common/util/exception.filter";
+import logger from "./common/util/logger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -77,5 +78,6 @@ async function bootstrap() {
     ); // 만약 global추가하는 경우 AllExceptionFilter 뒤에 추가하면 됨.
   }
   await app.listen(env.SERVER_PORT);
+  logger.debug(`Server is running on http://localhost:${env.SERVER_PORT}`);
 }
 bootstrap();

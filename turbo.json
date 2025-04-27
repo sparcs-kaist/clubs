@@ -2,18 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": [".env"],
   "tasks": {
-    "dev": {
+    "web#dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "cache": false
+      "persistent": true
     },
     "api#dev": {
-      "cache": false,
-      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "persistent": true,
-      "interruptible": true
-    },
-    "web#dev": {
-      "cache": false,
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
     },
