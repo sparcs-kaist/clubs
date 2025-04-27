@@ -11,38 +11,6 @@ import {
   UsePipes,
 } from "@nestjs/common";
 
-import type {
-  ApiAct001RequestBody,
-  ApiAct001ResponseCreated,
-} from "@clubs/interface/api/activity/endpoint/apiAct001";
-import apiAct001 from "@clubs/interface/api/activity/endpoint/apiAct001";
-import type {
-  ApiAct002RequestParam,
-  ApiAct002ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct002";
-import apiAct002 from "@clubs/interface/api/activity/endpoint/apiAct002";
-import type {
-  ApiAct003RequestBody,
-  ApiAct003RequestParam,
-  ApiAct003ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct003";
-import apiAct003 from "@clubs/interface/api/activity/endpoint/apiAct003";
-import type {
-  ApiAct004RequestParam,
-  ApiAct004ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct004";
-import apiAct004 from "@clubs/interface/api/activity/endpoint/apiAct004";
-import type {
-  ApiAct005RequestQuery,
-  ApiAct005ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct005";
-import apiAct005 from "@clubs/interface/api/activity/endpoint/apiAct005";
-import type {
-  ApiAct006RequestParam,
-  ApiAct006RequestQuery,
-  ApiAct006ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct006";
-import apiAct006 from "@clubs/interface/api/activity/endpoint/apiAct006";
 import apiAct007, {
   ApiAct007RequestBody,
   ApiAct007ResponseCreated,
@@ -147,6 +115,28 @@ import apiAct029, {
   ApiAct029RequestUrl,
   ApiAct029ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
+import {
+  apiAct001,
+  type ApiAct001RequestBody,
+  type ApiAct001ResponseCreated,
+  apiAct002,
+  type ApiAct002RequestParam,
+  type ApiAct002ResponseOk,
+  apiAct003,
+  type ApiAct003RequestBody,
+  type ApiAct003RequestParam,
+  type ApiAct003ResponseOk,
+  apiAct004,
+  type ApiAct004RequestParam,
+  type ApiAct004ResponseOk,
+  apiAct005,
+  type ApiAct005RequestQuery,
+  type ApiAct005ResponseOk,
+  apiAct006,
+  type ApiAct006RequestParam,
+  type ApiAct006RequestQuery,
+  type ApiAct006ResponseOk,
+} from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
