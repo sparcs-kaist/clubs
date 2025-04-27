@@ -14,9 +14,9 @@ import {
   sql,
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   MeetingAgendaVote,
   MeetingMapping,

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
-import { DrizzleModule } from "src/drizzle/drizzle.module";
+
+import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 
 import { NoticeController } from "./controller/notice.controller";
 import { NoticeRepository } from "./repository/notice.repository";

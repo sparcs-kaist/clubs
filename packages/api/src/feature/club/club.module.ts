@@ -1,5 +1,6 @@
 import { forwardRef, Module } from "@nestjs/common";
-import { DrizzleModule } from "src/drizzle/drizzle.module";
+
+import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 
 import DivisionModule from "../division/division.module";
 import DivisionRepository from "../division/repository/division.repository";

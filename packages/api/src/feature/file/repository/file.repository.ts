@@ -1,8 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import { File } from "src/drizzle/schema/file.schema";
+
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import { File } from "@sparcs-clubs/api/drizzle/schema/file.schema";
 
 import { MFile } from "../model/file.model";
 

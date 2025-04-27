@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import { DrizzleModule } from "src/drizzle/drizzle.module";
 
+import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 import ClubModule from "@sparcs-clubs/api/feature/club/club.module";
 import UserModule from "@sparcs-clubs/api/feature/user/user.module";
 
