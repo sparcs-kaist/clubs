@@ -704,12 +704,18 @@ export default class FundingService {
     param: ApiFnd009RequestParam,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
-    const activityD = await this.activityDurationPublicService.load();
+    const semesterId = await this.semesterPublicService.loadId();
+    const [activityDId1, activityDId2] = await Promise.all([
+      this.activityDurationPublicService.loadId({ semesterId: semesterId - 1 }),
+      this.activityDurationPublicService.loadId({ semesterId: semesterId - 2 }),
+    ]);
 
-    const fundings = await this.fundingRepository.fetchSummaries(
-      param.clubId,
-      activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
-    );
+    // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
+    const [fundings1, fundings2] = await Promise.all([
+      this.fundingRepository.fetchSummaries(param.clubId, activityDId1),
+      this.fundingRepository.fetchSummaries(param.clubId, activityDId2),
+    ]);
+    const fundings = [...fundings1, ...fundings2];
 
     const club = await this.clubPublicService.fetchSummary(param.clubId);
 
