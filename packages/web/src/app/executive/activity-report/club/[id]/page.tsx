@@ -73,7 +73,7 @@ const ExecutiveActivityReportClub = () => {
         />
         <ExecutiveActivityReportClubFrame
           clubId={id}
-          semesters={activityTermList}
+          activityTerms={activityTermList}
         />
       </FlexWrapper>
     </AsyncBoundary>

@@ -152,6 +152,7 @@ import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
   Professor,
+  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -547,16 +548,17 @@ export default class ActivityController {
     return result;
   }
 
-  @Student()
+  //@Student()
+  @Public()
   @Get("/student/activities/activity-terms")
   @UsePipes(new ZodPipe(apiAct009))
   async getStudentActivitiesActivityTerms(
-    @GetStudent() user: GetStudent,
+    //@GetStudent() user: GetStudent,
     @Query() query: ApiAct009RequestQuery,
   ): Promise<ApiAct009ResponseOk> {
     const result = await this.activityService.getStudentActivitiesActivityTerms(
       query,
-      user.studentId,
+      //user.studentId,
     );
     return result;
   }
