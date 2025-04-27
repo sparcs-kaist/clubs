@@ -5,7 +5,7 @@ import {
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
 
@@ -22,9 +22,9 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveClubActivitiesTableProps {
   data: ApiAct024ResponseOk;
-  searchText: string;
-  selectedActivityIds: number[];
-  setSelectedActivityIds: (clubIds: number[]) => void;
+  searchText?: string;
+  selectedActivityIds?: number[];
+  setSelectedActivityIds?: (clubIds: number[]) => void;
 }
 
 const columnHelper = createColumnHelper<ApiAct024ResponseOk["items"][number]>();
@@ -82,10 +82,15 @@ const columns = [
 
 const ExecutiveClubActivitiesTable: React.FC<
   ExecutiveClubActivitiesTableProps
-> = ({ data, searchText, selectedActivityIds, setSelectedActivityIds }) => {
+> = ({
+  data,
+  searchText = "",
+  selectedActivityIds = [],
+  setSelectedActivityIds = () => {},
+}) => {
   const sortedActivities = useMemo(
-    () => sortActivitiesByStatusAndActivityId(data.items),
-    [data.items],
+    () => (data.items ? sortActivitiesByStatusAndActivityId(data.items) : []),
+    [data],
   );
 
   const initialRowValues = useMemo(
@@ -101,10 +106,6 @@ const ExecutiveClubActivitiesTable: React.FC<
 
   const [rowValues, setRowValues] =
     useState<RowSelectionState>(initialRowValues);
-
-  useEffect(() => {
-    setRowValues(initialRowValues);
-  }, [initialRowValues]);
 
   const handleRowClick = (rowState: RowSelectionState) => {
     setRowValues(rowState);

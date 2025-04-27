@@ -11,19 +11,29 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useGetExecutiveClubActivities = (query: ApiAct024RequestQuery) =>
+export const executiveClubActivitiesForDurationQueryFn = async (
+  query: ApiAct024RequestQuery,
+): Promise<ApiAct024ResponseOk> => {
+  try {
+    const { data } = await axiosClientWithAuth.get(apiAct024.url(), {
+      params: query,
+    });
+
+    return data;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
+const useGetExecutiveClubActivitiesForDuration = (
+  query: ApiAct024RequestQuery,
+) =>
   useQuery<ApiAct024ResponseOk, Error>({
     queryKey: [apiAct024.url(), query.clubId, query.activityDurationId],
-    queryFn: async (): Promise<ApiAct024ResponseOk> => {
-      const { data } = await axiosClientWithAuth.get(apiAct024.url(), {
-        params: query,
-      });
-
-      return data;
-    },
+    queryFn: () => executiveClubActivitiesForDurationQueryFn(query),
   });
 
-export default useGetExecutiveClubActivities;
+export default useGetExecutiveClubActivitiesForDuration;
 
 export const mockExecutiveClubActivitiesData: ApiAct024ResponseOk = {
   items: [
