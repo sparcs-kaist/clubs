@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
-
-import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -12,7 +9,9 @@ import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import { ExecutiveRegistrationClubFrame } from "@sparcs-clubs/web/features/executive/register-club/frames/ExecutiveRegistrationClubFrame";
 
-const ExecutiveRegisterClub = () => {
+// TODO. 동아리등록 내역이 심사를 위해 모든 학생이 볼 수 있어야 한다고 해서 잠시 집행부쪽 코드 복붙함,
+// 나중에 디자이너와 함께 새로운 진입경로 추가 리팩토링 해야 함
+const ClubRegistration = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -30,22 +29,15 @@ const ExecutiveRegisterClub = () => {
     return <LoginRequired login={login} />;
   }
 
-  if (profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
-  }
-
   return (
     <FlexWrapper direction="column" gap={20}>
       <PageHead
-        items={[
-          { name: "집행부원 대시보드", path: "/executive" },
-          { name: "동아리 등록 신청 내역", path: `/executive/register-club` },
-        ]}
+        items={[{ name: "동아리 등록 신청 내역", path: `/club-registration` }]}
         title="동아리 등록 신청 내역"
       />
-      <ExecutiveRegistrationClubFrame url="/executive/register-club" />
+      <ExecutiveRegistrationClubFrame url="/club-registration" />
     </FlexWrapper>
   );
 };
 
-export default ExecutiveRegisterClub;
+export default ClubRegistration;

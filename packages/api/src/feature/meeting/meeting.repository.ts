@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { and, count, eq, gte, isNull, lt, max, not, sql } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import { ApiMee012ResponseOk } from "@clubs/interface/api/meeting/apiMee012";
 import {
@@ -11,6 +10,7 @@ import {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Meeting,
   MeetingAgenda,

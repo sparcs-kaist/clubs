@@ -12,81 +12,6 @@ import {
 } from "@nestjs/common";
 
 import type {
-  ApiAct001RequestBody,
-  ApiAct001ResponseCreated,
-} from "@clubs/interface/api/activity/endpoint/apiAct001";
-import apiAct001 from "@clubs/interface/api/activity/endpoint/apiAct001";
-import type {
-  ApiAct002RequestParam,
-  ApiAct002ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct002";
-import apiAct002 from "@clubs/interface/api/activity/endpoint/apiAct002";
-import type {
-  ApiAct003RequestBody,
-  ApiAct003RequestParam,
-  ApiAct003ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct003";
-import apiAct003 from "@clubs/interface/api/activity/endpoint/apiAct003";
-import type {
-  ApiAct004RequestParam,
-  ApiAct004ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct004";
-import apiAct004 from "@clubs/interface/api/activity/endpoint/apiAct004";
-import type {
-  ApiAct005RequestQuery,
-  ApiAct005ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct005";
-import apiAct005 from "@clubs/interface/api/activity/endpoint/apiAct005";
-import type {
-  ApiAct006RequestParam,
-  ApiAct006RequestQuery,
-  ApiAct006ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct006";
-import apiAct006 from "@clubs/interface/api/activity/endpoint/apiAct006";
-import apiAct007, {
-  ApiAct007RequestBody,
-  ApiAct007ResponseCreated,
-} from "@clubs/interface/api/activity/endpoint/apiAct007";
-import apiAct008, {
-  ApiAct008RequestBody,
-  ApiAct008RequestParam,
-  ApiAct008ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct008";
-import apiAct009, {
-  ApiAct009RequestQuery,
-  ApiAct009ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct009";
-import type {
-  ApiAct010RequestQuery,
-  ApiAct010ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct010";
-import apiAct010 from "@clubs/interface/api/activity/endpoint/apiAct010";
-import type {
-  ApiAct011RequestQuery,
-  ApiAct011ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct011";
-import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
-import type {
-  ApiAct012RequestQuery,
-  ApiAct012ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct012";
-import apiAct012 from "@clubs/interface/api/activity/endpoint/apiAct012";
-import type {
-  ApiAct013RequestQuery,
-  ApiAct013ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct013";
-import apiAct013 from "@clubs/interface/api/activity/endpoint/apiAct013";
-import type {
-  ApiAct014RequestParam,
-  ApiAct014ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct014";
-import apiAct014 from "@clubs/interface/api/activity/endpoint/apiAct014";
-import type {
-  ApiAct015RequestParam,
-  ApiAct015ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct015";
-import apiAct015 from "@clubs/interface/api/activity/endpoint/apiAct015";
-import type {
   ApiAct016RequestParam,
   ApiAct016ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct016";
@@ -147,6 +72,56 @@ import apiAct029, {
   ApiAct029RequestUrl,
   ApiAct029ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
+import {
+  apiAct001,
+  type ApiAct001RequestBody,
+  type ApiAct001ResponseCreated,
+  apiAct002,
+  type ApiAct002RequestParam,
+  type ApiAct002ResponseOk,
+  apiAct003,
+  type ApiAct003RequestBody,
+  type ApiAct003RequestParam,
+  type ApiAct003ResponseOk,
+  apiAct004,
+  type ApiAct004RequestParam,
+  type ApiAct004ResponseOk,
+  apiAct005,
+  type ApiAct005RequestQuery,
+  type ApiAct005ResponseOk,
+  apiAct006,
+  type ApiAct006RequestParam,
+  type ApiAct006RequestQuery,
+  type ApiAct006ResponseOk,
+  apiAct007,
+  type ApiAct007RequestBody,
+  type ApiAct007ResponseCreated,
+  apiAct008,
+  type ApiAct008RequestBody,
+  type ApiAct008RequestParam,
+  type ApiAct008ResponseOk,
+  apiAct009,
+  type ApiAct009RequestQuery,
+  type ApiAct009ResponseOk,
+  apiAct010,
+  type ApiAct010RequestQuery,
+  type ApiAct010ResponseOk,
+  apiAct011,
+  type ApiAct011RequestQuery,
+  type ApiAct011ResponseOk,
+  apiAct012,
+  ApiAct012RequestQuery,
+  ApiAct012ResponseOk,
+  apiAct013,
+  ApiAct013RequestQuery,
+  ApiAct013ResponseOk,
+  apiAct014,
+  ApiAct014RequestParam,
+  ApiAct014ResponseOk,
+  apiAct015,
+  ApiAct015RequestParam,
+  ApiAct015ResponseOk,
+} from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -313,7 +288,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/provisional/activities")
   @UsePipes(new ZodPipe(apiAct012))
   async getExecutiveProvisionalActivities(
@@ -343,7 +320,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/activities/activity/:activityId")
   @UsePipes(new ZodPipe(apiAct014))
   async getExecutiveActivity(

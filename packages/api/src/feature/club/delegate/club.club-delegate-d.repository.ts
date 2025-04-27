@@ -13,15 +13,6 @@ import {
   or,
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { getKSTDate, takeOne } from "src/common/util/util";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import {
-  ClubDelegate,
-  ClubDelegateChangeRequest,
-  ClubOld,
-  ClubStudentT,
-} from "src/drizzle/schema/club.schema";
-import { Student } from "src/drizzle/schema/user.schema";
 
 import {
   ClubDelegateChangeRequestStatusEnum,
@@ -29,6 +20,15 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  ClubDelegate,
+  ClubDelegateChangeRequest,
+  ClubOld,
+  ClubStudentT,
+} from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
 export class ClubDelegateDRepository {

@@ -1,8 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { eq } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import { PromotionalPrintingOrderSize } from "src/drizzle/schema/promotional-printing.schema";
+
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import { PromotionalPrintingOrderSize } from "@sparcs-clubs/api/drizzle/schema/promotional-printing.schema";
 
 import type { FindPromotionalPrintingOrderSizeBypromotionalPrintingOrderIdReturn } from "../dto/promotional-printing.dto";
 

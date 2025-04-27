@@ -17,6 +17,14 @@ export function generateOpenAPI(): ReturnType<
     },
     tags: [
       {
+        name: "activity",
+        description: "활동 보고서 관리 API",
+      },
+      {
+        name: "club",
+        description: "동아리 관리 API",
+      },
+      {
         name: "member-registration",
         description: "동아리 가입 신청 관리 API",
       },

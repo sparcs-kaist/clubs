@@ -18,7 +18,6 @@ import {
 } from "drizzle-orm";
 import { union } from "drizzle-orm/mysql-core";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -30,6 +29,7 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   ClubDelegate,
   ClubOld,

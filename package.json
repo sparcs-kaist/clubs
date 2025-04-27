@@ -14,7 +14,8 @@
     "storybook": "turbo watch storybook",
     "db": "dotenv -- pnpm -F api db",
     "generate": "dotenv -- pnpm -F api generate",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "pnpm --filter=api test"
   },
   "lint-staged": {
     "./packages/api/**/*.ts": [

@@ -22,7 +22,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint"; // 👴
 
 // 커스텀 룰 추가하기
-import noDirectZodNumberRule from "./custom_rules/zod-number-rules.mjs";
+import eslintPluginZodCoerce from "./custom_rules/eslint-plugin-zod-coerce.mjs";
 // 이것도 서드파티이긴한데...
 const compat = new FlatCompat({});
 
@@ -127,10 +127,10 @@ export const baseConfig = tseslint.config(
   {
     name: "zod custom rules enforce coerce",
     plugins: {
-      "zod-rules": noDirectZodNumberRule,
+      "eslint-plugin-zod-coerce": eslintPluginZodCoerce,
     },
     rules: {
-      "zod-rules/no-direct-z-number": "error",
+      "eslint-plugin-zod-coerce/z-number": "error",
     },
   },
 );

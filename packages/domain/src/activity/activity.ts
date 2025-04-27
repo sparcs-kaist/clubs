@@ -1,13 +1,15 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
+import { zClub } from "@clubs/domain/club/club";
+import { zId } from "@clubs/domain/common/id";
+import { zExtractId } from "@clubs/domain/common/utils";
+import { zFile } from "@clubs/domain/file/file";
 import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+import { zExecutive } from "@clubs/domain/user/executive";
+import { zStudent } from "@clubs/domain/user/student";
 
-import { zClub } from "../club/club";
-import { zId } from "../common/id";
-import { zExtractId } from "../common/utils";
-import { zFile } from "../file/file";
-import { zExecutive } from "../user/executive";
-import { zStudent } from "../user/student";
+extendZodWithOpenApi(z);
 
 export enum ActivityTypeEnum {
   matchedInternalActivity = 1,
@@ -25,16 +27,25 @@ export enum ActivityStatusEnum {
 export const zActivity = z.object({
   id: zId,
   club: zExtractId(zClub),
-  name: z.string().max(255).min(1),
+  name: z
+    .string()
+    .max(255)
+    .min(1)
+    .openapi({
+      description: "활동 이름",
+      examples: ["딸기파티", "동아리 정기총회"],
+    }),
   activityTypeEnum: z.nativeEnum(ActivityTypeEnum),
   activityStatusEnum: z.nativeEnum(ActivityStatusEnum),
   activityDuration: z.object({ id: zActivityDuration.shape.id }),
-  durations: z.array(
-    z.object({
-      startTerm: z.coerce.date(),
-      endTerm: z.coerce.date(),
-    }),
-  ),
+  durations: z
+    .array(
+      z.object({
+        startTerm: z.coerce.date(),
+        endTerm: z.coerce.date(),
+      }),
+    )
+    .min(1),
   location: z.string().max(255),
   purpose: z.string(),
   detail: z.string(),

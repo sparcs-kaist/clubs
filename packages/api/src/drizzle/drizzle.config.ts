@@ -1,5 +1,6 @@
 import type { Config } from "drizzle-kit";
-import { env } from "src/env";
+
+import { env } from "@sparcs-clubs/api/env";
 
 export default {
   driver: "mysql2",
