@@ -9,7 +9,9 @@ export const nestJsConfig = [
   {
     name: "nestJS settings",
     files: ["**/*.ts"],
-    plugins: { jest: eslintPluginJest },
+    plugins: {
+      jest: eslintPluginJest,
+    },
     languageOptions: {
       globals: eslintPluginJest.environments.globals.globals,
     },
@@ -24,6 +26,24 @@ export const nestJsConfig = [
       "jest/no-identical-title": "error",
       "jest/prefer-to-have-length": "warn",
       "jest/valid-expect": "error",
+    },
+  },
+  {
+    name: "api-specific import rules",
+    files: ["**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["src/*", "src/**/*"],
+              message:
+                "Importing directly from the src directory is prohibited. Please use the relative path or path alias defined in `tsconfig.json`.",
+            },
+          ],
+        },
+      ],
     },
   },
 ];
