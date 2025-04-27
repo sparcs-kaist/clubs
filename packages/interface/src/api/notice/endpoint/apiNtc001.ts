@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zNotice } from "@clubs/domain/notice/notice";
+
 /**
  * @version v0.1
  * @description 전체 공지사항 목록을 Pagination을 통해 가져옵니다
@@ -18,19 +20,19 @@ const requestQuery = z.object({
 
 const requestBody = z.object({});
 
-const zNotice = z.object({
-  id: z.number().int().positive(),
-  title: z.string().max(512),
-  author: z.string().max(20),
-  date: z.coerce.date(),
-  link: z.string().max(200),
-});
-
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
-    notices: zNotice.array(),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(0),
+    notices: z
+      .object({
+        id: zNotice.shape.id,
+        title: z.string().max(512),
+        author: z.string().max(20),
+        date: z.coerce.date(),
+        link: z.string().max(200),
+      })
+      .array(),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(0),
   }),
 };
 

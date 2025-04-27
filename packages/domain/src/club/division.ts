@@ -18,16 +18,5 @@ export const zDivision = z.object({
   endTerm: z.coerce.date().nullable(),
 });
 
-export const zDivisionResponse = zDivision.extend({
-  district: zDistrict,
-});
-
-export const zDivisionSummary = zDivision.pick({ id: true, name: true });
-
-export const zDivisionSummaryResponse = zDivisionSummary;
-
 export type IDistrict = z.infer<typeof zDistrict>;
 export type IDivision = z.infer<typeof zDivision>;
-export type IDivisionResponse = z.infer<typeof zDivisionResponse>;
-export type IDivisionSummary = z.infer<typeof zDivisionSummary>;
-export type IDivisionSummaryResponse = z.infer<typeof zDivisionSummaryResponse>;

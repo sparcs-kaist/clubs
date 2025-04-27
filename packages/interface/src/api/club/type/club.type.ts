@@ -49,7 +49,7 @@ export const zClub = z.object({
     example: "sulbox",
   }),
   description: z.string().nullable(),
-  foundingYear: z.number(),
+  foundingYear: z.coerce.number(),
   // clubT schema
   typeEnum: z.nativeEnum(ClubTypeEnum),
   characteristicKr: z.string().max(30).nullable(),

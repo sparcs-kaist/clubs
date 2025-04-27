@@ -17,7 +17,7 @@ const requestParam = z.object({
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  agendaIdList: z.number().array().min(1),
+  agendaIdList: z.coerce.number().array().min(1),
 });
 
 const responseBodyMap = {

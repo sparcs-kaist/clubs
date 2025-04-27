@@ -17,6 +17,10 @@ import type {
   ApiAct008RequestBody,
   ApiAct008RequestParam,
 } from "@clubs/interface/api/activity/endpoint/apiAct008";
+import {
+  ApiAct009RequestQuery,
+  ApiAct009ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct009";
 import type {
   ApiAct010RequestQuery,
   ApiAct010ResponseOk,
@@ -42,7 +46,6 @@ import type {
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
@@ -70,17 +73,20 @@ import {
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
 import {
   ActivityDeadlineEnum,
+  ActivityDurationTypeEnum,
   ActivityStatusEnum,
 } from "@clubs/interface/common/enum/activity.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist, takeOne } from "@sparcs-clubs/api/common/util/util";
-import ClubTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-t.repository";
+import { takeExist } from "@sparcs-clubs/api/common/util/util";
+import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
 import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.duration.public.service";
+import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
@@ -103,6 +109,7 @@ export default class ActivityService {
     private activityDeadlinePublicService: ActivityDeadlinePublicService,
     private activityDurationPublicService: ActivityDurationPublicService,
     private activityNewRepository: ActivityNewRepository,
+    private registrationDeadlinePublicService: RegistrationDeadlinePublicService,
   ) {}
 
   /**
@@ -582,7 +589,10 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
 
-    const activityDId = await this.activityDurationPublicService.loadId();
+    const activityDId = await this.activityDurationPublicService.loadId({
+      date: new Date(),
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -706,12 +716,31 @@ export default class ActivityService {
    * @returns 해당 동아리가 작성한 모든 활동을 REG-011의 리턴 타입에 맞추어 가져옵니다.
    */
   private async getProvisionalActivities(param: { clubId: number }) {
-    const activityDId = await this.activityDurationPublicService.loadId();
-    const result =
+    const activityDId = await this.activityDurationPublicService.loadId({
+      date: new Date(),
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    const resultNow =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         param.clubId,
         activityDId,
       );
+    // 25 봄 한정. TODO: 25봄 등록 이후 삭제 필요
+    // Ascend 의 이전 학기 등록 시 활보를 가져오기 위해 이전 학기의 목록을 가져옵니다.
+    const prevActivityDId = await this.activityDurationPublicService.loadId({
+      semesterId:
+        (await this.semesterPublicService.loadId({
+          date: new Date(),
+        })) - 1,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    const prevActivities =
+      await this.activityRepository.selectActivityByClubIdAndActivityDId(
+        param.clubId,
+        prevActivityDId,
+      );
+    const result = [...resultNow, ...prevActivities];
+    // Ascend 특별처리 End
     const activities = await Promise.all(
       result.map(async activity => {
         const durations = (
@@ -763,7 +792,14 @@ export default class ActivityService {
   ) {
     const activity = await this.getActivity({ activityId });
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
+    // 이거 맞나? 등록 기간용 따로 파야 할 수도
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
+
+    // 현재가 동아리 등록 기간인지 확인합니다
+    await this.registrationDeadlinePublicService.validate({
+      date: new Date(),
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
 
     if (!(await this.activityRepository.deleteActivity({ activityId }))) {
       throw new HttpException(
@@ -992,37 +1028,6 @@ export default class ActivityService {
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
-  }
-
-  /**
-   * @description getActivitiesDeadline의 서비스 진입점입니다.
-   * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
-   */
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const term = await this.activityDurationPublicService.load();
-    const todayDeadline = await this.activityDeadlinePublicService
-      .search({
-        date: new Date(),
-        deadlineEnum: ActivityDeadlineEnum.Writing,
-      })
-      .then(takeExist())
-      .then(takeOne);
-    return {
-      targetTerm: {
-        id: term.id,
-        name: term.name,
-        startTerm: term.startTerm,
-        endTerm: term.endTerm,
-        year: term.year,
-      },
-      deadline: {
-        activityDeadlineEnum: todayDeadline.deadlineEnum,
-        duration: {
-          startTerm: todayDeadline.startTerm,
-          endTerm: todayDeadline.endTerm,
-        },
-      },
-    };
   }
 
   async getProfessorActivities(
@@ -1359,7 +1364,7 @@ export default class ActivityService {
     ]);
     if (!isStudentDelegate) {
       throw new HttpException(
-        `Student ${studentId} is not the delegate of Club ${clubId}`,
+        `Student ${studentId} is not the delegate of ClubOld ${clubId}`,
         HttpStatus.FORBIDDEN,
       );
     }
@@ -1496,6 +1501,43 @@ export default class ActivityService {
           : a.durations[0].startTerm.getTime() -
             b.durations[0].startTerm.getTime(),
       ),
+    };
+  }
+
+  async getStudentActivitiesActivityTerms(
+    query: ApiAct009RequestQuery,
+    studentId: number,
+  ): Promise<ApiAct009ResponseOk> {
+    // 요청한 학생이 동아리의 대표자인지 확인합니다.
+    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
+    const semesterIds = await this.clubPublicService.searchSemesterIdsByClubId(
+      query.clubId,
+    );
+    const activityDurations = await this.activityDurationPublicService.search({
+      semesterId: semesterIds,
+    });
+
+    const terms = await Promise.all(
+      activityDurations.map(async e => ({
+        term: e,
+        numActivity: await this.activityNewRepository.count({
+          activityDId: e.id,
+          clubId: query.clubId,
+        }),
+      })),
+    );
+
+    return {
+      terms: terms
+        .filter(e => e.numActivity > 0)
+        .map(e => ({
+          name: e.term.name,
+          id: e.term.id,
+          startTerm: e.term.startTerm,
+          endTerm: e.term.endTerm,
+          year: e.term.year,
+        })),
     };
   }
 }

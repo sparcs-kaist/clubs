@@ -31,8 +31,8 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     usageOrders: z
       .object({
-        orderId: z.number().int().min(1), // orderId는 정수여야 합니다.
-        clubId: z.number().int().min(1), // clubId는 Club.id와 같은 정수여야 합니다.
+        orderId: z.coerce.number().int().min(1), // orderId는 정수여야 합니다.
+        clubId: z.coerce.number().int().min(1), // clubId는 ClubOld.id와 같은 정수여야 합니다.
         chargeStudentName: z.string().max(255), // chargeStudentName은 문자열로 최대 255자여야 합니다.
         startTerm: z.coerce.date(), // startTerm은 날짜 및 시간이어야 합니다.
         endTerm: z.coerce.date(), // endTerm은 날짜 및 시간이어야 합니다.

@@ -19,9 +19,12 @@ import eslintPluginStylistic from "@stylistic/eslint-plugin";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended"; //
 import eslintPluginSimpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
-import tseslint from "typescript-eslint";
+import tseslint from "typescript-eslint"; // 👴
+
+// 커스텀 룰 추가하기
+import eslintPluginZodCoerce from "./custom_rules/eslint-plugin-zod-coerce.mjs";
 // 이것도 서드파티이긴한데...
-const compat = new FlatCompat({}); // 👴
+const compat = new FlatCompat({});
 
 /** 이 설정 파일도 ts server를 통해 검사하기 위해,
  * typescript-eslint에서 권장하는 tseslint.config()를 통해 flat config를 생성합니다.
@@ -119,6 +122,15 @@ export const baseConfig = tseslint.config(
           ],
         },
       ],
+    },
+  },
+  {
+    name: "zod custom rules enforce coerce",
+    plugins: {
+      "eslint-plugin-zod-coerce": eslintPluginZodCoerce,
+    },
+    rules: {
+      "eslint-plugin-zod-coerce/z-number": "error",
     },
   },
 );

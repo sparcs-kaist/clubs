@@ -53,14 +53,9 @@ export class ActivityDeadlinePublicService extends BasePublicService<
    * @returns ActivityDeadline[]
    */
   async search(
-    query?: ActivityDeadlineSearchQuery,
+    query: ActivityDeadlineSearchQuery,
   ): Promise<MActivityDeadline[]> {
-    const queryParam = {
-      ...query,
-      date: !query ? new Date() : query.date,
-    };
-
-    const res = await super.search(queryParam);
+    const res = await super.search(query);
     return res;
   }
 

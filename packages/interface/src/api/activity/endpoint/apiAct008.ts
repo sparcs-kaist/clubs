@@ -1,45 +1,30 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
+import { zActivity } from "@clubs/domain/activity/activity";
+import { zStudent } from "@clubs/domain/user/student";
 
-/**
- * @version v0.1
- * @description 활동보고서의 활동을 수정합니다
- * 동아리 대표자 또는 대의원으로 로그인되어 있어야 합니다.
- *
- * 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간 이여야 합니다.
- * 활동기간 사이의 중복을 검사하지 않습니다.
- * 활동기간이 지난 활동기간 이내여야 합니다.
- * 파일 uid의 유효성을 검사하지 않습니다.
- * 참여 학생이 지난 활동기간 동아리의 소속원이였는지 확인합니다.
- */
+import { registry } from "@clubs/interface/open-api";
 
 const url = (activityId: number) =>
   `/student/activities/activity/${activityId}/provisional`;
 const method = "PUT";
 
 const requestParam = z.object({
-  activityId: z.coerce.number().int().min(1),
+  activityId: zActivity.shape.id,
 });
 
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  name: z.string().max(255),
-  activityTypeEnumId: z.nativeEnum(ActivityTypeEnum),
-  durations: z
-    .array(
-      z.object({
-        startTerm: z.coerce.date(),
-        endTerm: z.coerce.date(),
-      }),
-    )
-    .min(1), // 최소 하나의 duration 객체가 있어야 함을 보장
-  location: z.string().max(255),
-  purpose: z.string(),
-  detail: z.string(),
-  evidence: z.string(),
+  name: zActivity.shape.name,
+  activityTypeEnumId: zActivity.shape.activityTypeEnum, // ActivityTypeEnum.id는 양의 정수로 가정
+  durations: zActivity.shape.durations,
+  location: zActivity.shape.location,
+  purpose: zActivity.shape.purpose,
+  detail: zActivity.shape.detail,
+  evidence: zActivity.shape.evidence,
+  // TODO: zActivity.shape.evidenceFiles는 id를 써서 uid랑 둘중 무엇을 이용할지 결정해야함
   evidenceFiles: z
     .array(
       z.object({
@@ -47,10 +32,11 @@ const requestBody = z.object({
       }),
     )
     .min(1), // 최소 하나의 evidenceFile 객체가 있어야 함을 보장
+  // TODO: zActivity.shape.participants는 id를 써서 studentId와 둘중 무엇을 이용할지 결정해야함
   participants: z
     .array(
       z.object({
-        studentId: z.coerce.number().int().min(1),
+        studentId: zStudent.shape.id,
       }),
     )
     .min(1), // 최소 하나의 participant 객체가 있어야 함을 보장
@@ -85,3 +71,47 @@ export type {
   ApiAct008RequestBody,
   ApiAct008ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["activity"],
+  method: "put",
+  path: "/student/activities/activity/:activityId/provisional",
+  summary: "ACT-008: 가동아리의 활동보고서의 활동을 수정합니다",
+  description: `
+  # ACT-008
+
+  활동보고서의 활동을 수정합니다.
+
+  동아리 대표자 또는 대의원으로 로그인되어 있어야 합니다.
+
+  오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간 이여야 합니다.
+
+  활동기간 사이의 중복을 검사하지 않습니다.
+
+  활동기간이 지난 활동기간 이내여야 합니다.
+
+  파일 uid의 유효성을 검사하지 않습니다.
+
+  참여 학생이 지난 활동기간 동아리의 소속원이였는지 확인합니다.
+  `,
+  request: {
+    params: requestParam,
+    body: {
+      content: {
+        "application/json": {
+          schema: requestBody,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "성공적으로 활동보고서의 활동을 수정했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

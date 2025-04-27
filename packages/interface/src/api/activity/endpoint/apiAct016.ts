@@ -3,7 +3,7 @@ import { z } from "zod";
 
 /**
  * @version v0.1
- * @description 집행부원으로서 동아리 등록 신청을 수락(activityStatusEnumId.Approved)합니다.
+ * @description 집행부원으로서 활동보고서 신청을 수락(activityStatusEnumId.Approved)합니다.
  */
 
 const url = (activityId: number) =>
