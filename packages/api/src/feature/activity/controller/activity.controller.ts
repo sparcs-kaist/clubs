@@ -135,6 +135,7 @@ import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
   Executive,
   Professor,
+  Public,
   Student,
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
@@ -295,7 +296,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/provisional/activities")
   @UsePipes(new ZodPipe(apiAct012))
   async getExecutiveProvisionalActivities(
@@ -325,7 +328,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/activities/activity/:activityId")
   @UsePipes(new ZodPipe(apiAct014))
   async getExecutiveActivity(
