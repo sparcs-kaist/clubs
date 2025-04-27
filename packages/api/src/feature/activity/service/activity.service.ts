@@ -1210,10 +1210,17 @@ export default class ActivityService {
       throw new HttpException("No such club", HttpStatus.NOT_FOUND);
     }
 
-    const activities = await this.getActivities({ clubId: param.query.clubId });
+    const activityDId =
+      param.query.activityDurationId ??
+      (await this.activityDurationPublicService.loadId());
+
+    const activities = await this.getActivities({
+      clubId: param.query.clubId,
+      activityDId,
+    });
     const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
       .selectActivityClubChargedExecutiveByClubId({
-        activityDId: await this.activityDurationPublicService.loadId(),
+        activityDId,
         clubId: param.query.clubId,
       })
       .then(arr => {
@@ -1506,10 +1513,10 @@ export default class ActivityService {
 
   async getStudentActivitiesActivityTerms(
     query: ApiAct009RequestQuery,
-    studentId: number,
+    //studentId: number,
   ): Promise<ApiAct009ResponseOk> {
     // 요청한 학생이 동아리의 대표자인지 확인합니다.
-    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    //await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
     // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
     const semesterIds = await this.clubPublicService.searchSemesterIdsByClubId(
       query.clubId,

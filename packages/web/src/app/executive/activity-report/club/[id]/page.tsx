@@ -42,7 +42,7 @@ const ExecutiveActivityReportClub = () => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <FlexWrapper direction="column" gap={20}>
+      <FlexWrapper direction="column" gap={60}>
         <PageHead
           items={[
             { name: "집행부원 대시보드", path: "/executive" },

@@ -423,9 +423,6 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Query() query: ApiAct024RequestQuery,
   ): Promise<ApiAct024ResponseOk> {
-    if (query.semesterId !== undefined) {
-      console.log("semesterId filter of ACT-024 is not yet implemented");
-    }
     const result = await this.activityService.getExecutiveActivitiesClubBrief({
       query,
     });
@@ -530,16 +527,17 @@ export default class ActivityController {
     return result;
   }
 
-  @Student()
+  //@Student()
+  @Public()
   @Get("/student/activities/activity-terms")
   @UsePipes(new ZodPipe(apiAct009))
   async getStudentActivitiesActivityTerms(
-    @GetStudent() user: GetStudent,
+    //@GetStudent() user: GetStudent,
     @Query() query: ApiAct009RequestQuery,
   ): Promise<ApiAct009ResponseOk> {
     const result = await this.activityService.getStudentActivitiesActivityTerms(
       query,
-      user.studentId,
+      //user.studentId,
     );
     return result;
   }
