@@ -12,7 +12,7 @@ const useGetExecutiveClubActivities = (
 ): {
   data: {
     term: ApiAct009ResponseOk["terms"][number];
-    activities: ApiAct024ResponseOk;
+    activities: ApiAct024ResponseOk | null;
   }[];
   isLoading: boolean;
   isError: boolean;
@@ -56,9 +56,9 @@ const useGetExecutiveClubActivities = (
     })),
   });
 
-  const successDataList = queries
-    .map(query => (query.isSuccess ? query.data : []))
-    .filter((data): data is ApiAct024ResponseOk => data !== null);
+  const successDataList = queries.map(query =>
+    query.isSuccess ? query.data : null,
+  );
 
   return {
     data:

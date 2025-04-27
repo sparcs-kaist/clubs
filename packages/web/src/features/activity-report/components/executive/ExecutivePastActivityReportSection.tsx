@@ -28,11 +28,15 @@ const ExecutivePastActivityReportSection: React.FC<
           {dataList.map(data => (
             <FoldableSection
               key={data.term.id}
-              title={`${data.term.year}년 ${data.term.name}학기 (총 ${data.activities.items ? data.activities.items.length : 0}개)`}
+              title={`${data.term.year}년 ${data.term.name}학기 (총 ${data.activities?.items ? data.activities.items.length : 0}개)`}
             >
-              <ExecutiveClubActivitiesTable
-                data={data?.activities ? data.activities : { items: [] }}
-              />
+              {data.activities == null ? (
+                <AsyncBoundary isLoading={false} isError />
+              ) : (
+                <ExecutiveClubActivitiesTable
+                  data={data?.activities ? data.activities : { items: [] }}
+                />
+              )}
             </FoldableSection>
           ))}
         </FlexWrapper>
