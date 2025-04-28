@@ -7,9 +7,9 @@ import apiAct024 from "@clubs/interface/api/activity/endpoint/apiAct024";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import SearchSelect from "@sparcs-clubs/web/common/components/Forms/SearchSelect";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
-import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import ChargedChangeActivityModalTable, {
   ChargedChangeActivityProps,
@@ -90,12 +90,11 @@ const ChargedChangeActivityModalContent: React.FC<
             gap={12}
             style={{ width: "min(600px, 80vw)" }}
           >
-            <Select
+            <SearchSelect
               items={chargeableExecutives}
               value={selectedExecutiveId}
               onChange={setSelectedExecutiveId}
               label="개별 활동 보고서 담당자"
-              isTextAlignStart
             />
             <ChargedChangeActivityModalTable
               data={selectedActivityInfos}

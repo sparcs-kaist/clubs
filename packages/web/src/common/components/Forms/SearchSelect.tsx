@@ -1,241 +1,161 @@
-import isPropValid from "@emotion/is-prop-valid";
-import React, {
-  ChangeEvent,
-  ChangeEventHandler,
-  InputHTMLAttributes,
-  useEffect,
-  useState,
-} from "react";
-import styled, { css } from "styled-components";
-
-import Icon from "@sparcs-clubs/web/common/components/Icon";
-import colors from "@sparcs-clubs/web/styles/themes/colors";
+import { hangulIncludes } from "es-hangul";
+import React, { useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 
 import FormError from "../FormError";
 import Label from "../FormLabel";
+import NoOption from "../Select/_atomic/NoOption";
+import SelectOption from "../Select/SelectOption";
 
-export interface SearchSelectProps
-  extends InputHTMLAttributes<HTMLInputElement> {
+export interface SearchSelectItem<T> {
+  label: string;
+  value: T;
+  selectable?: boolean;
+}
+
+interface SearchSelectProps<T> {
+  items: SearchSelectItem<T>[];
   label?: string;
-  placeholder: string;
   errorMessage?: string;
   disabled?: boolean;
-  value?: string;
-  handleChange?: (value: string) => void;
+  value?: T | null;
+  onChange?: (value: T | null) => void;
   setErrorStatus?: (hasError: boolean) => void;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
-  options: string[];
-  selected: string;
-  setSelected: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
 }
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  placeholder: string;
-  disabled?: boolean;
-  hasError?: boolean;
-  value?: string;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
-}
-
-const RightContentWrapper = styled.div.withConfig({
-  shouldForwardProp: prop => isPropValid(prop),
-})`
-  position: absolute;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
-  color: ${({ theme }) => theme.colors.BLACK};
-  justify-content: center;
-  )
-`;
-
-const errorBorderStyle = css`
-  border-color: ${({ theme }) => theme.colors.RED[600]};
-`;
-
-const disabledStyle = css`
-  background-color: ${({ theme }) => theme.colors.GRAY[100]};
-  border-color: ${({ theme }) => theme.colors.GRAY[200]};
-`;
-
-const Input = styled.input<InputProps>`
-  display: block;
+const SelectWrapper = styled.div`
   width: 100%;
-  padding: 8px 12px 8px 12px;
-  outline: none;
+  flex-direction: column;
+  display: flex;
+  gap: 4px;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 8px 12px;
   border: 1px solid ${({ theme }) => theme.colors.GRAY[200]};
   border-radius: 4px;
-  gap: 8px;
-  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
   font-size: 16px;
-  line-height: 20px;
-  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
-  color: ${({ theme }) => theme.colors.BLACK};
-  background-color: ${({ theme }) => theme.colors.WHITE};
+  outline: none;
+
   &:focus {
-        border-color: ${({ theme, hasError, disabled }) =>
-          !hasError && !disabled && theme.colors.PRIMARY};
-    }
-    &:hover:not(:focus) {
-        border-color: ${({ theme, hasError, disabled }) =>
-          !hasError && !disabled && theme.colors.GRAY[300]};
-    }
-    &::placeholder {
-        color: ${({ theme }) => theme.colors.GRAY[200]};
-    }
-    ${({ disabled }) => disabled && disabledStyle}
-    ${({ hasError, disabled }) => hasError && !disabled && errorBorderStyle}
+    border-color: ${({ theme }) => theme.colors.PRIMARY};
   }
 `;
 
-const InputWrapper = styled.div`
-  width: 100%;
-  flex-direction: column;
-  display: flex;
-  gap: 4px;
-  position: relative;
-  justify-content: center;
-`;
-
-const SearchList = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  align-self: stretch;
-  opacity: 1;
-  background-color: ${({ theme }) => theme.colors.WHITE};
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
-  padding: 8px;
-  max-height: 280px;
+const DropdownWrapper = styled.div`
+  max-height: 200px;
   overflow-y: auto;
-  scrollbar-width: none;
-`;
-
-const SearchItemWrapper = styled.div`
-  display: flex;
-  padding: 4px 12px;
-  align-items: center;
-  gap: 10px;
-  align-self: stretch;
+  border: 1px solid ${({ theme }) => theme.colors.GRAY[200]};
   border-radius: 4px;
-  color: ${({ theme }) => theme.colors.BLACK};
-  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
-  font-size: 16px;
-  font-style: normal;
-  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
-  line-height: 20px;
-  cursor: pointer;
-  position: relative;
+  margin-top: 4px;
+  background-color: ${({ theme }) => theme.colors.WHITE};
 `;
 
-const SearchItem: React.FC<{
-  selected: string;
-  isSelected: boolean;
-  children: string;
-  onClick: (value: string) => void;
-}> = ({
-  selected = "",
-  isSelected = false,
-  children = "",
-  onClick = () => {},
-}) => (
-  <SearchItemWrapper
-    onClick={() => (children !== selected ? onClick(children) : onClick(""))}
-  >
-    {children}
-    {isSelected && (
-      <RightContentWrapper>
-        <Icon type="check" size={16} />
-      </RightContentWrapper>
-    )}
-  </SearchItemWrapper>
-);
-
-const SearchSelect: React.FC<SearchSelectProps> = ({
-  label = "",
-  placeholder,
+const SearchSelect = <T,>({
+  items,
   errorMessage = "",
+  label = "",
   disabled = false,
-  value = "",
-  handleChange = () => {},
+  value,
+  onChange = () => {},
   setErrorStatus = () => {},
-  onChange = undefined,
-  options = [],
-  selected = "",
-  setSelected = () => {},
-  ...props
-}) => {
-  const handleValueChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    handleChange(inputValue);
+  placeholder = "검색어를 입력해주세요",
+  required = true,
+}: SearchSelectProps<T>) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filteredItems = items.filter(
+    item =>
+      item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      hangulIncludes(item.label, searchTerm),
+  );
+
+  useEffect(() => {
+    setErrorStatus(!!errorMessage || (value == null && items.length > 0));
+  }, [errorMessage, value, items.length, setErrorStatus]);
+
+  const handleOptionClick = (item: SearchSelectItem<T>) => {
+    if (item.selectable || item.selectable === undefined) {
+      onChange(item.value);
+      setSearchTerm(item.label);
+      setHasOpenedOnce(true);
+      setIsDropdownOpen(false);
+    }
   };
 
-  const [listToggle, setListToggle] = useState(false);
+  const handleInputFocus = () => {
+    if (!disabled) {
+      setIsDropdownOpen(true);
+    }
+  };
 
-  const filteredOptions = value
-    ? options.filter(option =>
-        option.toLowerCase().includes(value.toLowerCase()),
-      )
-    : options;
-
-  const handleItemClick = (clickedValue: string) => {
-    setSelected(clickedValue);
-    handleChange(clickedValue);
-    setListToggle(false);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    onChange(null);
+    setHasOpenedOnce(true);
+    setIsDropdownOpen(true);
   };
 
   useEffect(() => {
-    if (setErrorStatus) {
-      setErrorStatus(!!errorMessage);
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        if (isDropdownOpen) {
+          setIsDropdownOpen(false);
+          if (items.length > 0 && value == null) {
+            setHasOpenedOnce(true);
+          }
+        }
+      }
     }
-  }, [errorMessage, setErrorStatus]);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [containerRef, isDropdownOpen, items.length, value]);
 
   return (
-    <InputWrapper onFocus={() => setListToggle(true)}>
+    <SelectWrapper ref={containerRef}>
       {label && <Label>{label}</Label>}
-      <InputWrapper>
-        <Input
-          placeholder={placeholder}
-          hasError={!!errorMessage}
-          disabled={disabled}
-          value={value || selected}
-          onChange={onChange ?? handleValueChange}
-          {...props}
-        />
-        <RightContentWrapper onClick={() => setListToggle(!listToggle)}>
-          <Icon
-            type={listToggle ? "expand_less" : "expand_more"}
-            size={20}
-            color={disabled ? colors.GRAY[200] : colors.BLACK}
-          />
-        </RightContentWrapper>
-      </InputWrapper>
-      {filteredOptions.length !== 0 && listToggle && (
-        <SearchList onFocus={() => setListToggle(true)}>
-          {filteredOptions.map(option => (
-            <SearchItem
-              key={option}
-              onClick={handleItemClick}
-              selected={selected}
-              isSelected={option === selected}
-            >
-              {option}
-            </SearchItem>
-          ))}
-        </SearchList>
+      <SearchInput
+        placeholder={placeholder}
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        disabled={disabled}
+      />
+      {isDropdownOpen && (
+        <DropdownWrapper>
+          {filteredItems.length > 0 ? (
+            filteredItems.map(item => (
+              <SelectOption
+                key={item.value as string}
+                selectable={item.selectable || item.selectable === undefined}
+                onClick={() => {
+                  handleOptionClick(item);
+                }}
+              >
+                {item.label}
+              </SelectOption>
+            ))
+          ) : (
+            <NoOption>검색 결과가 없습니다</NoOption>
+          )}
+        </DropdownWrapper>
       )}
-      {errorMessage && !listToggle && !disabled && (
-        <FormError>{errorMessage}</FormError>
+      {required && hasOpenedOnce && !value && items.length > 0 && (
+        <FormError>
+          {errorMessage || "필수로 선택해야 하는 항목입니다"}
+        </FormError>
       )}
-    </InputWrapper>
+    </SelectWrapper>
   );
 };
 

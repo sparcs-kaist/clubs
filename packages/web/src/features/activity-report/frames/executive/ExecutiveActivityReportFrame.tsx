@@ -1,5 +1,5 @@
 import { overlay } from "overlay-kit";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
