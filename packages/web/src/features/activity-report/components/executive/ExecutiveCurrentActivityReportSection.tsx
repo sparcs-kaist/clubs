@@ -57,6 +57,7 @@ const ExecutiveCurrentActivityReportSection: React.FC<
         selectedActivityInfos={selectedActivityInfos}
       />
     ));
+    setSelectedActivityIds([]);
   };
 
   return (

@@ -52,6 +52,7 @@ const ExecutiveActivityReportFrame = () => {
         selectedClubInfos={selectedClubInfos}
       />
     ));
+    setSelectedClubIds([]);
   };
 
   return (
