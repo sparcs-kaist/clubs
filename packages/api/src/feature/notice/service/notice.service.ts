@@ -21,26 +21,23 @@ export interface PostCrawlResult {
   link: string;
 }
 
+enum UpdatePeriodEnum {
+  After3Pages = -10,
+  Among3Pages = -5,
+}
+
 function findArticleId(link: string): number {
   return Number.parseInt(
     link.match(/articleid=[0-9]+/)[0].replace("articleid=", ""),
   );
 }
-
 @Injectable()
 export class NoticeService {
   constructor(private readonly noticeRepository: NoticeRepository) {}
 
-  async getAllNotices() {
-    return this.noticeRepository.find({
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-  }
-
   async getNotices(pageOffset: number, itemCount: number) {
     const notices = await this.noticeRepository.find({
+      articleId: { gte: 0 },
       pagination: {
         offset: pageOffset,
         itemCount,
@@ -193,7 +190,9 @@ export class NoticeService {
   }
 
   async updateNotices(maxPages: number) {
-    const noticesFromDB = (await this.noticeRepository.find({})).map(e => ({
+    const noticesFromDB = (
+      await this.noticeRepository.find({ articleId: { gt: 0 } })
+    ).map(e => ({
       createdAt: e.createdAt,
       author: e.author,
       title: e.title,
@@ -254,5 +253,52 @@ export class NoticeService {
         articleId: post.articleId,
       });
     });
+
+    const isAfter3Pages: boolean = maxPages > 3;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+
+    await this.noticeRepository.create({
+      articleId: negativePeriod,
+      date: new Date(),
+      link: "",
+      createdAt: new Date(),
+      author: "Notice Cron",
+      title: `Notices Last Update TIme(~3)=${new Date()}`,
+    });
+    if (isAfter3Pages) {
+      await this.noticeRepository.create({
+        articleId: UpdatePeriodEnum.Among3Pages,
+        date: new Date(),
+        link: "",
+        createdAt: new Date(),
+        author: "Notice Cron",
+        title: `Notices Last Update TIme(4~)=${new Date()}`,
+      });
+    }
+  }
+
+  async getLastUpdateTime(pageOffset: number, itemCount: number) {
+    const isAfter3Pages: boolean = pageOffset + itemCount > 3 * userDisplay;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+    const lastUpdateRow = await this.noticeRepository.find({
+      articleId: negativePeriod,
+      orderBy: {
+        createdAt: OrderByTypeEnum.DESC,
+      },
+      pagination: {
+        itemCount: 1,
+        offset: 1,
+      },
+    });
+    if (lastUpdateRow.length === 0) {
+      const time = new Date();
+      time.setTime(time.getTime() + 600000 * negativePeriod);
+      return { time };
+    }
+    return { time: new Date(lastUpdateRow[0].title.split("=")[1]) };
   }
 }

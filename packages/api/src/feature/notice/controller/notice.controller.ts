@@ -6,6 +6,11 @@ import type {
   ApiNtc001ResponseOK,
 } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 import apiNtc001 from "@clubs/interface/api/notice/endpoint/apiNtc001";
+import type {
+  ApiNtc002RequestQuery,
+  ApiNtc002ResponseOK,
+} from "@clubs/interface/api/notice/endpoint/apiNtc002";
+import apiNtc002 from "@clubs/interface/api/notice/endpoint/apiNtc002";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
@@ -26,6 +31,19 @@ export class NoticeController {
       `[/notices] offset: ${query.pageOffset}, count: ${query.itemCount}`,
     );
     const notices = await this.noticesService.getNotices(
+      query.pageOffset,
+      query.itemCount,
+    );
+    return notices;
+  }
+
+  @Public()
+  @Get("/notices/lastupdatetime")
+  @UsePipes(new ZodPipe(apiNtc002))
+  async getLastUpdateTime(
+    @Query() query: ApiNtc002RequestQuery,
+  ): Promise<ApiNtc002ResponseOK> {
+    const notices = await this.noticesService.getLastUpdateTime(
       query.pageOffset,
       query.itemCount,
     );
