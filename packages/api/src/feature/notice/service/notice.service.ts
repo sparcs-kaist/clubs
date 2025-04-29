@@ -259,6 +259,7 @@ export class NoticeService {
       ? UpdatePeriodEnum.After3Pages
       : UpdatePeriodEnum.Among3Pages;
 
+    // articleId를 음수로 해서 로그를 남깁니다.
     await this.noticeRepository.create({
       articleId: negativePeriod,
       date: new Date(),
@@ -299,6 +300,8 @@ export class NoticeService {
       time.setTime(time.getTime() + 600000 * negativePeriod);
       return { time };
     }
+
+    // 그냥 lastUpdateRow[0].date로 하려고 했는데 그러면 날짜만 남고 시간이 짤려서 이렇게 했습니다
     return { time: new Date(lastUpdateRow[0].title.split("=")[1]) };
   }
 }

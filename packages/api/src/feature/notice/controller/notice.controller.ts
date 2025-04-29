@@ -43,6 +43,7 @@ export class NoticeController {
   async getLastUpdateTime(
     @Query() query: ApiNtc002RequestQuery,
   ): Promise<ApiNtc002ResponseOK> {
+    // 모든 notice 글이 한번에 업데이트 되는 것이 아니기 때문에 페이지네이션 값도 필요합니다.
     const notices = await this.noticesService.getLastUpdateTime(
       query.pageOffset,
       query.itemCount,
