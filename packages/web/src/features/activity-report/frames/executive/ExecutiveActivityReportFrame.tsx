@@ -1,5 +1,5 @@
 import { overlay } from "overlay-kit";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -43,7 +43,7 @@ const ExecutiveActivityReportFrame = () => {
     }
   }, [data, selectedClubIds]);
 
-  const openChargedChangeModal = () => {
+  const openChargedChangeModal = useCallback(() => {
     overlay.open(({ isOpen, close }) => (
       <ChargedChangeClubModalContent
         isOpen={isOpen}
@@ -53,7 +53,7 @@ const ExecutiveActivityReportFrame = () => {
       />
     ));
     setSelectedClubIds([]);
-  };
+  }, [selectedClubIds, selectedClubInfos]);
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
