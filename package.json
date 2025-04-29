@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "turbo watch dev",
     "dev-mock": "turbo watch dev-mock",
-    "build": "turbo run build",
+    "build": "turbo run build --force",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",

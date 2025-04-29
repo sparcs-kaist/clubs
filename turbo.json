@@ -9,7 +9,9 @@
     "build": {
       "dependsOn": ["^build"]
     },
-    "clean": {},
+    "clean": {
+      "cache": false
+    },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
