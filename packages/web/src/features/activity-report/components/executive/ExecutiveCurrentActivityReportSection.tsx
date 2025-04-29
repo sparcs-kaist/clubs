@@ -52,12 +52,14 @@ const ExecutiveCurrentActivityReportSection: React.FC<
     overlay.open(({ isOpen, close }) => (
       <ChargedChangeActivityModalContent
         isOpen={isOpen}
-        close={close}
+        close={() => {
+          setSelectedActivityIds([]);
+          close();
+        }}
         selectedActivityIds={selectedActivityIds}
         selectedActivityInfos={selectedActivityInfos}
       />
     ));
-    setSelectedActivityIds([]);
   }, [selectedActivityIds, selectedActivityInfos]);
 
   return (

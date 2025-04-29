@@ -47,12 +47,14 @@ const ExecutiveActivityReportFrame = () => {
     overlay.open(({ isOpen, close }) => (
       <ChargedChangeClubModalContent
         isOpen={isOpen}
-        close={close}
+        close={() => {
+          setSelectedClubIds([]);
+          close();
+        }}
         selectedClubIds={selectedClubIds}
         selectedClubInfos={selectedClubInfos}
       />
     ));
-    setSelectedClubIds([]);
   }, [selectedClubIds, selectedClubInfos]);
 
   return (
