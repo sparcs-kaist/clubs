@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -43,7 +43,7 @@ const ExecutiveRegisterClub = () => {
         ]}
         title="동아리 등록 신청 내역"
       />
-      <ExecutiveRegistrationClubFrame />
+      <ExecutiveRegistrationClubFrame url="/executive/register-club" />
     </FlexWrapper>
   );
 };

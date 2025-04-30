@@ -1,18 +1,16 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-/**
- * @version v0.1
- * @description 활동보고서의 활동을 삭제합니다.
- * 동아리 대표자로 로그인되어 있어야 합니다.
- */
+import { zActivity } from "@clubs/domain/activity/activity";
+
+import { registry } from "@clubs/interface/open-api";
 
 const url = (activityId: number) =>
   `/student/activities/activity/${activityId}`;
 const method = "DELETE";
 
 const requestParam = z.object({
-  activityId: z.coerce.number().int().min(1),
+  activityId: zActivity.shape.id,
 });
 
 const requestQuery = z.object({});
@@ -48,3 +46,28 @@ export type {
   ApiAct004RequestBody,
   ApiAct004ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["activity"],
+  method: "delete",
+  path: "/student/activities/activity/:activityId",
+  description: `
+  # ACT-004
+
+  활동보고서의 활동을 삭제합니다.
+
+  동아리 대표자로 로그인되어 있어야 합니다.
+  `,
+  summary: "ACT-004: 동아리 대표자가 활동보고서의 활동을 삭제합니다.",
+  request: {},
+  responses: {
+    200: {
+      description: "성공적으로 삭제되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[HttpStatusCode.Ok],
+        },
+      },
+    },
+  },
+});

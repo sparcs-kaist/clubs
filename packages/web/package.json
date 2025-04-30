@@ -72,6 +72,7 @@
     "@clubs/eslint-config": "workspace:*",
     "@clubs/typescript-config": "workspace:*",
     "@clubs/interface": "workspace:*",
+    "@clubs/domain": "workspace:*",
     "@storybook/addon-actions": "^8.4.5",
     "@storybook/addon-essentials": "^8.4.5",
     "@storybook/addon-interactions": "^8.4.5",

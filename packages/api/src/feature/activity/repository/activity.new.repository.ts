@@ -30,7 +30,7 @@ export type ActivityQuery = {
   clubId: number;
   activityTypeEnumId: ActivityTypeEnum;
   activityStatusEnumId: ActivityStatusEnum;
-  activityDurationId: number;
+  activityDId: number;
 };
 
 type ActivityOrderByKeys = "id";
@@ -183,7 +183,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       clubId: Activity,
       activityTypeEnumId: Activity,
       activityStatusEnumId: Activity,
-      activityDurationId: Activity,
+      activityDId: Activity,
     };
 
     if (!(field in fieldMappings)) {

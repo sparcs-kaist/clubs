@@ -6,6 +6,8 @@ import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
 import { zStudent } from "@clubs/domain/user/student";
 
+import { zExtractId } from "../common/utils";
+
 extendZodWithOpenApi(z);
 
 export enum ClubMemberTypeEnum {
@@ -18,9 +20,9 @@ export const zClubMember = z.object({
     description: "동아리 소속 멤버 상태 ID",
     examples: [1, 2, 3],
   }),
-  clubId: zClub.shape.id,
-  studentId: zStudent.shape.id,
-  semester: z.object({ id: zSemester.shape.id }),
+  club: zExtractId(zClub),
+  student: zExtractId(zStudent),
+  semester: zExtractId(zSemester),
   clubMemberTypeEnum: z.nativeEnum(ClubMemberTypeEnum).openapi({
     description: "회원의 상태 1: 정회원 2: 준회원",
     examples: [ClubMemberTypeEnum.Regular, ClubMemberTypeEnum.Associate],

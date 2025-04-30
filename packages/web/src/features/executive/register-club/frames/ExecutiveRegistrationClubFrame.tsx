@@ -1,7 +1,7 @@
 "use client";
 
 import { hangulIncludes } from "es-hangul";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import {
@@ -62,7 +62,9 @@ const RegistrationTypeList = Object.keys(RegistrationTypeTagList).map(key =>
   parseInt(key),
 );
 
-export const ExecutiveRegistrationClubFrame = () => {
+export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
+  url,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 200;
   const [searchText, setSearchText] = useState<string>("");
@@ -250,6 +252,7 @@ export const ExecutiveRegistrationClubFrame = () => {
       <TableWithPaginationWrapper>
         <ExecutiveRegistrationTable
           registerList={filteredClubs ?? { total: 0, items: [], offset: 0 }}
+          url={url}
         />
         <FlexWrapper direction="row" gap={16} justify="center">
           <Pagination

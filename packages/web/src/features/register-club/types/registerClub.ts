@@ -1,4 +1,5 @@
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 

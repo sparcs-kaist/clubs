@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
 import apiAct002, {
   ApiAct002ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct002";
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { activityDetailGet } from "@sparcs-clubs/web/features/register-club/services/_atomic/actApiList";
 import {

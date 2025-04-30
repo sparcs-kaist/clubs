@@ -15,15 +15,15 @@ import {
   or,
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import {
-  Club,
-  ClubDelegateD,
-  ClubStudentT,
-} from "src/drizzle/schema/club.schema";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  ClubDelegate,
+  ClubOld,
+  ClubStudentT,
+} from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 import { MStudent } from "@sparcs-clubs/api/feature/user/model/student.model";
@@ -139,11 +139,11 @@ export default class ClubStudentTRepository {
     const clubs = await this.db
       .select({
         id: ClubStudentT.clubId,
-        nameKr: Club.nameKr,
-        nameEn: Club.nameEn,
+        nameKr: ClubOld.nameKr,
+        nameEn: ClubOld.nameEn,
       })
       .from(ClubStudentT)
-      .leftJoin(Club, eq(Club.id, ClubStudentT.clubId))
+      .leftJoin(ClubOld, eq(ClubOld.id, ClubStudentT.clubId))
       .where(
         and(
           eq(ClubStudentT.studentId, studentId),
@@ -181,12 +181,12 @@ export default class ClubStudentTRepository {
   ): Promise<void> {
     if (isTargetStudentDelegate)
       await this.db
-        .delete(ClubDelegateD)
+        .delete(ClubDelegate)
         .where(
           and(
-            eq(ClubDelegateD.studentId, studentId),
-            eq(ClubDelegateD.clubId, clubId),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.studentId, studentId),
+            eq(ClubDelegate.clubId, clubId),
+            isNull(ClubDelegate.deletedAt),
           ),
         )
         .execute();

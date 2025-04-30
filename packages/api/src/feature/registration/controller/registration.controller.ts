@@ -254,11 +254,13 @@ export class RegistrationController {
     return result;
   }
 
-  @Executive()
+  // Reg014~015: 등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/registrations/club-registrations")
   @UsePipes(new ZodPipe(apiReg014))
   async getExecutiveRegistrationsClubRegistrations(
-    @GetExecutive() user: GetExecutive,
+    //@GetExecutive() user: GetExecutive,
     @Query() query: ApiReg014RequestQuery,
   ): Promise<ApiReg014ResponseOk> {
     const result =
@@ -269,11 +271,12 @@ export class RegistrationController {
     return result;
   }
 
-  @Executive()
+  //@Executive()
+  @Public()
   @Get("/executive/registrations/club-registrations/club-registration/:applyId")
   @UsePipes(new ZodPipe(apiReg015))
   async getExecutiveRegistrationsClubRegistration(
-    @GetExecutive() user: GetExecutive,
+    //@GetExecutive() user: GetExecutive,
     @Param() { applyId }: ApiReg015RequestParam,
   ): Promise<ApiReg015ResponseOk> {
     const result =

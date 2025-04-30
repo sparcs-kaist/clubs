@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { InferSelectModel } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
@@ -27,7 +27,7 @@ type NoticeQuerySupport = {}; // ?
 type NoticeTable = typeof Notice;
 type NoticeDbSelect = InferSelectModel<NoticeTable>;
 type NoticeDbUpdate = Partial<NoticeDbSelect>;
-
+type NoticeDbInsert = InferInsertModel<NoticeTable>;
 type NoticeFieldMapKeys = BaseTableFieldMapKeys<
   NoticeQuery,
   NoticeOrderByKeys,
@@ -65,6 +65,17 @@ export class NoticeRepository extends BaseSingleTableRepository<
       author: model.author,
       createdAt: model.createdAt,
       date: model.date,
+      link: model.link,
+      title: model.title,
+      articleId: model.articleId,
+    };
+  }
+
+  protected createToDBMapping(model: INoticeCreate): NoticeDbInsert {
+    return {
+      date: model.date,
+      author: model.author,
+      createdAt: model.createdAt,
       link: model.link,
       title: model.title,
       articleId: model.articleId,
