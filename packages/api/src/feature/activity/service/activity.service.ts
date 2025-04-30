@@ -1198,6 +1198,9 @@ export default class ActivityService {
     return {
       items,
       executiveProgresses,
+      // TODO. 영미가 임의로  추가한거임. 확인필요
+      total: items.length,
+      offset: 0,
     };
   }
 
