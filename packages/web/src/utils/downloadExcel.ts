@@ -29,5 +29,7 @@ export default function downloadExcel<T>({
   downloadLink.href = url;
   downloadLink.download = fileName;
   downloadLink.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
 }
