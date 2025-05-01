@@ -25,6 +25,10 @@ export const activityDeadlineEnumToString = (
 export const newActivityReportListSectionInfoText = (
   data?: ApiAct018ResponseOk,
 ) => {
+  if (data?.deadline == null) {
+    return "현재는 활동 보고서 기간이 아닙니다.";
+  }
+
   const status = activityDeadlineEnumToString(
     data?.deadline.activityDeadlineEnum,
   );
