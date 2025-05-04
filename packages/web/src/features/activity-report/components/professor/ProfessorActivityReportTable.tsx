@@ -69,7 +69,7 @@ const columns = [
   }),
   columnHelper.accessor(
     row =>
-      `${formatDate(row.durations[0].startTerm)} ~ ${formatDate(row.durations[0].endTerm)}${row.durations.length > 1 ? ` 외 ${row.durations.length - 1}개` : ""}`,
+      `${formatDate(row.durations[0].startTerm!)} ~ ${formatDate(row.durations[0].endTerm!)}${row.durations.length > 1 ? ` 외 ${row.durations.length - 1}개` : ""}`,
     {
       id: "date-range",
       header: "활동 기간",

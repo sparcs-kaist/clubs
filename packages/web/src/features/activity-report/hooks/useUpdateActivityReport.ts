@@ -17,6 +17,10 @@ const useUpdateActivityReport = (activityId: number) => {
           activityId,
           body: {
             ...data,
+            durations: data.durations.map(duration => ({
+              startTerm: duration.startTerm!,
+              endTerm: duration.endTerm!,
+            })),
             evidenceFiles: data.evidenceFiles.map(file => ({
               fileId: file.id,
             })),
