@@ -104,7 +104,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       commentedExecutive: undefined,
       commentedAt: result.main.commentedAt,
       editedAt: result.main.editedAt,
-      updatedAt: result.main.updatedAt,
+      professorApprovedAt: result.main.professorApprovedAt,
       durations: result.oneToMany.activityT,
     });
   }
@@ -124,7 +124,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         chargedExecutiveId: model.chargedExecutive?.id,
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
-        updatedAt: model.updatedAt,
+        professorApprovedAt: model.professorApprovedAt,
       },
       oneToOne: {},
       oneToMany: {

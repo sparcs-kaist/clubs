@@ -14,7 +14,8 @@ import ActivityClubChargedExecutiveRepository from "./repository/activity.activi
 import { ActivityNewRepository } from "./repository/activity.new.repository";
 import ActivityRepository from "./repository/activity.repository";
 import ActivityPublicService from "./service/activity.public.service";
-import ActivityService from "./service/activity.service";
+import ActivityOldService from "./service/activity.service";
+import ActivityService from "./service/activity.service.new";
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import ActivityService from "./service/activity.service";
     ActivityRepository,
     ActivityClubChargedExecutiveRepository,
     ActivityService,
+    ActivityOldService,
     ActivityPublicService,
     ClubTRepository,
     ActivityNewRepository,

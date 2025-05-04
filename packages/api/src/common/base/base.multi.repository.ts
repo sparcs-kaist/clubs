@@ -127,7 +127,7 @@ export type MultiModelInsertTableArray<MultiTable extends MultiTableWithID> = {
 // 베이스 레포지토리 추상클래스
 // 사용 방법
 // 1. Model에 모델 클래스 넣기
-// 2. Table에 FromDB (InferSelectTable) 타입 넣기
+// 2. Table 타입 넣기
 // 3. 쿼리 조건 추가 (id 등 제외)
 // 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
 @Injectable()

@@ -96,7 +96,7 @@ import { ActivityNewRepository } from "../repository/activity.new.repository";
 import ActivityRepository from "../repository/activity.repository";
 
 @Injectable()
-export default class ActivityService {
+export default class ActivityOldService {
   constructor(
     private activityRepository: ActivityRepository,
     private activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,

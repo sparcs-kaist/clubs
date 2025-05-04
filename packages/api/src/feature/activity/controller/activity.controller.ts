@@ -144,11 +144,15 @@ import {
   GetStudent,
 } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
 
-import ActivityService from "../service/activity.service";
+import ActivityOldService from "../service/activity.service";
+import ActivityService from "../service/activity.service.new";
 
 @Controller()
 export default class ActivityController {
-  constructor(private activityService: ActivityService) {}
+  constructor(
+    private activityOldService: ActivityOldService,
+    private activityService: ActivityService,
+  ) {}
 
   // TODO: Authentication 필요
   @Student()
@@ -205,7 +209,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Body() body: ApiAct001RequestBody,
   ): Promise<ApiAct001ResponseCreated> {
-    await this.activityService.postStudentActivity(body, user.studentId);
+    await this.activityOldService.postStudentActivity(body, user.studentId);
     return {};
   }
 
@@ -229,7 +233,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Body() body: ApiAct007RequestBody,
   ): Promise<ApiAct007ResponseCreated> {
-    await this.activityService.postStudentActivityProvisional(
+    await this.activityOldService.postStudentActivityProvisional(
       body,
       user.studentId,
     );
@@ -244,7 +248,7 @@ export default class ActivityController {
     @Param() param: ApiAct008RequestParam,
     @Body() body: ApiAct008RequestBody,
   ): Promise<ApiAct008ResponseOk> {
-    await this.activityService.putStudentActivityProvisional(
+    await this.activityOldService.putStudentActivityProvisional(
       param,
       body,
       user.studentId,
@@ -259,7 +263,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct004RequestParam,
   ): Promise<ApiAct004ResponseOk> {
-    await this.activityService.deleteStudentActivityProvisional(
+    await this.activityOldService.deleteStudentActivityProvisional(
       param.activityId,
       user.studentId,
     );
@@ -274,7 +278,7 @@ export default class ActivityController {
     @Query() query: ApiAct010RequestQuery,
   ): Promise<ApiAct010ResponseOk> {
     const result =
-      await this.activityService.getStudentActivitiesAvailableMembers({
+      await this.activityOldService.getStudentActivitiesAvailableMembers({
         studentId: user.studentId,
         query,
       });
@@ -288,10 +292,11 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Query() query: ApiAct011RequestQuery,
   ): Promise<ApiAct011ResponseOk> {
-    const result = await this.activityService.getStudentProvisionalActivities({
-      studentId: user.studentId,
-      query,
-    });
+    const result =
+      await this.activityOldService.getStudentProvisionalActivities({
+        studentId: user.studentId,
+        query,
+      });
 
     return result;
   }
@@ -304,11 +309,10 @@ export default class ActivityController {
   async getExecutiveProvisionalActivities(
     @Query() query: ApiAct012RequestQuery,
   ): Promise<ApiAct012ResponseOk> {
-    const result = await this.activityService.getExecutiveProvisionalActivities(
-      {
+    const result =
+      await this.activityOldService.getExecutiveProvisionalActivities({
         query,
-      },
-    );
+      });
 
     return result;
   }
@@ -319,11 +323,10 @@ export default class ActivityController {
   async getProfessorProvisionalActivities(
     @Query() query: ApiAct013RequestQuery,
   ): Promise<ApiAct013ResponseOk> {
-    const result = await this.activityService.getProfessorProvisionalActivities(
-      {
+    const result =
+      await this.activityOldService.getProfessorProvisionalActivities({
         query,
-      },
-    );
+      });
 
     return result;
   }
@@ -336,7 +339,7 @@ export default class ActivityController {
   async getExecutiveActivity(
     @Param() param: ApiAct014RequestParam,
   ): Promise<ApiAct014ResponseOk> {
-    const result = await this.activityService.getExecutiveActivity(
+    const result = await this.activityOldService.getExecutiveActivity(
       param.activityId,
     );
 
@@ -350,7 +353,7 @@ export default class ActivityController {
     @Param() param: ApiAct015RequestParam,
     @GetProfessor() user: GetProfessor,
   ): Promise<ApiAct015ResponseOk> {
-    const result = await this.activityService.getProfessorActivity(
+    const result = await this.activityOldService.getProfessorActivity(
       param.activityId,
       user.professorId,
     );
@@ -365,10 +368,12 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Param() param: ApiAct016RequestParam,
   ): Promise<ApiAct016ResponseOk> {
-    const result = await this.activityService.patchExecutiveActivityApproval({
-      executiveId: user.executiveId,
-      param,
-    });
+    const result = await this.activityOldService.patchExecutiveActivityApproval(
+      {
+        executiveId: user.executiveId,
+        param,
+      },
+    );
     return result;
   }
 
@@ -380,11 +385,13 @@ export default class ActivityController {
     @Param() param: ApiAct017RequestParam,
     @Body() body: ApiAct017RequestBody,
   ): Promise<ApiAct017ResponseOk> {
-    const result = await this.activityService.patchExecutiveActivitySendBack({
-      executiveId: user.executiveId,
-      param,
-      body,
-    });
+    const result = await this.activityOldService.patchExecutiveActivitySendBack(
+      {
+        executiveId: user.executiveId,
+        param,
+        body,
+      },
+    );
     return result;
   }
 
@@ -395,7 +402,7 @@ export default class ActivityController {
     @GetProfessor() user: GetProfessor,
     @Query() query: ApiAct019RequestQuery,
   ): Promise<ApiAct019ResponseOk> {
-    const result = await this.activityService.getProfessorActivities(
+    const result = await this.activityOldService.getProfessorActivities(
       query.clubId,
       user.professorId,
     );
@@ -409,7 +416,7 @@ export default class ActivityController {
     @GetProfessor() user: GetProfessor,
     @Body() body: ApiAct020RequestBody,
   ): Promise<ApiAct020ResponseCreated> {
-    await this.activityService.postProfessorActivityApprove(
+    await this.activityOldService.postProfessorActivityApprove(
       body.activities.map(activity => activity.id),
       user.professorId,
     );
@@ -420,7 +427,7 @@ export default class ActivityController {
   @Get("/executive/activities/clubs")
   @UsePipes(new ZodPipe(apiAct023))
   async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const result = await this.activityService.getExecutiveActivitiesClubs();
+    const result = await this.activityOldService.getExecutiveActivitiesClubs();
     return result;
   }
 
@@ -434,9 +441,10 @@ export default class ActivityController {
     if (query.semesterId !== undefined) {
       console.log("semesterId filter of ACT-024 is not yet implemented");
     }
-    const result = await this.activityService.getExecutiveActivitiesClubBrief({
-      query,
-    });
+    const result =
+      await this.activityOldService.getExecutiveActivitiesClubBrief({
+        query,
+      });
     return result;
   }
 
@@ -447,7 +455,7 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Body() body: ApiAct025RequestBody,
   ): Promise<ApiAct025ResponseOk> {
-    await this.activityService.patchExecutiveActivities({
+    await this.activityOldService.patchExecutiveActivities({
       body,
     });
     return {};
@@ -460,7 +468,7 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Body() body: ApiAct026RequestBody,
   ): Promise<ApiAct026ResponseOk> {
-    await this.activityService.putExecutiveActivitiesClubChargedExecutive({
+    await this.activityOldService.putExecutiveActivitiesClubChargedExecutive({
       body,
     });
     return {};
@@ -473,7 +481,7 @@ export default class ActivityController {
     @Query() query: ApiAct027RequestQuery,
   ): Promise<ApiAct027ResponseOk> {
     const result =
-      await this.activityService.getExecutiveActivitiesClubChargeAvailableExecutives(
+      await this.activityOldService.getExecutiveActivitiesClubChargeAvailableExecutives(
         query,
       );
     return result;
@@ -486,7 +494,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Query() query: ApiAct021RequestQuery,
   ): Promise<ApiAct021ResponseOk> {
-    return this.activityService.getStudentActivitiesAvailable(
+    return this.activityOldService.getStudentActivitiesAvailable(
       user.studentId,
       query.clubId,
     );
@@ -499,7 +507,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct022RequestParam,
   ): Promise<ApiAct022ResponseOk> {
-    return this.activityService.getStudentActivityParticipants(param.id);
+    return this.activityOldService.getStudentActivityParticipants(param.id);
   }
 
   @Executive()
@@ -508,7 +516,7 @@ export default class ActivityController {
   async getExecutiveActivitiesExecutiveBrief(
     @Param() param: ApiAct028RequestParam,
   ): Promise<ApiAct028ResponseOk> {
-    return this.activityService.getExecutiveActivitiesExecutiveBrief(
+    return this.activityOldService.getExecutiveActivitiesExecutiveBrief(
       param.executiveId,
     );
   }
@@ -519,7 +527,9 @@ export default class ActivityController {
   async getStudentActivityProvisional(
     @Param() param: ApiAct029RequestParam,
   ): Promise<ApiAct029ResponseOk> {
-    return this.activityService.getStudentActivityProvisional(param.activityId);
+    return this.activityOldService.getStudentActivityProvisional(
+      param.activityId,
+    );
   }
 
   @Student()
@@ -530,11 +540,12 @@ export default class ActivityController {
     @Param() param: ApiAct006RequestParam,
     @Query() query: ApiAct006RequestQuery,
   ): Promise<ApiAct006ResponseOk> {
-    const result = await this.activityService.getStudentActivitiesActivityTerm(
-      param,
-      query,
-      user.studentId,
-    );
+    const result =
+      await this.activityOldService.getStudentActivitiesActivityTerm(
+        param,
+        query,
+        user.studentId,
+      );
     return result;
   }
 
@@ -545,10 +556,11 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Query() query: ApiAct009RequestQuery,
   ): Promise<ApiAct009ResponseOk> {
-    const result = await this.activityService.getStudentActivitiesActivityTerms(
-      query,
-      user.studentId,
-    );
+    const result =
+      await this.activityOldService.getStudentActivitiesActivityTerms(
+        query,
+        user.studentId,
+      );
     return result;
   }
 }
