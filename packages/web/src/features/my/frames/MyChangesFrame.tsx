@@ -18,7 +18,7 @@ export const MyChangesFrame = () => {
 
   // TODO - Div005 & Div006 API 나오면 이 코드를 사용하도록 수정할 것
   // const {divisionPresidentData, divisionPresidentIsLoading, divisionPresidentIsError, divisionPresidentRefetch} = useGetMyDivisionPresidentRequest();
-  const divisionPresidentData = useGetMyDivisionPresidentRequest();
+  const { data: divisionPresidentData } = useGetMyDivisionPresidentRequest();
 
   const { data: myProfile } = useGetUserProfile();
 
