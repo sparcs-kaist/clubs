@@ -40,7 +40,10 @@ import apiAct022, {
   ApiAct022RequestUrl,
   type ApiAct022ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct022";
-import type { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
+import type {
+  ApiAct023RequestQuery,
+  ApiAct023ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct023";
 import apiAct023 from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
   ApiAct024RequestQuery,
@@ -411,8 +414,11 @@ export default class ActivityController {
   @Executive()
   @Get("/executive/activities/clubs")
   @UsePipes(new ZodPipe(apiAct023))
-  async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const result = await this.activityService.getExecutiveActivitiesClubs();
+  async getExecutiveActivitiesClubs(
+    @Query() query: ApiAct023RequestQuery,
+  ): Promise<ApiAct023ResponseOk> {
+    const result =
+      await this.activityService.getExecutiveActivitiesClubs(query);
     return result;
   }
 
