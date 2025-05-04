@@ -472,34 +472,30 @@ export default class ClubPublicService {
     const semester = await this.semesterPublicService.load({
       date: query.date,
     });
-    const clubs = await this.clubRepository.find({
-      or: query.name
-        ? {
-            nameKr: { like: query.name },
-            nameEn: { like: query.name },
-          }
-        : undefined,
-    });
-
-    const clubSemesters = await this.clubSemesterRepository.find({
-      semesterId: semester.id,
-      clubId: query.clubId,
-      clubTypeEnum: query.clubTypeEnum,
-    });
-
-    const divisions = await this.divisionPublicService.search({
-      date: query.date,
-    });
-
-    const clubDivisions = await this.clubDivisionHistoryRepository.find({
-      date: query.date,
-      clubId: query.clubId,
-    });
-
-    const clubDelegates = await this.clubDelegateRepository.find({
-      date: query.date,
-      clubId: query.clubId,
-    });
+    const [clubs, clubSemesters, divisions, clubDivisions, clubDelegates] =
+      await Promise.all([
+        this.clubRepository.find({
+          or: query.name
+            ? {
+                nameKr: { like: query.name },
+                nameEn: { like: query.name },
+              }
+            : undefined,
+        }),
+        this.clubSemesterRepository.find({
+          semesterId: semester.id,
+          clubId: query.clubId,
+        }),
+        this.divisionPublicService.search({ date: query.date }),
+        this.clubDivisionHistoryRepository.find({
+          date: query.date,
+          clubId: query.clubId,
+        }),
+        this.clubDelegateRepository.find({
+          date: query.date,
+          clubId: query.clubId,
+        }),
+      ]);
 
     const [students, professors] = await Promise.all([
       this.userPublicService.getStudentsByIds(

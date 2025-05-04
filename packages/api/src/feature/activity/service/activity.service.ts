@@ -1104,7 +1104,7 @@ export default class ActivityService {
     query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
     const date = new Date("2025-01-05");
-    const semesterId = await this.activityDurationPublicService.loadId({
+    const semesterId = await this.semesterPublicService.loadId({
       date,
     });
     const activityDId = await this.activityDurationPublicService.loadId({
@@ -1281,6 +1281,13 @@ export default class ActivityService {
     const pageEnd = pageStart + query.itemCount;
     const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
 
+    console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
+    console.log(`ActivityDId: ${activityDId}`);
+    const semester = await this.semesterPublicService.load({
+      date,
+    });
+    console.log(`SemesterId: ${semester.id}`);
+    console.log(`Date: ${date}`);
     return {
       items: paginatedItems,
       executiveProgresses: executiveNameFilteredExecutiveProgresses,
