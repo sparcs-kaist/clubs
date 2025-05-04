@@ -74,8 +74,6 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
     });
   };
 
-  console.log("asdfa", activityTermList, durations);
-
   return (
     <FlexWrapper direction="column" gap={4}>
       <Typography fw="MEDIUM" fs={16} lh={20}>
