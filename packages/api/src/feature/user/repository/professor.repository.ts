@@ -1,103 +1,137 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
 
-import { IProfessor } from "@clubs/interface/api/user/type/user.type";
-
-import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  BaseMultiTableRepository,
+  MultiInsertModel,
+  MultiSelectModel,
+  MultiUpdateModel,
+} from "@sparcs-clubs/api/common/base/base.multi.repository";
+import {
+  BaseTableFieldMapKeys,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
 import {
   Professor,
   ProfessorT,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import {
+  IProfessorCreate,
+  MProfessor,
+} from "@sparcs-clubs/api/feature/user/model/professor.model";
+
+export type ProfessorQuery = {
+  userId: number;
+  email: string;
+};
+
+type ProfessorOrderByKeys = "id";
+type ProfessorQuerySupport = {};
+
+type ProfessorTable = {
+  main: typeof Professor;
+  oneToOne: {
+    professorT: typeof ProfessorT;
+  };
+  oneToMany: {};
+};
+type ProfessorDbSelect = MultiSelectModel<ProfessorTable>;
+type ProfessorDbUpdate = MultiUpdateModel<ProfessorTable>;
+type ProfessorDbInsert = MultiInsertModel<ProfessorTable, "professorId">;
+
+type ProfessorFieldMapKeys = BaseTableFieldMapKeys<
+  ProfessorQuery,
+  ProfessorOrderByKeys,
+  ProfessorQuerySupport
+>;
 
 @Injectable()
-export default class ProfessorRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
-
-  async getProfessorPhoneNumber(id: number) {
-    const crt = getKSTDate();
-    const result = await this.db
-      .select({ phoneNumber: Professor.phoneNumber })
-      .from(Professor)
-      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)))
-      .leftJoin(
-        ProfessorT,
-        and(
-          eq(ProfessorT.professorId, Professor.id),
-          or(gte(ProfessorT.endTerm, crt), isNull(ProfessorT.endTerm)),
-          lte(ProfessorT.startTerm, crt),
-          isNull(ProfessorT.deletedAt),
-        ),
-      )
-      .then(takeOne);
-    return result;
+export class ProfessorRepository extends BaseMultiTableRepository<
+  MProfessor,
+  IProfessorCreate,
+  "professorId",
+  ProfessorTable,
+  ProfessorQuery,
+  ProfessorOrderByKeys,
+  ProfessorQuerySupport
+> {
+  constructor() {
+    super(
+      {
+        main: Professor,
+        oneToOne: {
+          professorT: ProfessorT,
+        },
+        oneToMany: {},
+      },
+      MProfessor,
+      "professorId",
+    );
   }
-
-  async selectProfessorById(id: number) {
-    return this.db
-      .select()
-      .from(Professor)
-      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)));
-  }
-
-  async updateProfessorPhoneNumber(id: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(Professor)
-        .set({ phoneNumber })
-        .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)));
-      if (result.affectedRows === 0) {
-        logger.debug("[updatePhoneNumber] rollback occurs");
-        tx.rollback();
-        return false;
-      }
-      return true;
+  protected dbToModelMapping(result: ProfessorDbSelect): MProfessor {
+    return new MProfessor({
+      id: result.main.id,
+      userId: result.main.userId,
+      name: result.main.name,
+      email: result.main.email,
+      professorEnum: result.oneToOne.professorT.professorEnum,
+      phoneNumber: result.main.phoneNumber,
+      department: result.oneToOne.professorT.department,
     });
-    return isUpdateSucceed;
   }
 
-  async findAll(ids: number[]): Promise<IProfessor[]> {
-    if (ids.length === 0) {
-      return [];
-    }
-
-    const professors = await this.db
-      .select({
-        id: Professor.id,
-        name: Professor.name,
-        userId: Professor.userId,
-        email: Professor.email,
-        professorEnum: ProfessorT.professorEnum,
-        department: ProfessorT.department,
-        phoneNumber: Professor.phoneNumber,
-      })
-      .from(Professor)
-      .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
-      .where(inArray(Professor.id, ids));
-    return professors;
+  protected modelToDBMapping(model: MProfessor): ProfessorDbUpdate {
+    return {
+      main: {
+        id: model.id,
+        userId: model.userId,
+        name: model.name,
+        email: model.email,
+        phoneNumber: model.phoneNumber,
+      },
+      oneToOne: {
+        professorT: {
+          id: model.id,
+          professorId: model.id,
+          professorEnum: model.professorEnum,
+          department: model.department,
+        },
+      },
+      oneToMany: {},
+    };
   }
 
-  async find(id: number): Promise<IProfessor> {
-    const result = await this.db
-      .select({
-        id: Professor.id,
-        name: Professor.name,
-        userId: Professor.userId,
-        email: Professor.email,
-        professorEnum: ProfessorT.professorEnum,
-        department: ProfessorT.department,
-        phoneNumber: Professor.phoneNumber,
-      })
-      .from(Professor)
-      .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
-      .where(and(eq(Professor.id, id), isNull(Professor.deletedAt)));
+  protected createToDBMapping(model: IProfessorCreate): ProfessorDbInsert {
+    return {
+      main: {
+        userId: model.userId,
+        name: model.name,
+        email: model.email,
+        phoneNumber: model.phoneNumber,
+      },
+      oneToOne: {
+        professorT: {
+          startTerm: new Date(),
+          //   professorEnum: model.professorEnum,
+          //   department: model.department,
+        },
+      },
+      oneToMany: {},
+    };
+  }
 
-    if (result.length !== 1) {
-      return null;
+  protected fieldMap(
+    field: ProfessorFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<ProfessorFieldMapKeys, TableWithID | null> = {
+      id: Professor,
+      userId: Professor,
+      email: Professor,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
     }
 
-    return result[0];
+    return fieldMappings[field];
   }
 }

@@ -4,6 +4,8 @@ import { z } from "zod";
 import { zId } from "@clubs/domain/common/id";
 import { zSemester } from "@clubs/domain/semester/semester";
 
+import { zExtractId } from "../common/utils";
+
 extendZodWithOpenApi(z);
 
 export enum StudentStatusEnum {
@@ -39,18 +41,14 @@ export const zStudent = z.object({
 //todo: 미완성 상태. 사용하지 말것.
 export const zStudentHistory = z.object({
   id: zId,
-  studentId: zStudent.pick({ id: true }),
+  studentId: zExtractId(zStudent),
   studentEnum: z.nativeEnum(StudentStatusEnum), // TODO: 학생 재학 상태를
   StudentStatusEnum: z.nativeEnum(StudentStatusEnum), // TODO: 두 enum 정확히 비교 필요
   department: z.coerce.number().int().min(1), // 학부코드
-  semester: zSemester.pick({ id: true }),
-  startTerm: z.coerce.date(), // 해당 상태가 시작된 시각
-  endTerm: z.coerce.date(), // 해당 상태가 종료된 시각
+  semester: zExtractId(zSemester),
+  startTerm: z.coerce.date(), // 언젠가 정상화 필요
+  endTerm: z.coerce.date(), // 언젠가 정상화 필요
 });
 
-export const zStudentSummary = zStudent.pick({
-  id: true,
-  userId: true,
-  name: true,
-  studentNumber: true,
-});
+export type IStudent = z.infer<typeof zStudent>;
+export type IStudentHistory = z.infer<typeof zStudentHistory>;
