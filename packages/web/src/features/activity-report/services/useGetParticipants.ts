@@ -7,22 +7,32 @@ import apiAct010, {
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
-export const activityReportParticipantsQueryKey = (clubId: number) => [
-  apiAct010.url(),
-  clubId,
-];
+export const activityReportParticipantsQueryKey = (
+  clubId: number,
+  startTerm: Date | null,
+  endTerm: Date | null,
+) => [apiAct010.url(), clubId, startTerm, endTerm];
 
-interface UseGetParticipantsQuery extends ApiAct010RequestQuery {
+interface UseGetParticipantsQuery
+  extends Omit<ApiAct010RequestQuery, "startTerm" | "endTerm"> {
   startTerm: Date | null;
   endTerm: Date | null;
 }
 
 const useGetParticipants = (query: UseGetParticipantsQuery) =>
   useQuery<ApiAct010ResponseOk, Error>({
-    queryKey: activityReportParticipantsQueryKey(query.clubId),
+    queryKey: activityReportParticipantsQueryKey(
+      query.clubId,
+      query.startTerm,
+      query.endTerm,
+    ),
     queryFn: async (): Promise<ApiAct010ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiAct010.url(), {
-        params: query,
+        params: {
+          ...query,
+          startTerm: query.startTerm,
+          endTerm: query.endTerm,
+        },
       });
 
       if (data.total === 0 && data.items.length === 0 && data.offset)
