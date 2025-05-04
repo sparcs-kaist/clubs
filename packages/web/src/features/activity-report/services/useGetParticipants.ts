@@ -12,7 +12,12 @@ export const activityReportParticipantsQueryKey = (clubId: number) => [
   clubId,
 ];
 
-const useGetParticipants = (query: ApiAct010RequestQuery) =>
+interface UseGetParticipantsQuery extends ApiAct010RequestQuery {
+  startTerm: Date | null;
+  endTerm: Date | null;
+}
+
+const useGetParticipants = (query: UseGetParticipantsQuery) =>
   useQuery<ApiAct010ResponseOk, Error>({
     queryKey: activityReportParticipantsQueryKey(query.clubId),
     queryFn: async (): Promise<ApiAct010ResponseOk> => {
@@ -25,6 +30,7 @@ const useGetParticipants = (query: ApiAct010RequestQuery) =>
         return data;
       return apiAct010.responseBodyMap[200].parse(data);
     },
+    enabled: query.startTerm != null && query.endTerm != null,
   });
 
 export default useGetParticipants;
