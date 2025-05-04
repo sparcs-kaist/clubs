@@ -4,11 +4,13 @@ import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 
 import {
+  BaseRepositoryFindQuery,
+  BaseRepositoryQuery,
   BaseTableFieldMapKeys,
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ClubT as ClubSemester } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubSemester } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   IClubSemesterCreate,
   MClubSemester,
@@ -36,6 +38,13 @@ type ClubSemesterFieldMapKeys = BaseTableFieldMapKeys<
   ClubSemesterQuerySupport
 >;
 
+export type ClubSemesterRepositoryFindQuery = BaseRepositoryFindQuery<
+  ClubSemesterQuery,
+  ClubSemesterOrderByKeys
+>;
+export type ClubSemesterRepositoryQuery =
+  BaseRepositoryQuery<ClubSemesterQuery>;
+
 @Injectable()
 export class ClubSemesterRepository extends BaseSingleTableRepository<
   MClubSemester,
@@ -54,7 +63,7 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
       id: result.id,
       club: { id: result.clubId },
       semester: { id: result.semesterId },
-      clubTypeEnum: result.clubStatusEnumId,
+      clubTypeEnum: result.clubTypeEnum,
       characteristicKr: result.characteristicKr,
       characteristicEn: result.characteristicEn,
       professor: { id: result.professorId },
@@ -68,7 +77,7 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
       id: model.id,
       clubId: model.club.id,
       semesterId: model.semester.id,
-      clubStatusEnumId: model.clubTypeEnum,
+      clubTypeEnum: model.clubTypeEnum,
       characteristicKr: model.characteristicKr,
       characteristicEn: model.characteristicEn,
       professorId: model.professor.id,
@@ -83,7 +92,7 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     return {
       clubId: model.club.id,
       semesterId: model.semester.id,
-      clubStatusEnumId: model.clubTypeEnum,
+      clubTypeEnum: model.clubTypeEnum,
       characteristicKr: model.characteristicKr,
       characteristicEn: model.characteristicEn,
       professorId: model.professor.id,

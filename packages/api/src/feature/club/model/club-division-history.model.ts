@@ -13,6 +13,8 @@ export class MClubDivisionHistory
   extends MEntity
   implements IClubDivisionHistory, IClubDivisionHistoryCreate
 {
+  static modelName = "clubDivisionHistory";
+
   club: IClubDivisionHistory["club"];
   division: IClubDivisionHistory["division"];
   startTerm: IClubDivisionHistory["startTerm"];
