@@ -1,6 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { forwardRef, Module } from "@nestjs/common";
-import { DrizzleModule } from "src/drizzle/drizzle.module";
+
+import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 
 import ClubModule from "../club/club.module";
 import { FileController } from "./controller/file.controller";

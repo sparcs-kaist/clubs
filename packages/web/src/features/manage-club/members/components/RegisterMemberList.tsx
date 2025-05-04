@@ -1,10 +1,10 @@
 import { useState } from "react";
 import styled from "styled-components";
 
-import { ApiClb002ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
-import { ApiClb006ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
-import { ApiClb015ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
-import { ApiReg008ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg008";
+import { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
+import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
+import { ApiClb015ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb015";
+import { ApiReg008ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg008";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";

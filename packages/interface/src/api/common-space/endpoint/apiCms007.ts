@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
+import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
 
 /**
  * @version v0.1
@@ -16,20 +16,20 @@ const requestParam = z.object({});
 const requestQuery = z
   .object({
     startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
+    endTerm: z.coerce.date().optional(),
     pageOffset: z.coerce.number().min(1),
     itemCount: z.coerce.number().min(1),
   })
   .refine(
     data => {
-      if (data.startDate && data.endDate) {
-        return data.startDate <= data.endDate;
+      if (data.startDate && data.endTerm) {
+        return data.startDate <= data.endTerm;
       }
       return true;
     },
     {
-      message: "startDate must be same or earlier than endDate",
-      path: ["startDate", "endDate"],
+      message: "startDate must be same or earlier than endTerm",
+      path: ["startDate", "endTerm"],
     },
   );
 
@@ -39,7 +39,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
       z.object({
-        orderId: z.number().int().min(1),
+        orderId: z.coerce.number().int().min(1),
         statusEnum: z.nativeEnum(CommonSpaceUsageOrderStatusEnum),
         spaceName: z.string(),
         chargeStudentName: z.string().max(255),
@@ -48,8 +48,8 @@ const responseBodyMap = {
         createdAt: z.coerce.date(), // Assuming createdAt is a datetime
       }),
     ),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(1),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(1),
   }),
 };
 

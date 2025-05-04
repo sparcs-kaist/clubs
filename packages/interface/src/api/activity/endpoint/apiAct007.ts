@@ -1,12 +1,10 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { zActivity } from "@clubs/domain/activity/activity";
+import { zClub } from "@clubs/domain/club/club";
 
-/**
- * @version v0.1
- * @description 활동보고서의 활동을 생성합니다.(가동아리 동아리 신규등록 신청을 위한 예외적 활동보고서 작성 기능입니다.)
- */
+import { registry } from "@clubs/interface/open-api";
 
 const url = () => `/student/activities/activity/provisional`;
 const method = "POST";
@@ -16,24 +14,21 @@ const requestParam = z.object({});
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  clubId: z.coerce.number().int().min(1),
-  name: z.coerce.string().max(255),
-  activityTypeEnumId: z.nativeEnum(ActivityTypeEnum),
-  durations: z.array(
-    z.object({
-      startTerm: z.coerce.date(),
-      endTerm: z.coerce.date(),
-    }),
-  ),
-  location: z.coerce.string().max(255),
-  purpose: z.coerce.string(),
-  detail: z.coerce.string(),
-  evidence: z.coerce.string(),
+  clubId: zClub.shape.id,
+  name: zActivity.shape.name,
+  activityTypeEnumId: zActivity.shape.activityTypeEnum,
+  durations: zActivity.shape.durations,
+  location: zActivity.shape.location,
+  purpose: zActivity.shape.purpose,
+  detail: zActivity.shape.detail,
+  evidence: zActivity.shape.evidence,
+  // TODO: zActivity.shape.evidenceFiles는 id를 써서 uid랑 둘중 무엇을 이용할지 결정해야함
   evidenceFiles: z.array(
     z.object({
       fileId: z.coerce.string().max(255),
     }),
   ),
+  // TODO: zActivity.shape.participants는 id를 써서 studentId와 둘중 무엇을 이용할지 결정해야함
   participants: z.array(
     z.object({
       studentId: z.coerce.number().int().min(1),
@@ -72,3 +67,37 @@ export type {
   ApiAct007RequestQuery,
   ApiAct007ResponseCreated,
 };
+
+registry.registerPath({
+  tags: ["activity"],
+  method: "post",
+  path: url(),
+  summary:
+    "ACT-007: 가동아리 동아리 신규등록 신청을 위한 예외적 활동보고서 작성",
+  description: `
+  # ACT-007
+
+  가동아리 동아리 신규등록 신청을 위한 예외적 활동보고서 작성을 위한 API입니다.
+
+  동아리 신규등록 신청을 위한 예외적 활동보고서 작성을 위한 API입니다.
+  `,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: requestBody,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "성공적으로 활동보고서의 활동을 추가했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[201],
+        },
+      },
+    },
+  },
+});

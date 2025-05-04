@@ -207,7 +207,7 @@ const ActivityCertificateInfoSecondFrame: React.FC<
                         selectsRange
                         showMonthYearPicker
                         startDate={value?.[0] ?? undefined}
-                        endDate={value?.[1] ?? undefined}
+                        endTerm={value?.[1] ?? undefined}
                         onChange={(dates: Date | null) => {
                           onChange(dates);
                         }}

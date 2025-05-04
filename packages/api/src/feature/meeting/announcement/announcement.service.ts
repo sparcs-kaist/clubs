@@ -3,18 +3,18 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import {
   ApiMee001RequestBody,
   ApiMee001ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee001";
-import { ApiMee002RequestParam } from "@sparcs-clubs/interface/api/meeting/apiMee002";
+} from "@clubs/interface/api/meeting/apiMee001";
+import { ApiMee002RequestParam } from "@clubs/interface/api/meeting/apiMee002";
 import {
   ApiMee003RequestBody,
   ApiMee003RequestParam,
   ApiMee003ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee003";
+} from "@clubs/interface/api/meeting/apiMee003";
 import {
   ApiMee004RequestParam,
   ApiMee004ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee004";
-import { ApiMee012RequestQuery } from "@sparcs-clubs/interface/api/meeting/apiMee012";
+} from "@clubs/interface/api/meeting/apiMee004";
+import { ApiMee012RequestQuery } from "@clubs/interface/api/meeting/apiMee012";
 
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
@@ -60,7 +60,7 @@ export class AnnouncementService {
       announcementTitle: meetingAnnouncement.announcementTitle,
       announcementContent: meetingAnnouncement.announcementContent,
       startDate: meeting.startDate,
-      endDate: meeting.endDate,
+      endTerm: meeting.endTerm,
       isRegular: meeting.isRegular,
       location: meeting.location,
       locationEn: meeting.locationEn,

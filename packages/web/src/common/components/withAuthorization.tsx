@@ -2,7 +2,7 @@ import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { ComponentType } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
 import { getUserTypeEnumKeyByValue } from "@sparcs-clubs/web/utils/getUserType";

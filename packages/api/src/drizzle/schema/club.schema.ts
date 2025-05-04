@@ -11,9 +11,22 @@ import {
 } from "drizzle-orm/mysql-core";
 
 import { Division } from "./division.schema";
+import { SemesterD } from "./semester.schema";
 import { Professor, Student } from "./user.schema";
 
 export const Club = mysqlTable("club", {
+  id: int("id").autoincrement().primaryKey(),
+  nameKr: varchar("name_kr", { length: 30 }).unique(),
+  nameEn: varchar("name_en", { length: 100 }).unique(),
+  description: text("description"),
+  foundingYear: int("founding_year").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+// Club 테이블에서 division을 지우기 이전 테이블
+// TODO: ClubNewRepository 작업 완료 후 삭제
+export const ClubOld = mysqlTable("club", {
   id: int("id").autoincrement().primaryKey(),
   nameKr: varchar("name_kr", { length: 30 }).unique(),
   nameEn: varchar("name_en", { length: 100 }).unique(),
@@ -29,16 +42,6 @@ export const Club = mysqlTable("club", {
 export const ClubStatusEnum = mysqlTable("club_status_enum", {
   id: int("id").autoincrement().primaryKey(),
   statusName: varchar("status_name", { length: 30 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  deletedAt: timestamp("deleted_at"),
-});
-
-export const SemesterD = mysqlTable("semester_d", {
-  id: int("id").autoincrement().primaryKey(),
-  year: int("year"),
-  name: varchar("name", { length: 10 }),
-  startTerm: date("start_term"),
-  endTerm: date("end_term"),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -64,7 +67,7 @@ export const ClubT = mysqlTable("club_t", {
 });
 
 // 동아리의 분과 변경 이력
-export const ClubDivisionT = mysqlTable("club_division_t", {
+export const ClubDivisionHistory = mysqlTable("club_division_t", {
   id: int("id").autoincrement().primaryKey(),
   clubId: int("club_id")
     .notNull()
@@ -128,7 +131,7 @@ export const ClubDelegateEnum = mysqlTable("club_delegate_enum", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const ClubDelegateD = mysqlTable(
+export const ClubDelegate = mysqlTable(
   "club_delegate_d",
   {
     id: int("id").autoincrement().primaryKey(),
@@ -138,7 +141,7 @@ export const ClubDelegateD = mysqlTable(
     studentId: int("student_id")
       .notNull()
       .references(() => Student.id),
-    ClubDelegateEnumId: int("club_delegate_enum_id").notNull(),
+    clubDelegateEnum: int("club_delegate_enum_id").notNull(),
     startTerm: datetime("start_term").notNull(),
     endTerm: datetime("end_term"),
     createdAt: timestamp("created_at").defaultNow(),
@@ -146,7 +149,7 @@ export const ClubDelegateD = mysqlTable(
   },
   table => ({
     ClubDelegateEnumIdFk: index("club_delegate_d_club_delegate_enum_id_fk").on(
-      table.ClubDelegateEnumId,
+      table.clubDelegateEnum,
     ),
   }),
 );

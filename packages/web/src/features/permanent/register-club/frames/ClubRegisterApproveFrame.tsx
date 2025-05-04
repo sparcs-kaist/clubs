@@ -1,15 +1,17 @@
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 import { formatSlashDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
-import useRegisterClubDetail from "../services/getRegisterClubDetail";
-
 const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {
-  const { data, isLoading, isError } = useRegisterClubDetail({
-    applyId,
-  });
+  const { data, isLoading, isError } = useGetRegisterClubDetail(
+    UserTypeEnum.Undergraduate,
+    { applyId },
+  );
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

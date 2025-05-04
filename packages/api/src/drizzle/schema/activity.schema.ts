@@ -9,7 +9,8 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-import { Club, SemesterD } from "./club.schema";
+import { Club } from "./club.schema";
+import { ActivityD, SemesterD } from "./semester.schema";
 import { Executive, Student } from "./user.schema";
 
 export const ActivityTypeEnum = mysqlTable("activity_type_enum", {
@@ -22,23 +23,6 @@ export const ActivityTypeEnum = mysqlTable("activity_type_enum", {
 export const ActivityStatusEnum = mysqlTable("activity_status_enum", {
   id: int("id").autoincrement().primaryKey().notNull(),
   statusName: varchar("status_name", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});
-
-export const ActivityDeadlineEnum = mysqlTable("activity_deadline_enum", {
-  id: int("id").autoincrement().primaryKey().notNull(),
-  statusName: varchar("status_name", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at"),
-});
-
-export const ActivityD = mysqlTable("activity_d", {
-  id: int("id").autoincrement().primaryKey().notNull(),
-  year: int("year").notNull(),
-  name: varchar("name", { length: 10 }).notNull(),
-  startTerm: datetime("start_term").notNull(),
-  endTerm: datetime("end_term").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -61,12 +45,17 @@ export const Activity = mysqlTable(
     activityStatusEnumId: int("activity_status_enum_id")
       .notNull()
       .references(() => ActivityStatusEnum.id),
+    // 비정규화 메모 칼럼들
     chargedExecutiveId: int("charged_executive_id").references(
       () => Executive.id,
     ),
     professorApprovedAt: timestamp("professor_approved_at"),
-    editedAt: timestamp("edited_at").defaultNow().notNull(),
     commentedAt: timestamp("commented_at"),
+    commentedExecutiveId: int("commented_executive_id").references(
+      () => Executive.id,
+    ),
+    // DB레벨 시간 칼럼들
+    editedAt: timestamp("edited_at").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
     deletedAt: timestamp("deleted_at"),
@@ -212,25 +201,6 @@ export const ActivityClubChargedExecutive = mysqlTable(
       name: "activity_club_charged_executive_executive_id_fk",
       columns: [table.executiveId],
       foreignColumns: [Executive.id],
-    }),
-  }),
-);
-
-export const ActivityDeadlineD = mysqlTable(
-  "activity_deadline_d",
-  {
-    id: int("id").autoincrement().primaryKey().notNull(),
-    deadlineEnumId: int("deadline_enum_id").notNull(),
-    startDate: datetime("start_date").notNull(),
-    endDate: datetime("end_date").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    deletedAt: timestamp("deleted_at"),
-  },
-  table => ({
-    deadlineEnumForeignKey: foreignKey({
-      name: "activity_deadline_d_deadline_enum_id_fk",
-      columns: [table.deadlineEnumId],
-      foreignColumns: [ActivityDeadlineEnum.id],
     }),
   }),
 );

@@ -1,4 +1,4 @@
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 export const isProvisional = (registrationTypeEnumId: RegistrationTypeEnum) =>
   [

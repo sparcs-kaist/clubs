@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@sparcs-clubs/interface/common/commonString";
+import { zClubName } from "@clubs/interface/common/commonString";
 
 /**
  * @version v0.1
@@ -21,7 +21,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     clubs: z.array(
       z.object({
-        id: z.number().int(),
+        id: z.coerce.number().int(),
         nameKr: zClubName,
         nameEn: zClubName,
         dateRange: z.array(

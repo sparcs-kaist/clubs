@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { IProfessor } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IProfessor } from "@clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";

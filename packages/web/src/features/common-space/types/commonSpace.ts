@@ -3,7 +3,7 @@ import React from "react";
 import {
   ApiCms003RequestBody,
   ApiCms003RequestParam,
-} from "@sparcs-clubs/interface/api/common-space/endpoint/apiCms003";
+} from "@clubs/interface/api/common-space/endpoint/apiCms003";
 
 export interface CommonSpaceBasicInfo {
   clubName: string;

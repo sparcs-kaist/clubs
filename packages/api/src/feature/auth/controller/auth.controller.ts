@@ -14,16 +14,16 @@ import { Response } from "express";
 import apiAut001, {
   ApiAut001RequestQuery,
   ApiAut001ResponseOk,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut001";
+} from "@clubs/interface/api/auth/endpoint/apiAut001";
 import apiAut002, {
   ApiAut002ResponseCreated,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut002";
+} from "@clubs/interface/api/auth/endpoint/apiAut002";
 import apiAut003, {
   ApiAut003ResponseOk,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut003";
+} from "@clubs/interface/api/auth/endpoint/apiAut003";
 import apiAut004, {
   ApiAut004RequestQuery,
-} from "@sparcs-clubs/interface/api/auth/endpoint/apiAut004";
+} from "@clubs/interface/api/auth/endpoint/apiAut004";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -60,11 +60,19 @@ export class AuthController {
     @Query() query: ApiAut004RequestQuery,
     @Session() session: Request["session"],
   ) {
-    const { next, token } = await this.authService.getAuthSignInCallback(
-      query,
-      session,
-    );
+    const { next, token, isKaistIamLogin } =
+      await this.authService.getAuthSignInCallback(query, session);
 
+    if (!isKaistIamLogin) {
+      const iamErrorRedirectionUrl =
+        process.env.NODE_ENV === "local"
+          ? "http://localhost:3000/errors/not-iam-login"
+          : "https://clubs.sparcs.org/errors/not-iam-login";
+      logger.info(
+        `Can't find kaist iam info. Redirecting to ${iamErrorRedirectionUrl}`,
+      );
+      return res.redirect(iamErrorRedirectionUrl);
+    }
     res.cookie("refreshToken", token.refreshToken, {
       expires: token.refreshTokenExpiresAt,
       httpOnly: true,

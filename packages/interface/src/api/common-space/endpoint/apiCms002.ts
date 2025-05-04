@@ -18,11 +18,11 @@ const requestParam = z.object({
 const requestQuery = z
   .object({
     startDate: z.coerce.date(), // startDate는 날짜여야 합니다.
-    endDate: z.coerce.date(), // endDate는 날짜여야 합니다.
+    endTerm: z.coerce.date(), // endTerm는 날짜여야 합니다.
   })
-  .refine(data => data.startDate <= data.endDate, {
-    message: "startDate must be same or earlier than endDate",
-    path: ["startDate", "endDate"],
+  .refine(data => data.startDate <= data.endTerm, {
+    message: "startDate must be same or earlier than endTerm",
+    path: ["startDate", "endTerm"],
   });
 
 const requestBody = z.object({});
@@ -31,8 +31,8 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     usageOrders: z
       .object({
-        orderId: z.number().int().min(1), // orderId는 정수여야 합니다.
-        clubId: z.number().int().min(1), // clubId는 Club.id와 같은 정수여야 합니다.
+        orderId: z.coerce.number().int().min(1), // orderId는 정수여야 합니다.
+        clubId: z.coerce.number().int().min(1), // clubId는 ClubOld.id와 같은 정수여야 합니다.
         chargeStudentName: z.string().max(255), // chargeStudentName은 문자열로 최대 255자여야 합니다.
         startTerm: z.coerce.date(), // startTerm은 날짜 및 시간이어야 합니다.
         endTerm: z.coerce.date(), // endTerm은 날짜 및 시간이어야 합니다.

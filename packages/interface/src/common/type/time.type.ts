@@ -15,6 +15,8 @@ type WeekTime = z.infer<typeof zWeekTime>;
 // 168까지 정상적으로 validation한 이후 validationerror를 throw합니다.
 const testZWeekTimeValidation = () => {
   for (let i = 0; ; i += 1) {
+    // test 함수이므로 console log를 허용합니다.
+    // eslint-disable-next-line no-console
     console.log(zWeekTime.parse(i));
   }
 };

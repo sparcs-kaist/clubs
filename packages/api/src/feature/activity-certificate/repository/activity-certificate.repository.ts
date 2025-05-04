@@ -1,15 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
+
+import type { ApiAcf003RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
+import type { ApiAcf007RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
+
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   ActivityCertificate,
   ActivityCertificateItem,
-} from "src/drizzle/schema/activity-certificate.schema";
-
-import type { ApiAcf003RequestQuery } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf003";
-import type { ApiAcf007RequestQuery } from "@sparcs-clubs/interface/api/activity-certificate/endpoint/apiAcf007";
-import { ActivityCertificateOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/activityCertificate.enum";
+} from "@sparcs-clubs/api/drizzle/schema/activity-certificate.schema";
 
 @Injectable()
 export class ActivityCertificateRepository {
@@ -18,7 +19,7 @@ export class ActivityCertificateRepository {
   async countActivityCertificatesByClubIdAndCreatedAtIn(
     clubId: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<number> {
     const numberOfOrders = (
       await this.db
@@ -30,8 +31,8 @@ export class ActivityCertificateRepository {
             startDate !== undefined
               ? gte(ActivityCertificate.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(ActivityCertificate.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(ActivityCertificate.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -43,7 +44,7 @@ export class ActivityCertificateRepository {
   async countActivityCertificatesByStudentIdAndCreatedAtIn(
     StudentId: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<number> {
     const numberOfOrders = (
       await this.db
@@ -55,8 +56,8 @@ export class ActivityCertificateRepository {
             startDate !== undefined
               ? gte(ActivityCertificate.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(ActivityCertificate.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(ActivityCertificate.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -79,8 +80,8 @@ export class ActivityCertificateRepository {
           query.startDate !== undefined
             ? gte(ActivityCertificate.createdAt, query.startDate)
             : undefined,
-          query.endDate !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endDate)
+          query.endTerm !== undefined
+            ? lte(ActivityCertificate.createdAt, query.endTerm)
             : undefined,
         ),
       )
@@ -106,8 +107,8 @@ export class ActivityCertificateRepository {
           query.startDate !== undefined
             ? gte(ActivityCertificate.createdAt, query.startDate)
             : undefined,
-          query.endDate !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endDate)
+          query.endTerm !== undefined
+            ? lte(ActivityCertificate.createdAt, query.endTerm)
             : undefined,
         ),
       )

@@ -5,25 +5,14 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  exists,
-  gt,
-  inArray,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNull, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
@@ -34,14 +23,13 @@ import {
 import {
   Activity,
   ActivityClubChargedExecutive,
-  ActivityDeadlineD,
   ActivityEvidenceFile,
   ActivityFeedback,
   ActivityParticipant,
   ActivityT,
   ProfessorSignStatus,
 } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
-import { Club, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubOld, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import {
   Professor,
@@ -392,20 +380,6 @@ export default class ActivityRepository {
     return result;
   }
 
-  async selectDeadlineByDate(date: Date) {
-    const result = await this.db
-      .select()
-      .from(ActivityDeadlineD)
-      .where(
-        and(
-          lte(ActivityDeadlineD.startDate, date),
-          gt(ActivityDeadlineD.endDate, date),
-          isNull(ActivityDeadlineD.deletedAt),
-        ),
-      );
-    return result;
-  }
-
   async selectFileByActivityId(activityId: number) {
     const result = await this.db
       .select()
@@ -716,26 +690,26 @@ export default class ActivityRepository {
   }) {
     const result = await this.db
       .select({
-        clubId: Club.id,
+        clubId: ClubOld.id,
         clubTypeEnum: ClubT.clubStatusEnumId,
         divisionName: Division.name,
-        clubNameKr: Club.nameKr,
-        clubNameEn: Club.nameEn,
+        clubNameKr: ClubOld.nameKr,
+        clubNameEn: ClubOld.nameEn,
         advisor: Professor.name,
         chargedExecutiveId: ActivityClubChargedExecutive.executiveId,
       })
-      .from(Club)
+      .from(ClubOld)
       .innerJoin(
         ClubT,
         and(
-          eq(ClubT.clubId, Club.id),
+          eq(ClubT.clubId, ClubOld.id),
           eq(ClubT.semesterId, param.semesterId),
           isNull(ClubT.deletedAt),
         ),
       )
       .innerJoin(
         Division,
-        and(eq(Division.id, Club.divisionId), isNull(Division.deletedAt)),
+        and(eq(Division.id, ClubOld.divisionId), isNull(Division.deletedAt)),
       )
       .leftJoin(
         Professor,
@@ -744,12 +718,14 @@ export default class ActivityRepository {
       .leftJoin(
         ActivityClubChargedExecutive,
         and(
-          eq(ActivityClubChargedExecutive.clubId, Club.id),
+          eq(ActivityClubChargedExecutive.clubId, ClubOld.id),
           eq(ActivityClubChargedExecutive.activityDId, param.activityDId),
           isNull(ActivityClubChargedExecutive.deletedAt),
         ),
       )
-      .where(and(inArray(Club.id, param.clubsList), isNull(Club.deletedAt)));
+      .where(
+        and(inArray(ClubOld.id, param.clubsList), isNull(ClubOld.deletedAt)),
+      );
     return result;
   }
 

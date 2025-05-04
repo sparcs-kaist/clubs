@@ -1,8 +1,10 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+
+import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
  * @version v0.1
@@ -16,6 +18,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   clubId: zId,
+  activityDurationId: zActivityDuration.shape.id.optional(),
 });
 
 const requestBody = z.object({});

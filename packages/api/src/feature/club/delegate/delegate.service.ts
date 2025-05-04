@@ -3,33 +3,34 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiClb006RequestParam,
   ApiClb006ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb006";
+} from "@clubs/interface/api/club/endpoint/apiClb006";
 import type {
   ApiClb008RequestParam,
   ApiClb008ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb008";
+} from "@clubs/interface/api/club/endpoint/apiClb008";
 import type {
   ApiClb011RequestParam,
   ApiClb011ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb011";
-import type { ApiClb012RequestParam } from "@sparcs-clubs/interface/api/club/endpoint/apiClb012";
-import type { ApiClb013ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb013";
+} from "@clubs/interface/api/club/endpoint/apiClb011";
+import type { ApiClb012RequestParam } from "@clubs/interface/api/club/endpoint/apiClb012";
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
 import type {
   ApiClb014RequestBody,
   ApiClb014RequestParam,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb014";
+} from "@clubs/interface/api/club/endpoint/apiClb014";
 import type {
   ApiClb015ResponseNoContent,
   ApiClb015ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb015";
+} from "@clubs/interface/api/club/endpoint/apiClb015";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "./club.club-delegate-d.repository";
@@ -44,6 +45,7 @@ export default class ClubDelegateService {
     private clubDelegateDRepository: ClubDelegateDRepository,
     private userPublicService: UserPublicService,
     private clubPublicService: ClubPublicService,
+    private semesterPublicService: SemesterPublicService,
   ) {}
 
   /**
@@ -110,7 +112,7 @@ export default class ClubDelegateService {
         return {
           name: student.name,
           studentId: student.id,
-          delegateEnumId: e.ClubDelegateEnumId,
+          delegateEnumId: e.clubDelegateEnum,
           studentNumber: student.number,
           phoneNumber:
             student.phoneNumber === null
@@ -151,13 +153,13 @@ export default class ClubDelegateService {
     // if (
     //   studentStatus === undefined ||
     //   (param.clubDelegateEnumId === ClubDelegateEnum.Representative &&
-    //     studentStatus.ClubDelegateEnumId !== ClubDelegateEnum.Representative)
+    //     studentStatus.clubDelegateEnum !== ClubDelegateEnum.Representative)
     // )
     //   throw new HttpException(
     //     "This api is allowed for delegates",
     //     HttpStatus.FORBIDDEN,
     //   );
-    if (studentStatus.ClubDelegateEnumId !== ClubDelegateEnum.Representative)
+    if (studentStatus.clubDelegateEnum !== ClubDelegateEnum.Representative)
       throw new HttpException(
         "This api is allowed for the club representative",
         HttpStatus.FORBIDDEN,
@@ -376,7 +378,7 @@ export default class ClubDelegateService {
     // studentId가 해당 clubId 동아리의 대표자 인지 확인합니다.
     if (
       delegates.find(
-        e => e.studentId === param.studentId && e.ClubDelegateEnumId === 1,
+        e => e.studentId === param.studentId && e.clubDelegateEnum === 1,
       ) === undefined
     )
       throw new HttpException(
@@ -519,7 +521,7 @@ export default class ClubDelegateService {
       status: HttpStatus.OK,
       data: {
         clubId: result[0].clubId,
-        delegateEnumId: result[0].ClubDelegateEnumId,
+        delegateEnumId: result[0].clubDelegateEnum,
       },
     };
   }
@@ -556,8 +558,7 @@ export default class ClubDelegateService {
         );
     }
 
-    const semesterId =
-      await this.clubPublicService.dateToSemesterId(getKSTDate());
+    const semesterId = await this.semesterPublicService.loadId();
     logger.debug(semesterId);
     const result =
       await this.clubDelegateDRepository.selectDelegateCandidatesByClubId({

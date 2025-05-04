@@ -1,4 +1,4 @@
-import { IExecutiveSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
 
 import { MExecutive } from "./executive.model";
 

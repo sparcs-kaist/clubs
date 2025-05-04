@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
+import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import NotForExecutive from "@sparcs-clubs/web/common/frames/NotForExecutive";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ProfessorRegisterClubDetailFrame from "@sparcs-clubs/web/features/my/register-club/frames/ProfessorRegisterClubDetailFrame";
-import StudentRegisterClubDetailFrame from "@sparcs-clubs/web/features/my/register-club/frames/StudentRegisterClubDetailFrame";
+import MyRegisterClubDetailFrame from "@sparcs-clubs/web/features/register-club/frames/MyRegisterClubDetailFrame";
 
 const MyRegisterClubDetail = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -38,10 +39,20 @@ const MyRegisterClubDetail = () => {
     return <NotFound />;
   }
 
-  return profile?.type === UserTypeEnum.Professor ? (
-    <ProfessorRegisterClubDetailFrame userType={profile.type} />
-  ) : (
-    <StudentRegisterClubDetailFrame userType={profile.type} />
+  return (
+    <FlexWrapper direction="column" gap={40}>
+      <PageHead
+        items={[
+          { name: "마이페이지", path: "/my" },
+          {
+            name: "동아리 등록",
+            path: "/my/register-club",
+          },
+        ]}
+        title="동아리 등록"
+      />
+      <MyRegisterClubDetailFrame profile={profile.type as UserTypeEnum} />
+    </FlexWrapper>
   );
 };
 export default MyRegisterClubDetail;

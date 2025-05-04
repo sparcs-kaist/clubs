@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import type { ApiRnt003ResponseOK } from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt003";
+import type { ApiRnt003ResponseOK } from "@clubs/interface/api/rental/endpoint/apiRnt003";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";

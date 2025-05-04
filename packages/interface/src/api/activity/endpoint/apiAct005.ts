@@ -1,15 +1,10 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import {
-  ActivityStatusEnum,
-  ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { zActivity } from "@clubs/domain/activity/activity";
+import { zClub } from "@clubs/domain/club/club";
 
-/**
- * @version v0.1
- * @description 현재 학기의 활동보고서를 조회합니다.
- */
+import { registry } from "@clubs/interface/open-api";
 
 const url = () => `/student/activities`;
 const method = "GET";
@@ -17,7 +12,7 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const requestBody = z.object({});
@@ -25,19 +20,14 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z
     .object({
-      id: z.coerce.number().int().min(1),
-      activityStatusEnumId: z.nativeEnum(ActivityStatusEnum),
-      name: z.string().max(255),
-      activityTypeEnumId: z.nativeEnum(ActivityTypeEnum),
-      durations: z.array(
-        z.object({
-          startTerm: z.coerce.date(),
-          endTerm: z.coerce.date(),
-        }),
-      ),
-      professorApprovedAt: z.coerce.date().nullable(),
-      editedAt: z.coerce.date(),
-      commentedAt: z.coerce.date().nullable(),
+      id: zActivity.shape.id,
+      activityStatusEnumId: zActivity.shape.activityStatusEnum,
+      name: zActivity.shape.name,
+      activityTypeEnumId: zActivity.shape.activityTypeEnum,
+      durations: zActivity.shape.durations,
+      professorApprovedAt: zActivity.shape.professorApprovedAt,
+      editedAt: zActivity.shape.editedAt,
+      commentedAt: zActivity.shape.commentedAt,
     })
     .array(),
 };
@@ -67,3 +57,30 @@ export type {
   ApiAct005RequestQuery,
   ApiAct005ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["activity"],
+  method: "get",
+  path: url(),
+  description: `
+  # ACT-005
+
+  현재 학기의 활동보고서를 조회합니다.
+
+  동아리 대표자로 로그인되어 있어야 합니다.
+  `,
+  summary: "ACT-005: 현재 학기의 활동보고서를 조회합니다.",
+  request: {
+    query: requestQuery,
+  },
+  responses: {
+    200: {
+      description: "성공적으로 현재 학기의 활동보고서를 조회했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

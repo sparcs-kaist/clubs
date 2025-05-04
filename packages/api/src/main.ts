@@ -1,3 +1,4 @@
+import "reflect-metadata"; // 데코레이터 및 메타데이터를 사용하기 위해 import
 import { HttpException } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
@@ -6,7 +7,7 @@ import session from "express-session";
 import * as swaggerUi from "swagger-ui-express";
 import { ZodError } from "zod";
 
-import { generateOpenAPI } from "@sparcs-clubs/interface/open-api";
+import { generateOpenAPI } from "@clubs/interface/open-api";
 
 import { env } from "@sparcs-clubs/api/env";
 
@@ -16,6 +17,7 @@ import {
   UnexpectedExceptionFilter,
   ZodErrorFilter,
 } from "./common/util/exception.filter";
+import logger from "./common/util/logger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,7 +27,25 @@ async function bootstrap() {
   const openApiSpec = generateOpenAPI();
   // Swagger UI 제공 (NestJS 기본 SwaggerModule 사용 불가)
   const swaggerApp = express();
-  swaggerApp.use("", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+  swaggerApp.use(
+    "",
+    swaggerUi.serve,
+    swaggerUi.setup(openApiSpec, {
+      swaggerOptions: {
+        operationsSorter: (
+          a: {
+            get: (arg0: string) => string;
+          },
+          b: {
+            get: (arg0: string) => string;
+          },
+        ) => {
+          const result = a.get("path").localeCompare(b.get("path"));
+          return result;
+        },
+      },
+    }),
+  );
   app.use("/docs", swaggerApp);
   /* swagger 세팅 끝 */
 
@@ -58,5 +78,6 @@ async function bootstrap() {
     ); // 만약 global추가하는 경우 AllExceptionFilter 뒤에 추가하면 됨.
   }
   await app.listen(env.SERVER_PORT);
+  logger.debug(`Server is running on http://localhost:${env.SERVER_PORT}`);
 }
 bootstrap();

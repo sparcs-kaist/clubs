@@ -7,7 +7,7 @@ import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
 
-import { ApiAct011ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
+import { ApiAct011ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct011";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";

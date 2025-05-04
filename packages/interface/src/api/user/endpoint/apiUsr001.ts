@@ -2,9 +2,9 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { zStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zClub } from "@clubs/interface/api/club/type/club.type";
+import { zStudent } from "@clubs/interface/api/user/type/user.type";
+import { registry } from "@clubs/interface/open-api";
 
 extendZodWithOpenApi(z);
 
@@ -31,7 +31,7 @@ const responseBodyMap = {
       name: zStudent.shape.name,
       email: zStudent.shape.email,
       department: z.string().max(10), // TODO: zStudentHistory와 연결하기
-      studentNumber: z.number().int().min(20000000).max(30000000), // TODO: zStudent와 연결하기. 학번 문자열로 통일 필요
+      studentNumber: z.coerce.number().int().min(20000000).max(30000000), // TODO: zStudent와 연결하기. 학번 문자열로 통일 필요
       phoneNumber: zStudent.shape.phoneNumber,
     })
     .openapi("CLB-001 response"),

@@ -1,17 +1,18 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, count, eq, gte, isNull, lte } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import { Club } from "src/drizzle/schema/club.schema";
+
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
+
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import { ClubOld } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   RentalEnum,
   RentalObject,
   RentalOrder,
   RentalOrderItemD,
-} from "src/drizzle/schema/rental.schema";
-import { Student } from "src/drizzle/schema/user.schema";
-
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+} from "@sparcs-clubs/api/drizzle/schema/rental.schema";
+import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 interface Period {
   desiredStart?: Date;
@@ -203,7 +204,7 @@ export class RentalServiceRepository {
     return result;
   }
 
-  async getRentals(clubId, page, pageSize, startDate?: Date, endDate?: Date) {
+  async getRentals(clubId, page, pageSize, startDate?: Date, endTerm?: Date) {
     const orders = await this.db
       .select({
         id: RentalOrder.id,
@@ -225,7 +226,7 @@ export class RentalServiceRepository {
         and(
           eq(RentalOrder.clubId, clubId),
           startDate && gte(RentalOrder.desiredStart, startDate),
-          endDate && lte(RentalOrder.desiredEnd, endDate),
+          endTerm && lte(RentalOrder.desiredEnd, endTerm),
         ),
       )
       .groupBy(
@@ -256,7 +257,7 @@ export class RentalServiceRepository {
     page: number,
     pageSize: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ) {
     const myOrders = await this.db
       .select({
@@ -271,7 +272,7 @@ export class RentalServiceRepository {
       })
       .from(RentalOrder)
       .leftJoin(Student, eq(RentalOrder.studentId, Student.id))
-      .leftJoin(Club, eq(RentalOrder.clubId, Club.id))
+      .leftJoin(ClubOld, eq(RentalOrder.clubId, ClubOld.id))
       .leftJoin(
         RentalOrderItemD,
         eq(RentalOrder.id, RentalOrderItemD.rentalOrderId),
@@ -285,7 +286,7 @@ export class RentalServiceRepository {
         and(
           eq(RentalOrder.studentId, 1),
           startDate && gte(RentalOrder.desiredStart, startDate),
-          endDate && lte(RentalOrder.desiredEnd, endDate),
+          endTerm && lte(RentalOrder.desiredEnd, endTerm),
         ),
       );
 

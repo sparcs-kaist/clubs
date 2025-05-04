@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -10,7 +10,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ExecutiveActivityReportFrame from "@sparcs-clubs/web/features/executive/activity-report/frames/ExecutiveActivityReportFrame";
+import ExecutiveActivityReportFrame from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportFrame";
 
 const ExecutiveActivityReport = () => {
   const { isLoggedIn, login, profile } = useAuth();

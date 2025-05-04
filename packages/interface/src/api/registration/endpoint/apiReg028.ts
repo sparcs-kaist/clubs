@@ -1,7 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
+import { zSemester } from "@clubs/domain/semester/semester";
+
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -33,7 +35,7 @@ const responseBodyMap = {
     deadline: z
       .object({
         startDate: z.date(),
-        endDate: z.date(),
+        endTerm: z.date(),
       })
       .nullable(),
   }),
@@ -64,3 +66,31 @@ export type {
   ApiReg028RequestQuery,
   ApiReg028ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["member-registration"],
+  method: "get",
+  path: url(),
+  description: `
+  # REG-028
+
+  회원 등록 신청 기간 조회
+
+  PUBLIC 대상입니다.
+
+  현재의 학기 정보 및 회원 등록 기간을 조회합니다.
+
+  현재가 회원 등록 기간일 경우에는 등록 기간을 가져오고, 그렇지 않으면 deadline이 null 이 나옵니다.
+  `,
+  summary: "REG-028: 회원 등록 신청 기간 조회",
+  responses: {
+    200: {
+      description: "성공적으로 조회되었습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

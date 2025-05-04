@@ -1,0 +1,29 @@
+// https://www.typescriptlang.org/docs/handbook/modules/guides/choosing-compiler-options.html#im-writing-a-library
+
+{
+  "extends": "@clubs/typescript-config/base.json",
+  "compilerOptions": {
+    // module 코드는 최신 버전으로 유지합시다
+    "module": "NodeNext",
+    // 클라이언트(web)도 사용하는 라이브러리이므로 target을 꽤 낮게 설정
+    "target": "ES2020",
+    "strict": true,
+    // 아직 역할을 잘 이해못함...
+    // 켜면 commonjs 코드에서 esm의 import를 사용할수 없어서 제거함
+    // https://jjnooys.medium.com/typescript-5-0%EC%9D%98-verbatimmodulesyntax-7ecb36d833bc
+    // "verbatimModuleSyntax": true,
+    // 빌드 결과물에 다양한 타입 지원 포함하기
+    "declaration": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    // 코드 디렉터리
+    "rootDir": "src",
+    // 빌드 디렉터리
+    "outDir": "dist",
+    "paths": {
+      "@clubs/domain/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,72 +1,92 @@
 import { Injectable } from "@nestjs/common";
-import { desc, eq } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import { IFundingCommentRequest } from "@sparcs-clubs/interface/api/funding/type/funding.comment.type";
-
-import { BaseRepository } from "@sparcs-clubs/api/common/repository/base.repository";
-import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  BaseTableFieldMapKeys,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import {
-  FundingCommentDbResult,
+  IFundingCommentCreate,
   MFundingComment,
 } from "@sparcs-clubs/api/feature/funding/model/funding.comment.model";
 
+export type FundingCommentQuery = {
+  fundingId: number;
+};
+
+type FundingCommentTable = typeof FundingFeedback;
+type FundingCommentDbSelect = InferSelectModel<FundingCommentTable>;
+type FundingCommentDbUpdate = Partial<FundingCommentDbSelect>;
+type FundingCommentDbInsert = InferInsertModel<FundingCommentTable>;
+
+type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
+
 @Injectable()
-export default class FundingCommentRepository extends BaseRepository<
+export class FundingCommentRepository extends BaseSingleTableRepository<
   MFundingComment,
-  IFundingCommentRequest,
-  FundingCommentDbResult,
-  typeof FundingFeedback
+  IFundingCommentCreate,
+  FundingCommentTable,
+  FundingCommentQuery
 > {
   constructor() {
     super(FundingFeedback, MFundingComment);
   }
 
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    ids: number[],
-  ): Promise<MFundingComment[]>;
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    fundingId: number,
-  ): Promise<MFundingComment[]>;
-  async fetchAllTx(
-    tx: DrizzleTransaction,
-    arg1: number | number[],
-  ): Promise<MFundingComment[]> {
-    if (Array.isArray(arg1)) {
-      return super.fetchAllTx(tx, arg1);
-    }
-
-    const result = await tx
-      .select()
-      .from(FundingFeedback)
-      .where(eq(FundingFeedback.fundingId, arg1))
-      .orderBy(desc(FundingFeedback.createdAt));
-
-    return result.map(row => MFundingComment.from(row));
+  protected dbToModelMapping(result: FundingCommentDbSelect): MFundingComment {
+    return new MFundingComment({
+      id: result.id,
+      funding: { id: result.fundingId },
+      executive: {
+        id: result.executiveId,
+      },
+      fundingStatusEnum: result.fundingStatusEnum,
+      approvedAmount: result.approvedAmount,
+      content: result.content,
+      createdAt: result.createdAt,
+    });
   }
 
-  async fetchAll(fundingId: number): Promise<MFundingComment[]>;
-  async fetchAll(ids: number[]): Promise<MFundingComment[]>;
-  async fetchAll(arg1: number | number[]): Promise<MFundingComment[]> {
-    if (Array.isArray(arg1)) {
-      return super.fetchAll(arg1);
-    }
-
-    return this.withTransaction(async tx => this.fetchAllTx(tx, arg1));
-  }
-
-  async insertTx(
-    tx: DrizzleTransaction,
-    param: IFundingCommentRequest,
-  ): Promise<MFundingComment> {
-    const comment = {
-      ...param,
-      fundingId: param.funding.id,
-      executiveId: param.executive.id,
-      feedback: param.content,
+  protected modelToDBMapping(model: MFundingComment): FundingCommentDbUpdate {
+    return {
+      id: model.id,
+      fundingId: model.funding.id,
+      executiveId: model.executive.id,
+      content: model.content,
+      fundingStatusEnum: model.fundingStatusEnum,
+      approvedAmount: model.approvedAmount,
+      createdAt: model.createdAt,
     };
-    return super.insertTx(tx, comment);
+  }
+
+  protected createToDBMapping(
+    model: IFundingCommentCreate,
+  ): FundingCommentDbInsert {
+    return {
+      fundingId: model.funding.id,
+      executiveId: model.executive.id,
+      content: model.content,
+      fundingStatusEnum: model.fundingStatusEnum,
+      approvedAmount: model.approvedAmount,
+    };
+  }
+
+  protected fieldMap(
+    field: FundingCommentFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<
+      FundingCommentFieldMapKeys,
+      TableWithID | null
+    > = {
+      id: FundingFeedback,
+      fundingId: FundingFeedback,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
   }
 }

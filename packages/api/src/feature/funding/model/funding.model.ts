@@ -1,4 +1,4 @@
-import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
 import {
   IClubSupplies,
   IFixture,
@@ -6,8 +6,8 @@ import {
   IMinorExpense,
   INonCorporateTransaction,
   ITransportation,
-} from "@sparcs-clubs/interface/api/funding/type/funding.type";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/api/funding/type/funding.type";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 export type FundingDBResult = {
   funding: {

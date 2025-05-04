@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   MeetingEnum,
   MeetingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/meeting.enum";
+} from "@clubs/interface/common/enum/meeting.enum";
 
 /**
  * @version v0.1
@@ -33,7 +33,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
       z.object({
-        id: z.number().int().min(1),
+        id: z.coerce.number().int().min(1),
         meetingEnumId: z.nativeEnum(MeetingEnum),
         meetingTitle: z.coerce.string(),
         meetingDate: z.coerce.date(),
@@ -41,8 +41,8 @@ const responseBodyMap = {
         meetingStatus: z.nativeEnum(MeetingStatusEnum),
       }),
     ),
-    total: z.number().int().min(0),
-    offset: z.number().int().min(1),
+    total: z.coerce.number().int().min(0),
+    offset: z.coerce.number().int().min(1),
   }),
 };
 

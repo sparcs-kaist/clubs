@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { fundingDetailQueryKey } from "./useGetFunding";
 import usePostFundingReview from "./usePostFundingReview";

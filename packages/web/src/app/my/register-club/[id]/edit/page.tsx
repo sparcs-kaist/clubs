@@ -3,8 +3,8 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getDisplayNameRegistration } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { getDisplayNameRegistration } from "@clubs/interface/common/enum/registration.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -13,7 +13,7 @@ import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import NotForExecutive from "@sparcs-clubs/web/common/frames/NotForExecutive";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import MyRegisterClubEditFrame from "@sparcs-clubs/web/features/my/register-club/frames/MyRegisterClubEditFrame";
-import useGetClubRegistration from "@sparcs-clubs/web/features/my/services/useGetClubRegistration";
+import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
 const MyRegisterClubEdit = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -30,7 +30,7 @@ const MyRegisterClubEdit = () => {
     data: detail,
     isLoading,
     isError,
-  } = useGetClubRegistration({
+  } = useGetRegisterClubDetail(profile?.type as UserTypeEnum, {
     applyId: +applyId,
   });
 

@@ -13,22 +13,22 @@ import {
   or,
 } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { getKSTDate, takeOne } from "src/common/util/util";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import {
-  Club,
-  ClubDelegateChangeRequest,
-  ClubDelegateD,
-  ClubStudentT,
-} from "src/drizzle/schema/club.schema";
-import { Student } from "src/drizzle/schema/user.schema";
 
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
+} from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
+import {
+  ClubDelegate,
+  ClubDelegateChangeRequest,
+  ClubOld,
+  ClubStudentT,
+} from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
 export class ClubDelegateDRepository {
@@ -145,20 +145,20 @@ export class ClubDelegateDRepository {
 
     const representative = await this.db
       .select({ name: Student.name })
-      .from(ClubDelegateD)
-      .leftJoin(Student, eq(Student.id, ClubDelegateD.studentId))
+      .from(ClubDelegate)
+      .leftJoin(Student, eq(Student.id, ClubDelegate.studentId))
       .where(
         and(
-          eq(ClubDelegateD.clubId, clubId),
-          eq(ClubDelegateD.ClubDelegateEnumId, 1),
-          lte(ClubDelegateD.startTerm, startTerm || currentDate),
+          eq(ClubDelegate.clubId, clubId),
+          eq(ClubDelegate.clubDelegateEnum, 1),
+          lte(ClubDelegate.startTerm, startTerm || currentDate),
           or(
-            gte(ClubDelegateD.endTerm, startTerm || currentDate),
-            isNull(ClubDelegateD.endTerm),
+            gte(ClubDelegate.endTerm, startTerm || currentDate),
+            isNull(ClubDelegate.endTerm),
           ),
         ),
       )
-      .orderBy(ClubDelegateD.endTerm)
+      .orderBy(ClubDelegate.endTerm)
       .limit(1)
       .then(takeOne);
 
@@ -186,19 +186,19 @@ export class ClubDelegateDRepository {
 
     const delegate = await this.db
       .select()
-      .from(ClubDelegateD)
+      .from(ClubDelegate)
       .where(
         and(
-          eq(ClubDelegateD.clubId, clubId),
-          lte(ClubDelegateD.startTerm, currentDate),
+          eq(ClubDelegate.clubId, clubId),
+          lte(ClubDelegate.startTerm, currentDate),
           or(
-            gte(ClubDelegateD.endTerm, currentDate),
-            isNull(ClubDelegateD.endTerm),
+            gte(ClubDelegate.endTerm, currentDate),
+            isNull(ClubDelegate.endTerm),
           ),
-          isNull(ClubDelegateD.deletedAt),
+          isNull(ClubDelegate.deletedAt),
         ),
       )
-      .orderBy(ClubDelegateD.endTerm);
+      .orderBy(ClubDelegate.endTerm);
 
     return delegate;
   }
@@ -213,19 +213,19 @@ export class ClubDelegateDRepository {
 
     const delegate = await this.db
       .select()
-      .from(ClubDelegateD)
+      .from(ClubDelegate)
       .where(
         and(
-          eq(ClubDelegateD.studentId, studentId),
-          lte(ClubDelegateD.startTerm, currentDate),
+          eq(ClubDelegate.studentId, studentId),
+          lte(ClubDelegate.startTerm, currentDate),
           or(
-            gte(ClubDelegateD.endTerm, currentDate),
-            isNull(ClubDelegateD.endTerm),
+            gte(ClubDelegate.endTerm, currentDate),
+            isNull(ClubDelegate.endTerm),
           ),
-          isNull(ClubDelegateD.deletedAt),
+          isNull(ClubDelegate.deletedAt),
         ),
       )
-      .orderBy(ClubDelegateD.endTerm);
+      .orderBy(ClubDelegate.endTerm);
 
     return delegate;
   }
@@ -236,14 +236,14 @@ export class ClubDelegateDRepository {
   ): Promise<boolean> {
     const crt = getKSTDate();
     const result = !!(await this.db
-      .select({ id: ClubDelegateD.id })
-      .from(ClubDelegateD)
+      .select({ id: ClubDelegate.id })
+      .from(ClubDelegate)
       .where(
         and(
-          eq(ClubDelegateD.clubId, clubId),
-          eq(ClubDelegateD.studentId, studentId),
-          lte(ClubDelegateD.startTerm, crt),
-          or(gte(ClubDelegateD.endTerm, crt), isNull(ClubDelegateD.endTerm)),
+          eq(ClubDelegate.clubId, clubId),
+          eq(ClubDelegate.studentId, studentId),
+          lte(ClubDelegate.startTerm, crt),
+          or(gte(ClubDelegate.endTerm, crt), isNull(ClubDelegate.endTerm)),
         ),
       )
       .limit(1)
@@ -269,44 +269,47 @@ export class ClubDelegateDRepository {
     logger.debug(today);
     const result = await this.db
       .select()
-      .from(Club)
+      .from(ClubOld)
       .innerJoin(
         ClubStudentT,
-        and(eq(Club.id, ClubStudentT.clubId), isNull(ClubStudentT.deletedAt)),
+        and(
+          eq(ClubOld.id, ClubStudentT.clubId),
+          isNull(ClubStudentT.deletedAt),
+        ),
       )
       .innerJoin(
         Student,
         and(eq(ClubStudentT.studentId, Student.id), isNull(Student.deletedAt)),
       )
       .leftJoin(
-        ClubDelegateD,
+        ClubDelegate,
         and(
-          eq(ClubDelegateD.studentId, Student.id),
-          lte(ClubDelegateD.startTerm, today),
-          or(gte(ClubDelegateD.endTerm, today), isNull(ClubDelegateD.endTerm)),
-          isNull(ClubDelegateD.deletedAt),
+          eq(ClubDelegate.studentId, Student.id),
+          lte(ClubDelegate.startTerm, today),
+          or(gte(ClubDelegate.endTerm, today), isNull(ClubDelegate.endTerm)),
+          isNull(ClubDelegate.deletedAt),
         ),
       )
       .where(
         and(
-          eq(Club.id, param.clubId),
+          eq(ClubOld.id, param.clubId),
           eq(ClubStudentT.semesterId, param.semesterId),
           param.filterClubDelegateEnum.length !== 0
             ? or(
                 notInArray(
-                  ClubDelegateD.ClubDelegateEnumId,
+                  ClubDelegate.clubDelegateEnum,
                   param.filterClubDelegateEnum,
                 ),
-                isNull(ClubDelegateD.ClubDelegateEnumId),
+                isNull(ClubDelegate.clubDelegateEnum),
               )
             : undefined,
           not(
             and(
-              not(eq(ClubDelegateD.clubId, param.clubId)),
-              isNotNull(ClubDelegateD.id),
+              not(eq(ClubDelegate.clubId, param.clubId)),
+              isNotNull(ClubDelegate.id),
             ),
           ),
-          isNull(Club.deletedAt),
+          isNull(ClubOld.deletedAt),
         ),
       );
     // logger.debug(result); // 로그가 너무 길어서 주석처리해 두었어요
@@ -375,32 +378,32 @@ export class ClubDelegateDRepository {
     const result = await this.db.transaction(async tx => {
       // 기존 대표자의 임기를 종료
       const [prevDelegateUpdateResult] = await tx
-        .update(ClubDelegateD)
+        .update(ClubDelegate)
         .set({
           endTerm: now,
         })
         .where(
           and(
-            eq(ClubDelegateD.clubId, param.clubId),
-            eq(ClubDelegateD.ClubDelegateEnumId, param.clubDelegateEnumId),
-            lte(ClubDelegateD.startTerm, now),
-            or(gte(ClubDelegateD.endTerm, now), isNull(ClubDelegateD.endTerm)),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.clubId, param.clubId),
+            eq(ClubDelegate.clubDelegateEnum, param.clubDelegateEnumId),
+            lte(ClubDelegate.startTerm, now),
+            or(gte(ClubDelegate.endTerm, now), isNull(ClubDelegate.endTerm)),
+            isNull(ClubDelegate.deletedAt),
           ),
         );
       // 신규 delegate가 맡고 있던 지위를 해제
       const [delegateUpdateResult] = await tx
-        .update(ClubDelegateD)
+        .update(ClubDelegate)
         .set({
           endTerm: now,
         })
         .where(
           and(
-            eq(ClubDelegateD.clubId, param.clubId),
-            eq(ClubDelegateD.studentId, param.studentId),
-            lte(ClubDelegateD.startTerm, now),
-            or(gte(ClubDelegateD.endTerm, now), isNull(ClubDelegateD.endTerm)),
-            isNull(ClubDelegateD.deletedAt),
+            eq(ClubDelegate.clubId, param.clubId),
+            eq(ClubDelegate.studentId, param.studentId),
+            lte(ClubDelegate.startTerm, now),
+            or(gte(ClubDelegate.endTerm, now), isNull(ClubDelegate.endTerm)),
+            isNull(ClubDelegate.deletedAt),
           ),
         );
       // 변경된 row는 각각 0줄 또는 한줄이어야 합니다.
@@ -421,10 +424,10 @@ export class ClubDelegateDRepository {
 
       if (param.studentId === 0) return true;
 
-      const [delegateInsertResult] = await tx.insert(ClubDelegateD).values({
+      const [delegateInsertResult] = await tx.insert(ClubDelegate).values({
         clubId: param.clubId,
         studentId: param.studentId,
-        ClubDelegateEnumId: param.clubDelegateEnumId,
+        clubDelegateEnum: param.clubDelegateEnumId,
         startTerm: now,
       });
       if (delegateInsertResult.affectedRows !== 1) {
@@ -458,16 +461,16 @@ export class ClubDelegateDRepository {
     const cur = getKSTDate();
     const presidentEnumId = ClubDelegateEnum.Representative;
     const { president } = await this.db
-      .select({ president: count(ClubDelegateD.id) })
-      .from(ClubDelegateD)
+      .select({ president: count(ClubDelegate.id) })
+      .from(ClubDelegate)
       .where(
         and(
-          eq(ClubDelegateD.studentId, studentId),
-          eq(ClubDelegateD.clubId, clubId),
-          eq(ClubDelegateD.ClubDelegateEnumId, presidentEnumId),
-          lte(ClubDelegateD.startTerm, cur),
-          or(gte(ClubDelegateD.endTerm, cur), isNull(ClubDelegateD.endTerm)),
-          isNull(ClubDelegateD.deletedAt),
+          eq(ClubDelegate.studentId, studentId),
+          eq(ClubDelegate.clubId, clubId),
+          eq(ClubDelegate.clubDelegateEnum, presidentEnumId),
+          lte(ClubDelegate.startTerm, cur),
+          or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
+          isNull(ClubDelegate.deletedAt),
         ),
       )
       .then(takeOne);
