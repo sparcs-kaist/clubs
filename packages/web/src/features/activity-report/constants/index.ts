@@ -1,7 +1,9 @@
-import { getDate, getMonth, getYear } from "date-fns";
+import { subSeconds } from "date-fns";
 
 import { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
+
+import { formatSimpleDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 export const MAX_ACTIVITY_REPORT_COUNT = 20;
 
@@ -33,5 +35,5 @@ export const newActivityReportListSectionInfoText = (
     data?.deadline.activityDeadlineEnum,
   );
   const endTerm = data?.deadline.duration.endTerm;
-  return `현재는 ${data?.targetTerm.year}년 ${data?.targetTerm.name}학기 활동 보고서 ${status} 기간입니다 (${status} 마감 : ${endTerm ? `${getYear(endTerm)}년 ${getMonth(endTerm) + 1}월 ${getDate(endTerm)}일 23:59` : "-"})`;
+  return `현재는 ${data?.targetTerm.year}년 ${data?.targetTerm.name}학기 활동 보고서 ${status} 기간입니다 (${status} 마감 : ${endTerm ? formatSimpleDateTime(subSeconds(endTerm, 1)) : "-"})`;
 };
