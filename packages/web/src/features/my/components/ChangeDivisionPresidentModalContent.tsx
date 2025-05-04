@@ -1,6 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 // import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 import styled from "styled-components";
+
+import apiDiv005 from "@clubs/interface/api/division/endpoint/apiDiv005";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -21,9 +24,6 @@ interface ChangeDivisionPresidentModalContentProps {
   divisionName: string;
   onClose: () => void;
   fetch: () => void;
-  onConfirmed: () => void;
-  onRejected: () => void;
-  setType: (type: "Requested" | "Finished" | "Rejected") => void;
 }
 
 const ButtonWrapper = styled.div`
@@ -42,9 +42,6 @@ const ChangeDivisionPresidentModalContent: React.FC<
   divisionName,
   onClose,
   fetch,
-  onConfirmed,
-  onRejected,
-  setType,
 }: ChangeDivisionPresidentModalContentProps) => {
   const messageContext = new ChangeDivisionPresidentMessageContext({
     actingPresident,
@@ -58,16 +55,23 @@ const ChangeDivisionPresidentModalContent: React.FC<
   const [errorPhone, setErrorPhone] = useState<boolean>(false);
   const [phone, setPhone] = useState<string>("");
 
+  const queryClient = useQueryClient();
+
   const onConfirm = () => {
-    setType("Finished");
-    onConfirmed();
-    onClose();
+    //TODO - ApiDiv006 POST 하기
+    queryClient.invalidateQueries({
+      queryKey: [apiDiv005.url()],
+    });
     fetch();
+    onClose();
   };
 
   const onReject = () => {
-    setType("Rejected");
-    onRejected();
+    //TODO - ApiDiv006 POST 하기
+    queryClient.invalidateQueries({
+      queryKey: [apiDiv005.url()],
+    });
+    fetch();
     onClose();
   };
 

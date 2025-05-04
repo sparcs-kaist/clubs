@@ -4,6 +4,8 @@ import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
 
+import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
+
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
@@ -18,8 +20,7 @@ import colors from "@sparcs-clubs/web/styles/themes/colors";
 import ChangeRepresentativeModalContent from "./ChangeRepresentativeModalContent";
 
 interface MyChangeRepresentativeProps {
-  type: "Requested" | "Finished" | "Rejected";
-  setType: (type: "Requested" | "Finished" | "Rejected") => void;
+  status: ClubDelegateChangeRequestStatusEnum;
   clubName: string;
   prevRepresentative: string;
   newRepresentative: string;
@@ -30,7 +31,7 @@ interface MyChangeRepresentativeProps {
 const MyChangeRepresentativeWrapper = styled.div.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
 })<{
-  type: MyChangeRepresentativeProps["type"];
+  status: MyChangeRepresentativeProps["status"];
 }>`
   display: flex;
   flex-direction: row;
@@ -38,28 +39,31 @@ const MyChangeRepresentativeWrapper = styled.div.withConfig({
   gap: 8px;
   border-radius: 8px;
   border: 1px solid
-    ${({ type, theme }) =>
-      type === "Requested" ? theme.colors.RED[600] : theme.colors.GREEN[600]};
-  background-color: ${({ type, theme }) =>
-    type === "Requested" ? theme.colors.RED[100] : theme.colors.GREEN[100]};
+    ${({ status, theme }) =>
+      status === ClubDelegateChangeRequestStatusEnum.Applied
+        ? theme.colors.RED[600]
+        : theme.colors.GREEN[600]};
+  background-color: ${({ status, theme }) =>
+    status === ClubDelegateChangeRequestStatusEnum.Applied
+      ? theme.colors.RED[100]
+      : theme.colors.GREEN[100]};
 `;
 
 const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
-  type,
+  status,
   clubName,
   prevRepresentative,
   newRepresentative,
   refetch,
   requestId,
-  setType,
 }) => {
   const router = useRouter();
   const Title =
-    type === "Requested"
+    status === ClubDelegateChangeRequestStatusEnum.Applied
       ? "동아리 대표자 변경 요청"
       : "동아리 대표자 변경 완료";
   const Text =
-    type === "Requested"
+    status === ClubDelegateChangeRequestStatusEnum.Applied
       ? myChangeRepresentativeRequestText(
           clubName,
           prevRepresentative,
@@ -83,15 +87,14 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
           onClose={close}
           refetch={refetch}
           requestId={requestId}
-          setType={setType}
         />
       </Modal>
     ));
   };
 
   return (
-    <MyChangeRepresentativeWrapper type={type}>
-      {type === "Requested" ? (
+    <MyChangeRepresentativeWrapper status={status}>
+      {status === ClubDelegateChangeRequestStatusEnum.Applied ? (
         <Icon type="error" size={20} color={colors.RED[600]} />
       ) : (
         <Icon type="check_circle" size={20} color={colors.GREEN[600]} />
@@ -103,7 +106,7 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
         <Typography fs={16} lh={20} style={{ whiteSpace: "pre-wrap" }}>
           {Text}
         </Typography>
-        {type === "Requested" && (
+        {status === ClubDelegateChangeRequestStatusEnum.Applied && (
           <TextButton
             color="GRAY"
             text="클릭하여 더보기"
@@ -111,16 +114,17 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
             onClick={openConfirmModal}
           />
         )}
-        {type === "Finished" && isNewRepresentative && (
-          <TextButton
-            color="GRAY"
-            text="대표 동아리 관리 페이지 바로가기"
-            fw="REGULAR"
-            onClick={() => {
-              router.push(`/manage-club/`);
-            }}
-          />
-        )}
+        {status === ClubDelegateChangeRequestStatusEnum.Approved &&
+          isNewRepresentative && (
+            <TextButton
+              color="GRAY"
+              text="대표 동아리 관리 페이지 바로가기"
+              fw="REGULAR"
+              onClick={() => {
+                router.push(`/manage-club/`);
+              }}
+            />
+          )}
       </FlexWrapper>
     </MyChangeRepresentativeWrapper>
   );

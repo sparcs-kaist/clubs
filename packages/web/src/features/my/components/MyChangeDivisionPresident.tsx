@@ -13,20 +13,28 @@ import {
 } from "@sparcs-clubs/web/constants/changeDivisionPresident";
 import ChangeDivisionPresidentModalContent from "@sparcs-clubs/web/features/my/components/ChangeDivisionPresidentModalContent";
 
+export type MyChangeDivisionPresidentStatusEnum =
+  | ChangeDivisionPresidentStatusEnum.Requested
+  | ChangeDivisionPresidentStatusEnum.Confirmed;
+
 interface MyChangeDivisionPresidentProps {
-  status:
-    | ChangeDivisionPresidentStatusEnum.Requested
-    | ChangeDivisionPresidentStatusEnum.Confirmed;
+  status: MyChangeDivisionPresidentStatusEnum;
+
   actingPresident?: boolean;
   prevPresident: string;
   newPresident: string;
   phoneNumber: string | undefined;
   divisionName: string;
-  setType: (type: "Requested" | "Finished" | "Rejected") => void;
   fetch: () => void;
-  onConfirmed: () => void;
-  onRejected: () => void;
 }
+
+const notificationStatus: Record<
+  MyChangeDivisionPresidentStatusEnum,
+  "Alert" | "Success"
+> = {
+  [ChangeDivisionPresidentStatusEnum.Requested]: "Alert",
+  [ChangeDivisionPresidentStatusEnum.Confirmed]: "Success",
+};
 
 const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   status = ChangeDivisionPresidentStatusEnum.Requested,
@@ -35,10 +43,7 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   newPresident,
   phoneNumber = "",
   divisionName,
-  setType,
   fetch,
-  onConfirmed,
-  onRejected,
 }: MyChangeDivisionPresidentProps) => {
   const router = useRouter();
   const messageContext = new ChangeDivisionPresidentMessageContext({
@@ -66,9 +71,6 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
           status={status}
           onClose={close}
           fetch={fetch}
-          onConfirmed={onConfirmed}
-          onRejected={onRejected}
-          setType={setType}
         />
       </Modal>
     ));
@@ -83,11 +85,7 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
 
   return (
     <NotificationCard
-      status={
-        status === ChangeDivisionPresidentStatusEnum.Confirmed
-          ? "Success"
-          : "Alert"
-      }
+      status={notificationStatus[status]}
       header={messageContext.getHeader()}
     >
       <FlexWrapper gap={8} direction="column">

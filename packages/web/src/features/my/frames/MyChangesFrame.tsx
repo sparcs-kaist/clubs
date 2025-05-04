@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
@@ -14,92 +14,74 @@ import { useGetMyDivisionPresidentRequest } from "@sparcs-clubs/web/features/my/
 import MyChangeDivisionPresident from "../components/MyChangeDivisionPresident";
 
 export const MyChangesFrame = () => {
-  const { data, isLoading, isError, refetch } = useGetMyDelegateRequest();
+  const {
+    data: rawClubDelegateData,
+    isLoading: clubDelegateIsLoading,
+    isError: clubDelegateIsError,
+    refetch: clubDelegateRefetch,
+  } = useGetMyDelegateRequest();
+
+  const clubDelegateDataExists =
+    rawClubDelegateData?.requests && rawClubDelegateData?.requests.length > 0;
+
+  const clubDelegateData = clubDelegateDataExists
+    ? rawClubDelegateData.requests[0]
+    : undefined;
 
   // TODO - Div005 & Div006 API 나오면 이 코드를 사용하도록 수정할 것
-  // const {divisionPresidentData, divisionPresidentIsLoading, divisionPresidentIsError, divisionPresidentRefetch} = useGetMyDivisionPresidentRequest();
-  const { data: divisionPresidentData } = useGetMyDivisionPresidentRequest();
+  // const {rawDivisionPresidentData, divisionPresidentIsLoading, divisionPresidentIsError, divisionPresidentRefetch} = useGetMyDivisionPresidentRequest();
+  const {
+    data: rawDivisionPresidentData,
+    isLoading: divisionPresidentIsLoading,
+    isError: divisionPresidentIsError,
+    refetch: divisionPresidentRefetch,
+  } = useGetMyDivisionPresidentRequest();
+
+  const divisionPresidentDataExists =
+    rawDivisionPresidentData?.requests &&
+    rawDivisionPresidentData?.requests.length > 0;
+
+  const divisionPresidentData = divisionPresidentDataExists
+    ? rawDivisionPresidentData.requests[0]
+    : undefined;
 
   const { data: myProfile } = useGetUserProfile();
 
-  const [clubDelegateType, setClubDelegateType] = useState<
-    "Requested" | "Finished" | "Rejected"
-  >("Finished");
+  if (!(clubDelegateDataExists && divisionPresidentDataExists)) {
+    return null;
+  }
 
-  const [divisionPresidentType, setDivisionPresidentType] = useState<
-    "Requested" | "Finished" | "Rejected"
-  >("Finished");
-
-  const onConfirmed = () => {
-    //TODO - Div006 API call
-  };
-  const onRejected = () => {
-    //TODO - Div006 API call
-  };
-
-  useEffect(() => {
-    switch (data?.requests[0]?.clubDelegateChangeRequestStatusEnumId) {
-      case ClubDelegateChangeRequestStatusEnum.Applied:
-        setClubDelegateType("Requested");
-        break;
-      case ClubDelegateChangeRequestStatusEnum.Approved:
-        setClubDelegateType("Finished");
-        break;
-      default:
-        setClubDelegateType("Finished");
-    }
-    switch (
-      divisionPresidentData?.requests[0]?.changeDivisionPresidentStatusEnumId
-    ) {
-      case ChangeDivisionPresidentStatusEnum.Requested:
-        setDivisionPresidentType("Requested");
-        break;
-      case ChangeDivisionPresidentStatusEnum.Confirmed:
-        setDivisionPresidentType("Finished");
-        break;
-      default:
-        setDivisionPresidentType("Finished");
-    }
-  }, [data, divisionPresidentData]);
   return (
-    <AsyncBoundary isLoading={isLoading} isError={isError}>
-      {data?.requests &&
-        data?.requests.length > 0 &&
-        clubDelegateType !== "Rejected" && (
+    <AsyncBoundary
+      isLoading={clubDelegateIsLoading || divisionPresidentIsLoading}
+      isError={clubDelegateIsError || divisionPresidentIsError}
+    >
+      {clubDelegateDataExists &&
+        (clubDelegateData?.clubDelegateChangeRequestStatusEnumId ===
+          ClubDelegateChangeRequestStatusEnum.Applied ||
+          clubDelegateData?.clubDelegateChangeRequestStatusEnumId ===
+            ClubDelegateChangeRequestStatusEnum.Approved) && (
           <MyChangeRepresentative
-            type={clubDelegateType}
-            clubName={data?.requests[0].clubName}
-            prevRepresentative={`${data?.requests[0].prevStudentNumber} ${data?.requests[0].prevStudentName}`}
+            status={clubDelegateData.clubDelegateChangeRequestStatusEnumId}
+            clubName={clubDelegateData!.clubName}
+            prevRepresentative={`${clubDelegateData!.prevStudentNumber} ${clubDelegateData!.prevStudentName}`}
             newRepresentative={`${myProfile?.studentNumber} ${myProfile?.name}`}
-            refetch={refetch}
-            requestId={data?.requests[0]?.id}
-            setType={setClubDelegateType}
+            refetch={clubDelegateRefetch}
+            requestId={clubDelegateData!.id}
           />
         )}
-      {divisionPresidentData?.requests &&
-        divisionPresidentData?.requests.length > 0 &&
-        (divisionPresidentData?.requests[0]
-          ?.changeDivisionPresidentStatusEnumId ===
+      {divisionPresidentDataExists &&
+        (divisionPresidentData?.changeDivisionPresidentStatusEnumId ===
           ChangeDivisionPresidentStatusEnum.Requested ||
-          divisionPresidentData?.requests[0]
-            ?.changeDivisionPresidentStatusEnumId ===
-            ChangeDivisionPresidentStatusEnum.Confirmed) &&
-        (divisionPresidentType === "Requested" ||
-          divisionPresidentType === "Finished") && (
+          divisionPresidentData?.changeDivisionPresidentStatusEnumId ===
+            ChangeDivisionPresidentStatusEnum.Confirmed) && (
           <MyChangeDivisionPresident
-            status={
-              divisionPresidentData?.requests[0]
-                ?.changeDivisionPresidentStatusEnumId
-            }
-            prevPresident={`${divisionPresidentData?.requests[0].prevStudent.studentNumber} ${divisionPresidentData?.requests[0].prevStudent.name}`}
+            status={divisionPresidentData.changeDivisionPresidentStatusEnumId}
+            prevPresident={`${divisionPresidentData.prevStudent.studentNumber} ${divisionPresidentData.prevStudent.name}`}
             newPresident={`${myProfile?.studentNumber} ${myProfile?.name}`}
-            setType={setDivisionPresidentType}
-            onConfirmed={onConfirmed}
-            onRejected={onRejected}
-            fetch={() => {}}
+            fetch={divisionPresidentRefetch}
             phoneNumber={myProfile?.phoneNumber}
-            divisionName={divisionPresidentData.requests[0].divisionName.name}
-            // fetch={divisionPresidentRefetch} //TODO - activate this
+            divisionName={divisionPresidentData.divisionName.name}
           />
         )}
     </AsyncBoundary>
