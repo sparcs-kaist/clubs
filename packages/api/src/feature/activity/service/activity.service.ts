@@ -28,7 +28,6 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { ActivityDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/activity.deadline.public.service";
@@ -47,7 +46,6 @@ export default class ActivityOldService {
     private activityRepository: ActivityRepository,
     private clubPublicService: ClubPublicService,
     private filePublicService: FilePublicService,
-    private clubTRepository: ClubTRepository,
     private userPublicService: UserPublicService,
     private semesterPublicService: SemesterPublicService,
     private activityDeadlinePublicService: ActivityDeadlinePublicService,
@@ -97,19 +95,6 @@ export default class ActivityOldService {
         HttpStatus.FORBIDDEN,
       );
   }
-
-  private async checkIsProfessor(param: {
-    professorId: number;
-    clubId: number;
-  }) {
-    const clubT = await this.clubTRepository.findClubTById(param.clubId);
-    if (clubT.professorId !== param.professorId)
-      throw new HttpException(
-        "You are not a professor of the club",
-        HttpStatus.FORBIDDEN,
-      );
-  }
-
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
    * @param clubId 동아리 id
@@ -180,7 +165,10 @@ export default class ActivityOldService {
     clubId: number,
     professorId: number,
   ): Promise<ApiAct019ResponseOk> {
-    await this.checkIsProfessor({ professorId, clubId });
+    await this.clubPublicService.checkIsProfessor({
+      professorId,
+      clubId,
+    });
 
     const activityDId = await this.activityDurationPublicService.loadId();
     const activities =
@@ -221,7 +209,10 @@ export default class ActivityOldService {
   ) {
     const activities =
       await this.activityRepository.selectActivityByIds(activityIds);
-    await this.checkIsProfessor({ professorId, clubId: activities[0].clubId });
+    await this.clubPublicService.checkIsProfessor({
+      professorId,
+      clubId: activities[0].clubId,
+    });
 
     if (activities.some(activity => activity.clubId !== activities[0].clubId))
       throw new HttpException("Invalid club id", HttpStatus.BAD_REQUEST);
@@ -235,7 +226,7 @@ export default class ActivityOldService {
   async getExecutiveActivitiesClubs(
     _query?: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
-    const date = new Date("2025-01-05");
+    const date = new Date(); //new Date("2025-01-05");
     const semesterId = await this.semesterPublicService.loadId({
       date,
     });

@@ -520,7 +520,12 @@ export abstract class BaseMultiTableRepository<
       oneToMany: Object.fromEntries(
         Object.keys(this.table.oneToMany).map(key => [
           key,
-          models.flatMap(m => m.oneToMany[key as keyof typeof m.oneToMany]),
+          models.flatMap(m =>
+            m.oneToMany[key as keyof typeof m.oneToMany].map(data => ({
+              ...data,
+              [this.mainTableIdName]: m.id,
+            })),
+          ),
         ]),
       ) as unknown as MultiModelInsertTableArray<Table>["oneToMany"],
     };
@@ -577,7 +582,9 @@ export abstract class BaseMultiTableRepository<
       const oneToMany = Object.fromEntries(
         Object.entries(tableResult.oneToMany).map(([key]) => [
           key,
-          oneToManyMaps[key].get(id as IdType),
+          oneToManyMaps[key].has(id as IdType)
+            ? oneToManyMaps[key].get(id as IdType)
+            : [],
         ]),
       ) as MultiSelectModel<Table>["oneToMany"];
 

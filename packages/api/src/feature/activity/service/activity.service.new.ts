@@ -244,9 +244,10 @@ export default class ActivityService {
         ],
       })
       .then(takeExist());
-
+    const activityDId = await this.activityDurationPublicService.loadId();
     const activities = await this.activityRepository.count({
       clubId: body.clubId,
+      activityDId,
     });
     if (activities >= 20) {
       throw new HttpException(
@@ -255,7 +256,6 @@ export default class ActivityService {
       );
     }
 
-    const activityDId = await this.activityDurationPublicService.loadId();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     // TODO: 현재학기 뿐만 아니라 직전학기 동아리원도 활동 참가자로 포함될 수 있어야 합니다.
     const participants = await Promise.all(
