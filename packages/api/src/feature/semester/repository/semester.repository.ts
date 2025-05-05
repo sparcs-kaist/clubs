@@ -105,6 +105,7 @@ export class SemesterRepository extends BaseSingleTableRepository<
     value: PrimitiveConditionValue,
   ): SQL {
     if (key === "date" && value instanceof Date) {
+      // console.log(`semester date: ${value}`);
       return and(lte(SemesterD.startTerm, value), gt(SemesterD.endTerm, value));
     }
 

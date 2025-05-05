@@ -7,7 +7,7 @@ import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider
 import { ActivityClubChargedExecutive } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
 
 @Injectable()
-export default class ActivityClubChargedExecutiveRepository {
+export class OldActivityClubChargedExecutiveRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
   /**

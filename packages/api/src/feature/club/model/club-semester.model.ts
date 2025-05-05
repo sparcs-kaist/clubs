@@ -21,6 +21,8 @@ export class MClubSemester
   extends MEntity
   implements IClubSemester, IClubSemesterCreate
 {
+  static modelName = "clubSemester";
+
   club: IClubSemester["club"];
   semester: IClubSemester["semester"];
 
