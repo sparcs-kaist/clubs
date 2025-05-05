@@ -52,7 +52,6 @@ import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
 import { ActivityClubChargedExecutiveRepository } from "@sparcs-clubs/api/feature/activity/repository/activity-club-charge-executive.repository";
-import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
@@ -69,17 +68,16 @@ import { ActivityCommentRepository } from "../repository/activity-comment.reposi
 export default class ActivityService {
   constructor(
     private readonly activityRepository: ActivityNewRepository,
+    private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
+    private readonly activityCommentRepository: ActivityCommentRepository,
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly activityDeadlinePublicService: ActivityDeadlinePublicService,
     private readonly semesterPublicService: SemesterPublicService,
     private readonly clubPublicService: ClubPublicService,
-    private readonly clubTRepository: ClubTRepository,
     private readonly filePublicService: FilePublicService,
     private readonly registrationPublicService: RegistrationPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
     private readonly userPublicService: UserPublicService,
-    private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
-    private readonly activityCommentRepository: ActivityCommentRepository,
   ) {}
 
   /**
@@ -106,7 +104,10 @@ export default class ActivityService {
     studentId: number,
   ): Promise<ApiAct005ResponseOk> {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId,
+    });
 
     const activityDId = await this.activityDurationPublicService.loadId();
 
@@ -135,42 +136,13 @@ export default class ActivityService {
       );
   }
 
-  /**
-   * @param studentId 학생 id
-   * @param clubId 동아리 id
-   * @description 학생이 해당 동아리의 대표자 또는 대의원이 아닌 경우 403 exception을 throw 합니다.
-   */
-  private async checkIsStudentDelegate(param: {
-    studentId: number;
-    clubId: number;
-  }) {
-    if (
-      !(await this.clubPublicService.isStudentDelegate(
-        param.studentId,
-        param.clubId,
-      ))
-    )
-      throw new HttpException(
-        "It seems that you are not the delegate of the club.",
-        HttpStatus.FORBIDDEN,
-      );
-  }
-
-  private async checkIsProfessor(param: {
-    professorId: number;
-    clubId: number;
-  }) {
-    const clubT = await this.clubTRepository.findClubTById(param.clubId);
-    if (clubT.professorId !== param.professorId)
-      throw new HttpException(
-        "You are not a professor of the club",
-        HttpStatus.FORBIDDEN,
-      );
-  }
   async deleteStudentActivity(activityId: number, studentId: number) {
     const activity = await this.activityRepository.fetch(activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: activity.club.id,
+    });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
       date: new Date(),
@@ -257,7 +229,10 @@ export default class ActivityService {
     studentId: number,
   ): Promise<void> {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: body.clubId });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: body.clubId,
+    });
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService
@@ -315,14 +290,17 @@ export default class ActivityService {
   ): Promise<void> {
     const activity = await this.activityRepository.fetch(param.activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
-    // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: activity.club.id,
+    });
+    // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
       date: new Date(),
       deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
-        ActivityDeadlineEnum.Exception,
+        // ActivityDeadlineEnum.Exception,
       ],
     });
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
@@ -414,7 +392,10 @@ export default class ActivityService {
     const activity = await this.activityRepository.fetch(activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     // 이거 맞나? 등록 기간용 따로 파야 할 수도
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: activity.club.id,
+    });
 
     // 현재가 동아리 등록 기간인지 확인합니다
     await this.registrationDeadlinePublicService.validate({
@@ -436,7 +417,10 @@ export default class ActivityService {
     studentId: number,
   ): Promise<ApiAct006ResponseOk> {
     // 요청한 학생이 동아리의 대표자인지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: query.clubId });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: query.clubId,
+    });
     const activities = await this.activityRepository.find({
       clubId: query.clubId,
       activityDId: param.activityTermId,
@@ -534,16 +518,10 @@ export default class ActivityService {
     studentId: number;
     query: ApiAct010RequestQuery;
   }): Promise<ApiAct010ResponseOk> {
-    if (
-      !(await this.clubPublicService.isStudentDelegate(
-        param.studentId,
-        param.query.clubId,
-      ))
-    )
-      throw new HttpException(
-        "It seems that you are not a delegate of the club",
-        HttpStatus.BAD_REQUEST,
-      );
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId: param.studentId,
+      clubId: param.query.clubId,
+    });
 
     const result = await this.clubPublicService.getMemberFromDuration({
       clubId: param.query.clubId,
@@ -567,9 +545,16 @@ export default class ActivityService {
     studentId: number,
   ): Promise<void> {
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: body.clubId });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: body.clubId,
+    });
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
+    await this.registrationDeadlinePublicService.validate({
+      date: new Date(),
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
 
     const activityDId = await this.activityDurationPublicService.loadId({
       date: new Date(),
@@ -636,7 +621,10 @@ export default class ActivityService {
   ): Promise<void> {
     const activity = await this.activityRepository.fetch(param.activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
+    await this.clubPublicService.checkIsStudentDelegate({
+      studentId,
+      clubId: activity.club.id,
+    });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
 
@@ -1075,7 +1063,11 @@ export default class ActivityService {
     professorId: number,
   ): Promise<ApiAct015ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
-    await this.checkIsProfessor({ professorId, clubId: activity.club.id });
+    await this.clubPublicService.checkIsProfessor({
+      professorId,
+      clubId: activity.club.id,
+      date: new Date(),
+    });
 
     const studentMap = await this.userPublicService.getStudentMapByIds(
       activity.participants.map(e => e.id),
