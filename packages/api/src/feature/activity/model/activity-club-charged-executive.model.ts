@@ -22,4 +22,14 @@ export class MActivityClubChargedExecutive
     super();
     Object.assign(this, data);
   }
+
+  static updateExecutiveId(
+    executiveId: number,
+  ): (model: MActivityClubChargedExecutive) => MActivityClubChargedExecutive {
+    return (model: MActivityClubChargedExecutive) =>
+      new MActivityClubChargedExecutive({
+        ...model,
+        executive: { id: executiveId },
+      });
+  }
 }

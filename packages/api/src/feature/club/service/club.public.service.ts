@@ -623,4 +623,54 @@ export default class ClubPublicService {
 
     return joinedClubs;
   }
+
+  /**
+   * @param studentId 학생 id
+   * @param clubId 동아리 id
+   * @returns void
+   * 학생이 현재 해당 동아리의 대표자 또는 대의원인지 확인합니다.
+   * 학생이 현재 해당 동아리의 대표자 또는 대의원이 아닌 경우 403 exception을 throw 합니다.
+   */
+  async checkIsStudentDelegate(query: {
+    studentId: number;
+    clubId: number;
+  }): Promise<void> {
+    const isDelegate = await this.clubDelegateRepository.count({
+      studentId: query.studentId,
+      clubId: query.clubId,
+      date: new Date(),
+    });
+    if (isDelegate === 0) {
+      throw new Error(
+        `Student ${query.studentId} is not a delegate of club: ${query.clubId}`,
+      );
+    }
+  }
+
+  /**
+   * @param professorId 교수 id
+   * @param clubId 동아리 id
+   * @returns void
+   * 교수가 현재 해당 동아리의 교수인지 확인합니다.
+   * 교수가 현재 해당 동아리의 교수가 아닌 경우 403 exception을 throw 합니다.
+   */
+  async checkIsProfessor(query: {
+    professorId: number;
+    clubId: number;
+    date?: Date;
+  }): Promise<void> {
+    const semesterId = await this.semesterPublicService.loadId({
+      date: query.date,
+    });
+    const isProfessor = await this.clubSemesterRepository.count({
+      professorId: query.professorId,
+      clubId: query.clubId,
+      semesterId,
+    });
+    if (isProfessor === 0) {
+      throw new Error(
+        `Professor ${query.professorId} is not a professor of club: ${query.clubId}`,
+      );
+    }
+  }
 }
