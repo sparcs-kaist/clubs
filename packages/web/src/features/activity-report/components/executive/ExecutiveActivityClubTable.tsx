@@ -15,8 +15,10 @@ import Table from "@sparcs-clubs/web/common/components/Table";
 import CheckboxCenterPlacerStopPropagation from "@sparcs-clubs/web/common/components/Table/CheckboxCenterPlacerStopPropagation";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import { ClubTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagColorFromDivision } from "@sparcs-clubs/web/types/clubdetail.types";
+import {
+  ClubTypeTagList,
+  getDivisionTagColor,
+} from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveActivityClubTableProps {
@@ -51,9 +53,7 @@ const columns = [
   columnHelper.accessor("divisionName", {
     header: "분과",
     cell: info => (
-      <Tag color={getTagColorFromDivision(info.getValue())}>
-        {info.getValue()}
-      </Tag>
+      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
     ),
     size: 120,
   }),

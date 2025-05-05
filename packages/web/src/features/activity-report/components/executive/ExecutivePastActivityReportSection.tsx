@@ -35,6 +35,7 @@ const ExecutivePastActivityReportSection: React.FC<
               ) : (
                 <ExecutiveClubActivitiesTable
                   data={data?.activities ? data.activities : { items: [] }}
+                  isPast
                 />
               )}
             </FoldableSection>

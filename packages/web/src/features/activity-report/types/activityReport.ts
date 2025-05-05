@@ -9,8 +9,8 @@ import { Comment } from "@sparcs-clubs/web/types/comment";
 import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
 type Duration = {
-  startTerm: Date;
-  endTerm: Date;
+  startTerm: Date | null;
+  endTerm: Date | null;
 };
 
 export interface BaseActivityReport {
