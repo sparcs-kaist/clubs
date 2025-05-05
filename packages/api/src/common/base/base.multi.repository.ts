@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import {
+  and,
   eq,
   inArray,
   InferInsertModel,
   InferSelectModel,
+  isNull,
   SQL,
   sql,
 } from "drizzle-orm";
@@ -204,7 +206,12 @@ export abstract class BaseMultiTableRepository<
     const main = await tx
       .select()
       .from(this.table.main)
-      .where(inArray(this.table.main.id, mainIds))
+      .where(
+        and(
+          inArray(this.table.main.id, mainIds),
+          isNull(this.table.main.deletedAt),
+        ),
+      )
       .execute();
 
     const oneToOneMapEntries = await Promise.all(
@@ -212,7 +219,12 @@ export abstract class BaseMultiTableRepository<
         const rows = await tx
           .select()
           .from(table)
-          .where(inArray(table[this.mainTableIdName], mainIds))
+          .where(
+            and(
+              inArray(table[this.mainTableIdName], mainIds),
+              isNull(table.deletedAt),
+            ),
+          )
           .execute();
         return [key, rows];
       }),
@@ -224,7 +236,12 @@ export abstract class BaseMultiTableRepository<
         const rows = await tx
           .select()
           .from(table)
-          .where(inArray(table[this.mainTableIdName], mainIds))
+          .where(
+            and(
+              inArray(table[this.mainTableIdName], mainIds),
+              isNull(table.deletedAt),
+            ),
+          )
           .execute();
         return [key, rows];
       }),
