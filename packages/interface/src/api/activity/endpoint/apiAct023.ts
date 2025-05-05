@@ -6,7 +6,7 @@ import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
  * @version v0.1
- * @description 집행부원을 위한 동아리별 활동 보고서 내역을 조회합니다.
+ * @description 집행부원을 위한 동아리별 활동 보고서 내역, 담당자 리스트를 조회합니다.
  */
 
 const url = () => `/executive/activities/clubs`;
@@ -14,10 +14,16 @@ const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  pageOffset: z.coerce.number().int().min(1),
+  itemCount: z.coerce.number().int().min(1),
+  clubName: z.string().optional(), // 검색 키워드: 동아리 이름
+  executiveName: z.string().optional(), // 검색 키워드: 담당자 이름
+});
 
 const requestBody = z.object({});
 
+// items 와 executiveProgresses는 각각 정렬해서 보내주기!
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     items: z.array(
@@ -57,6 +63,8 @@ const responseBodyMap = {
         ),
       }),
     ),
+    total: z.coerce.number().min(1),
+    offset: z.coerce.number().min(1),
   }),
 };
 
@@ -80,8 +88,8 @@ type ApiAct023ResponseOk = z.infer<(typeof apiAct023.responseBodyMap)[200]>;
 export default apiAct023;
 
 export type {
+  ApiAct023RequestBody,
   ApiAct023RequestParam,
   ApiAct023RequestQuery,
-  ApiAct023RequestBody,
   ApiAct023ResponseOk,
 };

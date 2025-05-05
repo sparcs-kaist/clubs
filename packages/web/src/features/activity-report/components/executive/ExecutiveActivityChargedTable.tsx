@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { overlay } from "overlay-kit";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
 
@@ -21,8 +21,7 @@ import ChargedActivityModalTable, {
 } from "./ChargedActivityModalTable";
 
 interface ExecutiveActivityChargedTableProps {
-  activities: ApiAct023ResponseOk;
-  searchText: string;
+  executives?: ApiAct023ResponseOk["executiveProgresses"];
 }
 
 const openAssignModal = (data: ExecutiveProgresses) => {
@@ -153,44 +152,24 @@ const columns = [
 
 const ExecutiveActivityChargedTable: React.FC<
   ExecutiveActivityChargedTableProps
-> = ({ activities, searchText }) => {
-  const sortedActivities = useMemo(
-    () =>
-      [...activities.executiveProgresses].sort((a, b) =>
-        a.executiveName < b.executiveName ? -1 : 1,
-      ),
-    [activities.executiveProgresses],
-  );
-
+> = ({ executives = [] }) => {
   const table = useReactTable({
-    data: sortedActivities,
+    data: executives,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      globalFilter: searchText,
-    },
-    enableSorting: false,
+    enableSorting: true,
   });
 
-  const totalCount = sortedActivities.length;
-
-  let countString = `총 ${totalCount}개`;
-  if (table.getRowModel().rows.length !== totalCount) {
-    countString = `검색 결과 ${table.getRowModel().rows.length}개 / 총 ${totalCount}개`;
-  }
+  const totalCount = executives.length;
 
   return (
-    <FlexWrapper direction="column" gap={8}>
-      <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
-        {countString}
-      </Typography>
-      <Table
-        table={table}
-        minWidth={800}
-        rowLink={row => `/executive/activity-report/charged/${row.executiveId}`}
-      />
-    </FlexWrapper>
+    <Table
+      count={totalCount}
+      table={table}
+      minWidth={800}
+      rowLink={row => `/executive/activity-report/charged/${row.executiveId}`}
+    />
   );
 };
 

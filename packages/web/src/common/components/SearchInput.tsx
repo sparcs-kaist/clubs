@@ -27,7 +27,7 @@ const SearchInputWrapper = styled.div`
   }
 `;
 
-const SeachInput = styled.input`
+const Input = styled.input`
   display: flex;
   flex-direction: row;
   flex: 1;
@@ -55,7 +55,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   return (
     <SearchInputWrapper>
       <Icon type="search" size={20} />
-      <SeachInput
+      <Input
         value={searchText}
         placeholder={placeholder}
         onChange={handleValueChange}
