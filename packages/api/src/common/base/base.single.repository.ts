@@ -137,7 +137,7 @@ export abstract class BaseSingleTableRepository<
     data: IModelCreate[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
-    const dbData = data.map(d => this.createToDBMapping(d));
+    const dbData = data.map(d => this.createToDB(d));
     // TODO: bulk로 보내고 $returningId로 동작하게 수정
     // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
     // 원래 계획: $returningId를 사용해 insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
