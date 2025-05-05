@@ -94,6 +94,7 @@ import { MActivity } from "../model/activity.model.new";
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "../repository/activity.new.repository";
 import ActivityRepository from "../repository/activity.repository";
+import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
 @Injectable()
 export default class ActivityService {
@@ -110,6 +111,7 @@ export default class ActivityService {
     private activityDurationPublicService: ActivityDurationPublicService,
     private activityNewRepository: ActivityNewRepository,
     private registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private activityCommentRepository: ActivityCommentRepository,
   ) {}
 
   /**
@@ -980,23 +982,26 @@ export default class ActivityService {
     executiveId: number;
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
-    const isApprovalSucceed =
-      await this.activityRepository.updateActivityStatusEnumId({
-        activityId: param.param.activityId,
-        activityStatusEnumId: ActivityStatusEnum.Approved,
-      });
+    // TODO: transaction 추가
+    const isApprovalSucceed = await this.activityNewRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Approved),
+    );
     if (!isApprovalSucceed)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    const isInsertionSucceed =
-      await this.activityRepository.insertActivityFeedback({
-        activityId: param.param.activityId,
-        comment: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열ㄴ
-        executiveId: param.executiveId,
-      });
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
+      // TODO?: 활동 승인 시에도 content를 넣을까요?
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Approved,
+    });
     if (!isInsertionSucceed)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -1013,17 +1018,20 @@ export default class ActivityService {
     param: ApiAct017RequestParam;
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
-    await this.activityRepository.updateActivityStatusEnumId({
-      activityId: param.param.activityId,
-      activityStatusEnumId: ActivityStatusEnum.Rejected,
-    });
+    // TODO: transaction 추가
+    await this.activityNewRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Rejected),
+    );
 
-    const isInsertionSucceed =
-      await this.activityRepository.insertActivityFeedback({
-        activityId: param.param.activityId,
-        comment: param.body.comment,
-        executiveId: param.executiveId,
-      });
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: param.body.comment,
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Rejected,
+    });
     if (!isInsertionSucceed)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
