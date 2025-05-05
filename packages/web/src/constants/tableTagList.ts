@@ -175,6 +175,31 @@ const ClubTypeTagList: {
   [ClubTypeEnum.Provisional]: { text: "가동아리", color: "ORANGE" },
 };
 
+const getDivisionTagColor = (name: string): TagColor => {
+  switch (name) {
+    case "생활체육":
+    case "구기체육":
+      return "PINK";
+    case "인문학술":
+    case "이공학술":
+      return "YELLOW";
+    case "연행예술":
+    case "전시창작":
+      return "BLUE";
+    case "생활문화":
+    case "식생활":
+    case "대중문화":
+      return "GREEN";
+    case "사회":
+    case "종교":
+      return "PURPLE";
+    case "밴드음악":
+      return "ORANGE";
+    default:
+      return "ORANGE";
+  }
+};
+
 export {
   AcfTagList,
   ActStatusTagList,
@@ -190,4 +215,5 @@ export {
   RegistrationStatusTagList,
   RegistrationTypeTagList,
   RntTagList,
+  getDivisionTagColor,
 };

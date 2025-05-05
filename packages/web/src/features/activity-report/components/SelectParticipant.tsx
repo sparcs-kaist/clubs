@@ -94,9 +94,6 @@ const SelectParticipant: React.FC<SelectParticipantProps> = ({
     useState<RowSelectionState>(initialRowValues);
 
   useEffect(() => {
-    setRowValues(initialRowValues);
-  }, [initialRowValues]);
-  useEffect(() => {
     setSelected(data.filter((_, i) => rowValues?.[i]));
   }, [rowValues, data]);
 

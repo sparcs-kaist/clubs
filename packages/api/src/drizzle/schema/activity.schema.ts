@@ -117,6 +117,7 @@ export const ActivityFeedback = mysqlTable(
     activityId: int("activity_id").notNull(),
     executiveId: int("executive_id").notNull(),
     comment: text("comment").notNull(),
+    activityStatusEnum: int("activity_status_enum").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     deletedAt: timestamp("deleted_at"),
   },

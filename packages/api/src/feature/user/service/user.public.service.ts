@@ -9,16 +9,22 @@ import {
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 
+import { RMProfessor } from "../model/professor.model";
+import { MStudent } from "../model/student.model";
 import ExecutiveRepository from "../repository/executive.repository";
-import ProfessorRepository from "../repository/professor.repository";
-import StudentRepository from "../repository/student.repository";
+import OldProfessorRepository from "../repository/old.professor.repository";
+import OldStudentRepository from "../repository/old.student.repository";
+import { ProfessorRepository } from "../repository/professor.repository";
+import { StudentRepository } from "../repository/student.repository";
 
 @Injectable()
 export default class UserPublicService {
   constructor(
-    private studentRepository: StudentRepository,
+    private oldStudentRepository: OldStudentRepository,
     private executiveRepository: ExecutiveRepository,
+    private oldProfessorRepository: OldProfessorRepository,
     private professorRepository: ProfessorRepository,
+    private studentRepository: StudentRepository,
   ) {}
 
   /**
@@ -26,7 +32,9 @@ export default class UserPublicService {
    * 만약 매치되는 학생이 존재하지 않을 경우 undefined를 리턴합니다.
    * */
   async getStudentById(student: { id: number }) {
-    const students = await this.studentRepository.selectStudentById(student.id);
+    const students = await this.oldStudentRepository.selectStudentById(
+      student.id,
+    );
 
     if (students.length > 1)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -103,7 +111,7 @@ export default class UserPublicService {
    * @returns 해당 id에 매칭되는 교수 정보를 반환합니다. 없을 경우 undefined를 반환합니다.
    */
   async getProfessorById(professor: { id: number }) {
-    const professors = await this.professorRepository.selectProfessorById(
+    const professors = await this.oldProfessorRepository.selectProfessorById(
       professor.id,
     );
 
@@ -122,7 +130,10 @@ export default class UserPublicService {
     semesterId: number,
   ): Promise<boolean> {
     const isNotgraduateStudent =
-      await this.studentRepository.isNotgraduateStudent(studentId, semesterId);
+      await this.oldStudentRepository.isNotgraduateStudent(
+        studentId,
+        semesterId,
+      );
     if (!isNotgraduateStudent) return false;
     return true;
   }
@@ -132,9 +143,8 @@ export default class UserPublicService {
    * 만약 매치되는 id가 존재하지 않을 경우 undefined를 리턴합니다.
    * */
   async getStudentByTId(studentT: { id: number }) {
-    const studentIds = await this.studentRepository.selectStudentIdByStudentTId(
-      studentT.id,
-    );
+    const studentIds =
+      await this.oldStudentRepository.selectStudentIdByStudentTId(studentT.id);
 
     if (studentIds.length === 0) {
       return undefined;
@@ -145,7 +155,7 @@ export default class UserPublicService {
 
     const students = await Promise.all(
       studentIds.map(async student =>
-        this.studentRepository.selectStudentById(student.studentId),
+        this.oldStudentRepository.selectStudentById(student.studentId),
       ),
     );
 
@@ -163,7 +173,10 @@ export default class UserPublicService {
    * */
 
   async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    await this.studentRepository.updateStudentPhoneNumber(userId, phoneNumber);
+    await this.oldStudentRepository.updateStudentPhoneNumber(
+      userId,
+      phoneNumber,
+    );
   }
 
   /**
@@ -182,7 +195,7 @@ export default class UserPublicService {
     studentIds: number[],
   ): Promise<IStudentSummary[]> {
     const students =
-      await this.studentRepository.fetchStudentSummaries(studentIds);
+      await this.oldStudentRepository.fetchStudentSummaries(studentIds);
     return students;
   }
 
@@ -202,12 +215,12 @@ export default class UserPublicService {
   }
 
   async findProfessorAll(professorIds: number[]): Promise<IProfessor[]> {
-    const professors = await this.professorRepository.findAll(professorIds);
+    const professors = await this.oldProfessorRepository.findAll(professorIds);
     return professors;
   }
 
   async findProfessor(professorId: number): Promise<IProfessor | null> {
-    const professor = await this.professorRepository.find(professorId);
+    const professor = await this.oldProfessorRepository.find(professorId);
     return professor;
   }
 
@@ -247,7 +260,7 @@ export default class UserPublicService {
     semesterId,
   ): Promise<number> {
     const studentEnumId =
-      await this.studentRepository.selectStudentStatusEnumIdByStudentIdSemesterId(
+      await this.oldStudentRepository.selectStudentStatusEnumIdByStudentIdSemesterId(
         studentId,
         semesterId,
       );
@@ -259,10 +272,20 @@ export default class UserPublicService {
     semesterId: number,
   ): Promise<{ id: number; studentEnumId: number }[]> {
     const studentEnums =
-      await this.studentRepository.getStudentEnumsByIdsAndSemesterId(
+      await this.oldStudentRepository.getStudentEnumsByIdsAndSemesterId(
         studentIds,
         semesterId,
       );
     return studentEnums;
+  }
+
+  async getProfessorsByIds(professorIds: number[]): Promise<RMProfessor[]> {
+    const professors = await this.professorRepository.fetchAll(professorIds);
+    return professors;
+  }
+
+  async getStudentsByIds(studentIds: number[]): Promise<MStudent[]> {
+    const students = await this.studentRepository.fetchAll(studentIds);
+    return students;
   }
 }

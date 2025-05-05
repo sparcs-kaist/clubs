@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
 import { ISemester } from "@clubs/domain/semester/semester";
 
 import {
@@ -10,13 +11,17 @@ import {
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-import DivisionRepository from "@sparcs-clubs/api/feature/division/repository/division.repository";
+import OldDivisionRepository from "@sparcs-clubs/api/feature/division/repository/old.division.repository";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
+import { RMClub } from "../model/club.model";
 import { MClubOld } from "../model/club-old.model";
+import { ClubRepository } from "../repository/club.repository";
+import { ClubDelegateRepository } from "../repository/club-delegate-repository";
+import { ClubDivisionHistoryRepository } from "../repository/club-division-history.repository";
 import { ClubSemesterRepository } from "../repository/club-semester.repository";
 import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
 import ClubTRepository from "../repository-old/club.club-t.repository";
@@ -30,12 +35,15 @@ export default class ClubPublicService {
     private clubOldRepository: ClubOldRepository,
     private clubTRepository: ClubTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
-    private divisionRepository: DivisionRepository,
+    private oldOldDivisionRepository: OldDivisionRepository,
     private divisionPublicService: DivisionPublicService,
     private divisionPermanentClubDRepository: DivisionPermanentClubDRepository,
     private userPublicService: UserPublicService,
     private semesterPublicService: SemesterPublicService,
+    private clubRepository: ClubRepository,
     private clubSemesterRepository: ClubSemesterRepository,
+    private clubDelegateRepository: ClubDelegateRepository,
+    private clubDivisionHistoryRepository: ClubDivisionHistoryRepository,
   ) {}
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.
@@ -349,7 +357,7 @@ export default class ClubPublicService {
   }
 
   async fetchDivisionSummaries(ids: number[]): Promise<IDivisionSummary[]> {
-    const results = await this.divisionRepository.fetchSummaries(ids);
+    const results = await this.oldOldDivisionRepository.fetchSummaries(ids);
     return results;
   }
 
@@ -453,5 +461,166 @@ export default class ClubPublicService {
       clubId,
     });
     return clubSemester.map(c => c.semester.id);
+  }
+
+  async searchClubDetailByDate(query: {
+    date: Date;
+    clubId?: number | number[];
+    name?: string;
+    clubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
+  }): Promise<RMClub[]> {
+    const semester = await this.semesterPublicService.load({
+      date: query.date,
+    });
+    const [clubs, clubSemesters, divisions, clubDivisions, clubDelegates] =
+      await Promise.all([
+        this.clubRepository.find({
+          or: query.name
+            ? {
+                nameKr: { like: query.name },
+                nameEn: { like: query.name },
+              }
+            : undefined,
+        }),
+        this.clubSemesterRepository.find({
+          semesterId: semester.id,
+          clubId: query.clubId,
+        }),
+        this.divisionPublicService.search({ date: query.date }),
+        this.clubDivisionHistoryRepository.find({
+          date: query.date,
+          clubId: query.clubId,
+        }),
+        this.clubDelegateRepository.find({
+          date: query.date,
+          clubId: query.clubId,
+        }),
+      ]);
+
+    const [students, professors] = await Promise.all([
+      this.userPublicService.getStudentsByIds(
+        clubDelegates.map(c => c.student.id),
+      ),
+      this.userPublicService.getProfessorsByIds(
+        clubSemesters.filter(c => c.professor).map(c => c.professor.id),
+      ),
+    ]);
+
+    const clubSemesterMap = new Map(clubSemesters.map(c => [c.club.id, c]));
+    const divisionMap = new Map(divisions.map(d => [d.id, d]));
+    const clubDivisionMap = new Map(clubDivisions.map(c => [c.club.id, c]));
+    const clubRepresentativeMap = new Map(
+      clubDelegates
+        .filter(
+          delegate =>
+            delegate.clubDelegateEnum === ClubDelegateEnum.Representative,
+        )
+        .map(c => [c.club.id, c]),
+    );
+    const clubDelegate1Map = new Map(
+      clubDelegates
+        .filter(
+          delegate => delegate.clubDelegateEnum === ClubDelegateEnum.Delegate1,
+        )
+        .map(c => [c.club.id, c]),
+    );
+    const clubDelegate2Map = new Map(
+      clubDelegates
+        .filter(
+          delegate => delegate.clubDelegateEnum === ClubDelegateEnum.Delegate2,
+        )
+        .map(c => [c.club.id, c]),
+    );
+    const studentMap = new Map(students.map(s => [s.id, s]));
+    const professorMap = new Map(professors.map(p => [p.id, p]));
+
+    const joinedClubs = clubs
+      .filter(e => clubSemesterMap.get(e.id) !== undefined)
+      .map(club => {
+        if (
+          !clubRepresentativeMap.has(club.id) ||
+          !clubSemesterMap.has(club.id) ||
+          !clubDivisionMap.has(club.id)
+        ) {
+          throw new Error(
+            `Club Important Data Not Found ${club.id} \n clubSemester: ${JSON.stringify(
+              clubSemesterMap.get(club.id),
+            )} \n clubDivision: ${JSON.stringify(clubDivisionMap.get(club.id))} \n clubRepresentative: ${JSON.stringify(
+              clubRepresentativeMap.get(club.id),
+            )}`,
+          );
+        }
+        const clubRepresentative = {
+          ...clubRepresentativeMap.get(club.id),
+          student: studentMap.get(
+            clubRepresentativeMap.get(club.id).student.id,
+          ),
+        };
+        const clubDelegate1 = clubDelegate1Map.has(club.id)
+          ? {
+              ...clubDelegate1Map.get(club.id),
+              student: studentMap.get(clubDelegate1Map.get(club.id).student.id),
+            }
+          : undefined;
+        const clubDelegate2 = clubDelegate2Map.has(club.id)
+          ? {
+              ...clubDelegate2Map.get(club.id),
+              student: studentMap.get(clubDelegate2Map.get(club.id).student.id),
+            }
+          : undefined;
+        // console.log(
+        //   `club: ${JSON.stringify(club)} \n clubSemester: ${JSON.stringify(
+        //     clubSemesterMap.get(club.id),
+        //   )} \n clubDivision: ${JSON.stringify(clubDivisionMap.get(club.id))}`,
+        // );
+        return {
+          ...club,
+          semester: clubSemesterMap.get(club.id),
+          division: divisionMap.get(clubDivisionMap.get(club.id)?.division.id),
+          clubTypeEnum: clubSemesterMap.get(club.id).clubTypeEnum,
+          characteristicKr: clubSemesterMap.get(club.id).characteristicKr,
+          characteristicEn: clubSemesterMap.get(club.id).characteristicEn,
+
+          clubRepresentative: {
+            studentId: clubRepresentative.student.id,
+            name: clubRepresentative.student.name,
+            studentNumber: clubRepresentative.student.studentNumber,
+            email: clubRepresentative.student.email,
+            phoneNumber: clubRepresentative.student.phoneNumber,
+            clubDelegateEnum: clubRepresentative.clubDelegateEnum,
+            startTerm: clubRepresentative.startTerm,
+            endTerm: clubRepresentative.endTerm,
+          },
+          clubDelegate1: clubDelegate1
+            ? {
+                studentId: clubDelegate1.student.id,
+                name: clubDelegate1.student.name,
+                studentNumber: clubDelegate1.student.studentNumber,
+                email: clubDelegate1.student.email,
+                phoneNumber: clubDelegate1.student.phoneNumber,
+                clubDelegateEnum: clubDelegate1.clubDelegateEnum,
+                startTerm: clubDelegate1.startTerm,
+                endTerm: clubDelegate1.endTerm,
+              }
+            : undefined,
+          clubDelegate2: clubDelegate2
+            ? {
+                studentId: clubDelegate2.student.id,
+                name: clubDelegate2.student.name,
+                studentNumber: clubDelegate2.student.studentNumber,
+                email: clubDelegate2.student.email,
+                phoneNumber: clubDelegate2.student.phoneNumber,
+                clubDelegateEnum: clubDelegate2.clubDelegateEnum,
+                startTerm: clubDelegate2.startTerm,
+                endTerm: clubDelegate2.endTerm,
+              }
+            : undefined,
+          professor: professorMap.get(
+            clubSemesterMap.get(club.id).professor.id,
+          ),
+        };
+      });
+
+    return joinedClubs;
   }
 }

@@ -26,7 +26,7 @@ import {
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
-import { MStudent } from "@sparcs-clubs/api/feature/user/model/student.model";
+import { MOldStudent } from "@sparcs-clubs/api/feature/user/model/old.student.model";
 
 @Injectable()
 export default class ClubStudentTRepository {
@@ -284,14 +284,14 @@ export default class ClubStudentTRepository {
    *
    * @param semesterId 학기의 ID
    * @param clubIds 동아리의 ID []
-   * @returns MStudent[]
+   * @returns MOldStudent[]
    *
    */
 
   async findUnionByClubIdsAndSemesterId(
     clubIds: number[],
     semesterId: number,
-  ): Promise<MStudent[]> {
+  ): Promise<MOldStudent[]> {
     const result = await this.db
       .select({
         id: ClubStudentT.studentId,
@@ -313,7 +313,10 @@ export default class ClubStudentTRepository {
 
     return result.map(
       row =>
-        new MStudent({ ...row, studentNumber: row.studentNumber.toString() }), // TODO: studentNumber가 string으로 바뀌면 변경 필요
+        new MOldStudent({
+          ...row,
+          studentNumber: row.studentNumber.toString(),
+        }), // TODO: studentNumber가 string으로 바뀌면 변경 필요
     );
   }
 }

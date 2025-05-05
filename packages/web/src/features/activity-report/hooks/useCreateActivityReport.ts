@@ -15,7 +15,10 @@ export const useCreateActivityReport = (clubId: number) => {
           body: {
             ...data,
             clubId,
-            duration: data.durations,
+            duration: data.durations.map(duration => ({
+              startTerm: duration.startTerm!,
+              endTerm: duration.endTerm!,
+            })),
             evidenceFiles: data.evidenceFiles.map(file => ({
               uid: file.id,
             })),

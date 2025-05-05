@@ -49,8 +49,8 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
           body: {
             ..._data,
             durations: _data.durations.map(({ startTerm, endTerm }) => ({
-              startTerm,
-              endTerm,
+              startTerm: startTerm!,
+              endTerm: endTerm!,
             })),
             participants: _data.participants.map(({ id }) => ({
               studentId: id,

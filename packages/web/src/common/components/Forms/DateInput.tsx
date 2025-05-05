@@ -73,7 +73,7 @@ const DateInput: React.FC<
   };
 
   return (
-    <FlexWrapper direction="column" gap={4}>
+    <FlexWrapper direction="column" gap={4} style={{ width: "100%" }}>
       {label.length > 0 && (
         <Typography ff="PRETENDARD" fw="MEDIUM" fs={16} lh={20} color="BLACK">
           {label}

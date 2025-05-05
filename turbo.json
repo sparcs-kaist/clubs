@@ -4,18 +4,13 @@
   "tasks": {
     "dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "cache": false
-    },
-    "api#dev": {
-      "cache": false,
-      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "persistent": true,
-      "interruptible": true
-    },
-    "web#dev": {
-      "cache": false,
-      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
     },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
@@ -23,9 +18,6 @@
     },
     "web#storybook": {
       "persistent": true
-    },
-    "build": {
-      "dependsOn": ["^build"]
     },
     "lint": {}
   }
