@@ -209,7 +209,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Body() body: ApiAct001RequestBody,
   ): Promise<ApiAct001ResponseCreated> {
-    await this.activityOldService.postStudentActivity(body, user.studentId);
+    await this.activityService.postStudentActivity(body, user.studentId);
     return {};
   }
 
@@ -263,7 +263,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct004RequestParam,
   ): Promise<ApiAct004ResponseOk> {
-    await this.activityOldService.deleteStudentActivityProvisional(
+    await this.activityService.deleteStudentActivityProvisional(
       param.activityId,
       user.studentId,
     );

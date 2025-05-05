@@ -79,7 +79,7 @@ import {
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeExist } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeExist } from "@sparcs-clubs/api/common/util/util";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -407,7 +407,7 @@ export default class ActivityOldService {
         content: e.comment,
         createdAt: e.createdAt,
       })),
-      updatedAt: activity.updatedAt,
+      updatedAt: getKSTDate(),
       professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
@@ -566,10 +566,10 @@ export default class ActivityOldService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
-        updatedAt: new Date(),
         editedAt: new Date(),
         commentedAt: new Date(),
         commentedExecutive: undefined,
+        professorApprovedAt: undefined,
       }),
     );
 
@@ -903,7 +903,7 @@ export default class ActivityOldService {
         content: e.comment,
         createdAt: e.createdAt,
       })),
-      updatedAt: activity.updatedAt,
+      updatedAt: getKSTDate(),
       professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
@@ -966,7 +966,7 @@ export default class ActivityOldService {
         content: e.comment,
         createdAt: e.createdAt,
       })),
-      updatedAt: activity.updatedAt,
+      updatedAt: new Date(),
       professorApprovedAt: activity.commentedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
