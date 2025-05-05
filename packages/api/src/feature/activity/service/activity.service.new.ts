@@ -39,6 +39,8 @@ import {
   ApiAct012ResponseOk,
   ApiAct013RequestQuery,
   ApiAct013ResponseOk,
+  ApiAct014ResponseOk,
+  ApiAct015ResponseOk,
   ApiAct016RequestParam,
   ApiAct016ResponseOk,
   ApiAct017RequestBody,
@@ -268,22 +270,24 @@ export default class ActivityService {
       })
       .then(takeExist());
 
-    const activities = await this.getActivities({ clubId: body.clubId });
-    if (activities.length >= 20) {
+    const activities = await this.activityRepository.count({
+      clubId: body.clubId,
+    });
+    if (activities >= 20) {
       throw new HttpException(
         "The number of activities is over the limit",
         HttpStatus.BAD_REQUEST,
       );
     }
-    // QUESTION: 신청내용중 startTerm과 endTerm이 이번 학기의 활동기간에 맞는지 검사해야 할까요?.
-    // Answer: 네!!!
+
     const activityDId = await this.activityDurationPublicService.loadId();
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     // TODO: 현재학기 뿐만 아니라 직전학기 동아리원도 활동 참가자로 포함될 수 있어야 합니다.
     const participants = await Promise.all(
       body.participants.map(async e => e.studentId),
     );
-    // TOD
+    // TODO: ActivityDuration 과 입력된 Duration들이 유효한 지 확인하는 로직
+    // TODO: 해당 학기에 활동한 인원인지 검사하는 로직
     // TODO: 파일 유효한지 검사하는 로직도 필요해요! 이건 파일 모듈 구성되면 public할듯
 
     const isInsertionSucceed = await this.activityRepository.create({
@@ -1011,5 +1015,115 @@ export default class ActivityService {
       }),
     );
     return {};
+  }
+
+  async getExecutiveActivity(activityId: number): Promise<ApiAct014ResponseOk> {
+    const activity = await this.activityRepository.fetch(activityId);
+
+    const studentMap = await this.userPublicService.getStudentMapByIds(
+      activity.participants.map(e => e.id),
+    );
+    const participants = activity.participants.map(e => ({
+      studentId: e.id,
+      studentNumber: Number(studentMap.get(e.id)?.studentNumber),
+      name: studentMap.get(e.id)?.name,
+    }));
+
+    const evidenceFiles = await Promise.all(
+      activity.evidenceFiles.map(async e => ({
+        fileId: e.id,
+        name: await this.filePublicService
+          .getFileInfoById(e.id)
+          .then(f => f.name),
+        url: await this.filePublicService.getFileUrl(e.id),
+      })),
+    );
+
+    const comments = await this.activityCommentRepository.find({
+      activityId: activity.id,
+    });
+
+    return {
+      clubId: activity.club.id,
+      name: activity.name,
+      originalName: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
+      location: activity.location,
+      purpose: activity.purpose,
+      detail: activity.detail,
+      evidence: activity.evidence,
+      evidenceFiles,
+      participants,
+      durations: activity.durations.map(e => ({
+        startTerm: e.startTerm,
+        endTerm: e.endTerm,
+      })),
+      activityStatusEnumId: activity.activityStatusEnum,
+      comments: comments.map(e => ({
+        content: e.content,
+        createdAt: e.createdAt,
+      })),
+      updatedAt: activity.editedAt,
+      professorApprovedAt: activity.commentedAt,
+      editedAt: activity.editedAt,
+      commentedAt: activity.commentedAt,
+    };
+  }
+
+  async getProfessorActivity(
+    activityId: number,
+    professorId: number,
+  ): Promise<ApiAct015ResponseOk> {
+    const activity = await this.activityRepository.fetch(activityId);
+    await this.checkIsProfessor({ professorId, clubId: activity.club.id });
+
+    const studentMap = await this.userPublicService.getStudentMapByIds(
+      activity.participants.map(e => e.id),
+    );
+    const participants = activity.participants.map(e => ({
+      studentId: e.id,
+      studentNumber: Number(studentMap.get(e.id)?.studentNumber),
+      name: studentMap.get(e.id)?.name,
+    }));
+
+    const evidenceFiles = await Promise.all(
+      activity.evidenceFiles.map(async e => ({
+        fileId: e.id,
+        name: await this.filePublicService
+          .getFileInfoById(e.id)
+          .then(f => f.name),
+        url: await this.filePublicService.getFileUrl(e.id),
+      })),
+    );
+
+    const comments = await this.activityCommentRepository.find({
+      activityId: activity.id,
+    });
+
+    return {
+      clubId: activity.club.id,
+      name: activity.name,
+      originalName: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
+      location: activity.location,
+      purpose: activity.purpose,
+      detail: activity.detail,
+      evidence: activity.evidence,
+      evidenceFiles,
+      participants,
+      durations: activity.durations.map(e => ({
+        startTerm: e.startTerm,
+        endTerm: e.endTerm,
+      })),
+      activityStatusEnumId: activity.activityStatusEnum,
+      comments: comments.map(e => ({
+        content: e.content,
+        createdAt: e.createdAt,
+      })),
+      updatedAt: activity.editedAt,
+      professorApprovedAt: activity.commentedAt,
+      editedAt: activity.editedAt,
+      commentedAt: activity.commentedAt,
+    };
   }
 }
