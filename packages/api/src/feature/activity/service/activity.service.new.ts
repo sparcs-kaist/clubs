@@ -27,13 +27,17 @@ import {
   ApiAct012ResponseOk,
   ApiAct013RequestQuery,
   ApiAct013ResponseOk,
+  ApiAct016RequestParam,
+  ApiAct016ResponseOk,
+  ApiAct017RequestBody,
+  ApiAct017RequestParam,
+  ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import ActivityClubChargedExecutiveRepository from "@sparcs-clubs/api/feature/activity/repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
-import ActivityRepository from "@sparcs-clubs/api/feature/activity/repository/activity.repository";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -44,10 +48,11 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { ActivityCommentRepository } from "../repository/activity-comment.repository";
+
 @Injectable()
 export default class ActivityService {
   constructor(
-    private readonly activityOldRepository: ActivityRepository,
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly activityDeadlinePublicService: ActivityDeadlinePublicService,
@@ -59,27 +64,8 @@ export default class ActivityService {
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
     private readonly userPublicService: UserPublicService,
     private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
+    private readonly activityCommentRepository: ActivityCommentRepository,
   ) {}
-
-  /**
-   * @param activityId 활동 id
-   * @returns 해당id의 활동이 존재할 경우 그 정보를 리턴합니다.
-   * 존재하지 않을 경우 not found exception을 throw합니다.`
-   */
-  private async getActivity(param: { activityId: number }) {
-    // const activities = await this.activityRepository.selectActivityByActivityId(
-    //   param.activityId,
-    // );
-    const activities = await this.activityRepository.find({
-      id: param.activityId,
-    });
-    if (activities.length > 1)
-      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
-    if (activities.length === 0)
-      throw new HttpException("No such activity", HttpStatus.NOT_FOUND);
-
-    return activities[0];
-  }
 
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
@@ -167,7 +153,7 @@ export default class ActivityService {
       );
   }
   async deleteStudentActivity(activityId: number, studentId: number) {
-    const activity = await this.getActivity({ activityId });
+    const activity = await this.activityRepository.fetch(activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
@@ -192,7 +178,7 @@ export default class ActivityService {
     activityId: number,
     // studentId: number,
   ): Promise<ApiAct002ResponseOk> {
-    const activity = await this.getActivity({ activityId });
+    const activity = await this.activityRepository.fetch(activityId);
 
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     // await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
@@ -222,10 +208,9 @@ export default class ActivityService {
       })),
     );
 
-    const comments =
-      await this.activityOldRepository.selectActivityFeedbackByActivityId({
-        activityId: activity.id,
-      });
+    const comments = await this.activityCommentRepository.find({
+      activityId: activity.id,
+    });
 
     return {
       clubId: activity.club.id,
@@ -241,7 +226,8 @@ export default class ActivityService {
       durations: activity.durations,
       activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
-        content: e.comment,
+        // TODO?: status 추가하기?
+        content: e.content,
         createdAt: e.createdAt,
       })),
       updatedAt: activity.editedAt,
@@ -310,7 +296,7 @@ export default class ActivityService {
     body: ApiAct003RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.getActivity({ activityId: param.activityId });
+    const activity = await this.activityRepository.fetch(param.activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
@@ -408,7 +394,7 @@ export default class ActivityService {
     activityId: number,
     studentId: number,
   ) {
-    const activity = await this.getActivity({ activityId });
+    const activity = await this.activityRepository.fetch(activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     // 이거 맞나? 등록 기간용 따로 파야 할 수도
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
@@ -631,7 +617,7 @@ export default class ActivityService {
     body: ApiAct008RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.getActivity({ activityId: param.activityId });
+    const activity = await this.activityRepository.fetch(param.activityId);
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
@@ -808,5 +794,68 @@ export default class ActivityService {
       clubId: param.query.clubId,
     });
     return { activities };
+  }
+
+  /**
+   * @description patchExecutiveActivityApproval의 서비스 진입점입니다.
+   */
+  async patchExecutiveActivityApproval(param: {
+    executiveId: number;
+    param: ApiAct016RequestParam;
+  }): Promise<ApiAct016ResponseOk> {
+    // TODO: transaction 추가
+    const isApprovalSucceed = await this.activityRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Approved),
+    );
+    if (!isApprovalSucceed)
+      throw new HttpException(
+        "the activity is already approved",
+        HttpStatus.BAD_REQUEST,
+      );
+
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
+      // TODO?: 활동 승인 시에도 content를 넣을까요?
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Approved,
+    });
+    if (!isInsertionSucceed)
+      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
+
+    return {};
+  }
+
+  /**
+   * @param param
+   * @description patchExecutiveActivitySendBack의 서비스 진입점입니다.
+   * 동시성을 고려하지 않고 구현했습니다.
+   */
+  async patchExecutiveActivitySendBack(param: {
+    executiveId: number;
+    param: ApiAct017RequestParam;
+    body: ApiAct017RequestBody;
+  }): Promise<ApiAct017ResponseOk> {
+    // TODO: transaction 추가
+    await this.activityRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Rejected),
+    );
+
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: param.body.comment,
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Rejected,
+    });
+    if (!isInsertionSucceed)
+      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
+
+    return {};
   }
 }

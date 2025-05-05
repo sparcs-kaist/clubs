@@ -360,12 +360,10 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Param() param: ApiAct016RequestParam,
   ): Promise<ApiAct016ResponseOk> {
-    const result = await this.activityOldService.patchExecutiveActivityApproval(
-      {
-        executiveId: user.executiveId,
-        param,
-      },
-    );
+    const result = await this.activityService.patchExecutiveActivityApproval({
+      executiveId: user.executiveId,
+      param,
+    });
     return result;
   }
 
@@ -377,13 +375,11 @@ export default class ActivityController {
     @Param() param: ApiAct017RequestParam,
     @Body() body: ApiAct017RequestBody,
   ): Promise<ApiAct017ResponseOk> {
-    const result = await this.activityOldService.patchExecutiveActivitySendBack(
-      {
-        executiveId: user.executiveId,
-        param,
-        body,
-      },
-    );
+    const result = await this.activityService.patchExecutiveActivitySendBack({
+      executiveId: user.executiveId,
+      param,
+      body,
+    });
     return result;
   }
 

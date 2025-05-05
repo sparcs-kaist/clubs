@@ -37,15 +37,6 @@ import type {
   ApiAct013RequestQuery,
   ApiAct013ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct013";
-import type {
-  ApiAct016RequestParam,
-  ApiAct016ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct016";
-import type {
-  ApiAct017RequestBody,
-  ApiAct017RequestParam,
-  ApiAct017ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct017";
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
@@ -973,69 +964,6 @@ export default class ActivityOldService {
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
-  }
-
-  /**
-   * @description patchExecutiveActivityApproval의 서비스 진입점입니다.
-   */
-  async patchExecutiveActivityApproval(param: {
-    executiveId: number;
-    param: ApiAct016RequestParam;
-  }): Promise<ApiAct016ResponseOk> {
-    // TODO: transaction 추가
-    const isApprovalSucceed = await this.activityNewRepository.patch(
-      {
-        id: param.param.activityId,
-      },
-      MActivity.updateStatus(ActivityStatusEnum.Approved),
-    );
-    if (!isApprovalSucceed)
-      throw new HttpException(
-        "the activity is already approved",
-        HttpStatus.BAD_REQUEST,
-      );
-
-    const isInsertionSucceed = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
-      // TODO?: 활동 승인 시에도 content를 넣을까요?
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Approved,
-    });
-    if (!isInsertionSucceed)
-      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
-
-    return {};
-  }
-
-  /**
-   * @param param
-   * @description patchExecutiveActivitySendBack의 서비스 진입점입니다.
-   * 동시성을 고려하지 않고 구현했습니다.
-   */
-  async patchExecutiveActivitySendBack(param: {
-    executiveId: number;
-    param: ApiAct017RequestParam;
-    body: ApiAct017RequestBody;
-  }): Promise<ApiAct017ResponseOk> {
-    // TODO: transaction 추가
-    await this.activityNewRepository.patch(
-      {
-        id: param.param.activityId,
-      },
-      MActivity.updateStatus(ActivityStatusEnum.Rejected),
-    );
-
-    const isInsertionSucceed = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: param.body.comment,
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Rejected,
-    });
-    if (!isInsertionSucceed)
-      throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
-
-    return {};
   }
 
   async getProfessorActivities(
