@@ -568,11 +568,11 @@ export default class ClubPublicService {
               student: studentMap.get(clubDelegate2Map.get(club.id).student.id),
             }
           : undefined;
-        console.log(
-          `club: ${JSON.stringify(club)} \n clubSemester: ${JSON.stringify(
-            clubSemesterMap.get(club.id),
-          )} \n clubDivision: ${JSON.stringify(clubDivisionMap.get(club.id))}`,
-        );
+        // console.log(
+        //   `club: ${JSON.stringify(club)} \n clubSemester: ${JSON.stringify(
+        //     clubSemesterMap.get(club.id),
+        //   )} \n clubDivision: ${JSON.stringify(clubDivisionMap.get(club.id))}`,
+        // );
         return {
           ...club,
           semester: clubSemesterMap.get(club.id),

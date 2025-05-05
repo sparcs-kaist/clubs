@@ -1101,7 +1101,7 @@ export default class ActivityService {
   }
 
   async getExecutiveActivitiesClubs(
-    query: ApiAct023RequestQuery,
+    _query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
     const date = new Date("2025-01-05");
     const semesterId = await this.semesterPublicService.loadId({
@@ -1110,8 +1110,8 @@ export default class ActivityService {
     const activityDId = await this.activityDurationPublicService.loadId({
       semesterId,
     });
-    console.log(`QUERY: ${JSON.stringify(query)}`);
-    console.log(`${Boolean(query.clubName)}`);
+    // console.log(`QUERY: ${JSON.stringify(query)}`);
+    // console.log(`${Boolean(query.clubName)}`);
     const [
       clubs,
       activityClubChargedExecutiveList,
@@ -1121,7 +1121,7 @@ export default class ActivityService {
       this.clubPublicService.searchClubDetailByDate({
         date,
         clubTypeEnum: ClubTypeEnum.Regular,
-        name: query.clubName,
+        // name: query.clubName,
       }),
       this.activityClubChargedExecutiveRepository.find({
         activityDId,
@@ -1130,14 +1130,14 @@ export default class ActivityService {
       this.userPublicService.getCurrentExecutives(),
     ]);
 
-    console.log(
-      `RESULT1: ${JSON.stringify([
-        clubs,
-        activityClubChargedExecutiveList,
-        activitiesOnActivityD,
-        executives,
-      ])}`,
-    );
+    // console.log(
+    //   `RESULT1: ${JSON.stringify([
+    //     clubs,
+    //     activityClubChargedExecutiveList,
+    //     activitiesOnActivityD,
+    //     executives,
+    //   ])}`,
+    // );
     const clubChargedExecutiveMap = new Map(
       activityClubChargedExecutiveList.map(e => [e.club.id, e.executive.id]),
     );
@@ -1192,7 +1192,7 @@ export default class ActivityService {
         chargedExecutive,
       };
     });
-    console.log(items);
+    // console.log(items);
     const clubMap = new Map(clubs.map(club => [club.id, club]));
     const executiveProgresses: ApiAct023ResponseOk["executiveProgresses"] =
       executives.map(executive => {
@@ -1249,50 +1249,52 @@ export default class ActivityService {
 
     // 쿼리와 페이지네이션 적용
 
-    const clubNameFilteredItems = !query.clubName
-      ? items
-      : items.filter(
-          item =>
-            item.clubNameKr
-              .normalize("NFC")
-              .includes(query.clubName.normalize("NFC")) ||
-            item.clubNameEn
-              .normalize("NFC")
-              .includes(query.clubName.normalize("NFC")),
-        );
+    // const clubNameFilteredItems = !query.clubName
+    //   ? items
+    //   : items.filter(
+    //       item =>
+    //         item.clubNameKr
+    //           .normalize("NFC")
+    //           .includes(query.clubName.normalize("NFC")) ||
+    //         item.clubNameEn
+    //           .normalize("NFC")
+    //           .includes(query.clubName.normalize("NFC")),
+    //     );
 
-    const executiveNameFilteredItems = !query.executiveName
-      ? clubNameFilteredItems
-      : clubNameFilteredItems.filter(item =>
-          item.chargedExecutive?.name
-            .normalize("NFC")
-            .includes(query.executiveName.normalize("NFC")),
-        );
-    const total = executiveNameFilteredItems.length;
-    const executiveNameFilteredExecutiveProgresses = !query.executiveName
-      ? executiveProgresses
-      : executiveProgresses.filter(e =>
-          e.executiveName
-            .normalize("NFC")
-            .includes(query.executiveName.normalize("NFC")),
-        );
+    // const executiveNameFilteredItems = !query.executiveName
+    //   ? clubNameFilteredItems
+    //   : clubNameFilteredItems.filter(item =>
+    //       item.chargedExecutive?.name
+    //         .normalize("NFC")
+    //         .includes(query.executiveName.normalize("NFC")),
+    //     );
+    // const total = executiveNameFilteredItems.length;
+    // const executiveNameFilteredExecutiveProgresses = !query.executiveName
+    //   ? executiveProgresses
+    //   : executiveProgresses.filter(e =>
+    //       e.executiveName
+    //         .normalize("NFC")
+    //         .includes(query.executiveName.normalize("NFC")),
+    //     );
 
-    const pageStart = (query.pageOffset - 1) * query.itemCount;
-    const pageEnd = pageStart + query.itemCount;
-    const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
+    // const pageStart = (query.pageOffset - 1) * query.itemCount;
+    // const pageEnd = pageStart + query.itemCount;
+    // const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
 
-    console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
-    console.log(`ActivityDId: ${activityDId}`);
-    const semester = await this.semesterPublicService.load({
-      date,
-    });
-    console.log(`SemesterId: ${semester.id}`);
-    console.log(`Date: ${date}`);
+    // console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
+    // console.log(`ActivityDId: ${activityDId}`);
+    // const semester = await this.semesterPublicService.load({
+    //   date,
+    // });
+    // console.log(`SemesterId: ${semester.id}`);
+    // console.log(`Date: ${date}`);
     return {
-      items: paginatedItems,
-      executiveProgresses: executiveNameFilteredExecutiveProgresses,
-      total,
-      offset: query.pageOffset,
+      items,
+      executiveProgresses,
+      // items: paginatedItems,
+      // executiveProgresses: executiveNameFilteredExecutiveProgresses,
+      // total,
+      // offset: query.pageOffset,
     };
   }
 

@@ -771,18 +771,18 @@ export abstract class BaseRepository<
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
-    console.log(
-      `${this.mainModelConstructor.modelName} QUERY: ${JSON.stringify(query)}`,
-    );
+    // console.log(
+    //   `${this.mainModelConstructor.modelName} QUERY: ${JSON.stringify(query)}`,
+    // );
     const resPromise = tx
       ? this.findImplementation(query, tx)
       : this.txManager.runInTransaction(tsx =>
           this.findImplementation(query, tsx),
         );
     const res = await resPromise;
-    console.log(
-      `${this.mainModelConstructor.modelName} RES: ${JSON.stringify(res)}`,
-    );
+    // console.log(
+    //   `${this.mainModelConstructor.modelName} RES: ${JSON.stringify(res)}`,
+    // );
     return res;
   }
 
