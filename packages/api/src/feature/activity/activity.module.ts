@@ -13,6 +13,7 @@ import ActivityController from "./controller/activity.controller";
 import ActivityClubChargedExecutiveRepository from "./repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "./repository/activity.new.repository";
 import ActivityRepository from "./repository/activity.repository";
+import { ActivityCommentRepository } from "./repository/activity-comment.repository";
 import ActivityPublicService from "./service/activity.public.service";
 import ActivityService from "./service/activity.service";
 
@@ -34,6 +35,7 @@ import ActivityService from "./service/activity.service";
     ActivityPublicService,
     ClubTRepository,
     ActivityNewRepository,
+    ActivityCommentRepository,
   ],
   exports: [ActivityPublicService],
 })

@@ -1,3 +1,5 @@
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
 import { IActivity } from "@clubs/interface/api/activity/type/activity.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
@@ -41,5 +43,13 @@ export class MActivity extends MEntity implements IActivity {
   constructor(data: IActivity) {
     super();
     Object.assign(this, data);
+  }
+
+  static updateStatus(status: ActivityStatusEnum) {
+    return (model: MActivity) =>
+      new MActivity({
+        ...model,
+        activityStatusEnum: status,
+      });
   }
 }

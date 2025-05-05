@@ -11,7 +11,7 @@ extendZodWithOpenApi(z);
 
 export const zActivityComment = z.object({
   id: zId,
-  activityId: zExtractId(zActivity),
+  activity: zExtractId(zActivity),
   content: z.string(),
   activityStatusEnum: z.nativeEnum(ActivityStatusEnum),
   createdAt: z.coerce.date(),
