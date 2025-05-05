@@ -202,7 +202,6 @@ export default class ActivityService {
     return {
       clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.name,
       activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,
@@ -1034,7 +1033,6 @@ export default class ActivityService {
     return {
       clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.name,
       activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,
@@ -1095,7 +1093,6 @@ export default class ActivityService {
     return {
       clubId: activity.club.id,
       name: activity.name,
-      originalName: activity.name,
       activityTypeEnumId: activity.activityTypeEnum,
       location: activity.location,
       purpose: activity.purpose,

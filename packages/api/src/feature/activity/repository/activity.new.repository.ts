@@ -113,6 +113,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     return {
       main: {
         id: model.id,
+        name: model.name,
         clubId: model.club.id,
         activityTypeEnumId: model.activityTypeEnum,
         activityStatusEnumId: model.activityStatusEnum,
@@ -124,6 +125,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         chargedExecutiveId: model.chargedExecutive?.id,
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
+        updatedAt: new Date(),
         professorApprovedAt: model.professorApprovedAt,
       },
       oneToOne: {},
