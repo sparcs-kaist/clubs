@@ -94,6 +94,7 @@ import { MActivity } from "../model/activity.model.new";
 import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "../repository/activity.new.repository";
 import ActivityRepository from "../repository/activity.repository";
+import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
 @Injectable()
 export default class ActivityOldService {
@@ -110,6 +111,7 @@ export default class ActivityOldService {
     private activityDurationPublicService: ActivityDurationPublicService,
     private activityNewRepository: ActivityNewRepository,
     private registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private activityCommentRepository: ActivityCommentRepository,
   ) {}
 
   /**
@@ -980,23 +982,26 @@ export default class ActivityOldService {
     executiveId: number;
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
-    const isApprovalSucceed =
-      await this.activityRepository.updateActivityStatusEnumId({
-        activityId: param.param.activityId,
-        activityStatusEnumId: ActivityStatusEnum.Approved,
-      });
+    // TODO: transaction 추가
+    const isApprovalSucceed = await this.activityNewRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Approved),
+    );
     if (!isApprovalSucceed)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    const isInsertionSucceed =
-      await this.activityRepository.insertActivityFeedback({
-        activityId: param.param.activityId,
-        comment: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열ㄴ
-        executiveId: param.executiveId,
-      });
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
+      // TODO?: 활동 승인 시에도 content를 넣을까요?
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Approved,
+    });
     if (!isInsertionSucceed)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -1013,17 +1018,20 @@ export default class ActivityOldService {
     param: ApiAct017RequestParam;
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
-    await this.activityRepository.updateActivityStatusEnumId({
-      activityId: param.param.activityId,
-      activityStatusEnumId: ActivityStatusEnum.Rejected,
-    });
+    // TODO: transaction 추가
+    await this.activityNewRepository.patch(
+      {
+        id: param.param.activityId,
+      },
+      MActivity.updateStatus(ActivityStatusEnum.Rejected),
+    );
 
-    const isInsertionSucceed =
-      await this.activityRepository.insertActivityFeedback({
-        activityId: param.param.activityId,
-        comment: param.body.comment,
-        executiveId: param.executiveId,
-      });
+    const isInsertionSucceed = await this.activityCommentRepository.create({
+      activity: { id: param.param.activityId },
+      content: param.body.comment,
+      executive: { id: param.executiveId },
+      activityStatusEnum: ActivityStatusEnum.Rejected,
+    });
     if (!isInsertionSucceed)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -1210,10 +1218,17 @@ export default class ActivityOldService {
       throw new HttpException("No such club", HttpStatus.NOT_FOUND);
     }
 
-    const activities = await this.getActivities({ clubId: param.query.clubId });
+    const activityDId =
+      param.query.activityDurationId ??
+      (await this.activityDurationPublicService.loadId());
+
+    const activities = await this.getActivities({
+      clubId: param.query.clubId,
+      activityDId,
+    });
     const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
       .selectActivityClubChargedExecutiveByClubId({
-        activityDId: await this.activityDurationPublicService.loadId(),
+        activityDId,
         clubId: param.query.clubId,
       })
       .then(arr => {
@@ -1506,10 +1521,10 @@ export default class ActivityOldService {
 
   async getStudentActivitiesActivityTerms(
     query: ApiAct009RequestQuery,
-    studentId: number,
+    //studentId: number,
   ): Promise<ApiAct009ResponseOk> {
     // 요청한 학생이 동아리의 대표자인지 확인합니다.
-    await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
+    //await this.clubPublicService.checkStudentDelegate(studentId, query.clubId);
     // 해당 동아리가 등록되었던 학기 정보를 가져오고, startTerm과 endTerm에 대응되는 활동기간을 조회합니다.
     const semesterIds = await this.clubPublicService.searchSemesterIdsByClubId(
       query.clubId,

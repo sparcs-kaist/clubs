@@ -12,26 +12,6 @@ import {
 } from "@nestjs/common";
 
 import type {
-  ApiAct012RequestQuery,
-  ApiAct012ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct012";
-import apiAct012 from "@clubs/interface/api/activity/endpoint/apiAct012";
-import type {
-  ApiAct013RequestQuery,
-  ApiAct013ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct013";
-import apiAct013 from "@clubs/interface/api/activity/endpoint/apiAct013";
-import type {
-  ApiAct014RequestParam,
-  ApiAct014ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct014";
-import apiAct014 from "@clubs/interface/api/activity/endpoint/apiAct014";
-import type {
-  ApiAct015RequestParam,
-  ApiAct015ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct015";
-import apiAct015 from "@clubs/interface/api/activity/endpoint/apiAct015";
-import type {
   ApiAct016RequestParam,
   ApiAct016ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct016";
@@ -129,6 +109,18 @@ import {
   apiAct011,
   type ApiAct011RequestQuery,
   type ApiAct011ResponseOk,
+  apiAct012,
+  ApiAct012RequestQuery,
+  ApiAct012ResponseOk,
+  apiAct013,
+  ApiAct013RequestQuery,
+  ApiAct013ResponseOk,
+  apiAct014,
+  ApiAct014RequestParam,
+  ApiAct014ResponseOk,
+  apiAct015,
+  ApiAct015RequestParam,
+  ApiAct015ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -438,9 +430,6 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Query() query: ApiAct024RequestQuery,
   ): Promise<ApiAct024ResponseOk> {
-    if (query.semesterId !== undefined) {
-      console.log("semesterId filter of ACT-024 is not yet implemented");
-    }
     const result =
       await this.activityOldService.getExecutiveActivitiesClubBrief({
         query,
@@ -548,17 +537,18 @@ export default class ActivityController {
     return result;
   }
 
-  @Student()
+  //@Student()
+  @Public()
   @Get("/student/activities/activity-terms")
   @UsePipes(new ZodPipe(apiAct009))
   async getStudentActivitiesActivityTerms(
-    @GetStudent() user: GetStudent,
+    //@GetStudent() user: GetStudent,
     @Query() query: ApiAct009RequestQuery,
   ): Promise<ApiAct009ResponseOk> {
     const result =
       await this.activityOldService.getStudentActivitiesActivityTerms(
         query,
-        user.studentId,
+        //user.studentId,
       );
     return result;
   }

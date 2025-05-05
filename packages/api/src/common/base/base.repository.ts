@@ -375,6 +375,13 @@ export abstract class BaseRepository<
     return makeObjectPropsToDBTimezone(this.modelToDBMapping(model));
   }
 
+  /**
+   * @description ModelCreate -> DB
+   * @description ModelCreate가 DB에 저장되기 전에, 9시간을 더하는 조작을 함
+   */
+  protected createToDB(model: IModelCreate): DbInsert {
+    return makeObjectPropsToDBTimezone(this.createToDBMapping(model));
+  }
   ///////////////////////////////////////////////////////////////////////////////
   // 락 관련 메서드
 

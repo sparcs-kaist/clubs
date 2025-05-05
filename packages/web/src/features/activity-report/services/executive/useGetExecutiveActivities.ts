@@ -3,8 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import apiAct023, {
   ApiAct023ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct023";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
+import {
+  axiosClientWithAuth,
+  defineAxiosMock,
+} from "@sparcs-clubs/web/lib/axios";
 
 const useGetExecutiveActivities = () =>
   useQuery<ApiAct023ResponseOk, Error>({
@@ -17,3 +21,43 @@ const useGetExecutiveActivities = () =>
   });
 
 export default useGetExecutiveActivities;
+
+defineAxiosMock(mock => {
+  mock.onGet(apiAct023.url()).reply(() => [
+    200,
+    {
+      items: [
+        {
+          clubId: 1,
+          clubTypeEnum: ClubTypeEnum.Regular,
+          divisionName: "string",
+          clubNameKr: "string",
+          clubNameEn: "string",
+          pendingActivitiesCount: 1,
+          approvedActivitiesCount: 1,
+          rejectedActivitiesCount: 1,
+          advisor: undefined,
+          chargedExecutive: undefined,
+        },
+      ],
+      executiveProgresses: [
+        {
+          executiveId: 1,
+          executiveName: "string",
+          chargedClubsAndProgresses: [
+            {
+              clubId: 1,
+              clubTypeEnum: ClubTypeEnum.Regular,
+              divisionName: "string",
+              clubNameKr: "string",
+              clubNameEn: "string",
+              pendingActivitiesCount: 1,
+              approvedActivitiesCount: 1,
+              rejectedActivitiesCount: 1,
+            },
+          ],
+        },
+      ],
+    },
+  ]);
+});

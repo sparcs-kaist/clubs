@@ -251,7 +251,7 @@ export abstract class BaseMultiTableRepository<
     data: IModelCreate[],
     tx: DrizzleTransaction,
   ): Promise<Model[]> {
-    const dbFormattedData = data.map(d => this.createToDBMapping(d));
+    const dbFormattedData = data.map(d => this.createToDB(d));
 
     // 메인 테이블 삽입
     const processedData = await Promise.all(
