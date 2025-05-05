@@ -50,4 +50,12 @@ export class MActivity extends MEntity implements IActivity {
         activityStatusEnum: status,
       });
   }
+
+  static updateChargedExecutive(executiveId: number) {
+    return (model: MActivity) =>
+      new MActivity({
+        ...model,
+        chargedExecutive: { id: executiveId },
+      });
+  }
 }

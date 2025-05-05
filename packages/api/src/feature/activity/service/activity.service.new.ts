@@ -8,6 +8,18 @@ import {
 } from "@clubs/domain/semester/deadline";
 
 import {
+  ApiAct024RequestQuery,
+  ApiAct024ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct024";
+import {
+  ApiAct025RequestBody,
+  ApiAct025ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct025";
+import {
+  ApiAct026RequestBody,
+  ApiAct026ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct026";
+import {
   ApiAct001RequestBody,
   ApiAct002ResponseOk,
   ApiAct003RequestBody,
@@ -36,8 +48,8 @@ import {
 
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
-import ActivityClubChargedExecutiveRepository from "@sparcs-clubs/api/feature/activity/repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
+import { ActivityClubChargedExecutiveRepository } from "@sparcs-clubs/api/feature/activity/repository/activity-club-charge-executive.repository";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -48,6 +60,7 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
 @Injectable()
@@ -459,29 +472,29 @@ export default class ActivityService {
     executiveId: number;
   }) {
     const activityDId = await this.activityDurationPublicService.loadId();
-    const prevChargedExecutiveId =
-      await this.activityClubChargedExecutiveRepository.selectActivityClubChargedExecutiveByClubId(
-        { activityDId, clubId: param.clubId },
-      );
+    const prevChargedExecutive =
+      await this.activityClubChargedExecutiveRepository.find({
+        activityDId,
+        clubId: param.clubId,
+      });
     let upsertResult = false;
-    if (prevChargedExecutiveId.length === 0) {
+    if (prevChargedExecutive.length === 0) {
       upsertResult =
-        await this.activityClubChargedExecutiveRepository.insertActivityClubChargedExecutive(
-          {
-            activityDId,
-            clubId: param.clubId,
-            executiveId: param.executiveId,
-          },
-        );
+        (
+          await this.activityClubChargedExecutiveRepository.create({
+            activityDuration: { id: activityDId },
+            club: { id: param.clubId },
+            executive: { id: param.executiveId },
+          })
+        ).length > 0;
     } else {
       upsertResult =
-        await this.activityClubChargedExecutiveRepository.updateActivityClubChargedExecutive(
-          {
-            activityDId,
-            clubId: param.clubId,
-            executiveId: param.executiveId,
-          },
-        );
+        (
+          await this.activityClubChargedExecutiveRepository.patch(
+            { id: prevChargedExecutive[0].id },
+            MActivityClubChargedExecutive.updateExecutiveId(param.executiveId),
+          )
+        ).length > 0;
     }
     if (upsertResult === false) {
       throw new HttpException(
@@ -856,6 +869,147 @@ export default class ActivityService {
     if (!isInsertionSucceed)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
+    return {};
+  }
+
+  async getExecutiveActivitiesClubBrief(param: {
+    query: ApiAct024RequestQuery;
+  }): Promise<ApiAct024ResponseOk> {
+    // check the clubs is activated
+    const clubs = await this.clubPublicService.getAtivatedClubs();
+    if (!clubs.some(e => e.club.id === param.query.clubId)) {
+      throw new HttpException("No such club", HttpStatus.NOT_FOUND);
+    }
+
+    const activityDId =
+      param.query.activityDurationId ??
+      (await this.activityDurationPublicService.loadId());
+
+    const activities = await this.getActivities({
+      clubId: param.query.clubId,
+      activityDId,
+    });
+    const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
+      .find({
+        activityDId,
+        clubId: param.query.clubId,
+      })
+      .then(arr => {
+        if (arr.length === 0) {
+          return undefined;
+        }
+        if (arr.length > 1) {
+          throw new HttpException(
+            "unreachable",
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        return arr[0].executive.id;
+      });
+    const clubChargedExecutive =
+      chargedExecutiveId === undefined
+        ? undefined
+        : await this.userPublicService
+            .getExecutiveAndExecutiveTByExecutiveId({
+              executiveId: chargedExecutiveId,
+            })
+            .then(e => ({
+              id: e.executive.id,
+              name: e.executive.name,
+            }));
+
+    const items: ApiAct024ResponseOk["items"] = await Promise.all(
+      activities.map(async activity => {
+        const lastFeedback = await this.activityCommentRepository
+          .find({
+            activityId: activity.id,
+          })
+          .then(arr =>
+            arr.reduce((acc, cur) => {
+              if (acc === undefined || acc.createdAt < cur.createdAt) {
+                return cur;
+              }
+              return acc;
+            }, undefined),
+          );
+
+        const commentedExecutive =
+          lastFeedback === undefined
+            ? undefined
+            : await this.userPublicService
+                .getExecutiveAndExecutiveTByExecutiveId({
+                  executiveId: lastFeedback.executive.id,
+                })
+                .then(e => ({
+                  id: e.executive.id,
+                  name: e.executive.name,
+                }));
+
+        const chargedExecutive =
+          activity.chargedExecutive === undefined ||
+          activity.chargedExecutive === null
+            ? undefined
+            : await this.userPublicService
+                .getExecutiveAndExecutiveTByExecutiveId({
+                  executiveId: activity.chargedExecutive.id,
+                })
+                .then(e => ({
+                  id: e.executive.id,
+                  name: e.executive.name,
+                }));
+
+        return {
+          activityId: activity.id,
+          activityStatusEnum: activity.activityStatusEnum,
+          activityName: activity.name,
+          commentedExecutive,
+          chargedExecutive,
+          updatedAt: activity.editedAt,
+          commentedAt: activity.commentedAt,
+          editedAt: activity.editedAt,
+        };
+      }),
+    );
+
+    return {
+      chargedExecutive: clubChargedExecutive,
+      items,
+    };
+  }
+
+  /**
+   * @description patchExecutiveActivities의 서비스 진입점입니다.
+   */
+  async patchExecutiveActivities(param: {
+    body: ApiAct025RequestBody;
+  }): Promise<ApiAct025ResponseOk> {
+    await Promise.all(
+      param.body.activityIds.map(async activityId => {
+        const isUpdateSuceed = await this.activityRepository.patch(
+          { id: activityId },
+          MActivity.updateChargedExecutive(param.body.executiveId),
+        );
+        return isUpdateSuceed;
+      }),
+    );
+    return {};
+  }
+
+  /**
+   * @description putExecutiveActivitiesClubChargedExecutive의 서비스 진입점입니다.
+   * @param body
+   */
+  async putExecutiveActivitiesClubChargedExecutive(param: {
+    body: ApiAct026RequestBody;
+  }): Promise<ApiAct026ResponseOk> {
+    Promise.all(
+      param.body.clubIds.map(async clubId => {
+        this.changeClubChargedExecutive({
+          clubId,
+          executiveId: param.body.executiveId,
+        });
+      }),
+    );
     return {};
   }
 }

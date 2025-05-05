@@ -426,10 +426,9 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Query() query: ApiAct024RequestQuery,
   ): Promise<ApiAct024ResponseOk> {
-    const result =
-      await this.activityOldService.getExecutiveActivitiesClubBrief({
-        query,
-      });
+    const result = await this.activityService.getExecutiveActivitiesClubBrief({
+      query,
+    });
     return result;
   }
 
@@ -440,7 +439,7 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Body() body: ApiAct025RequestBody,
   ): Promise<ApiAct025ResponseOk> {
-    await this.activityOldService.patchExecutiveActivities({
+    await this.activityService.patchExecutiveActivities({
       body,
     });
     return {};
@@ -453,7 +452,7 @@ export default class ActivityController {
     @GetExecutive() user: GetExecutive,
     @Body() body: ApiAct026RequestBody,
   ): Promise<ApiAct026ResponseOk> {
-    await this.activityOldService.putExecutiveActivitiesClubChargedExecutive({
+    await this.activityService.putExecutiveActivitiesClubChargedExecutive({
       body,
     });
     return {};

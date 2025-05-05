@@ -40,19 +40,10 @@ import type {
 import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import { ApiAct021ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct021";
 import { ApiAct022ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct022";
-import type { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
-  ApiAct024RequestQuery,
-  ApiAct024ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct024";
-import type {
-  ApiAct025RequestBody,
-  ApiAct025ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct025";
-import type {
-  ApiAct026RequestBody,
-  ApiAct026ResponseOk,
-} from "@clubs/interface/api/activity/endpoint/apiAct026";
+  ApiAct023RequestQuery,
+  ApiAct023ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
   ApiAct027RequestQuery,
   ApiAct027ResponseOk,
@@ -67,6 +58,7 @@ import {
   ActivityDurationTypeEnum,
   ActivityStatusEnum,
 } from "@clubs/interface/common/enum/activity.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
@@ -82,16 +74,15 @@ import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/public
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { MActivity } from "../model/activity.model.new";
-import ActivityClubChargedExecutiveRepository from "../repository/activity.activity-club-charged-executive.repository";
 import { ActivityNewRepository } from "../repository/activity.new.repository";
 import ActivityRepository from "../repository/activity.repository";
+import { ActivityClubChargedExecutiveRepository } from "../repository/activity-club-charge-executive.repository";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
 @Injectable()
 export default class ActivityOldService {
   constructor(
     private activityRepository: ActivityRepository,
-    private activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
     private clubPublicService: ClubPublicService,
     private filePublicService: FilePublicService,
     private registrationPublicService: RegistrationPublicService,
@@ -102,6 +93,7 @@ export default class ActivityOldService {
     private activityDurationPublicService: ActivityDurationPublicService,
     private activityNewRepository: ActivityNewRepository,
     private registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
     private activityCommentRepository: ActivityCommentRepository,
   ) {}
 
@@ -156,67 +148,6 @@ export default class ActivityOldService {
         "You are not a professor of the club",
         HttpStatus.FORBIDDEN,
       );
-  }
-
-  /**
-   *
-   * @param clubId
-   * @param executiveId
-   * @description 동아리의 담당 집행부원을 변경합니다.
-   * 해당 동아리의 활동에 대한 개별 담당 집행부원도 전부 덮어씌웁니다.
-   */
-  private async changeClubChargedExecutive(param: {
-    clubId: number;
-    executiveId: number;
-  }) {
-    const activityDId = await this.activityDurationPublicService.loadId();
-    const prevChargedExecutiveId =
-      await this.activityClubChargedExecutiveRepository.selectActivityClubChargedExecutiveByClubId(
-        { activityDId, clubId: param.clubId },
-      );
-    let upsertResult = false;
-    if (prevChargedExecutiveId.length === 0) {
-      upsertResult =
-        await this.activityClubChargedExecutiveRepository.insertActivityClubChargedExecutive(
-          {
-            activityDId,
-            clubId: param.clubId,
-            executiveId: param.executiveId,
-          },
-        );
-    } else {
-      upsertResult =
-        await this.activityClubChargedExecutiveRepository.updateActivityClubChargedExecutive(
-          {
-            activityDId,
-            clubId: param.clubId,
-            executiveId: param.executiveId,
-          },
-        );
-    }
-    if (upsertResult === false) {
-      throw new HttpException(
-        "failed to change charged-executive",
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const activities =
-      await this.activityRepository.selectActivityByClubIdAndActivityDId(
-        param.clubId,
-        activityDId,
-      );
-
-    await Promise.all(
-      activities.map(async e => {
-        const isUpdateSuceed =
-          await this.activityRepository.updateActivityChargedExecutive({
-            activityId: e.id,
-            executiveId: param.executiveId,
-          });
-        return isUpdateSuceed;
-      }),
-    );
   }
 
   /**
@@ -1022,20 +953,55 @@ export default class ActivityOldService {
     });
   }
 
-  async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const activityDId = await this.activityDurationPublicService.loadId();
-    const clubs = await this.clubPublicService.getAtivatedClubs();
-
-    const clubinfos = await this.activityRepository.getExecutiveActivitiesClubs(
-      {
-        semesterId: await this.semesterPublicService.loadId(),
+  async getExecutiveActivitiesClubs(
+    _query?: ApiAct023RequestQuery,
+  ): Promise<ApiAct023ResponseOk> {
+    const date = new Date("2025-01-05");
+    const semesterId = await this.semesterPublicService.loadId({
+      date,
+    });
+    const activityDId = await this.activityDurationPublicService.loadId({
+      semesterId,
+    });
+    // console.log(`QUERY: ${JSON.stringify(query)}`);
+    // console.log(`${Boolean(query.clubName)}`);
+    const [
+      clubs,
+      activityClubChargedExecutiveList,
+      activitiesOnActivityD,
+      executives,
+    ] = await Promise.all([
+      this.clubPublicService.searchClubDetailByDate({
+        date,
+        clubTypeEnum: ClubTypeEnum.Regular,
+        // name: query.clubName,
+      }),
+      this.activityClubChargedExecutiveRepository.find({
         activityDId,
-        clubsList: clubs.map(e => e.club.id),
-      },
+      }),
+      this.activityRepository.selectActivityByActivityDId(activityDId),
+      this.userPublicService.getCurrentExecutives(),
+    ]);
+
+    // console.log(
+    //   `RESULT1: ${JSON.stringify([
+    //     clubs,
+    //     activityClubChargedExecutiveList,
+    //     activitiesOnActivityD,
+    //     executives,
+    //   ])}`,
+    // );
+    const clubChargedExecutiveMap = new Map(
+      activityClubChargedExecutiveList.map(e => [e.club.id, e.executive.id]),
     );
-    const activitiesOnActivityD =
-      await this.activityRepository.selectActivityByActivityDId(activityDId);
-    const executives = await this.userPublicService.getCurrentExecutives();
+
+    const clubList = clubs.map(club => ({
+      ...club,
+      chargedExecutiveId: activityClubChargedExecutiveList.find(
+        e => e.club.id === club.id,
+      )?.executive.id,
+    }));
+
     const executiveMap = new Map<number, { id: number; name: string }>();
     executives.forEach(e => {
       executiveMap.set(e.executive.id, {
@@ -1047,37 +1013,40 @@ export default class ActivityOldService {
     logger.debug(`current activities count: ${activitiesOnActivityD.length}`);
     logger.debug(`current activated executives: ${executives.length}`);
 
-    const items: ApiAct023ResponseOk["items"] = clubinfos.map(clubinfo => {
+    const items: ApiAct023ResponseOk["items"] = clubList.map(club => {
       const pendingActivitiesCount = activitiesOnActivityD.filter(
         e =>
-          e.clubId === clubinfo.clubId &&
+          e.clubId === club.id &&
           e.activityStatusEnumId === ActivityStatusEnum.Applied,
       ).length;
       const approvedActivitiesCount = activitiesOnActivityD.filter(
         e =>
-          e.clubId === clubinfo.clubId &&
+          e.clubId === club.id &&
           e.activityStatusEnumId === ActivityStatusEnum.Approved,
       ).length;
       const rejectedActivitiesCount = activitiesOnActivityD.filter(
         e =>
-          e.clubId === clubinfo.clubId &&
+          e.clubId === club.id &&
           e.activityStatusEnumId === ActivityStatusEnum.Rejected,
       ).length;
-      const chargedExecutive =
-        clubinfo.chargedExecutiveId !== undefined &&
-        clubinfo.chargedExecutiveId !== null
-          ? executiveMap.get(clubinfo.chargedExecutiveId)
-          : undefined;
-
+      const chargedExecutive = clubChargedExecutiveMap.has(club.id)
+        ? executiveMap.get(clubChargedExecutiveMap.get(club.id))
+        : undefined;
       return {
-        ...clubinfo,
+        clubId: club.id,
+        clubTypeEnum: club.clubTypeEnum,
+        divisionName: club.division.name,
+        clubNameKr: club.nameKr,
+        clubNameEn: club.nameEn,
         pendingActivitiesCount,
         approvedActivitiesCount,
         rejectedActivitiesCount,
+        advisor: club.professor?.name,
         chargedExecutive,
       };
     });
-
+    // console.log(items);
+    const clubMap = new Map(clubs.map(club => [club.id, club]));
     const executiveProgresses: ApiAct023ResponseOk["executiveProgresses"] =
       executives.map(executive => {
         const chargedActivities = activitiesOnActivityD.filter(
@@ -1110,14 +1079,14 @@ export default class ActivityOldService {
                 e.activityStatusEnumId === ActivityStatusEnum.Rejected,
             ).length;
 
-            const clubInfo = clubinfos.find(e => e.clubId === clubId);
+            const clubInfo = clubMap.get(clubId);
 
             return {
               clubId,
               clubTypeEnum: clubInfo.clubTypeEnum,
-              divisionName: clubInfo.divisionName,
-              clubNameKr: clubInfo.clubNameKr,
-              clubNameEn: clubInfo.clubNameEn,
+              divisionName: clubInfo.division.name,
+              clubNameKr: clubInfo.nameKr,
+              clubNameEn: clubInfo.nameEn,
               pendingActivitiesCount,
               approvedActivitiesCount,
               rejectedActivitiesCount,
@@ -1131,152 +1100,55 @@ export default class ActivityOldService {
         };
       });
 
+    // 쿼리와 페이지네이션 적용
+
+    // const clubNameFilteredItems = !query.clubName
+    //   ? items
+    //   : items.filter(
+    //       item =>
+    //         item.clubNameKr
+    //           .normalize("NFC")
+    //           .includes(query.clubName.normalize("NFC")) ||
+    //         item.clubNameEn
+    //           .normalize("NFC")
+    //           .includes(query.clubName.normalize("NFC")),
+    //     );
+
+    // const executiveNameFilteredItems = !query.executiveName
+    //   ? clubNameFilteredItems
+    //   : clubNameFilteredItems.filter(item =>
+    //       item.chargedExecutive?.name
+    //         .normalize("NFC")
+    //         .includes(query.executiveName.normalize("NFC")),
+    //     );
+    // const total = executiveNameFilteredItems.length;
+    // const executiveNameFilteredExecutiveProgresses = !query.executiveName
+    //   ? executiveProgresses
+    //   : executiveProgresses.filter(e =>
+    //       e.executiveName
+    //         .normalize("NFC")
+    //         .includes(query.executiveName.normalize("NFC")),
+    //     );
+
+    // const pageStart = (query.pageOffset - 1) * query.itemCount;
+    // const pageEnd = pageStart + query.itemCount;
+    // const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
+
+    // console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
+    // console.log(`ActivityDId: ${activityDId}`);
+    // const semester = await this.semesterPublicService.load({
+    //   date,
+    // });
+    // console.log(`SemesterId: ${semester.id}`);
+    // console.log(`Date: ${date}`);
     return {
       items,
       executiveProgresses,
+      // items: paginatedItems,
+      // executiveProgresses: executiveNameFilteredExecutiveProgresses,
+      // total,
+      // offset: query.pageOffset,
     };
-  }
-
-  async getExecutiveActivitiesClubBrief(param: {
-    query: ApiAct024RequestQuery;
-  }): Promise<ApiAct024ResponseOk> {
-    // check the clubs is activated
-    const clubs = await this.clubPublicService.getAtivatedClubs();
-    if (!clubs.some(e => e.club.id === param.query.clubId)) {
-      throw new HttpException("No such club", HttpStatus.NOT_FOUND);
-    }
-
-    const activityDId =
-      param.query.activityDurationId ??
-      (await this.activityDurationPublicService.loadId());
-
-    const activities = await this.getActivities({
-      clubId: param.query.clubId,
-      activityDId,
-    });
-    const chargedExecutiveId = await this.activityClubChargedExecutiveRepository
-      .selectActivityClubChargedExecutiveByClubId({
-        activityDId,
-        clubId: param.query.clubId,
-      })
-      .then(arr => {
-        if (arr.length === 0) {
-          return undefined;
-        }
-        if (arr.length > 1) {
-          throw new HttpException(
-            "unreachable",
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        }
-        return arr[0].executiveId;
-      });
-    const clubChargedExecutive =
-      chargedExecutiveId === undefined
-        ? undefined
-        : await this.userPublicService
-            .getExecutiveAndExecutiveTByExecutiveId({
-              executiveId: chargedExecutiveId,
-            })
-            .then(e => ({
-              id: e.executive.id,
-              name: e.executive.name,
-            }));
-
-    const items: ApiAct024ResponseOk["items"] = await Promise.all(
-      activities.map(async activity => {
-        const lastFeedback = await this.activityRepository
-          .selectActivityFeedbackByActivityId({
-            activityId: activity.id,
-          })
-          .then(arr =>
-            arr.reduce((acc, cur) => {
-              if (acc === undefined || acc.createdAt < cur.createdAt) {
-                return cur;
-              }
-              return acc;
-            }, undefined),
-          );
-
-        const commentedExecutive =
-          lastFeedback === undefined
-            ? undefined
-            : await this.userPublicService
-                .getExecutiveAndExecutiveTByExecutiveId({
-                  executiveId: lastFeedback.executiveId,
-                })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
-
-        const chargedExecutive =
-          activity.chargedExecutiveId === undefined ||
-          activity.chargedExecutiveId === null
-            ? undefined
-            : await this.userPublicService
-                .getExecutiveAndExecutiveTByExecutiveId({
-                  executiveId: activity.chargedExecutiveId,
-                })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
-
-        return {
-          activityId: activity.id,
-          activityStatusEnum: activity.activityStatusEnumId,
-          activityName: activity.name,
-          commentedExecutive,
-          chargedExecutive,
-          updatedAt: activity.updatedAt,
-          commentedAt: activity.commentedAt,
-          editedAt: activity.editedAt,
-        };
-      }),
-    );
-
-    return {
-      chargedExecutive: clubChargedExecutive,
-      items,
-    };
-  }
-
-  /**
-   * @description patchExecutiveActivities의 서비스 진입점입니다.
-   */
-  async patchExecutiveActivities(param: {
-    body: ApiAct025RequestBody;
-  }): Promise<ApiAct025ResponseOk> {
-    await Promise.all(
-      param.body.activityIds.map(async activityId => {
-        const isUpdateSuceed =
-          await this.activityRepository.updateActivityChargedExecutive({
-            activityId,
-            executiveId: param.body.executiveId,
-          });
-        return isUpdateSuceed;
-      }),
-    );
-    return {};
-  }
-
-  /**
-   * @description putExecutiveActivitiesClubChargedExecutive의 서비스 진입점입니다.
-   * @param body
-   */
-  async putExecutiveActivitiesClubChargedExecutive(param: {
-    body: ApiAct026RequestBody;
-  }): Promise<ApiAct026ResponseOk> {
-    Promise.all(
-      param.body.clubIds.map(async clubId => {
-        this.changeClubChargedExecutive({
-          clubId,
-          executiveId: param.body.executiveId,
-        });
-      }),
-    );
-    return {};
   }
 
   async getExecutiveActivitiesClubChargeAvailableExecutives(

@@ -5,7 +5,7 @@ import { IDivisionSummary } from "@clubs/interface/api/division/type/division.ty
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
-import { MDivision } from "./division.model";
+import { OldMDivision } from "./old.division.model";
 
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
@@ -20,10 +20,10 @@ export class VDivisionSummary
   // 첫 번째 생성자: IDivision\Summary로부터 초기화
   constructor(divisionSummary: IDivisionSummary);
 
-  // 두 번째 생성자: MDivision로부터 초기화
-  constructor(division: MDivision);
+  // 두 번째 생성자: OldMDivision로부터 초기화
+  constructor(division: OldMDivision);
 
-  constructor(param: IDivisionSummary | MDivision) {
+  constructor(param: IDivisionSummary | OldMDivision) {
     super();
     Object.assign(this, param);
   }
