@@ -20,6 +20,7 @@ import {
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
+import ActivityRepository from "@sparcs-clubs/api/feature/activity/repository/activity.repository";
 import ClubTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-t.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -33,6 +34,7 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 @Injectable()
 export default class ActivityService {
   constructor(
+    private readonly activityOldRepository: ActivityRepository,
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly activityDeadlinePublicService: ActivityDeadlinePublicService,
@@ -207,7 +209,7 @@ export default class ActivityService {
     );
 
     const comments =
-      await this.activityRepository.selectActivityFeedbackByActivityId({
+      await this.activityOldRepository.selectActivityFeedbackByActivityId({
         activityId: activity.id,
       });
 

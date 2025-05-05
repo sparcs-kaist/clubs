@@ -540,12 +540,11 @@ export default class ActivityController {
     @Param() param: ApiAct006RequestParam,
     @Query() query: ApiAct006RequestQuery,
   ): Promise<ApiAct006ResponseOk> {
-    const result =
-      await this.activityOldService.getStudentActivitiesActivityTerm(
-        param,
-        query,
-        user.studentId,
-      );
+    const result = await this.activityService.getStudentActivitiesActivityTerm(
+      param,
+      query,
+      user.studentId,
+    );
     return result;
   }
 
