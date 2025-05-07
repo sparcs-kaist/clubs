@@ -10,8 +10,8 @@
 | ------------------ | -------------------------------------------------------------------- | -------------------------------------------- |
 | `packages/api`     | 백엔드 API 서버 관련 코드를 포함합니다. (예: NestJS, Express 등)          | `backend-rules.md`                        |
 | `packages/web`     | 프론트엔드 웹 애플리케이션 관련 코드를 포함합니다. (예: React, Vue, Angular 등) | `frontend-rules.md`                        |
-| `packages/domain`  | 프로젝트의 핵심 도메인 로직 및 엔티티를 정의합니다.                      | `backend-rules.md` 또는 별도 `domain-rules.md` |
-| `packages/interface` | API 요청/응답, 데이터 전송 객체(DTO) 등 인터페이스 정의를 포함합니다.    | `backend-rules.md` 및 `frontend-rules.md` |
+| `packages/domain`  | 프로젝트의 핵심 도메인 로직 및 엔티티를 정의합니다.                      | `domain-rules.md` |
+| `packages/interface` | API 요청/응답, 데이터 전송 객체(DTO) 등 인터페이스 정의를 포함합니다.    | `interface-rules.md` |
 | `packages/eslint-config` | ESLint 설정을 공유하여 코드 스타일의 일관성을 유지합니다.                | 해당 패키지 내 README 또는 설정 파일 참고      |
 | `packages/typescript-config` | TypeScript 설정을 공유하여 타입 검사의 일관성을 유지합니다.             | 해당 패키지 내 README 또는 설정 파일 참고      |
 
