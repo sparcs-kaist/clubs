@@ -1,13 +1,11 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import {
-  ClubDelegateEnum,
-  zClubDelegate,
-} from "@clubs/domain/club/club-delegate";
+import { zClub } from "@clubs/domain/club/club";
 import { zDivision } from "@clubs/domain/club/division";
+import { zStudent } from "@clubs/domain/user/student";
 
-import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 /**
  * @version v0.1
@@ -21,27 +19,38 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  division: z.array(zDivision),
+  division: z.array(zDivision.shape.id),
   clubNameLike: z.string(),
+  year: z.coerce.number(),
+  semesterName: z.string(),
   clubType: z.object({
-    [ClubTypeEnum.Regular]: z.boolean(),
-    [ClubTypeEnum.Provisional]: z.boolean(),
+    regular: z.boolean(),
+    provisional: z.boolean(),
   }),
-  [ClubDelegateEnum.Delegate1]: z.boolean(),
-  [ClubDelegateEnum.Delegate2]: z.boolean(),
+  delegate1: z.boolean(),
+  delegate2: z.boolean(),
 });
 
 const requestBody = z.object({});
 
+const zDelegateForOverview = z.object({
+  clubId: zClub.shape.id,
+  delegateType: z.nativeEnum(ClubDelegateEnum),
+  name: zStudent.shape.name,
+  studentNumber: z.coerce.number(),
+  phoneNumber: zStudent.shape.phoneNumber,
+  kaistEmail: zStudent.shape.email,
+});
+
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.array(
     z.object({
-      division: z.array(zDivision),
-      clubNameLike: z.string(),
-      clubType: z.nativeEnum(ClubTypeEnum),
-      [ClubDelegateEnum.Representative]: zClubDelegate,
-      [ClubDelegateEnum.Delegate1]: zClubDelegate.optional(),
-      [ClubDelegateEnum.Delegate2]: zClubDelegate.optional(),
+      division: zDivision.shape.name,
+      clubNameKr: zClub.shape.nameKr,
+      clubNameEn: zClub.shape.nameEn,
+      representative: zDelegateForOverview.optional(),
+      delegate1: zDelegateForOverview.optional(),
+      delegate2: zDelegateForOverview.optional(),
     }),
   ),
 };
