@@ -1,6 +1,6 @@
 ---
-description: 개발자가 프론트엔드 작업을 할때, 다음 과정을 따라서 Agent 가 동작합니다.
-globs: 
+description: 
+globs: packages/web/**
 alwaysApply: false
 ---
 # 프론트엔드 개발 규칙

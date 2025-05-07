@@ -1,6 +1,6 @@
 ---
-description: 개발자가 interface의 코드를 추가하거나 수정할때, 다음 과정을 따라서 Agent 가 동작합니다.
-globs: 
+description: 
+globs: packages/interface/**
 alwaysApply: false
 ---
 # 인터페이스 개발 규칙
