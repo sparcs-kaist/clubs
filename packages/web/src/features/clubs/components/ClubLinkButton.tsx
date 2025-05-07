@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
+
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 interface ClubLinkButtonProps {
   title: string;
   link: string;
-  icon: string;
+  icon: React.ElementType;
 }
 
 const ButtonContainer = styled.div`
@@ -31,25 +32,21 @@ const ButtonContainer = styled.div`
 `;
 
 const IconWrapper = styled.div`
+  display: flex;
   width: 30px;
   height: 30px;
-  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 `;
 
-const TextWrapper = styled.div`
-  flex: 1 1 0;
-  height: 28px;
-  text-align: center;
-  justify-content: center;
+const ContextWrapper = styled.div`
   display: flex;
+  height: 28px;
   flex-direction: column;
-
-  color: ${({ theme }) => theme.colors.BLACK};
-  font-size: 16px;
-  font-family: Pretendard, sans-serif;
-  font-weight: 400;
-  line-height: 20px;
-  word-wrap: break-word;
+  justify-content: center;
+  flex: 1 0 0;
 
   ${ButtonContainer}:hover & {
     line-height: 28px;
@@ -59,14 +56,32 @@ const TextWrapper = styled.div`
 const ClubLinkButton: React.FC<ClubLinkButtonProps> = ({
   title,
   link,
-  icon,
-}) => (
-  <ButtonContainer onClick={() => window.open(link, "_blank")}>
-    <IconWrapper>
-      <Image src={icon} alt={`${title} Icon`} width={30} height={30} />
-    </IconWrapper>
-    <TextWrapper>{title}</TextWrapper>
-  </ButtonContainer>
-);
+  icon: IconComponent,
+}) => {
+  const theme = useTheme();
+  return (
+    <ButtonContainer onClick={() => window.open(link, "_blank")}>
+      <IconWrapper>
+        <IconComponent
+          style={{ fill: theme.colors.PRIMARY, width: "30px", height: "30px" }}
+        />
+      </IconWrapper>
+      <ContextWrapper>
+        <Typography
+          style={{
+            color: "theme.colors.PRIMARY",
+            textAlign: "center",
+            fontFamily: "Pretendard",
+            fontSize: "16px",
+            fontWeight: 400,
+            lineHeight: "20px",
+          }}
+        >
+          {title}
+        </Typography>
+      </ContextWrapper>
+    </ButtonContainer>
+  );
+};
 
 export default ClubLinkButton;
