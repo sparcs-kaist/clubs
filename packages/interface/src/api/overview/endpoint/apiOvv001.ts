@@ -2,10 +2,13 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zClub } from "@clubs/domain/club/club";
-import { zDivision } from "@clubs/domain/club/division";
+import { zDistrict, zDivision } from "@clubs/domain/club/division";
 import { zStudent } from "@clubs/domain/user/student";
 
-import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
+import {
+  ClubDelegateEnum,
+  ClubTypeEnum,
+} from "@clubs/interface/common/enum/club.enum";
 
 /**
  * @version v0.1
@@ -19,16 +22,16 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  division: z.array(zDivision.shape.id),
+  division: z.coerce.string(),
   clubNameLike: z.string(),
   year: z.coerce.number(),
   semesterName: z.string(),
-  clubType: z.object({
-    regular: z.boolean(),
-    provisional: z.boolean(),
-  }),
-  delegate1: z.boolean(),
-  delegate2: z.boolean(),
+  provisional: z.coerce.boolean(),
+  regular: z.coerce.boolean(),
+  // 대의원1이 있는 동아리만 찾고싶을 때 사용
+  // false여도 대의원1이 있는 동아리까지 찾아줘야 함
+  hasDelegate1: z.coerce.boolean(),
+  hasDelegate2: z.coerce.boolean(),
 });
 
 const requestBody = z.object({});
@@ -46,6 +49,8 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.array(
     z.object({
       division: zDivision.shape.name,
+      district: zDistrict.shape.name,
+      clubType: z.nativeEnum(ClubTypeEnum),
       clubNameKr: zClub.shape.nameKr,
       clubNameEn: zClub.shape.nameEn,
       representative: zDelegateForOverview.optional(),

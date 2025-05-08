@@ -4,11 +4,14 @@ import apiOvv001, {
   ApiOvv001RequestQuery,
   ApiOvv001ResponseOK,
 } from "@clubs/interface/api/overview/endpoint/apiOvv001";
+import apiOvv002, {
+  ApiOvv002RequestQuery,
+  ApiOvv002ResponseOK,
+} from "@clubs/interface/api/overview/endpoint/apiOvv002";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
-
-import { OverviewService } from "../service/overview.service";
+import { OverviewService } from "@sparcs-clubs/api/feature/overview/service/overview.service";
 
 @Controller()
 export class OverviewController {
@@ -23,9 +26,12 @@ export class OverviewController {
     return this.overviewService.getDelegateOverview(query);
   }
 
-  // @Public()
-  // @Get("/overview/clubinfokr")
-  // async getClubInfoOverview(): Promise<unknown[]> {
-  //   return this.overviewService.getClubsInfoOverview();
-  // }
+  @Public()
+  @Get("/overview/clubinfo/kr")
+  @UsePipes(new ZodPipe(apiOvv002))
+  async getClubInfoOverview(
+    @Query() query: ApiOvv002RequestQuery,
+  ): Promise<ApiOvv002ResponseOK> {
+    return this.overviewService.getClubsOverview(query);
+  }
 }
