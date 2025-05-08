@@ -84,7 +84,13 @@ const ActivityReportList: React.FC<ActivityReportListProps> = ({
 }) => {
   const table = useReactTable({
     columns,
-    data,
+    data: data.map(item => ({
+      ...item,
+      durations: item.durations.map(duration => ({
+        startTerm: duration.startTerm!,
+        endTerm: duration.endTerm!,
+      })),
+    })),
     getCoreRowModel: getCoreRowModel(),
     enableSorting: false,
   });

@@ -66,6 +66,25 @@ export const ClubT = mysqlTable("club_t", {
   deletedAt: timestamp("deleted_at"),
 });
 
+// new version of club_t: 나중에 이것만 사용 후 위 ClubT 삭제 TODO:
+export const ClubSemester = mysqlTable("club_t", {
+  id: int("id").autoincrement().primaryKey(),
+  clubId: int("club_id")
+    .notNull()
+    .references(() => Club.id),
+  clubTypeEnum: int("club_status_enum_id").notNull(),
+  characteristicKr: varchar("characteristic_kr", { length: 255 }),
+  characteristicEn: varchar("characteristic_en", { length: 255 }),
+  professorId: int("professor_id").references(() => Professor.id),
+  semesterId: int("semester_id")
+    .notNull()
+    .references(() => SemesterD.id),
+  startTerm: date("start_term").notNull(),
+  endTerm: date("end_term"),
+  createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
+
 // 동아리의 분과 변경 이력
 export const ClubDivisionHistory = mysqlTable("club_division_t", {
   id: int("id").autoincrement().primaryKey(),

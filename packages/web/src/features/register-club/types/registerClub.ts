@@ -54,8 +54,8 @@ export interface ProfessorInfo {
 }
 
 export interface Duration {
-  startTerm: Date;
-  endTerm: Date;
+  startTerm: Date | null;
+  endTerm: Date | null;
 }
 
 export type ActivityReport = {

@@ -41,6 +41,10 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
         {
           body: {
             ...data,
+            durations: data.durations.map(duration => ({
+              startTerm: duration.startTerm!,
+              endTerm: duration.endTerm!,
+            })),
             clubId,
             evidence: data.evidence ?? "", // NOTE: (@dora) evidence is optional
             evidenceFiles: data.evidenceFiles.map(({ id }) => ({

@@ -375,6 +375,13 @@ export abstract class BaseRepository<
     return makeObjectPropsToDBTimezone(this.modelToDBMapping(model));
   }
 
+  /**
+   * @description ModelCreate -> DB
+   * @description ModelCreate가 DB에 저장되기 전에, 9시간을 더하는 조작을 함
+   */
+  protected createToDB(model: IModelCreate): DbInsert {
+    return makeObjectPropsToDBTimezone(this.createToDBMapping(model));
+  }
   ///////////////////////////////////////////////////////////////////////////////
   // 락 관련 메서드
 
@@ -421,12 +428,13 @@ export abstract class BaseRepository<
     Object.entries(timeProcessedQuery)
       .filter(([key, _]) => !defaultKeys.includes(key)) // 기본 키는 제외
       .forEach(([key, value]) => {
-        whereClause.push(
-          this.processQuery(
-            key,
-            value as BaseWhereQuery<Query, QuerySupport, Id>,
-          ),
+        const processedQuery = this.processQuery(
+          key,
+          value as BaseWhereQuery<Query, QuerySupport, Id>,
         );
+        if (processedQuery !== undefined) {
+          whereClause.push(processedQuery);
+        }
       });
 
     return whereClause.length > 1 ? and(...whereClause) : whereClause[0];
@@ -476,7 +484,10 @@ export abstract class BaseRepository<
       | BaseWhereQuery<Query, QuerySupport, Id>
       | PrimitiveConditionValue
       | AdvancedConditionalValue<PrimitiveConditionValue>,
-  ): SQL {
+  ): SQL | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
     if (this.isNestedQueryWrapper(String(key))) {
       // key가 and or not 인 경우 중첩 쿼리 처리
       return this.processNestedQuery(
@@ -493,6 +504,7 @@ export abstract class BaseRepository<
     }
     if (this.isAdvancedCondition(value)) {
       // value가 고급 쿼리 오브젝트 인 경우 고급 연산자 처리
+
       return this.processAdvancedCondition(
         key as BaseWhereQueryKeys<Query, QuerySupport, Id>,
         value as AdvancedConditionalValue<PrimitiveConditionValue>,
@@ -509,16 +521,25 @@ export abstract class BaseRepository<
   private processNestedQuery(
     wrapper: NestedQueryWrappingOperators,
     conditions: BaseWhereQuery<Query, QuerySupport, Id>,
-  ): SQL {
+  ): SQL | undefined {
     if (!this.isNestedQueryWrapper(wrapper)) {
       throw new Error(`Invalid wrapper condition : ${wrapper} ${conditions}`);
     }
-    const whereClause = Object.entries(conditions).map(
-      ([key, value]): SQL =>
-        this.processQuery(
+    if (conditions === undefined) {
+      return undefined;
+    }
+    const whereClause = Object.entries(conditions).reduce<SQL[]>(
+      (acc, [key, value]) => {
+        const processedQuery = this.processQuery(
           key,
           value as BaseWhereQuery<Query, QuerySupport, Id>,
-        ),
+        );
+        if (processedQuery !== undefined) {
+          acc.push(processedQuery);
+        }
+        return acc;
+      },
+      [],
     );
     if (whereClause.length === 0) {
       throw new Error(`Where clause is empty for conditions: ${conditions}`);
@@ -750,12 +771,18 @@ export abstract class BaseRepository<
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
     tx?: DrizzleTransaction,
   ): Promise<Model[]> {
+    // console.log(
+    //   `${this.mainModelConstructor.modelName} QUERY: ${JSON.stringify(query)}`,
+    // );
     const resPromise = tx
       ? this.findImplementation(query, tx)
       : this.txManager.runInTransaction(tsx =>
           this.findImplementation(query, tsx),
         );
     const res = await resPromise;
+    // console.log(
+    //   `${this.mainModelConstructor.modelName} RES: ${JSON.stringify(res)}`,
+    // );
     return res;
   }
 
@@ -840,16 +867,21 @@ export abstract class BaseRepository<
   }
 
   async fetchAll(ids: Id[], tx?: DrizzleTransaction): Promise<Model[]> {
+    const reducedIds = Array.from(new Set(ids));
     const resPromise = tx
       ? this.find(
-          { id: ids } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
+          { id: reducedIds } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
           tx,
-        ).then(takeAll(ids, this.mainModelConstructor.modelName))
+        ).then(takeAll(reducedIds, this.mainModelConstructor.modelName))
       : this.txManager.runInTransaction(async tsx =>
           this.find(
-            { id: ids } as BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
+            { id: reducedIds } as BaseRepositoryFindQuery<
+              Query,
+              OrderByKeys,
+              Id
+            >,
             tsx,
-          ).then(takeAll(ids, this.mainModelConstructor.modelName)),
+          ).then(takeAll(reducedIds, this.mainModelConstructor.modelName)),
         );
     const res = await resPromise;
     return res;

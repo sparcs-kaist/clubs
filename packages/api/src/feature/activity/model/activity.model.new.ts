@@ -1,4 +1,4 @@
-import { IActivity } from "@clubs/interface/api/activity/type/activity.type";
+import { ActivityStatusEnum, IActivity } from "@clubs/domain/activity/activity";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
@@ -36,10 +36,26 @@ export class MActivity extends MEntity implements IActivity {
   commentedExecutive: IActivity["commentedExecutive"];
   commentedAt: IActivity["commentedAt"];
   editedAt: IActivity["editedAt"];
-  updatedAt: IActivity["updatedAt"];
+  professorApprovedAt: IActivity["professorApprovedAt"];
 
   constructor(data: IActivity) {
     super();
     Object.assign(this, data);
+  }
+
+  static updateStatus(status: ActivityStatusEnum) {
+    return (model: MActivity) =>
+      new MActivity({
+        ...model,
+        activityStatusEnum: status,
+      });
+  }
+
+  static updateChargedExecutive(executiveId: number) {
+    return (model: MActivity) =>
+      new MActivity({
+        ...model,
+        chargedExecutive: { id: executiveId },
+      });
   }
 }

@@ -9,8 +9,10 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
-import { ClubTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagColorFromDivision } from "@sparcs-clubs/web/types/clubdetail.types";
+import {
+  ClubTypeTagList,
+  getDivisionTagColor,
+} from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ChargedClubsAndProgresses {
@@ -42,9 +44,7 @@ const columns = [
   columnHelper.accessor("divisionName", {
     header: "분과",
     cell: info => (
-      <Tag color={getTagColorFromDivision(info.getValue())}>
-        {info.getValue()}
-      </Tag>
+      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
     ),
     size: 50,
   }),

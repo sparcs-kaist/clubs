@@ -9,8 +9,10 @@ import { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
-import { RegistrationStatusTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagColorFromDivision } from "@sparcs-clubs/web/types/clubdetail.types";
+import {
+  getDivisionTagColor,
+  RegistrationStatusTagList,
+} from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyClubTableProps {
@@ -34,9 +36,7 @@ const columns = [
     id: "division.name",
     header: "분과",
     cell: info => (
-      <Tag color={getTagColorFromDivision(info.getValue())}>
-        {info.getValue()}
-      </Tag>
+      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
     ),
     size: 10,
   }),

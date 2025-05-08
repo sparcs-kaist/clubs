@@ -19,7 +19,7 @@ const ActivityReportCreate: React.FC = () => {
 
   const { data, isLoading, isError } = useGetMyManageClub();
   const {
-    data: deadline,
+    data: deadlineData,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
   } = useGetActivityDeadline();
@@ -46,12 +46,12 @@ const ActivityReportCreate: React.FC = () => {
     return <AsyncBoundary isLoading={isLoading} isError={isError} />;
   }
 
-  if (!deadline) {
+  if (deadlineData?.deadline == null) {
     return (
       <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline} />
     );
   }
-  if (!deadline.isWritable) {
+  if (!deadlineData.isWritable) {
     return <NotActivityReportPeriod type="write" />;
   }
 
