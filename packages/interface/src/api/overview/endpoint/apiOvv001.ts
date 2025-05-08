@@ -53,7 +53,7 @@ const responseBodyMap = {
       clubType: z.nativeEnum(ClubTypeEnum),
       clubNameKr: zClub.shape.nameKr,
       clubNameEn: zClub.shape.nameEn,
-      representative: zDelegateForOverview.optional(),
+      representative: zDelegateForOverview,
       delegate1: zDelegateForOverview.optional(),
       delegate2: zDelegateForOverview.optional(),
     }),

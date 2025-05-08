@@ -48,19 +48,26 @@ type Delegates = {
   kaistEmail: string;
 }[];
 
+// 필터링할 때 필요한 정보
 type ClubFilterType = ClubInfo | ClubFundamental;
+
+// 무엇으로 필터링할지에 대한 정보
 type FilterQuery = ApiOvv001RequestQuery | ApiOvv002RequestQuery;
 
 @Injectable()
 export class OverviewService {
   constructor(private clubDelegateRepository: OverviewRepository) {}
 
+  // 동아리 이름 검색 필터를 만들어줍니다
+  // .filter(this.clubNameLike(query)) 하여 사용
   private clubNameLike(query: FilterQuery): (club: ClubFilterType) => boolean {
     return (club: ClubFilterType) =>
       club.clubNameKr.includes(query.clubNameLike) ||
       club.clubNameEn.includes(query.clubNameLike);
   }
 
+  // 정동아리/가동아리 필터를 만들어줍니다
+  // .filter(this.clubTypeOf(query)) 하여 사용
   private clubTypeOf(query: FilterQuery): (club: ClubFilterType) => boolean {
     return (club: ClubFilterType) =>
       query[
@@ -68,11 +75,13 @@ export class OverviewService {
       ];
   }
 
+  // 동아리 분과 필터를 만들어줍니다
   private divisionIn(query: FilterQuery): (club: ClubFilterType) => boolean {
     return (club: ClubFilterType) =>
       query.division.split(",").includes(club.division);
   }
 
+  // 대의원1/대의원2 존재 여부 필터를 만들어줍니다
   private hasDelegates(
     query: ApiOvv001RequestQuery,
     delegates: Delegates,
@@ -172,8 +181,8 @@ export class OverviewService {
         clubBuildingEnum: club.clubBuildingEnum as ClubBuildingEnum,
         roomLocation: club.roomLocation,
         roomPassword: club.roomPassword?.trim(),
-        warning: "",
-        caution: "",
+        warning: null,
+        caution: null,
       }));
   }
 }
