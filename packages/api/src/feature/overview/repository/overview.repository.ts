@@ -6,6 +6,7 @@ import { RegistrationApplicationStudentStatusEnum } from "@clubs/domain/registra
 
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
+  ClubBuildingEnum,
   ClubDelegate,
   ClubDelegateEnum,
   ClubOld,
@@ -113,7 +114,7 @@ export class OverviewRepository {
         characteristicEn: ClubT.characteristicEn,
         advisor: User.name,
         foundingYear: ClubOld.foundingYear,
-        clubBuildingEnum: ClubRoomT.clubBuildingEnum,
+        clubBuildingEnum: ClubBuildingEnum.id,
         roomLocation: ClubRoomT.roomLocation,
         roomPassword: ClubRoomT.roomPassword,
         totalMemberCnt: sql<number>`count(distinct ${ClubStudentT.id})`,
@@ -147,9 +148,13 @@ export class OverviewRepository {
       .leftJoin(
         ClubRoomT,
         and(
-          eq(ClubRoomT.clubId, ClubT.semesterId),
+          eq(ClubRoomT.clubId, ClubT.clubId),
           eq(ClubRoomT.semesterId, ClubT.semesterId),
         ),
+      )
+      .leftJoin(
+        ClubBuildingEnum,
+        eq(ClubBuildingEnum.id, ClubRoomT.clubBuildingEnum),
       )
       .where(
         and(
@@ -160,6 +165,11 @@ export class OverviewRepository {
           eq(SemesterD.name, semesterName),
         ),
       )
-      .groupBy(ClubT.id);
+      .groupBy(
+        ClubT.id,
+        ClubRoomT.clubBuildingEnum,
+        ClubRoomT.roomLocation,
+        ClubRoomT.roomPassword,
+      );
   }
 }
