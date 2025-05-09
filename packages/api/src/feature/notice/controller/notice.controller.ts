@@ -32,7 +32,7 @@ export class NoticeController {
     return notices;
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES, {
+  @Cron(CronExpression.EVERY_10_SECONDS, {
     name: "crawlNotices",
     timeZone: "Asia/Seoul",
   })

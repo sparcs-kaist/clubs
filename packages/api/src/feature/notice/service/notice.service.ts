@@ -22,9 +22,14 @@ export interface PostCrawlResult {
 }
 
 function findArticleId(link: string): number {
-  return Number.parseInt(
-    link.match(/articleid=[0-9]+/)[0].replace("articleid=", ""),
-  );
+  const match = link.match(/articleid=[0-9]+/i);
+  if (match) {
+    return Number.parseInt(match[0].replace("articleid=", ""));
+  }
+
+  // TODO: Notice 최종 업데이트 시간 띄우기 할 때 이 부분 구체화
+  // articleId: { gt:0 } 또한 Notice 최종 업데이트 시간 띄울 때 필요한 조건식
+  return -1;
 }
 
 @Injectable()
@@ -45,6 +50,9 @@ export class NoticeService {
         offset: pageOffset,
         itemCount,
       },
+      articleId: {
+        gt: 0,
+      },
       orderBy: {
         articleId: OrderByTypeEnum.DESC,
       },
@@ -59,7 +67,11 @@ export class NoticeService {
 
     const serviceResponse: ApiNtc001ResponseOK = {
       notices,
-      total: await this.noticeRepository.count({}),
+      total: await this.noticeRepository.count({
+        articleId: {
+          gt: 0,
+        },
+      }),
       offset: pageOffset,
     };
 
@@ -201,6 +213,7 @@ export class NoticeService {
       date: e.date,
       id: e.id,
       articleId: findArticleId(e.link),
+      articleIdFromDB: e.articleId,
     }));
     const crawlResults = await this.crawlNotices(maxPages);
 
@@ -230,6 +243,28 @@ export class NoticeService {
           deletes.push(notice.articleId);
         }
       });
+    }
+
+    // articleId가 반영되지 않은 notice가 있다면 patch를 통해 정상화
+    const malformedNotices = noticesFromDB.filter(
+      notice => notice.articleIdFromDB !== notice.articleId,
+    );
+
+    if (malformedNotices.length > 0) {
+      await this.noticeRepository.patch(
+        {
+          id: malformedNotices.map(e => e.id),
+        },
+        notice => ({
+          createdAt: notice.createdAt,
+          author: notice.author,
+          title: notice.title,
+          link: notice.link,
+          date: notice.date,
+          id: notice.id,
+          articleId: findArticleId(notice.link),
+        }),
+      );
     }
 
     await forEachAsyncSequentially(inserts, async post => {
