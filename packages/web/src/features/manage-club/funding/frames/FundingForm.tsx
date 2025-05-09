@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -16,6 +16,7 @@ interface FundingFormProps {
   initialData?: FundingFormData;
   onCancel: VoidFunction;
   onSubmit: (data: FundingFormData) => void;
+  onFormDataChange?: (formData: FundingFormData) => void;
 }
 
 const FundingForm: React.FC<FundingFormProps> = ({
@@ -23,6 +24,7 @@ const FundingForm: React.FC<FundingFormProps> = ({
   initialData = undefined,
   onCancel,
   onSubmit,
+  onFormDataChange,
 }) => {
   const formCtx = useForm<FundingFormData>({
     mode: "all",
@@ -42,7 +44,16 @@ const FundingForm: React.FC<FundingFormProps> = ({
   const {
     handleSubmit,
     formState: { isValid },
+    watch,
   } = formCtx;
+
+  // 폼 데이터 변경 감지
+  const formData = watch();
+  useEffect(() => {
+    if (onFormDataChange) {
+      onFormDataChange(formData);
+    }
+  }, [formData, onFormDataChange]);
 
   return (
     <FormProvider {...formCtx}>
