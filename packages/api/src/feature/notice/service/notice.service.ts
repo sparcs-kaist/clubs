@@ -14,6 +14,7 @@ const maxAttempts = 10;
 const userDisplay = 50;
 
 export interface PostCrawlResult {
+  // 네이버 블로그에서 공지사항 글을 구분하는 고유한 번호
   articleId: number;
   author: string;
   title: string;
@@ -246,6 +247,7 @@ export class NoticeService {
     }
 
     // articleId가 반영되지 않은 notice가 있다면 patch를 통해 정상화
+    // 프로덕션에 올라가거나, DB를 롤백하는 등등 그런 상황을 위해 필요
     const malformedNotices = noticesFromDB.filter(
       notice => notice.articleIdFromDB !== notice.articleId,
     );
