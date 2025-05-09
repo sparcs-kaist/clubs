@@ -7,6 +7,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import ClubDetailCard from "@sparcs-clubs/web/features/clubs/components/ClubDetailCard";
 import ClubInfoCard from "@sparcs-clubs/web/features/clubs/components/ClubInfoCard";
+import ClubLinksList from "@sparcs-clubs/web/features/clubs/components/ClubLinksList";
 import ClubMemberCard, {
   ClubDetailFrameProps,
 } from "@sparcs-clubs/web/features/clubs/components/ClubMemberCard";
@@ -70,6 +71,10 @@ const ClubDetailInfoFrame: React.FC<ClubDetailFrameProps> = ({
         </CardWrapper>
       </FlexWrapper>
     </MoreInfoWrapper>
+    <FlexWrapper direction="column" gap={20}>
+      <SectionTitle size="lg">동아리 링크 모음</SectionTitle>
+      <ClubLinksList />
+    </FlexWrapper>
   </>
 );
 
