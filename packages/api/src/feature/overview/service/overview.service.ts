@@ -58,14 +58,6 @@ type FilterQuery = ApiOvv001RequestQuery | ApiOvv002RequestQuery;
 export class OverviewService {
   constructor(private clubDelegateRepository: OverviewRepository) {}
 
-  // 동아리 이름 검색 필터를 만들어줍니다
-  // .filter(this.clubNameLike(query)) 하여 사용
-  private clubNameLike(query: FilterQuery): (club: ClubFilterType) => boolean {
-    return (club: ClubFilterType) =>
-      club.clubNameKr.includes(query.clubNameLike) ||
-      club.clubNameEn.includes(query.clubNameLike);
-  }
-
   // 정동아리/가동아리 필터를 만들어줍니다
   // .filter(this.clubTypeOf(query)) 하여 사용
   private clubTypeOf(query: FilterQuery): (club: ClubFilterType) => boolean {
@@ -128,14 +120,14 @@ export class OverviewService {
       query.semesterName,
     );
     return clubsFundamental
-      .filter(this.clubNameLike(query))
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .filter(this.hasDelegates(query, delegates))
       .map(club => ({
+        clubId: club.clubId,
         district: club.district.trim(),
-        division: club.division,
-        clubType: club.clubStatus,
+        divisionName: club.division,
+        clubTypeEnum: club.clubStatus,
         clubNameKr: club.clubNameKr,
         clubNameEn: club.clubNameEn,
         representative: delegates.find(
@@ -164,13 +156,13 @@ export class OverviewService {
       query.semesterName,
     );
     return clubs
-      .filter(this.clubNameLike(query))
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .map(club => ({
-        division: club.division,
+        clubId: club.clubId,
+        divisionName: club.division,
         district: club.district.trim(),
-        clubType: club.clubStatus,
+        clubTypeEnum: club.clubStatus,
         clubNameKr: club.clubNameKr,
         clubNameEn: club.clubNameEn,
         fieldsOfActivity: club.characteristicKr,

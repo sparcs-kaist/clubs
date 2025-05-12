@@ -67,6 +67,7 @@ export class OverviewRepository {
         studentNumber: Student.number,
         phoneNumber: Student.phoneNumber,
         kaistEmail: Student.email,
+        department: Department.name,
       })
       .from(ClubDelegate)
       .leftJoin(
