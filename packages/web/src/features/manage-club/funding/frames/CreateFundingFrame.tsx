@@ -11,7 +11,6 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useTemporaryStorage from "@sparcs-clubs/web/common/hooks/useTemporaryStorage";
 import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
 import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
-import { isObjectEmpty } from "@sparcs-clubs/web/utils";
 
 import { useCreateFunding } from "../hooks/useCreateFunding";
 import { FundingFormData } from "../types/funding";
@@ -65,12 +64,6 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
     });
   };
 
-  const handleFormDataChange = (formData: FundingFormData) => {
-    if (!isObjectEmpty(formData)) {
-      LocalStorageUtil.save(LOCAL_STORAGE_KEY.CREATE_FUNDING, formData);
-    }
-  };
-
   if (isModalOpen) {
     return (
       <RestoreDraftModal
@@ -97,7 +90,6 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
         onCancel={fundingCancelClick}
         onSubmit={handleSubmit}
         initialData={savedData}
-        onFormDataChange={handleFormDataChange}
       />
     </FlexWrapper>
   );
