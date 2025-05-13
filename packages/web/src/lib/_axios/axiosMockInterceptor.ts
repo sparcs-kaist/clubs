@@ -57,15 +57,6 @@ export const mockResponseInterceptor = {
     return response;
   },
   onRejected(error: AxiosError) {
-    if (env.NEXT_PUBLIC_API_MOCK_MODE) {
-      log.debug(
-        `Error from ${error.config?.method} ${error.config?.url}:\n${JSON.stringify(
-          error.response?.data,
-          null,
-          2,
-        )}`,
-      );
-    }
     return Promise.reject(error);
   },
 };
