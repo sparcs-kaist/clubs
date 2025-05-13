@@ -1,4 +1,4 @@
-import { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import log from "loglevel";
 
 import { env } from "@sparcs-clubs/web/env";
@@ -9,10 +9,11 @@ export const BASE_URL = env.NEXT_PUBLIC_API_URL ?? "";
 const mockInterceptor = {
   async onFulfilled(config: InternalAxiosRequestConfig) {
     const responseConfig = { ...config };
-    try {
-      const parsedUrl = new URL(config.url ?? "");
 
-      if (parsedUrl.host != null) {
+    try {
+      const parsedUrl = new URL(config.url ?? "", BASE_URL);
+
+      if (parsedUrl.host == null) {
         return responseConfig;
       }
     } catch (error) {
@@ -36,6 +37,24 @@ const mockInterceptor = {
     responseConfig.baseURL = BASE_URL;
 
     return responseConfig;
+  },
+  onRejected(error: AxiosError) {
+    return Promise.reject(error);
+  },
+};
+
+export const mockResponseInterceptor = {
+  onFulfilled(response: AxiosResponse) {
+    if (env.NEXT_PUBLIC_API_MOCK_MODE) {
+      log.debug(
+        `Response from ${response.config.method} ${response.config.url}:\n${JSON.stringify(
+          response.data,
+          null,
+          2,
+        )}`,
+      );
+    }
+    return response;
   },
   onRejected(error: AxiosError) {
     return Promise.reject(error);
