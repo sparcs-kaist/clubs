@@ -1,6 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import styled from "styled-components";
 
+import apiClb013 from "@clubs/interface/api/club/endpoint/apiClb013";
 import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -19,7 +21,6 @@ interface ChangeRepresentativeModalContentProps {
   onClose: () => void;
   refetch: () => void;
   requestId: number;
-  setType: (type: "Requested" | "Finished" | "Rejected") => void;
 }
 
 const ButtonWrapper = styled.div`
@@ -39,10 +40,11 @@ const ChangeRepresentativeModalContent: React.FC<
   onClose,
   refetch,
   requestId,
-  setType,
 }) => {
   const [errorPhone, setErrorPhone] = useState<boolean>(false);
   const [phone, setPhone] = useState<string>("");
+
+  const queryClient = useQueryClient();
 
   const onConfirm = () => {
     patchMyDelegateRequest(
@@ -53,9 +55,11 @@ const ChangeRepresentativeModalContent: React.FC<
           ClubDelegateChangeRequestStatusEnum.Approved,
       },
     );
-    onClose();
+    queryClient.invalidateQueries({
+      queryKey: [apiClb013.url()],
+    });
     refetch();
-    setType("Finished");
+    onClose();
   };
 
   const onReject = () => {
@@ -66,7 +70,10 @@ const ChangeRepresentativeModalContent: React.FC<
           ClubDelegateChangeRequestStatusEnum.Rejected,
       },
     );
-    setType("Rejected");
+    queryClient.invalidateQueries({
+      queryKey: [apiClb013.url()],
+    });
+    refetch();
     onClose();
   };
 

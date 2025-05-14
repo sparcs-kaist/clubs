@@ -1,4 +1,4 @@
-export const enum ChangeDivisionPresidentStatusEnum {
+export enum ChangeDivisionPresidentStatusEnum {
   Requested = 1,
   Canceled,
   Rejected,
@@ -77,7 +77,7 @@ export class ChangeDivisionPresidentMessageContext {
         ? ""
         : this.getChange()
     }${
-      this.status === ChangeDivisionPresidentStatusEnum.Rejected &&
+      this.status === ChangeDivisionPresidentStatusEnum.Requested &&
       this.page === "/my" &&
       !this.isModal
         ? " (승인 전)"
