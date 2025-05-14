@@ -1,59 +1,44 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
-import { useState } from "react";
-import DropdownTreeSelect, { TreeNode } from "react-dropdown-tree-select";
+import { useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import DetailFilterDropdown from "@sparcs-clubs/web/common/components/MultiFilter/_atomic/DetailFilterDropdown";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/components/ClubIntoKROverviewTable";
+import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
+import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
+import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
 
-import ClubInfoKROverviewTable from "../components/ClubIntoKROverviewTable";
-import DelegatesOverviewTable from "../components/DelegatesOverviewTable";
-import useGetClubInfoKROverview from "../services/useGetClubInfoKROverview";
-import useGetDelegatesOverview from "../services/useGetDelegatesOverview";
-
-const DivisionNode = (division: string): TreeNode => ({
-  value: division,
-  // label: <Tag color={getDivisionTagColor(division)}>{division}</Tag>,
-  label: division,
-});
-
-const DistrictNode = (district: string, children: Array<string>): TreeNode => ({
-  value: `_${district}`,
-  // label: <Label>{district}</Label>,
-  label: district,
-  children: children.map(DivisionNode),
-});
-
-const nodes = [
-  DistrictNode("생활문화", ["생활문화"]),
-  DistrictNode("종교사회", ["종교", "사회"]),
-  DistrictNode("예술", ["연행예술", "전시창작"]),
-  DistrictNode("음악", ["밴드음악", "보컬음악", "여섯줄"]),
-  DistrictNode("체육", ["구기체육", "생활체육"]),
-  DistrictNode("학술", ["이공학술", "인문학술"]),
+const divisions = [
+  "생활문화",
+  "종교",
+  "사회",
+  "연행예술",
+  "전시창작",
+  "밴드음악",
+  "보컬음악",
+  "구기체육",
+  "생활체육",
+  "이공학술",
+  "인문학술",
 ];
 
-const OverviewFrame = () => {
-  const [searchText, setSearchText] = useState<string>("");
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const checkedDivisions = [
-    "생활문화",
-    "종교",
-    "사회",
-    "연행예술",
-    "전시창작",
-    "밴드음악",
-    "보컬음악",
-    "여섯줄",
-    "구기체육",
-    "생활체육",
-    "이공학술",
-    "인문학술",
-  ].join(",");
+const ExecutiveActivityReportFrame = () => {
+  const [isDelegateView, setIsDelegateView] = useState<boolean>(
+    window.history.state?.isDelegateView ?? true,
+  );
+
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: "clubNameKr", value: "" },
+    { id: "clubTypeEnum", value: ["정동아리", "가동아리"] },
+    { id: "divisionName", value: divisions },
+  ]);
 
   const delegates = useGetDelegatesOverview({
-    division: checkedDivisions,
+    division:
+      "생활문화,종교,사회,연행예술,전시창작,밴드음악,보컬음악,구기체육,생활체육,이공학술,인문학술",
     hasDelegate1: false,
     hasDelegate2: false,
     provisional: true,
@@ -63,65 +48,92 @@ const OverviewFrame = () => {
   });
 
   const clubInfo = useGetClubInfoKROverview({
-    division: checkedDivisions,
+    division:
+      "생활문화,종교,사회,연행예술,전시창작,밴드음악,보컬음악,구기체육,생활체육,이공학술,인문학술",
     provisional: true,
     regular: true,
     semesterName: "봄",
     year: 2024,
   });
 
-  const isDelegatesOverview = true;
-  const setIsDelegatesOverview = (_: boolean) => {};
+  useEffect(() => {
+    window.history.replaceState({ isClubView: isDelegateView }, "");
+  }, [isDelegateView]);
 
   return (
     <AsyncBoundary
-      isLoading={delegates.isLoading && clubInfo.isLoading}
+      isLoading={delegates.isLoading || clubInfo.isLoading}
       isError={delegates.isError || clubInfo.isError}
     >
       <FlexWrapper direction="row" gap={12}>
         <Button
           style={{ flex: 1 }}
-          type={isDelegatesOverview ? "default" : "outlined"}
-          onClick={() => setIsDelegatesOverview(true)}
+          type={isDelegateView ? "default" : "outlined"}
+          onClick={() => setIsDelegateView(true)}
         >
           동아리 대표자대의원
         </Button>
         <Button
           style={{ flex: 1 }}
-          type={isDelegatesOverview ? "outlined" : "default"}
-          onClick={() => setIsDelegatesOverview(false)}
+          type={isDelegateView ? "outlined" : "default"}
+          onClick={() => setIsDelegateView(false)}
         >
           동아리 정보(KR)
         </Button>
       </FlexWrapper>
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
-          searchText={searchText}
-          handleChange={setSearchText}
+          searchText={columnFilters[0].value as string}
+          handleChange={value => {
+            setColumnFilters([
+              { id: "clubName", value },
+              ...columnFilters.slice(1),
+            ]);
+          }}
           placeholder=""
         />
-        <DropdownTreeSelect
-          data={nodes}
-          onChange={(_, _divisions) => {
-            setColumnFilters([]);
+        <DetailFilterDropdown
+          category={{
+            name: "동아리 구분",
+            content: ["정동아리", "가동아리"],
+            selectedContent: columnFilters[1].value as string[],
           }}
-          inlineSearchInput
+          setSelectedContents={selectedContents => {
+            setColumnFilters([
+              columnFilters[0],
+              { id: "clubTypeEnum", value: selectedContents },
+              ...columnFilters.slice(2),
+            ]);
+          }}
+        />
+        <DetailFilterDropdown
+          category={{
+            name: "분과",
+            content: divisions,
+            selectedContent: columnFilters[2].value as string[],
+          }}
+          setSelectedContents={selectedContents => {
+            setColumnFilters([
+              ...columnFilters.slice(0, 2),
+              { id: "divisionName", value: selectedContents },
+              ...columnFilters.slice(3),
+            ]);
+          }}
         />
       </FlexWrapper>
-      <DelegatesOverviewTable
-        delegates={delegates.data ?? []}
-        columnFilters={columnFilters}
-        // searchText={searchText}
-        // divisions={checkedDivisions}
-      />
-      <ClubInfoKROverviewTable
-        clubs={clubInfo.data ?? []}
-        columnFilters={columnFilters}
-        // searchText={searchText}
-        // divisions={checkedDivisions}
-      />
+      {isDelegateView ? (
+        <DelegatesOverviewTable
+          delegates={delegates.data ?? []}
+          columnFilters={columnFilters}
+        />
+      ) : (
+        <ClubInfoKROverviewTable
+          clubInfos={clubInfo.data ?? []}
+          columnFilters={columnFilters}
+        />
+      )}
     </AsyncBoundary>
   );
 };
 
-export default OverviewFrame;
+export default ExecutiveActivityReportFrame;

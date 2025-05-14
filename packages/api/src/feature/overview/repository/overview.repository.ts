@@ -88,7 +88,7 @@ export class OverviewRepository {
         ),
       )
       .leftJoin(User, eq(User.id, Student.userId))
-      .leftJoin(Department, eq(Department.id, StudentT.department))
+      .leftJoin(Department, eq(Department.departmentId, StudentT.department))
       .where(
         and(
           isNull(ClubDelegate.endTerm),

@@ -43,6 +43,7 @@ type Delegates = {
   clubId: number;
   delegateType: number;
   name: string;
+  department: string;
   studentNumber: number;
   phoneNumber: string;
   kaistEmail: string;
