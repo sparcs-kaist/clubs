@@ -1,5 +1,5 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -24,8 +24,15 @@ const divisions = [
   "이공학술",
   "인문학술",
 ];
+interface OverviewFrameProps {
+  year: number;
+  semesterName: string;
+}
 
-const ExecutiveActivityReportFrame = () => {
+const OverviewFrame: React.FC<OverviewFrameProps> = ({
+  year,
+  semesterName,
+}) => {
   const [isDelegateView, setIsDelegateView] = useState<boolean>(
     window.history.state?.isDelegateView ?? true,
   );
@@ -43,8 +50,8 @@ const ExecutiveActivityReportFrame = () => {
     hasDelegate2: false,
     provisional: true,
     regular: true,
-    semesterName: "봄",
-    year: 2024,
+    semesterName,
+    year,
   });
 
   const clubInfo = useGetClubInfoKROverview({
@@ -136,4 +143,4 @@ const ExecutiveActivityReportFrame = () => {
   );
 };
 
-export default ExecutiveActivityReportFrame;
+export default OverviewFrame;
