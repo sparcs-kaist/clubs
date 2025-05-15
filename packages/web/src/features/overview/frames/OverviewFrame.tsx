@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import DetailFilterDropdown from "@sparcs-clubs/web/common/components/MultiFilter/_atomic/DetailFilterDropdown";
+import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
+import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/components/ClubIntoKROverviewTable";
 import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
@@ -67,6 +68,19 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     window.history.replaceState({ isClubView: isDelegateView }, "");
   }, [isDelegateView]);
 
+  const getFilterCategories = () => [
+    {
+      name: "동아리 구분",
+      content: ["정동아리", "가동아리"],
+      selectedContent: columnFilters[1].value as string[],
+    },
+    {
+      name: "분과",
+      content: divisions,
+      selectedContent: columnFilters[2].value as string[],
+    },
+  ];
+
   return (
     <AsyncBoundary
       isLoading={delegates.isLoading || clubInfo.isLoading}
@@ -99,30 +113,16 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
           }}
           placeholder=""
         />
-        <DetailFilterDropdown
-          category={{
-            name: "동아리 구분",
-            content: ["정동아리", "가동아리"],
-            selectedContent: columnFilters[1].value as string[],
-          }}
-          setSelectedContents={selectedContents => {
+        <MultiFilter
+          categories={getFilterCategories()}
+          setCategories={updated => {
+            const categories = (
+              updated as (prevState: CategoryProps[]) => CategoryProps[]
+            )(getFilterCategories());
             setColumnFilters([
               columnFilters[0],
-              { id: "clubTypeEnum", value: selectedContents },
-              ...columnFilters.slice(2),
-            ]);
-          }}
-        />
-        <DetailFilterDropdown
-          category={{
-            name: "분과",
-            content: divisions,
-            selectedContent: columnFilters[2].value as string[],
-          }}
-          setSelectedContents={selectedContents => {
-            setColumnFilters([
-              ...columnFilters.slice(0, 2),
-              { id: "divisionName", value: selectedContents },
+              { id: "clubTypeEnum", value: categories[0].selectedContent },
+              { id: "divisionName", value: categories[1].selectedContent },
               ...columnFilters.slice(3),
             ]);
           }}
