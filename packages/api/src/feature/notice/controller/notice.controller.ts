@@ -6,11 +6,6 @@ import type {
   ApiNtc001ResponseOK,
 } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 import apiNtc001 from "@clubs/interface/api/notice/endpoint/apiNtc001";
-import type {
-  ApiNtc002RequestQuery,
-  ApiNtc002ResponseOK,
-} from "@clubs/interface/api/notice/endpoint/apiNtc002";
-import apiNtc002 from "@clubs/interface/api/notice/endpoint/apiNtc002";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
@@ -31,20 +26,6 @@ export class NoticeController {
       `[/notices] offset: ${query.pageOffset}, count: ${query.itemCount}`,
     );
     const notices = await this.noticesService.getNotices(
-      query.pageOffset,
-      query.itemCount,
-    );
-    return notices;
-  }
-
-  @Public()
-  @Get("/notices/lastupdatetime")
-  @UsePipes(new ZodPipe(apiNtc002))
-  async getLastUpdateTime(
-    @Query() query: ApiNtc002RequestQuery,
-  ): Promise<ApiNtc002ResponseOK> {
-    // 모든 notice 글이 한번에 업데이트 되는 것이 아니기 때문에 페이지네이션 값도 필요합니다.
-    const notices = await this.noticesService.getLastUpdateTime(
       query.pageOffset,
       query.itemCount,
     );

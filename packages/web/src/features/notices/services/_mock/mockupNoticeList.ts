@@ -99,6 +99,7 @@ const mockupNoticeList: ApiNtc001ResponseOK = {
   ],
   offset: 0,
   total: 302,
+  lastUpdateTime: z.coerce.date().parse("2024-03-03"),
 };
 
 export default mockupNoticeList;

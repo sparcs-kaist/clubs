@@ -33,45 +33,11 @@ function findArticleId(link: string): number {
     return Number.parseInt(match[0].replace("articleid=", ""));
   }
 
-  // TODO: Notice 최종 업데이트 시간 띄우기 할 때 이 부분 구체화
-  // articleId: { gt:0 } 또한 Notice 최종 업데이트 시간 띄울 때 필요한 조건식
   return -1;
 }
 @Injectable()
 export class NoticeService {
   constructor(private readonly noticeRepository: NoticeRepository) {}
-
-  async getNotices(pageOffset: number, itemCount: number) {
-    const notices = await this.noticeRepository.find({
-      articleId: { gte: 0 },
-      pagination: {
-        offset: pageOffset,
-        itemCount,
-      },
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-
-    if (!notices) {
-      throw new HttpException(
-        "[NoticeService] Error occurs while getting notices",
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const serviceResponse: ApiNtc001ResponseOK = {
-      notices,
-      total: await this.noticeRepository.count({
-        articleId: {
-          gt: 0,
-        },
-      }),
-      offset: pageOffset,
-    };
-
-    return serviceResponse;
-  }
 
   private async tryFetch(pageNum: number): Promise<string> {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -332,10 +298,43 @@ export class NoticeService {
     if (lastUpdateRow.length === 0) {
       const time = new Date();
       time.setTime(time.getTime() + 600000 * negativePeriod);
-      return { time };
+      return time;
     }
 
     // 그냥 lastUpdateRow[0].date로 하려고 했는데 그러면 날짜만 남고 시간이 짤려서 이렇게 했습니다
-    return { time: new Date(lastUpdateRow[0].title.split("=")[1]) };
+    return new Date(lastUpdateRow[0].title.split("=")[1]);
+  }
+
+  async getNotices(pageOffset: number, itemCount: number) {
+    const notices = await this.noticeRepository.find({
+      articleId: { gt: 0 },
+      pagination: {
+        offset: pageOffset,
+        itemCount,
+      },
+      orderBy: {
+        articleId: OrderByTypeEnum.DESC,
+      },
+    });
+
+    if (!notices) {
+      throw new HttpException(
+        "[NoticeService] Error occurs while getting notices",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const serviceResponse: ApiNtc001ResponseOK = {
+      notices,
+      total: await this.noticeRepository.count({
+        articleId: {
+          gt: 0,
+        },
+      }),
+      offset: pageOffset,
+      lastUpdateTime: await this.getLastUpdateTime(pageOffset, itemCount),
+    };
+
+    return serviceResponse;
   }
 }
