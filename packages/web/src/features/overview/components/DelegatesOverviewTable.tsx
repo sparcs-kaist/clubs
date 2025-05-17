@@ -25,57 +25,57 @@ const columns = [
   columnHelper.accessor(row => row.representative?.name ?? "-", {
     id: "representative.name",
     header: "대표자/성명",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.representative?.studentNumber ?? "-", {
     id: "representative.studentNumber",
     header: "대표자/학번",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.representative?.department ?? "-", {
     id: "representative.department",
     header: "대표자/학과",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.representative?.phoneNumber ?? "-", {
     id: "representative.phoneNumber",
     header: "대표자/전화번호",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.representative?.kaistEmail ?? "-", {
     id: "representative.kaistEmail",
     header: "대표자/KAIST E-Mail",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate1?.name ?? "-", {
     id: "delegate1.name",
     header: "대의원1/성명",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate1?.studentNumber ?? "-", {
     id: "delegate1.studentNumber",
     header: "대의원1/학번",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate1?.department ?? "-", {
     id: "delegate1.department",
     header: "대의원1/학과",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate2?.name ?? "-", {
     id: "delegate2.name",
     header: "대의원2/성명",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate2?.studentNumber ?? "-", {
     id: "delegate2.studentNumber",
     header: "대의원2/학번",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.delegate2?.department ?? "-", {
     id: "delegate2.department",
     header: "대의원2/학과",
-    size: 50,
+    size: 100,
   }),
 ];
 
@@ -108,9 +108,11 @@ const DelegatesOverviewTable: React.FC<DelegatesOverviewTableProps> = ({
 
   return (
     <FlexWrapper direction="column" gap={8}>
-      <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
-        {countString}
-      </Typography>
+      <FlexWrapper direction="row" gap={8}>
+        <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
+          {countString}
+        </Typography>
+      </FlexWrapper>
       <Table
         table={table}
         minWidth={columns.reduce((a, b) => a + (b.size ?? 0), 0)}

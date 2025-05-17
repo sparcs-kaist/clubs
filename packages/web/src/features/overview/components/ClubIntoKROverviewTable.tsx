@@ -32,22 +32,22 @@ const columns = [
   columnHelper.accessor("foundingYear", {
     id: "foundingYear",
     header: "설립년도",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.professor ?? "-", {
     id: "professor",
     header: "지도교수",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor("totalMemberCnt", {
     id: "totalMemberCnt",
     header: "회원수",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor("regularMemberCnt", {
     id: "regularMemberCnt",
     header: "정회원수",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(
     row =>
@@ -66,12 +66,12 @@ const columns = [
   columnHelper.accessor(row => row.warning ?? "-", {
     id: "warning",
     header: "경고",
-    size: 50,
+    size: 100,
   }),
   columnHelper.accessor(row => row.caution ?? "-", {
     id: "caution",
     header: "주의",
-    size: 50,
+    size: 100,
   }),
 ];
 

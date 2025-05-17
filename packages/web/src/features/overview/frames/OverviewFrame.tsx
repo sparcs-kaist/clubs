@@ -12,6 +12,8 @@ import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/componen
 import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
 import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
 
+import { downloadDelegateOverviewExcel } from "../utils/downloadOverviewExcel";
+
 const divisions = [
   "생활문화",
   "종교",
@@ -127,6 +129,20 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
             ]);
           }}
         />
+        <Button
+          onClick={() =>
+            downloadDelegateOverviewExcel(
+              { delegates: delegates.data, clubInfo: clubInfo.data },
+              year,
+              semesterName,
+            )
+          }
+          type={
+            delegates.isLoading || clubInfo.isLoading ? "disabled" : "default"
+          }
+        >
+          XLSX 다운로드
+        </Button>
       </FlexWrapper>
       {isDelegateView ? (
         <DelegatesOverviewTable
