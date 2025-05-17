@@ -33,6 +33,7 @@ const responseBodyMap = {
       .array(),
     total: z.coerce.number().int().min(0),
     offset: z.coerce.number().int().min(0),
+    lastUpdateTime: z.coerce.date(),
   }),
 };
 
