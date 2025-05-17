@@ -20,9 +20,9 @@ const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
-    isWritable: z.boolean().optional(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 작성 가능 여부
-    isEditable: z.boolean().optional(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 수정, 삭제 가능 여부
-    canApprove: z.boolean().optional(), // 집행부원, 지도교수님이 현재 기간(activityDeadlineEnum)에 대해 활동보고서 승인 가능 여부
+    isWritable: z.boolean(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 작성 가능 여부
+    isEditable: z.boolean(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 수정, 삭제 가능 여부
+    canApprove: z.boolean(), // 집행부원, 지도교수님이 현재 기간(activityDeadlineEnum)에 대해 활동보고서 승인 가능 여부
     targetTerm: z.object({
       id: zActivityDuration.shape.id,
       year: zActivityDuration.shape.year,
@@ -30,13 +30,15 @@ const responseBodyMap = {
       startTerm: zActivityDuration.shape.startTerm,
       endTerm: zActivityDuration.shape.endTerm,
     }),
-    deadline: z.object({
-      activityDeadlineEnum: zActivityDeadline.shape.deadlineEnum,
-      duration: z.object({
-        startTerm: zActivityDeadline.shape.startTerm,
-        endTerm: zActivityDeadline.shape.endTerm,
-      }),
-    }),
+    deadline: z
+      .object({
+        activityDeadlineEnum: zActivityDeadline.shape.deadlineEnum,
+        duration: z.object({
+          startTerm: zActivityDeadline.shape.startTerm,
+          endTerm: zActivityDeadline.shape.endTerm,
+        }),
+      })
+      .optional(),
   }),
 };
 

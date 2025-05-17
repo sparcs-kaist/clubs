@@ -25,6 +25,7 @@ interface ExecutiveClubActivitiesTableProps {
   searchText?: string;
   selectedActivityIds?: number[];
   setSelectedActivityIds?: (clubIds: number[]) => void;
+  isPast?: boolean;
 }
 
 const columnHelper = createColumnHelper<ApiAct024ResponseOk["items"][number]>();
@@ -87,6 +88,7 @@ const ExecutiveClubActivitiesTable: React.FC<
   searchText = "",
   selectedActivityIds = [],
   setSelectedActivityIds = () => {},
+  isPast = false,
 }) => {
   const sortedActivities = useMemo(
     () => (data.items ? sortActivitiesByStatusAndActivityId(data.items) : []),
@@ -115,7 +117,7 @@ const ExecutiveClubActivitiesTable: React.FC<
 
   const table = useReactTable({
     data: sortedActivities,
-    columns,
+    columns: isPast ? columns.slice(1) : columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {

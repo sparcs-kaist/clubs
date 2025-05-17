@@ -3,7 +3,7 @@ import { forwardRef, Module } from "@nestjs/common";
 import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 
 import DivisionModule from "../division/division.module";
-import DivisionRepository from "../division/repository/division.repository";
+import OldDivisionRepository from "../division/repository/old.division.repository";
 import RegistrationModule from "../registration/registration.module";
 import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
@@ -11,6 +11,8 @@ import { ClubController } from "./controller/club.controller";
 import { ClubDelegateDRepository } from "./delegate/club.club-delegate-d.repository";
 import { DelegateModule } from "./delegate/delegate.module";
 import { ClubRepository } from "./repository/club.repository";
+import { ClubDelegateRepository } from "./repository/club-delegate-repository";
+import { ClubDivisionHistoryRepository } from "./repository/club-division-history.repository";
 import { ClubSemesterRepository } from "./repository/club-semester.repository";
 import { ClubRoomTRepository } from "./repository-old/club.club-room-t.repository";
 import ClubStudentTRepository from "./repository-old/club.club-student-t.repository";
@@ -44,9 +46,11 @@ import { ClubService } from "./service/club.service";
     ClubGetStudentClubBrief,
     ClubPutStudentClubBrief,
     ClubDelegateDRepository,
-    DivisionRepository,
+    OldDivisionRepository,
     ClubOldRepository,
     ClubSemesterRepository,
+    ClubDelegateRepository,
+    ClubDivisionHistoryRepository,
   ],
   exports: [ClubPublicService],
 })

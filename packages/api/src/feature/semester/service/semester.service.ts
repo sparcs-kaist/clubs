@@ -97,15 +97,15 @@ export class SemesterService {
         endTerm: term.endTerm,
         year: term.year,
       },
-      deadline: {
-        activityDeadlineEnum:
-          todayDeadline?.deadlineEnum ?? thisSemesterDeadlines[0].deadlineEnum, // TODO: 오늘 날짜가 기한 내에 있지 않을 경우에 대한 행동 정의 완료 시 수정
-        duration: {
-          startTerm:
-            todayDeadline?.startTerm ?? thisSemesterDeadlines[0].startTerm,
-          endTerm: todayDeadline?.endTerm ?? thisSemesterDeadlines[0].endTerm,
-        },
-      },
+      deadline: todayDeadline
+        ? {
+            activityDeadlineEnum: todayDeadline.deadlineEnum,
+            duration: {
+              startTerm: todayDeadline.startTerm,
+              endTerm: todayDeadline.endTerm,
+            },
+          }
+        : undefined,
     };
   }
 }

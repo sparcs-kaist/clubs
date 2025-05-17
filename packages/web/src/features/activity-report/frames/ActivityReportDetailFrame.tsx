@@ -204,7 +204,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             >
               {data.durations.map((duration, index) => (
                 <Typography key={index}>
-                  {`${formatDate(duration.startTerm)} ~ ${formatDate(duration.endTerm)}`}
+                  {`${formatDate(duration.startTerm!)} ~ ${formatDate(duration.endTerm!)}`}
                 </Typography>
               ))}
             </FlexWrapper>

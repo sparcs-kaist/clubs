@@ -19,7 +19,7 @@ const ActivityReport = ({ params }: { params: { id: string } }) => {
 
   const { data, isLoading, isError } = useGetMyManageClub();
   const {
-    data: deadline,
+    data: deadlineData,
     isLoading: isLoadingDeadline,
     isError: isErrorDeadline,
   } = useGetActivityDeadline();
@@ -46,12 +46,12 @@ const ActivityReport = ({ params }: { params: { id: string } }) => {
     return <AsyncBoundary isLoading={isLoading} isError={isError} />;
   }
 
-  if (!deadline) {
+  if (deadlineData?.deadline == null) {
     return (
       <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline} />
     );
   }
-  if (!deadline.isEditable) {
+  if (!deadlineData.isEditable) {
     return <NotActivityReportPeriod type="edit" />;
   }
 

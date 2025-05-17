@@ -1,4 +1,4 @@
-import { format as formatFns } from "date-fns";
+import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
 /**
@@ -6,16 +6,6 @@ import { ko } from "date-fns/locale";
  * - KST 기준으로 포맷팅하기 위해서는 시간대를 변경해야 함
  * - 예시) 2025-01-01T00:00:00Z -> 2025-01-01T00:00:00+09:00
  */
-const format = (
-  date: Date,
-  _format: string,
-  options?: Parameters<typeof formatFns>[2],
-) => {
-  const dateString = new Date(date).toISOString();
-  const dateStringWithTimezone = dateString.replace("Z", "+09:00");
-  const dateWithTimezone = new Date(dateStringWithTimezone);
-  return formatFns(dateWithTimezone, _format, options);
-};
 
 const formatDate = (date: Date) =>
   format(date, "yyyy년 M월 d일 (iii)", { locale: ko });
@@ -45,8 +35,7 @@ const formatTime = (date: Date) => format(date, "HH:mm", { locale: ko });
 const formatSlashDateTime = (date: Date) =>
   format(date, "yyyy/MM/dd HH:mm", { locale: ko });
 
-const formatDotDate = (date: Date) =>
-  format(date, "yyyy.MM.dd", { locale: ko });
+const formatDotDate = (date: Date) => format(date, "yyyy.MM.dd");
 
 const formatDotSimpleDate = (date: Date) =>
   format(date, "yy.MM.dd", { locale: ko });

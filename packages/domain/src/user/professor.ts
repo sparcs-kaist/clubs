@@ -10,7 +10,7 @@ export enum ProfessorEnum {
 
 export const zProfessor = z.object({
   id: z.coerce.number(),
-  userId: z.coerce.number().nullable(),
+  userId: z.coerce.number().optional(),
   name: z.string(),
   email: z.string(),
   phoneNumber: z.string().optional(),

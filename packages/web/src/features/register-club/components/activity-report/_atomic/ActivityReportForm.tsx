@@ -55,11 +55,13 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
   const [startTerm, setStartTerm] = useState<Date>(
     durations
       ?.map(d => d.startTerm)
+      .filter((date): date is Date => date !== null)
       .reduce((a, b) => (a < b ? a : b), new Date()),
   );
   const [endTerm, setEndTerm] = useState<Date>(
     durations
       ?.map(d => d.endTerm)
+      .filter((date): date is Date => date !== null)
       .reduce((a, b) => (a > b ? a : b), new Date()),
   );
 
@@ -141,18 +143,27 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
           />
 
           <SelectActivityTerm
-            initialData={durations}
             onChange={terms => {
               setValue("durations", terms, {
                 shouldValidate: true,
               });
+              setValue("durations", terms, { shouldValidate: true });
               if (terms.length > 0) {
-                setStartTerm(
-                  terms.map(d => d.startTerm).reduce((a, b) => (a < b ? a : b)),
-                );
-                setEndTerm(
-                  terms.map(d => d.endTerm).reduce((a, b) => (a > b ? a : b)),
-                );
+                const validStartTerms = terms
+                  .map(d => d.startTerm)
+                  .filter((date): date is Date => date !== null);
+                const validEndTerms = terms
+                  .map(d => d.endTerm)
+                  .filter((date): date is Date => date !== null);
+
+                if (validStartTerms.length > 0) {
+                  setStartTerm(
+                    validStartTerms.reduce((a, b) => (a < b ? a : b)),
+                  );
+                }
+                if (validEndTerms.length > 0) {
+                  setEndTerm(validEndTerms.reduce((a, b) => (a > b ? a : b)));
+                }
               }
 
               setValue("participants", []);

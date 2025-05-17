@@ -281,35 +281,35 @@ export default class ActivityRepository {
     return isInsertionSucceed;
   }
 
-  /**
-   * @param param
-   * @description 동아리활동 반려 사유를 생성합니다.
-   * activityId와 activityId의의 유효성을 검사하지 않습니다.
-   * @returns 생성의 성공 여부를 boolean으로 리턴합니다.
-   */
-  async insertActivityFeedback(param: {
-    activityId: number;
-    comment: string;
-    executiveId: number;
-  }): Promise<boolean> {
-    const isInsertionSucceed = await this.db.transaction(async tx => {
-      const [insertionResult] = await tx.insert(ActivityFeedback).values({
-        activityId: param.activityId,
-        comment: param.comment,
-        executiveId: param.executiveId,
-      });
-      if (insertionResult.affectedRows > 1)
-        throw new HttpException(
-          "unreachable",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      if (insertionResult.affectedRows === 0) return false;
+  // /**
+  //  * @param param
+  //  * @description 동아리활동 반려 사유를 생성합니다.
+  //  * activityId와 activityId의의 유효성을 검사하지 않습니다.
+  //  * @returns 생성의 성공 여부를 boolean으로 리턴합니다.
+  //  */
+  // async insertActivityFeedback(param: {
+  //   activityId: number;
+  //   comment: string;
+  //   executiveId: number;
+  // }): Promise<boolean> {
+  //   const isInsertionSucceed = await this.db.transaction(async tx => {
+  //     const [insertionResult] = await tx.insert(ActivityFeedback).values({
+  //       activityId: param.activityId,
+  //       comment: param.comment,
+  //       executiveId: param.executiveId,
+  //     });
+  //     if (insertionResult.affectedRows > 1)
+  //       throw new HttpException(
+  //         "unreachable",
+  //         HttpStatus.INTERNAL_SERVER_ERROR,
+  //       );
+  //     if (insertionResult.affectedRows === 0) return false;
 
-      return true;
-    });
+  //     return true;
+  //   });
 
-    return isInsertionSucceed;
-  }
+  //   return isInsertionSucceed;
+  // }
 
   async selectActivityByActivityId(activityId: number) {
     const result = await this.db

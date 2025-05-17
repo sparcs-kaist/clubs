@@ -14,6 +14,7 @@ const maxAttempts = 10;
 const userDisplay = 50;
 
 export interface PostCrawlResult {
+  // 네이버 블로그에서 공지사항 글을 구분하는 고유한 번호
   articleId: number;
   author: string;
   title: string;
@@ -27,9 +28,14 @@ enum UpdatePeriodEnum {
 }
 
 function findArticleId(link: string): number {
-  return Number.parseInt(
-    link.match(/articleid=[0-9]+/)[0].replace("articleid=", ""),
-  );
+  const match = link.match(/articleid=[0-9]+/i);
+  if (match) {
+    return Number.parseInt(match[0].replace("articleid=", ""));
+  }
+
+  // TODO: Notice 최종 업데이트 시간 띄우기 할 때 이 부분 구체화
+  // articleId: { gt:0 } 또한 Notice 최종 업데이트 시간 띄울 때 필요한 조건식
+  return -1;
 }
 @Injectable()
 export class NoticeService {
@@ -56,7 +62,11 @@ export class NoticeService {
 
     const serviceResponse: ApiNtc001ResponseOK = {
       notices,
-      total: await this.noticeRepository.count({}),
+      total: await this.noticeRepository.count({
+        articleId: {
+          gt: 0,
+        },
+      }),
       offset: pageOffset,
     };
 
@@ -200,6 +210,7 @@ export class NoticeService {
       date: e.date,
       id: e.id,
       articleId: findArticleId(e.link),
+      articleIdFromDB: e.articleId,
     }));
     const crawlResults = await this.crawlNotices(maxPages);
 
@@ -229,6 +240,29 @@ export class NoticeService {
           deletes.push(notice.articleId);
         }
       });
+    }
+
+    // articleId가 반영되지 않은 notice가 있다면 patch를 통해 정상화
+    // 프로덕션에 올라가거나, DB를 롤백하는 등등 그런 상황을 위해 필요
+    const malformedNotices = noticesFromDB.filter(
+      notice => notice.articleIdFromDB !== notice.articleId,
+    );
+
+    if (malformedNotices.length > 0) {
+      await this.noticeRepository.patch(
+        {
+          id: malformedNotices.map(e => e.id),
+        },
+        notice => ({
+          createdAt: notice.createdAt,
+          author: notice.author,
+          title: notice.title,
+          link: notice.link,
+          date: notice.date,
+          id: notice.id,
+          articleId: findArticleId(notice.link),
+        }),
+      );
     }
 
     await forEachAsyncSequentially(inserts, async post => {

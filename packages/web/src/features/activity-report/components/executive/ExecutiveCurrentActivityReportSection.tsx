@@ -1,5 +1,5 @@
 import { overlay } from "overlay-kit";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
@@ -48,16 +48,19 @@ const ExecutiveCurrentActivityReportSection: React.FC<
     }
   }, [data, selectedActivityIds]);
 
-  const openChangeModal = () => {
+  const openChangeModal = useCallback(() => {
     overlay.open(({ isOpen, close }) => (
       <ChargedChangeActivityModalContent
         isOpen={isOpen}
-        close={close}
+        close={() => {
+          setSelectedActivityIds([]);
+          close();
+        }}
         selectedActivityIds={selectedActivityIds}
         selectedActivityInfos={selectedActivityInfos}
       />
     ));
-  };
+  }, [selectedActivityIds, selectedActivityInfos]);
 
   return (
     <FoldableSectionTitle childrenMargin="20px" title="신규 활동 보고서">

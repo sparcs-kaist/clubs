@@ -25,8 +25,7 @@ export const formatLocalDateString = (dateString: string): string => {
  * @example 2024.01.01 -> 2024-01-01T00:00:00
  */
 export const getLocalDateOnly = (date: Date | string): Date => {
-  const dateInput =
-    typeof date === "string" ? new Date(formatLocalDateString(date)) : date;
+  const dateInput = typeof date === "string" ? new Date(date) : date;
   return new Date(
     dateInput.getFullYear(),
     dateInput.getMonth(),
@@ -42,7 +41,8 @@ export const getLocalDateOnly = (date: Date | string): Date => {
  * @example 2024.01.01 -> 2024-01-01T23:59:59
  */
 export const getLocalDateLastTime = (date: Date | string): Date => {
-  const dateInput = getLocalDateOnly(date);
+  const dateInput = typeof date === "string" ? new Date(date) : date;
+
   return new Date(
     dateInput.getFullYear(),
     dateInput.getMonth(),

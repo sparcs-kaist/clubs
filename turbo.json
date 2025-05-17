@@ -6,15 +6,18 @@
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
     },
+    "build": {
+      "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
+    },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
     },
     "web#storybook": {
       "persistent": true
-    },
-    "build": {
-      "dependsOn": ["^build"]
     },
     "lint": {}
   }

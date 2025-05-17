@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
+  BaseRepositoryFindQuery,
+  BaseRepositoryQuery,
   BaseTableFieldMapKeys,
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
@@ -31,6 +33,12 @@ type ClubFieldMapKeys = BaseTableFieldMapKeys<
   ClubOrderByKeys,
   ClubQuerySupport
 >;
+
+export type ClubRepositoryFindQuery = BaseRepositoryFindQuery<
+  ClubQuery,
+  ClubOrderByKeys
+>;
+export type ClubRepositoryQuery = BaseRepositoryQuery<ClubQuery>;
 
 @Injectable()
 export class ClubRepository extends BaseSingleTableRepository<

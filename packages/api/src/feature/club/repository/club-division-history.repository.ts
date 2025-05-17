@@ -1,8 +1,19 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import {
+  and,
+  gt,
+  InferInsertModel,
+  InferSelectModel,
+  isNotNull,
+  lte,
+  not,
+  or,
+  SQL,
+} from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
   TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
@@ -102,5 +113,23 @@ export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
     }
 
     return fieldMappings[field];
+  }
+  protected processSpecialCondition(
+    key: ClubDivisionHistoryFieldMapKeys,
+    value: PrimitiveConditionValue,
+  ): SQL {
+    if (key === "date" && value instanceof Date) {
+      return not(
+        or(
+          gt(ClubDivisionHistory.startTerm, value),
+          and(
+            isNotNull(ClubDivisionHistory.endTerm),
+            lte(ClubDivisionHistory.endTerm, value),
+          ),
+        ),
+      );
+    }
+
+    throw new Error(`Invalid key: ${key}`);
   }
 }

@@ -221,7 +221,6 @@ export const mockParticipantData: IStudentSummary[] = [
 
 export const mockActivityDetailData: ApiAct002ResponseOkTemp = {
   clubId: 1,
-  originalName: "술박스",
   name: "스팍스 봄학기 해커톤",
   activityStatusEnumId: ActivityStatusEnum.Rejected,
   activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
