@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import patchNoteList, {
-  patchNote,
-} from "@sparcs-clubs/web/constants/patchNote";
+import { patchNote } from "@sparcs-clubs/web/constants/patchNote";
 
 export interface AgreementModalProps {
   isOpen: boolean;
   onConfirm: () => void;
+  latestPatchNote: patchNote;
 }
 
 const StyledModalContainer = styled.div`
@@ -43,58 +42,46 @@ const StyledTextContainer = styled.div`
 const PatchNoteModal: React.FC<AgreementModalProps> = ({
   isOpen,
   onConfirm,
-}) => {
-  const [latestPatchNote, setLatestPatchNote] = useState<patchNote>();
-
-  useEffect(() => {
-    setLatestPatchNote(
-      patchNoteList.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      )[0],
-    );
-  }, [patchNoteList]);
-
-  return (
-    latestPatchNote && (
-      <Modal isOpen={isOpen} onClose={() => {}}>
-        <StyledModalContainer>
-          <Typography fs={20} lh={24} fw="SEMIBOLD">
-            🛠️ 패치노트
-          </Typography>
-          <StyledVersionDateContainer>
-            <StyledTextContainer>
-              <Typography fs={16} lh={24} fw="BOLD">
-                버전
-              </Typography>
-              <Typography fs={16} lh={24} fw="MEDIUM">
-                {latestPatchNote.version}
-              </Typography>
-            </StyledTextContainer>
-            <StyledTextContainer>
-              <Typography fs={16} lh={24} fw="BOLD">
-                날짜
-              </Typography>
-              <Typography fs={16} lh={24} fw="MEDIUM">
-                {`${String(latestPatchNote.date.getFullYear())}.${String(latestPatchNote.date.getMonth() + 1).padStart(2, "0")}.${String(latestPatchNote.date.getDate()).padStart(2, "0")}`}
-              </Typography>
-            </StyledTextContainer>
-          </StyledVersionDateContainer>
-          <Card gap={16} padding="16px" outline>
-            <Typography
-              fs={16}
-              lh={24}
-              fw="MEDIUM"
-              style={{ whiteSpace: "pre-wrap", minHeight: "100px" }}
-            >
-              {latestPatchNote.patchNoteContent}
+  latestPatchNote,
+}) =>
+  latestPatchNote && (
+    <Modal isOpen={isOpen} onClose={() => {}}>
+      <StyledModalContainer>
+        <Typography fs={20} lh={24} fw="SEMIBOLD">
+          🛠️ 패치노트
+        </Typography>
+        <StyledVersionDateContainer>
+          <StyledTextContainer>
+            <Typography fs={16} lh={24} fw="BOLD">
+              버전
             </Typography>
-          </Card>
+            <Typography fs={16} lh={24} fw="MEDIUM">
+              {latestPatchNote.version}
+            </Typography>
+          </StyledTextContainer>
+          <StyledTextContainer>
+            <Typography fs={16} lh={24} fw="BOLD">
+              날짜
+            </Typography>
+            <Typography fs={16} lh={24} fw="MEDIUM">
+              {`${String(latestPatchNote.date.getFullYear())}.${String(latestPatchNote.date.getMonth() + 1).padStart(2, "0")}.${String(latestPatchNote.date.getDate()).padStart(2, "0")}`}
+            </Typography>
+          </StyledTextContainer>
+        </StyledVersionDateContainer>
+        <Card gap={16} padding="16px" outline>
+          <Typography
+            fs={16}
+            lh={24}
+            fw="MEDIUM"
+            style={{ whiteSpace: "pre-wrap", minHeight: "100px" }}
+          >
+            {latestPatchNote.patchNoteContent}
+          </Typography>
+        </Card>
 
-          <Button onClick={onConfirm}>확인</Button>
-        </StyledModalContainer>
-      </Modal>
-    )
+        <Button onClick={onConfirm}>확인</Button>
+      </StyledModalContainer>
+    </Modal>
   );
-};
 
 export default PatchNoteModal;

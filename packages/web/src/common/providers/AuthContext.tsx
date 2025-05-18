@@ -51,39 +51,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [isAgreed, setIsAgreed] = useState(true);
-  const [isLatest, setIsLatest] = useState(true);
 
   const checkAgree = async () => {
     const agree = await getUserAgree();
     setIsAgreed(agree.status.isAgree);
   };
 
-  const checkLatest = () => {
+  const latestPatchNote = useMemo(
+    () =>
+      patchNoteList.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )[0],
+    [patchNoteList],
+  );
+
+  const isLatest = useMemo(() => {
     const latestPatchNoteVersionSeen = localStorage.getItem(
       "latestPatchNoteVersionSeen",
     );
-    const latestPatchNoteVersionActual = patchNoteList.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    )[0].version;
-
-    if (
+    const latestPatchNoteVersionActual = latestPatchNote.version;
+    return !(
       latestPatchNoteVersionSeen == null ||
       latestPatchNoteVersionSeen !== latestPatchNoteVersionActual
-    ) {
-      setIsLatest(false);
-    } else {
-      setIsLatest(true);
-    }
-  };
-
-  const setLatestPatchNoteVersionSeen = (
-    latestPatchNoteVersionSeen: string,
-  ) => {
-    localStorage.setItem(
-      "latestPatchNoteVersionSeen",
-      latestPatchNoteVersionSeen,
     );
-  };
+  }, [latestPatchNote]);
 
   useEffect(() => {
     const update = () => {
@@ -160,17 +151,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   //패치노트
   useEffect(() => {
-    if (isLoggedIn) {
-      checkLatest();
-    }
     if (!isLatest && isLoggedIn) {
-      setLatestPatchNoteVersionSeen(
-        patchNoteList.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-        )[0].version,
+      localStorage.setItem(
+        "latestPatchNoteVersionSeen",
+        latestPatchNote.version,
       );
       overlay.open(({ isOpen, close }) => (
-        <PatchNoteModal isOpen={isOpen} onConfirm={close} />
+        <PatchNoteModal
+          isOpen={isOpen}
+          onConfirm={close}
+          latestPatchNote={latestPatchNote}
+        />
       ));
     }
   }, [isLatest, isLoggedIn]);
