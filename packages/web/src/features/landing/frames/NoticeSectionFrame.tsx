@@ -54,7 +54,7 @@ const NoticeSectionFrame: React.FC = () => {
       <NoticeSectionFrameInner>
         <MoreSectionTitle title="공지사항" path={paths.NOTICE.path} />
         <NoticeLastUpdateTime>
-          최종 업데이트 시각: {data?.lastUpdateTime.toLocaleDateString()}{" "}
+          last update: {data?.lastUpdateTime.toLocaleDateString()}{" "}
           {data?.lastUpdateTime.toLocaleTimeString()}
         </NoticeLastUpdateTime>
         <NoticeWrapper>
