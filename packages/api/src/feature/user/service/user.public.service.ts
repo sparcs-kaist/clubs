@@ -288,4 +288,11 @@ export default class UserPublicService {
     const students = await this.studentRepository.fetchAll(studentIds);
     return students;
   }
+
+  async getStudentMapByIds(
+    studentIds: number[],
+  ): Promise<Map<number, MStudent>> {
+    const students = await this.studentRepository.fetchAll(studentIds);
+    return new Map(students.map(student => [student.id, student]));
+  }
 }
