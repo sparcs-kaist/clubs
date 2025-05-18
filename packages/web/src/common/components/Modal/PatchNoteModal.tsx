@@ -15,7 +15,7 @@ export interface AgreementModalProps {
 }
 
 const StyledModalContainer = styled.div`
-  width: 600px;
+  width: 536px;
   display: flex;
   flex-direction: column;
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
@@ -40,32 +40,6 @@ const StyledTextContainer = styled.div`
   display: flex;
 `;
 
-const ResponsiveTypographyTitle = styled(Typography)`
-  font-size: 20px;
-  line-height: 24px;
-  font-weight: 600;
-`;
-
-const ResponsiveTypographyContentBold = styled(Typography)`
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 700;
-`;
-
-const ResponsiveTypographyContent = styled(Typography)`
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 500;
-`;
-
-const ResponsiveTypographyPatchNoteContent = styled(Typography)`
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 500;
-  white-space: pre-wrap;
-  min-height: 100px;
-`;
-
 const PatchNoteModal: React.FC<AgreementModalProps> = ({
   isOpen,
   onConfirm,
@@ -84,29 +58,36 @@ const PatchNoteModal: React.FC<AgreementModalProps> = ({
     latestPatchNote && (
       <Modal isOpen={isOpen} onClose={() => {}}>
         <StyledModalContainer>
-          <ResponsiveTypographyTitle>🛠️ 패치노트</ResponsiveTypographyTitle>
+          <Typography fs={20} lh={24} fw="SEMIBOLD">
+            🛠️ 패치노트
+          </Typography>
           <StyledVersionDateContainer>
             <StyledTextContainer>
-              <ResponsiveTypographyContentBold>
+              <Typography fs={16} lh={24} fw="BOLD">
                 버전
-              </ResponsiveTypographyContentBold>
-              <ResponsiveTypographyContent>
+              </Typography>
+              <Typography fs={16} lh={24} fw="MEDIUM">
                 {latestPatchNote.version}
-              </ResponsiveTypographyContent>
+              </Typography>
             </StyledTextContainer>
             <StyledTextContainer>
-              <ResponsiveTypographyContentBold>
+              <Typography fs={16} lh={24} fw="BOLD">
                 날짜
-              </ResponsiveTypographyContentBold>
-              <ResponsiveTypographyContent>
+              </Typography>
+              <Typography fs={16} lh={24} fw="MEDIUM">
                 {`${String(latestPatchNote.date.getFullYear())}.${String(latestPatchNote.date.getMonth() + 1).padStart(2, "0")}.${String(latestPatchNote.date.getDate()).padStart(2, "0")}`}
-              </ResponsiveTypographyContent>
+              </Typography>
             </StyledTextContainer>
           </StyledVersionDateContainer>
           <Card gap={16} padding="16px" outline>
-            <ResponsiveTypographyPatchNoteContent>
+            <Typography
+              fs={16}
+              lh={24}
+              fw="MEDIUM"
+              style={{ whiteSpace: "pre-wrap", minHeight: "100px" }}
+            >
               {latestPatchNote.patchNoteContent}
-            </ResponsiveTypographyPatchNoteContent>
+            </Typography>
           </Card>
 
           <Button onClick={onConfirm}>확인</Button>

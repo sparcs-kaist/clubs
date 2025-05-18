@@ -12,8 +12,8 @@ const patchNoteList: patchNote[] = [
   },
   {
     version: "v.0.0.1",
-    date: new Date("1971.1.1"),
-    patchNoteContent: "아주 오래된 패치노트.",
+    date: new Date("1971.2.16"),
+    patchNoteContent: "클럽스는 스팍스 탄생 전부터 존재했다 - Hama",
   },
 ];
 
