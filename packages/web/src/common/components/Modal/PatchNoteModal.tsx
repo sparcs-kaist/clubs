@@ -9,8 +9,8 @@ import { patchNote } from "@sparcs-clubs/web/constants/patchNote";
 
 export interface AgreementModalProps {
   isOpen: boolean;
-  onConfirm: () => void;
   latestPatchNote: patchNote;
+  onConfirm: () => void;
 }
 
 const StyledModalContainer = styled.div`

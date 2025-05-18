@@ -13,6 +13,7 @@ import React, {
 } from "react";
 import { Cookies } from "react-cookie";
 
+import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import patchNoteList from "@sparcs-clubs/web/constants/patchNote";
 import {
   getLocalStorageItem,
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const isLatest = useMemo(() => {
     const latestPatchNoteVersionSeen = localStorage.getItem(
-      "latestPatchNoteVersionSeen",
+      LOCAL_STORAGE_KEY.LATEST_PATCH_NOTE_VERSION_SEEN,
     );
     const latestPatchNoteVersionActual = latestPatchNote.version;
     return !(
@@ -153,7 +154,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!isLatest && isLoggedIn) {
       localStorage.setItem(
-        "latestPatchNoteVersionSeen",
+        LOCAL_STORAGE_KEY.LATEST_PATCH_NOTE_VERSION_SEEN,
         latestPatchNote.version,
       );
       overlay.open(({ isOpen, close }) => (
@@ -164,7 +165,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         />
       ));
     }
-  }, [isLatest, isLoggedIn]);
+  }, [isLatest, latestPatchNote, isLoggedIn]);
 
   //개인정보 제공 동의
   useEffect(() => {
