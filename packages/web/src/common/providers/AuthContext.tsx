@@ -13,6 +13,7 @@ import React, {
 } from "react";
 import { Cookies } from "react-cookie";
 
+import patchNoteList from "@sparcs-clubs/web/constants/patchNote";
 import {
   getLocalStorageItem,
   removeLocalStorageItem,
@@ -23,6 +24,7 @@ import {
 import logger from "@sparcs-clubs/web/utils/logger";
 
 import AgreementModal from "../components/Modal/AgreeModal";
+import PatchNoteModal from "../components/Modal/PatchNoteModal";
 import getLogin from "../services/getLogin";
 import getUserAgree from "../services/getUserAgree";
 import postLogout from "../services/postLogout";
@@ -49,10 +51,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [isAgreed, setIsAgreed] = useState(true);
+  const [isLatest, setIsLatest] = useState(true);
 
   const checkAgree = async () => {
     const agree = await getUserAgree();
     setIsAgreed(agree.status.isAgree);
+  };
+
+  const checkLatest = () => {
+    const latestPatchNoteVersionSeen = localStorage.getItem(
+      "latestPatchNoteVersionSeen",
+    );
+    const latestPatchNoteVersionActual = patchNoteList.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )[0].version;
+
+    if (
+      latestPatchNoteVersionSeen == null ||
+      latestPatchNoteVersionSeen !== latestPatchNoteVersionActual
+    ) {
+      setIsLatest(false);
+    } else {
+      setIsLatest(true);
+    }
+  };
+
+  const setLatestPatchNoteVersionSeen = (
+    latestPatchNoteVersionSeen: string,
+  ) => {
+    localStorage.setItem(
+      "latestPatchNoteVersionSeen",
+      latestPatchNoteVersionSeen,
+    );
   };
 
   useEffect(() => {
@@ -128,35 +158,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  //패치노트
+  useEffect(() => {
+    if (isLoggedIn) {
+      checkLatest();
+    }
+    if (!isLatest && isLoggedIn) {
+      setLatestPatchNoteVersionSeen(
+        patchNoteList.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        )[0].version,
+      );
+      overlay.open(({ isOpen, close }) => (
+        <PatchNoteModal isOpen={isOpen} onConfirm={close} />
+      ));
+    }
+  }, [isLatest, isLoggedIn]);
+
+  //개인정보 제공 동의
   useEffect(() => {
     if (isLoggedIn) {
       checkAgree();
     }
-    if (isAgreed) {
-      overlay.closeAll();
-    }
-    overlay.open(
-      ({ isOpen, close }) =>
-        !isAgreed &&
-        isLoggedIn && (
-          <AgreementModal
-            isOpen={isOpen}
-            onAgree={async () => {
-              try {
-                await postUserAgree();
-                setIsAgreed(true);
-                close();
-              } catch (_) {
-                window.location.reload();
-              }
-            }}
-            onDisagree={async () => {
-              await logout();
+    if (!isAgreed && isLoggedIn) {
+      overlay.open(({ isOpen, close }) => (
+        <AgreementModal
+          isOpen={isOpen}
+          onAgree={async () => {
+            try {
+              await postUserAgree();
+              setIsAgreed(true);
               close();
-            }}
-          />
-        ),
-    );
+            } catch (_) {
+              window.location.reload();
+            }
+          }}
+          onDisagree={async () => {
+            await logout();
+            close();
+          }}
+        />
+      ));
+    }
   }, [isAgreed, isLoggedIn]);
 
   const value = useMemo(
