@@ -1,13 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
+import Custom404 from "@sparcs-clubs/web/app/not-found";
+import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Select from "@sparcs-clubs/web/common/components/Select";
+import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import OverviewFrame from "@sparcs-clubs/web/features/overview/frames/OverviewFrame";
 
 const Overview: React.FC = () => {
+  const { isLoggedIn, login, profile } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isLoggedIn !== undefined || profile !== undefined) {
+      setLoading(false);
+    }
+  }, [isLoggedIn, profile]);
+
+  if (loading) {
+    return <AsyncBoundary isLoading={loading} isError />;
+  }
+
+  if (!isLoggedIn) {
+    return <LoginRequired login={login} />;
+  }
+
+  if (profile?.type !== "executive") {
+    return <Custom404 />;
+  }
+
   const currentYear = new Date().getFullYear();
   const currentSemester = new Date().getMonth() < 6 ? "봄" : "가을";
 

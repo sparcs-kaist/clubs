@@ -10,14 +10,14 @@ import apiOvv002, {
 } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
-import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
+import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { OverviewService } from "@sparcs-clubs/api/feature/overview/service/overview.service";
 
 @Controller()
 export class OverviewController {
   constructor(private readonly overviewService: OverviewService) {}
 
-  @Public()
+  @Executive()
   @Get("/overview/delegates")
   @UsePipes(new ZodPipe(apiOvv001))
   async getDelegateOverveiw(
@@ -26,7 +26,7 @@ export class OverviewController {
     return this.overviewService.getDelegateOverview(query);
   }
 
-  @Public()
+  @Executive()
   @Get("/overview/clubinfo/kr")
   @UsePipes(new ZodPipe(apiOvv002))
   async getClubInfoOverview(
