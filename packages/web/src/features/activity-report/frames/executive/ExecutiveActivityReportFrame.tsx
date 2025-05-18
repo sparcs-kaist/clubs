@@ -36,7 +36,7 @@ const ExecutiveActivityReportFrame = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 10;
 
-  const { data, isLoading, isError, refetch } = useGetExecutiveActivities({
+  const { data, isLoading, isError } = useGetExecutiveActivities({
     pageOffset: currentPage,
     itemCount: limit,
     clubName: isClubView ? searchText : undefined,
@@ -80,7 +80,6 @@ const ExecutiveActivityReportFrame = () => {
     const debounce = setTimeout(() => {
       setSearchText(tempSearchText);
     }, 500);
-    refetch();
     return () => clearTimeout(debounce);
   }, [tempSearchText]);
 

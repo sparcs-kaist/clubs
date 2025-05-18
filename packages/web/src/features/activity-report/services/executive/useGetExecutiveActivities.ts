@@ -18,6 +18,7 @@ const useGetExecutiveActivities = (query: ApiAct023RequestQuery) =>
       query.pageOffset,
       query.itemCount,
       query.clubName,
+      query.executiveName,
     ],
     queryFn: async (): Promise<ApiAct023ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiAct023.url(), {
