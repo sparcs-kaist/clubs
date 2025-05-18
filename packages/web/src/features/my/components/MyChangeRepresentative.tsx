@@ -24,7 +24,6 @@ interface MyChangeRepresentativeProps {
   clubName: string;
   prevRepresentative: string;
   newRepresentative: string;
-  refetch: () => void;
   requestId: number;
 }
 
@@ -54,7 +53,6 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
   clubName,
   prevRepresentative,
   newRepresentative,
-  refetch,
   requestId,
 }) => {
   const router = useRouter();
@@ -85,7 +83,6 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
           prevRepresentative={prevRepresentative}
           newRepresentative={newRepresentative}
           onClose={close}
-          refetch={refetch}
           requestId={requestId}
         />
       </Modal>

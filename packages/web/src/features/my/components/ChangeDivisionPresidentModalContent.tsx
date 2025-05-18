@@ -23,7 +23,6 @@ interface ChangeDivisionPresidentModalContentProps {
   phoneNumber: string | undefined;
   divisionName: string;
   onClose: () => void;
-  fetch: () => void;
 }
 
 const ButtonWrapper = styled.div`
@@ -41,7 +40,6 @@ const ChangeDivisionPresidentModalContent: React.FC<
   phoneNumber,
   divisionName,
   onClose,
-  fetch,
 }: ChangeDivisionPresidentModalContentProps) => {
   const messageContext = new ChangeDivisionPresidentMessageContext({
     actingPresident,
@@ -62,7 +60,6 @@ const ChangeDivisionPresidentModalContent: React.FC<
     queryClient.invalidateQueries({
       queryKey: [apiDiv005.url()],
     });
-    fetch();
     onClose();
   };
 
@@ -71,7 +68,6 @@ const ChangeDivisionPresidentModalContent: React.FC<
     queryClient.invalidateQueries({
       queryKey: [apiDiv005.url()],
     });
-    fetch();
     onClose();
   };
 

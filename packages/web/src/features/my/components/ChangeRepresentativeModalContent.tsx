@@ -19,7 +19,6 @@ interface ChangeRepresentativeModalContentProps {
   newRepresentative: string;
   phonePlaceholder?: string;
   onClose: () => void;
-  refetch: () => void;
   requestId: number;
 }
 
@@ -38,7 +37,6 @@ const ChangeRepresentativeModalContent: React.FC<
   newRepresentative,
   phonePlaceholder = "010-XXXX-XXXX",
   onClose,
-  refetch,
   requestId,
 }) => {
   const [errorPhone, setErrorPhone] = useState<boolean>(false);
@@ -58,7 +56,6 @@ const ChangeRepresentativeModalContent: React.FC<
     queryClient.invalidateQueries({
       queryKey: [apiClb013.url()],
     });
-    refetch();
     onClose();
   };
 
@@ -73,7 +70,6 @@ const ChangeRepresentativeModalContent: React.FC<
     queryClient.invalidateQueries({
       queryKey: [apiClb013.url()],
     });
-    refetch();
     onClose();
   };
 

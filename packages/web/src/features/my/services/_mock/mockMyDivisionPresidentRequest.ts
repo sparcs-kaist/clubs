@@ -1,8 +1,8 @@
-import { ApiDiv005RequestBody } from "@clubs/interface/api/division/endpoint/apiDiv005";
+import { ApiDiv005ResponseOk } from "@clubs/interface/api/division/endpoint/apiDiv005";
 
 import { ChangeDivisionPresidentStatusEnum } from "@sparcs-clubs/web/constants/changeDivisionPresident";
 
-export const mockMyDivisionPresidentRequest: ApiDiv005RequestBody = {
+export const mockMyDivisionPresidentRequest: ApiDiv005ResponseOk = {
   requests: [
     {
       id: 1,

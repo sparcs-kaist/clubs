@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -9,7 +7,7 @@ import useGetUserProfile from "@sparcs-clubs/web/common/services/getUserProfile"
 import { ChangeDivisionPresidentStatusEnum } from "@sparcs-clubs/web/constants/changeDivisionPresident";
 import MyChangeRepresentative from "@sparcs-clubs/web/features/my/components/MyChangeRepresentative";
 import { useGetMyDelegateRequest } from "@sparcs-clubs/web/features/my/services/getMyDelegateRequest";
-import { useGetMyDivisionPresidentRequest } from "@sparcs-clubs/web/features/my/services/getMyDivisionPresidentRequest";
+import { useGetMyDivisionPresidentRequest } from "@sparcs-clubs/web/features/my/services/useGetMyDivisionPresidentRequest";
 
 import MyChangeDivisionPresident from "../components/MyChangeDivisionPresident";
 
@@ -18,7 +16,6 @@ export const MyChangesFrame = () => {
     data: rawClubDelegateData,
     isLoading: clubDelegateIsLoading,
     isError: clubDelegateIsError,
-    refetch: clubDelegateRefetch,
   } = useGetMyDelegateRequest();
 
   const clubDelegateDataExists =
@@ -34,7 +31,6 @@ export const MyChangesFrame = () => {
     data: rawDivisionPresidentData,
     isLoading: divisionPresidentIsLoading,
     isError: divisionPresidentIsError,
-    refetch: divisionPresidentRefetch,
   } = useGetMyDivisionPresidentRequest();
 
   const divisionPresidentDataExists =
@@ -66,7 +62,6 @@ export const MyChangesFrame = () => {
             clubName={clubDelegateData!.clubName}
             prevRepresentative={`${clubDelegateData!.prevStudentNumber} ${clubDelegateData!.prevStudentName}`}
             newRepresentative={`${myProfile?.studentNumber} ${myProfile?.name}`}
-            refetch={clubDelegateRefetch}
             requestId={clubDelegateData!.id}
           />
         )}
@@ -79,7 +74,6 @@ export const MyChangesFrame = () => {
             status={divisionPresidentData.changeDivisionPresidentStatusEnumId}
             prevPresident={`${divisionPresidentData.prevStudent.studentNumber} ${divisionPresidentData.prevStudent.name}`}
             newPresident={`${myProfile?.studentNumber} ${myProfile?.name}`}
-            fetch={divisionPresidentRefetch}
             phoneNumber={myProfile?.phoneNumber}
             divisionName={divisionPresidentData.divisionName.name}
           />

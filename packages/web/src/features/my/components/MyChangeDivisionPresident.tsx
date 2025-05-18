@@ -19,13 +19,11 @@ export type MyChangeDivisionPresidentStatusEnum =
 
 interface MyChangeDivisionPresidentProps {
   status: MyChangeDivisionPresidentStatusEnum;
-
   actingPresident?: boolean;
   prevPresident: string;
   newPresident: string;
   phoneNumber: string | undefined;
   divisionName: string;
-  fetch: () => void;
 }
 
 const notificationStatus: Record<
@@ -43,7 +41,6 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   newPresident,
   phoneNumber = "",
   divisionName,
-  fetch,
 }: MyChangeDivisionPresidentProps) => {
   const router = useRouter();
   const messageContext = new ChangeDivisionPresidentMessageContext({
@@ -70,7 +67,6 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
           divisionName={divisionName}
           status={status}
           onClose={close}
-          fetch={fetch}
         />
       </Modal>
     ));
