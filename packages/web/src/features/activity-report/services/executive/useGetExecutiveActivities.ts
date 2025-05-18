@@ -13,7 +13,12 @@ import {
 
 const useGetExecutiveActivities = (query: ApiAct023RequestQuery) =>
   useQuery<ApiAct023ResponseOk, Error>({
-    queryKey: [apiAct023.url()],
+    queryKey: [
+      apiAct023.url(),
+      query.pageOffset,
+      query.itemCount,
+      query.clubName,
+    ],
     queryFn: async (): Promise<ApiAct023ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiAct023.url(), {
         params: query,

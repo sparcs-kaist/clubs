@@ -1,6 +1,5 @@
-import { debounce } from "lodash";
 import { overlay } from "overlay-kit";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -26,7 +25,8 @@ const ExecutiveActivityReportFrame = () => {
   const [isClubView, setIsClubView] = useState<boolean>(
     window.history.state.isClubView ?? true,
   );
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useState("");
+  const [tempSearchText, setTempSearchText] = useState(searchText);
 
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
@@ -76,14 +76,13 @@ const ExecutiveActivityReportFrame = () => {
     ));
   }, [selectedClubIds, selectedClubInfos]);
 
-  const debouncedOnChange = useMemo(
-    () =>
-      debounce((value: string) => {
-        setSearchText(value);
-        refetch();
-      }, 20),
-    [setSearchText, refetch],
-  );
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      setSearchText(tempSearchText);
+    }, 500);
+    refetch();
+    return () => clearTimeout(debounce);
+  }, [tempSearchText]);
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
@@ -125,8 +124,8 @@ const ExecutiveActivityReportFrame = () => {
       </FlexWrapper>
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
-          searchText={searchText}
-          handleChange={debouncedOnChange}
+          searchText={tempSearchText}
+          handleChange={setTempSearchText}
           placeholder={
             isClubView
               ? "동아리 이름을 입력해주세요"
@@ -156,7 +155,7 @@ const ExecutiveActivityReportFrame = () => {
         )}
         <FlexWrapper direction="row" gap={16} justify="center">
           <Pagination
-            totalPage={Math.ceil(data?.total ?? 0 / limit)}
+            totalPage={Math.ceil((data?.total ?? 0) / limit)}
             currentPage={currentPage}
             limit={limit}
             setPage={setCurrentPage}
