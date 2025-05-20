@@ -16,7 +16,7 @@ const LangaugeSwitcherWrapper = styled.div`
 
 const LanguageSwitcherLine = styled.div`
   width: 1px;
-  height: 100%;
+  height: 8px;
   background-color: ${({ theme }) => theme.colors.GRAY[300]};
 `;
 
