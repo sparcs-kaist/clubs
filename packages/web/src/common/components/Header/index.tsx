@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 
 import Icon from "@sparcs-clubs/web/common/components/Icon";
 import NavList from "@sparcs-clubs/web/common/components/NavTools/NavList";
+import useMediaQuery from "@sparcs-clubs/web/common/hooks/useMediaQuery";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import navPaths from "@sparcs-clubs/web/constants/nav";
 import paths from "@sparcs-clubs/web/constants/paths";
@@ -76,6 +77,11 @@ const Menu = styled.div`
 
 const Header: React.FC = () => {
   const isBetaPeriod = true;
+  const theme = useTheme();
+  const isMd = useMediaQuery(`(max-width: ${theme.responsive.BREAKPOINT.md})`);
+  const isMobile = useMediaQuery(
+    `(max-width: ${theme.responsive.BREAKPOINT.xs})`,
+  );
 
   const [isMobileMenuVisible, setIsMobileMenuVisible] = useState<boolean>();
 
@@ -106,7 +112,7 @@ const Header: React.FC = () => {
         </LogoContainer>
         <FlexWrapper gap={8} direction={"row"}>
           {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
-            <LanguageSwitcher />
+            <LanguageSwitcher isMobile={isMobile} />
           )}
           <Login />
         </FlexWrapper>
@@ -117,7 +123,7 @@ const Header: React.FC = () => {
             onClick={handleClick}
           />
         </Menu>
-        <StyledNavList highlight keys={headerPaths} />
+        {!isMd && <StyledNavList highlight keys={headerPaths} />}
       </NavInner>
       {isMobileMenuVisible && (
         <MobileNavMenu
