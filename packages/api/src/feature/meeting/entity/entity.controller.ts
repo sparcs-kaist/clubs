@@ -12,11 +12,11 @@ import apiMee021, {
   ApiMee021RequestBody,
   ApiMee021RequestParam,
   ApiMee021ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee021";
+} from "@clubs/interface/api/meeting/apiMee021";
 import apiMee027, {
   ApiMee027RequestParam,
   ApiMee027ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee027";
+} from "@clubs/interface/api/meeting/apiMee027";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

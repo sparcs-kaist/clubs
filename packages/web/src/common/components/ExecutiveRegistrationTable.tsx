@@ -18,6 +18,7 @@ import useGetDivisionType from "../hooks/useGetDivisionType";
 
 interface ExecutiveRegistrationTableProps {
   registerList: RegisterClubList;
+  url: string;
 }
 
 const columnHelper = createColumnHelper<RegisterClubList["items"][number]>();
@@ -91,6 +92,7 @@ const columns = [
 
 const ExecutiveRegistrationTable: React.FC<ExecutiveRegistrationTableProps> = ({
   registerList,
+  url = "/executive/register-club",
 }) => {
   const table = useReactTable({
     columns,
@@ -104,7 +106,7 @@ const ExecutiveRegistrationTable: React.FC<ExecutiveRegistrationTableProps> = ({
       table={table}
       count={registerList.total}
       emptyMessage="동아리 등록 신청 내역이 없습니다."
-      rowLink={row => `/executive/register-club/${row.id}`}
+      rowLink={row => `${url}/${row.id}`}
     />
   );
 };

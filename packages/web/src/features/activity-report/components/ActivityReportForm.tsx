@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
-import { ActivityTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -58,14 +58,16 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
 
   const formValues = watch();
 
-  const [startTerm, setStartTerm] = useState<Date>(
+  const [startTerm, setStartTerm] = useState<Date | null>(
     formValues.durations
       ?.map(d => d.startTerm)
+      .filter((date): date is Date => date !== null)
       .reduce((a, b) => (a < b ? a : b), new Date()),
   );
-  const [endTerm, setEndTerm] = useState<Date>(
+  const [endTerm, setEndTerm] = useState<Date | null>(
     formValues.durations
       ?.map(d => d.endTerm)
+      .filter((date): date is Date => date !== null)
       .reduce((a, b) => (a > b ? a : b), new Date()),
   );
 
@@ -150,20 +152,26 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
                 )}
               />
               <SelectActivityTerm
-                initialData={formValues.durations ?? []}
                 onChange={_durations => {
                   setValue("durations", _durations, { shouldValidate: true });
                   if (_durations.length > 0) {
-                    setStartTerm(
-                      _durations
-                        .map(d => d.startTerm)
-                        .reduce((a, b) => (a < b ? a : b)),
-                    );
-                    setEndTerm(
-                      _durations
-                        .map(d => d.endTerm)
-                        .reduce((a, b) => (a > b ? a : b)),
-                    );
+                    const validStartTerms = _durations
+                      .map(d => d.startTerm)
+                      .filter((date): date is Date => date !== null);
+                    const validEndTerms = _durations
+                      .map(d => d.endTerm)
+                      .filter((date): date is Date => date !== null);
+
+                    if (validStartTerms.length > 0) {
+                      setStartTerm(
+                        validStartTerms.reduce((a, b) => (a < b ? a : b)),
+                      );
+                    }
+                    if (validEndTerms.length > 0) {
+                      setEndTerm(
+                        validEndTerms.reduce((a, b) => (a > b ? a : b)),
+                      );
+                    }
                   }
 
                   setValue("participants", []);

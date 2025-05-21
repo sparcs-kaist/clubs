@@ -13,29 +13,29 @@ import apiMee006, {
   ApiMee006RequestBody,
   ApiMee006RequestParam,
   ApiMee006ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee006";
+} from "@clubs/interface/api/meeting/apiMee006";
 import apiMee007, {
   ApiMee007RequestParam,
   ApiMee007ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee007";
+} from "@clubs/interface/api/meeting/apiMee007";
 import apiMee008, {
   ApiMee008RequestBody,
   ApiMee008RequestParam,
   ApiMee008ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee008";
+} from "@clubs/interface/api/meeting/apiMee008";
 import apiMee009, {
   ApiMee009RequestBody,
   ApiMee009RequestParam,
   ApiMee009ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee009";
+} from "@clubs/interface/api/meeting/apiMee009";
 import apiMee010, {
   ApiMee010RequestParam,
   ApiMee010ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee010";
+} from "@clubs/interface/api/meeting/apiMee010";
 import apiMee011, {
   ApiMee011RequestParam,
   ApiMee011ResponseCreated,
-} from "@sparcs-clubs/interface/api/meeting/apiMee011";
+} from "@clubs/interface/api/meeting/apiMee011";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

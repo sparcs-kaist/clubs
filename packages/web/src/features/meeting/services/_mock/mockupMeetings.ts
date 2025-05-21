@@ -1,7 +1,7 @@
 import {
   MeetingEnum,
   MeetingStatusEnum,
-} from "@sparcs-clubs/interface/common/enum/meeting.enum";
+} from "@clubs/interface/common/enum/meeting.enum";
 
 import { MeetingTemplate } from "@sparcs-clubs/web/features/meeting/constants/meetingTemplate";
 import { MeetingNoticeItemType } from "@sparcs-clubs/web/features/meeting/types/meeting";

@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@sparcs-clubs/interface/common/commonString";
-import { ProfessorEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { zClubName } from "@clubs/interface/common/commonString";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 /**
  * @version v0.1
@@ -23,7 +23,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     clubs: z.array(
       z.object({
-        id: z.number().int().min(1),
+        id: z.coerce.number().int().min(1),
         clubNameKr: zClubName,
         clubNameEn: zClubName,
         professor: z

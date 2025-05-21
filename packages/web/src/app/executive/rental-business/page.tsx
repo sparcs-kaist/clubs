@@ -8,7 +8,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -117,7 +117,7 @@ interface MockUpDataType {
   desiredStart: Date;
   desiredEnd: Date;
   startDate: Date;
-  endDate: Date;
+  endTerm: Date;
   createdAt: Date;
 }
 

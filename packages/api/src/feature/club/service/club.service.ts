@@ -5,50 +5,50 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 
-import type { ApiClb001ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb001";
+import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
   ApiClb002RequestParam,
   ApiClb002ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb002";
-import type { ApiClb003ResponseOK } from "@sparcs-clubs/interface/api/club/endpoint/apiClb003";
+} from "@clubs/interface/api/club/endpoint/apiClb002";
+import type { ApiClb003ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb003";
 import type {
   ApiClb004RequestParam,
   ApiClb004ResponseOK,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb004";
+} from "@clubs/interface/api/club/endpoint/apiClb004";
 import type {
   ApiClb005RequestBody,
   ApiClb005RequestParam,
   ApiClb005ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb005";
+} from "@clubs/interface/api/club/endpoint/apiClb005";
 import {
   ApiClb009RequestParam,
   ApiClb009ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb009";
+} from "@clubs/interface/api/club/endpoint/apiClb009";
 import {
   ApiClb010RequestParam,
   ApiClb010ResponseOk,
-} from "@sparcs-clubs/interface/api/club/endpoint/apiClb010";
-import type { ApiClb016ResponseOk } from "@sparcs-clubs/interface/api/club/endpoint/apiClb016";
-import { RegistrationDeadlineEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/api/club/endpoint/apiClb010";
+import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { env } from "@sparcs-clubs/api/env";
-import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
-import { ClubRegistrationPublicService } from "@sparcs-clubs/api/feature/registration/club-registration/service/club-registration.public.service";
+import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
+import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
-import ClubStudentTRepository from "../repository/club.club-student-t.repository";
-import ClubTRepository from "../repository/club.club-t.repository";
-import { DivisionPermanentClubDRepository } from "../repository/club.division-permanent-club-d.repository";
-import { ClubGetStudentClubBrief } from "../repository/club.get-student-club-brief";
-import { ClubPutStudentClubBrief } from "../repository/club.put-student-club-brief";
-import ClubRepository from "../repository/club.repository";
+import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
+import ClubTRepository from "../repository-old/club.club-t.repository";
+import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
+import { ClubGetStudentClubBrief } from "../repository-old/club.get-student-club-brief";
+import { ClubPutStudentClubBrief } from "../repository-old/club.put-student-club-brief";
+import { ClubOldRepository } from "../repository-old/club-old.repository";
 import ClubPublicService from "./club.public.service";
 
 @Injectable()
 export class ClubService {
   constructor(
-    private clubRepository: ClubRepository,
+    private clubOldRepository: ClubOldRepository,
     private clubDelegateDRepository: ClubDelegateDRepository,
     private clubRoomTRepository: ClubRoomTRepository,
     private clubStudentTRepository: ClubStudentTRepository,
@@ -57,14 +57,15 @@ export class ClubService {
     private clubGetStudentClubBrief: ClubGetStudentClubBrief,
     private clubPutStudentClubBrief: ClubPutStudentClubBrief,
     private clubPublicService: ClubPublicService,
-    private clubRegistrationPublicService: ClubRegistrationPublicService,
+    private registrationPublicService: RegistrationPublicService,
+    private readonly semesterPublicService: SemesterPublicService,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
     env.NODE_ENV === "local" ? [] : [112, 113, 121];
 
   async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubRepository.getAllClubsGroupedByDivision();
+    const result = await this.clubOldRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
       ...division,
@@ -78,11 +79,10 @@ export class ClubService {
 
   async getClub(param: ApiClb002RequestParam): Promise<ApiClb002ResponseOK> {
     const { clubId } = param;
-    const today = getKSTDate();
-    const currentSemester = await this.clubPublicService.fetchSemester(today);
+    const currentSemester = await this.semesterPublicService.load();
     let targetSemesterId = currentSemester.id;
     try {
-      await this.clubRegistrationPublicService.checkDeadline({
+      await this.registrationPublicService.checkDeadline({
         enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
       });
       targetSemesterId -= 1;
@@ -96,7 +96,7 @@ export class ClubService {
       roomDetails,
       isPermanent,
     ] = await Promise.all([
-      this.clubRepository.findClubDetail(clubId),
+      this.clubOldRepository.findClubDetail(clubId),
       this.clubStudentTRepository.findTotalMemberCnt(clubId, targetSemesterId),
       this.clubDelegateDRepository.findRepresentativeName(clubId),
       this.clubRoomTRepository.findClubLocationById(clubId),
@@ -104,7 +104,7 @@ export class ClubService {
     ]);
 
     if (!clubDetails) {
-      throw new NotFoundException(`Club with ID ${clubId} not found.`);
+      throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
     }
     if (!totalMemberCnt || !representative) {
       throw new NotFoundException(
@@ -139,7 +139,7 @@ export class ClubService {
       studentSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,
@@ -204,7 +204,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(
@@ -231,7 +231,7 @@ export class ClubService {
     const { clubId } = param;
     const isAvailableClub = await this.clubTRepository.findClubById(clubId);
     if (!isAvailableClub) {
-      throw new HttpException("Club not available", HttpStatus.FORBIDDEN);
+      throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
     const isAvailableRepresentative =
       await this.clubDelegateDRepository.findRepresentativeByClubIdAndStudentId(
@@ -302,7 +302,7 @@ export class ClubService {
       professorSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const clubName = await this.clubRepository.findClubName(club.id);
+            const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
               club.id,

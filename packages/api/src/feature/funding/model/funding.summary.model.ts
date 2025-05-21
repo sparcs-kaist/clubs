@@ -1,6 +1,6 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IFundingSummary } from "@sparcs-clubs/interface/api/funding/type/funding.type";
+import { IFundingSummary } from "@clubs/interface/api/funding/type/funding.type";
 
 import { Funding } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 

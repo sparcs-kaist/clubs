@@ -2,7 +2,7 @@ import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
   TransportationEnum,
-} from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/common/enum/funding.enum";
 
 const transportationEnumMap = (enumValue?: TransportationEnum): string => {
   if (enumValue === TransportationEnum.CityBus) {

@@ -1,12 +1,12 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IClubSummary } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { IClubSummary } from "@clubs/interface/api/club/type/club.type";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-import { Club, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { ClubOld, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 
 type ClubSummaryDBResult = {
-  club: InferSelectModel<typeof Club>;
+  club: InferSelectModel<typeof ClubOld>;
   club_t?: InferSelectModel<typeof ClubT>;
 };
 

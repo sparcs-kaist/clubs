@@ -11,15 +11,15 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiFil001RequestBody,
   ApiFil001ResponseCreated,
-} from "@sparcs-clubs/interface/api/file/apiFil001";
+} from "@clubs/interface/api/file/apiFil001";
 import type {
   ApiFil002RequestBody,
   ApiFil002ResponseOk,
-} from "@sparcs-clubs/interface/api/file/apiFil002";
+} from "@clubs/interface/api/file/apiFil002";
 import type {
   ApiFil003RequestBody,
   ApiFil003ResponseOk,
-} from "@sparcs-clubs/interface/api/file/apiFil003";
+} from "@clubs/interface/api/file/apiFil003";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import type { UserAccessTokenPayload } from "@sparcs-clubs/api/feature/auth/dto/auth.dto";

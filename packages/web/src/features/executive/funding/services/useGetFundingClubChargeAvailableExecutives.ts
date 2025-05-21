@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiFnd016, {
   ApiFnd016ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd016";
+} from "@clubs/interface/api/funding/endpoint/apiFnd016";
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 

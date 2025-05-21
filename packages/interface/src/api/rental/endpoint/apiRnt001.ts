@@ -13,7 +13,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
+  endTerm: z.coerce.date(),
 });
 
 const requestBody = z.object({});
@@ -22,9 +22,9 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     objects: z
       .object({
-        id: z.number().int().min(1),
+        id: z.coerce.number().int().min(1),
         name: z.string().max(30),
-        maximum: z.number().int().min(0),
+        maximum: z.coerce.number().int().min(0),
       })
       .array(),
   }),

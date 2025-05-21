@@ -1,8 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zSemester } from "@sparcs-clubs/interface/api/club/type/semester.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zSemester } from "@clubs/domain/semester/semester";
+
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -34,7 +35,7 @@ const responseBodyMap = {
     deadline: z
       .object({
         startDate: z.date(),
-        endDate: z.date(),
+        endTerm: z.date(),
       })
       .nullable(),
   }),

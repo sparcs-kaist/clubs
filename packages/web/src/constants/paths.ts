@@ -41,6 +41,7 @@ export const productionReadyPaths: {
     "/clubs",
     "/notice",
     "/credits",
+    "/errors/not-iam-login",
     // 마이페이지
     "/my/clubs",
     // 대표 동아리 관리
@@ -58,6 +59,8 @@ export const productionReadyPaths: {
     "/executive/register-member",
     // 상임동아리 대표자 대시보드
     "/manage-club/permanent",
+    // 동아리 등록 신청 내역
+    "/club-registration",
   ],
   exclude: [],
 };

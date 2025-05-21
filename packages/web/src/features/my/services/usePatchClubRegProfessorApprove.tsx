@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import apiReg023, {
   ApiReg023RequestParam,
   ApiReg023ResponseOk,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg023";
+} from "@clubs/interface/api/registration/endpoint/apiReg023";
 
 import {
   axiosClientWithAuth,

@@ -19,12 +19,11 @@ export type MyChangeDivisionPresidentStatusEnum =
 
 interface MyChangeDivisionPresidentProps {
   status: MyChangeDivisionPresidentStatusEnum;
-  isDivisionPresident: boolean;
   actingPresident?: boolean;
-  change?: [string, string];
-  fetch: () => void;
-  onConfirmed: () => void;
-  onRejected: () => void;
+  prevPresident: string;
+  newPresident: string;
+  phoneNumber: string | undefined;
+  divisionName: string;
 }
 
 const notificationStatus: Record<
@@ -37,20 +36,19 @@ const notificationStatus: Record<
 
 const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
   status = ChangeDivisionPresidentStatusEnum.Requested,
-  isDivisionPresident,
   actingPresident = false,
-  change = undefined,
-  fetch,
-  onConfirmed,
-  onRejected,
+  prevPresident,
+  newPresident,
+  phoneNumber = "",
+  divisionName,
 }: MyChangeDivisionPresidentProps) => {
   const router = useRouter();
   const messageContext = new ChangeDivisionPresidentMessageContext({
     actingPresident,
-    division: "'생활체육' 분과",
+    division: divisionName,
     status,
     page: "/my",
-    change,
+    change: [prevPresident, newPresident],
     isModal: false,
   });
 
@@ -63,13 +61,12 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
     overlay.open(({ isOpen, close }) => (
       <Modal isOpen={isOpen}>
         <ChangeDivisionPresidentModalContent
-          needPhoneNumber
-          actingPresident
-          change={["20210227 박병찬", "20200510 이지윤"]}
+          actingPresident={actingPresident}
+          phoneNumber={phoneNumber}
+          change={[prevPresident, newPresident]}
+          divisionName={divisionName}
+          status={status}
           onClose={close}
-          fetch={fetch}
-          onConfirmed={onConfirmed}
-          onRejected={onRejected}
         />
       </Modal>
     ));
@@ -89,16 +86,14 @@ const MyChangeDivisionPresident: React.FC<MyChangeDivisionPresidentProps> = ({
     >
       <FlexWrapper gap={8} direction="column">
         <Typography fs={16} lh={24} style={{ whiteSpace: "pre-wrap" }}>
-          {messageContext.getBody()}
+          {`${messageContext.getBody()}`}
         </Typography>
-        {isDivisionPresident && (
-          <TextButton
-            text={buttonString}
-            color="GRAY"
-            fw="REGULAR"
-            onClick={onClick}
-          />
-        )}
+        <TextButton
+          text={buttonString}
+          color="GRAY"
+          fw="REGULAR"
+          onClick={onClick}
+        />
       </FlexWrapper>
     </NotificationCard>
   );

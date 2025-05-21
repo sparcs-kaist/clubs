@@ -1,25 +1,54 @@
-// date를 입력했을 때 시간을 제외한 년, 월, 일만 남기고 Date 타입으로 반환, 즉 시간을 00:00:00 으로 치환하기
-export const getLocalDateOnly = (date: Date) =>
-  new Date(
-    new Date(date).getFullYear(),
-    new Date(date).getMonth(),
-    new Date(date).getDate(),
+/**
+ * @description 각종 시간 표시에 대한 포매팅 함수
+ * @description 로컬 기준으로 만들어 줌 (UTC 기준이 아님)
+ * @example 2024.01.01 -> 2024-01-01T00:00:00
+ * @example 2024-01-01 -> 2024-01-01T00:00:00
+ * @example 2024-01-01T00:00:00 -> 2024-01-01T00:00:00
+ */
+export const formatLocalDateString = (dateString: string): string => {
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return `${dateString}T00:00:00`;
+  }
+  if (/^\d{4}\.\d{2}\.\d{2}$/.test(dateString)) {
+    return `${dateString.replaceAll(".", "-")}T00:00:00`;
+  }
+  throw new Error("Invalid date string");
+};
+
+/**
+ * @description date를 입력했을 때 시간을 제외한 년, 월, 일만 남기고 Date 타입으로 반환, 즉 시간을 00:00:00 으로 치환하기
+ * @example 2024-01-01T00:00:00 -> 2024-01-01T00:00:00
+ * @example 2024-01-01 -> 2024-01-01T00:00:00
+ * @example 2024.01.01 -> 2024-01-01T00:00:00
+ */
+export const getLocalDateOnly = (date: Date | string): Date => {
+  const dateInput = typeof date === "string" ? new Date(date) : date;
+  return new Date(
+    dateInput.getFullYear(),
+    dateInput.getMonth(),
+    dateInput.getDate(),
   );
+};
 
-// 시간을 제외한 날짜만 KST로 변경
-// 예시: 입력 date가 2024-10-18 15:00 일 경우 getKSTDate 씌워서 api 요청 보내면
-// 2024.10.18 00:00 으로 요청 보내짐 (백에서도 그대로 받아서 그대로 프론트에 데이터 보냄)
-// 즉 항상 시간은 00:00 이게 됨
-export function getKSTDate(date: Date): Date {
-  const localDateOnly = getLocalDateOnly(date);
+/**
+ * @description local date의 23시 59분 59초를 return
+ * @description 활동보고서 활동 기간을 위해서 사용(나머지 deadline이나 semester같은 값은 다음날 자정을 열린구간으로 사용)
+ * @example 2024-01-01T00:00:00 -> 2024-01-01T23:59:59
+ * @example 2024-01-01 -> 2024-01-01T23:59:59
+ * @example 2024.01.01 -> 2024-01-01T23:59:59
+ */
+export const getLocalDateLastTime = (date: Date | string): Date => {
+  const dateInput = typeof date === "string" ? new Date(date) : date;
 
-  const kstOffset = 9 * 60; // KST: UTC+9
-  return new Date(localDateOnly.getTime() + kstOffset * 60 * 1000);
-}
-
-// 시간 포함하여 KST 변경
-export function getKSTDateTime(date: Date): Date {
-  const kstOffset = 9 * 60; // KST: UTC+9
-
-  return new Date(new Date(date).getTime() + kstOffset * 60 * 1000);
-}
+  return new Date(
+    dateInput.getFullYear(),
+    dateInput.getMonth(),
+    dateInput.getDate(),
+    23,
+    59,
+    59,
+  );
+};

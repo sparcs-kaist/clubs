@@ -1,6 +1,7 @@
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { RegistrationTypeEnum } from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { FileDetail } from "@sparcs-clubs/web/common/components/File/attachment";
 
@@ -53,8 +54,8 @@ export interface ProfessorInfo {
 }
 
 export interface Duration {
-  startTerm: Date;
-  endTerm: Date;
+  startTerm: Date | null;
+  endTerm: Date | null;
 }
 
 export type ActivityReport = {

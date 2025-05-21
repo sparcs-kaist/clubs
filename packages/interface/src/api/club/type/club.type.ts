@@ -1,23 +1,20 @@
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import {
   zDivision,
   zDivisionResponse,
   zDivisionSummary,
   zDivisionSummaryResponse,
-} from "@sparcs-clubs/interface/api/division/type/division.type";
-import {
-  zProfessor,
-  zStudent,
-} from "@sparcs-clubs/interface/api/user/type/user.type";
+} from "@clubs/interface/api/division/type/division.type";
+import { zProfessor, zStudent } from "@clubs/interface/api/user/type/user.type";
 import {
   ClubBuildingEnum,
   ClubDelegateEnum,
   ClubTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/club.enum";
-import zId from "@sparcs-clubs/interface/common/type/id.type";
-
-import { zSemester } from "./semester.type";
+} from "@clubs/interface/common/enum/club.enum";
+import { zId } from "@clubs/interface/common/type/id.type";
 
 const zClubRoom = z.object({
   id: zId,
@@ -52,7 +49,7 @@ export const zClub = z.object({
     example: "sulbox",
   }),
   description: z.string().nullable(),
-  foundingYear: z.number(),
+  foundingYear: z.coerce.number(),
   // clubT schema
   typeEnum: z.nativeEnum(ClubTypeEnum),
   characteristicKr: z.string().max(30).nullable(),

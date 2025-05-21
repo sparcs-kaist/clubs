@@ -1,24 +1,22 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityTypeEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { zActivity } from "@clubs/domain/activity/activity";
+import { zClub } from "@clubs/domain/club/club";
 
-/**
- * @version v0.1
- * @description 동아리의 특정 활동기간의 활동보고서를 조회합니다.
- * - 동아리 대표자 또는 대의원으로 로그인되어 있어야 합니다.
- */
+import { registry } from "@clubs/interface/open-api";
 
 const url = (activityTermId: number) =>
   `/student/activities/activity-terms/activity-term/${activityTermId}`;
 const method = "GET";
 
 const requestParam = z.object({
+  // TODO: domain object로 교체
   activityTermId: z.coerce.number().int().min(1),
 });
 
 const requestQuery = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const requestBody = z.object({});
@@ -27,15 +25,10 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     activities: z.array(
       z.object({
-        id: z.coerce.number().int().min(1),
-        name: z.string().max(255),
-        activityTypeEnumId: z.nativeEnum(ActivityTypeEnum),
-        durations: z.array(
-          z.object({
-            startTerm: z.coerce.date(),
-            endTerm: z.coerce.date(),
-          }),
-        ),
+        id: zActivity.shape.id,
+        name: zActivity.shape.name,
+        activityTypeEnumId: zActivity.shape.activityTypeEnum,
+        durations: zActivity.shape.durations,
       }),
     ),
   }),
@@ -66,3 +59,39 @@ export type {
   ApiAct006RequestQuery,
   ApiAct006ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["activity"],
+  method: "get",
+  path: "/student/activities/activity-terms/activity-term/:activityTermId",
+  description: `
+  # ACT-006
+
+  동아리의 특정 활동반기의 활동보고서를 조회합니다.
+
+  동아리 대표자 또는 대의원으로 로그인되어 있어야 합니다.
+  `,
+  summary: "ACT-006: 해당 활동 기간의 활동보고서 목록을 조회합니다",
+  request: {
+    params: requestParam,
+    query: requestQuery,
+    body: {
+      content: {
+        "application/json": {
+          schema: requestBody,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description:
+        "성공적으로 동아리의 특정 활동반기의 활동보고서를 조회했습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

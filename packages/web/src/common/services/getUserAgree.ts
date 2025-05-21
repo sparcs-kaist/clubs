@@ -1,5 +1,5 @@
-import type { ApiUsr005ResponseOk } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr005";
-import apiUsr005 from "@sparcs-clubs/interface/api/user/endpoint/apiUsr005";
+import type { ApiUsr005ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr005";
+import apiUsr005 from "@clubs/interface/api/user/endpoint/apiUsr005";
 
 import {
   axiosClientWithAuth,

@@ -1,118 +1,51 @@
-import { InferSelectModel } from "drizzle-orm";
+import { IClub } from "@clubs/domain/club/club";
 
-import { IClub } from "@sparcs-clubs/interface/api/club/type/club.type";
-import { ClubDelegateEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
+import { RMDivision } from "@sparcs-clubs/api/feature/division/model/division.model";
+import { RMProfessor } from "@sparcs-clubs/api/feature/user/model/professor.model";
 
-import {
-  Club,
-  ClubDelegateD,
-  ClubRoomT,
-  ClubT,
-} from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { RMClubDelegate } from "./club-delegate.model";
+import { MClubSemester } from "./club-semester.model";
 
-type ClubDBResult = {
-  club: InferSelectModel<typeof Club>;
-  club_t: InferSelectModel<typeof ClubT>;
-  club_room_t: InferSelectModel<typeof ClubRoomT>;
-  club_delegate_d: InferSelectModel<typeof ClubDelegateD>[];
-};
+/**
+ * @description ClubOld 중 학기에 따라 불변하는 값을 모은 부분 입니다.
+ */
 
-export class MClub implements IClub {
-  id: IClub["id"];
+export interface IClubCreate {
+  nameKr: IClub["nameKr"];
+  nameEn: IClub["nameEn"];
+  description: IClub["description"];
+  foundingYear: IClub["foundingYear"];
+}
+
+export class MClub extends MEntity implements IClub, IClubCreate {
+  static modelName = "club";
 
   nameKr: IClub["nameKr"];
-
   nameEn: IClub["nameEn"];
-
-  typeEnum: IClub["typeEnum"];
-
   description: IClub["description"];
-
   foundingYear: IClub["foundingYear"];
 
-  characteristicKr: IClub["characteristicKr"];
-
-  characteristicEn: IClub["characteristicEn"];
-
-  semester: IClub["semester"];
-
-  clubRoom: IClub["clubRoom"];
-
-  clubRepresentative: IClub["clubRepresentative"];
-
-  clubDelegate1: IClub["clubDelegate1"];
-
-  clubDelegate2: IClub["clubDelegate2"];
-
-  division: IClub["division"];
-
-  professor: IClub["professor"];
-
   constructor(data: IClub) {
+    super();
     Object.assign(this, data);
   }
+}
 
-  static fromDBResult(result: ClubDBResult): MClub {
-    const president = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Representative,
-    );
-    const delegate1 = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Delegate1,
-    );
-    const delegate2 = result.club_delegate_d.find(
-      e => e.ClubDelegateEnumId === ClubDelegateEnum.Delegate2,
-    );
+export interface RMClub extends MClub {
+  semester: MClubSemester["semester"];
 
-    return new MClub({
-      id: result.club.id,
-      nameKr: result.club.nameKr,
-      nameEn: result.club.nameEn,
-      typeEnum: result.club_t.clubStatusEnumId,
-      description: result.club.description,
-      foundingYear: result.club.foundingYear,
-      characteristicKr: result.club_t.characteristicKr,
-      characteristicEn: result.club_t.characteristicEn,
-      semester: {
-        id: result.club_t.semesterId,
-      },
-      clubRoom: result.club_room_t
-        ? {
-            id: result.club_room_t.id,
-          }
-        : null,
-      clubRepresentative: {
-        ...president,
-        student: {
-          id: president.studentId,
-        },
-        clubDelegateEnum: president.ClubDelegateEnumId,
-      },
-      clubDelegate1: delegate1
-        ? {
-            ...delegate1,
-            student: {
-              id: delegate1.studentId,
-            },
-            clubDelegateEnum: delegate1.ClubDelegateEnumId,
-          }
-        : null,
-      clubDelegate2: delegate2
-        ? {
-            ...delegate2,
-            student: {
-              id: delegate2.studentId,
-            },
-            clubDelegateEnum: delegate2.ClubDelegateEnumId,
-          }
-        : null,
-      division: {
-        id: result.club.divisionId,
-      },
-      professor: result.club_t.professorId
-        ? {
-            id: result.club_t.professorId,
-          }
-        : null,
-    });
-  }
+  clubTypeEnum: MClubSemester["clubTypeEnum"];
+  characteristicKr: MClubSemester["characteristicKr"];
+  characteristicEn: MClubSemester["characteristicEn"];
+
+  professor: RMProfessor;
+
+  clubRepresentative: RMClubDelegate;
+
+  clubDelegate1: RMClubDelegate | undefined;
+
+  clubDelegate2: RMClubDelegate | undefined;
+
+  division: RMDivision;
 }

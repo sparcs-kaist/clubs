@@ -1,8 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zMemberRegistration } from "@sparcs-clubs/interface/api/registration/type/member.registration.type";
-import { registry } from "@sparcs-clubs/interface/open-api";
+import { zMemberRegistration } from "@clubs/domain/registration/member-registration";
+
+import { registry } from "@clubs/interface/open-api";
 
 const url = (applyId: string) =>
   `/student/registrations/member-registrations/member-registration/${applyId}`;

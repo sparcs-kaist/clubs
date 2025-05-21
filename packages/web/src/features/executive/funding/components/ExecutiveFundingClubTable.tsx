@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
-import { ApiFnd008ResponseOk } from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd008";
+import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 
 import Checkbox from "@sparcs-clubs/web/common/components/Checkbox";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -15,8 +15,10 @@ import Table from "@sparcs-clubs/web/common/components/Table";
 import CheckboxCenterPlacerStopPropagation from "@sparcs-clubs/web/common/components/Table/CheckboxCenterPlacerStopPropagation";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import { ClubTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagColorFromDivision } from "@sparcs-clubs/web/types/clubdetail.types";
+import {
+  ClubTypeTagList,
+  getDivisionTagColor,
+} from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveFundingClubTableProps {
@@ -52,9 +54,7 @@ const columns = [
   columnHelper.accessor(row => row.division.name, {
     header: "분과",
     cell: info => (
-      <Tag color={getTagColorFromDivision(info.getValue())}>
-        {info.getValue()}
-      </Tag>
+      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
     ),
     size: 120,
   }),

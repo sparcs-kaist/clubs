@@ -1,19 +1,24 @@
-import { IStudent } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IStudent } from "@clubs/domain/user/student";
 
-export class MStudent implements IStudent {
-  id: number;
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
-  userId?: number;
+export interface IStudentCreate {
+  name: IStudent["name"];
+  studentNumber: IStudent["studentNumber"];
+  userId?: IStudent["userId"];
+  email?: IStudent["email"];
+  phoneNumber?: IStudent["phoneNumber"];
+}
 
-  studentNumber: string;
+export class MStudent extends MEntity implements IStudent {
+  name: IStudent["name"];
+  studentNumber: IStudent["studentNumber"];
+  userId?: IStudent["userId"];
+  email?: IStudent["email"];
+  phoneNumber?: IStudent["phoneNumber"];
 
-  name: string;
-
-  email?: string;
-
-  phoneNumber?: string;
-
-  constructor(student: IStudent) {
-    Object.assign(this, student);
+  constructor(data: IStudent) {
+    super();
+    Object.assign(this, data);
   }
 }

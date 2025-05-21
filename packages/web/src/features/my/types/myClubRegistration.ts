@@ -1,7 +1,7 @@
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
+} from "@clubs/interface/common/enum/registration.enum";
 
 import { ProfessorInfo } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 

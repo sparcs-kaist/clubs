@@ -7,7 +7,7 @@ import {
   IFundingExtra,
   IFundingRequest,
   IFundingSummary,
-} from "@sparcs-clubs/interface/api/funding/type/funding.type";
+} from "@clubs/interface/api/funding/type/funding.type";
 
 import {
   DrizzleAsyncProvider,
@@ -516,7 +516,7 @@ export default class FundingRepository {
         isEtcExpense: funding.isEtcExpense,
         isNonCorporateTransaction: funding.isNonCorporateTransaction,
         tradeDetailExplanation: funding.tradeDetailExplanation,
-        // Club supplies fields
+        // ClubOld supplies fields
         clubSuppliesName: funding.clubSupplies?.name,
         clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
         clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
@@ -572,7 +572,7 @@ export default class FundingRepository {
           }),
         ),
 
-        // Club supplies files
+        // ClubOld supplies files
         ...(funding.clubSupplies && funding.clubSupplies.imageFiles
           ? funding.clubSupplies.imageFiles.map(file =>
               tx.insert(FundingClubSuppliesImageFile).values({
@@ -816,7 +816,7 @@ export default class FundingRepository {
           isEtcExpense: funding.isEtcExpense,
           isNonCorporateTransaction: funding.isNonCorporateTransaction,
           tradeDetailExplanation: funding.tradeDetailExplanation,
-          // Club supplies fields
+          // ClubOld supplies fields
           clubSuppliesName: funding.clubSupplies?.name,
           clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
           clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
@@ -936,7 +936,7 @@ export default class FundingRepository {
           }),
         ),
 
-        // Club supplies files
+        // ClubOld supplies files
         ...(funding.clubSupplies && funding.clubSupplies.imageFiles
           ? funding.clubSupplies.imageFiles.map(file =>
               tx.insert(FundingClubSuppliesImageFile).values({

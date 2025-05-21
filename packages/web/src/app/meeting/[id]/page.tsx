@@ -17,7 +17,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import {
   dateTime,
-  endDate,
+  endTerm,
   isRegular,
   location,
   locationEn,
@@ -104,8 +104,8 @@ const MeetingDetailFrame: React.FC = () => {
     content = content.replace(dateTime, formatDateTime(data.startDate));
     content = content.replace(dateTime, formatDateTimeEn(data.startDate));
     content = content.replace(startDate, formatDateTime(data.startDate));
-    if (data.endDate != null) {
-      content = content.replace(endDate, formatDateTime(data.endDate));
+    if (data.endTerm != null) {
+      content = content.replace(endTerm, formatDateTime(data.endTerm));
     }
 
     content = content.replace(location, data.location);

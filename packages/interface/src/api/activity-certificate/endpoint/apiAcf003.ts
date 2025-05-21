@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityCertificateOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/activityCertificate.enum";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
 
 /**
  * @version v0.1
@@ -16,7 +16,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({
   clubId: z.coerce.number().int().min(1),
   startDate: z.optional(z.coerce.date()),
-  endDate: z.optional(z.coerce.date()),
+  endTerm: z.optional(z.coerce.date()),
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
 });

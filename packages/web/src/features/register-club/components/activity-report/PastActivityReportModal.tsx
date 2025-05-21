@@ -1,16 +1,19 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React, { useEffect, useState } from "react";
 
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+
+import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ThumbnailPreviewList from "@sparcs-clubs/web/common/components/File/ThumbnailPreviewList";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
+import Icon from "@sparcs-clubs/web/common/components/Icon";
 import { ListItem } from "@sparcs-clubs/web/common/components/ListItem";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
@@ -48,6 +51,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
   viewOnly = false,
   clubId,
 }) => {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useGetActivityReport(
     profile,
@@ -141,11 +145,44 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
     close();
   };
 
+  const handleOpenActivityReportPage = () => {
+    close();
+    router.push(`/manage-club/activity-report/${activityId}`);
+  };
+
   if (!data) return null;
 
   return (
     <Modal isOpen={isOpen} width="full">
       <AsyncBoundary isLoading={isLoading} isError={isError}>
+        <FlexWrapper style={{ height: 0, margin: 0, zIndex: 10 }}>
+          <FlexWrapper
+            direction="row"
+            gap={16}
+            style={{
+              position: "absolute",
+              right: 0,
+            }}
+          >
+            <Button
+              style={{ padding: "8px" }}
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/manage-club/activity-report/${activityId}`,
+                );
+                alert("활동보고서 주소가 클립보드에 복사 되었습니다!");
+              }}
+            >
+              <Icon type="link_variant" size={16} color="white" />
+            </Button>
+            <Button
+              style={{ padding: "8px" }}
+              onClick={handleOpenActivityReportPage}
+            >
+              <Icon type="open_in_new" size={16} color="white" />
+            </Button>
+          </FlexWrapper>
+        </FlexWrapper>
         <FlexWrapper gap={20} direction="column">
           {!isExecutive &&
             data.activityStatusEnumId === ActivityStatusEnum.Rejected &&

@@ -9,7 +9,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
-import { IStudentSummary } from "@sparcs-clubs/interface/api/user/type/user.type";
+import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
 import Checkbox from "@sparcs-clubs/web/common/components/Checkbox";
@@ -93,9 +93,6 @@ const SelectParticipant: React.FC<SelectParticipantProps> = ({
   const [rowValues, setRowValues] =
     useState<RowSelectionState>(initialRowValues);
 
-  useEffect(() => {
-    setRowValues(initialRowValues);
-  }, [initialRowValues]);
   useEffect(() => {
     setSelected(data.filter((_, i) => rowValues?.[i]));
   }, [rowValues, data]);

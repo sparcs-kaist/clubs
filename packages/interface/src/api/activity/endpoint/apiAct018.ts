@@ -1,7 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ActivityDeadlineEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+import { zActivityDeadline } from "@clubs/domain/semester/deadline";
 
 /**
  * @version v0.1
@@ -19,25 +20,25 @@ const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    isWritable: z.boolean(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 작성 가능 여부
+    isEditable: z.boolean(), // 현재 기간(activityDeadlineEnum)에 대해 활동보고서 수정, 삭제 가능 여부
+    canApprove: z.boolean(), // 집행부원, 지도교수님이 현재 기간(activityDeadlineEnum)에 대해 활동보고서 승인 가능 여부
     targetTerm: z.object({
-      id: z.coerce.number().int().min(1),
-      year: z.coerce.number().int().min(1900),
-      name: z.string().max(255),
-      startTerm: z.coerce.date(),
-      endTerm: z.coerce.date(),
+      id: zActivityDuration.shape.id,
+      year: zActivityDuration.shape.year,
+      name: zActivityDuration.shape.name,
+      startTerm: zActivityDuration.shape.startTerm,
+      endTerm: zActivityDuration.shape.endTerm,
     }),
-    deadline: z.object({
-      activityDeadlineEnum: z.nativeEnum(ActivityDeadlineEnum),
-      duration: z
-        .object({
-          startTerm: z.coerce.date(),
-          endTerm: z.coerce.date(),
-        })
-        .refine(data => data.startTerm <= data.endTerm, {
-          message: "종료일은 시작일보다 이후여야 합니다",
-          path: ["endTerm"],
+    deadline: z
+      .object({
+        activityDeadlineEnum: zActivityDeadline.shape.deadlineEnum,
+        duration: z.object({
+          startTerm: zActivityDeadline.shape.startTerm,
+          endTerm: zActivityDeadline.shape.endTerm,
         }),
-    }),
+      })
+      .optional(),
   }),
 };
 
@@ -61,8 +62,8 @@ type ApiAct018ResponseOk = z.infer<(typeof apiAct018.responseBodyMap)[200]>;
 export default apiAct018;
 
 export type {
+  ApiAct018RequestBody,
   ApiAct018RequestParam,
   ApiAct018RequestQuery,
-  ApiAct018RequestBody,
   ApiAct018ResponseOk,
 };

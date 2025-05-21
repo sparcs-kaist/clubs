@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 import styled from "styled-components";
 
@@ -68,6 +69,8 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
 
   const router = useRouter();
 
+  const t = useTranslations();
+
   const handleMyPageClick = () => {
     onClose();
     router.push("/my");
@@ -87,18 +90,21 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
     <MobileNavMenuInner className={className}>
       {keys.map(key => {
         const subPath = (paths[key] as Path).sub;
+        const haveSubPath = subPath && subPath.length > 0;
 
         return (
           <>
             <MobileNavItem
               key={key}
-              isExpanded={isSelected(key)}
+              isExpanded={haveSubPath ? isSelected(key) : false}
               {...paths[key]}
               onClick={() => {
-                if (isSelected(key)) {
-                  setSelectedMenu(null);
-                } else {
-                  setSelectedMenu(key);
+                if (haveSubPath) {
+                  if (isSelected(key)) {
+                    setSelectedMenu(null);
+                  } else {
+                    setSelectedMenu(key);
+                  }
                 }
               }}
             />
@@ -123,17 +129,17 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
         <>
           <LoginButton type="outlined" onClick={handleMyPageClick}>
             <Icon type="person" size={16} />
-            마이페이지
+            {t("path.마이페이지")}
           </LoginButton>
           <LoginButton type="outlined" onClick={logoutButton}>
             <Icon type="logout" size={16} />
-            로그아웃
+            {t("path.로그아웃")}
           </LoginButton>
         </>
       ) : (
         <LoginButton type="outlined" onClick={loginButton}>
           <Icon type="login" size={16} />
-          {paths.LOGIN.name}
+          {t("path.로그인")}
         </LoginButton>
       )}
     </MobileNavMenuInner>

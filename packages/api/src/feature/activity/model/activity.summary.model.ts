@@ -1,8 +1,8 @@
-import { IActivitySummary } from "@sparcs-clubs/interface/api/activity/type/activity.type";
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
+} from "@clubs/interface/common/enum/activity.enum";
 
 export class VActivitySummary implements IActivitySummary {
   id: number;

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -43,7 +43,7 @@ const ExecutiveRegisterClub = () => {
         ]}
         title="동아리 등록 신청 내역"
       />
-      <ExecutiveRegistrationClubFrame />
+      <ExecutiveRegistrationClubFrame url="/executive/register-club" />
     </FlexWrapper>
   );
 };

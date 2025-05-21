@@ -5,15 +5,15 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import { ApiReg012ResponseOk } from "@sparcs-clubs/interface/api/registration/endpoint/apiReg012";
+import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import {
+  getDivisionTagColor,
   RegistrationStatusTagList,
   RegistrationTypeTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagColorFromDivision } from "@sparcs-clubs/web/types/clubdetail.types";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyClubTableProps {
@@ -50,9 +50,7 @@ const columns = [
     id: "divisionName",
     header: "분과",
     cell: info => (
-      <Tag color={getTagColorFromDivision(info.getValue())}>
-        {info.getValue()}
-      </Tag>
+      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
     ),
     size: 10,
   }),

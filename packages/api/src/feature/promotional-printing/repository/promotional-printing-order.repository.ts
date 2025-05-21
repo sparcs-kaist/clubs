@@ -1,15 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
+
+import { PromotionalPrintingOrderStatusEnum as Status } from "@clubs/interface/common/enum/promotionalPrinting.enum";
+
+import logger from "@sparcs-clubs/api/common/util/logger";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   PromotionalPrintingOrder,
   PromotionalPrintingOrderSize,
-} from "src/drizzle/schema/promotional-printing.schema";
-
-import { PromotionalPrintingOrderStatusEnum as Status } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
-
-import logger from "@sparcs-clubs/api/common/util/logger";
+} from "@sparcs-clubs/api/drizzle/schema/promotional-printing.schema";
 import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 import type {
@@ -25,7 +25,7 @@ export class PromotionalPrintingOrderRepository {
   async countByStudentIdAndCreatedAtIn(
     studentId: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<number> {
     const numberOfOrders = (
       await this.db
@@ -37,8 +37,8 @@ export class PromotionalPrintingOrderRepository {
             startDate !== undefined
               ? gte(PromotionalPrintingOrder.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(PromotionalPrintingOrder.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(PromotionalPrintingOrder.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -47,7 +47,7 @@ export class PromotionalPrintingOrderRepository {
     return numberOfOrders;
   }
 
-  async countByCreatedAtIn(startDate?: Date, endDate?: Date): Promise<number> {
+  async countByCreatedAtIn(startDate?: Date, endTerm?: Date): Promise<number> {
     const numberOfOrders = (
       await this.db
         .select({ count: count() })
@@ -57,8 +57,8 @@ export class PromotionalPrintingOrderRepository {
             startDate !== undefined
               ? gte(PromotionalPrintingOrder.createdAt, startDate)
               : undefined,
-            endDate !== undefined
-              ? lte(PromotionalPrintingOrder.createdAt, endDate)
+            endTerm !== undefined
+              ? lte(PromotionalPrintingOrder.createdAt, endTerm)
               : undefined,
           ),
         )
@@ -81,7 +81,7 @@ export class PromotionalPrintingOrderRepository {
     pageOffset: number,
     itemCount: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<GetStudentPromotionalPrintingsOrdersReturn> {
     const startIndex = (pageOffset - 1) * itemCount + 1;
     const orders = await this.db
@@ -101,8 +101,8 @@ export class PromotionalPrintingOrderRepository {
           startDate !== undefined
             ? gte(PromotionalPrintingOrder.createdAt, startDate)
             : undefined,
-          endDate !== undefined
-            ? lte(PromotionalPrintingOrder.createdAt, endDate)
+          endTerm !== undefined
+            ? lte(PromotionalPrintingOrder.createdAt, endTerm)
             : undefined,
         ),
       )
@@ -169,7 +169,7 @@ export class PromotionalPrintingOrderRepository {
     pageOffset: number,
     itemCount: number,
     startDate?: Date,
-    endDate?: Date,
+    endTerm?: Date,
   ): Promise<GetStudentPromotionalPrintingsOrdersMyReturn> {
     const startIndex = (pageOffset - 1) * itemCount + 1;
     const orders = await this.db
@@ -189,8 +189,8 @@ export class PromotionalPrintingOrderRepository {
           startDate !== undefined
             ? gte(PromotionalPrintingOrder.createdAt, startDate)
             : undefined,
-          endDate !== undefined
-            ? lte(PromotionalPrintingOrder.createdAt, endDate)
+          endTerm !== undefined
+            ? lte(PromotionalPrintingOrder.createdAt, endTerm)
             : undefined,
         ),
       )

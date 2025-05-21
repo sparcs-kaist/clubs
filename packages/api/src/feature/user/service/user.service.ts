@@ -1,21 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { ApiUsr002ResponseOk } from "@sparcs-clubs/interface/api/user/endpoint/apiUsr002";
+import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
 
-import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository/club.club-student-t.repository";
+import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-student-t.repository";
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";
 
 import ExecutiveRepository from "../repository/executive.repository";
-import ProfessorRepository from "../repository/professor.repository";
-import StudentRepository from "../repository/student.repository";
+import OldProfessorRepository from "../repository/old.professor.repository";
+import OldStudentRepository from "../repository/old.student.repository";
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly studentRepository: StudentRepository,
+    private readonly oldStudentRepository: OldStudentRepository,
     private readonly executiveRepository: ExecutiveRepository,
-    private readonly professorRepository: ProfessorRepository,
+    private readonly professorRepository: OldProfessorRepository,
     private readonly clubStudentTRepository: ClubStudentTRepository,
   ) {}
 
@@ -57,7 +57,7 @@ export class UserService {
     userId: number,
   ): Promise<ApiUsr002ResponseOk> {
     const phoneNumber =
-      await this.studentRepository.getStudentPhoneNumber(userId);
+      await this.oldStudentRepository.getStudentPhoneNumber(userId);
     return phoneNumber;
   }
 

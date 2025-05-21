@@ -12,133 +12,116 @@ import {
 } from "@nestjs/common";
 
 import type {
-  ApiAct001RequestBody,
-  ApiAct001ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct001";
-import apiAct001 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct001";
-import type {
-  ApiAct002RequestParam,
-  ApiAct002ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct002";
-import apiAct002 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct002";
-import type {
-  ApiAct003RequestBody,
-  ApiAct003RequestParam,
-  ApiAct003ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct003";
-import apiAct003 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct003";
-import type {
-  ApiAct004RequestParam,
-  ApiAct004ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct004";
-import apiAct004 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct004";
-import type {
-  ApiAct005RequestQuery,
-  ApiAct005ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
-import apiAct005 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct005";
-import apiAct007, {
-  ApiAct007RequestBody,
-  ApiAct007ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct007";
-import apiAct008, {
-  ApiAct008RequestBody,
-  ApiAct008RequestParam,
-  ApiAct008ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct008";
-import type {
-  ApiAct010RequestQuery,
-  ApiAct010ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct010";
-import apiAct010 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct010";
-import type {
-  ApiAct011RequestQuery,
-  ApiAct011ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
-import type {
-  ApiAct012RequestQuery,
-  ApiAct012ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct012";
-import apiAct012 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct012";
-import type {
-  ApiAct013RequestQuery,
-  ApiAct013ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct013";
-import apiAct013 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct013";
-import type {
-  ApiAct014RequestParam,
-  ApiAct014ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct014";
-import apiAct014 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct014";
-import type {
-  ApiAct015RequestParam,
-  ApiAct015ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct015";
-import apiAct015 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct015";
-import type {
   ApiAct016RequestParam,
   ApiAct016ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct016";
-import apiAct016 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct016";
+} from "@clubs/interface/api/activity/endpoint/apiAct016";
+import apiAct016 from "@clubs/interface/api/activity/endpoint/apiAct016";
 import type {
   ApiAct017RequestBody,
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
-import apiAct017 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct017";
-import type { ApiAct018ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
-import apiAct018 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct018";
+} from "@clubs/interface/api/activity/endpoint/apiAct017";
+import apiAct017 from "@clubs/interface/api/activity/endpoint/apiAct017";
 import apiAct019, {
   ApiAct019RequestQuery,
   ApiAct019ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct019";
+} from "@clubs/interface/api/activity/endpoint/apiAct019";
 import apiAct020, {
   ApiAct020RequestBody,
   ApiAct020ResponseCreated,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct020";
+} from "@clubs/interface/api/activity/endpoint/apiAct020";
 import apiAct021, {
   type ApiAct021RequestQuery,
   ApiAct021RequestUrl,
   type ApiAct021ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct021";
+} from "@clubs/interface/api/activity/endpoint/apiAct021";
 import apiAct022, {
   ApiAct022RequestParam,
   ApiAct022RequestUrl,
   type ApiAct022ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct022";
-import type { ApiAct023ResponseOk } from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
-import apiAct023 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct023";
+} from "@clubs/interface/api/activity/endpoint/apiAct022";
+import type { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
+import apiAct023 from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
   ApiAct024RequestQuery,
   ApiAct024ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
-import apiAct024 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct024";
+} from "@clubs/interface/api/activity/endpoint/apiAct024";
+import apiAct024 from "@clubs/interface/api/activity/endpoint/apiAct024";
 import type {
   ApiAct025RequestBody,
   ApiAct025ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct025";
-import apiAct025 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct025";
+} from "@clubs/interface/api/activity/endpoint/apiAct025";
+import apiAct025 from "@clubs/interface/api/activity/endpoint/apiAct025";
 import type {
   ApiAct026RequestBody,
   ApiAct026ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
-import apiAct026 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct026";
+} from "@clubs/interface/api/activity/endpoint/apiAct026";
+import apiAct026 from "@clubs/interface/api/activity/endpoint/apiAct026";
 import apiAct027, {
   type ApiAct027RequestQuery,
   ApiAct027RequestUrl,
   type ApiAct027ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct027";
+} from "@clubs/interface/api/activity/endpoint/apiAct027";
 import apiAct028, {
   ApiAct028RequestParam,
   ApiAct028RequestUrl,
   type ApiAct028ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct028";
+} from "@clubs/interface/api/activity/endpoint/apiAct028";
 import apiAct029, {
   ApiAct029RequestParam,
   ApiAct029RequestUrl,
   ApiAct029ResponseOk,
-} from "@sparcs-clubs/interface/api/activity/endpoint/apiAct029";
+} from "@clubs/interface/api/activity/endpoint/apiAct029";
+import {
+  apiAct001,
+  type ApiAct001RequestBody,
+  type ApiAct001ResponseCreated,
+  apiAct002,
+  type ApiAct002RequestParam,
+  type ApiAct002ResponseOk,
+  apiAct003,
+  type ApiAct003RequestBody,
+  type ApiAct003RequestParam,
+  type ApiAct003ResponseOk,
+  apiAct004,
+  type ApiAct004RequestParam,
+  type ApiAct004ResponseOk,
+  apiAct005,
+  type ApiAct005RequestQuery,
+  type ApiAct005ResponseOk,
+  apiAct006,
+  type ApiAct006RequestParam,
+  type ApiAct006RequestQuery,
+  type ApiAct006ResponseOk,
+  apiAct007,
+  type ApiAct007RequestBody,
+  type ApiAct007ResponseCreated,
+  apiAct008,
+  type ApiAct008RequestBody,
+  type ApiAct008RequestParam,
+  type ApiAct008ResponseOk,
+  apiAct009,
+  type ApiAct009RequestQuery,
+  type ApiAct009ResponseOk,
+  apiAct010,
+  type ApiAct010RequestQuery,
+  type ApiAct010ResponseOk,
+  apiAct011,
+  type ApiAct011RequestQuery,
+  type ApiAct011ResponseOk,
+  apiAct012,
+  ApiAct012RequestQuery,
+  ApiAct012ResponseOk,
+  apiAct013,
+  ApiAct013RequestQuery,
+  ApiAct013ResponseOk,
+  apiAct014,
+  ApiAct014RequestParam,
+  ApiAct014ResponseOk,
+  apiAct015,
+  ApiAct015RequestParam,
+  ApiAct015ResponseOk,
+} from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -153,11 +136,15 @@ import {
   GetStudent,
 } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
 
-import ActivityService from "../service/activity.service";
+import ActivityOldService from "../service/activity.service";
+import ActivityService from "../service/activity.service.new";
 
 @Controller()
 export default class ActivityController {
-  constructor(private activityService: ActivityService) {}
+  constructor(
+    private activityOldService: ActivityOldService,
+    private activityService: ActivityService,
+  ) {}
 
   // TODO: Authentication 필요
   @Student()
@@ -305,7 +292,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/provisional/activities")
   @UsePipes(new ZodPipe(apiAct012))
   async getExecutiveProvisionalActivities(
@@ -335,7 +324,9 @@ export default class ActivityController {
     return result;
   }
 
-  @Executive()
+  // Act 012, 014등록 심의를 위해서 잠시 public으로 변경
+  //@Executive()
+  @Public()
   @Get("/executive/activities/activity/:activityId")
   @UsePipes(new ZodPipe(apiAct014))
   async getExecutiveActivity(
@@ -393,14 +384,6 @@ export default class ActivityController {
     return result;
   }
 
-  @Public()
-  @Get("/public/activities/deadline")
-  @UsePipes(new ZodPipe(apiAct018))
-  async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const result = await this.activityService.getPublicActivitiesDeadline();
-    return result;
-  }
-
   @Professor()
   @Get("/professor/activities")
   @UsePipes(new ZodPipe(apiAct019))
@@ -408,7 +391,7 @@ export default class ActivityController {
     @GetProfessor() user: GetProfessor,
     @Query() query: ApiAct019RequestQuery,
   ): Promise<ApiAct019ResponseOk> {
-    const result = await this.activityService.getProfessorActivities(
+    const result = await this.activityOldService.getProfessorActivities(
       query.clubId,
       user.professorId,
     );
@@ -422,7 +405,7 @@ export default class ActivityController {
     @GetProfessor() user: GetProfessor,
     @Body() body: ApiAct020RequestBody,
   ): Promise<ApiAct020ResponseCreated> {
-    await this.activityService.postProfessorActivityApprove(
+    await this.activityOldService.postProfessorActivityApprove(
       body.activities.map(activity => activity.id),
       user.professorId,
     );
@@ -433,7 +416,7 @@ export default class ActivityController {
   @Get("/executive/activities/clubs")
   @UsePipes(new ZodPipe(apiAct023))
   async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const result = await this.activityService.getExecutiveActivitiesClubs();
+    const result = await this.activityOldService.getExecutiveActivitiesClubs();
     return result;
   }
 
@@ -483,7 +466,7 @@ export default class ActivityController {
     @Query() query: ApiAct027RequestQuery,
   ): Promise<ApiAct027ResponseOk> {
     const result =
-      await this.activityService.getExecutiveActivitiesClubChargeAvailableExecutives(
+      await this.activityOldService.getExecutiveActivitiesClubChargeAvailableExecutives(
         query,
       );
     return result;
@@ -496,7 +479,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Query() query: ApiAct021RequestQuery,
   ): Promise<ApiAct021ResponseOk> {
-    return this.activityService.getStudentActivitiesAvailable(
+    return this.activityOldService.getStudentActivitiesAvailable(
       user.studentId,
       query.clubId,
     );
@@ -509,7 +492,7 @@ export default class ActivityController {
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct022RequestParam,
   ): Promise<ApiAct022ResponseOk> {
-    return this.activityService.getStudentActivityParticipants(param.id);
+    return this.activityOldService.getStudentActivityParticipants(param.id);
   }
 
   @Executive()
@@ -518,7 +501,7 @@ export default class ActivityController {
   async getExecutiveActivitiesExecutiveBrief(
     @Param() param: ApiAct028RequestParam,
   ): Promise<ApiAct028ResponseOk> {
-    return this.activityService.getExecutiveActivitiesExecutiveBrief(
+    return this.activityOldService.getExecutiveActivitiesExecutiveBrief(
       param.executiveId,
     );
   }
@@ -529,6 +512,40 @@ export default class ActivityController {
   async getStudentActivityProvisional(
     @Param() param: ApiAct029RequestParam,
   ): Promise<ApiAct029ResponseOk> {
-    return this.activityService.getStudentActivityProvisional(param.activityId);
+    return this.activityOldService.getStudentActivityProvisional(
+      param.activityId,
+    );
+  }
+
+  @Student()
+  @Get("/student/activities/activity-terms/activity-term/:activityTermId")
+  @UsePipes(new ZodPipe(apiAct006))
+  async getStudentActivitiesActivityTerm(
+    @GetStudent() user: GetStudent,
+    @Param() param: ApiAct006RequestParam,
+    @Query() query: ApiAct006RequestQuery,
+  ): Promise<ApiAct006ResponseOk> {
+    const result = await this.activityService.getStudentActivitiesActivityTerm(
+      param,
+      query,
+      user.studentId,
+    );
+    return result;
+  }
+
+  //@Student()
+  @Public()
+  @Get("/student/activities/activity-terms")
+  @UsePipes(new ZodPipe(apiAct009))
+  async getStudentActivitiesActivityTerms(
+    //@GetStudent() user: GetStudent,
+    @Query() query: ApiAct009RequestQuery,
+  ): Promise<ApiAct009ResponseOk> {
+    const result =
+      await this.activityOldService.getStudentActivitiesActivityTerms(
+        query,
+        //user.studentId,
+      );
+    return result;
   }
 }

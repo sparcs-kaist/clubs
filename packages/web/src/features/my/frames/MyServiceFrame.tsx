@@ -19,7 +19,7 @@ import { useGetMyPrinting } from "../services/getMyPrinting";
 const MyServiceFrame: React.FC = () => {
   // TODO: 실제 필요한 값으로 바꾸기
   const startDate = new Date("2024-01-01");
-  const endDate = new Date("2024-12-31");
+  const endTerm = new Date("2024-12-31");
   const pageOffset = 1;
   const itemCount = 10;
 
@@ -27,25 +27,25 @@ const MyServiceFrame: React.FC = () => {
     data: myRental,
     isLoading: rentalLoading,
     isError: rentalError,
-  } = useGetMyRentals(startDate, endDate, pageOffset, itemCount);
+  } = useGetMyRentals(startDate, endTerm, pageOffset, itemCount);
 
   const {
     data: myPrinting,
     isLoading: printingLoading,
     isError: printingError,
-  } = useGetMyPrinting(startDate, endDate, pageOffset, itemCount);
+  } = useGetMyPrinting(startDate, endTerm, pageOffset, itemCount);
 
   const {
     data: myActivityCertificate,
     isLoading: acfLoading,
     isError: acfError,
-  } = useGetMyActivityCertificate(startDate, endDate, pageOffset, itemCount);
+  } = useGetMyActivityCertificate(startDate, endTerm, pageOffset, itemCount);
 
   const {
     data: myCommonSpace,
     isLoading: cmsLoading,
     isError: cmsError,
-  } = useGetMyCommonSpace(startDate, endDate, pageOffset, itemCount);
+  } = useGetMyCommonSpace(startDate, endTerm, pageOffset, itemCount);
 
   return (
     <FoldableSectionTitle title="서비스 신청 내역">

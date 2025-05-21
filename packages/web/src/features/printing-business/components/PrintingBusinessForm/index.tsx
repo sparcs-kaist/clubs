@@ -4,7 +4,7 @@ import styled from "styled-components";
 import type {
   ApiPrt002RequestBody,
   ApiPrt002RequestParam,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

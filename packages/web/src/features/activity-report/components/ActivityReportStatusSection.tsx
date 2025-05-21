@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
 import ProgressStatus from "@sparcs-clubs/web/common/components/ProgressStatus";
 import CommentToast from "@sparcs-clubs/web/common/components/Toast/CommentToast";

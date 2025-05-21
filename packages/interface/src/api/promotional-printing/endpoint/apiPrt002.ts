@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { PromotionalPrintingSizeEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
-import { zKrPhoneNumber } from "@sparcs-clubs/interface/common/type/phoneNumber.type";
+import { PromotionalPrintingSizeEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
+import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 /**
  * @version v0.1
@@ -29,7 +29,7 @@ const requestBody = z.object({
         .int()
         .min(1)
         .pipe(z.nativeEnum(PromotionalPrintingSizeEnum)),
-      numberOfPrints: z.number().min(0), // 음수를 허용하지 않는 것으로 변경하고 있습니다.
+      numberOfPrints: z.coerce.number().min(0), // 음수를 허용하지 않는 것으로 변경하고 있습니다.
     })
     .array(),
   isColorPrint: z.coerce.boolean(),

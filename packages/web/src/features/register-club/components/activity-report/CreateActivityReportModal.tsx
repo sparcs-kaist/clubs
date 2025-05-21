@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback } from "react";
 
-import apiAct011 from "@sparcs-clubs/interface/api/activity/endpoint/apiAct011";
+import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
 
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
@@ -41,6 +41,10 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
         {
           body: {
             ...data,
+            durations: data.durations.map(duration => ({
+              startTerm: duration.startTerm!,
+              endTerm: duration.endTerm!,
+            })),
             clubId,
             evidence: data.evidence ?? "", // NOTE: (@dora) evidence is optional
             evidenceFiles: data.evidenceFiles.map(({ id }) => ({

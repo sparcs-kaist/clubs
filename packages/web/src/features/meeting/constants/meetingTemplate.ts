@@ -1,4 +1,4 @@
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 import { getFullSemester } from "@sparcs-clubs/web/utils/getSemester";
 
@@ -11,7 +11,7 @@ export const meetingType = "[[MEETING_TYPE]]]";
 export const isRegular = "[[[IS_REGULAR]]]";
 export const dateTime = "[[[DATE]]] [[[TIME]]]";
 export const startDate = "[[[START_DATE]]]";
-export const endDate = "[[[END_DATE]]]";
+export const endTerm = "[[[END_DATE]]]";
 export const location = "[[[LOCATION_KR]]]";
 export const locationEn = "[[[LOCATION_EN]]]";
 
@@ -53,7 +53,7 @@ export class MeetingTemplate {
 
 Hello, this is the vice-president of KAIST Undergraduate Students Clubs Union.
 
-The date and location of the 1st Council of the Club Representatives in 2024 is announced as follows:
+The date and location of the 1st Council of the ClubOld Representatives in 2024 is announced as follows:
 
 Date & Time : ${dateTime}
 Location : ${locationEn}
@@ -84,7 +84,7 @@ Thank you.`;
       content: `안녕하세요, 부회장입니다.
 
 ${now.getMonth()}월 분과회의 기간을 다음과 같이 공고합니다.
-${startDate} ~ ${endDate}
+${startDate} ~ ${endTerm}
 
 감사합니다.`,
     };

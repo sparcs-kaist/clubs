@@ -12,7 +12,10 @@ import UnitInput from "@sparcs-clubs/web/common/components/Forms/UnitInput";
 import Select from "@sparcs-clubs/web/common/components/Select";
 import useGetActivityAvailable from "@sparcs-clubs/web/features/activity-report/services/useGetActivityAvailable";
 import { FundingInfo } from "@sparcs-clubs/web/features/manage-club/funding/types/funding";
-import { getLocalDateOnly } from "@sparcs-clubs/web/utils/Date/getKSTDate";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import { NO_ACTIVITY_REPORT_FUNDING } from "../constants";
 import useGetFundingDeadline from "../services/useGetFundingDeadline";
@@ -54,14 +57,12 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
       if (!fundingDeadline) {
         return false;
       }
-
       const localTargetDate = getLocalDateOnly(targeDate);
-
       return (
         getLocalDateOnly(fundingDeadline.targetDuration.startTerm) <=
           localTargetDate &&
         localTargetDate <=
-          getLocalDateOnly(fundingDeadline.targetDuration.endTerm)
+          getLocalDateLastTime(fundingDeadline.targetDuration.endTerm)
       );
     },
     [fundingDeadline],
@@ -126,6 +127,7 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
                     fundingDeadline.targetDuration.startTerm ?? undefined
                   }
                   maxDate={fundingDeadline.targetDuration.endTerm ?? undefined}
+                  // TODO: mindate 와 maxdate 활동 기간 안에 포함되는 지 확인
                   selected={value}
                   onChange={(data: Date | null) => {
                     onChange(data);

@@ -1,14 +1,14 @@
 import { HttpException, Injectable, NotFoundException } from "@nestjs/common";
 
-import { ApiRnt002RequestBody } from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt002";
+import { ApiRnt002RequestBody } from "@clubs/interface/api/rental/endpoint/apiRnt002";
 import {
   ApiRnt003RequestQuery,
   ApiRnt003ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt003";
+} from "@clubs/interface/api/rental/endpoint/apiRnt003";
 import {
   ApiRnt006RequestQuery,
   ApiRnt006ResponseOK,
-} from "@sparcs-clubs/interface/api/rental/endpoint/apiRnt006";
+} from "@clubs/interface/api/rental/endpoint/apiRnt006";
 
 import { RentalObjectRepository } from "../repository/rental.rental-object.repository";
 import { RentalOrderRepository } from "../repository/rental.rental-order.repository";
@@ -82,13 +82,13 @@ export class RentalService {
     query: ApiRnt006RequestQuery,
   ): Promise<ApiRnt006ResponseOK> {
     // TODO: 원래는 token student Id 에서 가져와야 하는데 일단은 고정 값(1)로 할게요.
-    const { pageOffset, itemCount, startDate, endDate } = query;
+    const { pageOffset, itemCount, startDate, endTerm } = query;
     const { paginatedItems, total } =
       await this.rentalServiceRepository.getRentalsMy(
         pageOffset,
         itemCount,
         startDate,
-        endDate,
+        endTerm,
       );
     return {
       items: paginatedItems,

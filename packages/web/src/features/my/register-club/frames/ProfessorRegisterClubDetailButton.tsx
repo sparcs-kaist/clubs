@@ -3,8 +3,9 @@ import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
-import apiReg011 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg011";
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import apiReg011, {
+  ApiReg011ResponseOk,
+} from "@clubs/interface/api/registration/endpoint/apiReg011";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -13,17 +14,12 @@ import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/services/usePatchClubRegProfessorApprove";
-import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
-const ProfessorRegisterClubDetailButton: React.FC = () => {
+const ProfessorRegisterClubDetailButton: React.FC<{
+  clubDetail: ApiReg011ResponseOk;
+}> = ({ clubDetail }) => {
   const { id } = useParams();
   const queryClient = useQueryClient();
-
-  const {
-    data: clubDetail,
-    isLoading,
-    isError,
-  } = useGetRegisterClubDetail(UserTypeEnum.Professor, { applyId: +id });
 
   const { mutate } = usePatchClubRegProfessorApprove();
 
@@ -59,10 +55,7 @@ const ProfessorRegisterClubDetailButton: React.FC = () => {
     ));
   };
   return (
-    <AsyncBoundary
-      isLoading={isLoadingDeadline || isLoading}
-      isError={isErrorDeadline || isError}
-    >
+    <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline}>
       {deadlineData?.deadline && (
         <FlexWrapper direction="row" gap={10}>
           <Button

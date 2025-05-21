@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { MeetingEnum } from "@sparcs-clubs/interface/common/enum/meeting.enum";
+import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 /**
  * @version v0.1
@@ -20,7 +20,7 @@ const requestBody = z.object({
   announcementTitle: z.string().min(1),
   announcementContent: z.string().min(1),
   startDate: z.coerce.date(),
-  endDate: z.coerce.date().optional(),
+  endTerm: z.coerce.date().optional(),
   isRegular: z.coerce.boolean(),
   location: z.string().min(1).optional(),
   locationEn: z.string().min(1).optional(),
@@ -28,7 +28,7 @@ const requestBody = z.object({
 
 const responseBodyMap = {
   [HttpStatusCode.Created]: z.object({
-    id: z.number().int().min(1),
+    id: z.coerce.number().int().min(1),
   }),
 };
 

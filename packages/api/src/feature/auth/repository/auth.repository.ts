@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
 
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { AuthActivatedRefreshTokens } from "@sparcs-clubs/api/drizzle/schema/refresh-token.schema";
+import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   Employee,
   EmployeeT,
@@ -70,7 +70,7 @@ export class AuthRepository {
     const user = await this.db
       .select()
       .from(User)
-      .where(eq(User.email, email))
+      .where(and(eq(User.email, email), isNull(User.deletedAt)))
       .then(takeOne);
 
     let result: FindOrCreateUserReturn = {
@@ -89,6 +89,7 @@ export class AuthRepository {
         and(
           lte(SemesterD.startTerm, currentDate),
           gte(SemesterD.endTerm, currentDate),
+          isNull(SemesterD.deletedAt),
         ),
       )
       .then(takeOne);
@@ -109,7 +110,12 @@ export class AuthRepository {
       const student = await this.db
         .select()
         .from(Student)
-        .where(eq(Student.number, parseInt(studentNumber)))
+        .where(
+          and(
+            eq(Student.number, parseInt(studentNumber)),
+            isNull(Student.deletedAt),
+          ),
+        )
         .then(takeOne);
 
       // studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
@@ -126,7 +132,7 @@ export class AuthRepository {
       const students = await this.db
         .select()
         .from(Student)
-        .where(eq(Student.userId, user.id));
+        .where(and(eq(Student.userId, user.id), isNull(Student.deletedAt)));
 
       /* eslint-disable no-shadow */
       // eslint-disable-next-line no-restricted-syntax
@@ -217,7 +223,7 @@ export class AuthRepository {
       const professor = await this.db
         .select()
         .from(Professor)
-        .where(eq(Professor.userId, user.id))
+        .where(and(eq(Professor.userId, user.id), isNull(Professor.deletedAt)))
         .then(takeOne);
       await this.db
         .insert(ProfessorT)
@@ -251,7 +257,7 @@ export class AuthRepository {
       const employee = await this.db
         .select()
         .from(Employee)
-        .where(and(eq(Employee.userId, user.id)))
+        .where(and(eq(Employee.userId, user.id), isNull(Employee.deletedAt)))
         .then(takeOne);
       await this.db
         .insert(EmployeeT)
@@ -306,7 +312,7 @@ export class AuthRepository {
     const user = await this.db
       .select()
       .from(User)
-      .where(eq(User.id, id))
+      .where(and(eq(User.id, id), isNull(User.deletedAt)))
       .then(takeOne);
 
     const result: {
@@ -348,7 +354,7 @@ export class AuthRepository {
     const students = this.db
       .select()
       .from(Student)
-      .where(eq(Student.userId, id));
+      .where(and(eq(Student.userId, id), isNull(Student.deletedAt)));
 
     // eslint-disable-next-line no-restricted-syntax
     for (const student of await students) {
@@ -369,7 +375,7 @@ export class AuthRepository {
     const executive = await this.db
       .select()
       .from(Executive)
-      .where(eq(Executive.userId, id))
+      .where(and(eq(Executive.userId, id), isNull(Executive.deletedAt)))
       .then(takeOne);
 
     if (executive) {
@@ -382,7 +388,7 @@ export class AuthRepository {
     const professor = await this.db
       .select()
       .from(Professor)
-      .where(eq(Professor.userId, id))
+      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)))
       .then(takeOne);
 
     if (professor) {
@@ -395,7 +401,7 @@ export class AuthRepository {
     const employee = await this.db
       .select()
       .from(Employee)
-      .where(eq(Employee.userId, id))
+      .where(and(eq(Employee.userId, id), isNull(Employee.deletedAt)))
       .then(takeOne);
 
     if (employee) {
@@ -424,7 +430,7 @@ export class AuthRepository {
           gte(AuthActivatedRefreshTokens.expiresAt, cur),
         ),
       )
-      .where(eq(User.id, userId));
+      .where(and(eq(User.id, userId), isNull(User.deletedAt)));
     return result.length > 0;
   }
 

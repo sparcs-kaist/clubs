@@ -1,4 +1,4 @@
-import { ActivityStatusEnum } from "@sparcs-clubs/interface/common/enum/activity.enum";
+import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
 import {
   ProgressCheckSectionStatusEnum,

@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { getKSTDate } from "@sparcs-clubs/web/utils/Date/getKSTDate";
 import { isParticipantsRequired } from "@sparcs-clubs/web/utils/isTransportation";
 
 import { newFundingListQueryKey } from "../services/useGetNewFundingList";
@@ -42,7 +41,7 @@ export const useCreateFunding = (clubId: number) => {
               ? { id: purposeActivity.id }
               : { id: null },
             name,
-            expenditureDate: getKSTDate(data.expenditureDate),
+            expenditureDate: data.expenditureDate,
             expenditureAmount: Number(expenditureAmount),
 
             tradeEvidenceFiles: data.tradeEvidenceFiles.map(file => ({

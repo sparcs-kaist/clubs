@@ -1,4 +1,4 @@
-// import { ApiAut001ResponseOk } from "@sparcs-clubs/interface/api/auth/endpoint/apiAut001";
+// import { ApiAut001ResponseOk } from "@clubs/interface/api/auth/endpoint/apiAut001";
 
 const mockAccessToken = {
   accessToken: {

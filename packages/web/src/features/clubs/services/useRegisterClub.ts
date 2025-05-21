@@ -3,10 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   ApiReg005RequestBody,
   ApiReg005ResponseCreated,
-} from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
-import apiReg005 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg005";
-import apiReg006 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg006";
-import apiReg026 from "@sparcs-clubs/interface/api/registration/endpoint/apiReg026";
+} from "@clubs/interface/api/registration/endpoint/apiReg005";
+import apiReg005 from "@clubs/interface/api/registration/endpoint/apiReg005";
+import apiReg006 from "@clubs/interface/api/registration/endpoint/apiReg006";
+import apiReg026 from "@clubs/interface/api/registration/endpoint/apiReg026";
 
 import {
   axiosClientWithAuth,

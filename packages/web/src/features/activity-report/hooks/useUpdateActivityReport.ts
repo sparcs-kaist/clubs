@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { activityReportDetailQueryKey } from "../services/useGetActivityReport";
 import { usePutActivityReport } from "../services/usePutActivityReport";
@@ -17,6 +17,10 @@ const useUpdateActivityReport = (activityId: number) => {
           activityId,
           body: {
             ...data,
+            durations: data.durations.map(duration => ({
+              startTerm: duration.startTerm!,
+              endTerm: duration.endTerm!,
+            })),
             evidenceFiles: data.evidenceFiles.map(file => ({
               fileId: file.id,
             })),

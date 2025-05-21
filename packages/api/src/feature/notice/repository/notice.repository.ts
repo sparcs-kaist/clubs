@@ -1,36 +1,103 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { count, desc } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
-import { DrizzleAsyncProvider } from "src/drizzle/drizzle.provider";
-import { Notice } from "src/drizzle/schema/notice.schema";
+import { Injectable } from "@nestjs/common";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import type { GetNoticePaginationReturn } from "@sparcs-clubs/api/feature/notice/dto/notice.dto";
+import {
+  BaseTableFieldMapKeys,
+  TableWithID,
+} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { Notice } from "@sparcs-clubs/api/drizzle/schema/notice.schema";
+import {
+  INoticeCreate,
+  MNotice,
+} from "@sparcs-clubs/api/feature/notice/model/notice.model";
+
+export type NoticeQuery = {
+  id: number;
+  title: string;
+  date: Date;
+  createdAt: Date;
+  author: string;
+  articleId: number;
+};
+
+type NoticeOrderByKeys = "id" | "date" | "createdAt" | "articleId";
+type NoticeQuerySupport = {};
+
+type NoticeTable = typeof Notice;
+type NoticeDbSelect = InferSelectModel<NoticeTable>;
+type NoticeDbUpdate = Partial<NoticeDbSelect>;
+type NoticeDbInsert = InferInsertModel<NoticeTable>;
+type NoticeFieldMapKeys = BaseTableFieldMapKeys<
+  NoticeQuery,
+  NoticeOrderByKeys,
+  NoticeQuerySupport
+>;
 
 @Injectable()
-export class NoticeRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+export class NoticeRepository extends BaseSingleTableRepository<
+  MNotice,
+  INoticeCreate,
+  NoticeTable,
+  NoticeQuery,
+  NoticeOrderByKeys,
+  NoticeQuerySupport
+> {
+  constructor() {
+    super(Notice, MNotice);
+  }
 
-  // Notice 의 id 내림차순으로 정렬된 상태에서, 페이지네이션을 수행합니다.
-  async getNoticePagination(
-    pageOffset: number,
-    itemCount: number,
-  ): Promise<GetNoticePaginationReturn> {
-    const numberOfNotices = (
-      await this.db.select({ count: count() }).from(Notice)
-    ).at(0).count;
-
-    const startIndex = (pageOffset - 1) * itemCount + 1;
-    const notices: GetNoticePaginationReturn["notices"] = await this.db
-      .select()
-      .from(Notice)
-      .orderBy(desc(Notice.date))
-      .limit(itemCount)
-      .offset(startIndex - 1);
-
+  protected dbToModelMapping(result: NoticeDbSelect): MNotice {
     return {
-      notices,
-      total: numberOfNotices,
-      offset: pageOffset,
+      date: result.date,
+      author: result.author,
+      createdAt: result.createdAt,
+      id: result.id,
+      link: result.link,
+      title: result.title,
+      articleId: result.articleId,
     };
+  }
+
+  protected modelToDBMapping(model: MNotice): NoticeDbUpdate {
+    return {
+      id: model.id,
+      author: model.author,
+      createdAt: model.createdAt,
+      date: model.date,
+      link: model.link,
+      title: model.title,
+      articleId: model.articleId,
+    };
+  }
+
+  protected createToDBMapping(model: INoticeCreate): NoticeDbInsert {
+    return {
+      date: model.date,
+      author: model.author,
+      createdAt: model.createdAt,
+      link: model.link,
+      title: model.title,
+      articleId: model.articleId,
+    };
+  }
+
+  protected fieldMap(
+    field: NoticeFieldMapKeys,
+  ): TableWithID | null | undefined {
+    const fieldMappings: Record<NoticeFieldMapKeys, TableWithID | null> = {
+      id: Notice,
+      author: Notice,
+      createdAt: Notice,
+      title: Notice,
+      date: Notice,
+      articleId: Notice,
+    };
+
+    if (!(field in fieldMappings)) {
+      return undefined;
+    }
+
+    return fieldMappings[field];
   }
 }

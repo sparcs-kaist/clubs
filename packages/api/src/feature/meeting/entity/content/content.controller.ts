@@ -13,16 +13,16 @@ import apiMee013, {
   ApiMee013RequestBody,
   ApiMee013RequestParam,
   ApiMee013ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee013";
+} from "@clubs/interface/api/meeting/apiMee013";
 import apiMee014, {
   ApiMee014RequestBody,
   ApiMee014RequestParam,
   ApiMee014ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee014";
+} from "@clubs/interface/api/meeting/apiMee014";
 import apiMee015, {
   ApiMee015RequestParam,
   ApiMee015ResponseOk,
-} from "@sparcs-clubs/interface/api/meeting/apiMee015";
+} from "@clubs/interface/api/meeting/apiMee015";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

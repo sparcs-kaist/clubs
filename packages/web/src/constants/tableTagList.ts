@@ -1,17 +1,17 @@
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/activity.enum";
-import { ActivityCertificateOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/activityCertificate.enum";
-import { ClubTypeEnum } from "@sparcs-clubs/interface/common/enum/club.enum";
-import { CommonSpaceUsageOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/commonSpace.enum";
-import { FundingStatusEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
-import { PromotionalPrintingOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+} from "@clubs/interface/common/enum/activity.enum";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
+import { PromotionalPrintingOrderStatusEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
-} from "@sparcs-clubs/interface/common/enum/registration.enum";
-import { RentalOrderStatusEnum } from "@sparcs-clubs/interface/common/enum/rental.enum";
+} from "@clubs/interface/common/enum/registration.enum";
+import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
 import { TagColor } from "../common/components/Tag";
 import {
@@ -175,6 +175,31 @@ const ClubTypeTagList: {
   [ClubTypeEnum.Provisional]: { text: "가동아리", color: "ORANGE" },
 };
 
+const getDivisionTagColor = (name: string): TagColor => {
+  switch (name) {
+    case "생활체육":
+    case "구기체육":
+      return "PINK";
+    case "인문학술":
+    case "이공학술":
+      return "YELLOW";
+    case "연행예술":
+    case "전시창작":
+      return "BLUE";
+    case "생활문화":
+    case "식생활":
+    case "대중문화":
+      return "GREEN";
+    case "사회":
+    case "종교":
+      return "PURPLE";
+    case "밴드음악":
+      return "ORANGE";
+    default:
+      return "ORANGE";
+  }
+};
+
 export {
   AcfTagList,
   ActStatusTagList,
@@ -190,4 +215,5 @@ export {
   RegistrationStatusTagList,
   RegistrationTypeTagList,
   RntTagList,
+  getDivisionTagColor,
 };

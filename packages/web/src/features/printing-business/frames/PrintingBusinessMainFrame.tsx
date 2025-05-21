@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import type {
   ApiPrt002RequestBody,
   ApiPrt002RequestParam,
-} from "@sparcs-clubs/interface/api/promotional-printing/endpoint/apiPrt002";
-import { PromotionalPrintingSizeEnum } from "@sparcs-clubs/interface/common/enum/promotionalPrinting.enum";
+} from "@clubs/interface/api/promotional-printing/endpoint/apiPrt002";
+import { PromotionalPrintingSizeEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";

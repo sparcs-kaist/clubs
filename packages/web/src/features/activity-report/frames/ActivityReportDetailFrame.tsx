@@ -2,10 +2,10 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import styled from "styled-components";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -165,30 +165,6 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     });
   }, [approveActivityReport, id]);
 
-  const isPastActivity = useMemo(() => {
-    if (
-      !activityDeadline ||
-      !activityDeadline.targetTerm ||
-      !data.durations ||
-      data.durations.length === 0
-    ) {
-      return false;
-    }
-
-    const maxEndTermDuration = data.durations.reduce(
-      (maxDuration, currentDuration) =>
-        new Date(currentDuration.endTerm) > new Date(maxDuration.endTerm)
-          ? currentDuration
-          : maxDuration,
-      data.durations[0],
-    );
-
-    return (
-      new Date(maxEndTermDuration.endTerm) <
-      new Date(activityDeadline.targetTerm.startTerm)
-    );
-  }, [activityDeadline, data.durations]);
-
   if (isError) {
     return <NotFound />;
   }
@@ -196,34 +172,6 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
   if (!data || isLoading) {
     return <AsyncBoundary isLoading={isLoading} isError={isError} />;
   }
-
-  const additionalButtons = () => {
-    if (profile.type === UserTypeEnum.Undergraduate) {
-      return (
-        <FlexWrapper gap={12}>
-          <Button type="default" onClick={handleDelete}>
-            삭제
-          </Button>
-          <Button type="default" onClick={handleEdit}>
-            수정
-          </Button>
-        </FlexWrapper>
-      );
-    }
-
-    if (profile.type === UserTypeEnum.Professor) {
-      return (
-        <Button
-          type={data.professorApprovedAt ? "disabled" : "default"}
-          onClick={handleProfessorApproval}
-        >
-          승인
-        </Button>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
@@ -256,7 +204,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             >
               {data.durations.map((duration, index) => (
                 <Typography key={index}>
-                  {`${formatDate(duration.startTerm)} ~ ${formatDate(duration.endTerm)}`}
+                  {`${formatDate(duration.startTerm!)} ~ ${formatDate(duration.endTerm!)}`}
                 </Typography>
               ))}
             </FlexWrapper>
@@ -332,12 +280,13 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
           )}
         </Card>
 
-        {profile.type === UserTypeEnum.Executive && (
-          <ExecutiveActivityReportApprovalSection
-            comments={filterActivityComments(data.comments)}
-            clubId={data.clubId}
-          />
-        )}
+        {profile.type === UserTypeEnum.Executive &&
+          activityDeadline?.canApprove && (
+            <ExecutiveActivityReportApprovalSection
+              comments={filterActivityComments(data.comments)}
+              clubId={data.clubId}
+            />
+          )}
 
         <FlexWrapper gap={20} justify="space-between">
           <Button type="default" onClick={navigateToActivityReportList}>
@@ -348,7 +297,26 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             isLoading={isLoadingDeadline}
             isError={isErrorDeadline}
           >
-            {isPastActivity ? null : additionalButtons()}
+            {profile.type === UserTypeEnum.Undergraduate &&
+              activityDeadline?.isEditable && (
+                <FlexWrapper gap={12}>
+                  <Button type="default" onClick={handleDelete}>
+                    삭제
+                  </Button>
+                  <Button type="default" onClick={handleEdit}>
+                    수정
+                  </Button>
+                </FlexWrapper>
+              )}
+            {profile.type === UserTypeEnum.Professor &&
+              activityDeadline?.canApprove && (
+                <Button
+                  type={data.professorApprovedAt ? "disabled" : "default"}
+                  onClick={handleProfessorApproval}
+                >
+                  승인
+                </Button>
+              )}
           </AsyncBoundary>
         </FlexWrapper>
       </FlexWrapper>

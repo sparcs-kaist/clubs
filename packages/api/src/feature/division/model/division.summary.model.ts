@@ -1,15 +1,18 @@
 import { InferSelectModel } from "drizzle-orm";
 
-import { IDivisionSummary } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { IDivisionSummary } from "@clubs/interface/api/division/type/division.type";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
-import { MDivision } from "./division.model";
+import { OldMDivision } from "./old.division.model";
 
 export type DivisionDBResult = InferSelectModel<typeof Division>;
 
-export class VDivisionSummary extends MEntity implements IDivisionSummary {
+export class VDivisionSummary
+  extends MEntity<number>
+  implements IDivisionSummary
+{
   static modelName = "divisionSummary";
 
   name: IDivisionSummary["name"];
@@ -17,17 +20,12 @@ export class VDivisionSummary extends MEntity implements IDivisionSummary {
   // 첫 번째 생성자: IDivision\Summary로부터 초기화
   constructor(divisionSummary: IDivisionSummary);
 
-  // 두 번째 생성자: MDivision로부터 초기화
-  constructor(division: MDivision);
+  // 두 번째 생성자: OldMDivision로부터 초기화
+  constructor(division: OldMDivision);
 
-  constructor(param: IDivisionSummary | MDivision) {
+  constructor(param: IDivisionSummary | OldMDivision) {
     super();
-    if (param instanceof MDivision) {
-      this.id = param.id;
-      this.name = param.name;
-    } else {
-      Object.assign(this, param);
-    }
+    Object.assign(this, param);
   }
 
   static from(result: DivisionDBResult): VDivisionSummary {

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import { UserTypeEnum } from "@sparcs-clubs/interface/common/enum/user.enum";
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ExecutiveActivityReportChargedFrame from "@sparcs-clubs/web/features/executive/activity-report/frames/ExecutiveActivityReportChargedFrame";
+import ExecutiveActivityReportChargedFrame from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportChargedFrame";
 
 const ExecutiveActivityReport = () => {
   const { isLoggedIn, login, profile } = useAuth();

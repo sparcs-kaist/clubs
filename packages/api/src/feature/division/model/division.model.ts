@@ -1,34 +1,28 @@
-import { InferSelectModel } from "drizzle-orm";
+import { IDivision } from "@clubs/domain/division/division";
 
-import { IDivision } from "@sparcs-clubs/interface/api/division/type/division.type";
+import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
 
-import { MEntity } from "@sparcs-clubs/api/common/model/entity.model";
-import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
+import { MDistrict } from "./district.model";
 
-export type DivisionDBResult = InferSelectModel<typeof Division>;
-
-export class MDivision extends MEntity implements IDivision {
-  static modelName = "division";
-
+export interface IDivisionCreate {
   name: IDivision["name"];
-
-  startTerm: IDivision["startTerm"];
-
-  endTerm: IDivision["endTerm"];
-
   district: IDivision["district"];
+  startTerm: IDivision["startTerm"];
+  endTerm: IDivision["endTerm"];
+}
+
+export class MDivision extends MEntity implements IDivision, IDivisionCreate {
+  name: IDivision["name"];
+  district: IDivision["district"];
+  startTerm: IDivision["startTerm"];
+  endTerm: IDivision["endTerm"];
 
   constructor(data: IDivision) {
     super();
     Object.assign(this, data);
   }
+}
 
-  static from(result: DivisionDBResult): MDivision {
-    return new MDivision({
-      ...result,
-      district: {
-        id: result.districtId,
-      },
-    });
-  }
+export interface RMDivision extends MDivision {
+  district: MDistrict;
 }

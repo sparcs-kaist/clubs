@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import apiFnd007, {
   ApiFnd007ResponseOk,
-} from "@sparcs-clubs/interface/api/funding/endpoint/apiFnd007";
-import { FundingDeadlineEnum } from "@sparcs-clubs/interface/common/enum/funding.enum";
+} from "@clubs/interface/api/funding/endpoint/apiFnd007";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";
 
@@ -27,14 +27,16 @@ defineAxiosMock(mock => {
         id: 1,
         year: 2023,
         name: "여름가을",
+        semester: [{ id: 15 }, { id: 16 }, { id: 17 }],
+        activityDurationTypeEnum: [1],
         startTerm: new Date("2024-07-01"),
         endTerm: new Date("2024-12-30"),
       },
       deadline: {
         id: 1,
-        deadlineEnum: FundingDeadlineEnum.Revision,
+        deadlineEnum: FundingDeadlineEnum.Modification,
         startDate: new Date("2024-07-01"),
-        endDate: new Date("2024-12-30"),
+        endTerm: new Date("2024-12-30"),
       },
     },
   ]);
