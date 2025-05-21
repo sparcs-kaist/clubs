@@ -74,7 +74,7 @@ export class OverviewRepository {
         ClubDelegateEnum,
         eq(ClubDelegateEnum.id, ClubDelegate.clubDelegateEnum),
       )
-      .leftJoin(ClubT, eq(ClubT.id, ClubDelegate.clubId))
+      .leftJoin(ClubT, eq(ClubT.clubId, ClubDelegate.clubId))
       .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
       .leftJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
       .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
