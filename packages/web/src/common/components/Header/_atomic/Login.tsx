@@ -22,6 +22,7 @@ const LoginInner = styled.div`
   color: ${({ theme }) => theme.colors.BLACK};
   text-decoration: none;
   cursor: pointer;
+  width: max-content;
 
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
     display: none;

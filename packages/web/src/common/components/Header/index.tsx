@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 
 import Icon from "@sparcs-clubs/web/common/components/Icon";
 import NavList from "@sparcs-clubs/web/common/components/NavTools/NavList";
+import useMediaQuery from "@sparcs-clubs/web/common/hooks/useMediaQuery";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import navPaths from "@sparcs-clubs/web/constants/nav";
 import paths from "@sparcs-clubs/web/constants/paths";
@@ -18,7 +19,6 @@ import Login from "./_atomic/Login";
 import Logo from "./_atomic/Logo";
 
 const IdentityBar = styled.div`
-  position: relative;
   width: 100%;
   height: 5px;
   background-color: ${({ theme }) => theme.colors.PRIMARY};
@@ -26,34 +26,17 @@ const IdentityBar = styled.div`
 
 const LogoContainer = styled.div`
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 `;
 
 const NavInner = styled.div`
-  position: relative;
   display: flex;
   height: 50px;
   padding: 0px 20px;
   justify-content: space-between;
   align-items: center;
-  align-self: stretch;
-`;
-
-const StyledNavList = styled(NavList)`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: ${({ theme }) => theme.responsive.CONTENT.xxl};
-
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.xl}) {
-    width: ${({ theme }) => theme.responsive.CONTENT.xl};
-  }
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.lg}) {
-    width: ${({ theme }) => theme.responsive.CONTENT.lg};
-  }
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
-    display: none;
-  }
 `;
 
 const HeaderInner = styled.div`
@@ -66,16 +49,15 @@ const HeaderInner = styled.div`
   backdrop-filter: blur(10px);
 `;
 
-const Menu = styled.div`
-  display: none;
-
-  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
-    display: flex;
-  }
-`;
-
 const Header: React.FC = () => {
   const isBetaPeriod = true;
+  const theme = useTheme();
+  const isSmallerThanMd = useMediaQuery(
+    `(max-width: ${theme.responsive.BREAKPOINT.md})`,
+  );
+  const isMobile = useMediaQuery(
+    `(max-width: ${theme.responsive.BREAKPOINT.xs})`,
+  );
 
   const [isMobileMenuVisible, setIsMobileMenuVisible] = useState<boolean>();
 
@@ -100,24 +82,28 @@ const Header: React.FC = () => {
     <HeaderInner>
       <IdentityBar />
       <NavInner>
-        <LogoContainer>
-          <Logo onClick={handleClose} />
-          {isBetaPeriod && <Beta />}
-        </LogoContainer>
-        <FlexWrapper gap={8} direction={"row"}>
-          {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
-            <LanguageSwitcher />
-          )}
-          <Login />
+        <FlexWrapper gap={45} direction="row">
+          <LogoContainer>
+            <Logo onClick={handleClose} />
+            {isBetaPeriod && <Beta />}
+          </LogoContainer>
+          {!isSmallerThanMd && <NavList highlight keys={headerPaths} />}
         </FlexWrapper>
-        <Menu>
-          <Icon
-            type={isMobileMenuVisible ? "close" : "menu"}
-            size={24}
-            onClick={handleClick}
-          />
-        </Menu>
-        <StyledNavList highlight keys={headerPaths} />
+        <FlexWrapper direction="row" gap={isSmallerThanMd ? 20 : 30}>
+          <FlexWrapper gap={8} direction="row">
+            {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
+              <LanguageSwitcher isMobile={isMobile} />
+            )}
+            <Login />
+          </FlexWrapper>
+          {isSmallerThanMd && (
+            <Icon
+              type={isMobileMenuVisible ? "close" : "menu"}
+              size={24}
+              onClick={handleClick}
+            />
+          )}
+        </FlexWrapper>
       </NavInner>
       {isMobileMenuVisible && (
         <MobileNavMenu
