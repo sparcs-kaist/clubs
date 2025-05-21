@@ -1,6 +1,8 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
 import React, { useEffect, useState } from "react";
 
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -11,8 +13,8 @@ import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/compone
 import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
 import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
 import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
-
-import { downloadDelegateOverviewExcel } from "../utils/downloadOverviewExcel";
+import { downloadDelegateOverviewExcel } from "@sparcs-clubs/web/features/overview/utils/downloadOverviewExcel";
+import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/utils/OverviewCommonColumns";
 
 const divisions = [
   "생활문화",
@@ -30,6 +32,18 @@ const divisions = [
 interface OverviewFrameProps {
   year: number;
   semesterName: string;
+}
+
+function overviewFilter(columnFilters: ColumnFiltersState) {
+  return (row: OverviewFilteredRow) =>
+    row.clubNameKr.includes(columnFilters[0].value as string) &&
+    (columnFilters[1].value as string[]).includes(
+      {
+        [ClubTypeEnum.Regular]: "정동아리",
+        [ClubTypeEnum.Provisional]: "가동아리",
+      }[row.clubTypeEnum as ClubTypeEnum],
+    ) &&
+    (columnFilters[2].value as string[]).includes(row.divisionName);
 }
 
 const OverviewFrame: React.FC<OverviewFrameProps> = ({
@@ -63,7 +77,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     provisional: true,
     regular: true,
     semesterName: "봄",
-    year: 2024,
+    year,
   });
 
   useEffect(() => {
@@ -109,7 +123,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
           searchText={columnFilters[0].value as string}
           handleChange={value => {
             setColumnFilters([
-              { id: "clubName", value },
+              { id: "clubNameKr", value },
               ...columnFilters.slice(1),
             ]);
           }}
@@ -132,7 +146,12 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
         <Button
           onClick={() =>
             downloadDelegateOverviewExcel(
-              { delegates: delegates.data, clubInfo: clubInfo.data },
+              {
+                delegates: delegates.data?.filter(
+                  overviewFilter(columnFilters),
+                ),
+                clubInfo: clubInfo.data?.filter(overviewFilter(columnFilters)),
+              },
               year,
               semesterName,
             )

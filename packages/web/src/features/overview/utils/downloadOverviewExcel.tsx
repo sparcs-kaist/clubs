@@ -6,11 +6,6 @@ import { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiO
 import { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-export interface SheetData<T> {
-  name: string;
-  data: T[];
-}
-
 interface ClubsOverviewData {
   delegates?: ApiOvv001ResponseOK;
   clubInfo?: ApiOvv002ResponseOK;

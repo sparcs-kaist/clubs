@@ -9,7 +9,7 @@ import {
 } from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
-interface ApiOvvResponseOKInterface {
+export interface OverviewFilteredRow {
   clubId: number;
   divisionName: string;
   district: string;
@@ -18,7 +18,7 @@ interface ApiOvvResponseOKInterface {
 }
 
 export default function OverviewCommonColumns<
-  ApiOvvResponseOK extends ApiOvvResponseOKInterface,
+  ApiOvvResponseOK extends OverviewFilteredRow,
 >(columnHelper: ColumnHelper<ApiOvvResponseOK>) {
   return [
     columnHelper.accessor(row => row.clubTypeEnum, {
@@ -58,6 +58,8 @@ export default function OverviewCommonColumns<
       id: "clubNameKr",
       header: "동아리 대표명칭",
       size: 120,
+      filterFn: (row, _, value: string) =>
+        row.original.clubNameKr.includes(value),
     }),
   ];
 }

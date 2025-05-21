@@ -62,10 +62,16 @@ export class OverviewService {
   // 정동아리/가동아리 필터를 만들어줍니다
   // .filter(this.clubTypeOf(query)) 하여 사용
   private clubTypeOf(query: FilterQuery): (club: ClubFilterType) => boolean {
-    return (club: ClubFilterType) =>
-      query[
-        club.clubStatus === ClubTypeEnum.Regular ? "regular" : "provisional"
-      ];
+    return (club: ClubFilterType) => {
+      if (club.clubStatus === ClubTypeEnum.Regular) {
+        return query.regular;
+      }
+      if (club.clubStatus === ClubTypeEnum.Provisional) {
+        return query.provisional;
+      }
+
+      return false;
+    };
   }
 
   // 동아리 분과 필터를 만들어줍니다
