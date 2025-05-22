@@ -11,10 +11,10 @@ import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/t
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/components/ClubIntoKROverviewTable";
 import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
+import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/OverviewCommonColumns";
 import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
 import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
 import { downloadDelegateOverviewExcel } from "@sparcs-clubs/web/features/overview/utils/downloadOverviewExcel";
-import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/utils/OverviewCommonColumns";
 
 const divisions = [
   "생활문화",
