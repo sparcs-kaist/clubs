@@ -11,7 +11,6 @@ import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import OverviewFrame from "@sparcs-clubs/web/features/overview/frames/OverviewFrame";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
-// import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
 const Overview: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -19,12 +18,11 @@ const Overview: React.FC = () => {
   const { semester: semesterInfo } = useGetSemesterNow();
 
   const currentYear = semesterInfo?.year ?? new Date().getFullYear();
-  const currentSemester = semesterInfo?.name;
+  const currentSemester = semesterInfo?.name ?? "봄";
 
   const [year, setYear] = useState<number>(currentYear);
-  const [semesterName, setSemesterName] = useState<string | undefined>(
-    currentSemester,
-  );
+  const [semesterName, setSemesterName] = useState<string>(currentSemester);
+
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
       setLoading(false);
@@ -81,7 +79,7 @@ const Overview: React.FC = () => {
         />
       </FlexWrapper>
       <OverviewFrame
-        semesterName={semesterName ?? "봄"}
+        semesterName={semesterName}
         year={year ?? new Date().getFullYear()}
       />
     </FlexWrapper>

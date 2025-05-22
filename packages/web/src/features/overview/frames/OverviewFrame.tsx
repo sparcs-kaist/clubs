@@ -28,7 +28,11 @@ const divisions = [
   "생활체육",
   "이공학술",
   "인문학술",
+  "연주음악",
+  "식생활",
+  "대중문화",
 ];
+
 interface OverviewFrameProps {
   year: number;
   semesterName: string;
@@ -61,8 +65,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   ]);
 
   const delegates = useGetDelegatesOverview({
-    division:
-      "생활문화,종교,사회,연행예술,전시창작,밴드음악,보컬음악,구기체육,생활체육,이공학술,인문학술",
+    division: divisions.join(","),
     hasDelegate1: false,
     hasDelegate2: false,
     provisional: true,
@@ -72,8 +75,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   });
 
   const clubInfo = useGetClubInfoKROverview({
-    division:
-      "생활문화,종교,사회,연행예술,전시창작,밴드음악,보컬음악,구기체육,생활체육,이공학술,인문학술",
+    division: divisions.join(","),
     provisional: true,
     regular: true,
     semesterName: "봄",
