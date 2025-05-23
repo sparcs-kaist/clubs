@@ -1110,7 +1110,7 @@ export default class ActivityService {
         createdAt: e.createdAt,
       })),
       updatedAt: activity.editedAt,
-      professorApprovedAt: activity.commentedAt,
+      professorApprovedAt: activity.professorApprovedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };

@@ -105,10 +105,25 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     profile.type === UserTypeEnum.Executive;
 
   const navigateToActivityReportList = () => {
-    if (profile.type === UserTypeEnum.Executive) {
-      router.back();
-    } else {
-      router.push("/manage-club/activity-report");
+    const profileType: UserTypeEnum = profile.type;
+    switch (profileType) {
+      case UserTypeEnum.Executive:
+        router.back();
+        break;
+      case UserTypeEnum.Professor:
+        router.push("/manage-club/");
+        break;
+      case UserTypeEnum.Master:
+      case UserTypeEnum.Doctor:
+      case UserTypeEnum.Employee:
+      case UserTypeEnum.Undergraduate:
+        router.push("/manage-club/activity-report");
+        break;
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const exhaustiveCheck: never = profileType;
+        router.push("/manage-club/activity-report");
+      }
     }
   };
 
