@@ -14,7 +14,7 @@ import { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiO
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import OverviewCommonColumns from "@sparcs-clubs/web/features/overview/OverviewCommonColumns";
+import OverviewCommonColumns from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
 
 interface ClubInfoKROverviewTableProps {
   clubInfos: ApiOvv002ResponseOK;

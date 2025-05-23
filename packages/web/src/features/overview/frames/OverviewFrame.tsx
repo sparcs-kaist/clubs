@@ -9,14 +9,21 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
 import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useGetDivisions from "@sparcs-clubs/web/common/services/getDivisions";
+import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
 import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/components/ClubIntoKROverviewTable";
 import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
-import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/OverviewCommonColumns";
 import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
 import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
 import { downloadDelegateOverviewExcel } from "@sparcs-clubs/web/features/overview/utils/downloadOverviewExcel";
 
-const divisions = [
+interface OverviewFrameProps {
+  year: number;
+  semesterName: string;
+}
+
+// 이거 없으면 (division 요청한 뒤에 총람 요청 응답까지) 너무 느려서 넣었습니다.
+const temporaryDivisions = [
   "생활문화",
   "종교",
   "사회",
@@ -32,11 +39,6 @@ const divisions = [
   "식생활",
   "대중문화",
 ];
-
-interface OverviewFrameProps {
-  year: number;
-  semesterName: string;
-}
 
 function overviewFilter(columnFilters: ColumnFiltersState) {
   return (row: OverviewFilteredRow) =>
@@ -54,6 +56,8 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   year,
   semesterName,
 }) => {
+  const { data: divisionData, isLoading, isError } = useGetDivisions();
+
   const [isDelegateView, setIsDelegateView] = useState<boolean>(
     window.history.state?.isDelegateView ?? true,
   );
@@ -61,11 +65,16 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     { id: "clubNameKr", value: "" },
     { id: "clubTypeEnum", value: ["정동아리", "가동아리"] },
-    { id: "divisionName", value: divisions },
+    {
+      id: "divisionName",
+      value: divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions,
+    },
   ]);
 
   const delegates = useGetDelegatesOverview({
-    division: divisions.join(","),
+    division: (
+      divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions
+    ).join(","),
     hasDelegate1: false,
     hasDelegate2: false,
     provisional: true,
@@ -75,7 +84,9 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   });
 
   const clubInfo = useGetClubInfoKROverview({
-    division: divisions.join(","),
+    division: (
+      divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions
+    ).join(","),
     provisional: true,
     regular: true,
     semesterName: "봄",
@@ -94,15 +105,15 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     },
     {
       name: "분과",
-      content: divisions,
+      content: divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions,
       selectedContent: columnFilters[2].value as string[],
     },
   ];
 
   return (
     <AsyncBoundary
-      isLoading={delegates.isLoading || clubInfo.isLoading}
-      isError={delegates.isError || clubInfo.isError}
+      isLoading={delegates.isLoading || clubInfo.isLoading || isLoading}
+      isError={delegates.isError || clubInfo.isError || isError}
     >
       <FlexWrapper direction="row" gap={12}>
         <Button
@@ -129,7 +140,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
               ...columnFilters.slice(1),
             ]);
           }}
-          placeholder=""
+          placeholder="동아리 이름을 입력하세요"
         />
         <MultiFilter
           categories={getFilterCategories()}
