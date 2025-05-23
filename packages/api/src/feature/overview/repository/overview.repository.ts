@@ -67,13 +67,14 @@ export class OverviewRepository {
         studentNumber: Student.number,
         phoneNumber: Student.phoneNumber,
         kaistEmail: Student.email,
+        department: Department.name,
       })
       .from(ClubDelegate)
       .leftJoin(
         ClubDelegateEnum,
         eq(ClubDelegateEnum.id, ClubDelegate.clubDelegateEnum),
       )
-      .leftJoin(ClubT, eq(ClubT.id, ClubDelegate.clubId))
+      .leftJoin(ClubT, eq(ClubT.clubId, ClubDelegate.clubId))
       .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
       .leftJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
       .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
@@ -87,7 +88,7 @@ export class OverviewRepository {
         ),
       )
       .leftJoin(User, eq(User.id, Student.userId))
-      .leftJoin(Department, eq(Department.id, StudentT.department))
+      .leftJoin(Department, eq(Department.departmentId, StudentT.department))
       .where(
         and(
           isNull(ClubDelegate.endTerm),
