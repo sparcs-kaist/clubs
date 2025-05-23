@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import apiAct023, {
+  ApiAct023RequestQuery,
   ApiAct023ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct023";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
@@ -10,11 +11,19 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useGetExecutiveActivities = () =>
+const useGetExecutiveActivities = (query: ApiAct023RequestQuery) =>
   useQuery<ApiAct023ResponseOk, Error>({
-    queryKey: [apiAct023.url()],
+    queryKey: [
+      apiAct023.url(),
+      query.pageOffset,
+      query.itemCount,
+      query.clubName,
+      query.executiveName,
+    ],
     queryFn: async (): Promise<ApiAct023ResponseOk> => {
-      const { data } = await axiosClientWithAuth.get(apiAct023.url(), {});
+      const { data } = await axiosClientWithAuth.get(apiAct023.url(), {
+        params: query,
+      });
 
       return data;
     },

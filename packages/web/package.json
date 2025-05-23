@@ -86,7 +86,6 @@
     "@types/node": "^20",
     "@types/qs": "^6.9.18",
     "@types/react": "^18",
-    "@types/react-datepicker": "^7.0.0",
     "@types/react-dom": "^18",
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.24.0",
