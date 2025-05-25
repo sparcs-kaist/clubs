@@ -2,7 +2,7 @@ import { getRequestConfig } from "next-intl/server";
 
 import { getUserLocale } from "./locale";
 
-const NAMESPACES = ["path", "main"];
+const NAMESPACES = ["path", "main", "agree"];
 
 export default getRequestConfig(async () => {
   const locale = await getUserLocale();
