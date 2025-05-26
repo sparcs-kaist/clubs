@@ -142,24 +142,24 @@ const ExecutiveActivityReportFrame = () => {
       </FlexWrapper>
       <TableWithPaginationWrapper>
         {isClubView ? (
-          <ExecutiveActivityClubTable
-            activities={data?.items}
-            selectedClubIds={selectedClubIds}
-            setSelectedClubIds={setSelectedClubIds}
-          />
+          <>
+            <ExecutiveActivityClubTable
+              activities={data?.items}
+              selectedClubIds={selectedClubIds}
+              setSelectedClubIds={setSelectedClubIds}
+            />
+            <Pagination
+              totalPage={Math.ceil((data?.total ?? 0) / limit)}
+              currentPage={currentPage}
+              limit={limit}
+              setPage={setCurrentPage}
+            />
+          </>
         ) : (
           <ExecutiveActivityChargedTable
             executives={data?.executiveProgresses}
           />
         )}
-        <FlexWrapper direction="row" gap={16} justify="center">
-          <Pagination
-            totalPage={Math.ceil((data?.total ?? 0) / limit)}
-            currentPage={currentPage}
-            limit={limit}
-            setPage={setCurrentPage}
-          />
-        </FlexWrapper>
       </TableWithPaginationWrapper>
     </AsyncBoundary>
   );
