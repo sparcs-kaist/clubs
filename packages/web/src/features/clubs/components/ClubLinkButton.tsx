@@ -68,14 +68,10 @@ const ClubLinkButton: React.FC<ClubLinkButtonProps> = ({
       </IconWrapper>
       <ContextWrapper>
         <Typography
-          style={{
-            color: "theme.colors.PRIMARY",
-            textAlign: "center",
-            fontFamily: "Pretendard",
-            fontSize: "16px",
-            fontWeight: 400,
-            lineHeight: "20px",
-          }}
+          color="BLACK"
+          fs={16}
+          lh={20}
+          style={{ textAlign: "center" }}
         >
           {title}
         </Typography>

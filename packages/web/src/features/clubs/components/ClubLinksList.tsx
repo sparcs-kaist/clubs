@@ -7,18 +7,20 @@ import YouTubeIcon from "@mui/icons-material/YouTube";
 import React from "react";
 import styled from "styled-components";
 
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 import ClubLinkButton from "@sparcs-clubs/web/features/clubs/components/ClubLinkButton";
 
-const EmptyLinkText = styled.div`
+const EmptyLinkText = styled(Typography).attrs({
+  fs: 16,
+  lh: 28,
+  fw: "REGULAR",
+  color: "GRAY.300",
+})`
   width: 100%;
-  font-size: 16px;
-  line-height: 28px;
-  font-weight: 400;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
-  color: ${({ theme }) => theme.colors.GRAY[300]};
 `;
 
 const ClubLinks = [
