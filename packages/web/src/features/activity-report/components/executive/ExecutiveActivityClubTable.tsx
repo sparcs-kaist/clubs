@@ -23,6 +23,7 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveActivityClubTableProps {
   activities?: ApiAct023ResponseOk["items"];
+  total: number;
   selectedClubIds: number[];
   setSelectedClubIds: (clubIds: number[]) => void;
 }
@@ -124,6 +125,7 @@ const columns = [
 
 const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
   activities = [],
+  total,
   selectedClubIds,
   setSelectedClubIds,
 }) => {
@@ -169,11 +171,9 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
     enableSorting: false,
   });
 
-  const totalCount = activities.length;
-
-  let countString = `총 ${totalCount}개`;
+  let countString = `총 ${total}개`;
   if (selectedClubIds.length !== 0) {
-    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${totalCount}개`;
+    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${total}개`;
   }
 
   return (

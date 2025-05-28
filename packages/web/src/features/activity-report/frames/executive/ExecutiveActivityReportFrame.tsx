@@ -79,6 +79,7 @@ const ExecutiveActivityReportFrame = () => {
   useEffect(() => {
     const debounce = setTimeout(() => {
       setSearchText(tempSearchText);
+      setCurrentPage(1);
     }, 500);
     return () => clearTimeout(debounce);
   }, [tempSearchText]);
@@ -145,6 +146,7 @@ const ExecutiveActivityReportFrame = () => {
           <>
             <ExecutiveActivityClubTable
               activities={data?.items}
+              total={data?.total ?? 0}
               selectedClubIds={selectedClubIds}
               setSelectedClubIds={setSelectedClubIds}
             />
