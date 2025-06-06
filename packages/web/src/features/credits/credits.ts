@@ -101,6 +101,13 @@ const credits: SemesterCredit[] = [
         roleType: RoleType.intern,
         comment: "👶",
       },
+      {
+        nickname: "lia",
+        name: "이리아",
+        role: "Designer",
+        roleType: RoleType.member,
+        comment: "Clubs 🎨🛠️",
+      },
     ],
   },
   {

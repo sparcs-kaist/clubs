@@ -224,7 +224,7 @@ export default class ActivityOldService {
   }
 
   async getExecutiveActivitiesClubs(
-    _query?: ApiAct023RequestQuery,
+    query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
     const date = new Date(); //new Date("2025-01-05");
     const semesterId = await this.semesterPublicService.loadId({
@@ -372,37 +372,37 @@ export default class ActivityOldService {
 
     // 쿼리와 페이지네이션 적용
 
-    // const clubNameFilteredItems = !query.clubName
-    //   ? items
-    //   : items.filter(
-    //       item =>
-    //         item.clubNameKr
-    //           .normalize("NFC")
-    //           .includes(query.clubName.normalize("NFC")) ||
-    //         item.clubNameEn
-    //           .normalize("NFC")
-    //           .includes(query.clubName.normalize("NFC")),
-    //     );
+    const clubNameFilteredItems = !query.clubName
+      ? items
+      : items.filter(
+          item =>
+            item.clubNameKr
+              .normalize("NFC")
+              .includes(query.clubName.normalize("NFC")) ||
+            item.clubNameEn
+              .normalize("NFC")
+              .includes(query.clubName.normalize("NFC")),
+        );
 
-    // const executiveNameFilteredItems = !query.executiveName
-    //   ? clubNameFilteredItems
-    //   : clubNameFilteredItems.filter(item =>
-    //       item.chargedExecutive?.name
-    //         .normalize("NFC")
-    //         .includes(query.executiveName.normalize("NFC")),
-    //     );
-    // const total = executiveNameFilteredItems.length;
-    // const executiveNameFilteredExecutiveProgresses = !query.executiveName
-    //   ? executiveProgresses
-    //   : executiveProgresses.filter(e =>
-    //       e.executiveName
-    //         .normalize("NFC")
-    //         .includes(query.executiveName.normalize("NFC")),
-    //     );
+    const executiveNameFilteredItems = !query.executiveName
+      ? clubNameFilteredItems
+      : clubNameFilteredItems.filter(item =>
+          item.chargedExecutive?.name
+            .normalize("NFC")
+            .includes(query.executiveName.normalize("NFC")),
+        );
+    const total = executiveNameFilteredItems.length;
+    const executiveNameFilteredExecutiveProgresses = !query.executiveName
+      ? executiveProgresses
+      : executiveProgresses.filter(e =>
+          e.executiveName
+            .normalize("NFC")
+            .includes(query.executiveName.normalize("NFC")),
+        );
 
-    // const pageStart = (query.pageOffset - 1) * query.itemCount;
-    // const pageEnd = pageStart + query.itemCount;
-    // const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
+    const pageStart = (query.pageOffset - 1) * query.itemCount;
+    const pageEnd = pageStart + query.itemCount;
+    const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
 
     // console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
     // console.log(`ActivityDId: ${activityDId}`);
@@ -412,12 +412,10 @@ export default class ActivityOldService {
     // console.log(`SemesterId: ${semester.id}`);
     // console.log(`Date: ${date}`);
     return {
-      items,
-      executiveProgresses,
-      // items: paginatedItems,
-      // executiveProgresses: executiveNameFilteredExecutiveProgresses,
-      // total,
-      // offset: query.pageOffset,
+      items: paginatedItems,
+      executiveProgresses: executiveNameFilteredExecutiveProgresses,
+      total,
+      offset: query.pageOffset,
     };
   }
 
