@@ -36,7 +36,6 @@ defineAxiosMock(mock => {
   mock.onGet(apiAct002.url(1)).reply(() => {
     const dummy: z.infer<(typeof apiAct002.responseBodyMap)[200]> = {
       clubId: 1,
-      originalName: "Original Activity Name",
       name: "Activity Name",
       activityTypeEnumId: 1,
       durations: [

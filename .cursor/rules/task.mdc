@@ -1,0 +1,25 @@
+---
+description: 개발자가 task 를 시작하려고 한다면, 다음 과정을 따라서 Agent 가 동작합니다.
+globs: 
+alwaysApply: false
+---
+Abstract
+- 개발자가 task 를 시작하려고 한다면, 다음 과정을 따라서 Agent 가 동작합니다.
+
+Step 1. Task 를 시작하기 위한 정보들이 충분한지 검토합니다.
+- Task 를 수행함으로써 이루고자하는 동작이 있어야 합니다. ex) 기획 문서, 에러에 대한 스택 트레이스 등
+
+Step 2. Task 리뷰
+- Task 를 검토합니다.
+- 엣지케이스에 대해서 어떻게 핸들링하면 좋을지, 일반적인 동작이 아닌 경우 다른 옵션을 제시하기도 합니다.
+
+Step 3. 기획 확정
+- Step 2 에서 의견을 충분히 교환해서 프로그래머가 다음을 요청한다면, 기획을 다시한 번 정리해서 알려주도록 합니다.
+
+Step 4. 구현
+- 이 부분은 기본적으로 [common.mdc](mdc:.cursor/rules/common.mdc) 의 Agent 모드 규칙을 따릅니다.
+- Database 의 schema 를 정의해 나갑니다.
+- Resource 에 들어갈 api spec 를 정의해 나갑니다.
+- 여기까지 완료되면, 확정된 api spec 을 markdown 형식으로 정의하여 출력해줍니다.
+- Behavior 에 들어갈 business logic 를 정의해 나갑니다.
+- 동작성을 확인하기 위한 test 를 정의해 나갑니다.

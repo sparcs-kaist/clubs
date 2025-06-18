@@ -21,7 +21,6 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     clubId: zClub.shape.id,
-    originalName: zActivity.shape.name,
     name: zActivity.shape.name,
     activityTypeEnumId: zActivity.shape.activityTypeEnum, // ActivityTypeEnum.id는 양의 정수로 가정
     durations: zActivity.shape.durations,

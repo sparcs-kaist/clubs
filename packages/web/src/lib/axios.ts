@@ -7,7 +7,9 @@ import { env } from "@sparcs-clubs/web/env";
 
 import tokenInterceptor from "./_axios/axiosAuthTokenInterceptor";
 import errorInterceptor from "./_axios/axiosErrorInterceptor";
-import mockInterceptor from "./_axios/axiosMockInterceptor";
+import mockInterceptor, {
+  mockResponseInterceptor,
+} from "./_axios/axiosMockInterceptor";
 
 // Timezone 설정
 const TIMEZONE = "Asia/Seoul";
@@ -86,6 +88,11 @@ axiosClient.interceptors.request.use(
 );
 
 axiosClient.interceptors.response.use(
+  mockResponseInterceptor.onFulfilled,
+  mockResponseInterceptor.onRejected,
+);
+
+axiosClient.interceptors.response.use(
   errorInterceptor.onFulfilled,
   errorInterceptor.onRejected,
 );
@@ -122,6 +129,11 @@ axiosClientWithAuth.interceptors.request.use(
 axiosClientWithAuth.interceptors.request.use(
   tokenInterceptor.onFulfilled,
   tokenInterceptor.onRejected,
+);
+
+axiosClientWithAuth.interceptors.response.use(
+  mockResponseInterceptor.onFulfilled,
+  mockResponseInterceptor.onRejected,
 );
 
 axiosClientWithAuth.interceptors.response.use(

@@ -27,6 +27,8 @@ defineAxiosMock(mock => {
         id: 1,
         year: 2023,
         name: "여름가을",
+        semester: [{ id: 15 }, { id: 16 }, { id: 17 }],
+        activityDurationTypeEnum: [1],
         startTerm: new Date("2024-07-01"),
         endTerm: new Date("2024-12-30"),
       },

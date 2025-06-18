@@ -61,6 +61,8 @@ export const productionReadyPaths: {
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
     "/club-registration",
+    // 동아리 총람
+    "/overview",
   ],
   exclude: [],
 };

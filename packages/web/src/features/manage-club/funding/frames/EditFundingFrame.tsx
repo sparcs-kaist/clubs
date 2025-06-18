@@ -6,8 +6,12 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
+import RestoreDraftModal from "@sparcs-clubs/web/common/components/Modal/RestoreDraftModal";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useTemporaryStorage from "@sparcs-clubs/web/common/hooks/useTemporaryStorage";
+import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
+import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 
 import useGetInitialFundingFormData from "../hooks/useGetInitialFundingForm";
 import useUpdateFunding from "../hooks/useUpdateFunding";
@@ -33,6 +37,9 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
 
   const { mutateAsync: updateFunding } = useUpdateFunding(+fundingId, clubId);
 
+  const { savedData, isModalOpen, handleConfirm, handleClose } =
+    useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.EDIT_FUNDING);
+
   const handleSubmit = (data: FundingFormData) => {
     const filteredData = Object.fromEntries(
       Object.entries(data)
@@ -42,6 +49,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
 
     updateFunding(filteredData, {
       onSuccess: () => {
+        LocalStorageUtil.remove(LOCAL_STORAGE_KEY.EDIT_FUNDING);
         overlay.open(({ isOpen, close }) => (
           <Modal isOpen={isOpen}>
             <ConfirmModalContent
@@ -71,6 +79,17 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
     });
   };
 
+  if (isModalOpen) {
+    return (
+      <RestoreDraftModal
+        isOpen={isModalOpen}
+        mainText="작성하시던 지원금 수정 내역이 있습니다. 불러오시겠습니까?"
+        onConfirm={handleConfirm}
+        onClose={handleClose}
+      />
+    );
+  }
+
   return (
     <FlexWrapper direction="column" gap={60}>
       <PageHead
@@ -86,7 +105,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
           clubId={clubId}
           onCancel={cancelClick}
           onSubmit={handleSubmit}
-          initialData={funding ?? []}
+          initialData={savedData ?? funding ?? []}
         />
       </AsyncBoundary>
     </FlexWrapper>

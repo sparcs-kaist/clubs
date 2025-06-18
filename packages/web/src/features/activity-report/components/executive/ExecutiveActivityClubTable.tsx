@@ -22,8 +22,8 @@ import {
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveActivityClubTableProps {
-  activities: ApiAct023ResponseOk;
-  searchText: string;
+  activities?: ApiAct023ResponseOk["items"];
+  total: number;
   selectedClubIds: number[];
   setSelectedClubIds: (clubIds: number[]) => void;
 }
@@ -124,25 +124,20 @@ const columns = [
 ];
 
 const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
-  activities,
-  searchText,
+  activities = [],
+  total,
   selectedClubIds,
   setSelectedClubIds,
 }) => {
-  const sortedActivities = useMemo(
-    () => [...activities.items].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
-    [activities.items],
-  );
-
   const initialRowValues = useMemo(
     () =>
       selectedClubIds.reduce((acc, clubId) => {
-        const index = sortedActivities.findIndex(
+        const index = activities.findIndex(
           activity => activity.clubId === clubId,
         );
         return { ...acc, [index]: true };
       }, {}),
-    [selectedClubIds, sortedActivities],
+    [selectedClubIds, activities],
   );
 
   const [rowValues, setRowValues] =
@@ -154,18 +149,17 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
 
   const handleRowClick = (rowState: RowSelectionState) => {
     setRowValues(rowState);
-    const newSelected = sortedActivities.filter((_, i) => rowState?.[i]);
+    const newSelected = activities.filter((_, i) => rowState?.[i]);
     setSelectedClubIds(newSelected.map(activity => activity.clubId));
   };
 
   const table = useReactTable({
-    data: sortedActivities,
+    data: activities,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       rowSelection: rowValues,
-      globalFilter: searchText,
     },
     onRowSelectionChange: updaterOrValue => {
       if (typeof updaterOrValue === "function") {
@@ -177,17 +171,13 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
     enableSorting: false,
   });
 
-  const totalCount = sortedActivities.length;
-
-  let countString = `총 ${totalCount}개`;
+  let countString = `총 ${total}개`;
   if (selectedClubIds.length !== 0) {
-    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${totalCount}개`;
-  } else if (table.getRowModel().rows.length !== totalCount) {
-    countString = `검색 결과 ${table.getRowModel().rows.length}개 / 총 ${totalCount}개`;
+    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${total}개`;
   }
 
   return (
-    <FlexWrapper direction="column" gap={8}>
+    <FlexWrapper direction="column" gap={8} style={{ width: "100%" }}>
       <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
         {countString}
       </Typography>

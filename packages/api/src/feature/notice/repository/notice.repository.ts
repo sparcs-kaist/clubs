@@ -22,7 +22,7 @@ export type NoticeQuery = {
 };
 
 type NoticeOrderByKeys = "id" | "date" | "createdAt" | "articleId";
-type NoticeQuerySupport = {}; // ?
+type NoticeQuerySupport = {};
 
 type NoticeTable = typeof Notice;
 type NoticeDbSelect = InferSelectModel<NoticeTable>;

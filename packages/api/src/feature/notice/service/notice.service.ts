@@ -14,6 +14,7 @@ const maxAttempts = 10;
 const userDisplay = 50;
 
 export interface PostCrawlResult {
+  // 네이버 블로그에서 공지사항 글을 구분하는 고유한 번호
   articleId: number;
   author: string;
   title: string;
@@ -21,50 +22,22 @@ export interface PostCrawlResult {
   link: string;
 }
 
-function findArticleId(link: string): number {
-  return Number.parseInt(
-    link.match(/articleid=[0-9]+/)[0].replace("articleid=", ""),
-  );
+enum UpdatePeriodEnum {
+  After3Pages = -10,
+  Among3Pages = -5,
 }
 
+function findArticleId(link: string): number {
+  const match = link.match(/articleid=[0-9]+/i);
+  if (match) {
+    return Number.parseInt(match[0].replace("articleid=", ""));
+  }
+
+  return -1;
+}
 @Injectable()
 export class NoticeService {
   constructor(private readonly noticeRepository: NoticeRepository) {}
-
-  async getAllNotices() {
-    return this.noticeRepository.find({
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-  }
-
-  async getNotices(pageOffset: number, itemCount: number) {
-    const notices = await this.noticeRepository.find({
-      pagination: {
-        offset: pageOffset,
-        itemCount,
-      },
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-
-    if (!notices) {
-      throw new HttpException(
-        "[NoticeService] Error occurs while getting notices",
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const serviceResponse: ApiNtc001ResponseOK = {
-      notices,
-      total: await this.noticeRepository.count({}),
-      offset: pageOffset,
-    };
-
-    return serviceResponse;
-  }
 
   private async tryFetch(pageNum: number): Promise<string> {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -193,7 +166,9 @@ export class NoticeService {
   }
 
   async updateNotices(maxPages: number) {
-    const noticesFromDB = (await this.noticeRepository.find({})).map(e => ({
+    const noticesFromDB = (
+      await this.noticeRepository.find({ articleId: { gt: 0 } })
+    ).map(e => ({
       createdAt: e.createdAt,
       author: e.author,
       title: e.title,
@@ -201,6 +176,7 @@ export class NoticeService {
       date: e.date,
       id: e.id,
       articleId: findArticleId(e.link),
+      articleIdFromDB: e.articleId,
     }));
     const crawlResults = await this.crawlNotices(maxPages);
 
@@ -232,6 +208,29 @@ export class NoticeService {
       });
     }
 
+    // articleId가 반영되지 않은 notice가 있다면 patch를 통해 정상화
+    // 프로덕션에 올라가거나, DB를 롤백하는 등등 그런 상황을 위해 필요
+    const malformedNotices = noticesFromDB.filter(
+      notice => notice.articleIdFromDB !== notice.articleId,
+    );
+
+    if (malformedNotices.length > 0) {
+      await this.noticeRepository.patch(
+        {
+          id: malformedNotices.map(e => e.id),
+        },
+        notice => ({
+          createdAt: notice.createdAt,
+          author: notice.author,
+          title: notice.title,
+          link: notice.link,
+          date: notice.date,
+          id: notice.id,
+          articleId: findArticleId(notice.link),
+        }),
+      );
+    }
+
     await forEachAsyncSequentially(inserts, async post => {
       await this.noticeRepository.create({
         title: post.title,
@@ -254,5 +253,88 @@ export class NoticeService {
         articleId: post.articleId,
       });
     });
+
+    const isAfter3Pages: boolean = maxPages > 3;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+
+    // articleId를 음수로 해서 로그를 남깁니다.
+    await this.noticeRepository.create({
+      articleId: negativePeriod,
+      date: new Date(),
+      link: "",
+      createdAt: new Date(),
+      author: "Notice Cron",
+      title: `Notices Last Update TIme(~3)=${new Date()}`,
+    });
+    if (isAfter3Pages) {
+      await this.noticeRepository.create({
+        articleId: UpdatePeriodEnum.Among3Pages,
+        date: new Date(),
+        link: "",
+        createdAt: new Date(),
+        author: "Notice Cron",
+        title: `Notices Last Update TIme(4~)=${new Date()}`,
+      });
+    }
+  }
+
+  async getLastUpdateTime(pageOffset: number, itemCount: number) {
+    const isAfter3Pages: boolean = pageOffset + itemCount > 3 * userDisplay;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+    const lastUpdateRow = await this.noticeRepository.find({
+      articleId: negativePeriod,
+      orderBy: {
+        createdAt: OrderByTypeEnum.DESC,
+      },
+      pagination: {
+        itemCount: 1,
+        offset: 1,
+      },
+    });
+    if (lastUpdateRow.length === 0) {
+      const time = new Date();
+      time.setTime(time.getTime() + 600000 * negativePeriod);
+      return time;
+    }
+
+    // 그냥 lastUpdateRow[0].date로 하려고 했는데 그러면 날짜만 남고 시간이 짤려서 이렇게 했습니다
+    return new Date(lastUpdateRow[0].title.split("=")[1]);
+  }
+
+  async getNotices(pageOffset: number, itemCount: number) {
+    const notices = await this.noticeRepository.find({
+      articleId: { gt: 0 },
+      pagination: {
+        offset: pageOffset,
+        itemCount,
+      },
+      orderBy: {
+        articleId: OrderByTypeEnum.DESC,
+      },
+    });
+
+    if (!notices) {
+      throw new HttpException(
+        "[NoticeService] Error occurs while getting notices",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const serviceResponse: ApiNtc001ResponseOK = {
+      notices,
+      total: await this.noticeRepository.count({
+        articleId: {
+          gt: 0,
+        },
+      }),
+      offset: pageOffset,
+      lastUpdateTime: await this.getLastUpdateTime(pageOffset, itemCount),
+    };
+
+    return serviceResponse;
   }
 }

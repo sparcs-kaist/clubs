@@ -5,8 +5,12 @@ import React from "react";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
+import RestoreDraftModal from "@sparcs-clubs/web/common/components/Modal/RestoreDraftModal";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useTemporaryStorage from "@sparcs-clubs/web/common/hooks/useTemporaryStorage";
+import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
+import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 
 import { useCreateFunding } from "../hooks/useCreateFunding";
 import { FundingFormData } from "../types/funding";
@@ -24,9 +28,13 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
 
   const { mutate: createFunding } = useCreateFunding(clubId);
 
+  const { savedData, isModalOpen, handleConfirm, handleClose } =
+    useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.CREATE_FUNDING);
+
   const handleSubmit = (data: FundingFormData) => {
     createFunding(data, {
       onSuccess: () => {
+        LocalStorageUtil.remove(LOCAL_STORAGE_KEY.CREATE_FUNDING);
         overlay.open(({ isOpen, close }) => (
           <Modal isOpen={isOpen}>
             <ConfirmModalContent
@@ -56,6 +64,17 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
     });
   };
 
+  if (isModalOpen) {
+    return (
+      <RestoreDraftModal
+        isOpen={isModalOpen}
+        mainText="작성하시던 지원금 신청 내역이 있습니다. 불러오시겠습니까?"
+        onConfirm={handleConfirm}
+        onClose={handleClose}
+      />
+    );
+  }
+
   return (
     <FlexWrapper direction="column" gap={60}>
       <PageHead
@@ -70,6 +89,7 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
         clubId={clubId}
         onCancel={fundingCancelClick}
         onSubmit={handleSubmit}
+        initialData={savedData}
       />
     </FlexWrapper>
   );

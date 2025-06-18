@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import StyledBottom from "@sparcs-clubs/web/common/components/StyledBottom";
+import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
+import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
+import { isObjectEmpty, objectDeepCompare } from "@sparcs-clubs/web/utils";
 
 import { NO_ACTIVITY_REPORT_FUNDING } from "../constants";
 import { FundingFormData } from "../types/funding";
@@ -24,25 +27,45 @@ const FundingForm: React.FC<FundingFormProps> = ({
   onCancel,
   onSubmit,
 }) => {
+  const defaultValues: FundingFormData = {
+    ...initialData,
+    purposeActivity: {
+      id: initialData?.purposeActivity?.id ?? Infinity,
+      name: initialData?.purposeActivity?.name ?? NO_ACTIVITY_REPORT_FUNDING,
+    },
+  } as FundingFormData;
+
   const formCtx = useForm<FundingFormData>({
     mode: "all",
-    defaultValues: {
-      ...initialData,
-      purposeActivity: {
-        id: initialData
-          ? (initialData.purposeActivity?.id ?? Infinity)
-          : undefined,
-        name: initialData
-          ? (initialData.purposeActivity?.name ?? NO_ACTIVITY_REPORT_FUNDING)
-          : undefined,
-      },
-    },
+    defaultValues,
   });
 
   const {
     handleSubmit,
     formState: { isValid },
+    watch,
   } = formCtx;
+
+  // 폼 데이터 변경 감지
+  const initialRender = useRef(true);
+  const previousValues = useRef<FundingFormData>(defaultValues);
+
+  const formData = watch();
+
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return;
+    }
+
+    if (
+      !isObjectEmpty(formData) &&
+      objectDeepCompare(formData, previousValues.current)
+    ) {
+      LocalStorageUtil.save(LOCAL_STORAGE_KEY.CREATE_FUNDING, formData);
+      previousValues.current = formData;
+    }
+  }, [formData]);
 
   return (
     <FormProvider {...formCtx}>

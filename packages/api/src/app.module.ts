@@ -15,6 +15,7 @@ import FileModule from "./feature/file/file.module";
 import FundingModule from "./feature/funding/funding.module";
 import { MeetingModule } from "./feature/meeting/meeting.module";
 import { NoticeModule } from "./feature/notice/notice.module";
+import { OverviewModule } from "./feature/overview/overview.module";
 import { PromotionalPrintingModule } from "./feature/promotional-printing/promotional-printing.module";
 import RegistrationModule from "./feature/registration/registration.module";
 import { RentalModule } from "./feature/rental/rental.module";
@@ -40,6 +41,7 @@ import UserModule from "./feature/user/user.module";
     AuthModule,
     MeetingModule,
     SemesterModule,
+    OverviewModule,
   ],
   controllers: [AppController],
   providers: [

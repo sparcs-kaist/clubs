@@ -10,7 +10,9 @@ export const fundingDeadlineEnumToString = (deadline?: FundingDeadlineEnum) => {
       return "수정";
     case FundingDeadlineEnum.Exception:
       return "이의 제기";
+    case undefined:
+      return "기간 없음";
     default:
-      throw new Error("Invalid funding deadline enum");
+      return "-";
   }
 };
