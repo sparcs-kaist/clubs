@@ -64,7 +64,6 @@ export class AuthService {
     logger.info(JSON.stringify(ssoProfile));
 
     const isKaistIamLogin: boolean = true;
-    ssoProfile.kaist_info.ku_std_no = null;
     if (process.env.NODE_ENV !== "local") {
       if (!ssoProfile.sid || !ssoProfile.kaist_info) {
         return { isKaistIamLogin: false };
