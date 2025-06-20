@@ -57,9 +57,19 @@ const useGetActivityReportDetail = (
         if (!hasProfessor) {
           return null;
         }
-        return activityReport.professorApprovedAt !== null
-          ? ProfessorApprovalEnum.Approved
-          : ProfessorApprovalEnum.Pending;
+
+        if (!activityReport.professorApprovedAt) {
+          return ProfessorApprovalEnum.Pending;
+        }
+
+        if (
+          activityReport.editedAt &&
+          activityReport.editedAt > activityReport.professorApprovedAt
+        ) {
+          return ProfessorApprovalEnum.Pending;
+        }
+
+        return ProfessorApprovalEnum.Approved;
       })(),
       professorApprovedAt:
         activityReport.professorApprovedAt !== null
