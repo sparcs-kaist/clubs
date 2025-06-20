@@ -12,8 +12,9 @@
     "clean": "turbo run clean",
     "lint": "turbo run lint",
     "storybook": "turbo watch storybook",
-    "db": "dotenv -- pnpm -F api db",
-    "generate": "dotenv -- pnpm -F api generate",
+    "db-up": "turbo run db-up",
+    "db-down": "turbo run db-down",
+    "db-generate": "turbo run db-generate",
     "prepare": "husky install",
     "test": "pnpm --filter=api test"
   },

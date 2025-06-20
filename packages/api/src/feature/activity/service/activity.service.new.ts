@@ -373,7 +373,7 @@ export default class ActivityService {
         club: { id: activity.club.id },
         editedAt: new Date(),
         professorApprovedAt: undefined,
-        commentedAt: new Date(),
+        commentedAt: undefined,
         commentedExecutive: undefined,
       }),
     );
@@ -1050,7 +1050,7 @@ export default class ActivityService {
         createdAt: e.createdAt,
       })),
       updatedAt: activity.editedAt,
-      professorApprovedAt: activity.commentedAt,
+      professorApprovedAt: activity.professorApprovedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };

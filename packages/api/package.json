@@ -15,8 +15,9 @@
     "test:unit": "NODE_ENV=test dotenv -e ../../.env jest",
     "test:e2e": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-e2e.json",
     "test:cov": "NODE_ENV=test dotenv -e ../../.env -- jest --coverage",
-    "db": "docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs -d",
-    "generate": "pnpm db up --wait && pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
+    "db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs up -d",
+    "db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs down",
+    "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.609.0",
