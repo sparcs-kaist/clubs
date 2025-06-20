@@ -12,6 +12,13 @@
     "clean": {
       "cache": false
     },
+    "db-up": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"]
+    },
+    "db-down": {},
+    "db-generate": {
+      "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"]
+    },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "persistent": true
