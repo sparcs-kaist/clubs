@@ -6,6 +6,22 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.77",
+    date: new Date("2025.06.25"),
+    patchNoteContent: `Clubs v0.0.77
+오류 수정은 다음과 같습니다.
+- 집행부원이 활동보고서를 조히할 때, 임기가 지난 집행부원이 담당한 활동보고서를 조회할 수 없던 버그가 수정되었습니다.
+`,
+  },
+  {
+    version: "v.0.0.76",
+    date: new Date("2025.06.20"),
+    patchNoteContent: `Clubs v0.0.76
+오류 수정은 다음과 같습니다.
+- 활동보고서 수정시 지도교수님께서 승인한 것처럼 보이는 버그가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.75",
     date: new Date("2025.06.17"),
     patchNoteContent: `Clubs v0.0.75
@@ -15,14 +31,6 @@ Clubs 신규 기능은은 다음과 같습니다.
 오류 수정은 다음과 같습니다.
 - 공지사항이 게시 시간과 다르게 정렬되는 버그가 수정되었습니다.
 - 일부 교수님들께서 로그인이 되지 않는 버그가 수정되었습니다.
-`,
-  },
-  {
-    version: "v.0.0.76",
-    date: new Date("2025.06.20"),
-    patchNoteContent: `Clubs v0.0.76
-오류 수정은 다음과 같습니다.
-- 활동보고서 수정시 지도교수님께서 승인한 것처럼 보이는 버그가 수정되었습니다.
 `,
   },
   {
