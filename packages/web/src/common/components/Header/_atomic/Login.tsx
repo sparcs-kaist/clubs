@@ -56,7 +56,7 @@ const Login = () => {
       {isLoggedIn ? (
         <LoginInner onClick={() => setIsMenuOpen(!isMenuOpen)}>
           <Icon type="person" size={16} />
-          {userName} ({getUserType(type)})
+          {userName} ({t(`common.${getUserType(type)}`)})
         </LoginInner>
       ) : (
         <LoginInner onClick={login}>
