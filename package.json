@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "turbo watch dev",
     "dev-mock": "turbo watch dev-mock",
-    "dev-no-d": "turbo run dev --no-daemon",
     "build": "turbo run build --force",
     "start": "turbo run start",
     "clean": "turbo run clean",
