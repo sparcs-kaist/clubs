@@ -27,5 +27,6 @@
       "persistent": true
     },
     "lint": {}
-  }
+  },
+  "daemon": false
 }
