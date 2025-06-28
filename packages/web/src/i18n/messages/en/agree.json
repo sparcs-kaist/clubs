@@ -19,5 +19,6 @@
     },
     "동의 문구": "I checked and agree with the Terms of Collections and Use of Personal Information and the Terms of Sharing Personal Information to Third Parties",
     "확인": "Agree",
-    "미동의": "Disagree (use services without log in)"
+    "미동의": "Disagree (use services without log in)",
+    "미동의_모바일": "Disagree (use services without log in)"
 }

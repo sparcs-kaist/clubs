@@ -157,11 +157,7 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
         <TextButtonContainer>
           <TextButton
             onClick={onDisagree}
-            text={
-              isMobile
-                ? "약관에 동의하지 않겠습니다 (비로그인)"
-                : "약관에 동의하지 않겠습니다 (비로그인 상태로 서비스 이용)"
-            }
+            text={isMobile ? t("미동의_모바일") : t("미동의")}
             fs={14}
             color="GRAY"
             fw="MEDIUM"
