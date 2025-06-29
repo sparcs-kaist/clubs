@@ -1,7 +1,7 @@
 {
-  "대중문화": "Public Lifes",
-  "식생활": "Dietary Lifes",
-  "연행예술": "Preformance Arts",
+  "대중문화": "Public Lives",
+  "식생활": "Dietary Lives",
+  "연행예술": "Performance Arts",
   "전시창작": "Exhibition Arts",
   "밴드음악": "Band Music",
   "보컬음악": "Vocal Music",
@@ -11,5 +11,5 @@
   "구기체육": "Ball Sports",
   "생활체육": "Daily Sports",
   "이공학술": "Science & Technology Research",
-  "인문학술": "Libral Arts Research"
+  "인문학술": "Liberal Arts Research"
   }
