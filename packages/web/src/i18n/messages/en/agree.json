@@ -1,0 +1,24 @@
+{
+    "notice": "To be a member of KAIST Undergraduate Student Clubs Union, it is necessary to agree with the Terms of Collection and Use of Personal Information and the Terms of Sharing Personal Information to Third Parties. There could be restrictions on Clubs services in the case of disagreement.",
+    "개인정보 동의":"The Terms of Collection and Use of Personal Information",
+    "개인정보 동의 내용": {
+        "main": "KAIST Undergraduate Student Clubs Union collects and uses personal information in accordance with Article 15 of the Personal Information Protection Act.",
+        "sub-1": "Purpose of collection and use of personal information : Keep records for managing member information, processing office works, and issuing activity certificates of the KAIST Undergraduate Student Clubs Union.",
+        "sub-2": "Subject to collection of personal information : Name, KAIST student ID, department, and club",
+        "sub-3": "Period of retention and use of personal information : Permanent (it is for recording the period of being a member of KAIST Undergraduate Student Clubs Union and issuing an activity certificates)",
+        "sub-4": "You may refuse to the agreement of collection and use of personal information, and if you refuse, you cannot become a member of KAIST Undergraduate Student Clubs Union."
+    },
+    "제3자 동의":"The Terms of Sharing Personal Information to Third Parties",
+    "제3자 동의 내용": {
+        "main": "KAIST Undergraduate Student Clubs Union shares personal information in accordance with Article 17 of the Personal Information Protection Act.",
+        "sub-1": "Recipient of personal information : SPARCS",
+        "sub-2": "Purpose of use of personal information for recipient : Operating and managing a computerized website of KAIST Undergraduate Student Clubs Union.",
+        "sub-3": "Subject to sharing of personal information : Name, KAIST student ID, department, club",
+        "sub-4": "Period of retention and use of personal information for recipient : Permanent (it is for recording the period of being a member of KAIST Undergraduate Student Clubs Union and issuing an activity certificates)",
+        "sub-5": "You may refuse to the agreement of sharing personal information, and if you refuse, you cannot become a member of KAIST Undergraduate Student Clubs Union."
+    },
+    "동의 문구": "I checked and agree with the Terms of Collections and Use of Personal Information and the Terms of Sharing Personal Information to Third Parties",
+    "확인": "Agree",
+    "미동의": "Disagree (use services without log in)",
+    "미동의_모바일": "Disagree (use services without log in)"
+}
