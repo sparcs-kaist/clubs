@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -180,6 +180,19 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     });
   }, [approveActivityReport, id]);
 
+  const isPastActivityReport = useMemo(
+    () =>
+      data.durations?.every(duration => {
+        if (!activityDeadline?.targetTerm || !duration.endTerm) return true;
+
+        return (
+          new Date(duration.endTerm) <=
+          new Date(activityDeadline.targetTerm.startTerm)
+        );
+      }),
+    [activityDeadline, data.durations],
+  );
+
   if (isError) {
     return <NotFound />;
   }
@@ -313,7 +326,8 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             isError={isErrorDeadline}
           >
             {profile.type === UserTypeEnum.Undergraduate &&
-              activityDeadline?.isEditable && (
+              activityDeadline?.isEditable &&
+              !isPastActivityReport && (
                 <FlexWrapper gap={12}>
                   <Button type="default" onClick={handleDelete}>
                     삭제
@@ -324,7 +338,8 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
                 </FlexWrapper>
               )}
             {profile.type === UserTypeEnum.Professor &&
-              activityDeadline?.canApprove && (
+              activityDeadline?.canApprove &&
+              !isPastActivityReport && (
                 <Button
                   type={data.professorApprovedAt ? "disabled" : "default"}
                   onClick={handleProfessorApproval}

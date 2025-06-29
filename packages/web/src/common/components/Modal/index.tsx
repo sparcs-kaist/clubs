@@ -41,13 +41,11 @@ const ModalContainer = styled.div.withConfig({
     width === "full" ? theme.responsive.CONTENT.xxl : width};
 
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.lg}) {
-    max-width: ${({ theme }) => theme.responsive.CONTENT.xl};
     width: ${({ width, theme }) =>
       width === "full" ? theme.responsive.CONTENT.xl : width};
   }
 
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
-    max-width: ${({ theme }) => theme.responsive.CONTENT.lg};
     width: ${({ width, theme }) =>
       width === "full" ? theme.responsive.CONTENT.lg : width};
   }
