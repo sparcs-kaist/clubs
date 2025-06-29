@@ -904,10 +904,14 @@ export default class ActivityService {
             .getExecutiveAndExecutiveTByExecutiveId({
               executiveId: chargedExecutiveId,
             })
-            .then(e => ({
-              id: e.executive.id,
-              name: e.executive.name,
-            }));
+            .then(e =>
+              e === undefined
+                ? undefined
+                : {
+                    id: e.executive.id,
+                    name: e.executive.name,
+                  },
+            );
 
     const items: ApiAct024ResponseOk["items"] = await Promise.all(
       activities.map(async activity => {
@@ -925,29 +929,41 @@ export default class ActivityService {
           );
 
         const commentedExecutive =
-          lastFeedback === undefined
+          lastFeedback === undefined ||
+          lastFeedback.executive === undefined ||
+          lastFeedback.executive.id === null
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
                   executiveId: lastFeedback.executive.id,
                 })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
+                .then(e =>
+                  e === undefined
+                    ? undefined
+                    : {
+                        id: e.executive.id,
+                        name: e.executive.name,
+                      },
+                );
 
         const chargedExecutive =
           activity.chargedExecutive === undefined ||
-          activity.chargedExecutive === null
+          activity.chargedExecutive === null ||
+          activity.chargedExecutive.id === null ||
+          activity.chargedExecutive.id === undefined
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
                   executiveId: activity.chargedExecutive.id,
                 })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
+                .then(e =>
+                  e === undefined
+                    ? undefined
+                    : {
+                        id: e.executive.id,
+                        name: e.executive.name,
+                      },
+                );
 
         return {
           activityId: activity.id,
