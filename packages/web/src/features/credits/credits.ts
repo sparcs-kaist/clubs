@@ -24,11 +24,11 @@ const credits: SemesterCredit[] = [
     semester: "2025년 여름",
     members: [
       {
-        nickname: "amet",
-        name: "윤인하",
-        role: "BE",
-        roleType: RoleType.member,
-        comment: "스팍스 너무 좋아요",
+        nickname: "ava",
+        name: "주영미",
+        role: "APM(FE)",
+        roleType: RoleType.APM_FE,
+        comment: "버그야 우리 이제 그만 보자",
       },
       {
         nickname: "eel",
@@ -43,6 +43,20 @@ const credits: SemesterCredit[] = [
         role: "BE",
         roleType: RoleType.member,
         comment: "더울때는 시원하게 동방에서 코딩하기",
+      },
+      {
+        nickname: "amet",
+        name: "윤인하",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "스팍스 너무 좋아요",
+      },
+      {
+        nickname: "kwabang",
+        name: "김경택",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "여름학기 수면 패턴 삭제 완료",
       },
     ],
   },
