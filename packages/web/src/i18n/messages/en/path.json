@@ -1,5 +1,4 @@
 {
-    "path": {
         "동아리": "Clubs",
         "공지사항": "Notice",
         "의결기구": "Meeting",
@@ -29,5 +28,4 @@
         "공용공간 비정기사용": "Common Space",
         "마이페이지": "My Page",
         "로그아웃": "Logout"
-    }
 }

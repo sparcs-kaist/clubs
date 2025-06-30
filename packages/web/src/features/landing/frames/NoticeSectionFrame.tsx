@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -49,10 +50,12 @@ const NoticeSectionFrame: React.FC = () => {
     noticeItemCount,
   );
 
+  const t = useTranslations();
+
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <NoticeSectionFrameInner>
-        <MoreSectionTitle title="공지사항" path={paths.NOTICE.path} />
+        <MoreSectionTitle title={t("common.notice")} path={paths.NOTICE.path} />
         <NoticeLastUpdateTime>
           last update: {data?.lastUpdateTime.toLocaleDateString()}{" "}
           {data?.lastUpdateTime.toLocaleTimeString()}

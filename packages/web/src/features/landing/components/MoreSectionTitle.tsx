@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -26,15 +27,18 @@ const MoreInfo = styled.div`
 const MoreSectionTitle: React.FC<{
   title: string;
   path?: string;
-}> = ({ title, path }) => (
-  <MoreSectionTitleInner>
-    <SectionTitle size="sm">{title}</SectionTitle>
-    {path && (
-      <Link href={path!} style={{ display: "flex", flexDirection: "column" }}>
-        <MoreInfo>글 더보기</MoreInfo>
-      </Link>
-    )}
-  </MoreSectionTitleInner>
-);
+}> = ({ title, path }) => {
+  const t = useTranslations();
+  return (
+    <MoreSectionTitleInner>
+      <SectionTitle size="sm">{title}</SectionTitle>
+      {path && (
+        <Link href={path!} style={{ display: "flex", flexDirection: "column" }}>
+          <MoreInfo>{t("common.view_more")}</MoreInfo>
+        </Link>
+      )}
+    </MoreSectionTitleInner>
+  );
+};
 
 export default MoreSectionTitle;
