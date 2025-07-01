@@ -58,6 +58,7 @@ export class AuthRepository {
     name: string,
     type: string,
     department: string,
+    typeV2: string,
   ): Promise<FindOrCreateUserReturn> {
     // User table에 해당 email이 있는지 확인 후 upsert
     await this.db
@@ -97,7 +98,10 @@ export class AuthRepository {
     // type이 "Student"인 경우 student table에서 해당 studentNumber이 있는지 확인 후 upsert
     // student_t에서 이번 학기의 해당 student_id이 있는지 확인 후 upsert
     // TODO: 임시로 "이전 사원" 타입을 학생으로 분류
-    if (type === "Student" || type === "Ex-employee") {
+    if (
+      (type === "Student" || type === "Ex-employee") &&
+      !typeV2.startsWith("P")
+    ) {
       await this.db
         .insert(Student)
         .values({
@@ -215,7 +219,7 @@ export class AuthRepository {
       }
     }
 
-    if (type.includes("Teacher")) {
+    if (type.includes("Teacher") || typeV2.startsWith("P")) {
       await this.db
         .insert(Professor)
         .values({ userId: user.id, name, email })
