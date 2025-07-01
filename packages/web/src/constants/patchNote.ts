@@ -6,13 +6,20 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.78",
+    date: new Date("2025.07.01"),
+    patchNoteContent: `Clubs v0.0.78
+오류 수정은 다음과 같습니다.
+- 일부 교수님들께서 학생으로 로그인되거나, 로그인되지 않는 버그가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.77",
-    date: new Date("2025.06.25"),
+    date: new Date("2025.06.29"),
     patchNoteContent: `Clubs v0.0.77
 오류 수정은 다음과 같습니다.
 - 집행부원이 활동보고서를 조회할 때, 임기가 지난 집행부원이 담당한 활동보고서를 조회할 수 없던 버그가 수정되었습니다.
 - 활동보고서 작성시, 활동기간을 4개 입력할 때 달력이 제대로 선택되지 않던 버그가 수정되었습니다.
-- 일부 교수님들께서 학생으로 로그인되거나, 잘 로그인되지 않는 버그가 수정되었습니다.
 `,
   },
   {
