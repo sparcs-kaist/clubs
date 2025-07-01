@@ -43,6 +43,9 @@ export class SSOUser {
 
   /** 사용자의 SPARCS ID입니다. SPARCS 회원이 아닌 경우 빈 문자열 값입니다. */
   sparcs_id!: string;
+
+  /** 사용자의 V2 KAIST Portal 데이터입니다. */
+  kaist_v2_info!: KaistV2Info;
 }
 
 export class KaistInfo {
@@ -77,4 +80,60 @@ export class KaistInfo {
   ku_sex!: string;
 
   ku_kname!: string;
+}
+
+/**
+ * KAIST 구성원 정보 모델 (v2 기준)
+ */
+export class KaistV2Info {
+  /** KAIST UID (고유 사용자 ID) */
+  kaist_uid!: string;
+
+  /** 사용자 영문 이름 (예: 'Kwon, HyeokTae') */
+  user_eng_nm!: string;
+
+  /** 로그인 유형 (예: 'L004'은 일반적인 로그인 코드로 추정) */
+  login_type!: string;
+
+  /** 학과 이름 (한글, 예: '전기및전자공학부') */
+  std_dept_kor_nm!: string;
+
+  /** 학과 이름 (영문, 예: 'School of Electrical Engineering') */
+  std_dept_eng_nm!: string;
+
+  /** 사용자 이름 (한글, 예: '권혁태') */
+  user_nm!: string;
+
+  /** 사무실 전화번호 (학생은 일반적으로 null) */
+  busn_phone!: string | null;
+
+  /** 학적 상태 (한글, 예: '재학') */
+  std_status_kor!: string;
+
+  /** 학과 ID (조직 코드, 예: '4423') */
+  std_dept_id!: string;
+
+  /** EBS 시스템에서의 사용자 상태 (null일 수 있음) */
+  ebs_user_status_kor!: string | null;
+
+  /** 학번 (예: '20180036') */
+  std_no!: string;
+
+  /** 로그인 ID (포탈 계정 ID, 예: 'jj6014') */
+  user_id!: string;
+
+  /** 캠퍼스 구분 코드 (예: 'D'는 대전 캠퍼스로 추정) */
+  camps_div_cd!: string;
+
+  /** 소속 구분 코드 (예: 'S'는 학생) */
+  socps_cd!: string;
+
+  /** 이메일 주소 */
+  email!: string;
+
+  /** 학사 프로그램 코드 (예: '0'은 학부) */
+  std_prog_code!: string;
+
+  /** KAIST 조직 ID (학과 코드와 동일한 경우가 많음, 예: '4423') */
+  kaist_org_id!: string;
 }

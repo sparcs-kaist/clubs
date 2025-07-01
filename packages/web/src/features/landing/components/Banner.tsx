@@ -17,7 +17,7 @@ const BannerInner = styled.div`
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.PRIMARY};
   background-color: ${({ theme }) => theme.colors.MINT[100]};
-
+  white-space: pre-line;
   font-size: 16px;
   line-height: 24px;
   font-weight: ${({ theme }) => theme.fonts.WEIGHT.MEDIUM};

@@ -1,4 +1,5 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -45,6 +46,7 @@ const Profile: React.FC<ProfileProps> = ({
   isSelected = false,
   onClick,
 }) => {
+  const t = useTranslations();
   const profileText = (number: number, mail: string) => {
     if (number && mail) return `${number} / ${mail}`;
     if (number === undefined || number === null) return `${mail}`;
@@ -56,7 +58,7 @@ const Profile: React.FC<ProfileProps> = ({
     <ProfileWrapper selected={isSelected} onClick={onClick}>
       <ProfileText>
         <Typography fw="MEDIUM" fs={16} lh={20} color="BLACK">
-          {profileName}
+          {t(`common.${profileName}`)}
         </Typography>
         <Typography fs={14} lh={16} color="GRAY.600">
           {profileText(profileNumber, email)}

@@ -62,13 +62,6 @@ const useGetActivityReportDetail = (
           return ProfessorApprovalEnum.Pending;
         }
 
-        if (
-          activityReport.editedAt &&
-          activityReport.editedAt > activityReport.professorApprovedAt
-        ) {
-          return ProfessorApprovalEnum.Pending;
-        }
-
         return ProfessorApprovalEnum.Approved;
       })(),
       professorApprovedAt:
