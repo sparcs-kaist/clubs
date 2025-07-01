@@ -77,6 +77,16 @@ export class AuthService {
     let type = ssoProfile.kaist_info.ku_person_type || "Student";
     let department = ssoProfile.kaist_info.ku_kaist_org_id;
 
+    // 임시로 kaist v2 추가
+    if (typeof ssoProfile.kaist_v2_info === "string") {
+      try {
+        ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
+      } catch (e) {
+        logger.error("Failed to parse kaist_v2_info", e);
+      }
+    }
+    let typeV2 = ssoProfile.kaist_v2_info?.socps_cd || "S";
+
     if (process.env.NODE_ENV === "local") {
       studentNumber = process.env.USER_KU_STD_NO;
       email = process.env.USER_MAIL;
@@ -84,6 +94,7 @@ export class AuthService {
       name = process.env.USER_KU_KNAME;
       type = process.env.USER_KU_PERSON_TYPE;
       department = process.env.USER_KU_KAIST_ORG_ID;
+      typeV2 = process.env.USER_SOCPS_CD;
     }
 
     const user = await this.authRepository.findOrCreateUser(
@@ -93,6 +104,7 @@ export class AuthService {
       name,
       type,
       department,
+      typeV2,
     );
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){
