@@ -22,13 +22,14 @@ const ExecutivePastActivityReportSection: React.FC<
   } = useGetExecutiveClubActivities(+clubId);
 
   return (
-    <FoldableSectionTitle title="과거 활동 보고서">
+    <FoldableSectionTitle title="과거 활동 보고서" childrenMargin="30px">
       <AsyncBoundary isLoading={isLoading} isError={isError}>
-        <FlexWrapper direction="column" gap={40}>
+        <FlexWrapper direction="column" gap={30}>
           {dataList.map(data => (
             <FoldableSection
               key={data.term.id}
               title={`${data.term.year}년 ${data.term.name}학기 (총 ${data.activities?.items ? data.activities.items.length : 0}개)`}
+              childrenMargin="20px"
             >
               {data.activities == null ? (
                 <AsyncBoundary isLoading={false} isError />
