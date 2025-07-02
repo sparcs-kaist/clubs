@@ -14,10 +14,10 @@ export const zPickElement = <T extends ZodRawShape, K extends keyof T>(
 // 배열인 경우 그대로 반환합니다.
 /* 사용 예시
 const requestQuery = z.object({
-  clubIds: zodArrayParse(zClub.pick({ id: true }).shape.id),
+  clubIds: zQueryArray(zClub.pick({ id: true }).shape.id),
 });
 */
-export const zodArrayParse = <T extends ZodTypeAny>(schema: T) =>
+export const zQueryArray = <T extends ZodTypeAny>(schema: T) =>
   z.preprocess(arg => {
     if (Array.isArray(arg)) {
       return arg;
