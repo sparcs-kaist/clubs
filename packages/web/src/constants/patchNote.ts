@@ -6,6 +6,14 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.79",
+    date: new Date("2025.07.02"),
+    patchNoteContent: `Clubs v0.0.79
+오류 수정은 다음과 같습니다.
+- 활동보고서에의 담당 집행부원 변경시, 하나의 동아리를 선택하면 오류가 발생하던 버그가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.78",
     date: new Date("2025.07.01"),
     patchNoteContent: `Clubs v0.0.78
