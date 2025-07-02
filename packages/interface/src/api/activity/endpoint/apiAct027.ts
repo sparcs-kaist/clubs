@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
+import { zQueryArray } from "@clubs/interface/common/zodUtil";
 // import { zPickElement } from "@clubs/interface/common/zodUtil";
 
 /**
@@ -21,7 +22,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   // clubIds: zPickElement(zClub, "id").array(),
-  clubIds: zClub.pick({ id: true }).shape.id.array(),
+  clubIds: zQueryArray(zClub.pick({ id: true }).shape.id),
 });
 
 const requestBody = z.object({});
