@@ -21,7 +21,7 @@ export const User = mysqlTable("user", {
 export const Student = mysqlTable("student", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("user_id").references(() => User.id),
-  number: int("number").unique(),
+  number: int("number").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phoneNumber: varchar("phone_number", { length: 30 }),

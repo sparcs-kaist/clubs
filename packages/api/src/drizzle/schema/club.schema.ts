@@ -28,8 +28,8 @@ export const Club = mysqlTable("club", {
 // TODO: ClubNewRepository 작업 완료 후 삭제
 export const ClubOld = mysqlTable("club", {
   id: int("id").autoincrement().primaryKey(),
-  nameKr: varchar("name_kr", { length: 30 }).unique(),
-  nameEn: varchar("name_en", { length: 100 }).unique(),
+  nameKr: varchar("name_kr", { length: 30 }).notNull().unique(),
+  nameEn: varchar("name_en", { length: 100 }).notNull().unique(),
   divisionId: int("division_id") // 제일 최신의 분과
     .notNull()
     .references(() => Division.id),

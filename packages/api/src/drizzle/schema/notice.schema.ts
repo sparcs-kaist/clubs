@@ -12,7 +12,7 @@ export const Notice = mysqlTable("notice", {
   author: varchar("author", { length: 30 }).notNull(),
   date: date("date").notNull(),
   link: varchar("link", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   articleId: int("article_id"),
   deletedAt: timestamp("deleted_at"),
 });

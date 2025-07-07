@@ -15,6 +15,7 @@ import {
 } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { OverviewRepository } from "@sparcs-clubs/api/feature/overview/repository/overview.repository";
 
 type ClubFundamental = {
@@ -45,8 +46,8 @@ type Delegates = {
   name: string;
   department: string;
   studentNumber: number;
-  phoneNumber: string;
-  kaistEmail: string;
+  phoneNumber: string | null;
+  kaistEmail: string | null;
 }[];
 
 // 필터링할 때 필요한 정보
@@ -115,7 +116,7 @@ export class OverviewService {
   }
 
   public async getDelegateOverview(
-    query?: ApiOvv001RequestQuery,
+    query: ApiOvv001RequestQuery,
   ): Promise<ApiOvv001ResponseOK> {
     const clubsFundamental =
       await this.clubDelegateRepository.findClubsFundamentals(
@@ -126,7 +127,7 @@ export class OverviewService {
       query.year,
       query.semesterName,
     );
-    return clubsFundamental
+    const result = clubsFundamental
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .filter(this.hasDelegates(query, delegates))
@@ -152,36 +153,64 @@ export class OverviewService {
             d.delegateType === ClubDelegateEnum.Delegate2 &&
             d.clubId === club.clubId,
         ),
-      }));
+      }))
+      .map(club => {
+        if (club.representative === undefined) {
+          logger.error(
+            `Club ${club.clubId} has no representative, but it is included in the overview.`,
+          );
+        }
+        return {
+          ...club,
+          representative: club.representative || {
+            clubId: club.clubId,
+            delegateType: ClubDelegateEnum.Representative,
+            name: "Error",
+            department: "",
+            studentNumber: 0,
+            phoneNumber: null,
+            kaistEmail: null,
+          },
+        };
+      });
+    return result;
   }
 
   public async getClubsOverview(
-    query?: ApiOvv002RequestQuery,
+    query: ApiOvv002RequestQuery,
   ): Promise<ApiOvv002ResponseOK> {
     const clubs = await this.clubDelegateRepository.findClubs(
       query.year,
       query.semesterName,
     );
-    return clubs
+    const filteredClubs = clubs
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .map(club => ({
         clubId: club.clubId,
         divisionName: club.division,
-        district: club.district.trim(),
+        district: (club.district || "").trim(),
         clubTypeEnum: club.clubStatus,
         clubNameKr: club.clubNameKr,
         clubNameEn: club.clubNameEn,
-        fieldsOfActivity: club.characteristicKr,
+        fieldsOfActivity: club.characteristicKr || "", // todo: 활동분야가 없는 경우 확인
         foundingYear: club.foundingYear,
         professor: club.advisor,
         totalMemberCnt: club.totalMemberCnt,
         regularMemberCnt: club.regularMemberCnt,
         clubBuildingEnum: club.clubBuildingEnum as ClubBuildingEnum,
-        roomLocation: club.roomLocation,
+        roomLocation: club.roomLocation || undefined,
         roomPassword: club.roomPassword?.trim(),
-        warning: null,
-        caution: null,
+        warning: undefined,
+        caution: undefined,
       }));
+
+    const result = filteredClubs.map(club => ({
+      ...club,
+      clubNameKr: club.clubNameKr || "",
+      clubNameEn: club.clubNameEn || "",
+    }));
+
+    return result;
   }
 }

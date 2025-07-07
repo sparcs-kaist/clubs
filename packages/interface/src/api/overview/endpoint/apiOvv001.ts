@@ -46,8 +46,8 @@ const zDelegateForOverview = z.object({
   delegateType: z.nativeEnum(ClubDelegateEnum),
   name: zStudent.shape.name,
   studentNumber: z.coerce.number(),
-  phoneNumber: zStudent.shape.phoneNumber,
-  kaistEmail: zStudent.shape.email,
+  phoneNumber: zStudent.shape.phoneNumber.nullable(),
+  kaistEmail: zStudent.shape.email.nullable(),
   department: z.string(),
 });
 

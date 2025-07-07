@@ -1,6 +1,9 @@
 {
+  "$schema": "http://json.schemastore.org/tsconfig",
   "extends": "@clubs/typescript-config/nest-js.json",
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,

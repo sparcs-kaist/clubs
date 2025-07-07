@@ -9,7 +9,7 @@ export const zNotice = z.object({
   date: z.date(),
   link: z.string(),
   createdAt: z.date(),
-  articleId: z.coerce.number(),
+  articleId: z.coerce.number().nullable(),
 });
 
 export type INotice = z.infer<typeof zNotice>;

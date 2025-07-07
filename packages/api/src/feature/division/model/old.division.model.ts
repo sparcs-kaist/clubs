@@ -10,13 +10,13 @@ export type DivisionDBResult = InferSelectModel<typeof Division>;
 export class OldMDivision extends MEntity implements IDivision {
   static modelName = "division";
 
-  name: IDivision["name"];
+  name!: IDivision["name"];
 
-  startTerm: IDivision["startTerm"];
+  startTerm!: IDivision["startTerm"];
 
-  endTerm: IDivision["endTerm"];
+  endTerm!: IDivision["endTerm"];
 
-  district: IDivision["district"];
+  district!: IDivision["district"];
 
   constructor(data: IDivision) {
     super();
