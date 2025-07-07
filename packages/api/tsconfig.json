@@ -17,16 +17,9 @@
     "noFallthroughCasesInSwitch": false,
     "preserveWatchOutput": true,
     "paths": {
-      "@sparcs-clubs/api/*": [
-        "./src/*"
-      ]
+      "@sparcs-clubs/api/*": ["./src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "eslint.config.mjs"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["**/*.ts", "eslint.config.mjs"],
+  "exclude": ["node_modules", "legacy_source"]
 }
