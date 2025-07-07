@@ -63,7 +63,7 @@ const ExecutiveCurrentActivityReportSection: React.FC<
   }, [selectedActivityIds, selectedActivityInfos]);
 
   return (
-    <FoldableSectionTitle childrenMargin="20px" title="신규 활동 보고서">
+    <FoldableSectionTitle childrenMargin="30px" title="신규 활동 보고서">
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FlexWrapper direction="column" gap={20}>
           {data?.items && data.items.length > 0 && (
