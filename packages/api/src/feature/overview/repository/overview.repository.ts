@@ -43,10 +43,10 @@ export class OverviewRepository {
         clubStatus: ClubT.clubStatusEnumId,
       })
       .from(ClubT)
-      .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
-      .leftJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
-      .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
-      .leftJoin(District, eq(District.id, Division.districtId))
+      .innerJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
+      .innerJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
+      .innerJoin(Division, eq(Division.id, ClubOld.divisionId))
+      .innerJoin(District, eq(District.id, Division.districtId))
       .where(
         and(
           isNull(ClubT.deletedAt),
@@ -70,25 +70,25 @@ export class OverviewRepository {
         department: Department.name,
       })
       .from(ClubDelegate)
-      .leftJoin(
+      .innerJoin(
         ClubDelegateEnum,
         eq(ClubDelegateEnum.id, ClubDelegate.clubDelegateEnum),
       )
-      .leftJoin(ClubT, eq(ClubT.clubId, ClubDelegate.clubId))
-      .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
-      .leftJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
-      .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
-      .leftJoin(District, eq(District.id, Division.districtId))
-      .leftJoin(Student, eq(Student.id, ClubDelegate.studentId))
-      .leftJoin(
+      .innerJoin(ClubT, eq(ClubT.clubId, ClubDelegate.clubId))
+      .innerJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
+      .innerJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
+      .innerJoin(Division, eq(Division.id, ClubOld.divisionId))
+      .innerJoin(District, eq(District.id, Division.districtId))
+      .innerJoin(Student, eq(Student.id, ClubDelegate.studentId))
+      .innerJoin(
         StudentT,
         and(
           eq(StudentT.id, ClubDelegate.studentId),
           eq(StudentT.semesterId, SemesterD.id),
         ),
       )
-      .leftJoin(User, eq(User.id, Student.userId))
-      .leftJoin(Department, eq(Department.departmentId, StudentT.department))
+      .innerJoin(User, eq(User.id, Student.userId))
+      .innerJoin(Department, eq(Department.departmentId, StudentT.department))
       .where(
         and(
           isNull(ClubDelegate.endTerm),
@@ -122,20 +122,20 @@ export class OverviewRepository {
         regularMemberCnt: sql<number>`count(distinct ${RegistrationApplicationStudent.studentId})`,
       })
       .from(ClubT)
-      .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
-      .leftJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
-      .leftJoin(Division, eq(Division.id, ClubOld.divisionId))
-      .leftJoin(District, eq(District.id, Division.districtId))
-      .leftJoin(Professor, eq(Professor.id, ClubT.professorId))
-      .leftJoin(User, eq(User.id, Professor.userId))
-      .leftJoin(
+      .innerJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
+      .innerJoin(ClubOld, eq(ClubOld.id, ClubT.clubId))
+      .innerJoin(Division, eq(Division.id, ClubOld.divisionId))
+      .innerJoin(District, eq(District.id, Division.districtId))
+      .innerJoin(Professor, eq(Professor.id, ClubT.professorId))
+      .innerJoin(User, eq(User.id, Professor.userId))
+      .innerJoin(
         ClubStudentT,
         and(
           eq(ClubOld.id, ClubStudentT.clubId),
           eq(ClubT.semesterId, ClubStudentT.semesterId),
         ),
       )
-      .leftJoin(
+      .innerJoin(
         RegistrationApplicationStudent,
         and(
           eq(RegistrationApplicationStudent.clubId, ClubT.clubId),
@@ -146,14 +146,14 @@ export class OverviewRepository {
           ),
         ),
       )
-      .leftJoin(
+      .innerJoin(
         ClubRoomT,
         and(
           eq(ClubRoomT.clubId, ClubT.clubId),
           eq(ClubRoomT.semesterId, ClubT.semesterId),
         ),
       )
-      .leftJoin(
+      .innerJoin(
         ClubBuildingEnum,
         eq(ClubBuildingEnum.id, ClubRoomT.clubBuildingEnum),
       )

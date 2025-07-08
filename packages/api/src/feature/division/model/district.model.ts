@@ -9,7 +9,7 @@ export interface IDistrictCreate {
 export class MDistrict extends MEntity implements IDistrict {
   static modelName = "district";
 
-  name: IDistrict["name"];
+  name!: IDistrict["name"];
 
   constructor(data: IDistrict) {
     super();

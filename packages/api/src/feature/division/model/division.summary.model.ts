@@ -15,7 +15,7 @@ export class VDivisionSummary
 {
   static modelName = "divisionSummary";
 
-  name: IDivisionSummary["name"];
+  name!: IDivisionSummary["name"];
 
   // 첫 번째 생성자: IDivision\Summary로부터 초기화
   constructor(divisionSummary: IDivisionSummary);

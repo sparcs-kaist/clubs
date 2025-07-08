@@ -245,7 +245,11 @@ export default class FundingService {
       ...comment,
       executive: commentedExecutive.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "0000000",
+      },
     }));
 
     return { funding, comments: updatedComments };
@@ -275,7 +279,11 @@ export default class FundingService {
       ...comment,
       executive: executives.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "0000000",
+      },
     }));
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }
@@ -350,8 +358,8 @@ export default class FundingService {
   private async fetchFiles(items: undefined): Promise<undefined>;
   private async fetchFiles(items: { id: string }[]): Promise<IFileSummary[]>;
   private async fetchFiles<T extends { files: { id: string }[] }>(
-    items: T,
-  ): Promise<Omit<T, "files"> & { files: IFileSummary[] }>;
+    items: T | undefined,
+  ): Promise<(Omit<T, "files"> & { files: IFileSummary[] }) | undefined>;
 
   // 구현부
   private async fetchFiles<T extends { files: { id: string }[] }>(
@@ -942,7 +950,11 @@ export default class FundingService {
       ...comment,
       executive: executives.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "알 수 없는 학번",
+      },
     }));
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }

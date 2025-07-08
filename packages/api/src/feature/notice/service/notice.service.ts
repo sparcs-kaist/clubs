@@ -73,15 +73,16 @@ export class NoticeService {
     rows.forEach(element => {
       const titleElement = element.querySelector(".article");
       if (titleElement !== null) {
-        let title = titleElement.textContent;
+        let title = titleElement.textContent || "";
         title = title.replace(/\s+/g, " ").trim();
         const link = urlPrefix + titleElement.getAttribute("href");
         const articleId = findArticleId(link);
 
-        let author = element.querySelector(".td_name .p-nick a").textContent;
+        let author =
+          element.querySelector(".td_name .p-nick a")?.textContent || "";
         author = author.replace(/\s+/g, " ").trim();
 
-        let date = element.querySelector(".td_date").textContent;
+        let date = element.querySelector(".td_date")?.textContent || "";
         date = date.replace(/\s+/g, " ").trim();
 
         // 시간만 제공되는 경우 오늘 날짜로 설정
@@ -122,9 +123,10 @@ export class NoticeService {
       const html = await this.tryFetch(pagenum);
       // 공지가 총 몇 개 있는지
       let totalCount = Number.parseInt(
-        html
-          .match(/search\.totalCount=[0-9]+(?=&)/)[0]
-          .replace("search.totalCount=", ""),
+        (html.match(/search\.totalCount=[0-9]+(?=&)/) || ["0"])[0].replace(
+          "search.totalCount=",
+          "",
+        ),
       );
       const posts = this.getPostsFromHTML(html);
 
@@ -139,9 +141,9 @@ export class NoticeService {
         // eslint-disable-next-line no-await-in-loop
         const nextPage = await this.tryFetch(pagenum);
         totalCount = Number.parseInt(
-          nextPage
-            .match(/search\.totalCount=[0-9]+(?=&)/)[0]
-            .replace("search.totalCount=", ""),
+          (nextPage.match(/search\.totalCount=[0-9]+(?=&)/) || [
+            "0",
+          ])[0].replace("search.totalCount=", ""),
         );
       }
       const postOfPages = await Promise.all(
@@ -180,8 +182,8 @@ export class NoticeService {
     }));
     const crawlResults = await this.crawlNotices(maxPages);
 
-    const updates = [];
-    const inserts = [];
+    const updates: (PostCrawlResult & { id: number; createdAt: Date })[] = [];
+    const inserts: PostCrawlResult[] = [];
     const deletes = [];
 
     crawlResults.forEach(crawlResult => {

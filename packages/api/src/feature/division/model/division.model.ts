@@ -12,10 +12,10 @@ export interface IDivisionCreate {
 }
 
 export class MDivision extends MEntity implements IDivision, IDivisionCreate {
-  name: IDivision["name"];
-  district: IDivision["district"];
-  startTerm: IDivision["startTerm"];
-  endTerm: IDivision["endTerm"];
+  name!: IDivision["name"];
+  district!: IDivision["district"];
+  startTerm!: IDivision["startTerm"];
+  endTerm!: IDivision["endTerm"];
 
   constructor(data: IDivision) {
     super();
