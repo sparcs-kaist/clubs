@@ -16,6 +16,7 @@
       }
     },
     "TypeScript": {
+      "language_servers": ["!biome"],
       "formatter": {
         "code_actions": {
           "source.fixAll.eslint": true
