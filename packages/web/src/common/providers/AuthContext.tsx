@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const isLatest = useMemo(() => {
-    const latestPatchNoteVersionSeen = localStorage.getItem(
+    const latestPatchNoteVersionSeen = getLocalStorageItem(
       LOCAL_STORAGE_KEY.LATEST_PATCH_NOTE_VERSION_SEEN,
     );
     const latestPatchNoteVersionActual = latestPatchNote.version;

@@ -2,7 +2,13 @@
 
 const LOCAL_STORAGE_SET_EVENT = "local-storage-set";
 
-export const getLocalStorageItem = (key: string) => localStorage.getItem(key);
+export const getLocalStorageItem = (key: string) => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem(key);
+  }
+  // window객체 localStorage, sessionStorage는 값이 없을때 null
+  return null;
+};
 
 export const setLocalStorageItem = (key: string, value: string) => {
   localStorage.setItem(key, value);
