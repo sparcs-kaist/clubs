@@ -16,8 +16,8 @@
     "./*": "./dist/*.js"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@clubs/domain": "workspace:*",
-    "@asteasolutions/zod-to-openapi": "^7.3.0",
     "axios": "^1.6.7"
   },
   "devDependencies": {

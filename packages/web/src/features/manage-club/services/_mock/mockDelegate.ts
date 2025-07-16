@@ -1,6 +1,6 @@
 import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
 import { ApiClb008ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb008";
-import { ApiClb011ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb011";
+import { ApiClb011ResponseOk } from "@clubs/interface/api/club/index";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
