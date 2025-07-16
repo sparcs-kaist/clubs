@@ -19,16 +19,13 @@ export const zClub = z.object({
     description: "동아리의 영어 이름입니다.",
     example: "sulbox",
   }),
-  description: z
-    .string()
-    .nullable()
-    .openapi({
-      description: "동아리 설명",
-      examples: [
-        "다같이 연주하는 동아리입니다",
-        "요리를 좋아하는 사람들이 모인 동아리입니다",
-      ],
-    }),
+  description: z.string().openapi({
+    description: "동아리 설명",
+    examples: [
+      "다같이 연주하는 동아리입니다",
+      "요리를 좋아하는 사람들이 모인 동아리입니다",
+    ],
+  }),
   foundingYear: z.coerce.number().openapi({
     description: "동아리 설립년도",
     examples: [2001, 2020],

@@ -9,7 +9,6 @@
       }
     },
     "TSX": {
-      "language_servers": ["!biome", "!prettier"],
       "formatter": {
         "code_actions": {
           "source.fixAll.eslint": true
@@ -17,7 +16,6 @@
       }
     },
     "TypeScript": {
-      "language_servers": ["!biome", "!prettier"],
       "formatter": {
         "code_actions": {
           "source.fixAll.eslint": true
