@@ -1,7 +1,11 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
+import { zClub } from "@clubs/domain/club/club";
+import { zClubDelegateChangeRequest } from "@clubs/domain/club/club-delegate-change-request";
+import { zStudent } from "@clubs/domain/user/student";
+
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -13,7 +17,7 @@ const url = (clubId: number) =>
 const method = "GET";
 
 const requestParam = z.object({
-  clubId: z.coerce.number().int().min(1),
+  clubId: zClub.shape.id,
 });
 
 const requestQuery = z.object({});
@@ -24,12 +28,11 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     requests: z
       .object({
-        studentId: z.coerce.number().int().min(1),
+        studentId: zStudent.shape.id,
         studentNumber: z.coerce.number().int().min(20000000).max(30000000),
-        studentName: z.coerce.string(),
-        clubDelegateChangeRequestStatusEnumId: z.nativeEnum(
-          ClubDelegateChangeRequestStatusEnum,
-        ),
+        studentName: zStudent.shape.name,
+        clubDelegateChangeRequestStatusEnumId:
+          zClubDelegateChangeRequest.shape.clubDelegateChangeRequestStatusEnum,
       })
       .array(),
   }),
@@ -60,3 +63,27 @@ export type {
   ApiClb011RequestBody,
   ApiClb011ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["club"],
+  method: "get",
+  path: "/student/clubs/club/:clubId/delegates/delegate/requests",
+  summary: "CLB-011: 학생용 동아리 대표자 변경 신청 조회",
+  description: `# CLB-011
+
+동아리의 현재 신청된 대표자 변경을 조회합니다.
+  `,
+  request: {
+    params: requestParam,
+  },
+  responses: {
+    200: {
+      description: "동아리 대표자 변경 신청 조회 성공",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

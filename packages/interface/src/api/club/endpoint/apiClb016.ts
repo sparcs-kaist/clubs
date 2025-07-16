@@ -1,8 +1,11 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@clubs/interface/common/commonString";
-import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { zClub } from "@clubs/domain/club/club";
+import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
+import { zSemester } from "@clubs/domain/semester/semester";
+
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -22,13 +25,13 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     semesters: z
       .object({
-        id: z.coerce.number().int().min(1), // 학기 id
-        name: z.coerce.string().max(20), // 학기명
+        id: zSemester.shape.id, // 학기 id
+        name: zSemester.shape.name, // 학기명
         clubs: z // 활동 동아리 목록
           .object({
-            id: z.coerce.number().int().min(1),
-            nameKr: zClubName,
-            nameEn: zClubName,
+            id: zClub.shape.id,
+            nameKr: zClub.shape.nameKr,
+            nameEn: zClub.shape.nameEn,
             type: z.nativeEnum(ClubTypeEnum), // 동아리 유형(정동아리 | 가동아리)
             isPermanent: z.coerce.boolean(), // 상임동아리 여부
             characteristic: z.coerce.string().max(50), // 동아리 소개
@@ -67,3 +70,30 @@ export type {
   ApiClb016RequestBody,
   ApiClb016ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["club"],
+  method: "get",
+  path: "/professor/clubs/my",
+  summary: "CLB-016: 지도교수가 지도했던 전체 동아리 목록을 가져옵니다",
+  description: `# CLB-016
+
+지도교수가 지도했던 전체 동아리 목록을 가져옵니다.
+
+지도교수로 로그인되어 있어야 합니다.
+
+학기별로 그룹화된 지도교수가 지도한 동아리 목록을 반환합니다.
+현재 지도 중인 동아리뿐만 아니라 과거에 지도했던 동아리도 포함됩니다.
+  `,
+  request: {},
+  responses: {
+    200: {
+      description: "성공적으로 지도교수가 지도했던 동아리 목록을 가져왔습니다.",
+      content: {
+        "application/json": {
+          schema: responseBodyMap[200],
+        },
+      },
+    },
+  },
+});

@@ -28,11 +28,6 @@ import type {
 } from "@clubs/interface/api/club/endpoint/apiClb008";
 import apiClb008 from "@clubs/interface/api/club/endpoint/apiClb008";
 import type {
-  ApiClb011RequestParam,
-  ApiClb011ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb011";
-import apiClb011 from "@clubs/interface/api/club/endpoint/apiClb011";
-import type {
   ApiClb012RequestParam,
   ApiClb012ResponseCreated,
 } from "@clubs/interface/api/club/endpoint/apiClb012";
@@ -50,6 +45,11 @@ import type {
   ApiClb015ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb015";
 import apiClb015 from "@clubs/interface/api/club/endpoint/apiClb015";
+import {
+  apiClb011,
+  type ApiClb011RequestParam,
+  type ApiClb011ResponseOk,
+} from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
