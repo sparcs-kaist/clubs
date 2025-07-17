@@ -20,7 +20,10 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import {
+  getKSTDateForQuery,
+  takeOne,
+} from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   ClubDelegate,
@@ -43,7 +46,7 @@ export class ClubDelegateDRepository {
     const [result] = await this.db
       .update(ClubDelegateChangeRequest)
       .set({
-        deletedAt: getKSTDate(),
+        deletedAt: getKSTDateForQuery(),
       })
       .where(eq(ClubDelegateChangeRequest.id, param.id));
     return result.affectedRows > 0;
@@ -141,7 +144,7 @@ export class ClubDelegateDRepository {
     clubId: number,
     startTerm?: Date,
   ): Promise<{ name: string }> {
-    const currentDate = getKSTDate();
+    const currentDate = getKSTDateForQuery();
 
     const representative = await this.db
       .select({ name: Student.name })
@@ -182,7 +185,7 @@ export class ClubDelegateDRepository {
    * @returns 해당 동아리의 대표자 정보 목록을 가져옵니다.
    */
   async findDelegateByClubId(clubId: number) {
-    const currentDate = getKSTDate();
+    const currentDate = getKSTDateForQuery();
 
     const delegate = await this.db
       .select()
@@ -209,7 +212,7 @@ export class ClubDelegateDRepository {
    * 로직에 문제가 없을경우 크기가 0 또는 1인 리스트가 리턴됩니다.
    */
   async findDelegateByStudentId(studentId: number) {
-    const currentDate = getKSTDate();
+    const currentDate = getKSTDateForQuery();
 
     const delegate = await this.db
       .select()
@@ -234,7 +237,7 @@ export class ClubDelegateDRepository {
     studentId: number,
     clubId: number,
   ): Promise<boolean> {
-    const crt = getKSTDate();
+    const crt = getKSTDateForQuery();
     const result = !!(await this.db
       .select({ id: ClubDelegate.id })
       .from(ClubDelegate)
@@ -264,7 +267,7 @@ export class ClubDelegateDRepository {
     semesterId: number;
     filterClubDelegateEnum: Array<ClubDelegateEnum>;
   }) {
-    const today = getKSTDate();
+    const today = getKSTDateForQuery();
     logger.debug(param.semesterId);
     logger.debug(today);
     const result = await this.db
@@ -332,7 +335,7 @@ export class ClubDelegateDRepository {
     clubId: number;
     clubDelegateEnumId: number;
   }): Promise<boolean> {
-    const now = getKSTDate();
+    const now = getKSTDateForQuery();
 
     const result = await this.db.transaction(async tx => {
       const [requestInsertionResult] = await tx
@@ -373,7 +376,7 @@ export class ClubDelegateDRepository {
     clubDelegateEnumId: number;
     studentId: number;
   }): Promise<boolean> {
-    const now = getKSTDate();
+    const now = getKSTDateForQuery();
 
     const result = await this.db.transaction(async tx => {
       // 기존 대표자의 임기를 종료
@@ -458,7 +461,7 @@ export class ClubDelegateDRepository {
   }
 
   async isPresidentByStudentIdAndClubId(studentId: number, clubId: number) {
-    const cur = getKSTDate();
+    const cur = getKSTDateForQuery();
     const presidentEnumId = ClubDelegateEnum.Representative;
     const { president } = await this.db
       .select({ president: count(ClubDelegate.id) })
