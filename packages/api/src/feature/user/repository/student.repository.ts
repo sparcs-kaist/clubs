@@ -48,7 +48,6 @@ export class StudentRepository extends BaseSingleTableRepository<
       studentNumber: String(result.number),
       userId: result.userId,
       email: result.email,
-      phoneNumber: result.phoneNumber,
     });
   }
 
@@ -59,7 +58,6 @@ export class StudentRepository extends BaseSingleTableRepository<
       number: Number(model.studentNumber),
       userId: model.userId,
       email: model.email,
-      phoneNumber: model.phoneNumber,
     };
   }
 
@@ -69,7 +67,6 @@ export class StudentRepository extends BaseSingleTableRepository<
       number: Number(model.studentNumber),
       userId: model.userId,
       email: model.email,
-      phoneNumber: model.phoneNumber,
     };
   }
 

@@ -8,6 +8,7 @@ import {
   Executive,
   ExecutiveT,
   Student,
+  User,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 import { VExecutiveSummary } from "../model/executive.summary.model";
@@ -51,8 +52,9 @@ export default class ExecutiveRepository {
   async getExecutivePhoneNumber(id: number) {
     const crt = getKSTDate();
     const result = await this.db
-      .select({ phoneNumber: Executive.phoneNumber })
+      .select({ phoneNumber: User.phoneNumber })
       .from(Executive)
+      .leftJoin(User, eq(User.id, Executive.userId))
       .where(eq(Executive.userId, id))
       .leftJoin(
         ExecutiveT,
@@ -70,9 +72,9 @@ export default class ExecutiveRepository {
   async updateExecutivePhoneNumber(id: number, phoneNumber: string) {
     const isUpdateSucceed = await this.db.transaction(async tx => {
       const [result] = await tx
-        .update(Executive)
+        .update(User)
         .set({ phoneNumber })
-        .where(and(eq(Executive.userId, id), isNull(Executive.deletedAt)));
+        .where(and(eq(User.id, id), isNull(User.deletedAt)));
       if (result.affectedRows === 0) {
         tx.rollback();
         return false;
