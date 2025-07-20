@@ -6,9 +6,9 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
-    version: "v.0.0.81 - (2)",
+    version: "v.0.0.82",
     date: new Date("2025.07.20"),
-    patchNoteContent: `Clubs v0.0.81
+    patchNoteContent: `Clubs v0.0.82
 오류 수정은 다음과 같습니다.
 - 웹서버가 항상 500을 반환하던 버그가 수정되었습니다.
 - 번역이 추가되었습니다
