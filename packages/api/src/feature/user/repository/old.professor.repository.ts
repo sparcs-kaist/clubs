@@ -10,6 +10,7 @@ import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider
 import {
   Professor,
   ProfessorT,
+  User,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
@@ -19,8 +20,9 @@ export default class OldProfessorRepository {
   async getProfessorPhoneNumber(id: number) {
     const crt = getKSTDate();
     const result = await this.db
-      .select({ phoneNumber: Professor.phoneNumber })
+      .select({ phoneNumber: User.phoneNumber })
       .from(Professor)
+      .leftJoin(User, eq(User.id, Professor.userId))
       .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)))
       .leftJoin(
         ProfessorT,
@@ -45,9 +47,9 @@ export default class OldProfessorRepository {
   async updateProfessorPhoneNumber(id: number, phoneNumber: string) {
     const isUpdateSucceed = await this.db.transaction(async tx => {
       const [result] = await tx
-        .update(Professor)
+        .update(User)
         .set({ phoneNumber })
-        .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)));
+        .where(and(eq(User.id, id), isNull(User.deletedAt)));
       if (result.affectedRows === 0) {
         logger.debug("[updatePhoneNumber] rollback occurs");
         tx.rollback();
@@ -71,9 +73,10 @@ export default class OldProfessorRepository {
         email: Professor.email,
         professorEnum: ProfessorT.professorEnum,
         department: ProfessorT.department,
-        phoneNumber: Professor.phoneNumber,
+        phoneNumber: User.phoneNumber,
       })
       .from(Professor)
+      .leftJoin(User, eq(User.id, Professor.userId))
       .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
       .where(inArray(Professor.id, ids));
     return professors;
@@ -88,9 +91,10 @@ export default class OldProfessorRepository {
         email: Professor.email,
         professorEnum: ProfessorT.professorEnum,
         department: ProfessorT.department,
-        phoneNumber: Professor.phoneNumber,
+        phoneNumber: User.phoneNumber,
       })
       .from(Professor)
+      .leftJoin(User, eq(User.id, Professor.userId))
       .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
       .where(and(eq(Professor.id, id), isNull(Professor.deletedAt)));
 

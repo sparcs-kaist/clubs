@@ -25,7 +25,7 @@ import {
   ClubStudentT,
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { Student, User } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 import { MOldStudent } from "@sparcs-clubs/api/feature/user/model/old.student.model";
 
 @Injectable()
@@ -118,11 +118,12 @@ export default class ClubStudentTRepository {
         student_id: Student.id,
         club_id: ClubStudentT.clubId,
         name: Student.name,
-        phoneNumber: Student.phoneNumber,
+        phoneNumber: User.phoneNumber,
         email: Student.email,
       })
       .from(ClubStudentT)
       .leftJoin(Student, eq(Student.id, studentId))
+      .leftJoin(User, eq(User.id, Student.userId))
       .where(
         and(
           eq(ClubStudentT.clubId, clubId),
@@ -266,10 +267,11 @@ export default class ClubStudentTRepository {
         studentId: Student.id,
         studentNumber: Student.number,
         email: Student.email,
-        phoneNumber: Student.phoneNumber,
+        phoneNumber: User.phoneNumber,
       })
       .from(ClubStudentT)
       .innerJoin(Student, eq(Student.id, ClubStudentT.studentId))
+      .leftJoin(User, eq(User.id, Student.userId))
       .where(
         and(
           eq(ClubStudentT.clubId, clubId),
@@ -299,7 +301,7 @@ export default class ClubStudentTRepository {
         name: Student.name,
         studentNumber: Student.number,
         email: Student.email,
-        phoneNumber: Student.phoneNumber,
+        phoneNumber: User.phoneNumber,
       })
       .from(ClubStudentT)
       .where(
@@ -309,7 +311,8 @@ export default class ClubStudentTRepository {
           and(isNull(ClubStudentT.deletedAt), isNull(ClubStudentT.deletedAt)),
         ),
       )
-      .innerJoin(Student, eq(Student.id, ClubStudentT.studentId));
+      .innerJoin(Student, eq(Student.id, ClubStudentT.studentId))
+      .leftJoin(User, eq(User.id, Student.userId));
 
     return result.map(
       row =>

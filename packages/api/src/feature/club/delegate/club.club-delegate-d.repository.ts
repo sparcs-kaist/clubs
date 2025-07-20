@@ -31,7 +31,7 @@ import {
   ClubOld,
   ClubStudentT,
 } from "@sparcs-clubs/api/drizzle/schema/club.schema";
-import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { Student, User } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
 export class ClubDelegateDRepository {
@@ -284,6 +284,7 @@ export class ClubDelegateDRepository {
         Student,
         and(eq(ClubStudentT.studentId, Student.id), isNull(Student.deletedAt)),
       )
+      .leftJoin(User, eq(User.id, Student.userId))
       .leftJoin(
         ClubDelegate,
         and(

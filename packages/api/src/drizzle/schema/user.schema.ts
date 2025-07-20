@@ -24,7 +24,6 @@ export const Student = mysqlTable("student", {
   number: int("number").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -60,7 +59,6 @@ export const Executive = mysqlTable("executive", {
     .references(() => Student.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -107,7 +105,6 @@ export const Professor = mysqlTable("professor", {
   userId: int("user_id").references(() => User.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique(),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -132,7 +129,6 @@ export const Employee = mysqlTable("employee", {
 
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });

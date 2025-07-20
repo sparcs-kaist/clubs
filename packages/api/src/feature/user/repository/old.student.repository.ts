@@ -10,6 +10,7 @@ import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider
 import {
   Student,
   StudentT,
+  User,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
@@ -18,8 +19,18 @@ export default class OldStudentRepository {
 
   async selectStudentById(id: number) {
     const result = await this.db
-      .select()
+      .select({
+        id: Student.id,
+        userId: Student.userId,
+        number: Student.number,
+        name: Student.name,
+        email: Student.email,
+        createdAt: Student.createdAt,
+        deletedAt: Student.deletedAt,
+        phoneNumber: User.phoneNumber,
+      })
       .from(Student)
+      .leftJoin(User, eq(User.id, Student.userId))
       .where(and(eq(Student.id, id), isNull(Student.deletedAt)));
 
     return result;
@@ -98,8 +109,9 @@ export default class OldStudentRepository {
   async getStudentPhoneNumber(id: number) {
     const crt = getKSTDate();
     const result = await this.db
-      .select({ phoneNumber: Student.phoneNumber })
+      .select({ phoneNumber: User.phoneNumber })
       .from(Student)
+      .leftJoin(User, eq(User.id, Student.userId))
       .where(eq(Student.userId, id))
       .leftJoin(
         StudentT,
@@ -116,10 +128,22 @@ export default class OldStudentRepository {
 
   async updateStudentPhoneNumber(id: number, phoneNumber: string) {
     const isUpdateSucceed = await this.db.transaction(async tx => {
+      const student = await tx
+        .select({ userId: Student.userId })
+        .from(Student)
+        .where(and(eq(Student.id, id), isNull(Student.deletedAt)))
+        .then(takeOne);
+
+      if (!student) {
+        tx.rollback();
+        return false;
+      }
+
       const [result] = await tx
-        .update(Student)
+        .update(User)
         .set({ phoneNumber })
-        .where(and(eq(Student.id, id), isNull(Student.deletedAt)));
+        .where(and(eq(User.id, student.userId), isNull(User.deletedAt)));
+
       if (result.affectedRows === 0) {
         tx.rollback();
         return false;

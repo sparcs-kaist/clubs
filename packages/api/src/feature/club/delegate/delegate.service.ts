@@ -582,7 +582,7 @@ export default class ClubDelegateService {
         id: e.student.id,
         studentNumber: String(e.student.number),
         name: e.student.name,
-        phoneNumber: e.student.phoneNumber,
+        phoneNumber: e.user.phoneNumber,
       })),
     };
     return response;
