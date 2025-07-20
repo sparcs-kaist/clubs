@@ -25,10 +25,11 @@ export default class UserRepository {
         email: Student.email,
         department: Department.name,
         studentNumber: Student.number,
-        phoneNumber: Student.phoneNumber,
+        phoneNumber: User.phoneNumber,
       })
       .from(Student)
       .where(eq(Student.id, studentId))
+      .leftJoin(User, eq(User.id, Student.userId))
       .leftJoin(
         StudentT,
         and(

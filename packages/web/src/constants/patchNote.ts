@@ -6,6 +6,18 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.82",
+    date: new Date("2025.07.20"),
+    patchNoteContent: `Clubs v0.0.82
+오류 수정은 다음과 같습니다.
+- 웹서버가 항상 500을 반환하던 버그가 수정되었습니다.
+- 번역이 추가되었습니다
+- 일부 API 문서가 추가되었습니다.
+- 일부 학우분들께서 동아리 대표자 변경을 요청해도 상대방에게 보이지 않던 버그가 수정되었습니다.
+- 추가: 지원금 신청 중, 일부 학우분들께서 교통비 신청이 되지 않는 버그가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.81",
     date: new Date("2025.07.10"),
     patchNoteContent: `Clubs v0.0.81
