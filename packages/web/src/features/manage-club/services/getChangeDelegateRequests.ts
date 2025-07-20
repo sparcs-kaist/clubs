@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type {
-  ApiClb011RequestParam,
-  ApiClb011ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb011";
-import apiClb011 from "@clubs/interface/api/club/endpoint/apiClb011";
+import {
+  apiClb011,
+  type ApiClb011RequestParam,
+  type ApiClb011ResponseOk,
+} from "@clubs/interface/api/club/index";
 
 import {
   axiosClientWithAuth,
