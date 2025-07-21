@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -20,13 +21,14 @@ const ResponsiveWrapper = styled(FlexWrapper)`
 `;
 
 const Clubs: React.FC = () => {
+  const t = useTranslations("club");
   const { isLoggedIn, profile } = useAuth();
 
   return (
     <ResponsiveWrapper direction="column" gap={60}>
       <PageHead
-        items={[{ name: "동아리 목록", path: "/clubs" }]}
-        title="동아리 목록"
+        items={[{ name: t("동아리 목록"), path: "/clubs" }]}
+        title={t("동아리 목록")}
       />
       {isLoggedIn && isStudent(profile) ? (
         <ClubsStudentFrame />

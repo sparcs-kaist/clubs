@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -13,6 +14,7 @@ import useGetMemberRegistrationDeadline from "@sparcs-clubs/web/features/clubs/s
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
 const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
+  const t = useTranslations("club");
   const {
     data: { registrationStatus, isRegistered, registrations },
     isLoading,
@@ -33,7 +35,7 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
       <FlexWrapper direction="column" gap={60}>
         <PageHead
           items={[
-            { name: "동아리 목록", path: "/clubs" },
+            { name: t("동아리 목록"), path: "/clubs" },
             { name: club.nameKr, path: `/clubs/${club.id}` },
           ]}
           title={club.nameKr}
