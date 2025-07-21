@@ -1,4 +1,5 @@
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -30,7 +31,8 @@ const BreadCrumb: React.FC<BreadCrumbProps> = ({
   items,
   enableLast = false,
 }) => {
-  const itemsWithMain = [{ name: "메인", path: "/" }, ...items];
+  const t = useTranslations("common");
+  const itemsWithMain = [{ name: t("메인"), path: "/" }, ...items];
   const router = useRouter();
 
   return (

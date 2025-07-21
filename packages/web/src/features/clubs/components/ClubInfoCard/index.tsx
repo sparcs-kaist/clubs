@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
 
@@ -56,6 +57,7 @@ const ResponsiveClubCard = styled(Card)`
 `;
 
 const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
+  const t = useTranslations();
   const theme = useTheme();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -81,35 +83,40 @@ const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
     <ResponsiveClubCard padding="16px 20px">
       <ClubInfoRow>
         <ClubInfoItem
-          title={isMobile ? "지위" : "동아리 지위"}
+          title={isMobile ? t("club.지위") : t("club.동아리 지위")}
           content={
             <Tag color={getTagColorFromClubType(club.type, club.isPermanent)}>
-              {getTagContentFromClubType(club.type, club.isPermanent)}
+              {t(
+                `club.${getTagContentFromClubType(
+                  club.type,
+                  club.isPermanent,
+                )}`,
+              )}
             </Tag>
           }
         />
         <AsyncBoundary isLoading={isLoading} isError={isError}>
           <ClubInfoItem
-            title={isMobile ? "분과" : "소속 분과"}
+            title={isMobile ? t("club.분과") : t("club.소속 분과")}
             content={
               <Tag
                 color={divisionData?.divisionTagList[club.division.id]?.color}
               >
-                {club.division.name}
+                {t(`division.${club.division.name}`)}
               </Tag>
             }
           />
         </AsyncBoundary>
       </ClubInfoRow>
       <ResponsiveClubInfoRow>
-        <ClubInfoItem title="성격" content={club.characteristic} />
+        <ClubInfoItem title={t("club.성격")} content={club.characteristic} />
         <ClubInfoItem
-          title={isMobile ? "연도" : "설립연도"}
+          title={isMobile ? t("club.연도") : t("club.설립연도")}
           content={`${club.foundingYear}년`}
         />
       </ResponsiveClubInfoRow>
       <ClubInfoItem
-        title={isMobile ? "동방" : "동아리방"}
+        title={isMobile ? t("club.동방") : t("club.동아리방")}
         content={club.room ? club.room : "-"}
       />
     </ResponsiveClubCard>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -45,32 +46,36 @@ const PersonInfoWrapper = styled.div`
 const ClubDetailInfoFrame: React.FC<ClubDetailFrameProps> = ({
   club,
   isRegistrationPeriod,
-}) => (
-  <>
-    <FlexWrapper direction="column" gap={20}>
-      <SectionTitle size="lg">동아리 정보</SectionTitle>
-      <CardWrapper>
-        <ClubInfoCard club={club} />
-      </CardWrapper>
-    </FlexWrapper>
-    <MoreInfoWrapper>
-      <PersonInfoWrapper>
-        <SectionTitle size="lg">인적 사항 </SectionTitle>
+}) => {
+  const t = useTranslations("club");
+
+  return (
+    <>
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle size="lg">{t("동아리 정보")}</SectionTitle>
         <CardWrapper>
-          <ClubMemberCard
-            club={club}
-            isRegistrationPeriod={isRegistrationPeriod}
-          />
-        </CardWrapper>
-      </PersonInfoWrapper>
-      <FlexWrapper direction="column" gap={20} style={{ flex: "1 0 0" }}>
-        <SectionTitle size="lg">동아리 설명</SectionTitle>
-        <CardWrapper>
-          <ClubDetailCard club={club} />
+          <ClubInfoCard club={club} />
         </CardWrapper>
       </FlexWrapper>
-    </MoreInfoWrapper>
-  </>
-);
+      <MoreInfoWrapper>
+        <PersonInfoWrapper>
+          <SectionTitle size="lg">{t("인적 사항")}</SectionTitle>
+          <CardWrapper>
+            <ClubMemberCard
+              club={club}
+              isRegistrationPeriod={isRegistrationPeriod}
+            />
+          </CardWrapper>
+        </PersonInfoWrapper>
+        <FlexWrapper direction="column" gap={20} style={{ flex: "1 0 0" }}>
+          <SectionTitle size="lg">{t("동아리 설명")}</SectionTitle>
+          <CardWrapper>
+            <ClubDetailCard club={club} />
+          </CardWrapper>
+        </FlexWrapper>
+      </MoreInfoWrapper>
+    </>
+  );
+};
 
 export default ClubDetailInfoFrame;
