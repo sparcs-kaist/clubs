@@ -91,8 +91,8 @@ const ChangeRepresentativeInfo: React.FC<ChangeRepresentativeProps> = ({
             거절되지 않을 경우 자동으로 취소됩니다
             <br />
             <br />
-            만약 요청 받으신 분의 &apos;마이페이지&apos;에서 대표자 변경 안내
-            팝업이 보이지 않는 다면 채널톡으로 문의주세요!
+            만약 요청받으신 분의 &apos;마이페이지&apos;에서 대표자 변경 안내
+            팝업이 보이지 않는다면 채널톡으로 문의해 주세요!
           </Typography>
         )}
       </FlexWrapper>
