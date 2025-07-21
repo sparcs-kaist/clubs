@@ -94,7 +94,7 @@ const ClubCard: React.FC<ClubCardProps> = ({
         <ClubCardNameWithTag>
           {isMobile && (
             <Tag color={getTagColorFromClubType(club.type, club.isPermanent)}>
-              {getShortClubType(club)}
+              {t(`club.${getShortClubType(club)}`)}
             </Tag>
           )}
           <ClubName isMobile={isMobile}>{getClubName()}</ClubName>
