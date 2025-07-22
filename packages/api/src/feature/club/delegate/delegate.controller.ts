@@ -11,45 +11,33 @@ import {
 } from "@nestjs/common";
 import { Response } from "express";
 
-import type {
-  ApiClb006RequestParam,
-  ApiClb006ResponseOK,
-} from "@clubs/interface/api/club/endpoint/apiClb006";
-import apiClb006 from "@clubs/interface/api/club/endpoint/apiClb006";
-import type {
-  ApiClb007RequestBody,
-  ApiClb007RequestParam,
-  ApiClb007ResponseCreated,
-} from "@clubs/interface/api/club/endpoint/apiClb007";
-import apiClb007 from "@clubs/interface/api/club/endpoint/apiClb007";
-import type {
-  ApiClb008RequestParam,
-  ApiClb008ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb008";
-import apiClb008 from "@clubs/interface/api/club/endpoint/apiClb008";
-import type {
-  ApiClb011RequestParam,
-  ApiClb011ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb011";
-import apiClb011 from "@clubs/interface/api/club/endpoint/apiClb011";
-import type {
-  ApiClb012RequestParam,
-  ApiClb012ResponseCreated,
-} from "@clubs/interface/api/club/endpoint/apiClb012";
-import apiClb012 from "@clubs/interface/api/club/endpoint/apiClb012";
-import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
-import apiClb013 from "@clubs/interface/api/club/endpoint/apiClb013";
-import type {
-  ApiClb014RequestBody,
-  ApiClb014RequestParam,
-  ApiClb014ResponseCreated,
-} from "@clubs/interface/api/club/endpoint/apiClb014";
-import apiClb014 from "@clubs/interface/api/club/endpoint/apiClb014";
-import type {
-  ApiClb015ResponseNoContent,
-  ApiClb015ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb015";
-import apiClb015 from "@clubs/interface/api/club/endpoint/apiClb015";
+import {
+  apiClb006,
+  type ApiClb006RequestParam,
+  type ApiClb006ResponseOK,
+  apiClb007,
+  type ApiClb007RequestBody,
+  type ApiClb007RequestParam,
+  type ApiClb007ResponseCreated,
+  apiClb008,
+  type ApiClb008RequestParam,
+  type ApiClb008ResponseOk,
+  apiClb011,
+  type ApiClb011RequestParam,
+  type ApiClb011ResponseOk,
+  apiClb012,
+  type ApiClb012RequestParam,
+  type ApiClb012ResponseCreated,
+  apiClb013,
+  ApiClb013ResponseOk,
+  apiClb014,
+  type ApiClb014RequestBody,
+  type ApiClb014RequestParam,
+  type ApiClb014ResponseCreated,
+  apiClb015,
+  type ApiClb015ResponseNoContent,
+  type ApiClb015ResponseOk,
+} from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";

@@ -65,7 +65,7 @@ export class OverviewRepository {
         delegateType: ClubDelegateEnum.id,
         name: User.name,
         studentNumber: Student.number,
-        phoneNumber: Student.phoneNumber,
+        phoneNumber: User.phoneNumber,
         kaistEmail: Student.email,
         department: Department.name,
       })

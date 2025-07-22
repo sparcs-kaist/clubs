@@ -8,10 +8,6 @@ import type {
   ApiClb008RequestParam,
   ApiClb008ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb008";
-import type {
-  ApiClb011RequestParam,
-  ApiClb011ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb011";
 import type { ApiClb012RequestParam } from "@clubs/interface/api/club/endpoint/apiClb012";
 import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
 import type {
@@ -22,6 +18,10 @@ import type {
   ApiClb015ResponseNoContent,
   ApiClb015ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb015";
+import type {
+  ApiClb011RequestParam,
+  ApiClb011ResponseOk,
+} from "@clubs/interface/api/club/index";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
@@ -582,7 +582,7 @@ export default class ClubDelegateService {
         id: e.student.id,
         studentNumber: String(e.student.number),
         name: e.student.name,
-        phoneNumber: e.student.phoneNumber,
+        phoneNumber: e.user.phoneNumber,
       })),
     };
     return response;

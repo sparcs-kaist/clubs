@@ -74,7 +74,6 @@ export class ProfessorRepository extends BaseMultiTableRepository<
       name: result.main.name,
       email: result.main.email,
       professorEnum: result.oneToOne.professorT.professorEnum,
-      phoneNumber: result.main.phoneNumber,
       department: result.oneToOne.professorT.department,
     });
   }
@@ -86,7 +85,6 @@ export class ProfessorRepository extends BaseMultiTableRepository<
         userId: model.userId,
         name: model.name,
         email: model.email,
-        phoneNumber: model.phoneNumber,
       },
       oneToOne: {
         professorT: {
@@ -106,7 +104,6 @@ export class ProfessorRepository extends BaseMultiTableRepository<
         userId: model.userId,
         name: model.name,
         email: model.email,
-        phoneNumber: model.phoneNumber,
       },
       oneToOne: {
         professorT: {

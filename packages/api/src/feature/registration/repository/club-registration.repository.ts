@@ -56,6 +56,7 @@ import {
   ProfessorT,
   Student,
   StudentT,
+  User,
 } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 @Injectable()
@@ -1001,6 +1002,7 @@ export class ClubRegistrationRepository {
         and(eq(Registration.clubId, ClubOld.id), isNull(ClubOld.deletedAt)),
       )
       .innerJoin(Student, eq(Registration.studentId, Student.id))
+      .leftJoin(User, eq(User.id, Student.userId))
       .innerJoin(
         Division,
         and(

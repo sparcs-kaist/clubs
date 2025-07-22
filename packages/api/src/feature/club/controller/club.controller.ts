@@ -1,35 +1,29 @@
 import { Body, Controller, Get, Param, Put, UsePipes } from "@nestjs/common";
 
-import apiClb001, {
-  ApiClb001ResponseOK,
-} from "@clubs/interface/api/club/endpoint/apiClb001";
-import apiClb002, {
-  ApiClb002RequestParam,
-  ApiClb002ResponseOK,
-} from "@clubs/interface/api/club/endpoint/apiClb002";
-import apiClb003, {
-  ApiClb003ResponseOK,
-} from "@clubs/interface/api/club/endpoint/apiClb003";
-import apiClb004, {
-  ApiClb004RequestParam,
-  ApiClb004ResponseOK,
-} from "@clubs/interface/api/club/endpoint/apiClb004";
-import apiClb005, {
-  ApiClb005RequestBody,
-  ApiClb005RequestParam,
-  ApiClb005ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb005";
-import apiClb009, {
-  ApiClb009RequestParam,
-  ApiClb009ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb009";
-import apiClb010, {
-  ApiClb010RequestParam,
-  ApiClb010ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb010";
-import apiClb016, {
-  ApiClb016ResponseOk,
-} from "@clubs/interface/api/club/endpoint/apiClb016";
+import {
+  apiClb001,
+  type ApiClb001ResponseOK,
+  apiClb002,
+  type ApiClb002RequestParam,
+  type ApiClb002ResponseOK,
+  apiClb003,
+  type ApiClb003ResponseOK,
+  apiClb004,
+  type ApiClb004RequestParam,
+  type ApiClb004ResponseOK,
+  apiClb005,
+  type ApiClb005RequestBody,
+  type ApiClb005RequestParam,
+  type ApiClb005ResponseOk,
+  apiClb009,
+  type ApiClb009RequestParam,
+  type ApiClb009ResponseOk,
+  apiClb010,
+  type ApiClb010RequestParam,
+  type ApiClb010ResponseOk,
+  apiClb016,
+  type ApiClb016ResponseOk,
+} from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {

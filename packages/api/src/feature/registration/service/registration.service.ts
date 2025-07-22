@@ -717,7 +717,7 @@ export class RegistrationService {
           id: e.student.id,
           studentNumber: e.student.number,
           name: e.student.name,
-          phoneNumber: e.student.phoneNumber,
+          phoneNumber: e.user.phoneNumber,
           email: e.student.email,
         },
         professorSignedAt: e.registration.professorApprovedAt,
