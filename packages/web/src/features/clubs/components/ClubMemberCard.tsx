@@ -51,6 +51,7 @@ const Title = styled(Typography)`
   font-weight: ${({ theme }) => theme.fonts.WEIGHT.MEDIUM};
   font-size: 16px;
   line-height: 24px;
+  text-align: center;
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
     font-size: 14px;
     line-height: 20px;
