@@ -109,7 +109,10 @@ const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
         </AsyncBoundary>
       </ClubInfoRow>
       <ResponsiveClubInfoRow>
-        <ClubInfoItem title={t("club.성격")} content={club.characteristic} />
+        <ClubInfoItem
+          title={isMobile ? t("club.Charac") : t("club.성격")}
+          content={club.characteristic}
+        />
         <ClubInfoItem
           title={isMobile ? t("club.연도") : t("club.설립연도")}
           content={`${club.foundingYear}년`}

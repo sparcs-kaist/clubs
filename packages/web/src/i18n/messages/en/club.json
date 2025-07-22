@@ -10,7 +10,8 @@
     "상임": "Senate",
     "동아리 정보": "Club Information",
     "동아리 지위": "Category",
-    "지위": "Category",
+    "지위": "Cat.",
+    "Charac": "Charac.",
     "성격": "Characteristic",
     "동아리방": "Room",
     "동방": "Room",
@@ -21,5 +22,6 @@
     "인적 사항": "People",
     "총원": "Total Number",
     "대표자": "Club Representative",
-    "동아리 설명": "About the club"
+    "동아리 설명": "About the club",
+    "동아리 설명 없음": "There is no description about the club"
 }
