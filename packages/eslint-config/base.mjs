@@ -23,6 +23,7 @@ import tseslint from "typescript-eslint"; // 👴
 
 // 커스텀 룰 추가하기
 import eslintPluginZodCoerce from "./custom_rules/eslint-plugin-zod-coerce.mjs";
+import eslintPluginZodRequestQueryArray from "./custom_rules/eslint-plugin-zod-requestquery-array.mjs";
 // 이것도 서드파티이긴한데...
 const compat = new FlatCompat({});
 
@@ -131,6 +132,17 @@ export const baseConfig = tseslint.config(
     },
     rules: {
       "eslint-plugin-zod-coerce/z-number": "error",
+    },
+  },
+  {
+    name: "zod custom rules enforce zQueryArray",
+    files: ["**/src/api/**/endpoint/*.ts"],
+    plugins: {
+      "eslint-plugin-zod-requestquery-array": eslintPluginZodRequestQueryArray,
+    },
+    rules: {
+      "eslint-plugin-zod-requestquery-array/enforce-zqueryrequest-array":
+        "error",
     },
   },
 );
