@@ -6,6 +6,14 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.84",
+    date: new Date("2025.07.23"),
+    patchNoteContent: `Clubs v0.0.84
+오류 수정은 다음과 같습니다.
+- API 호출시 argument가 1개이면 500을 반환하던 버그가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.83",
     date: new Date("2025.07.21"),
     patchNoteContent: `Clubs v0.0.83
