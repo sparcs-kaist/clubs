@@ -1,4 +1,4 @@
-/* eslint-disable object-shorthand */
+// @ts-check
 /**
  * @type {import("eslint").ESLint.Plugin}
  */
