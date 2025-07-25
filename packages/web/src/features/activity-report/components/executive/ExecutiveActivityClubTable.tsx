@@ -23,7 +23,7 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveActivityClubTableProps {
   activities?: ApiAct023ResponseOk["items"];
-  total: number;
+  searchText: string;
   selectedClubIds: number[];
   setSelectedClubIds: (clubIds: number[]) => void;
 }
@@ -125,19 +125,24 @@ const columns = [
 
 const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
   activities = [],
-  total,
+  searchText,
   selectedClubIds,
   setSelectedClubIds,
 }) => {
+  const sortedActivities = useMemo(
+    () => [...activities].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
+    [activities],
+  );
+
   const initialRowValues = useMemo(
     () =>
       selectedClubIds.reduce((acc, clubId) => {
-        const index = activities.findIndex(
+        const index = sortedActivities.findIndex(
           activity => activity.clubId === clubId,
         );
         return { ...acc, [index]: true };
       }, {}),
-    [selectedClubIds, activities],
+    [selectedClubIds, sortedActivities],
   );
 
   const [rowValues, setRowValues] =
@@ -149,17 +154,18 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
 
   const handleRowClick = (rowState: RowSelectionState) => {
     setRowValues(rowState);
-    const newSelected = activities.filter((_, i) => rowState?.[i]);
+    const newSelected = sortedActivities.filter((_, i) => rowState?.[i]);
     setSelectedClubIds(newSelected.map(activity => activity.clubId));
   };
 
   const table = useReactTable({
-    data: activities,
+    data: sortedActivities,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       rowSelection: rowValues,
+      globalFilter: searchText,
     },
     onRowSelectionChange: updaterOrValue => {
       if (typeof updaterOrValue === "function") {
@@ -171,9 +177,13 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
     enableSorting: false,
   });
 
-  let countString = `총 ${total}개`;
+  const totalCount = sortedActivities.length;
+
+  let countString = `총 ${totalCount}개`;
   if (selectedClubIds.length !== 0) {
-    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${total}개`;
+    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${activities.length}개`;
+  } else if (table.getRowModel().rows.length !== totalCount) {
+    countString = `검색 결과 ${table.getRowModel().rows.length}개 / 총 ${totalCount}개`;
   }
 
   return (
