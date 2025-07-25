@@ -12,74 +12,75 @@ import {
 } from "@nestjs/common";
 
 import apiFnd002, {
-  ApiFnd002RequestParam,
-  ApiFnd002ResponseOk,
+  type ApiFnd002RequestParam,
+  type ApiFnd002ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import apiFnd003, {
-  ApiFnd003RequestBody,
-  ApiFnd003RequestParam,
-  ApiFnd003ResponseOk,
+  type ApiFnd003RequestBody,
+  type ApiFnd003RequestParam,
+  type ApiFnd003ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd003";
 import apiFnd004, {
-  ApiFnd004RequestParam,
-  ApiFnd004ResponseOk,
+  type ApiFnd004RequestParam,
+  type ApiFnd004ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd004";
 import apiFnd005, {
-  ApiFnd005RequestQuery,
-  ApiFnd005ResponseOk,
+  type ApiFnd005RequestQuery,
+  type ApiFnd005ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd005";
 import apiFnd006, {
-  ApiFnd006RequestParam,
-  ApiFnd006RequestQuery,
-  ApiFnd006ResponseOk,
+  type ApiFnd006RequestParam,
+  type ApiFnd006RequestQuery,
+  type ApiFnd006ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd006";
 import apiFnd007, {
-  ApiFnd007ResponseOk,
+  type ApiFnd007ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd007";
 import apiFnd008, {
   ApiFnd008RequestUrl,
-  ApiFnd008ResponseOk,
+  type ApiFnd008ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import apiFnd009, {
-  ApiFnd009RequestParam,
+  type ApiFnd009RequestParam,
+  type ApiFnd009RequestQuery,
   ApiFnd009RequestUrl,
-  ApiFnd009ResponseOk,
+  type ApiFnd009ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import apiFnd010, {
-  ApiFnd010RequestParam,
+  type ApiFnd010RequestParam,
   ApiFnd010RequestUrl,
-  ApiFnd010ResponseOk,
+  type ApiFnd010ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd010";
 import apiFnd012, {
-  ApiFnd012RequestParam,
+  type ApiFnd012RequestParam,
   ApiFnd012RequestUrl,
-  ApiFnd012ResponseOk,
+  type ApiFnd012ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd012";
 import apiFnd013, {
-  ApiFnd013RequestBody,
-  ApiFnd013RequestParam,
+  type ApiFnd013RequestBody,
+  type ApiFnd013RequestParam,
   ApiFnd013RequestUrl,
-  ApiFnd013ResponseCreated,
+  type ApiFnd013ResponseCreated,
 } from "@clubs/interface/api/funding/endpoint/apiFnd013";
 import apiFnd014, {
-  ApiFnd014RequestBody,
+  type ApiFnd014RequestBody,
   ApiFnd014RequestUrl,
-  ApiFnd014ResponseOk,
+  type ApiFnd014ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd014";
 import apiFnd015, {
-  ApiFnd015RequestBody,
+  type ApiFnd015RequestBody,
   ApiFnd015RequestUrl,
-  ApiFnd015ResponseOk,
+  type ApiFnd015ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd015";
 import apiFnd016, {
-  ApiFnd016RequestQuery,
+  type ApiFnd016RequestQuery,
   ApiFnd016RequestUrl,
-  ApiFnd016ResponseOk,
+  type ApiFnd016ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd016";
 import {
   apiFnd001,
-  ApiFnd001RequestBody,
-  ApiFnd001ResponseCreated,
+  type ApiFnd001RequestBody,
+  type ApiFnd001ResponseCreated,
 } from "@clubs/interface/api/funding/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -224,10 +225,12 @@ export default class FundingController {
   async getExecutiveFundingsClubBrief(
     @GetExecutive() executive: GetExecutive,
     @Param() param: ApiFnd009RequestParam,
+    @Query() query: ApiFnd009RequestQuery,
   ): Promise<ApiFnd009ResponseOk> {
     return this.fundingService.getExecutiveFundingsClubBrief(
       executive.executiveId,
       param,
+      query,
     );
   }
 

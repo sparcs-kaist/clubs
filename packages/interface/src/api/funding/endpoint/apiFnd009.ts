@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import { zClubSummary } from "@clubs/interface/api/club/type/club.type";
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
 
@@ -21,7 +23,9 @@ const requestParam = z.object({
   clubId: z.coerce.number().int().min(1),
 });
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  activityDurationId: zActivityDuration.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
@@ -64,8 +68,8 @@ type ApiFnd009ResponseOk = z.infer<(typeof apiFnd009.responseBodyMap)[200]>;
 export default apiFnd009;
 
 export type {
+  ApiFnd009RequestBody,
   ApiFnd009RequestParam,
   ApiFnd009RequestQuery,
-  ApiFnd009RequestBody,
   ApiFnd009ResponseOk,
 };

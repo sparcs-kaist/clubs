@@ -17,7 +17,7 @@ import ExecutiveFundingClubFrame from "@sparcs-clubs/web/features/executive/fund
 const ExecutiveFundingClub = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
 
   const { data, isLoading, isError } = useGetClubDetail(id as string);
 
@@ -50,7 +50,7 @@ const ExecutiveFundingClub = () => {
           title={`지원금 신청 내역 (${data?.nameKr})`}
           enableLast
         />
-        <ExecutiveFundingClubFrame />
+        <ExecutiveFundingClubFrame clubId={id} />
       </FlexWrapper>
     </AsyncBoundary>
   );
