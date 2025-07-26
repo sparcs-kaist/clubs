@@ -21,7 +21,7 @@ export const activityReportDetailQueryKey = (
 export const useGetActivityReport = (
   profile: string,
   activityId: number,
-  operatingCommitteeSecret: string | undefined,
+  operatingCommitteeSecret?: string,
 ) =>
   useQuery<ApiAct002ResponseOk, Error>({
     queryKey: [

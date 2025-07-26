@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -12,6 +13,12 @@ import ActivityReportDetailFrame from "@sparcs-clubs/web/features/activity-repor
 const ExecutiveActivityReportDetail = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
+
+  const searchParams = useSearchParams();
+
+  const operatingCommitteeSecret = searchParams.get(
+    "operating-committee-secret",
+  );
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -38,7 +45,11 @@ const ExecutiveActivityReportDetail = () => {
         title="운영위원 활동 보고서 조회 페이지"
         enableLast
       />
-      <ActivityReportDetailFrame profile={profile} />
+      <ActivityReportDetailFrame
+        profile={profile}
+        isOperatingCommittee
+        operatingCommitteeSecret={operatingCommitteeSecret ?? undefined}
+      />
     </FlexWrapper>
   );
 };

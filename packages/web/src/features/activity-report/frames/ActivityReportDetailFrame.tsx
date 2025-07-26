@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
@@ -82,22 +82,21 @@ const FilePreviewContainer: React.FC<React.PropsWithChildren> = ({
 
 interface ActivityReportDetailFrameProps {
   profile: Profile;
+  isOperatingCommittee?: boolean;
+  operatingCommitteeSecret?: string;
 }
 
 const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
   profile,
+  isOperatingCommittee = false,
+  operatingCommitteeSecret = undefined,
 }) => {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
 
-  const operatingCommitteeSecret = searchParams.get(
-    "operating-committee-secret",
-  );
-  // console.log(`secret is ${operatingCommitteeSecret}`);
   const { data, isLoading, isError } = useGetActivityReportDetail(
     Number(id),
-    operatingCommitteeSecret === null ? undefined : operatingCommitteeSecret,
+    operatingCommitteeSecret,
   );
   const {
     data: activityDeadline,
@@ -213,7 +212,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={40} style={{ alignSelf: "stretch" }}>
         <Card outline padding="32px" gap={20}>
-          {isProgressVisible && (
+          {(isProgressVisible || isOperatingCommittee) && (
             <ActivityReportStatusSection
               status={data.activityStatusEnumId}
               editedAt={data.editedAt}
@@ -317,6 +316,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
         </Card>
 
         {profile.type === UserTypeEnum.Executive &&
+          !isOperatingCommittee &&
           activityDeadline?.canApprove && (
             <ExecutiveActivityReportApprovalSection
               comments={filterActivityComments(data.comments)}
@@ -324,39 +324,41 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             />
           )}
 
-        <FlexWrapper gap={20} justify="space-between">
-          <Button type="default" onClick={navigateToActivityReportList}>
-            목록으로 돌아가기
-          </Button>
+        {!isOperatingCommittee && (
+          <FlexWrapper gap={20} justify="space-between">
+            <Button type="default" onClick={navigateToActivityReportList}>
+              목록으로 돌아가기
+            </Button>
 
-          <AsyncBoundary
-            isLoading={isLoadingDeadline}
-            isError={isErrorDeadline}
-          >
-            {profile.type === UserTypeEnum.Undergraduate &&
-              activityDeadline?.isEditable &&
-              !isPastActivityReport && (
-                <FlexWrapper gap={12}>
-                  <Button type="default" onClick={handleDelete}>
-                    삭제
+            <AsyncBoundary
+              isLoading={isLoadingDeadline}
+              isError={isErrorDeadline}
+            >
+              {profile.type === UserTypeEnum.Undergraduate &&
+                activityDeadline?.isEditable &&
+                !isPastActivityReport && (
+                  <FlexWrapper gap={12}>
+                    <Button type="default" onClick={handleDelete}>
+                      삭제
+                    </Button>
+                    <Button type="default" onClick={handleEdit}>
+                      수정
+                    </Button>
+                  </FlexWrapper>
+                )}
+              {profile.type === UserTypeEnum.Professor &&
+                activityDeadline?.canApprove &&
+                !isPastActivityReport && (
+                  <Button
+                    type={data.professorApprovedAt ? "disabled" : "default"}
+                    onClick={handleProfessorApproval}
+                  >
+                    승인
                   </Button>
-                  <Button type="default" onClick={handleEdit}>
-                    수정
-                  </Button>
-                </FlexWrapper>
-              )}
-            {profile.type === UserTypeEnum.Professor &&
-              activityDeadline?.canApprove &&
-              !isPastActivityReport && (
-                <Button
-                  type={data.professorApprovedAt ? "disabled" : "default"}
-                  onClick={handleProfessorApproval}
-                >
-                  승인
-                </Button>
-              )}
-          </AsyncBoundary>
-        </FlexWrapper>
+                )}
+            </AsyncBoundary>
+          </FlexWrapper>
+        )}
       </FlexWrapper>
     </AsyncBoundary>
   );
