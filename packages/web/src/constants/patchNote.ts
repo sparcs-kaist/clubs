@@ -6,6 +6,15 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.84",
+    date: new Date("2025.07.26"),
+    patchNoteContent: `Clubs v0.0.84
+신규 기능은 다음과 같습니다.
+- 운영위원 활동보고서 조회 기능이 추가되었습니다.
+- 집행부원이 모든 지원금 신청 내역을 조회할 수 있습니다.
+`,
+  },
+  {
     version: "v.0.0.83",
     date: new Date("2025.07.21"),
     patchNoteContent: `Clubs v0.0.83
