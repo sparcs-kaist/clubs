@@ -11,6 +11,7 @@ import { CurrentActivityReport } from "../types/activityReport";
 
 const useGetActivityReportDetail = (
   activityId: number,
+  operatingCommitteeSecret: string | undefined,
 ): {
   data: CurrentActivityReport;
   isLoading: boolean;
@@ -24,6 +25,7 @@ const useGetActivityReportDetail = (
   } = useGetActivityReport(
     profile?.type ?? UserTypeEnum.Undergraduate,
     activityId,
+    operatingCommitteeSecret,
   );
   const {
     data: hasProfessor,
