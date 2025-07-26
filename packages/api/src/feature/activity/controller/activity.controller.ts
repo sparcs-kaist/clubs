@@ -193,7 +193,7 @@ export default class ActivityController {
     const result = await this.activityService.getStudentActivity(
       param.activityId,
       query.operatingCommitteeSecret,
-      // user.studentId,
+      user.studentId,
     );
 
     return result;

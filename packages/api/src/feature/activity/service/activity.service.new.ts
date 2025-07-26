@@ -169,7 +169,7 @@ export default class ActivityService {
   async getStudentActivity(
     activityId: number,
     operatingCommiteeSecret: string | undefined,
-    // studentId: number,
+    studentId: number,
   ): Promise<ApiAct002ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
 
@@ -178,7 +178,10 @@ export default class ActivityService {
     );
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     if (operatingCommiteeSecret === undefined) {
-      // await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+      await this.clubPublicService.checkIsStudentDelegate({
+        studentId,
+        clubId: activity.club.id,
+      });
     } else if (operatingCommiteeSecret !== this.operatingCommiteeSecret) {
       throw new HttpException("wrong secret", HttpStatus.BAD_REQUEST);
     }
