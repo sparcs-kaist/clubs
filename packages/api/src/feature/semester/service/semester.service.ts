@@ -2,12 +2,17 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
-import { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
+import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type {
   ApiSem001RequestQuery,
   ApiSem001ResponseOK,
   ApiSem002RequestBody,
   ApiSem002ResponseCreated,
+  ApiSem003RequestBody,
+  ApiSem003RequestQuery,
+  ApiSem003ResponseOk,
+  ApiSem004RequestQuery,
+  ApiSem004ResponseOk,
 } from "@clubs/interface/api/semester/index";
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
@@ -165,6 +170,104 @@ export class SemesterService {
       name: param.body.name,
       startTerm: param.body.startTerm,
       endTerm: param.body.endTerm,
+    });
+
+    return {
+      id: semester.id,
+    };
+  }
+
+  /**
+   * @description updateSemester의 서비스 진입점입니다.
+   * @returns 수정한 학기의 id를 리턴합니다. 만약 잘못된 요청이라면 400 예외를 발생시킵니다.
+   */
+  async updateSemester(param: {
+    query: ApiSem003RequestQuery;
+    body: ApiSem003RequestBody;
+  }): Promise<ApiSem003ResponseOk> {
+    // 1. 수정하려는 학기가 존재하는지 확인합니다.
+    const existingSemester =
+      await this.semesterSQLRepository.findSemesterByNameAndYear({
+        name: param.query.name,
+        year: param.query.year,
+      });
+
+    if (existingSemester.id === undefined) {
+      throw new HttpException(
+        `A semester with the name "${param.query.name}" and year "${param.query.year}" does not exist.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 2. 시작일이 종료일보다 이전인지 확인합니다.
+    if (param.body.startTerm >= param.body.endTerm) {
+      throw new HttpException(
+        `The start term "${param.body.startTerm}" must be before the end term "${param.body.endTerm}".`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 3. 해당 기간과 겹치는 다른 학기가 있는지 확인합니다. (현재 수정하는 학기는 제외)
+    const overlappingSemestersStart = await this.semesterRepository.find({
+      date: param.body.startTerm,
+    });
+    const overlappingSemestersEnd = await this.semesterRepository.find({
+      date: param.body.endTerm,
+    });
+
+    const hasOverlap =
+      overlappingSemestersStart.some(s => s.id !== existingSemester.id) ||
+      overlappingSemestersEnd.some(s => s.id !== existingSemester.id);
+
+    if (hasOverlap) {
+      throw new HttpException(
+        `There are overlapping semesters for the period ${param.body.startTerm} to ${param.body.endTerm}.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 4. 학기를 수정합니다.
+    const semester = await this.semesterSQLRepository.updateSemester(
+      {
+        name: param.query.name,
+        year: param.query.year,
+      },
+      {
+        startTerm: param.body.startTerm,
+        endTerm: param.body.endTerm,
+      },
+    );
+
+    return {
+      id: semester.id,
+    };
+  }
+
+  /**
+   * @description deleteSemester의 서비스 진입점입니다.
+   * @returns 삭제한 학기의 id를 리턴합니다. 만약 잘못된 요청이라면 400 예외를 발생시킵니다.
+   */
+  async deleteSemester(param: {
+    query: ApiSem004RequestQuery;
+  }): Promise<ApiSem004ResponseOk> {
+    // 1. 삭제하려는 학기가 존재하는지 확인합니다.
+    const existingSemester =
+      await this.semesterSQLRepository.findSemesterByNameAndYear({
+        name: param.query.name,
+        year: param.query.year,
+      });
+
+    if (existingSemester.id === undefined) {
+      throw new HttpException(
+        `A semester with the name "${param.query.name}" and year "${param.query.year}" does not exist.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 2. 학기를 소프트 삭제합니다.
+    const semester = await this.semesterSQLRepository.softDeleteSemester({
+      name: param.query.name,
+      year: param.query.year,
     });
 
     return {

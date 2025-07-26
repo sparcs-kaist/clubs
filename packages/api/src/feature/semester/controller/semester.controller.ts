@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+  UsePipes,
+} from "@nestjs/common";
 
 import apiAct018, {
   type ApiAct018ResponseOk,
@@ -10,6 +19,13 @@ import {
   apiSem002,
   type ApiSem002RequestBody,
   type ApiSem002ResponseCreated,
+  apiSem003,
+  type ApiSem003RequestBody,
+  type ApiSem003RequestQuery,
+  type ApiSem003ResponseOk,
+  apiSem004,
+  type ApiSem004RequestQuery,
+  type ApiSem004ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -40,6 +56,25 @@ export class SemesterController {
     @Body() body: ApiSem002RequestBody,
   ): Promise<ApiSem002ResponseCreated> {
     return this.semesterService.createSemester({ body });
+  }
+
+  @Executive()
+  @Put("/executive/semesters")
+  @UsePipes(new ZodPipe(apiSem003))
+  async updateSemester(
+    @Query() query: ApiSem003RequestQuery,
+    @Body() body: ApiSem003RequestBody,
+  ): Promise<ApiSem003ResponseOk> {
+    return this.semesterService.updateSemester({ query, body });
+  }
+
+  @Executive()
+  @Delete("/executive/semesters")
+  @UsePipes(new ZodPipe(apiSem004))
+  async deleteSemester(
+    @Query() query: ApiSem004RequestQuery,
+  ): Promise<ApiSem004ResponseOk> {
+    return this.semesterService.deleteSemester({ query });
   }
 
   @Public()
