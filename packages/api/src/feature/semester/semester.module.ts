@@ -13,6 +13,7 @@ import { ActivityDurationRepository } from "./repository/activity.duration.repos
 import { FundingDeadlineRepository } from "./repository/funding.deadline.repository";
 import { RegistrationDeadlineRepository } from "./repository/registration.deadline.repository";
 import { SemesterRepository } from "./repository/semester.repository";
+import { SemesterSQLRepository } from "./repository/semester.sql.repository";
 import { SemesterService } from "./service/semester.service";
 
 @Module({
@@ -26,6 +27,7 @@ import { SemesterService } from "./service/semester.service";
     FundingDeadlinePublicService,
     RegistrationDeadlinePublicService,
     SemesterRepository,
+    SemesterSQLRepository,
     ActivityDurationRepository,
     ActivityDeadlineRepository,
     FundingDeadlineRepository,
