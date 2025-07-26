@@ -7,12 +7,13 @@ export interface patchNote {
 const patchNoteList: patchNote[] = [
   {
     version: "v.0.0.85",
-    date: new Date("2025.07.25"),
+    date: new Date("2025.07.26"),
     patchNoteContent: `Clubs v0.0.85
 신규 기능은 다음과 같습니다.
 - 과거 지원금 신청 내역 조회 기능이 추가되었습니다.
 오류 수정은 다음과 같습니다.
 - 전화번호 변경 기능이 동작하지 않던 버그가 수정되었습니다.
+- 집행부 학기 수정 API가 추가되었습니다.
 `,
   },
   {
