@@ -63,6 +63,8 @@ export const productionReadyPaths: {
     "/club-registration",
     // 동아리 총람
     "/overview",
+    // 운영위원회 제공용 활동보고서 조회
+    "/operating-committee",
   ],
   exclude: [],
 };
