@@ -48,6 +48,7 @@ import {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
@@ -66,6 +67,8 @@ import { ActivityCommentRepository } from "../repository/activity-comment.reposi
 
 @Injectable()
 export default class ActivityService {
+  operatingCommiteeSecret: string;
+
   constructor(
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
@@ -78,7 +81,9 @@ export default class ActivityService {
     private readonly registrationPublicService: RegistrationPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
     private readonly userPublicService: UserPublicService,
-  ) {}
+  ) {
+    this.operatingCommiteeSecret = "7sUyWS2sLD";
+  }
 
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
@@ -163,12 +168,21 @@ export default class ActivityService {
   }
   async getStudentActivity(
     activityId: number,
+    operatingCommiteeSecret: string | undefined,
     // studentId: number,
   ): Promise<ApiAct002ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
 
+    logger.debug(
+      `getStudentActivity: activityId=${activityId}, operatingCommiteeSecret=${operatingCommiteeSecret}`,
+    );
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    // await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    if (operatingCommiteeSecret === undefined) {
+      // await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    } else if (operatingCommiteeSecret !== this.operatingCommiteeSecret) {
+      throw new HttpException("wrong secret", HttpStatus.BAD_REQUEST);
+    }
+
     const participants = await Promise.all(
       activity.participants.map(async e => {
         const student = await this.userPublicService.getStudentById({
@@ -181,6 +195,7 @@ export default class ActivityService {
         };
       }),
     );
+
     // const duration = await this.activityRepository.selectDurationByActivityId(
     //   activity.id,
     // );

@@ -81,6 +81,7 @@ import {
   type ApiAct001ResponseCreated,
   apiAct002,
   type ApiAct002RequestParam,
+  type ApiAct002RequestQuery,
   type ApiAct002ResponseOk,
   apiAct003,
   type ApiAct003RequestBody,
@@ -187,9 +188,11 @@ export default class ActivityController {
   async getStudentActivity(
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct002RequestParam,
+    @Query() query: ApiAct002RequestQuery,
   ): Promise<ApiAct002ResponseOk> {
     const result = await this.activityService.getStudentActivity(
       param.activityId,
+      query.operatingCommitteeSecret,
       // user.studentId,
     );
 

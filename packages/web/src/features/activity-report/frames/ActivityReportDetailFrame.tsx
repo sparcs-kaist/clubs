@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
@@ -89,8 +89,16 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
 }) => {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
 
-  const { data, isLoading, isError } = useGetActivityReportDetail(Number(id));
+  const operatingCommitteeSecret = searchParams.get(
+    "operating-committee-secret",
+  );
+  // console.log(`secret is ${operatingCommitteeSecret}`);
+  const { data, isLoading, isError } = useGetActivityReportDetail(
+    Number(id),
+    operatingCommitteeSecret === null ? undefined : operatingCommitteeSecret,
+  );
   const {
     data: activityDeadline,
     isLoading: isLoadingDeadline,
