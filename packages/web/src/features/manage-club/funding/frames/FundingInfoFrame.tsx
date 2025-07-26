@@ -1,3 +1,4 @@
+import { addDays, subDays } from "date-fns";
 import React, { useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
@@ -124,9 +125,13 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
                   label="지출 일자"
                   placeholder="20XX.XX.XX"
                   minDate={
-                    fundingDeadline.targetDuration.startTerm ?? undefined
+                    addDays(fundingDeadline.targetDuration.startTerm, 1) ??
+                    undefined
                   }
-                  maxDate={fundingDeadline.targetDuration.endTerm ?? undefined}
+                  maxDate={
+                    subDays(fundingDeadline.targetDuration.endTerm, 1) ??
+                    undefined
+                  }
                   // TODO: mindate 와 maxdate 활동 기간 안에 포함되는 지 확인
                   selected={value}
                   onChange={(data: Date | null) => {

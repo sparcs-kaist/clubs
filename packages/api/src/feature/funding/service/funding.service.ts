@@ -32,8 +32,9 @@ import {
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
 import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import {
-  ApiFnd009RequestParam,
-  ApiFnd009ResponseOk,
+  type ApiFnd009RequestParam,
+  type ApiFnd009RequestQuery,
+  type ApiFnd009ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import {
   ApiFnd010RequestParam,
@@ -722,20 +723,22 @@ export default class FundingService {
   async getExecutiveFundingsClubBrief(
     executiveId: IExecutive["id"],
     param: ApiFnd009RequestParam,
+    query: ApiFnd009RequestQuery,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
     const semesterId = await this.semesterPublicService.loadId();
-    const [activityDId1, activityDId2] = await Promise.all([
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 1 }),
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 2 }),
-    ]);
+    const activityDId =
+      query.activityDurationId === undefined
+        ? await this.activityDurationPublicService.loadId({
+            semesterId,
+          })
+        : query.activityDurationId;
 
     // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
-    const [fundings1, fundings2] = await Promise.all([
-      this.fundingRepository.fetchSummaries(param.clubId, activityDId1),
-      this.fundingRepository.fetchSummaries(param.clubId, activityDId2),
-    ]);
-    const fundings = [...fundings1, ...fundings2];
+    const fundings = await this.fundingRepository.fetchSummaries(
+      param.clubId,
+      activityDId,
+    );
 
     const club = await this.clubPublicService.fetchSummary(param.clubId);
 

@@ -6,6 +6,21 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.83",
+    date: new Date("2025.07.21"),
+    patchNoteContent: `Clubs v0.0.83
+신규 기능은 다음과 같습니다.
+- 동아리 번역이 추가되었습니다.
+- 과거 지원금 신청 내역 조회 기능이 추가되었습니다.
+오류 수정은 다음과 같습니다.
+- 지원금 신청시, 지원금 결제일 범위가 하루 차이나던 버그가 수정되었습니다.
+- API 호출시 argument가 1개이면 500을 반환하던 버그가 수정되었습니다.
+- 전화번호 변경 기능이 동작하지 않던 버그가 수정되었습니다.
+- 집행부 학기 수정 API가 추가되었습니다.
+
+`,
+  },
+  {
     version: "v.0.0.82",
     date: new Date("2025.07.20"),
     patchNoteContent: `Clubs v0.0.82

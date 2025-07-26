@@ -89,6 +89,10 @@ const ChangeRepresentativeInfo: React.FC<ChangeRepresentativeProps> = ({
           <Typography fw="REGULAR" fs={16} lh={20}>
             대표자 변경 요청을 취소할 수 있으며, 요청이 3일 내로 승인 또는
             거절되지 않을 경우 자동으로 취소됩니다
+            <br />
+            <br />
+            만약 요청받으신 분의 &apos;마이페이지&apos;에서 대표자 변경 안내
+            팝업이 보이지 않는다면 채널톡으로 문의해 주세요!
           </Typography>
         )}
       </FlexWrapper>

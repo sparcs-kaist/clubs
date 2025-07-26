@@ -214,10 +214,12 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
           )}
         </AsyncBoundary>
       </Card>
-      <ExecutiveFundingReviewSection
-        funding={data.funding}
-        comments={data.comments}
-      />
+      {profile.type === UserTypeEnum.Executive && !isPastFunding && (
+        <ExecutiveFundingReviewSection
+          funding={data.funding}
+          comments={data.comments}
+        />
+      )}
       <ButtonWrapper>
         <Button type="default" onClick={navigateToFundingList}>
           목록으로 돌아가기

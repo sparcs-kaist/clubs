@@ -5,7 +5,7 @@ import {
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { ApiFnd009ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
@@ -20,10 +20,11 @@ import { FundingTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveClubFundingsTableProps {
-  fundings: ApiFnd009ResponseOk;
-  searchText: string;
-  selectedFundingIds: number[];
-  setSelectedFundingIds: (fundingIds: number[]) => void;
+  data: ApiFnd009ResponseOk;
+  searchText?: string;
+  selectedFundingIds?: number[];
+  setSelectedFundingIds?: (fundingIds: number[]) => void;
+  isPast?: boolean;
 }
 
 type FundingSummary = ApiFnd009ResponseOk["fundings"][number];
@@ -112,14 +113,15 @@ const sortFundingsByStatusAndId = (fundings: FundingSummary[]) => {
 };
 
 const ExecutiveClubFundingsTable: React.FC<ExecutiveClubFundingsTableProps> = ({
-  fundings,
-  searchText,
-  selectedFundingIds,
-  setSelectedFundingIds,
+  data,
+  searchText = "",
+  selectedFundingIds = [],
+  setSelectedFundingIds = () => {},
+  isPast = false,
 }) => {
   const sortedFundings = useMemo(
-    () => sortFundingsByStatusAndId(fundings.fundings),
-    [fundings.fundings],
+    () => (data.fundings ? sortFundingsByStatusAndId(data.fundings) : []),
+    [data],
   );
 
   const initialRowValues = useMemo(
@@ -136,10 +138,6 @@ const ExecutiveClubFundingsTable: React.FC<ExecutiveClubFundingsTableProps> = ({
   const [rowValues, setRowValues] =
     useState<RowSelectionState>(initialRowValues);
 
-  useEffect(() => {
-    setRowValues(initialRowValues);
-  }, [initialRowValues]);
-
   const handleRowClick = (rowState: RowSelectionState) => {
     setRowValues(rowState);
     const newSelected = sortedFundings.filter((_, i) => rowState?.[i]);
@@ -148,7 +146,7 @@ const ExecutiveClubFundingsTable: React.FC<ExecutiveClubFundingsTableProps> = ({
 
   const table = useReactTable({
     data: sortedFundings,
-    columns,
+    columns: isPast ? columns.slice(1) : columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {
