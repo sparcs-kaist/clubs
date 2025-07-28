@@ -78,7 +78,11 @@ const FundingForm: React.FC<FundingFormProps> = ({
             <Button buttonType="button" type="outlined" onClick={onCancel}>
               취소
             </Button>
-            <Button buttonType="submit" type={isValid ? "default" : "disabled"}>
+            {/* <Button buttonType="submit" type={isValid ? "default" : "disabled"}> // 임시로 disabled 처리 */}
+            <Button
+              buttonType="submit"
+              type={isValid ? "disabled" : "disabled"}
+            >
               {initialData ? "저장" : "신청"}
             </Button>
           </StyledBottom>
