@@ -6,6 +6,7 @@ export { default as apiSem001 } from "./apiSem001";
 export * from "./apiSem002";
 export * from "./apiSem003";
 export * from "./apiSem004";
+export * from "./apiSem005";
 
 registry.registerPath({
   tags: ["semester"],
