@@ -9,7 +9,7 @@ import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 const useGetSemesters = (requestQuery: ApiSem001RequestQuery) =>
   useQuery<ApiSem001ResponseOK, Error>({
-    queryKey: [apiSem001.url(), requestQuery],
+    queryKey: ["getSemesters"],
     queryFn: async (): Promise<ApiSem001ResponseOK> => {
       const { data } = await axiosClientWithAuth.get(apiSem001.url(), {
         params: requestQuery,
