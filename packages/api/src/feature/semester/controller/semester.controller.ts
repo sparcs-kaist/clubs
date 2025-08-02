@@ -26,6 +26,8 @@ import {
   apiSem004,
   type ApiSem004RequestQuery,
   type ApiSem004ResponseOk,
+  apiSem005,
+  type ApiSem005ResponseOK,
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -75,6 +77,13 @@ export class SemesterController {
     @Query() query: ApiSem004RequestQuery,
   ): Promise<ApiSem004ResponseOk> {
     return this.semesterService.deleteSemester({ query });
+  }
+
+  @Public()
+  @Get("/public/semesters/now")
+  @UsePipes(new ZodPipe(apiSem005))
+  async getPublicSemesterNow(): Promise<ApiSem005ResponseOK> {
+    return this.semesterService.getPublicSemesterNow();
   }
 
   @Public()
