@@ -6,14 +6,6 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
-    version: "v.0.0.85",
-    date: new Date("2025.07.28"),
-    patchNoteContent: `Clubs v0.0.85
-신규 기능은 다음과 같습니다.
-- 지원금 심의 기간에 지원금 수정이 차단되었습니다.
-`,
-  },
-  {
     version: "v.0.0.84",
     date: new Date("2025.07.26"),
     patchNoteContent: `Clubs v0.0.84
