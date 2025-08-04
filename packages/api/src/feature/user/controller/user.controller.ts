@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Patch, Query, UsePipes } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Post,
+  Query,
+  UsePipes,
+} from "@nestjs/common";
 
 import apiUsr001 from "@clubs/interface/api/user/endpoint/apiUsr001";
 import apiUsr002, {
@@ -8,9 +17,17 @@ import apiUsr002, {
 import apiUsr003, {
   ApiUsr003RequestBody,
 } from "@clubs/interface/api/user/endpoint/apiUsr003";
+import apiUsr006, {
+  ApiUsr006RequestBody,
+} from "@clubs/interface/api/user/endpoint/apiUsr006";
+import apiUsr007 from "@clubs/interface/api/user/endpoint/apiUsr007";
+import apiUsr008 from "@clubs/interface/api/user/endpoint/apiUsr008";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
-import { Student } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
+import {
+  Executive,
+  Student,
+} from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import {
   GetStudent,
   GetUser,
@@ -133,6 +150,36 @@ export class UserController {
       );
     }
     await this.userService.updatePhoneNumber(user.id, body.phoneNumber);
+    return {};
+  }
+
+  @Executive()
+  @Post("/executive/user/executives")
+  @UsePipes(new ZodPipe(apiUsr006))
+  async createExecutive(
+    @GetUser() user: GetUser,
+    @Body() body: ApiUsr006RequestBody,
+  ) {
+    await this.userService.createExecutive(user.id, body);
+    return {};
+  }
+
+  @Executive()
+  @Get("/executive/user/executives")
+  @UsePipes(new ZodPipe(apiUsr007))
+  async getExecutives(@GetUser() user: GetUser) {
+    const executives = await this.userService.getExecutives(user.id);
+    return executives;
+  }
+
+  @Executive()
+  @Delete("/executive/user/executives/:executiveId")
+  @UsePipes(new ZodPipe(apiUsr008))
+  async deleteExecutive(
+    @GetUser() user: GetUser,
+    @Query("executiveId") id: number,
+  ) {
+    await this.userService.deleteExecutive(user.id, id);
     return {};
   }
 }
