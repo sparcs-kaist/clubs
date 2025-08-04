@@ -51,7 +51,7 @@ const NavItem = ({ name, path = "", sub = [], highlight = false }: Path) => {
       onMouseLeave={() => setIsHover(false)}
     >
       {path ? <StyledLink href={path}>{t(name)}</StyledLink> : t(name)}
-      {!path && isHover && <NavSubMenu sub={sub} />}
+      {isHover && sub.length > 0 && <NavSubMenu sub={sub} />}
     </NavItemInner>
   );
 };
