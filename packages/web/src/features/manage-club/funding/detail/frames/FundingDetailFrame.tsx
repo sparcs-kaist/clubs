@@ -230,18 +230,13 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
         >
           {!isPastFunding && profile.type === UserTypeEnum.Undergraduate && (
             <FlexWrapper direction="row" gap={10}>
-              {/* <Button
-                type="default"
-                onClick={() => openDeleteModal(data.funding.club.id)}
-              > */}
               <Button
-                type="disabled"
+                type="default"
                 onClick={() => openDeleteModal(data.funding.club.id)}
               >
                 삭제
               </Button>
-              {/* <Button type="default" onClick={openEditModal}> */}
-              <Button type="disabled" onClick={openEditModal}>
+              <Button type="default" onClick={openEditModal}>
                 수정
               </Button>
             </FlexWrapper>
