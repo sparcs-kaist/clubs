@@ -10,7 +10,7 @@ import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeI
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 
 import DashboardButton from "../components/DashboardButton";
-import ManageSemeterFrame from "./ManageSemeterFrame";
+import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
   display: flex;
@@ -31,7 +31,7 @@ const ExecutiveDashboardFrame = () => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <ManageSemeterFrame />
+      <ManageSemesterFrame />
       <FlexWrapper
         direction="row"
         gap={60}
