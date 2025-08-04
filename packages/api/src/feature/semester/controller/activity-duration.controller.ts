@@ -22,7 +22,6 @@ import type {
   ApiSem009RequestBody,
   ApiSem009RequestParam,
   ApiSem009ResponseNotImplemented,
-  ApiSem010RequestBody,
   ApiSem010RequestParam,
   ApiSem010ResponseOK,
 } from "@clubs/interface/api/semester/index";
@@ -35,10 +34,7 @@ import {
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
-import {
-  Executive,
-  Public,
-} from "@sparcs-clubs/api/common/util/decorators/method-decorator";
+import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 
 import { ActivityDurationService } from "../service/activity-duration.service";
 
@@ -57,7 +53,7 @@ export class ActivityDurationController {
     return this.activityDurationService.createActivityDeadline({ body });
   }
 
-  @Public()
+  @Executive()
   @Get("/executive/semesters/activity-deadlines")
   @UsePipes(new ZodPipe(apiSem007))
   async getDeadlines(
@@ -89,13 +85,11 @@ export class ActivityDurationController {
   }
 
   @Executive()
-  @Delete("/executive/semesters/:semesterId/activity-deadlines/:deadlineId")
+  @Delete("/executive/semesters/activity-deadlines/:deadlineId")
   @UsePipes(new ZodPipe(apiSem010))
   async deleteDeadline(
     @Param() param: ApiSem010RequestParam,
-    @Body() body: ApiSem010RequestBody,
   ): Promise<ApiSem010ResponseOK> {
-    console.log(param, body);
-    throw new NotImplementedException();
+    return this.activityDurationService.deleteActivityDeadline({ param });
   }
 }

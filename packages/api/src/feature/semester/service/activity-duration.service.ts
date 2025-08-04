@@ -109,4 +109,26 @@ export class ActivityDurationService {
 
     return { deadlines };
   }
+  async deleteActivityDeadline(param: {
+    param: import("@clubs/interface/api/semester/index").ApiSem010RequestParam;
+  }): Promise<
+    import("@clubs/interface/api/semester/index").ApiSem010ResponseOK
+  > {
+    const { deadlineId } = param.param;
+
+    const deadline = await this.activityDeadlineRepository.find({
+      id: deadlineId,
+    });
+    if (!deadline || (Array.isArray(deadline) && deadline.length === 0)) {
+      throw new HttpException(
+        `ActivityDeadline with id ${deadlineId} not found.`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 실제로는 soft delete가 필요하다면 update로 deletedAt을 설정해야 함
+    await this.activityDeadlineRepository.delete({ id: deadlineId });
+
+    return { id: deadlineId };
+  }
 }

@@ -2,7 +2,6 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zActivityDeadline } from "@clubs/domain/semester/deadline";
-import { zSemester } from "@clubs/domain/semester/semester";
 
 import { registry } from "@clubs/interface/open-api";
 
@@ -16,7 +15,6 @@ const url = (deadlineId: number) =>
 const method = "DELETE";
 
 const requestParam = z.object({
-  semesterId: zSemester.shape.id,
   deadlineId: zActivityDeadline.shape.id,
 });
 
