@@ -14,7 +14,6 @@ import {
 import type {
   ApiSem006RequestBody,
   ApiSem006ResponseCreated,
-  ApiSem007RequestBody,
   ApiSem007RequestQuery,
   ApiSem007ResponseOK,
   ApiSem008RequestBody,
@@ -49,7 +48,7 @@ export class ActivityDurationController {
     private readonly activityDurationService: ActivityDurationService,
   ) {}
 
-  @Public()
+  @Executive()
   @Post("/executive/semesters/activity-deadlines")
   @UsePipes(new ZodPipe(apiSem006))
   async createDeadline(
@@ -58,18 +57,16 @@ export class ActivityDurationController {
     return this.activityDurationService.createActivityDeadline({ body });
   }
 
-  @Executive()
+  @Public()
   @Get("/executive/semesters/activity-deadlines")
   @UsePipes(new ZodPipe(apiSem007))
   async getDeadlines(
     @Query() query: ApiSem007RequestQuery,
-    @Body() body: ApiSem007RequestBody,
   ): Promise<ApiSem007ResponseOK> {
-    console.log(query, body);
-    throw new NotImplementedException();
+    return this.activityDurationService.getActivityDeadlines({ query });
   }
 
-  @Public()
+  @Executive()
   @Get("/public/activity-deadlines/:deadlineId")
   @UsePipes(new ZodPipe(apiSem008))
   async getDeadline(

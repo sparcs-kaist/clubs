@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
 import { zActivityDeadline } from "@clubs/domain/semester/deadline";
 import { zSemester } from "@clubs/domain/semester/semester";
 
@@ -8,7 +9,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 특정 학기의 활동보고서 제출 기한 목록을 조회합니다.
+ * @description 모든 활동기간의 활동보고서 제출 기한 목록을 조회합니다.
  */
 
 const url = () => `/executive/semesters/activity-deadlines`;
@@ -17,8 +18,7 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  year: zSemester.shape.year,
-  name: zSemester.shape.name,
+  activityDId: zActivityDuration.shape.id.optional(),
 });
 
 const requestBody = z.object({});
@@ -28,6 +28,8 @@ const responseBodyMap = {
     deadlines: z.array(
       z.object({
         id: zActivityDeadline.shape.id,
+        semesterId: zSemester.shape.id,
+        activityDId: zActivityDuration.shape.id,
         deadlineEnum: zActivityDeadline.shape.deadlineEnum,
         startTerm: zActivityDeadline.shape.startTerm,
         endTerm: zActivityDeadline.shape.endTerm,
@@ -64,8 +66,12 @@ registry.registerPath({
   tags: ["semester"],
   method: "get",
   path: "/executive/semesters/activity-deadlines",
-  summary: "SEM-007: 활동보고서 제출 기한 목록 조회하기",
-  description: "특정 학기의 활동보고서 제출 기한 목록을 조회합니다.",
+  summary: "SEM-007: 활동보고서 제출 기한 목록 조회",
+  description: `
+  모든 활동기간의 활동보고서 제출 기한 목록을 조회합니다.
+  - 페이지네이션 없이 전체를 반환합니다.
+  - 각 항목은 연관된 학기(semesterId)와 활동기간(activityDId) 정보를 포함합니다.
+  `,
   request: {
     query: apiSem007.requestQuery,
   },
@@ -74,12 +80,9 @@ registry.registerPath({
       description: "성공적으로 활동보고서 제출 기한 목록을 조회했습니다.",
       content: {
         "application/json": {
-          schema: apiSem007.responseBodyMap[HttpStatusCode.Ok],
+          schema: responseBodyMap[HttpStatusCode.Ok],
         },
       },
-    },
-    404: {
-      description: "학기를 찾을 수 없습니다.",
     },
   },
 });

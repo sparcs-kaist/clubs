@@ -3,6 +3,8 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type {
   ApiSem006RequestBody,
   ApiSem006ResponseCreated,
+  ApiSem007RequestQuery,
+  ApiSem007ResponseOK,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
@@ -69,5 +71,42 @@ export class ActivityDurationService {
     });
 
     return {};
+  }
+
+  async getActivityDeadlines(param: {
+    query: ApiSem007RequestQuery;
+  }): Promise<ApiSem007ResponseOK> {
+    const { activityDId } = param.query;
+
+    let activityDurations: MActivityDuration[];
+    if (activityDId) {
+      const found = await this.activityDurationRepository.find({
+        id: activityDId,
+      });
+      activityDurations = found ?? [];
+    } else {
+      activityDurations = await this.activityDurationRepository.find({});
+    }
+
+    // 병렬 + flatMap 스타일로 deadlines 생성
+    const deadlines = (
+      await Promise.all(
+        activityDurations.map(async duration => {
+          const activityDeadlines = await this.activityDeadlineRepository.find({
+            semesterId: duration.semester.id,
+          });
+          return activityDeadlines.map(deadline => ({
+            id: deadline.id,
+            semesterId: duration.semester.id,
+            activityDId: duration.id,
+            deadlineEnum: deadline.deadlineEnum,
+            startTerm: deadline.startTerm,
+            endTerm: deadline.endTerm,
+          }));
+        }),
+      )
+    ).flat();
+
+    return { deadlines };
   }
 }
