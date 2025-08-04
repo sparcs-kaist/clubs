@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 
 import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 
+import { ActivityDurationController } from "./controller/activity-duration.controller";
 import { SemesterController } from "./controller/semester.controller";
 import { ActivityDeadlinePublicService } from "./publicService/activity.deadline.public.service";
 import { ActivityDurationPublicService } from "./publicService/activity.duration.public.service";
@@ -14,13 +15,15 @@ import { FundingDeadlineRepository } from "./repository/funding.deadline.reposit
 import { RegistrationDeadlineRepository } from "./repository/registration.deadline.repository";
 import { SemesterRepository } from "./repository/semester.repository";
 import { SemesterSQLRepository } from "./repository/semester.sql.repository";
+import { ActivityDurationService } from "./service/activity-duration.service";
 import { SemesterService } from "./service/semester.service";
 
 @Module({
   imports: [DrizzleModule],
-  controllers: [SemesterController],
+  controllers: [SemesterController, ActivityDurationController],
   providers: [
     SemesterService,
+    ActivityDurationService,
     SemesterPublicService,
     ActivityDurationPublicService,
     ActivityDeadlinePublicService,
