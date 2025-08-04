@@ -10,9 +10,10 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 import { getSsoConfig } from "@sparcs-clubs/api/env";
 
 import { Request } from "../dto/auth.dto";
-import { SSOUser } from "../dto/sparcs-sso.dto";
+import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
 import { Client } from "../util/sparcs-sso";
+import { safeExtractUserInfoFromV2 } from "../util/user-info-extractor";
 
 @Injectable()
 export class AuthService {
@@ -65,46 +66,98 @@ export class AuthService {
 
     const isKaistIamLogin: boolean = true;
     if (process.env.NODE_ENV !== "local") {
-      if (!ssoProfile.sid || !ssoProfile.kaist_info) {
-        return { isKaistIamLogin: false };
+      if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
+        logger.warn("Missing required SSO data", {
+          hasSid: !!ssoProfile.sid,
+          hasKaistV2Info: !!ssoProfile.kaist_v2_info,
+        });
+        return {
+          nextUrl: "/error/sso-data-missing",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
       }
     }
 
-    let studentNumber = ssoProfile.kaist_info.ku_std_no;
-    let email = ssoProfile.kaist_info.mail?.replace("mailto:", "");
-    let { sid } = ssoProfile;
-    let name = ssoProfile.kaist_info.ku_kname;
-    let type = ssoProfile.kaist_info.ku_person_type || "Student";
-    let department = ssoProfile.kaist_info.ku_kaist_org_id;
-
-    // 임시로 kaist v2 추가
+    // V2 정보 파싱 및 검증
     if (typeof ssoProfile.kaist_v2_info === "string") {
       try {
         ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
       } catch (e) {
         logger.error("Failed to parse kaist_v2_info", e);
+        return {
+          nextUrl: "/error/invalid-login",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
       }
     }
-    let typeV2 = ssoProfile.kaist_v2_info?.socps_cd || "S";
+
+    // V2 정보 안전 추출 (검증 포함)
+    const extractionResult = safeExtractUserInfoFromV2(
+      ssoProfile.kaist_v2_info,
+    );
+    if (!extractionResult.success) {
+      logger.error("Invalid kaist_v2_info", {
+        error: extractionResult.error,
+        sid: ssoProfile.sid,
+      });
+      return {
+        nextUrl: "/error/invalid-login",
+        refreshToken: null,
+        refreshTokenOptions: null,
+      };
+    }
+
+    // 로컬 환경에서는 V2 환경변수 사용
+    let userInfo = extractionResult.data;
+    let localSid = ssoProfile.sid;
+    let socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
 
     if (process.env.NODE_ENV === "local") {
-      studentNumber = process.env.USER_KU_STD_NO;
-      email = process.env.USER_MAIL;
-      sid = process.env.USER_SID;
-      name = process.env.USER_KU_KNAME;
-      type = process.env.USER_KU_PERSON_TYPE;
-      department = process.env.USER_KU_KAIST_ORG_ID;
-      typeV2 = process.env.USER_SOCPS_CD;
+      const mockV2Info: KaistV2Info = {
+        std_no: process.env.USER_V2_STD_NO!,
+        email: process.env.USER_V2_EMAIL!,
+        user_nm: process.env.USER_V2_USER_NM!,
+        socps_cd: process.env.USER_V2_SOCPS_CD!,
+        std_dept_id: process.env.USER_V2_STD_DEPT_ID!,
+        kaist_uid: process.env.USER_V2_KAIST_UID!,
+        user_id: process.env.USER_V2_USER_ID!,
+
+        // 로컬 개발용 기본값들
+        user_eng_nm: "Test User",
+        login_type: "L004",
+        std_dept_kor_nm: "테스트 학과",
+        std_dept_eng_nm: "Test Department",
+        busn_phone: null,
+        std_status_kor: "재학",
+        ebs_user_status_kor: null,
+        camps_div_cd: "D",
+        std_prog_code: "0",
+        kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
+      };
+
+      // Mock V2 정보에서 사용자 정보 추출
+      const localExtractionResult = safeExtractUserInfoFromV2(mockV2Info);
+      if (localExtractionResult.success) {
+        userInfo = localExtractionResult.data;
+        socpsCd = mockV2Info.socps_cd;
+      }
+
+      localSid = process.env.USER_SID || localSid;
     }
+
+    // 최종 사용자 정보
+    const { studentNumber, email, name, type, department } = userInfo;
 
     const user = await this.authRepository.findOrCreateUser(
       email,
       studentNumber,
-      sid,
+      localSid,
       name,
       type,
       department,
-      typeV2,
+      socpsCd,
     );
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){
