@@ -7,6 +7,12 @@ export * from "./apiSem002";
 export * from "./apiSem003";
 export * from "./apiSem004";
 
+export * from "./apiSem006";
+export * from "./apiSem007";
+export * from "./apiSem008";
+export * from "./apiSem009";
+export * from "./apiSem010";
+
 registry.registerPath({
   tags: ["semester"],
   method: "head",
