@@ -13,7 +13,10 @@ import { Request } from "../dto/auth.dto";
 import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
 import { Client } from "../util/sparcs-sso";
-import { safeExtractUserInfoFromV2 } from "../util/user-info-extractor";
+import {
+  type ExtractedUserInfo,
+  safeExtractUserInfoFromV2,
+} from "../util/user-info-extractor";
 
 @Injectable()
 export class AuthService {
@@ -86,42 +89,17 @@ export class AuthService {
       }
     }
 
-    // V2 정보 파싱 및 검증
-    if (typeof ssoProfile.kaist_v2_info === "string") {
-      try {
-        ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
-      } catch (e) {
-        logger.error("Failed to parse kaist_v2_info", e);
-        return {
-          nextUrl: "/error/invalid-login",
-          refreshToken: null,
-          refreshTokenOptions: null,
-        };
-      }
-    }
-
-    // V2 정보 안전 추출 (검증 포함)
-    const extractionResult = safeExtractUserInfoFromV2(
-      ssoProfile.kaist_v2_info,
-    );
-    if (!extractionResult.success) {
-      logger.error("Invalid kaist_v2_info", {
-        error: extractionResult.error,
-        sid: ssoProfile.sid,
-      });
-      return {
-        nextUrl: "/error/invalid-login",
-        refreshToken: null,
-        refreshTokenOptions: null,
-      };
-    }
-
-    // 로컬 환경에서는 V2 환경변수 사용
-    let userInfo = extractionResult.data;
+    // 로컬 환경에서는 ENV 기반 Mock 데이터를 우선 사용
+    let userInfo: ExtractedUserInfo;
     let localSid = ssoProfile.sid;
-    let socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
+    let socpsCd = "S"; // 기본값
 
     if (process.env.NODE_ENV === "local") {
+      logger.info(
+        "Using local V2 mock data for development (priority over SSO data)",
+      );
+
+      // 로컬 환경에서는 ENV 기반 Mock 데이터 생성 및 사용
       const mockV2Info: KaistV2Info = {
         std_no: process.env.USER_V2_STD_NO!,
         email: process.env.USER_V2_EMAIL!,
@@ -149,9 +127,66 @@ export class AuthService {
       if (localExtractionResult.success) {
         userInfo = localExtractionResult.data;
         socpsCd = mockV2Info.socps_cd;
+
+        logger.info(
+          "Successfully extracted user info from local V2 mock data",
+          {
+            userType: userInfo.type,
+            socpsCd: mockV2Info.socps_cd,
+          },
+        );
+      } else {
+        logger.error("Failed to extract user info from local V2 mock data", {
+          error: localExtractionResult.error,
+        });
+        return {
+          nextUrl: "/error/invalid-login",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
       }
 
       localSid = process.env.USER_SID || localSid;
+    } else {
+      // 프로덕션 환경에서만 SSO에서 받은 V2 정보 파싱 및 검증
+      if (typeof ssoProfile.kaist_v2_info === "string") {
+        try {
+          ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
+        } catch (e) {
+          logger.error("Failed to parse kaist_v2_info", e);
+          return {
+            nextUrl: "/error/invalid-login",
+            refreshToken: null,
+            refreshTokenOptions: null,
+          };
+        }
+      }
+
+      // V2 정보 안전 추출 (검증 포함)
+      const extractionResult = safeExtractUserInfoFromV2(
+        ssoProfile.kaist_v2_info,
+      );
+      if (!extractionResult.success) {
+        logger.error("Invalid kaist_v2_info", {
+          error: extractionResult.error,
+          sid: ssoProfile.sid,
+        });
+        return {
+          nextUrl: "/error/invalid-login",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
+      }
+
+      userInfo = extractionResult.data;
+      socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
+
+      logger.info("Successfully extracted user info from V2 data", {
+        sid: ssoProfile.sid,
+        userType: userInfo.type,
+        hasStudentNumber: !!userInfo.studentNumber,
+        hasEmail: !!userInfo.email,
+      });
     }
 
     // 최종 사용자 정보
