@@ -8,6 +8,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 // import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
+import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
 import ManageSemesterFrame from "./ManageSemesterFrame";
@@ -31,6 +32,9 @@ const ExecutiveDashboardFrame = () => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
+      <Banner icon="warning">
+        현재 집행부원 대시보드는 개발 중에 있습니다.
+      </Banner>
       <ManageSemesterFrame />
       <FlexWrapper
         direction="row"
