@@ -40,7 +40,7 @@ export class Client {
 
   private client_id: string;
 
-  private secret_key: Buffer;
+  private secret_key: string;
 
   constructor(
     client_id: string,
@@ -62,7 +62,7 @@ export class Client {
       return acc;
     }, {} as Urls);
     this.client_id = client_id;
-    this.secret_key = Buffer.from(secret_key, "utf-8");
+    this.secret_key = secret_key;
   }
 
   // eslint-disable-next-line no-underscore-dangle
@@ -75,10 +75,10 @@ export class Client {
     if (append_timestamp) {
       payload.push(timestamp.toString());
     }
-    const msg: Buffer = Buffer.from(payload.join(""), "utf-8");
+    const msg: string = payload.join("");
     const sign: string = crypto
       .createHmac("md5", this.secret_key)
-      .update(msg)
+      .update(msg, "utf-8")
       .digest("hex");
     return [sign, timestamp];
   }
@@ -100,8 +100,8 @@ export class Client {
     }
     if (
       !crypto.timingSafeEqual(
-        Buffer.from(sign_client, "utf-8"),
-        Buffer.from(sign, "utf-8"),
+        new Uint8Array(Buffer.from(sign_client, "utf-8")),
+        new Uint8Array(Buffer.from(sign, "utf-8")),
       )
     ) {
       return false;
@@ -130,9 +130,22 @@ export class Client {
 
       const result = r.data;
       // console.log(result);
+
+      // V1 kaist_info 파싱 (하위 호환성 유지용, 실제로는 사용 안 함)
       result.kaist_info = result.kaist_info
         ? JSON.parse(result.kaist_info)
         : {};
+
+      // V2 kaist_v2_info 파싱 추가
+      if (result.kaist_v2_info && typeof result.kaist_v2_info === "string") {
+        try {
+          result.kaist_v2_info = JSON.parse(result.kaist_v2_info);
+        } catch (e) {
+          console.error("Failed to parse kaist_v2_info in SSO client:", e);
+          result.kaist_v2_info = null;
+        }
+      }
+
       return result as SSOUser;
     } catch (e) {
       console.error(e);

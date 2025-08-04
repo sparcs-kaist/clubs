@@ -62,7 +62,14 @@ export class AuthService {
     }
 
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
-    logger.info(JSON.stringify(ssoProfile));
+
+    // SSO 프로필 정보 로깅 (보안상 민감한 정보는 제외)
+    logger.info("SSO profile retrieved", {
+      uid: ssoProfile.uid,
+      sid: ssoProfile.sid,
+      hasKaistInfo: !!ssoProfile.kaist_info,
+      hasKaistV2Info: !!ssoProfile.kaist_v2_info,
+    });
 
     const isKaistIamLogin: boolean = true;
     if (process.env.NODE_ENV !== "local") {
