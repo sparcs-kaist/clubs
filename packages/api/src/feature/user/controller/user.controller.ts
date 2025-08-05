@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Patch,
   Post,
   Query,
@@ -17,11 +18,16 @@ import apiUsr002, {
 import apiUsr003, {
   ApiUsr003RequestBody,
 } from "@clubs/interface/api/user/endpoint/apiUsr003";
-import apiUsr006, {
-  ApiUsr006RequestBody,
-} from "@clubs/interface/api/user/endpoint/apiUsr006";
-import apiUsr007 from "@clubs/interface/api/user/endpoint/apiUsr007";
-import apiUsr008 from "@clubs/interface/api/user/endpoint/apiUsr008";
+import {
+  apiUsr006,
+  type ApiUsr006RequestBody,
+  type ApiUsr006ResponseCreated,
+  apiUsr007,
+  type ApiUsr007ResponseOk,
+  apiUsr008,
+  type ApiUsr008RequestParam,
+  type ApiUsr008ResponseOk,
+} from "@clubs/interface/api/user/endpoint/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -159,7 +165,7 @@ export class UserController {
   async createExecutive(
     @GetUser() user: GetUser,
     @Body() body: ApiUsr006RequestBody,
-  ) {
+  ): Promise<ApiUsr006ResponseCreated> {
     await this.userService.createExecutive(user.id, body);
     return {};
   }
@@ -167,7 +173,7 @@ export class UserController {
   @Executive()
   @Get("/executive/user/executives")
   @UsePipes(new ZodPipe(apiUsr007))
-  async getExecutives(@GetUser() user: GetUser) {
+  async getExecutives(@GetUser() user: GetUser): Promise<ApiUsr007ResponseOk> {
     const executives = await this.userService.getExecutives(user.id);
     return executives;
   }
@@ -177,8 +183,8 @@ export class UserController {
   @UsePipes(new ZodPipe(apiUsr008))
   async deleteExecutive(
     @GetUser() user: GetUser,
-    @Query("executiveId") id: number,
-  ) {
+    @Param("executiveId") id: ApiUsr008RequestParam["executiveId"],
+  ): Promise<ApiUsr008ResponseOk> {
     await this.userService.deleteExecutive(user.id, id);
     return {};
   }

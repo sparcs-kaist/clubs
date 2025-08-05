@@ -83,7 +83,7 @@ registry.registerPath({
       },
     },
     400: {
-      description: "학번과 이름이 매칭되지 않습니다.",
+      description: "잘못된 입력입니다. 날짜와 학번, 이름을 확인해주세요.",
     },
     403: {
       description: "권한이 없습니다.",

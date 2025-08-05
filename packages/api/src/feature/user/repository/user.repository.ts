@@ -42,6 +42,34 @@ export default class UserRepository {
     return user;
   }
 
+  async findStudentByStudentNumberNameDate(
+    studentNumber: string,
+    name: string,
+    startTerm: Date,
+    endTerm: Date,
+  ) {
+    const studentnumber = parseInt(studentNumber);
+    const user = await this.db
+      .select()
+      .from(Student)
+      .where(
+        and(
+          eq(Student.number, studentnumber),
+          eq(Student.name, name),
+          isNull(Student.deletedAt),
+        ),
+      )
+      .innerJoin(
+        StudentT,
+        and(
+          eq(StudentT.studentId, Student.id),
+          lte(StudentT.startTerm, startTerm),
+          or(gte(StudentT.endTerm, endTerm), isNull(StudentT.endTerm)),
+        ),
+      );
+    return user;
+  }
+
   async create(studentId: number) {
     const user = await this.db
       .select()

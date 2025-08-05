@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
+import { ApiUsr006RequestBody } from "@clubs/interface/api/user/endpoint/apiUsr006";
 
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-student-t.repository";
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";
@@ -8,6 +9,7 @@ import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repos
 import ExecutiveRepository from "../repository/executive.repository";
 import OldProfessorRepository from "../repository/old.professor.repository";
 import OldStudentRepository from "../repository/old.student.repository";
+import { StudentRepository } from "../repository/student.repository";
 
 @Injectable()
 export class UserService {
@@ -17,6 +19,7 @@ export class UserService {
     private readonly executiveRepository: ExecutiveRepository,
     private readonly professorRepository: OldProfessorRepository,
     private readonly clubStudentTRepository: ClubStudentTRepository,
+    private readonly studentRepository: StudentRepository,
   ) {}
 
   async getStudentUserMy(studentId: number) {
@@ -93,5 +96,80 @@ export class UserService {
       userId,
       phoneNumber,
     );
+  }
+
+  async createExecutive(userId: number, body: ApiUsr006RequestBody) {
+    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+      throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
+    }
+    const studentRaw =
+      await this.userRepository.findStudentByStudentNumberNameDate(
+        body.studentNumber,
+        body.name,
+        body.startTerm,
+        body.endTerm,
+      );
+    const student =
+      Array.isArray(studentRaw) && studentRaw.length === 1
+        ? studentRaw[0]
+        : null;
+    if (!student) {
+      throw new HttpException("잘못된 입력입니다.", HttpStatus.BAD_REQUEST);
+    }
+    if (
+      await this.executiveRepository.checkExistExecutiveByIdDate(
+        student.student.id,
+        body.startTerm,
+        body.endTerm,
+      )
+    ) {
+      throw new HttpException(
+        "이미 존재하는 집행부원입니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (
+      !(await this.executiveRepository.createExecutive(
+        student.student.id,
+        student.student.userId,
+        student.student.email,
+        body.name,
+        body.startTerm,
+        body.endTerm,
+      ))
+    ) {
+      throw new HttpException(
+        "Failed to create executive",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return {};
+  }
+
+  async getExecutives(userId: number) {
+    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+      throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
+    }
+    const executives = await this.executiveRepository.getExecutives();
+    return executives;
+  }
+
+  async deleteExecutive(userId: number, executiveId: number) {
+    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+      throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
+    }
+    const executive = await this.executiveRepository.selectExecutiveById({
+      id: executiveId,
+    });
+    if (!executive) {
+      throw new HttpException("Executive not found", HttpStatus.NOT_FOUND);
+    }
+    if (!(await this.executiveRepository.deleteExecutiveById(executiveId))) {
+      throw new HttpException(
+        "Failed to delete executive",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return {};
   }
 }
