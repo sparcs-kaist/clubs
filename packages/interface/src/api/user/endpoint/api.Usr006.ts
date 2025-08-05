@@ -1,9 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
-
-import { zExecutive } from "../type/user.type";
+import { zExecutive } from "@clubs/interface/api/user/type/user.type";
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -20,15 +19,8 @@ const requestQuery = z.object({});
 const requestBody = z.object({
   studentNumber: zExecutive.shape.studentNumber,
   name: zExecutive.shape.name,
-  email: z
-    .string()
-    .email()
-    .refine(email => email.endsWith("@kaist.ac.kr"), {
-      message: "Must be a valid KAIST email address",
-    })
-    .optional()
-    .nullable(),
-  phoneNumber: zKrPhoneNumber.optional().nullable(),
+  startTerm: z.coerce.date(),
+  endTerm: z.coerce.date(),
 });
 
 const responseBodyMap = {
@@ -62,3 +54,41 @@ export type {
   ApiUsr006RequestBody,
   ApiUsr006ResponseCreated,
 };
+
+registry.registerPath({
+  tags: ["executive"],
+  method: "post",
+  path: "/executive/user/executives",
+  summary: "USR-006: 집행부원 추가",
+  description: `
+		집행부원을 추가하는 API입니다.
+		1. 집행부원은 학번, 이름, 시작날짜, 종료날짜로 식별됩니다.
+		2. 이름과 학번이 매칭되지 않는 경우 에러를 반환합니다.
+		3. 시작날짜와 종료날짜는 반드시 지정되어야 합니다.
+	`,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: apiUsr006.requestBody,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "성공적으로 집행부원을 추가했습니다.",
+      content: {
+        "application/json": {
+          schema: apiUsr006.responseBodyMap[HttpStatusCode.Created],
+        },
+      },
+    },
+    400: {
+      description: "학번과 이름이 매칭되지 않습니다.",
+    },
+    404: {
+      description: "해당 학번의 사용자가 존재하지 않습니다.",
+    },
+  },
+});

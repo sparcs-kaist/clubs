@@ -2,6 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zExecutive } from "@clubs/interface/api/user/type/user.type";
+import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
@@ -27,6 +28,8 @@ const responseBodyMap = {
         name: zExecutive.shape.name,
         email: zExecutive.shape.email,
         phoneNumber: zExecutive.shape.phoneNumber,
+        startTerm: z.coerce.date(),
+        endTerm: z.coerce.date(),
       }),
     ),
   }),
@@ -57,3 +60,29 @@ export type {
   ApiUsr007RequestBody,
   ApiUsr007ResponseOk,
 };
+
+registry.registerPath({
+  tags: ["executive"],
+  method: "get",
+  path: "/executive/user/executives",
+  summary: "USR-007: 집행부원 조회",
+  description: `
+		집행부원 목록을 조회하는 API입니다.
+		1. 모든 집행부원의 정보를 반환합니다.
+		2. id, userId, 학번, 이름, 이메일, 전화번호, 시작날짜, 종료날짜가 포함됩니다.
+	`,
+  request: {},
+  responses: {
+    200: {
+      description: "성공적으로 집행부원 목록을 조회했습니다.",
+      content: {
+        "application/json": {
+          schema: apiUsr007.responseBodyMap[HttpStatusCode.Ok],
+        },
+      },
+    },
+    400: {
+      description: "잘못된 요청입니다.",
+    },
+  },
+});
