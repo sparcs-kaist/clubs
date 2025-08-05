@@ -27,7 +27,7 @@ const responseBodyMap = {
 
 const responseErrorMap = {};
 
-const apiUsr008 = {
+export const apiUsr008 = {
   url,
   method,
   requestParam,
@@ -41,8 +41,6 @@ type ApiUsr008RequestParam = z.infer<typeof apiUsr008.requestParam>;
 type ApiUsr008RequestQuery = z.infer<typeof apiUsr008.requestQuery>;
 type ApiUsr008RequestBody = z.infer<typeof apiUsr008.requestBody>;
 type ApiUsr008ResponseOk = z.infer<(typeof apiUsr008.responseBodyMap)[200]>;
-
-export default apiUsr008;
 
 export type {
   ApiUsr008RequestParam,
@@ -71,6 +69,9 @@ registry.registerPath({
     },
     400: {
       description: "잘못된 요청입니다.",
+    },
+    403: {
+      description: "권한이 없습니다.",
     },
     404: {
       description: "존재하지 않는 집행부원입니다.",

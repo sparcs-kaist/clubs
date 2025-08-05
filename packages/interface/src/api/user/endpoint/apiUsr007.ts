@@ -37,7 +37,7 @@ const responseBodyMap = {
 
 const responseErrorMap = {};
 
-const apiUsr007 = {
+export const apiUsr007 = {
   url,
   method,
   requestParam,
@@ -51,8 +51,6 @@ type ApiUsr007RequestParam = z.infer<typeof apiUsr007.requestParam>;
 type ApiUsr007RequestQuery = z.infer<typeof apiUsr007.requestQuery>;
 type ApiUsr007RequestBody = z.infer<typeof apiUsr007.requestBody>;
 type ApiUsr007ResponseOk = z.infer<(typeof apiUsr007.responseBodyMap)[200]>;
-
-export default apiUsr007;
 
 export type {
   ApiUsr007RequestParam,
@@ -80,6 +78,9 @@ registry.registerPath({
           schema: apiUsr007.responseBodyMap[HttpStatusCode.Ok],
         },
       },
+    },
+    403: {
+      description: "권한이 없습니다.",
     },
     400: {
       description: "잘못된 요청입니다.",

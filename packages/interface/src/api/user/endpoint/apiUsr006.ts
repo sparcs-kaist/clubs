@@ -29,7 +29,7 @@ const responseBodyMap = {
 
 const responseErrorMap = {};
 
-const apiUsr006 = {
+export const apiUsr006 = {
   url,
   method,
   requestParam,
@@ -45,8 +45,6 @@ type ApiUsr006RequestBody = z.infer<typeof apiUsr006.requestBody>;
 type ApiUsr006ResponseCreated = z.infer<
   (typeof apiUsr006.responseBodyMap)[201]
 >;
-
-export default apiUsr006;
 
 export type {
   ApiUsr006RequestParam,
@@ -87,8 +85,8 @@ registry.registerPath({
     400: {
       description: "학번과 이름이 매칭되지 않습니다.",
     },
-    404: {
-      description: "해당 학번의 사용자가 존재하지 않습니다.",
+    403: {
+      description: "권한이 없습니다.",
     },
   },
 });
