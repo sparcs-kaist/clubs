@@ -175,7 +175,7 @@ export class UserController {
   @UsePipes(new ZodPipe(apiUsr007))
   async getExecutives(@GetUser() user: GetUser): Promise<ApiUsr007ResponseOk> {
     const executives = await this.userService.getExecutives(user.id);
-    return executives;
+    return { executives };
   }
 
   @Executive()
@@ -183,9 +183,9 @@ export class UserController {
   @UsePipes(new ZodPipe(apiUsr008))
   async deleteExecutive(
     @GetUser() user: GetUser,
-    @Param("executiveId") id: ApiUsr008RequestParam["executiveId"],
+    @Param() param: ApiUsr008RequestParam,
   ): Promise<ApiUsr008ResponseOk> {
-    await this.userService.deleteExecutive(user.id, id);
+    await this.userService.deleteExecutive(user.id, param.executiveId);
     return {};
   }
 }

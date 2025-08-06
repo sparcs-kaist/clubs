@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { formatInTimeZone } from "date-fns-tz";
 
 import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { ApiUsr006RequestBody } from "@clubs/interface/api/user/endpoint/apiUsr006";
@@ -98,16 +99,36 @@ export class UserService {
     );
   }
 
+  //todo: 트랜잭션으로 전부 묶어야 함.
   async createExecutive(userId: number, body: ApiUsr006RequestBody) {
-    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+    if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
+    const startTermStr = formatInTimeZone(
+      body.startTerm,
+      "Asia/Seoul",
+      "yyyy-MM-dd",
+    );
+    // let endTermStr: string | null = null;
+    // if (body.endTerm) {
+    const endTermStr = formatInTimeZone(
+      body.endTerm,
+      "Asia/Seoul",
+      "yyyy-MM-dd",
+    );
+    if (startTermStr >= endTermStr) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    // }
     const studentRaw =
       await this.userRepository.findStudentByStudentNumberNameDate(
         body.studentNumber,
         body.name,
-        body.startTerm,
-        body.endTerm,
+        startTermStr,
+        endTermStr,
       );
     const student =
       Array.isArray(studentRaw) && studentRaw.length === 1
@@ -119,8 +140,8 @@ export class UserService {
     if (
       await this.executiveRepository.checkExistExecutiveByIdDate(
         student.student.id,
-        body.startTerm,
-        body.endTerm,
+        startTermStr,
+        endTermStr,
       )
     ) {
       throw new HttpException(
@@ -134,8 +155,8 @@ export class UserService {
         student.student.userId,
         student.student.email,
         body.name,
-        body.startTerm,
-        body.endTerm,
+        startTermStr,
+        endTermStr,
       ))
     ) {
       throw new HttpException(
@@ -147,21 +168,24 @@ export class UserService {
   }
 
   async getExecutives(userId: number) {
-    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+    if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
     const executives = await this.executiveRepository.getExecutives();
-    return executives;
+    return executives.map(executive => ({
+      ...executive,
+      studentNumber: String(executive.studentNumber),
+    }));
   }
 
   async deleteExecutive(userId: number, executiveId: number) {
-    if (!(await this.executiveRepository.findExecutiveById(userId))) {
+    if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
     const executive = await this.executiveRepository.selectExecutiveById({
       id: executiveId,
     });
-    if (!executive) {
+    if (executive.length === 0) {
       throw new HttpException("Executive not found", HttpStatus.NOT_FOUND);
     }
     if (!(await this.executiveRepository.deleteExecutiveById(executiveId))) {

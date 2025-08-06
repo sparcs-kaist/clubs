@@ -63,6 +63,9 @@ registry.registerPath({
 		1. 집행부원은 학번, 이름, 시작날짜, 종료날짜로 식별됩니다.
 		2. 이름과 학번이 매칭되지 않는 경우 에러를 반환합니다.
 		3. 시작날짜와 종료날짜는 반드시 지정되어야 합니다.
+    4. 시작날짜는 종료날짜보다 이전이어야 합니다.
+    5. 기존에 존재하는 집행부원의 startTerm, endTerm과 추가하는 집행부원의 startTerm, endTerm이 겹치면 에러를 반환합니다.
+    6. student, studentT 테이블에서 학생을 먼저 찾고 추가하기 때문에 studentT의 한개의 row에 있는 startTerm, endTerm 단위 내에 추가하려는 startTerm, endTerm이 존재해야 합니다.
 	`,
   request: {
     body: {

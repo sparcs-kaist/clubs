@@ -10,7 +10,8 @@ import { registry } from "@clubs/interface/open-api";
  * @description 집행부원을 삭제합니다.
  */
 
-const url = () => `/executive/user/executives/:executiveId`;
+const url = (executiveId: number) =>
+  `/executive/user/executives/${executiveId}`;
 const method = "DELETE";
 
 const requestParam = z.object({
@@ -59,6 +60,7 @@ registry.registerPath({
 	1. 삭제하려는 집행부원이 존재해야 합니다.
 	2. 실제로 데이터를 삭제하지 않고 deletedAt 필드를 설정합니다.
 	3. 삭제하려는 집행부원의 id를 URL 파라미터로 전달해야 합니다.
+  4. 삭제하려는 집행부원의 모든 이력까지 삭제합니다.
 	`,
   request: {
     params: apiUsr008.requestParam,
