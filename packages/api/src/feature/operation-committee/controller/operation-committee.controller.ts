@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Post } from "@nestjs/common";
 
-import { Public } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
+import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { OperationCommitteeService } from "@sparcs-clubs/api/feature/operation-committee/service/operation-committee.service";
 
 @Controller()
@@ -9,7 +9,7 @@ export class OperationCommitteeController {
     private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
-  @Public()
+  @Executive()
   @Post("/executive/operation-committees/secret-key")
   async createOperationCommitteeSecretKey(
     @Body("secretKey") secretKey: string,
@@ -24,7 +24,7 @@ export class OperationCommitteeController {
     };
   }
 
-  @Public()
+  @Executive()
   @Get("/executive/operation-committees/secret-key")
   async findOperationCommitteeSecretKey() {
     const activeKeys =
@@ -35,7 +35,7 @@ export class OperationCommitteeController {
     };
   }
 
-  @Public()
+  @Executive()
   @Delete("/executive/operation-committees/secret-key")
   async deleteOperationCommitteeSecretKey() {
     await this.operationCommitteeService.deleteOperationCommitteeSecretKey();
