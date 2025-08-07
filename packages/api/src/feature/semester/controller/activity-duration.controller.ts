@@ -35,6 +35,8 @@ import {
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
+import { GetExecutive } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
+import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { ActivityDurationService } from "../service/activity-duration.service";
 
@@ -66,10 +68,13 @@ export class ActivityDurationController {
   @Get("/public/activity-deadlines/:deadlineId")
   @UsePipes(new ZodPipe(apiSem008))
   async getDeadline(
-    @Param() param: ApiSem008RequestParam,
-    @Body() body: ApiSem008RequestBody,
+    @GetExecutive() executive: GetExecutive,
+    @Param() _param: ApiSem008RequestParam,
+    @Body() _body: ApiSem008RequestBody,
   ): Promise<ApiSem008ResponseNotImplemented> {
-    console.log(param, body);
+    logger.info(
+      `User excutive_id: ${executive.id} trying to call unimplemeneted feature`,
+    );
     throw new NotImplementedException();
   }
 
@@ -77,10 +82,13 @@ export class ActivityDurationController {
   @Put("/executive/semesters/:semesterId/activity-deadlines/:deadlineId")
   @UsePipes(new ZodPipe(apiSem009))
   async updateDeadline(
-    @Param() param: ApiSem009RequestParam,
-    @Body() body: ApiSem009RequestBody,
+    @GetExecutive() executive: GetExecutive,
+    @Param() _param: ApiSem009RequestParam,
+    @Body() _body: ApiSem009RequestBody,
   ): Promise<ApiSem009ResponseNotImplemented> {
-    console.log(param, body);
+    logger.info(
+      `User excutive_id: ${executive.id} trying to call unimplemeneted feature`,
+    );
     throw new NotImplementedException();
   }
 
