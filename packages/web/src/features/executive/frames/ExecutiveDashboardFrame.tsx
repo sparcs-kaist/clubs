@@ -1,5 +1,4 @@
 import { Divider } from "@mui/material";
-import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -10,6 +9,7 @@ import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeI
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 
 import DashboardButton from "../components/DashboardButton";
+import ManageMemberFrame from "./ManageMemberFrame";
 import ManageSemeterFrame from "./ManageSemeterFrame";
 
 const DashboardSectionInner = styled.div`
@@ -32,6 +32,7 @@ const ExecutiveDashboardFrame = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <ManageSemeterFrame />
+      <ManageMemberFrame />
       <FlexWrapper
         direction="row"
         gap={60}
