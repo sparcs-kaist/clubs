@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
@@ -39,6 +39,37 @@ export default class UserRepository {
         ),
       )
       .leftJoin(Department, eq(Department.id, StudentT.department));
+    return user;
+  }
+
+  async findStudentByStudentNumberNameDate(
+    studentNumber: string,
+    name: string,
+    startTerm: string,
+    endTerm: string,
+  ) {
+    const studentnumber = parseInt(studentNumber);
+    const user = await this.db
+      .select()
+      .from(Student)
+      .where(
+        and(
+          eq(Student.number, studentnumber),
+          eq(Student.name, name),
+          isNull(Student.deletedAt),
+        ),
+      )
+      .innerJoin(
+        StudentT,
+        and(
+          eq(StudentT.studentId, Student.id),
+          lte(sql`DATE(${StudentT.startTerm})`, startTerm),
+          or(
+            gte(sql`DATE(${StudentT.endTerm})`, endTerm),
+            isNull(StudentT.endTerm),
+          ),
+        ),
+      );
     return user;
   }
 
