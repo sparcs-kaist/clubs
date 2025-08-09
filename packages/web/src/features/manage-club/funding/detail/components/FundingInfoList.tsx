@@ -41,7 +41,7 @@ function renderPurposeActivity(
     <>
       {isExecutive ? (
         <Link
-          href={`/activity/${purposeActivity.id}`}
+          href={`/executive/activity-report/${purposeActivity.id}`}
           style={{ color: "inherit", textDecoration: "underline" }}
         >
           {purposeActivity.name}
