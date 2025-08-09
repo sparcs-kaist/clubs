@@ -32,7 +32,7 @@ export const ListItem = styled.div`
 
 function renderPurposeActivity(
   purposeActivity: IFundingResponse["purposeActivity"],
-  isExecutive?: boolean,
+  isExecutive: boolean = false,
 ) {
   if (!purposeActivity?.name) {
     return <span>{NO_ACTIVITY_REPORT_FUNDING}</span>;
