@@ -146,7 +146,10 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
         />
 
         <AsyncBoundary isLoading={isLoading} isError={isError}>
-          <FundingInfoList data={data.funding} />
+          <FundingInfoList
+            data={data.funding}
+            isExecutive={profile.type === UserTypeEnum.Executive}
+          />
           <BasicEvidenceList data={data.funding} />
           {(!data.funding.purposeActivity ||
             isActivityReportUnverifiable(data.funding.purposeActivity.id)) && (
