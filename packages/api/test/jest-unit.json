@@ -1,0 +1,15 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testMatch": ["**/test/unit/**/*.spec.ts"],
+  "testEnvironment": "node",
+  "moduleNameMapper": {
+    "^@sparcs-clubs/api/(.*)$": "<rootDir>/src/$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "tsconfig.spec.json" }]
+  },
+  "setupFilesAfterEnv": ["dotenv/config"],
+  "collectCoverageFrom": ["src/**/*.(t|j)s", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
+  "coverageDirectory": "coverage/unit"
+} 

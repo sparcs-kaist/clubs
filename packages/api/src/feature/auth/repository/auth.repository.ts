@@ -95,12 +95,13 @@ export class AuthRepository {
       )
       .then(takeOne);
 
+    // V2 기반 사용자 타입 결정 (하위 호환성을 위해 V1 타입도 고려)
     // type이 "Student"인 경우 student table에서 해당 studentNumber이 있는지 확인 후 upsert
     // student_t에서 이번 학기의 해당 student_id이 있는지 확인 후 upsert
-    // TODO: 임시로 "이전 사원" 타입을 학생으로 분류
     if (
-      (type === "Student" || type === "Ex-employee") &&
-      !typeV2.startsWith("P")
+      typeV2 === "S" || // V2: 학생
+      ((type === "Student" || type === "Ex-employee") &&
+        !typeV2.startsWith("P")) // V1 fallback
     ) {
       await this.db
         .insert(Student)
@@ -219,7 +220,13 @@ export class AuthRepository {
       }
     }
 
-    if (type.includes("Teacher") || typeV2.startsWith("P")) {
+    // V2 기반 교수 타입 결정 (P: Professor, F: Faculty)
+    if (
+      typeV2 === "P" ||
+      typeV2 === "F" || // V2: 교수/교직원
+      type.includes("Teacher") ||
+      typeV2.startsWith("P") // V1 fallback
+    ) {
       await this.db
         .insert(Professor)
         .values({ userId: user.id, name, email })
@@ -249,7 +256,12 @@ export class AuthRepository {
       };
     }
 
-    if (type === "Employee") {
+    // V2 기반 직원 타입 결정 (E: Employee, R: Researcher)
+    if (
+      typeV2 === "E" ||
+      typeV2 === "R" || // V2: 직원/연구원
+      type === "Employee" // V1 fallback
+    ) {
       await this.db
         .insert(Employee)
         .values({

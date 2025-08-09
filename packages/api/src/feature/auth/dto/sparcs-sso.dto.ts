@@ -35,19 +35,32 @@ export class SSOUser {
   /** 사용자의 KAIST 고유 ID입니다. 연동하지 않았을 경우 빈 문자열입니다. */
   kaist_id!: string;
 
-  /** 사용자의 KAIST Portal 데이터입니다. */
+  /**
+   * @deprecated V1 KAIST Portal 데이터 - 하위 호환성을 위해 유지하지만 사용 안 함
+   * 실제로는 kaist_v2_info를 사용할 것
+   */
   kaist_info!: KaistInfo;
 
-  /** kaist_info를 업데이트한 날짜입니다. YYYY-MM-DD 형식의 날짜 또는 빈 문자열 값입니다. */
+  /**
+   * @deprecated kaist_info를 업데이트한 날짜 - 더 이상 사용 안 함
+   * YYYY-MM-DD 형식의 날짜 또는 빈 문자열 값입니다.
+   */
   kaist_info_time?: Date;
 
   /** 사용자의 SPARCS ID입니다. SPARCS 회원이 아닌 경우 빈 문자열 값입니다. */
   sparcs_id!: string;
 
-  /** 사용자의 V2 KAIST Portal 데이터입니다. */
+  /**
+   * V2 KAIST Portal 데이터 - 실제 사용
+   * 모든 사용자 정보는 이 필드에서 추출
+   */
   kaist_v2_info!: KaistV2Info;
 }
 
+/**
+ * @deprecated V1 KAIST 정보 - 하위 호환성을 위해 유지
+ * 새로운 개발에서는 KaistV2Info를 사용할 것
+ */
 export class KaistInfo {
   ku_std_no!: string;
 
