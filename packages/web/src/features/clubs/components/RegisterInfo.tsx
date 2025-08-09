@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
@@ -44,6 +45,7 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
   isRegistered,
   myRegistrationList,
 }) => {
+  const t = useTranslations("club");
   const { mutate: registerClub } = useRegisterClub({ clubId: club.id });
   const { mutate: unregisterClub } = useUnregisterClub(club.id);
   const {
@@ -67,7 +69,7 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
     () => (
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         {semester?.year}년도 {semester?.name}학기
-        <ResponsiveBr /> {club.type === 1 ? "정동아리" : "가동아리"}{" "}
+        <ResponsiveBr /> {club.type === 1 ? t("정동아리") : t("가동아리")}{" "}
         {club.nameKr}의 <br />
         {isRegistered
           ? "회원 등록을 취소합니다."

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -34,14 +35,18 @@ const EmptyDetailText = styled.div`
   color: ${({ theme }) => theme.colors.GRAY[300]};
 `;
 
-const ClubDetailCard: React.FC<ClubDetailProps> = ({ club }) => (
-  <Card gap={16} padding="16px 20px" style={{ flexGrow: "1" }}>
-    {club.description ? (
-      <ClubDetailText>{club.description}</ClubDetailText>
-    ) : (
-      <EmptyDetailText>등록된 동아리 설명이 없습니다.</EmptyDetailText>
-    )}
-  </Card>
-);
+const ClubDetailCard: React.FC<ClubDetailProps> = ({ club }) => {
+  const t = useTranslations();
+
+  return (
+    <Card gap={16} padding="16px 20px" style={{ flexGrow: "1" }}>
+      {club.description ? (
+        <ClubDetailText>{club.description}</ClubDetailText>
+      ) : (
+        <EmptyDetailText>{t("club.동아리 설명 없음")}</EmptyDetailText>
+      )}
+    </Card>
+  );
+};
 
 export default ClubDetailCard;

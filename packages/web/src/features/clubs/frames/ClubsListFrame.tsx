@@ -1,6 +1,7 @@
 "use client";
 
 import { hangulIncludes } from "es-hangul";
+import { useTranslations } from "next-intl";
 import React, { useMemo, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -17,6 +18,7 @@ interface ClubsListProps {
 const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
   // 이스터에그_리크루팅
   useEasterEgg();
+  const t = useTranslations();
 
   const { data, isLoading, isError } = useGetClubsList();
 
@@ -50,13 +52,13 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
       <SearchInput
         searchText={searchText}
         handleChange={setSearchText}
-        placeholder="동아리 이름으로 검색하세요"
+        placeholder={t("club.placeholder")}
       />
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FlexWrapper direction="column" gap={40}>
           {filteredDivisions.map(division => (
             <ClubsSectionFrame
-              title={division.name}
+              title={t(`division.${division.name}`)}
               clubList={division.clubs}
               key={division.name}
               isRegistrationPeriod={isRegistrationPeriod}
