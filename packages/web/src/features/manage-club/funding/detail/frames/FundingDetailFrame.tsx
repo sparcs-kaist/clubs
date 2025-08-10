@@ -4,6 +4,8 @@ import { overlay } from "overlay-kit";
 import React, { useMemo } from "react";
 import styled from "styled-components";
 
+import { FundingDeadlineEnum } from "@clubs/domain/semester/deadline";
+
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -231,19 +233,22 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
           isLoading={isLoadingFundingDeadline}
           isError={isErrorFundingDeadline}
         >
-          {!isPastFunding && profile.type === UserTypeEnum.Undergraduate && (
-            <FlexWrapper direction="row" gap={10}>
-              <Button
-                type="default"
-                onClick={() => openDeleteModal(data.funding.club.id)}
-              >
-                삭제
-              </Button>
-              <Button type="default" onClick={openEditModal}>
-                수정
-              </Button>
-            </FlexWrapper>
-          )}
+          {!isPastFunding &&
+            profile.type === UserTypeEnum.Undergraduate &&
+            fundingDeadline?.deadline.deadlineEnum !==
+              FundingDeadlineEnum.Exception && (
+              <FlexWrapper direction="row" gap={10}>
+                <Button
+                  type="default"
+                  onClick={() => openDeleteModal(data.funding.club.id)}
+                >
+                  삭제
+                </Button>
+                <Button type="default" onClick={openEditModal}>
+                  수정
+                </Button>
+              </FlexWrapper>
+            )}
         </AsyncBoundary>
       </ButtonWrapper>
     </FlexWrapper>
