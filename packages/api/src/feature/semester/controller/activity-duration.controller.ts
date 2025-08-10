@@ -24,6 +24,16 @@ import type {
   ApiSem009ResponseNotImplemented,
   ApiSem010RequestParam,
   ApiSem010ResponseOK,
+  ApiSem011RequestBody,
+  ApiSem011RequestQuery,
+  ApiSem011ResponseNotImplemented,
+  ApiSem012RequestQuery,
+  ApiSem012ResponseOK,
+  ApiSem013RequestBody,
+  ApiSem013RequestParam,
+  ApiSem013ResponseNotImplemented,
+  ApiSem014RequestParam,
+  ApiSem014ResponseNotImplemented,
 } from "@clubs/interface/api/semester/index";
 import {
   apiSem006,
@@ -31,6 +41,10 @@ import {
   apiSem008,
   apiSem009,
   apiSem010,
+  apiSem011,
+  apiSem012,
+  apiSem013,
+  apiSem014,
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -99,5 +113,56 @@ export class ActivityDurationController {
     @Param() param: ApiSem010RequestParam,
   ): Promise<ApiSem010ResponseOK> {
     return this.activityDurationService.deleteActivityDeadline({ param });
+  }
+
+  // ActivityDuration CRUD endpoints
+  @Executive()
+  @Post("/executive/semesters/activity-durations")
+  @UsePipes(new ZodPipe(apiSem011))
+  async createActivityDuration(
+    @GetExecutive() executive: GetExecutive,
+    @Query() _query: ApiSem011RequestQuery,
+    @Body() _body: ApiSem011RequestBody,
+  ): Promise<ApiSem011ResponseNotImplemented> {
+    logger.info(
+      `User executive_id: ${executive.id} trying to call unimplemented feature`,
+    );
+    throw new NotImplementedException();
+  }
+
+  @Executive()
+  @Get("/executive/semesters/activity-durations")
+  @UsePipes(new ZodPipe(apiSem012))
+  async getActivityDurations(
+    @Query() query: ApiSem012RequestQuery,
+  ): Promise<ApiSem012ResponseOK> {
+    return this.activityDurationService.getActivityDurations({ query });
+  }
+
+  @Executive()
+  @Put("/executive/semesters/activity-durations/:activityDurationId")
+  @UsePipes(new ZodPipe(apiSem013))
+  async updateActivityDuration(
+    @GetExecutive() executive: GetExecutive,
+    @Param() _param: ApiSem013RequestParam,
+    @Body() _body: ApiSem013RequestBody,
+  ): Promise<ApiSem013ResponseNotImplemented> {
+    logger.info(
+      `User executive_id: ${executive.id} trying to call unimplemented feature`,
+    );
+    throw new NotImplementedException();
+  }
+
+  @Executive()
+  @Delete("/executive/semesters/activity-durations/:activityDurationId")
+  @UsePipes(new ZodPipe(apiSem014))
+  async deleteActivityDuration(
+    @GetExecutive() executive: GetExecutive,
+    @Param() _param: ApiSem014RequestParam,
+  ): Promise<ApiSem014ResponseNotImplemented> {
+    logger.info(
+      `User executive_id: ${executive.id} trying to call unimplemented feature`,
+    );
+    throw new NotImplementedException();
   }
 }
