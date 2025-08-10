@@ -68,3 +68,9 @@ export class HttpExceptionFilter<T extends HttpException>
     });
   }
 }
+export class IntentionalRollback extends Error {
+  constructor(message = "Intentional Rollback") {
+    super(message);
+    this.name = "IntentionalRollback";
+  }
+}

@@ -6,6 +6,18 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.88",
+    date: new Date("2025.08.10"),
+    patchNoteContent: `Clubs v0.0.88
+신규 기능은 다음과 같습니다.
+- 집행부원 추가/삭제 API가 추가되었습니다.
+- 집행부원이 지원금 신청내역을 검토 할 때 활동보고서 이름을 누르면 바로가기가 됩니다.
+- 활동반기 조회 API가 추가되었습니다.
+- 학기 추가 기능에 안내메세지가 추가되었습니다.
+- 활동보고서 신청 기간 수정 API가 추가되었습니다.
+`,
+  },
+  {
     version: "v.0.0.87",
     date: new Date("2025.08.04"),
     patchNoteContent: `Clubs v0.0.87

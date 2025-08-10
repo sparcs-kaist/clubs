@@ -1,8 +1,24 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { formatInTimeZone } from "date-fns-tz";
+import {
+  and,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
+import {
+  getKSTDate,
+  getKSTDateForQuery,
+  takeOne,
+} from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Executive,
@@ -18,15 +34,38 @@ export default class ExecutiveRepository {
   constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
 
   async findExecutiveById(id: number): Promise<boolean> {
-    const crt = getKSTDate();
+    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
     const result = await this.db
       .select()
       .from(ExecutiveT)
       .where(
         and(
           eq(ExecutiveT.executiveId, id),
-          or(gte(ExecutiveT.endTerm, crt), isNull(ExecutiveT.endTerm)),
-          lte(ExecutiveT.startTerm, crt),
+          or(
+            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
+            isNull(ExecutiveT.endTerm),
+          ),
+          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
+        ),
+      );
+    return result.length > 0;
+  }
+
+  async findExecutiveByUserId(id: number): Promise<boolean> {
+    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+    const result = await this.db
+      .select()
+      .from(Executive)
+      .where(and(eq(Executive.userId, id), isNull(Executive.deletedAt)))
+      .innerJoin(
+        ExecutiveT,
+        and(
+          eq(ExecutiveT.executiveId, Executive.id),
+          or(
+            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
+            isNull(ExecutiveT.endTerm),
+          ),
+          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
         ),
       );
     return result.length > 0;
@@ -179,5 +218,194 @@ export default class ExecutiveRepository {
       .then(takeOne);
 
     return result ? VExecutiveSummary.fromDBResult(result) : null;
+  }
+
+  async checkExistExecutiveByIdDate(
+    studentId: number,
+    startTerm: string,
+    endTerm: string,
+  ) {
+    const result = await this.db
+      .select()
+      .from(Executive)
+      .where(
+        and(eq(Executive.studentId, studentId), isNull(Executive.deletedAt)),
+      )
+      .innerJoin(
+        ExecutiveT,
+        and(
+          eq(ExecutiveT.executiveId, Executive.id),
+          isNull(ExecutiveT.deletedAt),
+          or(
+            // 경우 1: ExecutiveT.endTerm이 null이 아닐 때
+            and(
+              // ExecutiveT.endTerm이 null이 아님
+              isNotNull(ExecutiveT.endTerm),
+              or(
+                // ExecutiveT.startTerm이 param의 startTerm~endTerm 사이
+                and(
+                  gte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
+                  lte(sql`DATE(${ExecutiveT.startTerm})`, endTerm),
+                ),
+                // ExecutiveT.endTerm이 param의 startTerm~endTerm 사이
+                and(
+                  gte(sql`DATE(${ExecutiveT.endTerm})`, startTerm),
+                  lte(sql`DATE(${ExecutiveT.endTerm})`, endTerm),
+                ),
+                // param의 startTerm~endTerm이 ExecutiveT의 startTerm~endTerm 사이
+                and(
+                  lte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
+                  gte(sql`DATE(${ExecutiveT.endTerm})`, endTerm),
+                ),
+              ),
+            ),
+            // 경우 2: ExecutiveT.endTerm이 null일 때
+            and(
+              isNull(ExecutiveT.endTerm),
+              or(
+                // ExecutiveT.startTerm이 param의 startTerm~endTerm 사이
+                and(
+                  gte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
+                  lte(sql`DATE(${ExecutiveT.startTerm})`, endTerm),
+                ),
+                // ExecutiveT.startTerm이 param의 startTerm보다 이른 것
+                lte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
+              ),
+            ),
+          ),
+        ),
+      );
+    return result.length > 0;
+  }
+
+  async createExecutive(
+    studentId: number,
+    userId: number,
+    email: string,
+    name: string,
+    startTerm: string,
+    endTerm: string,
+  ) {
+    try {
+      await this.db.transaction(async tx => {
+        let executiveId: number;
+        const existingExecutives = await tx
+          .select({ id: Executive.id })
+          .from(Executive)
+          .where(
+            and(
+              eq(Executive.studentId, studentId),
+              isNull(Executive.deletedAt),
+            ),
+          );
+        if (existingExecutives.length > 0) {
+          executiveId = existingExecutives[0].id;
+        } else {
+          const [newExecutive] = await tx
+            .insert(Executive)
+            .values({ userId, studentId, email, name });
+          executiveId = newExecutive.insertId;
+        }
+        const executiveT = await tx.insert(ExecutiveT).values({
+          executiveId,
+          executiveStatusEnum: 1,
+          executiveBureauEnum: 1,
+          startTerm: sql`DATE(${startTerm})`,
+          endTerm: sql`DATE(${endTerm})`,
+        });
+        if (executiveT[0].affectedRows === 0) {
+          throw new IntentionalRollback();
+        }
+        return true;
+      });
+      // isolation level과 accessmode를 지정하고 싶었지만 에러가 발생하여 일단 지워둠.
+
+      return true;
+    } catch (error) {
+      if (error instanceof IntentionalRollback) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  async getExecutives() {
+    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+    const result = await this.db
+      .select({
+        id: Executive.id,
+        userId: Executive.userId,
+        studentNumber: Student.number,
+        name: User.name,
+        email: User.email,
+        phoneNumber: User.phoneNumber,
+        startTerm: ExecutiveT.startTerm,
+        endTerm: ExecutiveT.endTerm,
+      })
+      .from(Executive)
+      .where(isNull(Executive.deletedAt))
+      .innerJoin(
+        ExecutiveT,
+        and(
+          eq(ExecutiveT.executiveId, Executive.id),
+          or(
+            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
+            isNull(ExecutiveT.endTerm),
+          ),
+          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
+          isNull(ExecutiveT.deletedAt),
+        ),
+      )
+      .innerJoin(
+        User,
+        and(eq(User.id, Executive.userId), isNull(User.deletedAt)),
+      )
+      .innerJoin(
+        Student,
+        and(eq(Student.id, Executive.studentId), isNull(Student.deletedAt)),
+      );
+    return result;
+  }
+
+  async deleteExecutiveById(executiveId: number) {
+    const cur = getKSTDateForQuery();
+    // const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+    try {
+      await this.db.transaction(async tx => {
+        const executiveUpdate = await tx
+          .update(Executive)
+          .set({ deletedAt: cur })
+          .where(
+            and(eq(Executive.id, executiveId), isNull(Executive.deletedAt)),
+          );
+        const executiveTUpdate = await tx
+          .update(ExecutiveT)
+          .set({ deletedAt: cur })
+          .where(
+            and(
+              eq(ExecutiveT.executiveId, executiveId),
+              // 모든 이력 삭제되도록 변경하면서 주석처리함.
+              // or(
+              //   gte(sql`DATE(${ExecutiveT.endTerm})`, date),
+              //   isNull(ExecutiveT.endTerm),
+              // ),
+              isNull(ExecutiveT.deletedAt),
+            ),
+          );
+        if (
+          executiveUpdate[0].affectedRows === 0 ||
+          executiveTUpdate[0].affectedRows === 0
+        ) {
+          throw new IntentionalRollback();
+        }
+        return true;
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof IntentionalRollback) {
+        return false;
+      }
+      throw error;
+    }
   }
 }

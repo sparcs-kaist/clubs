@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from "axios";
 import * as crypto from "crypto";
 import * as querystring from "querystring";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
+
 import { SSOUser } from "../dto/sparcs-sso.dto";
 
 // CONVERT SPARCS SSO V2 Client Version 1.1 TO TYPESCRIPT
@@ -135,7 +137,7 @@ export class Client {
         : {};
       return result as SSOUser;
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       throw new Error("INVALID_OBJECT");
     }
   }

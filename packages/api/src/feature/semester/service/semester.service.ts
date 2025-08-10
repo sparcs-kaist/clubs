@@ -13,6 +13,7 @@ import type {
   ApiSem003ResponseOk,
   ApiSem004RequestQuery,
   ApiSem004ResponseOk,
+  ApiSem005ResponseOK,
 } from "@clubs/interface/api/semester/index";
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
@@ -44,12 +45,37 @@ export class SemesterService {
     query: ApiSem001RequestQuery;
   }): Promise<ApiSem001ResponseOK> {
     const { pageOffset, itemCount } = param.query;
-    const semesters = await this.semesterRepository
+    const semesters = await this.semesterRepository.find({
+      pagination: {
+        offset: pageOffset,
+        itemCount,
+      },
+      orderBy: {
+        endTerm: OrderByTypeEnum.DESC,
+      },
+    });
+
+    const total = await this.semesterRepository.count({});
+
+    return {
+      semesters,
+      total,
+      offset: param.query.pageOffset,
+    };
+  }
+
+  /**
+   * @description getPublicSemestersNow의 서비스 진입점입니다.
+   * @param query
+   * @returns
+   */
+  async getPublicSemesterNow(): Promise<ApiSem005ResponseOK> {
+    const semester = await this.semesterRepository
       .find({
         date: new Date(),
         pagination: {
-          offset: pageOffset,
-          itemCount,
+          offset: 1,
+          itemCount: 1,
         },
         orderBy: {
           endTerm: OrderByTypeEnum.DESC,
@@ -57,12 +83,8 @@ export class SemesterService {
       })
       .then(takeOnlyOne());
 
-    const total = await this.semesterRepository.count({});
-
     return {
-      semesters: [semesters],
-      total,
-      offset: param.query.pageOffset,
+      semester,
     };
   }
 
