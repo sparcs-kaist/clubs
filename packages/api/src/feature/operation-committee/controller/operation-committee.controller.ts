@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Post } from "@nestjs/common";
+import { Controller, Delete, Get, Post } from "@nestjs/common";
+import { randomBytes } from "crypto";
 
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { OperationCommitteeService } from "@sparcs-clubs/api/feature/operation-committee/service/operation-committee.service";
@@ -11,13 +12,14 @@ export class OperationCommitteeController {
 
   @Executive()
   @Post("/executive/operation-committees/secret-key")
-  async createOperationCommitteeSecretKey(
-    @Body("secretKey") secretKey: string,
-  ) {
+  async createOperationCommitteeSecretKey() {
+    const secretKey = randomBytes(5).toString("hex");
+
     const createdKey =
       await this.operationCommitteeService.createOperationCommitteeSecretKey(
         secretKey,
       );
+
     return {
       message: "OperationCommittee secret key created successfully.",
       createdKey,

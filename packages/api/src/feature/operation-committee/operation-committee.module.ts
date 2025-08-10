@@ -9,5 +9,6 @@ import { OperationCommitteeService } from "@sparcs-clubs/api/feature/operation-c
   imports: [DrizzleModule],
   controllers: [OperationCommitteeController],
   providers: [OperationCommitteeRepository, OperationCommitteeService],
+  exports: [OperationCommitteeService],
 })
 export class OperationCommitteeModule {}

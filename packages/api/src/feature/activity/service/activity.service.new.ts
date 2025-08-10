@@ -62,12 +62,13 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
 @Injectable()
 export default class ActivityService {
-  operatingCommiteeSecret: string;
+  operatingCommiteeSecret: string | null = null;
 
   constructor(
     private readonly activityRepository: ActivityNewRepository,
@@ -80,9 +81,10 @@ export default class ActivityService {
     private readonly filePublicService: FilePublicService,
     private readonly registrationPublicService: RegistrationPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private readonly operationCommitteeService: OperationCommitteeService,
     private readonly userPublicService: UserPublicService,
   ) {
-    this.operatingCommiteeSecret = "7sUyWS2sLD";
+    this.operatingCommiteeSecret = "";
   }
 
   /**
@@ -182,8 +184,20 @@ export default class ActivityService {
         studentId,
         clubId: activity.club.id,
       });
-    } else if (operatingCommiteeSecret !== this.operatingCommiteeSecret) {
-      throw new HttpException("wrong secret", HttpStatus.BAD_REQUEST);
+    } else {
+      if (!this.operatingCommiteeSecret) {
+        //시크릿키를 불러옵니다.
+        const activeKeys =
+          await this.operationCommitteeService.findOperationCommitteeSecretKey();
+        if (activeKeys.length === 0) {
+          throw new Error("No active OperationCommittee secret key found.");
+        }
+        this.operatingCommiteeSecret = activeKeys[0].secretKey;
+      }
+
+      if (operatingCommiteeSecret !== this.operatingCommiteeSecret) {
+        throw new HttpException("wrong secret", HttpStatus.BAD_REQUEST);
+      }
     }
 
     const participants = await Promise.all(
