@@ -83,9 +83,7 @@ export default class ActivityService {
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
     private readonly operationCommitteeService: OperationCommitteeService,
     private readonly userPublicService: UserPublicService,
-  ) {
-    this.operatingCommiteeSecret = "";
-  }
+  ) {}
 
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
