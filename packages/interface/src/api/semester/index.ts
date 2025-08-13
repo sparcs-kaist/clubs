@@ -18,6 +18,9 @@ export * from "./apiSem011";
 export * from "./apiSem012";
 export * from "./apiSem013";
 export * from "./apiSem014";
+export * from "./apiSem015";
+export * from "./apiSem016";
+export * from "./apiSem017";
 
 registry.registerPath({
   tags: ["semester"],
