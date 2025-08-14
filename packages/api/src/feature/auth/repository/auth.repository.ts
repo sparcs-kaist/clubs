@@ -220,9 +220,10 @@ export class AuthRepository {
       }
     }
 
-    // V2 기반 교수 타입 결정 (P: Professor, F: Faculty)
+    // V2 기반 교수 타입 결정 (P: Professor, PA: Professor Associate, F: Faculty)
     if (
       typeV2 === "P" ||
+      typeV2 === "PA" || // V2: 부교수/겸임교수
       typeV2 === "F" || // V2: 교수/교직원
       type.includes("Teacher") ||
       typeV2.startsWith("P") // V1 fallback

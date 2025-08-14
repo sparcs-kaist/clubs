@@ -16,6 +16,10 @@ describe("User Info Extractor (Unit)", () => {
       expect(getUserTypeFromSocpsCd("P")).toBe("Professor");
     });
 
+    it("should return Professor for PA (Professor Associate)", () => {
+      expect(getUserTypeFromSocpsCd("PA")).toBe("Professor");
+    });
+
     it("should return Employee for E", () => {
       expect(getUserTypeFromSocpsCd("E")).toBe("Employee");
     });
@@ -144,7 +148,7 @@ describe("User Info Extractor (Unit)", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Invalid socps_cd 'X' - must be one of: S, P, E, F, R",
+        "Invalid socps_cd 'X' - must be one of: S, P, PA, E, F, R",
       );
     });
 
@@ -303,6 +307,7 @@ describe("User Info Extractor (Unit)", () => {
       const testCases = [
         { socps_cd: "S", expectedType: "Student" },
         { socps_cd: "P", expectedType: "Professor" },
+        { socps_cd: "PA", expectedType: "Professor" },
         { socps_cd: "E", expectedType: "Employee" },
         { socps_cd: "F", expectedType: "Professor" },
         { socps_cd: "R", expectedType: "Employee" },

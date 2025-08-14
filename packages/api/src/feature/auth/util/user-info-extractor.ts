@@ -45,6 +45,8 @@ export const getUserTypeFromSocpsCd = (
       return "Student"; // 학생
     case "P":
       return "Professor"; // 교수
+    case "PA":
+      return "Professor"; // Professor Associate (부교수/겸임교수)
     case "E":
       return "Employee"; // 직원
     case "F":
@@ -157,7 +159,7 @@ export const validateKaistV2Info = (
   }
 
   // socps_cd 유효성 검증
-  const validSocpsCodes = ["S", "P", "E", "F", "R"];
+  const validSocpsCodes = ["S", "P", "PA", "E", "F", "R"];
   if (
     kaistV2Info.socps_cd &&
     !validSocpsCodes.includes(kaistV2Info.socps_cd.toUpperCase())
