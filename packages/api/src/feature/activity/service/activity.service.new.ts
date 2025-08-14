@@ -68,8 +68,6 @@ import { ActivityCommentRepository } from "../repository/activity-comment.reposi
 
 @Injectable()
 export default class ActivityService {
-  operatingCommiteeSecret: string | null = null;
-
   constructor(
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
@@ -183,18 +181,15 @@ export default class ActivityService {
         clubId: activity.club.id,
       });
     } else {
-      if (!this.operatingCommiteeSecret) {
-        //시크릿키를 불러옵니다.
-        const activeKeys =
-          await this.operationCommitteeService.findOperationCommitteeSecretKey();
-        if (activeKeys.length === 0) {
-          throw new Error("No active OperationCommittee secret key found.");
-        }
-        this.operatingCommiteeSecret = activeKeys[0].secretKey;
+      const activeKey =
+        await this.operationCommitteeService.findOperationCommitteeSecretKey();
+      if (activeKey.length === 0) {
+        throw new Error("No active OperationCommittee secret key found.");
       }
 
-      if (operatingCommiteeSecret !== this.operatingCommiteeSecret) {
-        throw new HttpException("wrong secret", HttpStatus.BAD_REQUEST);
+      const validSecret = activeKey[0].secretKey;
+      if (operatingCommiteeSecret !== validSecret) {
+        throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
       }
     }
 
