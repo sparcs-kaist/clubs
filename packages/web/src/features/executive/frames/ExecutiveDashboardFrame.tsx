@@ -1,5 +1,3 @@
-// import { Divider } from "@mui/material";
-import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -11,6 +9,7 @@ import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
+import ManageMemberFrame from "./ManageMemberFrame";
 import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
@@ -36,6 +35,7 @@ const ExecutiveDashboardFrame = () => {
         현재 집행부원 대시보드는 개발 중에 있습니다.
       </Banner>
       <ManageSemesterFrame />
+      <ManageMemberFrame />
       <FlexWrapper
         direction="row"
         gap={60}
