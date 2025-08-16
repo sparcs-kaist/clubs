@@ -5,6 +5,8 @@ import type {
   ApiSem006ResponseCreated,
   ApiSem007RequestQuery,
   ApiSem007ResponseOK,
+  ApiSem012RequestQuery,
+  ApiSem012ResponseOK,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
@@ -12,12 +14,14 @@ import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import { MActivityDuration } from "../model/activity.duration.model";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "../repository/activity.duration.repository";
+import { SemesterRepository } from "../repository/semester.repository";
 
 @Injectable()
 export class ActivityDurationService {
   constructor(
     private readonly activityDurationRepository: ActivityDurationRepository,
     private readonly activityDeadlineRepository: ActivityDeadlineRepository,
+    private readonly semesterRepository: SemesterRepository,
   ) {}
 
   async createActivityDeadline(param: {
@@ -130,5 +134,49 @@ export class ActivityDurationService {
     await this.activityDeadlineRepository.delete({ id: deadlineId });
 
     return { id: deadlineId };
+  }
+
+  async getActivityDurations(param: {
+    query: ApiSem012RequestQuery;
+  }): Promise<ApiSem012ResponseOK> {
+    const { semesterId } = param.query;
+
+    // Build filter conditions
+    const filter: { semesterId?: number } = {};
+    if (semesterId) {
+      filter.semesterId = semesterId;
+    }
+
+    // Get activity durations
+    const activityDurations =
+      await this.activityDurationRepository.find(filter);
+
+    // Fetch semester details for each activity duration
+    const result = await Promise.all(
+      activityDurations.map(async duration => {
+        const semester = await this.semesterRepository.find({
+          id: duration.semester.id,
+        });
+        const semesterData = Array.isArray(semester) ? semester[0] : semester;
+
+        return {
+          id: duration.id,
+          semester: {
+            id: duration.semester.id,
+            name: semesterData?.name || "",
+            year: semesterData?.year || duration.year,
+          },
+          activityDurationTypeEnum: duration.activityDurationTypeEnum,
+          year: duration.year,
+          name: duration.name,
+          startTerm: duration.startTerm,
+          endTerm: duration.endTerm,
+        };
+      }),
+    );
+
+    return {
+      activityDurations: result,
+    };
   }
 }
