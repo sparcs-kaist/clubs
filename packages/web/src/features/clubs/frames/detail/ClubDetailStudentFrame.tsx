@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -9,10 +10,13 @@ import { ClubDetailProps } from "@sparcs-clubs/web/features/clubs/components/Clu
 import { RegisterInfo } from "@sparcs-clubs/web/features/clubs/components/RegisterInfo";
 import useGetMyRegistration from "@sparcs-clubs/web/features/clubs/hooks/useGetMyRegistration";
 import useGetMemberRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetMemberRegistrationDeadline";
+import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
 const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
+  const { isEnglish } = useLanguage();
+  const t = useTranslations("club");
   const {
     data: { registrationStatus, isRegistered, registrations },
     isLoading,
@@ -33,10 +37,13 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
       <FlexWrapper direction="column" gap={60}>
         <PageHead
           items={[
-            { name: "동아리 목록", path: "/clubs" },
-            { name: club.nameKr, path: `/clubs/${club.id}` },
+            { name: t("동아리 목록"), path: "/clubs" },
+            {
+              name: isEnglish ? club.nameEn : club.nameKr,
+              path: `/clubs/${club.id}`,
+            },
           ]}
-          title={club.nameKr}
+          title={isEnglish ? club.nameEn : club.nameKr}
           action={
             data?.deadline && (
               <RegisterInfo
