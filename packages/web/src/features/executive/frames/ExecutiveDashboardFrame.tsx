@@ -9,6 +9,7 @@ import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
+import ManageActivityDeadlineFrame from "./ManageActivityDeadlineFrame";
 import ManageMemberFrame from "./ManageMemberFrame";
 import ManageSemesterFrame from "./ManageSemesterFrame";
 
@@ -36,6 +37,7 @@ const ExecutiveDashboardFrame = () => {
       </Banner>
       <ManageSemesterFrame />
       <ManageMemberFrame />
+      <ManageActivityDeadlineFrame />
       <FlexWrapper
         direction="row"
         gap={60}
