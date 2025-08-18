@@ -15,6 +15,7 @@ import {
 } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { OverviewRepository } from "@sparcs-clubs/api/feature/overview/repository/overview.repository";
 
 type ClubFundamental = {
@@ -43,9 +44,10 @@ type Delegates = {
   clubId: number;
   delegateType: number;
   name: string;
+  department: string;
   studentNumber: number;
-  phoneNumber: string;
-  kaistEmail: string;
+  phoneNumber: string | null;
+  kaistEmail: string | null;
 }[];
 
 // 필터링할 때 필요한 정보
@@ -58,21 +60,19 @@ type FilterQuery = ApiOvv001RequestQuery | ApiOvv002RequestQuery;
 export class OverviewService {
   constructor(private clubDelegateRepository: OverviewRepository) {}
 
-  // 동아리 이름 검색 필터를 만들어줍니다
-  // .filter(this.clubNameLike(query)) 하여 사용
-  private clubNameLike(query: FilterQuery): (club: ClubFilterType) => boolean {
-    return (club: ClubFilterType) =>
-      club.clubNameKr.includes(query.clubNameLike) ||
-      club.clubNameEn.includes(query.clubNameLike);
-  }
-
   // 정동아리/가동아리 필터를 만들어줍니다
   // .filter(this.clubTypeOf(query)) 하여 사용
   private clubTypeOf(query: FilterQuery): (club: ClubFilterType) => boolean {
-    return (club: ClubFilterType) =>
-      query[
-        club.clubStatus === ClubTypeEnum.Regular ? "regular" : "provisional"
-      ];
+    return (club: ClubFilterType) => {
+      if (club.clubStatus === ClubTypeEnum.Regular) {
+        return query.regular;
+      }
+      if (club.clubStatus === ClubTypeEnum.Provisional) {
+        return query.provisional;
+      }
+
+      return false;
+    };
   }
 
   // 동아리 분과 필터를 만들어줍니다
@@ -116,7 +116,7 @@ export class OverviewService {
   }
 
   public async getDelegateOverview(
-    query?: ApiOvv001RequestQuery,
+    query: ApiOvv001RequestQuery,
   ): Promise<ApiOvv001ResponseOK> {
     const clubsFundamental =
       await this.clubDelegateRepository.findClubsFundamentals(
@@ -127,15 +127,15 @@ export class OverviewService {
       query.year,
       query.semesterName,
     );
-    return clubsFundamental
-      .filter(this.clubNameLike(query))
+    const result = clubsFundamental
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .filter(this.hasDelegates(query, delegates))
       .map(club => ({
+        clubId: club.clubId,
         district: club.district.trim(),
-        division: club.division,
-        clubType: club.clubStatus,
+        divisionName: club.division,
+        clubTypeEnum: club.clubStatus,
         clubNameKr: club.clubNameKr,
         clubNameEn: club.clubNameEn,
         representative: delegates.find(
@@ -153,36 +153,64 @@ export class OverviewService {
             d.delegateType === ClubDelegateEnum.Delegate2 &&
             d.clubId === club.clubId,
         ),
-      }));
+      }))
+      .map(club => {
+        if (club.representative === undefined) {
+          logger.error(
+            `Club ${club.clubId} has no representative, but it is included in the overview.`,
+          );
+        }
+        return {
+          ...club,
+          representative: club.representative || {
+            clubId: club.clubId,
+            delegateType: ClubDelegateEnum.Representative,
+            name: "Error",
+            department: "",
+            studentNumber: 0,
+            phoneNumber: null,
+            kaistEmail: null,
+          },
+        };
+      });
+    return result;
   }
 
   public async getClubsOverview(
-    query?: ApiOvv002RequestQuery,
+    query: ApiOvv002RequestQuery,
   ): Promise<ApiOvv002ResponseOK> {
     const clubs = await this.clubDelegateRepository.findClubs(
       query.year,
       query.semesterName,
     );
-    return clubs
-      .filter(this.clubNameLike(query))
+    const filteredClubs = clubs
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
       .map(club => ({
-        division: club.division,
-        district: club.district.trim(),
-        clubType: club.clubStatus,
+        clubId: club.clubId,
+        divisionName: club.division,
+        district: (club.district || "").trim(),
+        clubTypeEnum: club.clubStatus,
         clubNameKr: club.clubNameKr,
         clubNameEn: club.clubNameEn,
-        fieldsOfActivity: club.characteristicKr,
+        fieldsOfActivity: club.characteristicKr || "", // todo: 활동분야가 없는 경우 확인
         foundingYear: club.foundingYear,
         professor: club.advisor,
         totalMemberCnt: club.totalMemberCnt,
         regularMemberCnt: club.regularMemberCnt,
         clubBuildingEnum: club.clubBuildingEnum as ClubBuildingEnum,
-        roomLocation: club.roomLocation,
+        roomLocation: club.roomLocation || undefined,
         roomPassword: club.roomPassword?.trim(),
-        warning: null,
-        caution: null,
+        warning: undefined,
+        caution: undefined,
       }));
+
+    const result = filteredClubs.map(club => ({
+      ...club,
+      clubNameKr: club.clubNameKr || "",
+      clubNameEn: club.clubNameEn || "",
+    }));
+
+    return result;
   }
 }

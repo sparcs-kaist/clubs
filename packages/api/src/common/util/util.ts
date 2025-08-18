@@ -1,3 +1,4 @@
+import { addHours } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import { IdType, MEntity } from "../base/entity.model";
@@ -27,6 +28,12 @@ export function getKSTDate(input?: string | Date): Date {
     return date;
   }
   return new Date(input);
+}
+
+export function getKSTDateForQuery(): Date {
+  const date = new Date();
+  const kstDateForQuery = addHours(date, 9); // KST는 UTC+9
+  return kstDateForQuery;
 }
 
 /**

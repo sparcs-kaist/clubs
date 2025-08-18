@@ -1,11 +1,12 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useMediaQuery from "@sparcs-clubs/web/common/hooks/useMediaQuery";
 
-const Container = styled.div`
+const Container = styled.div<{ isMobile: boolean }>`
   position: absolute;
-  top: -8px;
+  top: ${({ isMobile }) => (isMobile ? "-8px" : "-1px")};
   right: -20px;
   background-color: ${({ theme }) => theme.colors.PRIMARY};
   border-radius: 4px;
@@ -13,12 +14,18 @@ const Container = styled.div`
   cursor: default;
 `;
 
-const Beta: React.FC = () => (
-  <Container>
-    <Typography fs={12} lh={14} color="WHITE">
-      Beta
-    </Typography>
-  </Container>
-);
+const Beta: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(
+    `(max-width: ${theme.responsive.BREAKPOINT.md})`,
+  );
+  return (
+    <Container isMobile={isMobile}>
+      <Typography fs={12} lh={14} color="WHITE">
+        Beta
+      </Typography>
+    </Container>
+  );
+};
 
 export default Beta;

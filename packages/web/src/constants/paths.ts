@@ -35,6 +35,8 @@ export const productionReadyPaths: {
     "/my",
     // 대표 동아리 관리
     "/manage-club",
+    // 집행부원 대시보드
+    "/executive",
   ],
   startsWith: [
     // 공통
@@ -61,6 +63,10 @@ export const productionReadyPaths: {
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
     "/club-registration",
+    // 동아리 총람
+    "/overview",
+    // 운영위원회 제공용 활동보고서 조회
+    "/operating-committee",
   ],
   exclude: [],
 };
@@ -77,6 +83,7 @@ const paths = {
   CLUBS: {
     name: "path.동아리",
     featureFlag: "DEFAULT",
+    path: "/clubs",
     sub: [
       {
         name: "path.동아리 목록",
@@ -203,6 +210,7 @@ const paths = {
   },
   EXECUTIVE: {
     name: "path.집행부",
+    path: "/executive",
     featureFlag: "DEFAULT",
     sub: [
       {

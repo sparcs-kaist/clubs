@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -82,15 +82,22 @@ const FilePreviewContainer: React.FC<React.PropsWithChildren> = ({
 
 interface ActivityReportDetailFrameProps {
   profile: Profile;
+  isOperatingCommittee?: boolean;
+  operatingCommitteeSecret?: string;
 }
 
 const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
   profile,
+  isOperatingCommittee = false,
+  operatingCommitteeSecret = undefined,
 }) => {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
-  const { data, isLoading, isError } = useGetActivityReportDetail(Number(id));
+  const { data, isLoading, isError } = useGetActivityReportDetail(
+    Number(id),
+    operatingCommitteeSecret,
+  );
   const {
     data: activityDeadline,
     isLoading: isLoadingDeadline,
@@ -105,10 +112,25 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     profile.type === UserTypeEnum.Executive;
 
   const navigateToActivityReportList = () => {
-    if (profile.type === UserTypeEnum.Executive) {
-      router.back();
-    } else {
-      router.push("/manage-club/activity-report");
+    const profileType: UserTypeEnum = profile.type;
+    switch (profileType) {
+      case UserTypeEnum.Executive:
+        router.back();
+        break;
+      case UserTypeEnum.Professor:
+        router.push("/manage-club/");
+        break;
+      case UserTypeEnum.Master:
+      case UserTypeEnum.Doctor:
+      case UserTypeEnum.Employee:
+      case UserTypeEnum.Undergraduate:
+        router.push("/manage-club/activity-report");
+        break;
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const exhaustiveCheck: never = profileType;
+        router.push("/manage-club/activity-report");
+      }
     }
   };
 
@@ -165,6 +187,19 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     });
   }, [approveActivityReport, id]);
 
+  const isPastActivityReport = useMemo(
+    () =>
+      data.durations?.every(duration => {
+        if (!activityDeadline?.targetTerm || !duration.endTerm) return true;
+
+        return (
+          new Date(duration.endTerm) <=
+          new Date(activityDeadline.targetTerm.startTerm)
+        );
+      }),
+    [activityDeadline, data.durations],
+  );
+
   if (isError) {
     return <NotFound />;
   }
@@ -177,7 +212,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={40} style={{ alignSelf: "stretch" }}>
         <Card outline padding="32px" gap={20}>
-          {isProgressVisible && (
+          {(isProgressVisible || isOperatingCommittee) && (
             <ActivityReportStatusSection
               status={data.activityStatusEnumId}
               editedAt={data.editedAt}
@@ -281,6 +316,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
         </Card>
 
         {profile.type === UserTypeEnum.Executive &&
+          !isOperatingCommittee &&
           activityDeadline?.canApprove && (
             <ExecutiveActivityReportApprovalSection
               comments={filterActivityComments(data.comments)}
@@ -288,37 +324,41 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             />
           )}
 
-        <FlexWrapper gap={20} justify="space-between">
-          <Button type="default" onClick={navigateToActivityReportList}>
-            목록으로 돌아가기
-          </Button>
+        {!isOperatingCommittee && (
+          <FlexWrapper gap={20} justify="space-between">
+            <Button type="default" onClick={navigateToActivityReportList}>
+              목록으로 돌아가기
+            </Button>
 
-          <AsyncBoundary
-            isLoading={isLoadingDeadline}
-            isError={isErrorDeadline}
-          >
-            {profile.type === UserTypeEnum.Undergraduate &&
-              activityDeadline?.isEditable && (
-                <FlexWrapper gap={12}>
-                  <Button type="default" onClick={handleDelete}>
-                    삭제
+            <AsyncBoundary
+              isLoading={isLoadingDeadline}
+              isError={isErrorDeadline}
+            >
+              {profile.type === UserTypeEnum.Undergraduate &&
+                activityDeadline?.isEditable &&
+                !isPastActivityReport && (
+                  <FlexWrapper gap={12}>
+                    <Button type="default" onClick={handleDelete}>
+                      삭제
+                    </Button>
+                    <Button type="default" onClick={handleEdit}>
+                      수정
+                    </Button>
+                  </FlexWrapper>
+                )}
+              {profile.type === UserTypeEnum.Professor &&
+                activityDeadline?.canApprove &&
+                !isPastActivityReport && (
+                  <Button
+                    type={data.professorApprovedAt ? "disabled" : "default"}
+                    onClick={handleProfessorApproval}
+                  >
+                    승인
                   </Button>
-                  <Button type="default" onClick={handleEdit}>
-                    수정
-                  </Button>
-                </FlexWrapper>
-              )}
-            {profile.type === UserTypeEnum.Professor &&
-              activityDeadline?.canApprove && (
-                <Button
-                  type={data.professorApprovedAt ? "disabled" : "default"}
-                  onClick={handleProfessorApproval}
-                >
-                  승인
-                </Button>
-              )}
-          </AsyncBoundary>
-        </FlexWrapper>
+                )}
+            </AsyncBoundary>
+          </FlexWrapper>
+        )}
       </FlexWrapper>
     </AsyncBoundary>
   );

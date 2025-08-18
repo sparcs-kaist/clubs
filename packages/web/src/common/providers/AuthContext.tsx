@@ -13,6 +13,8 @@ import React, {
 } from "react";
 import { Cookies } from "react-cookie";
 
+import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
+
 import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import patchNoteList from "@sparcs-clubs/web/constants/patchNote";
 import {
@@ -34,7 +36,7 @@ import postUserAgree from "../services/postUserAgree";
 export type Profile = {
   id: number;
   name: string;
-  type: string;
+  type: UserTypeEnum;
   email?: string;
 };
 interface AuthContextType {
@@ -67,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const isLatest = useMemo(() => {
-    const latestPatchNoteVersionSeen = localStorage.getItem(
+    const latestPatchNoteVersionSeen = getLocalStorageItem(
       LOCAL_STORAGE_KEY.LATEST_PATCH_NOTE_VERSION_SEEN,
     );
     const latestPatchNoteVersionActual = latestPatchNote.version;

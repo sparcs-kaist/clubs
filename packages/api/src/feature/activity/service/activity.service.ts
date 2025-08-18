@@ -224,7 +224,7 @@ export default class ActivityOldService {
   }
 
   async getExecutiveActivitiesClubs(
-    _query?: ApiAct023RequestQuery,
+    query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
     const date = new Date(); //new Date("2025-01-05");
     const semesterId = await this.semesterPublicService.loadId({
@@ -372,37 +372,37 @@ export default class ActivityOldService {
 
     // 쿼리와 페이지네이션 적용
 
-    // const clubNameFilteredItems = !query.clubName
-    //   ? items
-    //   : items.filter(
-    //       item =>
-    //         item.clubNameKr
-    //           .normalize("NFC")
-    //           .includes(query.clubName.normalize("NFC")) ||
-    //         item.clubNameEn
-    //           .normalize("NFC")
-    //           .includes(query.clubName.normalize("NFC")),
-    //     );
+    const clubNameFilteredItems = !query.clubName
+      ? items
+      : items.filter(
+          item =>
+            item.clubNameKr
+              .normalize("NFC")
+              .includes(query.clubName.normalize("NFC")) ||
+            item.clubNameEn
+              .normalize("NFC")
+              .includes(query.clubName.normalize("NFC")),
+        );
 
-    // const executiveNameFilteredItems = !query.executiveName
-    //   ? clubNameFilteredItems
-    //   : clubNameFilteredItems.filter(item =>
-    //       item.chargedExecutive?.name
-    //         .normalize("NFC")
-    //         .includes(query.executiveName.normalize("NFC")),
-    //     );
-    // const total = executiveNameFilteredItems.length;
-    // const executiveNameFilteredExecutiveProgresses = !query.executiveName
-    //   ? executiveProgresses
-    //   : executiveProgresses.filter(e =>
-    //       e.executiveName
-    //         .normalize("NFC")
-    //         .includes(query.executiveName.normalize("NFC")),
-    //     );
+    const executiveNameFilteredItems = !query.executiveName
+      ? clubNameFilteredItems
+      : clubNameFilteredItems.filter(item =>
+          item.chargedExecutive?.name
+            .normalize("NFC")
+            .includes(query.executiveName.normalize("NFC")),
+        );
+    const total = executiveNameFilteredItems.length;
+    const executiveNameFilteredExecutiveProgresses = !query.executiveName
+      ? executiveProgresses
+      : executiveProgresses.filter(e =>
+          e.executiveName
+            .normalize("NFC")
+            .includes(query.executiveName.normalize("NFC")),
+        );
 
-    // const pageStart = (query.pageOffset - 1) * query.itemCount;
-    // const pageEnd = pageStart + query.itemCount;
-    // const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
+    const pageStart = (query.pageOffset - 1) * query.itemCount;
+    const pageEnd = pageStart + query.itemCount;
+    const paginatedItems = executiveNameFilteredItems.slice(pageStart, pageEnd);
 
     // console.log(`Activities: ${JSON.stringify(activitiesOnActivityD)}`);
     // console.log(`ActivityDId: ${activityDId}`);
@@ -412,12 +412,10 @@ export default class ActivityOldService {
     // console.log(`SemesterId: ${semester.id}`);
     // console.log(`Date: ${date}`);
     return {
-      items,
-      executiveProgresses,
-      // items: paginatedItems,
-      // executiveProgresses: executiveNameFilteredExecutiveProgresses,
-      // total,
-      // offset: query.pageOffset,
+      items: paginatedItems,
+      executiveProgresses: executiveNameFilteredExecutiveProgresses,
+      total,
+      offset: query.pageOffset,
     };
   }
 
@@ -479,10 +477,17 @@ export default class ActivityOldService {
   async getExecutiveActivitiesExecutiveBrief(
     executiveId: number,
   ): Promise<ApiAct028ResponseOk> {
-    const [executive, activities] = await Promise.all([
-      this.userPublicService.fetchExecutiveSummary(executiveId),
-      this.activityRepository.fetchCommentedSummaries(executiveId),
-    ]);
+    const executive =
+      await this.userPublicService.fetchExecutiveSummary(executiveId);
+    let activities =
+      await this.activityRepository.fetchCommentedSummaries(executiveId);
+
+    // 중복된 activity 제거
+    // TODO: this.activityRepository.fetchCommentedSummaries가 중복된 activity를 반환하는 경우가 있는데, 이것이 정상인지 확인 필요
+    const uniqueActivities = new Map(
+      activities.map(activity => [activity.id, activity]),
+    );
+    activities = Array.from(uniqueActivities.values());
 
     // 필요한 모든 ID들을 수집
     const clubIds = new Set(activities.map(activity => activity.club.id));

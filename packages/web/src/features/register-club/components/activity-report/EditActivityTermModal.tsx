@@ -81,7 +81,11 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
           <FlexWrapper
             direction="column"
             gap={12}
-            style={{ width: "min(600px, 80vw)", height: "min(300px, 80vh)" }}
+            style={{
+              width: "min(600px, 80vw)",
+              height: "min(300px, 80vh)",
+              overflowY: "scroll",
+            }}
           >
             {fields.map((field, index) => (
               <FlexWrapper
@@ -161,7 +165,13 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
               </Typography>
             )}
             {isSomethingEmpty && (
-              <Typography fw="MEDIUM" fs={12} lh={18} color="RED.600">
+              <Typography
+                fw="MEDIUM"
+                fs={12}
+                lh={18}
+                color="RED.600"
+                style={{ marginBottom: fields.length === 4 ? "60px" : "0px" }}
+              >
                 기간을 입력하거나 해당 항목을 삭제해주세요.
               </Typography>
             )}

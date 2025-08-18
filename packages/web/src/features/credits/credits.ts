@@ -21,6 +21,53 @@ export interface SemesterCredit {
 
 const credits: SemesterCredit[] = [
   {
+    semester: "2025년 여름",
+    members: [
+      {
+        nickname: "hama",
+        name: "하승종",
+        role: "PM",
+        roleType: RoleType.PM,
+        comment: "최고로 바쁜 여름을 보내봅시다!",
+      },
+      {
+        nickname: "ava",
+        name: "주영미",
+        role: "APM(FE)",
+        roleType: RoleType.APM_FE,
+        comment: "버그야 우리 이제 그만 보자",
+      },
+      {
+        nickname: "eel",
+        name: "최우정",
+        role: "FE",
+        roleType: RoleType.member,
+        comment: "여름엔 코딩을 해야죠",
+      },
+      {
+        nickname: "tom",
+        name: "양지웅",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "더울때는 시원하게 동방에서 코딩하기",
+      },
+      {
+        nickname: "amet",
+        name: "윤인하",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "스팍스 너무 좋아요",
+      },
+      {
+        nickname: "kwabang",
+        name: "김경택",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "여름학기 수면 패턴 삭제 완료",
+      },
+    ],
+  },
+  {
     semester: "2025년 봄",
     members: [
       {
@@ -100,6 +147,13 @@ const credits: SemesterCredit[] = [
         role: "인턴",
         roleType: RoleType.intern,
         comment: "👶",
+      },
+      {
+        nickname: "lia",
+        name: "이리아",
+        role: "Designer",
+        roleType: RoleType.member,
+        comment: "Clubs 🎨🛠️",
       },
     ],
   },

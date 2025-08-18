@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { overlay } from "overlay-kit";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
 
@@ -21,8 +21,8 @@ import ChargedActivityModalTable, {
 } from "./ChargedActivityModalTable";
 
 interface ExecutiveActivityChargedTableProps {
-  activities: ApiAct023ResponseOk;
   searchText: string;
+  executives?: ApiAct023ResponseOk["executiveProgresses"];
 }
 
 const openAssignModal = (data: ExecutiveProgresses) => {
@@ -153,17 +153,9 @@ const columns = [
 
 const ExecutiveActivityChargedTable: React.FC<
   ExecutiveActivityChargedTableProps
-> = ({ activities, searchText }) => {
-  const sortedActivities = useMemo(
-    () =>
-      [...activities.executiveProgresses].sort((a, b) =>
-        a.executiveName < b.executiveName ? -1 : 1,
-      ),
-    [activities.executiveProgresses],
-  );
-
+> = ({ searchText, executives = [] }) => {
   const table = useReactTable({
-    data: sortedActivities,
+    data: executives,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -173,7 +165,7 @@ const ExecutiveActivityChargedTable: React.FC<
     enableSorting: false,
   });
 
-  const totalCount = sortedActivities.length;
+  const totalCount = executives.length;
 
   let countString = `총 ${totalCount}개`;
   if (table.getRowModel().rows.length !== totalCount) {

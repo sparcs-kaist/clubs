@@ -3,13 +3,13 @@ import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { MOldStudent } from "./old.student.model";
 
 export class VStudentSummary implements IStudentSummary {
-  id: number;
+  id!: number;
 
   userId?: number;
 
-  name: string;
+  name!: string;
 
-  studentNumber: string;
+  studentNumber!: string;
 
   // 첫 번째 생성자: IStudentSummary로부터 초기화
   constructor(StudentSummary: IStudentSummary);

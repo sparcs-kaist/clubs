@@ -19,13 +19,18 @@ const method = "GET";
 
 const requestParam = z.object({});
 
+const zStringBoolean = z
+  .string()
+  .toLowerCase()
+  .transform(x => x === "true")
+  .pipe(z.boolean());
+
 const requestQuery = z.object({
   division: z.coerce.string(),
-  clubNameLike: z.coerce.string(),
   year: z.coerce.number(),
   semesterName: z.string(),
-  provisional: z.coerce.boolean(),
-  regular: z.coerce.boolean(),
+  provisional: zStringBoolean,
+  regular: zStringBoolean,
 });
 
 const requestBody = z.object({});
@@ -33,9 +38,10 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.array(
     z.object({
-      division: zDivision.shape.name,
+      clubId: zClub.shape.id,
+      divisionName: zDivision.shape.name,
       district: zDistrict.shape.name,
-      clubType: z.nativeEnum(ClubTypeEnum),
+      clubTypeEnum: z.nativeEnum(ClubTypeEnum),
       clubNameKr: zClub.shape.nameKr,
       clubNameEn: zClub.shape.nameEn,
       fieldsOfActivity: z.string(),

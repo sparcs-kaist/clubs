@@ -3,6 +3,7 @@ import {
   int,
   mysqlTable,
   timestamp,
+  unique,
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
@@ -21,10 +22,9 @@ export const User = mysqlTable("user", {
 export const Student = mysqlTable("student", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("user_id").references(() => User.id),
-  number: int("number").unique(),
+  number: int("number").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -52,18 +52,23 @@ export const StudentT = mysqlTable(
   }),
 );
 
-export const Executive = mysqlTable("executive", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("user_id").references(() => User.id),
-  studentId: int("student_id")
-    .notNull()
-    .references(() => Student.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  deletedAt: timestamp("deleted_at"),
-});
+export const Executive = mysqlTable(
+  "executive",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id").references(() => User.id),
+    studentId: int("student_id")
+      .notNull()
+      .references(() => Student.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }),
+    createdAt: timestamp("created_at").defaultNow(),
+    deletedAt: timestamp("deleted_at"),
+  },
+  table => ({
+    studentIdUnique: unique("student_id_unique").on(table.studentId),
+  }),
+);
 
 export const ExecutiveStatusEnum = mysqlTable("executive_status_enum", {
   id: int("id").autoincrement().primaryKey(),
@@ -77,37 +82,28 @@ export const ExecutiveBureauEnum = mysqlTable("executive_bureau_enum", {
   name: varchar("name", { length: 31 }),
 });
 
-export const ExecutiveT = mysqlTable(
-  "executive_t",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    executiveId: int("executive_id")
-      .notNull()
-      .references(() => Executive.id),
-    executiveStatusEnum: int("executive_status_enum")
-      .notNull()
-      .references(() => ExecutiveStatusEnum.id),
-    executiveBureauEnum: int("executive_bureau_enum")
-      .notNull()
-      .references(() => ExecutiveBureauEnum.id),
-    startTerm: date("start_term").notNull(),
-    endTerm: date("end_term"),
-    createdAt: timestamp("created_at").defaultNow(),
-    deletedAt: timestamp("deleted_at"),
-  },
-  table => ({
-    StduentTStudentIdSemesterIdUniqueKey: uniqueIndex(
-      "executive_t_executive_id_start_term_unique_key",
-    ).on(table.executiveId, table.startTerm),
-  }),
-);
+export const ExecutiveT = mysqlTable("executive_t", {
+  id: int("id").autoincrement().primaryKey(),
+  executiveId: int("executive_id")
+    .notNull()
+    .references(() => Executive.id),
+  executiveStatusEnum: int("executive_status_enum")
+    .notNull()
+    .references(() => ExecutiveStatusEnum.id),
+  executiveBureauEnum: int("executive_bureau_enum")
+    .notNull()
+    .references(() => ExecutiveBureauEnum.id),
+  startTerm: date("start_term").notNull(),
+  endTerm: date("end_term"),
+  createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+});
 
 export const Professor = mysqlTable("professor", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("user_id").references(() => User.id),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique(),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -132,7 +128,6 @@ export const Employee = mysqlTable("employee", {
 
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
-  phoneNumber: varchar("phone_number", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   deletedAt: timestamp("deleted_at"),
 });

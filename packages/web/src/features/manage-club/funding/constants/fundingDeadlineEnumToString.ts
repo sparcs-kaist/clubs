@@ -13,6 +13,6 @@ export const fundingDeadlineEnumToString = (deadline?: FundingDeadlineEnum) => {
     case undefined:
       return "기간 없음";
     default:
-      throw new Error("Invalid funding deadline enum");
+      return "-";
   }
 };

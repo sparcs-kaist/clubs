@@ -10,9 +10,13 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 import { getSsoConfig } from "@sparcs-clubs/api/env";
 
 import { Request } from "../dto/auth.dto";
-import { SSOUser } from "../dto/sparcs-sso.dto";
+import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
 import { Client } from "../util/sparcs-sso";
+import {
+  type ExtractedUserInfo,
+  safeExtractUserInfoFromV2,
+} from "../util/user-info-extractor";
 
 @Injectable()
 export class AuthService {
@@ -61,37 +65,141 @@ export class AuthService {
     }
 
     const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
-    logger.info(JSON.stringify(ssoProfile));
+
+    // SSO 프로필 정보 로깅 (보안상 민감한 정보는 제외)
+    logger.info("SSO profile retrieved", {
+      uid: ssoProfile.uid,
+      sid: ssoProfile.sid,
+      hasKaistInfo: !!ssoProfile.kaist_info,
+      hasKaistV2Info: !!ssoProfile.kaist_v2_info,
+    });
 
     const isKaistIamLogin: boolean = true;
-    if (process.env.NODE_ENV !== "local")
-      if (!ssoProfile.kaist_info.ku_std_no || !ssoProfile.sid) {
-        return { isKaistIamLogin: false };
+    if (process.env.NODE_ENV !== "local") {
+      if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
+        logger.warn("Missing required SSO data", {
+          hasSid: !!ssoProfile.sid,
+          hasKaistV2Info: !!ssoProfile.kaist_v2_info,
+        });
+        return {
+          nextUrl: "/error/sso-data-missing",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
       }
+    }
 
-    let studentNumber = ssoProfile.kaist_info.ku_std_no;
-    let email = ssoProfile.kaist_info.mail?.replace("mailto:", "");
-    let { sid } = ssoProfile;
-    let name = ssoProfile.kaist_info.ku_kname;
-    let type = ssoProfile.kaist_info.ku_person_type || "Student";
-    let department = ssoProfile.kaist_info.ku_kaist_org_id;
+    // 로컬 환경에서는 ENV 기반 Mock 데이터를 우선 사용
+    let userInfo: ExtractedUserInfo;
+    let localSid = ssoProfile.sid;
+    let socpsCd = "S"; // 기본값
 
     if (process.env.NODE_ENV === "local") {
-      studentNumber = process.env.USER_KU_STD_NO;
-      email = process.env.USER_MAIL;
-      sid = process.env.USER_SID;
-      name = process.env.USER_KU_KNAME;
-      type = process.env.USER_KU_PERSON_TYPE;
-      department = process.env.USER_KU_KAIST_ORG_ID;
+      logger.info(
+        "Using local V2 mock data for development (priority over SSO data)",
+      );
+
+      // 로컬 환경에서는 ENV 기반 Mock 데이터 생성 및 사용
+      const mockV2Info: KaistV2Info = {
+        std_no: process.env.USER_V2_STD_NO!,
+        email: process.env.USER_V2_EMAIL!,
+        user_nm: process.env.USER_V2_USER_NM!,
+        socps_cd: process.env.USER_V2_SOCPS_CD!,
+        std_dept_id: process.env.USER_V2_STD_DEPT_ID!,
+        kaist_uid: process.env.USER_V2_KAIST_UID!,
+        user_id: process.env.USER_V2_USER_ID!,
+
+        // 로컬 개발용 기본값들
+        user_eng_nm: "Test User",
+        login_type: "L004",
+        std_dept_kor_nm: "테스트 학과",
+        std_dept_eng_nm: "Test Department",
+        busn_phone: null,
+        std_status_kor: "재학",
+        ebs_user_status_kor: null,
+        camps_div_cd: "D",
+        std_prog_code: "0",
+        kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
+      };
+
+      // Mock V2 정보에서 사용자 정보 추출
+      const localExtractionResult = safeExtractUserInfoFromV2(mockV2Info);
+      if (localExtractionResult.success) {
+        userInfo = localExtractionResult.data;
+        socpsCd = mockV2Info.socps_cd;
+
+        logger.info(
+          "Successfully extracted user info from local V2 mock data",
+          {
+            userType: userInfo.type,
+            socpsCd: mockV2Info.socps_cd,
+          },
+        );
+      } else {
+        logger.error("Failed to extract user info from local V2 mock data", {
+          error: localExtractionResult.error,
+        });
+        return {
+          nextUrl: "/error/invalid-login",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
+      }
+
+      localSid = process.env.USER_SID || localSid;
+    } else {
+      // 프로덕션 환경에서만 SSO에서 받은 V2 정보 파싱 및 검증
+      if (typeof ssoProfile.kaist_v2_info === "string") {
+        try {
+          ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
+        } catch (e) {
+          logger.error("Failed to parse kaist_v2_info", e);
+          return {
+            nextUrl: "/error/invalid-login",
+            refreshToken: null,
+            refreshTokenOptions: null,
+          };
+        }
+      }
+
+      // V2 정보 안전 추출 (검증 포함)
+      const extractionResult = safeExtractUserInfoFromV2(
+        ssoProfile.kaist_v2_info,
+      );
+      if (!extractionResult.success) {
+        logger.error("Invalid kaist_v2_info", {
+          error: extractionResult.error,
+          sid: ssoProfile.sid,
+        });
+        return {
+          nextUrl: "/error/invalid-login",
+          refreshToken: null,
+          refreshTokenOptions: null,
+        };
+      }
+
+      userInfo = extractionResult.data;
+      socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
+
+      logger.info("Successfully extracted user info from V2 data", {
+        sid: ssoProfile.sid,
+        userType: userInfo.type,
+        hasStudentNumber: !!userInfo.studentNumber,
+        hasEmail: !!userInfo.email,
+      });
     }
+
+    // 최종 사용자 정보
+    const { studentNumber, email, name, type, department } = userInfo;
 
     const user = await this.authRepository.findOrCreateUser(
       email,
       studentNumber,
-      sid,
+      localSid,
       name,
       type,
       department,
+      socpsCd,
     );
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){

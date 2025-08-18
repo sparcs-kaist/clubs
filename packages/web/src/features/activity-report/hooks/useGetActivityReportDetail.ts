@@ -11,6 +11,7 @@ import { CurrentActivityReport } from "../types/activityReport";
 
 const useGetActivityReportDetail = (
   activityId: number,
+  operatingCommitteeSecret: string | undefined,
 ): {
   data: CurrentActivityReport;
   isLoading: boolean;
@@ -24,6 +25,7 @@ const useGetActivityReportDetail = (
   } = useGetActivityReport(
     profile?.type ?? UserTypeEnum.Undergraduate,
     activityId,
+    operatingCommitteeSecret,
   );
   const {
     data: hasProfessor,
@@ -57,9 +59,12 @@ const useGetActivityReportDetail = (
         if (!hasProfessor) {
           return null;
         }
-        return activityReport.professorApprovedAt !== null
-          ? ProfessorApprovalEnum.Approved
-          : ProfessorApprovalEnum.Pending;
+
+        if (!activityReport.professorApprovedAt) {
+          return ProfessorApprovalEnum.Pending;
+        }
+
+        return ProfessorApprovalEnum.Approved;
       })(),
       professorApprovedAt:
         activityReport.professorApprovedAt !== null

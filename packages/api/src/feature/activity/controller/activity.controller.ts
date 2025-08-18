@@ -40,7 +40,10 @@ import apiAct022, {
   ApiAct022RequestUrl,
   type ApiAct022ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct022";
-import type { ApiAct023ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct023";
+import type {
+  ApiAct023RequestQuery,
+  ApiAct023ResponseOk,
+} from "@clubs/interface/api/activity/endpoint/apiAct023";
 import apiAct023 from "@clubs/interface/api/activity/endpoint/apiAct023";
 import type {
   ApiAct024RequestQuery,
@@ -78,6 +81,7 @@ import {
   type ApiAct001ResponseCreated,
   apiAct002,
   type ApiAct002RequestParam,
+  type ApiAct002RequestQuery,
   type ApiAct002ResponseOk,
   apiAct003,
   type ApiAct003RequestBody,
@@ -184,10 +188,12 @@ export default class ActivityController {
   async getStudentActivity(
     @GetStudent() user: GetStudent,
     @Param() param: ApiAct002RequestParam,
+    @Query() query: ApiAct002RequestQuery,
   ): Promise<ApiAct002ResponseOk> {
     const result = await this.activityService.getStudentActivity(
       param.activityId,
-      // user.studentId,
+      query.operatingCommitteeSecret,
+      user.studentId,
     );
 
     return result;
@@ -415,8 +421,11 @@ export default class ActivityController {
   @Executive()
   @Get("/executive/activities/clubs")
   @UsePipes(new ZodPipe(apiAct023))
-  async getExecutiveActivitiesClubs(): Promise<ApiAct023ResponseOk> {
-    const result = await this.activityOldService.getExecutiveActivitiesClubs();
+  async getExecutiveActivitiesClubs(
+    @Query() query: ApiAct023RequestQuery,
+  ): Promise<ApiAct023ResponseOk> {
+    const result =
+      await this.activityOldService.getExecutiveActivitiesClubs(query);
     return result;
   }
 

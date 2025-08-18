@@ -35,16 +35,32 @@ export class SSOUser {
   /** 사용자의 KAIST 고유 ID입니다. 연동하지 않았을 경우 빈 문자열입니다. */
   kaist_id!: string;
 
-  /** 사용자의 KAIST Portal 데이터입니다. */
+  /**
+   * @deprecated V1 KAIST Portal 데이터 - 하위 호환성을 위해 유지하지만 사용 안 함
+   * 실제로는 kaist_v2_info를 사용할 것
+   */
   kaist_info!: KaistInfo;
 
-  /** kaist_info를 업데이트한 날짜입니다. YYYY-MM-DD 형식의 날짜 또는 빈 문자열 값입니다. */
+  /**
+   * @deprecated kaist_info를 업데이트한 날짜 - 더 이상 사용 안 함
+   * YYYY-MM-DD 형식의 날짜 또는 빈 문자열 값입니다.
+   */
   kaist_info_time?: Date;
 
   /** 사용자의 SPARCS ID입니다. SPARCS 회원이 아닌 경우 빈 문자열 값입니다. */
   sparcs_id!: string;
+
+  /**
+   * V2 KAIST Portal 데이터 - 실제 사용
+   * 모든 사용자 정보는 이 필드에서 추출
+   */
+  kaist_v2_info!: KaistV2Info;
 }
 
+/**
+ * @deprecated V1 KAIST 정보 - 하위 호환성을 위해 유지
+ * 새로운 개발에서는 KaistV2Info를 사용할 것
+ */
 export class KaistInfo {
   ku_std_no!: string;
 
@@ -77,4 +93,60 @@ export class KaistInfo {
   ku_sex!: string;
 
   ku_kname!: string;
+}
+
+/**
+ * KAIST 구성원 정보 모델 (v2 기준)
+ */
+export class KaistV2Info {
+  /** KAIST UID (고유 사용자 ID) */
+  kaist_uid!: string;
+
+  /** 사용자 영문 이름 (예: 'Kwon, HyeokTae') */
+  user_eng_nm!: string;
+
+  /** 로그인 유형 (예: 'L004'은 일반적인 로그인 코드로 추정) */
+  login_type!: string;
+
+  /** 학과 이름 (한글, 예: '전기및전자공학부') */
+  std_dept_kor_nm!: string;
+
+  /** 학과 이름 (영문, 예: 'School of Electrical Engineering') */
+  std_dept_eng_nm!: string;
+
+  /** 사용자 이름 (한글, 예: '권혁태') */
+  user_nm!: string;
+
+  /** 사무실 전화번호 (학생은 일반적으로 null) */
+  busn_phone!: string | null;
+
+  /** 학적 상태 (한글, 예: '재학') */
+  std_status_kor!: string;
+
+  /** 학과 ID (조직 코드, 예: '4423') */
+  std_dept_id!: string;
+
+  /** EBS 시스템에서의 사용자 상태 (null일 수 있음) */
+  ebs_user_status_kor!: string | null;
+
+  /** 학번 (예: '20180036') */
+  std_no!: string;
+
+  /** 로그인 ID (포탈 계정 ID, 예: 'jj6014') */
+  user_id!: string;
+
+  /** 캠퍼스 구분 코드 (예: 'D'는 대전 캠퍼스로 추정) */
+  camps_div_cd!: string;
+
+  /** 소속 구분 코드 (예: 'S'는 학생) */
+  socps_cd!: string;
+
+  /** 이메일 주소 */
+  email!: string;
+
+  /** 학사 프로그램 코드 (예: '0'은 학부) */
+  std_prog_code!: string;
+
+  /** KAIST 조직 ID (학과 코드와 동일한 경우가 많음, 예: '4423') */
+  kaist_org_id!: string;
 }

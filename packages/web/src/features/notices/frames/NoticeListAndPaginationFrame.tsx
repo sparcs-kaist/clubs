@@ -25,6 +25,15 @@ const NoticeListAndPaginationFrameInner = styled.div`
   }
 `;
 
+const NoticeLastUpdateTimeListAndPagination = styled.div`
+  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
+  width: 100%;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
+  color: ${({ theme }) => theme.colors.BLACK};
+`;
+
 const NoticeListAndPaginationFrame = () => {
   const [page, setPage] = useState<number>(1);
   const { data, isLoading, isError } = useGetNotice(page, noticePerPage);
@@ -34,6 +43,10 @@ const NoticeListAndPaginationFrame = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <NoticeListAndPaginationFrameInner>
+        <NoticeLastUpdateTimeListAndPagination>
+          last update: {data?.lastUpdateTime.toLocaleDateString()}{" "}
+          {data?.lastUpdateTime.toLocaleTimeString()}
+        </NoticeLastUpdateTimeListAndPagination>
         <NoticeList infos={data?.notices ?? []} />
         <Pagination
           totalPage={totalPage}

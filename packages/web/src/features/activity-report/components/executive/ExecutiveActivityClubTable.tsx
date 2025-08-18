@@ -22,7 +22,7 @@ import {
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface ExecutiveActivityClubTableProps {
-  activities: ApiAct023ResponseOk;
+  activities?: ApiAct023ResponseOk["items"];
   searchText: string;
   selectedClubIds: number[];
   setSelectedClubIds: (clubIds: number[]) => void;
@@ -124,14 +124,14 @@ const columns = [
 ];
 
 const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
-  activities,
+  activities = [],
   searchText,
   selectedClubIds,
   setSelectedClubIds,
 }) => {
   const sortedActivities = useMemo(
-    () => [...activities.items].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
-    [activities.items],
+    () => [...activities].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
+    [activities],
   );
 
   const initialRowValues = useMemo(
@@ -181,13 +181,13 @@ const ExecutiveActivityClubTable: React.FC<ExecutiveActivityClubTableProps> = ({
 
   let countString = `총 ${totalCount}개`;
   if (selectedClubIds.length !== 0) {
-    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${totalCount}개`;
+    countString = `선택 항목 ${selectedClubIds.length}개 / 총 ${activities.length}개`;
   } else if (table.getRowModel().rows.length !== totalCount) {
     countString = `검색 결과 ${table.getRowModel().rows.length}개 / 총 ${totalCount}개`;
   }
 
   return (
-    <FlexWrapper direction="column" gap={8}>
+    <FlexWrapper direction="column" gap={8} style={{ width: "100%" }}>
       <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
         {countString}
       </Typography>

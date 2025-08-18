@@ -18,13 +18,20 @@ export const activityReportDetailQueryKey = (
   activityId: number,
 ) => [activityDetailGet(profile, activityId)];
 
-export const useGetActivityReport = (profile: string, activityId: number) =>
+export const useGetActivityReport = (
+  profile: string,
+  activityId: number,
+  operatingCommitteeSecret?: string,
+) =>
   useQuery<ApiAct002ResponseOk, Error>({
-    queryKey: activityReportDetailQueryKey(profile, activityId),
+    queryKey: [
+      operatingCommitteeSecret,
+      ...activityReportDetailQueryKey(profile, activityId),
+    ],
     queryFn: async (): Promise<ApiAct002ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(
         activityDetailGet(profile, activityId),
-        {},
+        { params: { operatingCommitteeSecret } },
       );
 
       // return apiAct002.responseBodyMap[200].parse(data);

@@ -65,6 +65,12 @@ export default class UserPublicService {
     return executives[0];
   }
 
+  async checkCurrentExecutiveById(executiveId) {
+    if (!(await this.executiveRepository.findExecutiveByUserId(executiveId))) {
+      throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
+    }
+  }
+
   /**
    * 현재 모든 집행부원을 가져옵니다.
    * 느려요~

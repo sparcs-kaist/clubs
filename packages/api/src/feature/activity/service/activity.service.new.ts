@@ -48,6 +48,7 @@ import {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import { ActivityNewRepository } from "@sparcs-clubs/api/feature/activity/repository/activity.new.repository";
@@ -61,6 +62,7 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 
@@ -77,6 +79,7 @@ export default class ActivityService {
     private readonly filePublicService: FilePublicService,
     private readonly registrationPublicService: RegistrationPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private readonly operationCommitteeService: OperationCommitteeService,
     private readonly userPublicService: UserPublicService,
   ) {}
 
@@ -163,12 +166,33 @@ export default class ActivityService {
   }
   async getStudentActivity(
     activityId: number,
-    // studentId: number,
+    operatingCommiteeSecret: string | undefined,
+    studentId: number,
   ): Promise<ApiAct002ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
 
+    logger.debug(
+      `getStudentActivity: activityId=${activityId}, operatingCommiteeSecret=${operatingCommiteeSecret}`,
+    );
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
-    // await this.checkIsStudentDelegate({ studentId, clubId: activity.clubId });
+    if (operatingCommiteeSecret === undefined) {
+      await this.clubPublicService.checkIsStudentDelegate({
+        studentId,
+        clubId: activity.club.id,
+      });
+    } else {
+      const activeKey =
+        await this.operationCommitteeService.findOperationCommitteeSecretKey();
+      if (activeKey.length === 0) {
+        throw new Error("No active OperationCommittee secret key found.");
+      }
+
+      const validSecret = activeKey[0].secretKey;
+      if (operatingCommiteeSecret !== validSecret) {
+        throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
+      }
+    }
+
     const participants = await Promise.all(
       activity.participants.map(async e => {
         const student = await this.userPublicService.getStudentById({
@@ -181,6 +205,7 @@ export default class ActivityService {
         };
       }),
     );
+
     // const duration = await this.activityRepository.selectDurationByActivityId(
     //   activity.id,
     // );
@@ -373,7 +398,7 @@ export default class ActivityService {
         club: { id: activity.club.id },
         editedAt: new Date(),
         professorApprovedAt: undefined,
-        commentedAt: new Date(),
+        commentedAt: undefined,
         commentedExecutive: undefined,
       }),
     );
@@ -904,10 +929,14 @@ export default class ActivityService {
             .getExecutiveAndExecutiveTByExecutiveId({
               executiveId: chargedExecutiveId,
             })
-            .then(e => ({
-              id: e.executive.id,
-              name: e.executive.name,
-            }));
+            .then(e =>
+              e === undefined
+                ? undefined
+                : {
+                    id: e.executive.id,
+                    name: e.executive.name,
+                  },
+            );
 
     const items: ApiAct024ResponseOk["items"] = await Promise.all(
       activities.map(async activity => {
@@ -925,29 +954,41 @@ export default class ActivityService {
           );
 
         const commentedExecutive =
-          lastFeedback === undefined
+          lastFeedback === undefined ||
+          lastFeedback.executive === undefined ||
+          lastFeedback.executive.id === null
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
                   executiveId: lastFeedback.executive.id,
                 })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
+                .then(e =>
+                  e === undefined
+                    ? undefined
+                    : {
+                        id: e.executive.id,
+                        name: e.executive.name,
+                      },
+                );
 
         const chargedExecutive =
           activity.chargedExecutive === undefined ||
-          activity.chargedExecutive === null
+          activity.chargedExecutive === null ||
+          activity.chargedExecutive.id === null ||
+          activity.chargedExecutive.id === undefined
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
                   executiveId: activity.chargedExecutive.id,
                 })
-                .then(e => ({
-                  id: e.executive.id,
-                  name: e.executive.name,
-                }));
+                .then(e =>
+                  e === undefined
+                    ? undefined
+                    : {
+                        id: e.executive.id,
+                        name: e.executive.name,
+                      },
+                );
 
         return {
           activityId: activity.id,
@@ -1050,7 +1091,7 @@ export default class ActivityService {
         createdAt: e.createdAt,
       })),
       updatedAt: activity.editedAt,
-      professorApprovedAt: activity.commentedAt,
+      professorApprovedAt: activity.professorApprovedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -1110,7 +1151,7 @@ export default class ActivityService {
         createdAt: e.createdAt,
       })),
       updatedAt: activity.editedAt,
-      professorApprovedAt: activity.commentedAt,
+      professorApprovedAt: activity.professorApprovedAt,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };

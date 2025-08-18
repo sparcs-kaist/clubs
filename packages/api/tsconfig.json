@@ -1,6 +1,9 @@
 {
+  "$schema": "http://json.schemastore.org/tsconfig",
   "extends": "@clubs/typescript-config/nest-js.json",
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -17,16 +20,9 @@
     "noFallthroughCasesInSwitch": false,
     "preserveWatchOutput": true,
     "paths": {
-      "@sparcs-clubs/api/*": [
-        "./src/*"
-      ]
+      "@sparcs-clubs/api/*": ["./src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "eslint.config.mjs"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["**/*.ts", "eslint.config.mjs"],
+  "exclude": ["node_modules", "legacy_source"]
 }

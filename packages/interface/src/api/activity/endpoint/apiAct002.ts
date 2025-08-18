@@ -14,7 +14,9 @@ const requestParam = z.object({
   activityId: zActivity.shape.id,
 });
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  operatingCommitteeSecret: z.string().max(255).optional(),
+});
 
 const requestBody = z.object({});
 
@@ -105,6 +107,7 @@ registry.registerPath({
   summary: "ACT-002: 활동보고서의 활동을 조회합니다.",
   request: {
     params: requestParam,
+    query: requestQuery,
     body: {
       content: {
         "application/json": {

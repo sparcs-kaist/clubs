@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
+import { zQueryArray } from "@clubs/interface/common/zodUtil";
 
 /**
  * @version v0.1
@@ -16,7 +17,7 @@ export const ApiFnd016RequestUrl = "/executive/fundings/clubs/executives";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  clubIds: z.array(zClub.pick({ id: true }).shape.id),
+  clubIds: zQueryArray(zClub.pick({ id: true }).shape.id),
 });
 
 const requestBody = z.object({});

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -34,16 +35,31 @@ const NoticeWrapper = styled.div`
   }
 `;
 
+const NoticeLastUpdateTime = styled.div`
+  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
+  margin-left: 24px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
+  color: ${({ theme }) => theme.colors.BLACK};
+`;
+
 const NoticeSectionFrame: React.FC = () => {
   const { data, isLoading, isError } = useGetNotice(
     noticePageOffset,
     noticeItemCount,
   );
 
+  const t = useTranslations();
+
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <NoticeSectionFrameInner>
-        <MoreSectionTitle title="공지사항" path={paths.NOTICE.path} />
+        <MoreSectionTitle title={t("common.notice")} path={paths.NOTICE.path} />
+        <NoticeLastUpdateTime>
+          last update: {data?.lastUpdateTime?.toLocaleDateString() ?? "-"}{" "}
+          {data?.lastUpdateTime?.toLocaleTimeString() ?? ""}
+        </NoticeLastUpdateTime>
         <NoticeWrapper>
           {data?.notices.map(noticeInfo => (
             <Link

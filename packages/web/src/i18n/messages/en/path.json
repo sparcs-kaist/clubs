@@ -1,5 +1,4 @@
 {
-    "path": {
         "동아리": "Clubs",
         "공지사항": "Notice",
         "의결기구": "Meeting",
@@ -12,12 +11,12 @@
         "로그인": "Login",
         "동아리 목록": "Clubs",
         "나의 동아리": "My Clubs",
-        "동아리 등록 신청": "Register ClubOld",
-        "대표 동아리 관리": "Manage ClubOld",
+        "동아리 등록 신청": "Register Club",
+        "대표 동아리 관리": "Manage Club",
         "회원 등록 신청": "Register Member",
         "활동 보고서": "Activity Report",
         "지원금": "Funding",
-        "전동대회": "All ClubOld Representative Meeting",
+        "전동대회": "All Club Representative Meeting",
         "확대운영위원회": "Expanded Operating Committee",
         "운영위원회": "Operating Committee",
         "분과회의": "Division Meeting",
@@ -29,5 +28,4 @@
         "공용공간 비정기사용": "Common Space",
         "마이페이지": "My Page",
         "로그아웃": "Logout"
-    }
 }

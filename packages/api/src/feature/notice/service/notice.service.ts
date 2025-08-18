@@ -22,62 +22,22 @@ export interface PostCrawlResult {
   link: string;
 }
 
+enum UpdatePeriodEnum {
+  After3Pages = -10,
+  Among3Pages = -5,
+}
+
 function findArticleId(link: string): number {
   const match = link.match(/articleid=[0-9]+/i);
   if (match) {
     return Number.parseInt(match[0].replace("articleid=", ""));
   }
 
-  // TODO: Notice 최종 업데이트 시간 띄우기 할 때 이 부분 구체화
-  // articleId: { gt:0 } 또한 Notice 최종 업데이트 시간 띄울 때 필요한 조건식
   return -1;
 }
-
 @Injectable()
 export class NoticeService {
   constructor(private readonly noticeRepository: NoticeRepository) {}
-
-  async getAllNotices() {
-    return this.noticeRepository.find({
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-  }
-
-  async getNotices(pageOffset: number, itemCount: number) {
-    const notices = await this.noticeRepository.find({
-      pagination: {
-        offset: pageOffset,
-        itemCount,
-      },
-      articleId: {
-        gt: 0,
-      },
-      orderBy: {
-        articleId: OrderByTypeEnum.DESC,
-      },
-    });
-
-    if (!notices) {
-      throw new HttpException(
-        "[NoticeService] Error occurs while getting notices",
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const serviceResponse: ApiNtc001ResponseOK = {
-      notices,
-      total: await this.noticeRepository.count({
-        articleId: {
-          gt: 0,
-        },
-      }),
-      offset: pageOffset,
-    };
-
-    return serviceResponse;
-  }
 
   private async tryFetch(pageNum: number): Promise<string> {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -113,15 +73,16 @@ export class NoticeService {
     rows.forEach(element => {
       const titleElement = element.querySelector(".article");
       if (titleElement !== null) {
-        let title = titleElement.textContent;
+        let title = titleElement.textContent || "";
         title = title.replace(/\s+/g, " ").trim();
         const link = urlPrefix + titleElement.getAttribute("href");
         const articleId = findArticleId(link);
 
-        let author = element.querySelector(".td_name .p-nick a").textContent;
+        let author =
+          element.querySelector(".td_name .p-nick a")?.textContent || "";
         author = author.replace(/\s+/g, " ").trim();
 
-        let date = element.querySelector(".td_date").textContent;
+        let date = element.querySelector(".td_date")?.textContent || "";
         date = date.replace(/\s+/g, " ").trim();
 
         // 시간만 제공되는 경우 오늘 날짜로 설정
@@ -162,9 +123,10 @@ export class NoticeService {
       const html = await this.tryFetch(pagenum);
       // 공지가 총 몇 개 있는지
       let totalCount = Number.parseInt(
-        html
-          .match(/search\.totalCount=[0-9]+(?=&)/)[0]
-          .replace("search.totalCount=", ""),
+        (html.match(/search\.totalCount=[0-9]+(?=&)/) || ["0"])[0].replace(
+          "search.totalCount=",
+          "",
+        ),
       );
       const posts = this.getPostsFromHTML(html);
 
@@ -179,9 +141,9 @@ export class NoticeService {
         // eslint-disable-next-line no-await-in-loop
         const nextPage = await this.tryFetch(pagenum);
         totalCount = Number.parseInt(
-          nextPage
-            .match(/search\.totalCount=[0-9]+(?=&)/)[0]
-            .replace("search.totalCount=", ""),
+          (nextPage.match(/search\.totalCount=[0-9]+(?=&)/) || [
+            "0",
+          ])[0].replace("search.totalCount=", ""),
         );
       }
       const postOfPages = await Promise.all(
@@ -206,7 +168,9 @@ export class NoticeService {
   }
 
   async updateNotices(maxPages: number) {
-    const noticesFromDB = (await this.noticeRepository.find({})).map(e => ({
+    const noticesFromDB = (
+      await this.noticeRepository.find({ articleId: { gt: 0 } })
+    ).map(e => ({
       createdAt: e.createdAt,
       author: e.author,
       title: e.title,
@@ -218,8 +182,8 @@ export class NoticeService {
     }));
     const crawlResults = await this.crawlNotices(maxPages);
 
-    const updates = [];
-    const inserts = [];
+    const updates: (PostCrawlResult & { id: number; createdAt: Date })[] = [];
+    const inserts: PostCrawlResult[] = [];
     const deletes = [];
 
     crawlResults.forEach(crawlResult => {
@@ -291,5 +255,88 @@ export class NoticeService {
         articleId: post.articleId,
       });
     });
+
+    const isAfter3Pages: boolean = maxPages > 3;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+
+    // articleId를 음수로 해서 로그를 남깁니다.
+    await this.noticeRepository.create({
+      articleId: negativePeriod,
+      date: new Date(),
+      link: "",
+      createdAt: new Date(),
+      author: "Notice Cron",
+      title: `Notices Last Update TIme(~3)=${new Date()}`,
+    });
+    if (isAfter3Pages) {
+      await this.noticeRepository.create({
+        articleId: UpdatePeriodEnum.Among3Pages,
+        date: new Date(),
+        link: "",
+        createdAt: new Date(),
+        author: "Notice Cron",
+        title: `Notices Last Update TIme(4~)=${new Date()}`,
+      });
+    }
+  }
+
+  async getLastUpdateTime(pageOffset: number, itemCount: number) {
+    const isAfter3Pages: boolean = pageOffset + itemCount > 3 * userDisplay;
+    const negativePeriod = isAfter3Pages
+      ? UpdatePeriodEnum.After3Pages
+      : UpdatePeriodEnum.Among3Pages;
+    const lastUpdateRow = await this.noticeRepository.find({
+      articleId: negativePeriod,
+      orderBy: {
+        createdAt: OrderByTypeEnum.DESC,
+      },
+      pagination: {
+        itemCount: 1,
+        offset: 1,
+      },
+    });
+    if (lastUpdateRow.length === 0) {
+      const time = new Date();
+      time.setTime(time.getTime() + 600000 * negativePeriod);
+      return time;
+    }
+
+    // 그냥 lastUpdateRow[0].date로 하려고 했는데 그러면 날짜만 남고 시간이 짤려서 이렇게 했습니다
+    return new Date(lastUpdateRow[0].title.split("=")[1]);
+  }
+
+  async getNotices(pageOffset: number, itemCount: number) {
+    const notices = await this.noticeRepository.find({
+      articleId: { gt: 0 },
+      pagination: {
+        offset: pageOffset,
+        itemCount,
+      },
+      orderBy: {
+        articleId: OrderByTypeEnum.DESC,
+      },
+    });
+
+    if (!notices) {
+      throw new HttpException(
+        "[NoticeService] Error occurs while getting notices",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const serviceResponse: ApiNtc001ResponseOK = {
+      notices,
+      total: await this.noticeRepository.count({
+        articleId: {
+          gt: 0,
+        },
+      }),
+      offset: pageOffset,
+      lastUpdateTime: await this.getLastUpdateTime(pageOffset, itemCount),
+    };
+
+    return serviceResponse;
   }
 }

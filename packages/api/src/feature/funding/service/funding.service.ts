@@ -32,8 +32,9 @@ import {
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
 import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import {
-  ApiFnd009RequestParam,
-  ApiFnd009ResponseOk,
+  type ApiFnd009RequestParam,
+  type ApiFnd009RequestQuery,
+  type ApiFnd009ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd009";
 import {
   ApiFnd010RequestParam,
@@ -245,7 +246,11 @@ export default class FundingService {
       ...comment,
       executive: commentedExecutive.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "0000000",
+      },
     }));
 
     return { funding, comments: updatedComments };
@@ -275,7 +280,11 @@ export default class FundingService {
       ...comment,
       executive: executives.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "0000000",
+      },
     }));
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }
@@ -350,8 +359,8 @@ export default class FundingService {
   private async fetchFiles(items: undefined): Promise<undefined>;
   private async fetchFiles(items: { id: string }[]): Promise<IFileSummary[]>;
   private async fetchFiles<T extends { files: { id: string }[] }>(
-    items: T,
-  ): Promise<Omit<T, "files"> & { files: IFileSummary[] }>;
+    items: T | undefined,
+  ): Promise<(Omit<T, "files"> & { files: IFileSummary[] }) | undefined>;
 
   // 구현부
   private async fetchFiles<T extends { files: { id: string }[] }>(
@@ -529,17 +538,11 @@ export default class FundingService {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
     const semesterId = await this.semesterPublicService.loadId();
-    const [activityDId1, activityDId2] = await Promise.all([
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 1 }),
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 2 }),
-    ]);
+    const activityDId = await this.activityDurationPublicService.loadId({
+      semesterId,
+    });
+    const fundings = await this.fundingRepository.fetchSummaries(activityDId);
 
-    // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
-    const [fundings1, fundings2] = await Promise.all([
-      this.fundingRepository.fetchSummaries(activityDId1),
-      this.fundingRepository.fetchSummaries(activityDId2),
-    ]);
-    const fundings = [...fundings1, ...fundings2];
     // const activityD = await this.activityDurationPublicService.load();
     // const fundings = await this.fundingRepository.fetchSummaries(
     //   activityD.id - 1, // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
@@ -714,20 +717,22 @@ export default class FundingService {
   async getExecutiveFundingsClubBrief(
     executiveId: IExecutive["id"],
     param: ApiFnd009RequestParam,
+    query: ApiFnd009RequestQuery,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
     const semesterId = await this.semesterPublicService.loadId();
-    const [activityDId1, activityDId2] = await Promise.all([
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 1 }),
-      this.activityDurationPublicService.loadId({ semesterId: semesterId - 2 }),
-    ]);
+    const activityDId =
+      query.activityDurationId === undefined
+        ? await this.activityDurationPublicService.loadId({
+            semesterId,
+          })
+        : query.activityDurationId;
 
     // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
-    const [fundings1, fundings2] = await Promise.all([
-      this.fundingRepository.fetchSummaries(param.clubId, activityDId1),
-      this.fundingRepository.fetchSummaries(param.clubId, activityDId2),
-    ]);
-    const fundings = [...fundings1, ...fundings2];
+    const fundings = await this.fundingRepository.fetchSummaries(
+      param.clubId,
+      activityDId,
+    );
 
     const club = await this.clubPublicService.fetchSummary(param.clubId);
 
@@ -942,7 +947,11 @@ export default class FundingService {
       ...comment,
       executive: executives.find(
         executive => executive.id === comment.executive.id,
-      ),
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "알 수 없는 학번",
+      },
     }));
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }

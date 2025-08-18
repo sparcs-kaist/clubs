@@ -14,7 +14,7 @@ import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 import { Activity } from "./activity.schema";
 import { Club } from "./club.schema";
 import { ActivityD } from "./semester.schema";
-import { Executive, StudentT } from "./user.schema";
+import { Executive, Student } from "./user.schema";
 
 export const Funding = mysqlTable(
   "funding",
@@ -370,10 +370,10 @@ export const FundingTransportationPassenger = mysqlTable(
       columns: [table.fundingId],
       foreignColumns: [Funding.id],
     }),
-    studentTForeignKey: foreignKey({
+    studentForeignKey: foreignKey({
       name: "transportation_passenger_student_id_fk",
       columns: [table.studentId],
-      foreignColumns: [StudentT.id],
+      foreignColumns: [Student.id],
     }),
   }),
 );

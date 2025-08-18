@@ -16,13 +16,18 @@ const ExecutiveActivityReportFrame = () => {
   const [isClubView, setIsClubView] = useState<boolean>(
     window.history.state.isClubView ?? true,
   );
-  const [searchText, setSearchText] = useState<string>("");
-  const { data, isLoading, isError } = useGetExecutiveActivities();
+  const [searchText, setSearchText] = useState("");
 
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
     ChargedChangeClubProps[]
   >([]);
+
+  // TODO. 우선 급한대로 야매로 처리함 (추후에 페이지네이션 백에서 삭제하기)
+  const { data, isLoading, isError } = useGetExecutiveActivities({
+    pageOffset: 1,
+    itemCount: 150,
+  });
 
   useEffect(() => {
     window.history.replaceState({ isClubView }, "");
@@ -99,7 +104,11 @@ const ExecutiveActivityReportFrame = () => {
         <SearchInput
           searchText={searchText}
           handleChange={setSearchText}
-          placeholder=""
+          placeholder={
+            isClubView
+              ? "동아리 이름을 입력해주세요"
+              : "담당자 이름을 입력해주세요"
+          }
         />
         {isClubView && (
           <Button
@@ -112,14 +121,14 @@ const ExecutiveActivityReportFrame = () => {
       </FlexWrapper>
       {isClubView ? (
         <ExecutiveActivityClubTable
-          activities={data ?? { items: [], executiveProgresses: [] }}
+          activities={data?.items}
           searchText={searchText}
           selectedClubIds={selectedClubIds}
           setSelectedClubIds={setSelectedClubIds}
         />
       ) : (
         <ExecutiveActivityChargedTable
-          activities={data ?? { items: [], executiveProgresses: [] }}
+          executives={data?.executiveProgresses}
           searchText={searchText}
         />
       )}
