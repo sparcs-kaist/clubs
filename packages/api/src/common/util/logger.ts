@@ -1,94 +1,82 @@
-import path from "path";
+import * as Sentry from "@sentry/node";
+import os from "os";
 import { createLogger, format, transports } from "winston";
-import DailyRotateFileTransport from "winston-daily-rotate-file";
+import SentryTransport from "winston-transport-sentry-node";
 
 import { env } from "@sparcs-clubs/api/env";
 
-// logger에서 사용할 포맷들을 정의합니다.
-const baseFormat = format.combine(
+const isReadyForSentryInProduction =
+  env.SENTRY_DSN && env.NODE_ENV === "production";
+
+// Sentry 초기화 (production 환경에서만)
+if (isReadyForSentryInProduction) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: 1.0,
+  });
+  Sentry.setTag("hostname", os.hostname());
+}
+
+// 콘솔 출력용 포맷
+const consoleFormat = format.combine(
   format.timestamp({ format: "YYYY-MM-DD HH:mm:ss(UTCZ)" }),
   format.errors({ stack: true }),
-  format.splat(),
-  format.json(),
-);
-const finalFormat = format.printf(
-  ({ level, message, timestamp, stack }) =>
-    `${timestamp} [${level}]: ${message} ${
-      level === "error" && stack !== undefined ? stack : ""
-    }`,
+  format.printf(
+    ({ level, message, timestamp, stack }) =>
+      `${timestamp} [${level}]: ${message} ${
+        level === "error" && stack !== undefined ? stack : ""
+      }`,
+  ),
 );
 
-// 파일 출력 시 사용될 포맷. 색 관련 특수문자가 파일에 쓰여지는 것을 방지하기 위해 색상이 표시되지 않습니다.
-const uncolorizedFormat = format.combine(
-  baseFormat,
-  format.uncolorize(),
-  finalFormat,
-);
-
-// 콘솔 출력 시 사용될 포맷. 색상이 표시됩니다.
+// 개발 환경용 색상 포맷
 const colorizedFormat = format.combine(
-  baseFormat,
   format.colorize({ all: true }),
-  finalFormat,
+  consoleFormat,
 );
-
-// 로그 파일명에 포함되는 시각
-const datePattern = "YYYY-MM-DD-HH";
-// 로그 파일당 최대 크기(=5MB).
-const maxSize = 5 * 1024 * 1024;
 
 /**
  * console.log()와 console.error() 대신 사용되는 winston Logger 객체입니다.
  *
- * - "production" 환경: 모든 로그는 파일 시스템에 저장되고, 오류 메시지는 콘솔로도 출력됩니다.
- * - "development" & "test" 환경: 모든 로그는 콘솔에 출력됩니다.
+ * - "production" 환경: 모든 로그는 콘솔에 출력되고, error 레벨만 Sentry로도 전송됩니다.
+ * - 기타 환경: 모든 로그는 콘솔에만 출력됩니다 (Sentry 전송 없음).
  *
  * @method info(message: string, callback: winston.LogCallback) - 일반적인 정보(API 접근 등) 기록을 위해 사용합니다.
  * @method error(message: string, callback: winston.LogCallback)  - 오류 메시지를 기록하기 위해 사용합니다.
  */
 const logger =
   env.NODE_ENV === "production"
-    ? // "production" 환경에서 사용되는 Logger 객체
-      createLogger({
-        level: "info",
-        format: uncolorizedFormat,
+    ? createLogger({
+        level: "info", // production 환경에서는 info 레벨부터 출력
+        format: consoleFormat, // production 환경에서는 색상 없는 포맷
         defaultMeta: { service: "clubs" },
         transports: [
-          // 전체 로그("info", "warn", "error")를 파일로 출력합니다.
-          new DailyRotateFileTransport({
-            level: "info",
-            filename: path.resolve("logs/%DATE%-combined.log"),
-            datePattern,
-            maxSize,
-          }),
-          // 예외 처리로 핸들링 된 오류 로그("error")를 파일과 콘솔에 출력합니다.
-          new DailyRotateFileTransport({
-            level: "error",
-            filename: path.resolve("logs/%DATE%-error.log"),
-            datePattern,
-            maxSize,
-          }),
-          new transports.Console({
-            level: "error",
-          }),
-        ],
-        exceptionHandlers: [
-          // 예외 처리가 되지 않은 오류 로그("error")를 파일과 콘솔에 출력합니다.
-          new DailyRotateFileTransport({
-            filename: path.resolve("logs/%DATE%-unhandled.log"),
-            datePattern,
-            maxSize,
-          }),
           new transports.Console(),
+          // 경고 레벨 이상만 Sentry로 전송
+          new SentryTransport({
+            level: "warn",
+          }),
         ],
+        exceptionHandlers: [new transports.Console()],
       })
-    : // "development", "test" 환경에서 사용되는 Logger 객체
-      createLogger({
-        level: "debug",
-        format: colorizedFormat,
+    : createLogger({
+        level: "debug", // 개발 환경에서는 debug 레벨까지 출력
+        format: colorizedFormat, // 개발 환경에서는 색상 포맷 사용
         defaultMeta: { service: "clubs" },
         transports: [new transports.Console()],
         exceptionHandlers: [new transports.Console()],
       });
+
+// 예외 처리가 되지 않은 오류를 Sentry로 전송 (production 환경에서만)
+if (isReadyForSentryInProduction) {
+  process.on("uncaughtException", error => {
+    Sentry.captureException(error);
+  });
+
+  process.on("unhandledRejection", reason => {
+    Sentry.captureException(reason);
+  });
+}
 
 export default logger;
