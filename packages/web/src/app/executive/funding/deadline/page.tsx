@@ -44,21 +44,21 @@ const ExecutiveFundingDeadline = () => {
   };
 
   return (
-    <FlexWrapper direction="column" gap={30}>
+    <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[{ name: "집행부원 대시보드", path: "/executive" }]}
         title="지원금 기간 관리"
+        action={
+          <IconButton
+            type="default"
+            icon="add"
+            onClick={openFundingDeadlineModal}
+          >
+            지원금 기간 추가
+          </IconButton>
+        }
         enableLast
       />
-      <FlexWrapper direction="row" justify="flex-end">
-        <IconButton
-          type="default"
-          icon="add"
-          onClick={openFundingDeadlineModal}
-        >
-          지원금 기간 추가
-        </IconButton>
-      </FlexWrapper>
       <FundingDeadlineManagementPage />
     </FlexWrapper>
   );
