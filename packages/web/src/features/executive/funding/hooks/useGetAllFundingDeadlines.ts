@@ -10,19 +10,21 @@ import { fundingDeadlinesQueryFn } from "../services/useGetFundingDeadlines";
 type ActivityDuration = ApiSem012ResponseOK["activityDurations"][number];
 
 const useGetAllFundingDeadlines = (activityDurations: ActivityDuration[]) => {
+  const reversedActivityDurations = [...activityDurations].reverse();
+
   const queries = useQueries({
-    queries: activityDurations.map(activityDuration => ({
+    queries: reversedActivityDurations.map(activityDuration => ({
       queryKey: [apiSem016.url, activityDuration.id],
       queryFn: () =>
         fundingDeadlinesQueryFn({ activityDId: activityDuration.id }),
-      enabled: activityDurations.length > 0,
+      enabled: reversedActivityDurations.length > 0,
     })),
   });
 
   const isLoading = queries.some(query => query.isLoading);
   const isError = queries.some(query => query.isError);
   const data = queries.map((query, index) => ({
-    activityDuration: activityDurations[index],
+    activityDuration: reversedActivityDurations[index],
     fundingDeadlines: query.data,
   }));
 
