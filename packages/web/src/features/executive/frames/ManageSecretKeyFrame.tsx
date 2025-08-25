@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -12,14 +12,21 @@ import { useOperationCommitteeSecret } from "../hooks/useOperationCommitteeSecre
 
 const OperationCommitteeSecretManager: React.FC = () => {
   const {
-    currentKey,
-    secretData,
+    currentKey: hookCurrentKey,
     isLoading,
     error,
     createSecretKey,
     deleteSecretKey,
     refetch,
   } = useOperationCommitteeSecret();
+
+  // 로컬 상태로 currentKey 관리
+  const [currentKey, setCurrentKey] = useState<string | null>(hookCurrentKey);
+
+  // 훅에서 받은 currentKey가 변경될 때 로컬 상태 동기화
+  useEffect(() => {
+    setCurrentKey(hookCurrentKey);
+  }, [hookCurrentKey]);
 
   const isNotFound =
     axios.isAxiosError(error) && error.response?.status === 404;
@@ -38,7 +45,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
     try {
       await createSecretKey();
       window.alert("새 비밀키가 생성되었습니다.");
-      // 생성 성공 후 확실하게 상태를 새로고침
+      // 생성 후 상태를 새로고침하여 새로운 키 가져오기
       await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
@@ -58,7 +65,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
     try {
       await createSecretKey();
       window.alert("비밀키가 갱신되었습니다.");
-      // 갱신 성공 후 확실하게 상태를 새로고침
+      // 갱신 후 상태를 새로고침하여 새로운 키 가져오기
       await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
@@ -77,9 +84,9 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await deleteSecretKey();
+      // 삭제 후 즉시 로컬 상태를 null로 설정하여 UI 즉시 업데이트
+      setCurrentKey(null);
       window.alert("비밀키가 삭제되었습니다.");
-      // 삭제 성공 후 확실하게 상태를 새로고침
-      await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
         console.error("비밀키 삭제 실패:", e);
@@ -264,13 +271,6 @@ const OperationCommitteeSecretManager: React.FC = () => {
             </div>
           )}
         </FlexWrapper>
-
-        {/* 개발 중 키 개수 확인용 */}
-        {process.env.NODE_ENV === "development" && secretData && (
-          <div style={{ fontSize: 12, color: "#6B7280" }}>
-            (dev) activeKey 개수: {secretData.activeKey?.length ?? 0}
-          </div>
-        )}
       </FlexWrapper>
     </AsyncBoundary>
   );
