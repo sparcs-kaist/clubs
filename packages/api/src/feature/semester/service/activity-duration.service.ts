@@ -103,6 +103,7 @@ export class ActivityDurationService {
             id: deadline.id,
             semesterId: duration.semester.id,
             activityDId: duration.id,
+            activityDurationName: duration.name,
             deadlineEnum: deadline.deadlineEnum,
             startTerm: deadline.startTerm,
             endTerm: deadline.endTerm,
