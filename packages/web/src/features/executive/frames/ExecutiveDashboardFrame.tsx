@@ -9,7 +9,9 @@ import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
+import OperationCommitteeSecretManager from "../components/OperationCommitteeSecretManager";
 import ManageMemberFrame from "./ManageMemberFrame";
+import ManageSecretKeyFrame from "./ManageSecretKeyFrame";
 import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
@@ -36,6 +38,20 @@ const ExecutiveDashboardFrame = () => {
       </Banner>
       <ManageSemesterFrame />
       <ManageMemberFrame />
+      <ManageSecretKeyFrame />
+
+      {/* 비밀키 생성용 */}
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>비밀키 관리</SectionTitle>
+        <DashboardSectionInner>
+          <FlexWrapper
+            direction="row"
+            gap={60}
+            style={{ justifyContent: "space-between" }}
+          />
+          <OperationCommitteeSecretManager />
+        </DashboardSectionInner>
+      </FlexWrapper>
 
       <FlexWrapper direction="column" gap={20}>
         <SectionTitle>기간 관리</SectionTitle>
