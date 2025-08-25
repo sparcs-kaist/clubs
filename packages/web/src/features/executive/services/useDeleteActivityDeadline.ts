@@ -6,6 +6,7 @@ import {
   ApiSem010ResponseOK,
 } from "@clubs/interface/api/semester/apiSem010";
 
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 const useDeleteActivityDeadline = () => {
@@ -21,6 +22,9 @@ const useDeleteActivityDeadline = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activityDeadlines"] });
+    },
+    onError: () => {
+      errorHandler("활동보고서 제출 기한 삭제에 실패하였습니다");
     },
   });
 };
