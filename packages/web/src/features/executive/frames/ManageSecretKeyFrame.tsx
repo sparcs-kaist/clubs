@@ -37,9 +37,9 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await createSecretKey();
-      // 생성 성공 후 즉시 상태를 새로고침
-      refetch();
       window.alert("새 비밀키가 생성되었습니다.");
+      // 생성 성공 후 확실하게 상태를 새로고침
+      await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
         console.error("비밀키 생성 실패:", e);
@@ -57,9 +57,9 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await createSecretKey();
-      // 갱신 성공 후 즉시 상태를 새로고침
-      refetch();
       window.alert("비밀키가 갱신되었습니다.");
+      // 갱신 성공 후 확실하게 상태를 새로고침
+      await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
         console.error("비밀키 갱신 실패:", e);
@@ -78,8 +78,8 @@ const OperationCommitteeSecretManager: React.FC = () => {
     try {
       await deleteSecretKey();
       window.alert("비밀키가 삭제되었습니다.");
-      // 삭제 성공 후 즉시 상태를 새로고침
-      refetch();
+      // 삭제 성공 후 확실하게 상태를 새로고침
+      await refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
         console.error("비밀키 삭제 실패:", e);
