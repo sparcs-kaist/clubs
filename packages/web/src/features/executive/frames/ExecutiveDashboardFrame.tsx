@@ -36,7 +36,6 @@ const ExecutiveDashboardFrame = () => {
       </Banner>
       <ManageSemesterFrame />
       <ManageMemberFrame />
-
       <FlexWrapper direction="column" gap={20}>
         <SectionTitle>기간 관리</SectionTitle>
         <DashboardSectionInner>
@@ -50,7 +49,10 @@ const ExecutiveDashboardFrame = () => {
               <DashboardButton text="회원 등록 기간" link="" />
             </FlexWrapper>
             <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
-              <DashboardButton text="활동 보고서 기간" link="" />
+              <DashboardButton
+                text="활동 보고서 기간"
+                link="/executive/activity-report/deadline"
+              />
               <DashboardButton
                 text="지원금 기간"
                 link="/executive/funding/deadline"
