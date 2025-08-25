@@ -25,6 +25,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
     axios.isAxiosError(error) && error.response?.status === 404;
   const boundaryError = !!error && !isNotFound;
 
+  // 운영위원 접속 링크
   const accessUrl = useMemo(() => {
     if (typeof window === "undefined" || !currentKey) return "";
     const baseUrl = window.location.origin;
@@ -36,6 +37,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await createSecretKey();
+      // 생성 성공 후 즉시 상태를 새로고침
       refetch();
       window.alert("새 비밀키가 생성되었습니다.");
     } catch (e) {
@@ -55,6 +57,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await createSecretKey();
+      // 갱신 성공 후 즉시 상태를 새로고침
       refetch();
       window.alert("비밀키가 갱신되었습니다.");
     } catch (e) {
@@ -74,8 +77,9 @@ const OperationCommitteeSecretManager: React.FC = () => {
 
     try {
       await deleteSecretKey();
-      refetch();
       window.alert("비밀키가 삭제되었습니다.");
+      // 삭제 성공 후 즉시 상태를 새로고침
+      refetch();
     } catch (e) {
       if (process.env.NODE_ENV === "development")
         console.error("비밀키 삭제 실패:", e);
@@ -88,6 +92,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
       await navigator.clipboard.writeText(text);
       window.alert("복사되었습니다.");
     } catch {
+      // fallback
       const ta = document.createElement("textarea");
       ta.value = text;
       document.body.appendChild(ta);
@@ -101,6 +106,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={boundaryError}>
       <FlexWrapper direction="column" gap={20} style={{ alignSelf: "stretch" }}>
+        {/* 헤더 */}
         <FlexWrapper
           direction="row"
           justify="space-between"
@@ -108,11 +114,13 @@ const OperationCommitteeSecretManager: React.FC = () => {
         >
           <SectionTitle>운영위원 비밀키 관리</SectionTitle>
           <FlexWrapper gap={8}>
+            {/* 비밀키가 있을 때만 새로고침 버튼 표시 */}
             {currentKey && (
               <Button type="default" onClick={() => refetch()}>
                 새로고침
               </Button>
             )}
+            {/* 비밀키가 없으면 생성 버튼만, 있으면 삭제와 갱신 버튼 */}
             {!currentKey ? (
               <Button
                 type={isLoading ? "disabled" : "default"}
@@ -139,6 +147,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
           </FlexWrapper>
         </FlexWrapper>
 
+        {/* 에러 메세지 */}
         {!!error && !isNotFound && (
           <div
             style={{
@@ -153,79 +162,110 @@ const OperationCommitteeSecretManager: React.FC = () => {
           </div>
         )}
 
-        {currentKey && (
-          <FlexWrapper
-            direction="column"
-            gap={8}
-            style={{
-              border: "1px solid #E5E7EB",
-              borderRadius: 8,
-              padding: 16,
-            }}
-          >
-            <div style={{ fontWeight: 600 }}>현재 비밀키</div>
+        {/* 현재 비밀키 - 항상 표시 */}
+        <FlexWrapper
+          direction="column"
+          gap={8}
+          style={{ border: "1px solid #E5E7EB", borderRadius: 8, padding: 16 }}
+        >
+          <div style={{ fontWeight: 600 }}>현재 비밀키</div>
+          {currentKey ? (
+            <>
+              <div
+                style={{
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  background: "#F9FAFB",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 6,
+                  padding: "10px 12px",
+                  color: "#111827",
+                  overflowX: "auto",
+                }}
+              >
+                {currentKey}
+              </div>
+              <FlexWrapper gap={8}>
+                <Button
+                  type={isLoading ? "disabled" : "default"}
+                  onClick={() => copyToClipboard(currentKey)}
+                >
+                  키 복사
+                </Button>
+              </FlexWrapper>
+            </>
+          ) : (
             <div
               style={{
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                 background: "#F9FAFB",
                 border: "1px solid #E5E7EB",
                 borderRadius: 6,
-                padding: "10px 12px",
-                color: "#111827",
-                overflowX: "auto",
+                padding: "20px 12px",
+                color: "#6B7280",
+                textAlign: "center",
               }}
             >
-              {currentKey}
+              비밀키가 설정되지 않았습니다.
+              <br />
+              우측 상단의 비밀키 생성 버튼을 눌러 새로운 비밀키를 생성해주세요.
             </div>
-            <FlexWrapper gap={8}>
-              <Button
-                type={isLoading ? "disabled" : "default"}
-                onClick={() => copyToClipboard(currentKey)}
-              >
-                키 복사
-              </Button>
-            </FlexWrapper>
-          </FlexWrapper>
-        )}
+          )}
+        </FlexWrapper>
 
-        {currentKey && (
-          <FlexWrapper
-            direction="column"
-            gap={8}
-            style={{
-              border: "1px solid #E5E7EB",
-              borderRadius: 8,
-              padding: 16,
-            }}
-          >
-            <div style={{ fontWeight: 600 }}>운영위원 접속 링크</div>
-            <input
-              type="text"
-              readOnly
-              value={accessUrl}
-              onClick={e => (e.target as HTMLInputElement).select()}
+        {/* 접속 링크 - 항상 표시 */}
+        <FlexWrapper
+          direction="column"
+          gap={8}
+          style={{
+            border: "1px solid #E5E7EB",
+            borderRadius: 8,
+            padding: 16,
+          }}
+        >
+          <div style={{ fontWeight: 600 }}>운영위원 접속 링크</div>
+          {currentKey ? (
+            <>
+              <input
+                type="text"
+                readOnly
+                value={accessUrl}
+                onClick={e => (e.target as HTMLInputElement).select()}
+                style={{
+                  width: "100%",
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  background: "#F9FAFB",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 6,
+                  padding: "10px 12px",
+                  color: "#1D4ED8",
+                  cursor: "text",
+                }}
+              />
+              <FlexWrapper gap={8}>
+                <Button
+                  type={isLoading ? "disabled" : "default"}
+                  onClick={() => copyToClipboard(accessUrl)}
+                >
+                  링크 복사
+                </Button>
+              </FlexWrapper>
+            </>
+          ) : (
+            <div
               style={{
-                width: "100%",
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
                 background: "#F9FAFB",
                 border: "1px solid #E5E7EB",
                 borderRadius: 6,
-                padding: "10px 12px",
-                color: "#1D4ED8",
-                cursor: "text",
+                padding: "20px 12px",
+                color: "#6B7280",
+                textAlign: "center",
               }}
-            />
-            <FlexWrapper gap={8}>
-              <Button
-                type={isLoading ? "disabled" : "default"}
-                onClick={() => copyToClipboard(accessUrl)}
-              >
-                링크 복사
-              </Button>
-            </FlexWrapper>
-          </FlexWrapper>
-        )}
+            >
+              비밀키를 먼저 생성하면 운영위원 접속 링크가 여기에 표시됩니다.
+            </div>
+          )}
+        </FlexWrapper>
 
+        {/* 개발 중 키 개수 확인용 */}
         {process.env.NODE_ENV === "development" && secretData && (
           <div style={{ fontSize: 12, color: "#6B7280" }}>
             (dev) activeKey 개수: {secretData.activeKey?.length ?? 0}
