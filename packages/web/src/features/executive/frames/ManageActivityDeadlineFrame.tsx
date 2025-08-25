@@ -5,17 +5,21 @@ import {
 } from "@tanstack/react-table";
 import { formatDate } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useMemo } from "react";
+import { overlay } from "overlay-kit";
+import React, { useCallback, useMemo } from "react";
 
 import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import Button from "@sparcs-clubs/web/common/components/Button";
+import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
+import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
 
+import ActivityDeadlineFormModal from "../components/ActivityDeadlineFormModal";
 import useGetActivityDeadlines from "../services/getActivityDeadlines";
+import useDeleteActivityDeadline from "../services/useDeleteActivityDeadline";
 
 interface ActivityDeadlineData {
   id: number;
@@ -49,16 +53,31 @@ const ManageActivityDeadlineFrame = () => {
     isError,
   } = useGetActivityDeadlines();
 
+  const { mutate: deleteActivityDeadline } = useDeleteActivityDeadline();
+
   const sortedDeadlines = useMemo(() => {
     if (!deadlineResponse?.deadlines) return [];
-    return [...deadlineResponse.deadlines].sort((a, b) => {
-      // 먼저 활동기간명으로 정렬, 그 다음 데드라인 유형으로 정렬
-      if (a.activityDurationName !== b.activityDurationName) {
-        return a.activityDurationName.localeCompare(b.activityDurationName);
-      }
-      return a.deadlineEnum - b.deadlineEnum;
-    });
+    return [...deadlineResponse.deadlines].sort(
+      (a, b) => new Date(b.endTerm).getTime() - new Date(a.endTerm).getTime(),
+    );
   }, [deadlineResponse?.deadlines]);
+
+  const openActivityDeadlineModal = () => {
+    overlay.open(({ isOpen, close }) => (
+      <ActivityDeadlineFormModal isOpen={isOpen} onClose={close} />
+    ));
+  };
+
+  const handleDelete = useCallback(
+    (deadlineId: number) => {
+      deleteActivityDeadline({ deadlineId });
+    },
+    [deleteActivityDeadline],
+  );
+
+  const actionsCellRenderer = (deadlineId: number) => (
+    <TextButton text="삭제" onClick={() => handleDelete(deadlineId)} />
+  );
 
   const columnHelper = createColumnHelper<ActivityDeadlineData>();
 
@@ -89,10 +108,10 @@ const ManageActivityDeadlineFrame = () => {
       size: 150,
       enableSorting: false,
     }),
-    columnHelper.accessor("semesterId", {
-      header: "학기 ID",
-      cell: info => info.getValue(),
-      size: 100,
+    columnHelper.accessor("id", {
+      header: "삭제",
+      cell: info => actionsCellRenderer(info.getValue()),
+      size: 80,
       enableSorting: false,
     }),
   ];
@@ -108,15 +127,13 @@ const ManageActivityDeadlineFrame = () => {
       <FlexWrapper direction="column" gap={20}>
         <FlexWrapper direction="row" justify="space-between">
           <SectionTitle>활동보고서 제출 기한 관리</SectionTitle>
-          <Button
+          <IconButton
             type="default"
-            onClick={() => {
-              // TODO: 새 기한 추가 모달 구현
-              console.log("새 기한 추가");
-            }}
+            icon="add"
+            onClick={openActivityDeadlineModal}
           >
             새 기한 추가
-          </Button>
+          </IconButton>
         </FlexWrapper>
         <Table
           table={table}

@@ -13,7 +13,7 @@ import {
 
 const useGetActivityDeadlines = (query?: ApiSem007RequestQuery) =>
   useQuery<ApiSem007ResponseOK, Error>({
-    queryKey: [apiSem007.url(), query?.activityDId],
+    queryKey: ["activityDeadlines"],
     queryFn: async (): Promise<ApiSem007ResponseOK> => {
       const { data } = await axiosClientWithAuth.get(apiSem007.url(), {
         params: query,
