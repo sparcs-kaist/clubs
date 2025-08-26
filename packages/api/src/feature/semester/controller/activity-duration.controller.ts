@@ -34,6 +34,12 @@ import type {
   ApiSem013ResponseNotImplemented,
   ApiSem014RequestParam,
   ApiSem014ResponseNotImplemented,
+  ApiSem015RequestBody,
+  ApiSem015ResponseCreated,
+  ApiSem016RequestQuery,
+  ApiSem016ResponseOk,
+  ApiSem017RequestParam,
+  ApiSem017ResponseOk,
 } from "@clubs/interface/api/semester/index";
 import {
   apiSem006,
@@ -45,6 +51,9 @@ import {
   apiSem012,
   apiSem013,
   apiSem014,
+  apiSem015,
+  apiSem016,
+  apiSem017,
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -53,11 +62,13 @@ import { GetExecutive } from "@sparcs-clubs/api/common/util/decorators/param-dec
 import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { ActivityDurationService } from "../service/activity-duration.service";
+import { FundingDeadlineService } from "../service/funding-deadline.service";
 
 @Controller()
 export class ActivityDurationController {
   constructor(
     private readonly activityDurationService: ActivityDurationService,
+    private readonly fundingDeadlineService: FundingDeadlineService,
   ) {}
 
   @Executive()
@@ -164,5 +175,47 @@ export class ActivityDurationController {
       `User executive_id: ${executive.id} trying to call unimplemented feature`,
     );
     throw new NotImplementedException();
+  }
+
+  @Executive()
+  @Post("/executive/semesters/funding-deadlines")
+  @UsePipes(new ZodPipe(apiSem015))
+  async createFundingDeadline(
+    @GetExecutive() executive: GetExecutive,
+    @Body() body: ApiSem015RequestBody,
+  ): Promise<ApiSem015ResponseCreated> {
+    return this.fundingDeadlineService.createFundingDeadline(
+      executive.id,
+      body,
+    );
+  }
+
+  @Executive()
+  @Get("/executive/semesters/funding-deadlines")
+  @UsePipes(new ZodPipe(apiSem016))
+  async getFundingDeadlines(
+    @GetExecutive() executive: GetExecutive,
+    @Query() query: ApiSem016RequestQuery,
+  ): Promise<ApiSem016ResponseOk> {
+    if (!query.activityDId) {
+      return this.fundingDeadlineService.getFundingDeadlines(executive.id);
+    }
+    return this.fundingDeadlineService.getFundingDeadlines(
+      executive.id,
+      query.activityDId,
+    );
+  }
+
+  @Executive()
+  @Delete("/executive/semesters/funding-deadlines/:fundingDeadlineId")
+  @UsePipes(new ZodPipe(apiSem017))
+  async deleteFundingDeadline(
+    @GetExecutive() executive: GetExecutive,
+    @Param() param: ApiSem017RequestParam,
+  ): Promise<ApiSem017ResponseOk> {
+    return this.fundingDeadlineService.deleteFundingDeadline(
+      executive.id,
+      param.fundingDeadlineId,
+    );
   }
 }

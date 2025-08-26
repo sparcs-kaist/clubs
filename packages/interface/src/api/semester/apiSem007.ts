@@ -30,6 +30,7 @@ const responseBodyMap = {
         id: zActivityDeadline.shape.id,
         semesterId: zSemester.shape.id,
         activityDId: zActivityDuration.shape.id,
+        activityDurationName: zActivityDuration.shape.name,
         deadlineEnum: zActivityDeadline.shape.deadlineEnum,
         startTerm: zActivityDeadline.shape.startTerm,
         endTerm: zActivityDeadline.shape.endTerm,

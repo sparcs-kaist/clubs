@@ -1,5 +1,3 @@
-// import { Divider } from "@mui/material";
-import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -11,6 +9,8 @@ import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
+import OperationCommitteeSecretManager from "../components/SecretKey/OperationCommitteeSecretManager";
+import ManageMemberFrame from "./ManageMemberFrame";
 import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
@@ -36,6 +36,34 @@ const ExecutiveDashboardFrame = () => {
         현재 집행부원 대시보드는 개발 중에 있습니다.
       </Banner>
       <ManageSemesterFrame />
+      <ManageMemberFrame />
+      <OperationCommitteeSecretManager />
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>기간 관리</SectionTitle>
+        <DashboardSectionInner>
+          <FlexWrapper
+            direction="row"
+            gap={60}
+            style={{ justifyContent: "space-between" }}
+          >
+            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+              <DashboardButton text="동아리 등록 기간" link="" />
+              <DashboardButton text="회원 등록 기간" link="" />
+            </FlexWrapper>
+            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+              <DashboardButton
+                text="활동 보고서 기간"
+                link="/executive/activity-report/deadline"
+              />
+              <DashboardButton
+                text="지원금 기간"
+                link="/executive/funding/deadline"
+              />
+            </FlexWrapper>
+          </FlexWrapper>
+        </DashboardSectionInner>
+      </FlexWrapper>
+
       <FlexWrapper
         direction="row"
         gap={60}

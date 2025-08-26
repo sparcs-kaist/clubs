@@ -13,6 +13,7 @@ import DivisionModule from "./feature/division/division.module";
 import FileModule from "./feature/file/file.module";
 import FundingModule from "./feature/funding/funding.module";
 import { NoticeModule } from "./feature/notice/notice.module";
+import { OperationCommitteeModule } from "./feature/operation-committee/operation-committee.module";
 import { OverviewModule } from "./feature/overview/overview.module";
 import RegistrationModule from "./feature/registration/registration.module";
 import { SemesterModule } from "./feature/semester/semester.module";
@@ -32,6 +33,7 @@ import UserModule from "./feature/user/user.module";
     ActivityCertificateModule,
     AuthModule,
     SemesterModule,
+    OperationCommitteeModule,
     OverviewModule,
   ],
   controllers: [AppController],

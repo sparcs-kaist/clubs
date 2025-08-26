@@ -290,15 +290,17 @@ export default class ExecutiveRepository {
       await this.db.transaction(async tx => {
         let executiveId: number;
         const existingExecutives = await tx
-          .select({ id: Executive.id })
+          .select({ id: Executive.id, deletedAt: Executive.deletedAt })
           .from(Executive)
-          .where(
-            and(
-              eq(Executive.studentId, studentId),
-              isNull(Executive.deletedAt),
-            ),
-          );
+          .where(eq(Executive.studentId, studentId));
         if (existingExecutives.length > 0) {
+          if (existingExecutives[0].deletedAt) {
+            // If the existing executive is soft-deleted, restore it
+            await tx
+              .update(Executive)
+              .set({ deletedAt: null })
+              .where(eq(Executive.id, existingExecutives[0].id));
+          }
           executiveId = existingExecutives[0].id;
         } else {
           const [newExecutive] = await tx

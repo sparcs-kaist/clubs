@@ -6,6 +6,7 @@ const schema = z.object({
   SECRET_KEY: z.string(),
   DATABASE_URL: z.string(),
   TEST_DATABASE_URL: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
 });
 
 const getSsoConfig = () => ({
