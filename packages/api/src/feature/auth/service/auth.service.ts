@@ -73,6 +73,15 @@ export class AuthService {
       hasKaistInfo: !!ssoProfile.kaist_info,
       hasKaistV2Info: !!ssoProfile.kaist_v2_info,
     });
+    logger.info(
+      "SSO profile retrieved",
+      JSON.stringify({
+        uid: ssoProfile.uid,
+        sid: ssoProfile.sid,
+        hasKaistInfo: !!ssoProfile.kaist_info,
+        hasKaistV2Info: !!ssoProfile.kaist_v2_info,
+      }),
+    );
 
     const isKaistIamLogin: boolean = true;
     if (process.env.NODE_ENV !== "local") {
