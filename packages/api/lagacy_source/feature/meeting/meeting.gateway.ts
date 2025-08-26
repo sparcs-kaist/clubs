@@ -69,7 +69,7 @@ export class MeetingGateway {
     @MessageBody() payload: EntryPayload,
     @ConnectedSocket() client: Socket,
   ): void {
-    console.log("🚀 ~ MeetingGateway ~ handleEntry ~ payload:", payload);
+    // console.log("🚀 ~ MeetingGateway ~ handleEntry ~ payload:", payload);
 
     const { userId, meetingId } = payload;
 
