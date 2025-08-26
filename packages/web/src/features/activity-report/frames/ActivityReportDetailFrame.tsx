@@ -217,7 +217,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
               status={data.activityStatusEnumId}
               editedAt={data.editedAt}
               commentedAt={data.commentedAt ?? undefined}
-              comments={data.comments.toReversed()}
+              comments={data.comments?.toReversed()}
             />
           )}
 
