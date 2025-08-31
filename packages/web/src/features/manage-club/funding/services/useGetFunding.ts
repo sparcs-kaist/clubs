@@ -14,13 +14,20 @@ export const fundingDetailQueryKey = (profile: string, fundingId: number) => [
   fundingDetailGet(profile, fundingId),
 ];
 
-export const useGetFunding = (profile: string, fundingId: number) =>
+export const useGetFunding = (
+  profile: string,
+  fundingId: number,
+  operatingCommitteeSecret?: string,
+) =>
   useQuery<ApiFnd002ResponseOk, Error>({
-    queryKey: fundingDetailQueryKey(profile, fundingId),
+    queryKey: [
+      ...fundingDetailQueryKey(profile, fundingId),
+      operatingCommitteeSecret,
+    ],
     queryFn: async (): Promise<ApiFnd002ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(
         fundingDetailGet(profile, fundingId),
-        {},
+        { params: { operatingCommitteeSecret } },
       );
 
       return data;
