@@ -7,7 +7,7 @@ export interface patchNote {
 const patchNoteList: patchNote[] = [
   {
     version: "v.0.0.89",
-    date: new Date("2025.08.28"),
+    date: new Date("2025.09.01"),
     patchNoteContent: `Clubs v0.0.89
 신규 기능은 다음과 같습니다.
 - 학기 추가/삭제
