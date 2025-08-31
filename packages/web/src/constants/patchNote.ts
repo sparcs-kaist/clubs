@@ -6,6 +6,25 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.90",
+    date: new Date("2025.09.01"),
+    patchNoteContent: `Clubs v0.0.89
+신규 기능은 다음과 같습니다.
+- 학기 추가/삭제
+- 집행부원 추가/삭제
+- 활동보고서 작성기간 추가/삭제
+- 지원금 작성기간 추가/삭제
+- 운영위원 비밀키 갱신/삭제
+- 신규 인증시스템(kaist v2 info) 완전이전
+- 로그 시스템 개선
+- 집행부 관리 로직 개선
+- 시스템 환경변수 개선
+
+❗️신규 인증시스템 적용에 따라 로그인기능이 불안정한 상태입니다.
+오류 발생시 우측 하단 채널톡을 통해 문의 부탁드려요!
+`,
+  },
+  {
     version: "v.0.0.89",
     date: new Date("2025.08.28"),
     patchNoteContent: `Clubs v0.0.89
