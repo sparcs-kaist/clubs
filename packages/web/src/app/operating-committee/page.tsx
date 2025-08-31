@@ -42,7 +42,10 @@ const ExecutiveActivityReportDetail = () => {
 
   return (
     <FlexWrapper direction="column" gap={60}>
-      <PageHead items={[]} title="운영위원 페이지" enableLast />
+      <PageHead
+        items={[{ name: "운영위원 페이지", path: "/operating-committee" }]}
+        title="운영위원 페이지"
+      />
 
       <FlexWrapper direction="row" gap={40} style={{ width: "100%" }}>
         {/* 활동보고서 바로가기 섹션 */}
