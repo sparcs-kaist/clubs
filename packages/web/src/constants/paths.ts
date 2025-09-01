@@ -217,7 +217,7 @@ const paths = {
         name: "path.동아리 등록 신청",
         path: "/executive/register-club",
         authority: ["executive"],
-        featureFlag: "REGISTER_CLUB",
+        featureFlag: "DEFAULT",
       },
       {
         name: "path.회원 등록 신청",
