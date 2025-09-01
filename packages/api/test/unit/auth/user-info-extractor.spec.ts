@@ -78,6 +78,13 @@ describe("User Info Extractor (Unit)", () => {
       email: "student@kaist.ac.kr",
       std_prog_code: "0",
       kaist_org_id: "4423",
+      // 교수/직원 필드들 (기본값)
+      emp_dept_id: "20686",
+      emp_dept_kor_nm: "디지털인문사회과학부",
+      emp_dept_eng_nm:
+        "School of Digital Humanities and Computational Social Sciences",
+      emp_no: "1267",
+      emp_status_kor: "재직",
       ...overrides,
     });
 
@@ -191,6 +198,61 @@ describe("User Info Extractor (Unit)", () => {
         expect(result.isValid).toBe(true);
       });
     });
+
+    // 교수/직원 관련 새로운 테스트 케이스들
+    it("should require emp_dept_id for professors", () => {
+      const invalidInfo = createValidV2Info({
+        socps_cd: "P",
+        emp_dept_id: "",
+      });
+      const result = validateKaistV2Info(invalidInfo);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Required field 'emp_dept_id' is missing or empty (교수/직원인 경우 부서 ID)",
+      );
+    });
+
+    it("should require emp_no for professors", () => {
+      const invalidInfo = createValidV2Info({
+        socps_cd: "P",
+        emp_no: "",
+      });
+      const result = validateKaistV2Info(invalidInfo);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Required field 'emp_no' is missing or empty (교수/직원인 경우 직원 번호)",
+      );
+    });
+
+    it("should require emp_dept_id for employees", () => {
+      const invalidInfo = createValidV2Info({
+        socps_cd: "E",
+        emp_dept_id: "",
+      });
+      const result = validateKaistV2Info(invalidInfo);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Required field 'emp_dept_id' is missing or empty (교수/직원인 경우 부서 ID)",
+      );
+    });
+
+    it("should validate all professor/employee types correctly", () => {
+      const professorEmployeeTypes = ["P", "PA", "E", "F", "R"];
+
+      professorEmployeeTypes.forEach(socpsCd => {
+        const validInfo = createValidV2Info({
+          socps_cd: socpsCd,
+          emp_dept_id: "20686",
+          emp_no: "1267",
+        });
+        const result = validateKaistV2Info(validInfo);
+
+        expect(result.isValid).toBe(true);
+      });
+    });
   });
 
   describe("extractUserInfoFromV2", () => {
@@ -214,6 +276,13 @@ describe("User Info Extractor (Unit)", () => {
       email: "student@kaist.ac.kr",
       std_prog_code: "0",
       kaist_org_id: "4423",
+      // 교수/직원 필드들 (기본값)
+      emp_dept_id: "20686",
+      emp_dept_kor_nm: "디지털인문사회과학부",
+      emp_dept_eng_nm:
+        "School of Digital Humanities and Computational Social Sciences",
+      emp_no: "1267",
+      emp_status_kor: "재직",
       ...overrides,
     });
 
@@ -320,6 +389,114 @@ describe("User Info Extractor (Unit)", () => {
         expect(result.type).toBe(expectedType);
       });
     });
+
+    // 교수/직원 필드 사용에 대한 새로운 테스트 케이스들
+    it("should use employee fields for professors", () => {
+      const v2Info = createValidV2Info({
+        socps_cd: "P",
+        user_nm: "전봉관",
+        emp_dept_id: "20686",
+        emp_dept_kor_nm: "디지털인문사회과학부",
+        emp_dept_eng_nm:
+          "School of Digital Humanities and Computational Social Sciences",
+        emp_status_kor: "재직",
+        // 학생 필드들은 무시되어야 함
+        std_dept_id: "4423",
+        std_dept_kor_nm: "전기및전자공학부",
+        std_dept_eng_nm: "School of Electrical Engineering",
+        std_status_kor: "재학",
+      });
+      const result = extractUserInfoFromV2(v2Info);
+
+      expect(result.type).toBe("Professor");
+      expect(result.name).toBe("전봉관");
+      expect(result.department).toBe("20686"); // emp_dept_id 사용
+      expect(result.departmentName.korean).toBe("디지털인문사회과학부"); // emp_dept_kor_nm 사용
+      expect(result.departmentName.english).toBe(
+        "School of Digital Humanities and Computational Social Sciences",
+      ); // emp_dept_eng_nm 사용
+      expect(result.status).toBe("재직"); // emp_status_kor 사용
+    });
+
+    it("should use employee fields for employees", () => {
+      const v2Info = createValidV2Info({
+        socps_cd: "E",
+        user_nm: "김직원",
+        emp_dept_id: "12345",
+        emp_dept_kor_nm: "행정부서",
+        emp_dept_eng_nm: "Administrative Department",
+        emp_status_kor: "재직",
+      });
+      const result = extractUserInfoFromV2(v2Info);
+
+      expect(result.type).toBe("Employee");
+      expect(result.name).toBe("김직원");
+      expect(result.department).toBe("12345");
+      expect(result.departmentName.korean).toBe("행정부서");
+      expect(result.departmentName.english).toBe("Administrative Department");
+      expect(result.status).toBe("재직");
+    });
+
+    it("should use student fields for students", () => {
+      const v2Info = createValidV2Info({
+        socps_cd: "S",
+        user_nm: "김학생",
+        std_dept_id: "4423",
+        std_dept_kor_nm: "전기및전자공학부",
+        std_dept_eng_nm: "School of Electrical Engineering",
+        std_status_kor: "재학",
+        // 교수 필드들은 무시되어야 함
+        emp_dept_id: "20686",
+        emp_dept_kor_nm: "디지털인문사회과학부",
+        emp_dept_eng_nm:
+          "School of Digital Humanities and Computational Social Sciences",
+        emp_status_kor: "재직",
+      });
+      const result = extractUserInfoFromV2(v2Info);
+
+      expect(result.type).toBe("Student");
+      expect(result.name).toBe("김학생");
+      expect(result.department).toBe("4423"); // std_dept_id 사용
+      expect(result.departmentName.korean).toBe("전기및전자공학부"); // std_dept_kor_nm 사용
+      expect(result.departmentName.english).toBe(
+        "School of Electrical Engineering",
+      ); // std_dept_eng_nm 사용
+      expect(result.status).toBe("재학"); // std_status_kor 사용
+    });
+
+    it("should handle missing employee fields gracefully for professors", () => {
+      const v2Info = createValidV2Info({
+        socps_cd: "P",
+        emp_dept_id: "",
+        emp_dept_kor_nm: "",
+        emp_dept_eng_nm: "",
+        emp_status_kor: "",
+      });
+      const result = extractUserInfoFromV2(v2Info);
+
+      expect(result.type).toBe("Professor");
+      expect(result.department).toBe(""); // 빈 문자열로 처리
+      expect(result.departmentName.korean).toBe("");
+      expect(result.departmentName.english).toBe("");
+      expect(result.status).toBe("");
+    });
+
+    it("should handle missing student fields gracefully for students", () => {
+      const v2Info = createValidV2Info({
+        socps_cd: "S",
+        std_dept_id: "",
+        std_dept_kor_nm: "",
+        std_dept_eng_nm: "",
+        std_status_kor: "",
+      });
+      const result = extractUserInfoFromV2(v2Info);
+
+      expect(result.type).toBe("Student");
+      expect(result.department).toBe(""); // 빈 문자열로 처리
+      expect(result.departmentName.korean).toBe("");
+      expect(result.departmentName.english).toBe("");
+      expect(result.status).toBe("");
+    });
   });
 
   describe("safeExtractUserInfoFromV2", () => {
@@ -341,6 +518,13 @@ describe("User Info Extractor (Unit)", () => {
       email: "student@kaist.ac.kr",
       std_prog_code: "0",
       kaist_org_id: "4423",
+      // 교수/직원 필드들 (기본값)
+      emp_dept_id: "20686",
+      emp_dept_kor_nm: "디지털인문사회과학부",
+      emp_dept_eng_nm:
+        "School of Digital Humanities and Computational Social Sciences",
+      emp_no: "1267",
+      emp_status_kor: "재직",
     });
 
     it("should return success result for valid input", () => {
