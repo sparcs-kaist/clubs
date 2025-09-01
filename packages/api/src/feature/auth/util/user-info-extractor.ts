@@ -70,20 +70,36 @@ export const extractUserInfoFromV2 = (
     throw new Error("kaist_v2_info is required but not provided");
   }
 
+  // 사용자 타입에 따른 조건부 데이터 추출
+  const userType = getUserTypeFromSocpsCd(kaistV2Info.socps_cd);
+  const isEmployeeOrProfessor =
+    userType === "Professor" || userType === "Employee";
+
   return {
     studentNumber: kaistV2Info.std_no || "",
     email: kaistV2Info.email || "",
     name: kaistV2Info.user_nm || "",
-    type: getUserTypeFromSocpsCd(kaistV2Info.socps_cd),
-    department: kaistV2Info.std_dept_id || "",
+    type: userType,
+    // 사용자 타입에 따라 적절한 부서 ID 사용
+    department: isEmployeeOrProfessor
+      ? kaistV2Info.emp_dept_id || ""
+      : kaistV2Info.std_dept_id || "",
     // 추가 정보
     kaistUid: kaistV2Info.kaist_uid || "",
     userId: kaistV2Info.user_id || "",
+    // 사용자 타입에 따라 적절한 부서명 사용
     departmentName: {
-      korean: kaistV2Info.std_dept_kor_nm || "",
-      english: kaistV2Info.std_dept_eng_nm || "",
+      korean: isEmployeeOrProfessor
+        ? kaistV2Info.emp_dept_kor_nm || ""
+        : kaistV2Info.std_dept_kor_nm || "",
+      english: isEmployeeOrProfessor
+        ? kaistV2Info.emp_dept_eng_nm || ""
+        : kaistV2Info.std_dept_eng_nm || "",
     },
-    status: kaistV2Info.std_status_kor || "",
+    // 상태 정보도 사용자 타입에 따라 적절히 처리
+    status: isEmployeeOrProfessor
+      ? kaistV2Info.emp_status_kor || ""
+      : kaistV2Info.std_status_kor || "",
     programCode: kaistV2Info.std_prog_code || "",
   };
 };
@@ -115,6 +131,7 @@ export const validateKaistV2Info = (
 
   // 추가 필수 필드 (사용자 타입에 따라)
   const conditionalFields = [
+    // 학생 필수 필드
     {
       field: "std_no",
       condition: (info: KaistV2Info) => info.socps_cd === "S",
@@ -124,6 +141,19 @@ export const validateKaistV2Info = (
       field: "std_dept_id",
       condition: (info: KaistV2Info) => info.socps_cd === "S",
       description: "학생인 경우 학과 ID",
+    },
+    // 교수/직원 필수 필드
+    {
+      field: "emp_dept_id",
+      condition: (info: KaistV2Info) =>
+        ["P", "PA", "E", "F", "R"].includes(info.socps_cd?.toUpperCase()),
+      description: "교수/직원인 경우 부서 ID",
+    },
+    {
+      field: "emp_no",
+      condition: (info: KaistV2Info) =>
+        ["P", "PA", "E", "F", "R"].includes(info.socps_cd?.toUpperCase()),
+      description: "교수/직원인 경우 직원 번호",
     },
   ];
 

@@ -149,4 +149,20 @@ export class KaistV2Info {
 
   /** KAIST 조직 ID (학과 코드와 동일한 경우가 많음, 예: '4423') */
   kaist_org_id!: string;
+
+  // 교수/직원 전용 필드들
+  /** 직원/교수 부서 ID (교수/직원인 경우, 예: '20686') */
+  emp_dept_id!: string;
+
+  /** 직원/교수 부서명 (한글, 교수/직원인 경우, 예: '디지털인문사회과학부') */
+  emp_dept_kor_nm!: string;
+
+  /** 직원/교수 부서명 (영문, 교수/직원인 경우, 예: 'School of Digital Humanities and Computational Social Sciences') */
+  emp_dept_eng_nm!: string;
+
+  /** 직원 번호 (직원/교수인 경우, 예: '1267') */
+  emp_no!: string;
+
+  /** 재직 상태 (한글, 교수/직원인 경우, 예: '재직') */
+  emp_status_kor!: string;
 }

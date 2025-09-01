@@ -166,13 +166,19 @@ export class AuthRepository {
       }
       /* eslint-enable no-shadow */
 
+      // 부서 ID를 안전하게 정수로 변환 (NaN 방지)
+      const departmentId =
+        department && !Number.isNaN(parseInt(department))
+          ? parseInt(department)
+          : null;
+
       await this.db
         .insert(StudentT)
         .values({
           studentId: student.id,
           studentEnum,
           studentStatusEnum,
-          department: parseInt(department),
+          department: departmentId,
           semesterId: semester.id,
           startTerm: semester.startTerm,
           endTerm: semester.endTerm,
@@ -181,7 +187,7 @@ export class AuthRepository {
           set: {
             studentEnum,
             studentStatusEnum,
-            department: parseInt(department),
+            department: departmentId,
           },
         });
 
@@ -237,17 +243,23 @@ export class AuthRepository {
         .from(Professor)
         .where(and(eq(Professor.userId, user.id), isNull(Professor.deletedAt)))
         .then(takeOne);
+      // 부서 ID를 안전하게 정수로 변환 (NaN 방지)
+      const departmentId =
+        department && !Number.isNaN(parseInt(department))
+          ? parseInt(department)
+          : null;
+
       await this.db
         .insert(ProfessorT)
         .values({
-          department: parseInt(department),
+          department: departmentId,
           professorId: professor.id,
           professorEnum: 3,
           startTerm: semester.startTerm,
         })
         .onDuplicateKeyUpdate({
           set: {
-            department: parseInt(department),
+            department: departmentId,
             professorId: professor.id,
             startTerm: semester.startTerm,
           },

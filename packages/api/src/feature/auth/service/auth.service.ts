@@ -121,6 +121,11 @@ export class AuthService {
         camps_div_cd: "D",
         std_prog_code: "0",
         kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
+        emp_dept_id: process.env.USER_V2_EMP_DEPT_ID || "20686",
+        emp_dept_kor_nm: "테스트 교수부서",
+        emp_dept_eng_nm: "Test Professor Department",
+        emp_no: "1267",
+        emp_status_kor: "재직",
       };
 
       // Mock V2 정보에서 사용자 정보 추출
