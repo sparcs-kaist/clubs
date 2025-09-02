@@ -4,6 +4,7 @@
   "tasks": {
     "dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
+      "cache": false,
       "persistent": true
     },
     "build": {
