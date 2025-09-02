@@ -34,16 +34,17 @@ const ExecutiveActivityReportDetail = () => {
     return <LoginRequired login={login} />;
   }
 
-  // if (profile?.type !== UserTypeEnum.Executive) {
-  //   return <Custom404 />;
-  // }
-
   return (
     <FlexWrapper direction="column" gap={60}>
       <PageHead
-        items={[]}
-        title="운영위원 활동 보고서 조회 페이지"
-        enableLast
+        items={[
+          { name: "운영위원 페이지", path: "/operating-committee" },
+          {
+            name: "운영위원 활동 보고서 조회",
+            path: "/",
+          },
+        ]}
+        title="운영위원 활동 보고서 조회"
       />
       <ActivityReportDetailFrame
         profile={profile}

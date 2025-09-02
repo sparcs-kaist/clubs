@@ -36,7 +36,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
   const accessUrl = useMemo(() => {
     if (typeof window === "undefined" || !currentKey) return "";
     const baseUrl = window.location.origin;
-    return `${baseUrl}/operating-committee/5425?operating-committee-secret=${currentKey}`;
+    return `${baseUrl}/operating-committee/activity-report/5425?operating-committee-secret=${currentKey}`;
   }, [currentKey]);
 
   const handleCreateKey = async () => {
