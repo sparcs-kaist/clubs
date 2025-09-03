@@ -1,6 +1,6 @@
 "use client";
 
-import { subDays } from "date-fns";
+import { subSeconds } from "date-fns";
 import React from "react";
 import styled from "styled-components";
 
@@ -50,7 +50,7 @@ const Clubs: React.FC = () => {
               style={{ whiteSpace: "pre-line" }}
             >
               {/* 종료일은 하루전 하루전 23:59이기 때문에 하루를 뺍니다 */}
-              {`"${formatDate(data?.deadline?.startDate)} - ${formatDate(subDays(data?.deadline?.endTerm, 1))}"은 동아리 등록 기간입니다.
+              {`"${formatDate(data?.deadline?.startDate)} - ${formatDate(subSeconds(data?.deadline?.endTerm, 1))}"은 동아리 등록 기간입니다.
               가을학기 동아리가 확정되지 않아 동아리 목록이 비어있어요. 동아리 대표자들께선 동아리 → 동아리 등록 기능을 통해 동아리 등록을 제출해주세요!`}
             </Typography>
           </Banner>
