@@ -59,7 +59,7 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
       <FlexWrapper direction="column" gap={40}>
         {filteredDivisions.map(division => (
           <ClubsSectionFrame
-            title={t(`club.division.${division.name}`)}
+            title={t(`division.${division.name}`)}
             clubList={division.clubs}
             key={division.name}
             isRegistrationPeriod={isRegistrationPeriod}

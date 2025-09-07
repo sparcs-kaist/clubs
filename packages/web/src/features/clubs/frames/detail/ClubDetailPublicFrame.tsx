@@ -6,10 +6,12 @@ import React from "react";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import { ClubDetailProps } from "@sparcs-clubs/web/features/clubs/components/ClubDetailCard";
+import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
 const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
+  const { isEnglish } = useLanguage();
   const t = useTranslations("club");
 
   return (
@@ -17,7 +19,10 @@ const ClubDetailStudentFrame: React.FC<ClubDetailProps> = ({ club }) => {
       <PageHead
         items={[
           { name: t("동아리 목록"), path: "/clubs" },
-          { name: club.nameKr, path: `/clubs/${club.id}` },
+          {
+            name: isEnglish ? club.nameEn : club.nameKr,
+            path: `/clubs/${club.id}`,
+          },
         ]}
         title={club.nameKr}
       />
