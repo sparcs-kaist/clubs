@@ -1,6 +1,7 @@
 "use client";
 
 import { hangulIncludes } from "es-hangul";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
@@ -65,6 +66,7 @@ const RegistrationTypeList = Object.keys(RegistrationTypeTagList).map(key =>
 export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
   url,
 }) => {
+  const t = useTranslations();
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 200;
   const [searchText, setSearchText] = useState<string>("");
@@ -212,7 +214,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
           <SearchInput
             searchText={searchText}
             handleChange={setSearchText}
-            placeholder="동아리 이름으로 검색하세요"
+            placeholder={t("club.placeholder")}
           />
           <MultiFilter categories={categories} setCategories={setCategories} />
         </ClubSearchAndFilter>

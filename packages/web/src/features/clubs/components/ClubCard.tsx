@@ -1,6 +1,7 @@
 "use client";
 
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -16,6 +17,7 @@ import {
   getShortClubType,
   getTagColorFromClubType,
 } from "@sparcs-clubs/web/features/clubs/constants/clubTypeControl";
+import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 import isStudent from "@sparcs-clubs/web/utils/isStudent";
 
 import { ClubDetail } from "../types";
@@ -75,7 +77,16 @@ const ClubCard: React.FC<ClubCardProps> = ({
   isRegistrationPeriod = false,
   isMobile = false,
 }) => {
+  const t = useTranslations();
   const { isLoggedIn, profile } = useAuth();
+  const { isEnglish, isLoading } = useLanguage();
+
+  const getClubName = () => {
+    if (isLoading) {
+      return club.nameKr;
+    }
+    return isEnglish ? club.nameEn : club.nameKr;
+  };
 
   return (
     <Card gap={isMobile ? 12 : 16} padding="16px 20px">
@@ -83,10 +94,10 @@ const ClubCard: React.FC<ClubCardProps> = ({
         <ClubCardNameWithTag>
           {isMobile && (
             <Tag color={getTagColorFromClubType(club.type, club.isPermanent)}>
-              {getShortClubType(club)}
+              {t(`club.${getShortClubType(club)}`)}
             </Tag>
           )}
-          <ClubName isMobile={isMobile}>{club.nameKr}</ClubName>
+          <ClubName isMobile={isMobile}>{getClubName()}</ClubName>
           {/* 돌아가는 텍스트를 만들 수 있어요
              <ScrollingText isMobile={isMobile} >{club.nameKr}</ScrollingText> */}
         </ClubCardNameWithTag>
@@ -104,8 +115,8 @@ const ClubCard: React.FC<ClubCardProps> = ({
           club.advisor === undefined ||
           club.advisor === null ||
           club.advisor === ""
-            ? `회장 ${club.representative}`
-            : `회장 ${club.representative} | 지도교수 ${club.advisor}`}
+            ? `${t("club.회장")} ${club.representative}`
+            : `${t("club.회장")} ${club.representative} | ${t("common.지도교수")} ${club.advisor}`}
         </ClubCardLongText>
       )}
       {!isMobile && (
@@ -116,7 +127,7 @@ const ClubCard: React.FC<ClubCardProps> = ({
       <ClubCardRow isMobile={isMobile}>
         {!isMobile && (
           <Tag color={getTagColorFromClubType(club.type, club.isPermanent)}>
-            {getClubType(club)}
+            {t(`club.${getClubType(club)}`)}
           </Tag>
         )}
         {isMobile && (

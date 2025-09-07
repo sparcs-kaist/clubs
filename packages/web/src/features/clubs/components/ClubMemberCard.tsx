@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -50,6 +51,7 @@ const Title = styled(Typography)`
   font-weight: ${({ theme }) => theme.fonts.WEIGHT.MEDIUM};
   font-size: 16px;
   line-height: 24px;
+  text-align: center;
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
     font-size: 14px;
     line-height: 20px;
@@ -77,27 +79,33 @@ const Contents = styled(Typography)`
 const ClubMemberCard: React.FC<ClubDetailFrameProps> = ({
   club,
   isRegistrationPeriod,
-}) => (
-  <StyledCard>
-    <TitleWrapper direction="column" gap={16}>
-      <Title>총원</Title>
-      <Title>대표자</Title>
-      <Title>지도교수</Title>
-    </TitleWrapper>
-    <ContentsWrapper direction="column" gap={16}>
-      <Contents>
-        {isRegistrationPeriod ? "-" : `${club.totalMemberCnt}명`}
-      </Contents>
-      <Contents>{club.representative}</Contents>
-      <Contents>
-        {!club.advisor ||
-        club.advisor === "null" ||
-        club.advisor === "undefined"
-          ? "-"
-          : club.advisor}
-      </Contents>
-    </ContentsWrapper>
-  </StyledCard>
-);
+}) => {
+  const t = useTranslations();
+
+  return (
+    <StyledCard>
+      <TitleWrapper direction="column" gap={16}>
+        <Title>{t("club.총원")}</Title>
+        <Title>{t("club.대표자")}</Title>
+        <Title>{t("common.지도교수")}</Title>
+      </TitleWrapper>
+      <ContentsWrapper direction="column" gap={16}>
+        <Contents>
+          {isRegistrationPeriod
+            ? "-"
+            : `${club.totalMemberCnt} ${t("common.명")}`}
+        </Contents>
+        <Contents>{club.representative}</Contents>
+        <Contents>
+          {!club.advisor ||
+          club.advisor === "null" ||
+          club.advisor === "undefined"
+            ? "-"
+            : club.advisor}
+        </Contents>
+      </ContentsWrapper>
+    </StyledCard>
+  );
+};
 
 export default ClubMemberCard;

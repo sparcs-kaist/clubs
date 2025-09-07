@@ -1,6 +1,7 @@
 "use client";
 
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -42,6 +43,7 @@ const FoldableSectionTitle: React.FC<{
 }) => {
   const [open, setOpen] = React.useState<boolean>(true);
   const openHandler = () => setOpen(!open);
+  const t = useTranslations("common");
 
   return (
     <FoldableSectionOuter>
@@ -51,7 +53,7 @@ const FoldableSectionTitle: React.FC<{
           fs={14}
           fw="REGULAR"
           color="BLACK"
-          text={(toggle ?? open) ? `접기` : `펼치기`}
+          text={(toggle ?? open) ? t("접기") : t("펼치기")}
           onClick={toggleHandler ?? openHandler}
         />
       </FoldableSectionTitleInner>
