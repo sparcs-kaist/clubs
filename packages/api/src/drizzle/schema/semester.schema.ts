@@ -8,8 +8,8 @@ import {
 
 export const SemesterD = mysqlTable("semester_d", {
   id: int("id").autoincrement().primaryKey(),
-  year: int("year"),
-  name: varchar("name", { length: 10 }),
+  year: int("year").notNull(),
+  name: varchar("name", { length: 10 }).notNull(),
   startTerm: date("start_term").notNull(),
   endTerm: date("end_term").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

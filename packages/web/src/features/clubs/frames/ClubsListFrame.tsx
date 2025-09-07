@@ -48,25 +48,25 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
   );
 
   return (
-    <>
-      <SearchInput
-        searchText={searchText}
-        handleChange={setSearchText}
-        placeholder={t("club.placeholder")}
-      />
-      <AsyncBoundary isLoading={isLoading} isError={isError}>
-        <FlexWrapper direction="column" gap={40}>
-          {filteredDivisions.map(division => (
-            <ClubsSectionFrame
-              title={t(`division.${division.name}`)}
-              clubList={division.clubs}
-              key={division.name}
-              isRegistrationPeriod={isRegistrationPeriod}
-            />
-          ))}
-        </FlexWrapper>
-      </AsyncBoundary>
-    </>
+    <AsyncBoundary isLoading={isLoading} isError={isError}>
+      {filteredDivisions.length > 0 && (
+        <SearchInput
+          searchText={searchText}
+          handleChange={setSearchText}
+          placeholder={t("club.placeholder")}
+        />
+      )}
+      <FlexWrapper direction="column" gap={40}>
+        {filteredDivisions.map(division => (
+          <ClubsSectionFrame
+            title={t(`club.division.${division.name}`)}
+            clubList={division.clubs}
+            key={division.name}
+            isRegistrationPeriod={isRegistrationPeriod}
+          />
+        ))}
+      </FlexWrapper>
+    </AsyncBoundary>
   );
 };
 

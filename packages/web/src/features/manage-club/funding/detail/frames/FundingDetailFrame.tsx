@@ -4,6 +4,8 @@ import { overlay } from "overlay-kit";
 import React, { useMemo } from "react";
 import styled from "styled-components";
 
+import { FundingDeadlineEnum } from "@clubs/domain/semester/deadline";
+
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -32,6 +34,8 @@ import TransportationEvidenceList from "../components/TransportationEvidenceList
 
 interface FundingDetailFrameProps {
   profile: Profile;
+  isOperatingCommittee?: boolean;
+  operatingCommitteeSecret?: string;
 }
 
 const ButtonWrapper = styled.div`
@@ -39,12 +43,20 @@ const ButtonWrapper = styled.div`
   justify-content: space-between;
 `;
 
-const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
+const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
+  profile,
+  isOperatingCommittee = false,
+  operatingCommitteeSecret = undefined,
+}) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
 
-  const { data, isLoading, isError } = useGetFunding(profile.type, +id);
+  const { data, isLoading, isError } = useGetFunding(
+    profile.type,
+    +id,
+    operatingCommitteeSecret,
+  );
   const { mutate: deleteFunding } = useDeleteFunding();
 
   const {
@@ -146,7 +158,10 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
         />
 
         <AsyncBoundary isLoading={isLoading} isError={isError}>
-          <FundingInfoList data={data.funding} />
+          <FundingInfoList
+            data={data.funding}
+            isExecutive={profile.type === UserTypeEnum.Executive}
+          />
           <BasicEvidenceList data={data.funding} />
           {(!data.funding.purposeActivity ||
             isActivityReportUnverifiable(data.funding.purposeActivity.id)) && (
@@ -214,33 +229,42 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({ profile }) => {
           )}
         </AsyncBoundary>
       </Card>
-      <ExecutiveFundingReviewSection
-        funding={data.funding}
-        comments={data.comments}
-      />
-      <ButtonWrapper>
-        <Button type="default" onClick={navigateToFundingList}>
-          목록으로 돌아가기
-        </Button>
-        <AsyncBoundary
-          isLoading={isLoadingFundingDeadline}
-          isError={isErrorFundingDeadline}
-        >
-          {!isPastFunding && profile.type === UserTypeEnum.Undergraduate && (
-            <FlexWrapper direction="row" gap={10}>
-              <Button
-                type="default"
-                onClick={() => openDeleteModal(data.funding.club.id)}
-              >
-                삭제
-              </Button>
-              <Button type="default" onClick={openEditModal}>
-                수정
-              </Button>
-            </FlexWrapper>
-          )}
-        </AsyncBoundary>
-      </ButtonWrapper>
+      {profile.type === UserTypeEnum.Executive &&
+        !isPastFunding &&
+        !isOperatingCommittee && (
+          <ExecutiveFundingReviewSection
+            funding={data.funding}
+            comments={data.comments}
+          />
+        )}
+      {!isOperatingCommittee && (
+        <ButtonWrapper>
+          <Button type="default" onClick={navigateToFundingList}>
+            목록으로 돌아가기
+          </Button>
+          <AsyncBoundary
+            isLoading={isLoadingFundingDeadline}
+            isError={isErrorFundingDeadline}
+          >
+            {!isPastFunding &&
+              profile.type === UserTypeEnum.Undergraduate &&
+              fundingDeadline?.deadline.deadlineEnum !==
+                FundingDeadlineEnum.Exception && (
+                <FlexWrapper direction="row" gap={10}>
+                  <Button
+                    type="default"
+                    onClick={() => openDeleteModal(data.funding.club.id)}
+                  >
+                    삭제
+                  </Button>
+                  <Button type="default" onClick={openEditModal}>
+                    수정
+                  </Button>
+                </FlexWrapper>
+              )}
+          </AsyncBoundary>
+        </ButtonWrapper>
+      )}
     </FlexWrapper>
   );
 };

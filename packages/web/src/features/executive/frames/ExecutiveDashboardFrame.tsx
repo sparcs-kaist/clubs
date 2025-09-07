@@ -1,15 +1,17 @@
-import { Divider } from "@mui/material";
-import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import Button from "@sparcs-clubs/web/common/components/Button";
-import Card from "@sparcs-clubs/web/common/components/Card";
+// import Button from "@sparcs-clubs/web/common/components/Button";
+// import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeInput";
+// import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
+import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import DashboardButton from "../components/DashboardButton";
+import OperationCommitteeSecretManager from "../components/SecretKey/OperationCommitteeSecretManager";
+import ManageMemberFrame from "./ManageMemberFrame";
+import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
   display: flex;
@@ -19,10 +21,10 @@ const DashboardSectionInner = styled.div`
   justify-content: flex-start;
 `;
 
-const ButtonWrapper = styled.div`
-  display: flex;
-  justify-content: flex-end;
-`;
+// const ButtonWrapper = styled.div`
+//   display: flex;
+//   justify-content: flex-end;
+// `;
 
 const ExecutiveDashboardFrame = () => {
   const isLoading = false;
@@ -30,6 +32,38 @@ const ExecutiveDashboardFrame = () => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
+      <Banner icon="warning">
+        현재 집행부원 대시보드는 개발 중에 있습니다.
+      </Banner>
+      <ManageSemesterFrame />
+      <ManageMemberFrame />
+      <OperationCommitteeSecretManager />
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>기간 관리</SectionTitle>
+        <DashboardSectionInner>
+          <FlexWrapper
+            direction="row"
+            gap={60}
+            style={{ justifyContent: "space-between" }}
+          >
+            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+              <DashboardButton text="동아리 등록 기간" link="" />
+              <DashboardButton text="회원 등록 기간" link="" />
+            </FlexWrapper>
+            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+              <DashboardButton
+                text="활동 보고서 기간"
+                link="/executive/activity-report/deadline"
+              />
+              <DashboardButton
+                text="지원금 기간"
+                link="/executive/funding/deadline"
+              />
+            </FlexWrapper>
+          </FlexWrapper>
+        </DashboardSectionInner>
+      </FlexWrapper>
+
       <FlexWrapper
         direction="row"
         gap={60}
@@ -39,7 +73,8 @@ const ExecutiveDashboardFrame = () => {
           <SectionTitle>동아리 / 회원 등록</SectionTitle>
           <DashboardSectionInner>
             <FlexWrapper direction="column" gap={12}>
-              <Card outline>
+              {/* TODO: 동아리 등록 기간 추가 */}
+              {/* <Card outline>
                 <DateRangeInput
                   label={["동아리 등록 기간", ""]}
                   startValue={""}
@@ -65,7 +100,7 @@ const ExecutiveDashboardFrame = () => {
                     저장
                   </Button>
                 </ButtonWrapper>
-              </Card>
+              </Card> */}
               <DashboardButton
                 text="동아리 등록 신청 내역"
                 link="/executive/register-club"
@@ -80,7 +115,8 @@ const ExecutiveDashboardFrame = () => {
         <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
           <SectionTitle>활동 보고서 / 지원금</SectionTitle>
           <DashboardSectionInner>
-            <Card outline>
+            {/* TODO: 활동 보고서 작성 기간 추가 */}
+            {/* <Card outline>
               <DateRangeInput
                 label={["활동 보고서 작성 기간", ""]}
                 startValue={""}
@@ -127,7 +163,7 @@ const ExecutiveDashboardFrame = () => {
                   저장
                 </Button>
               </ButtonWrapper>
-            </Card>
+            </Card> */}
             <FlexWrapper direction="column" gap={12}>
               <DashboardButton
                 text="활동 보고서 작성 내역"

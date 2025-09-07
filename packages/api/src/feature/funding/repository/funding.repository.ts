@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq, exists, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, exists, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import {
@@ -32,7 +32,10 @@ import {
   FundingTradeEvidenceFile,
   FundingTransportationPassenger,
 } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
-import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import {
+  Student,
+  StudentT,
+} from "@sparcs-clubs/api/drizzle/schema/user.schema";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
 import {
@@ -229,7 +232,19 @@ export default class FundingRepository {
         )
         .innerJoin(
           Student,
-          eq(Student.id, FundingTransportationPassenger.studentId),
+          and(
+            eq(Student.id, FundingTransportationPassenger.studentId),
+            isNull(Student.deletedAt),
+          ),
+        )
+        .innerJoin(
+          StudentT,
+          and(
+            eq(StudentT.studentId, Student.id),
+            lte(StudentT.startTerm, new Date()),
+            or(gte(StudentT.endTerm, new Date()), isNull(StudentT.endTerm)),
+            isNull(StudentT.deletedAt),
+          ),
         ),
     ]);
 

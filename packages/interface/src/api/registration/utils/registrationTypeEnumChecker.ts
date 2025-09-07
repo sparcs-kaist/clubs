@@ -27,7 +27,6 @@ const registrationTypeEnumChecker = (param: {
       break;
     case RegistrationTypeEnum.Renewal:
       if (param.clubId === undefined || param.clubId === null) return false;
-      if (param.activityPlanFileId !== undefined) return false;
       if (param.clubRuleFileId !== undefined) return false;
       break;
     default:

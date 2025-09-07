@@ -1,11 +1,9 @@
 import { overlay } from "overlay-kit";
 import { useCallback, useEffect, useState } from "react";
-import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
 import ChargedChangeClubModalContent from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalContent";
@@ -14,33 +12,21 @@ import ExecutiveActivityChargedTable from "@sparcs-clubs/web/features/activity-r
 import ExecutiveActivityClubTable from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutiveActivityClubTable";
 import useGetExecutiveActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveActivities";
 
-const TableWithPaginationWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-`;
-
 const ExecutiveActivityReportFrame = () => {
   const [isClubView, setIsClubView] = useState<boolean>(
     window.history.state.isClubView ?? true,
   );
   const [searchText, setSearchText] = useState("");
-  const [tempSearchText, setTempSearchText] = useState(searchText);
 
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
     ChargedChangeClubProps[]
   >([]);
 
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const limit = 10;
-
+  // TODO. 우선 급한대로 야매로 처리함 (추후에 페이지네이션 백에서 삭제하기)
   const { data, isLoading, isError } = useGetExecutiveActivities({
-    pageOffset: currentPage,
-    itemCount: limit,
-    clubName: isClubView ? searchText : undefined,
-    executiveName: !isClubView ? searchText : undefined,
+    pageOffset: 1,
+    itemCount: 150,
   });
 
   useEffect(() => {
@@ -75,14 +61,6 @@ const ExecutiveActivityReportFrame = () => {
       />
     ));
   }, [selectedClubIds, selectedClubInfos]);
-
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      setSearchText(tempSearchText);
-      setCurrentPage(1);
-    }, 500);
-    return () => clearTimeout(debounce);
-  }, [tempSearchText]);
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
@@ -124,8 +102,8 @@ const ExecutiveActivityReportFrame = () => {
       </FlexWrapper>
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
-          searchText={tempSearchText}
-          handleChange={setTempSearchText}
+          searchText={searchText}
+          handleChange={setSearchText}
           placeholder={
             isClubView
               ? "동아리 이름을 입력해주세요"
@@ -141,28 +119,19 @@ const ExecutiveActivityReportFrame = () => {
           </Button>
         )}
       </FlexWrapper>
-      <TableWithPaginationWrapper>
-        {isClubView ? (
-          <>
-            <ExecutiveActivityClubTable
-              activities={data?.items}
-              total={data?.total ?? 0}
-              selectedClubIds={selectedClubIds}
-              setSelectedClubIds={setSelectedClubIds}
-            />
-            <Pagination
-              totalPage={Math.ceil((data?.total ?? 0) / limit)}
-              currentPage={currentPage}
-              limit={limit}
-              setPage={setCurrentPage}
-            />
-          </>
-        ) : (
-          <ExecutiveActivityChargedTable
-            executives={data?.executiveProgresses}
-          />
-        )}
-      </TableWithPaginationWrapper>
+      {isClubView ? (
+        <ExecutiveActivityClubTable
+          activities={data?.items}
+          searchText={searchText}
+          selectedClubIds={selectedClubIds}
+          setSelectedClubIds={setSelectedClubIds}
+        />
+      ) : (
+        <ExecutiveActivityChargedTable
+          executives={data?.executiveProgresses}
+          searchText={searchText}
+        />
+      )}
     </AsyncBoundary>
   );
 };

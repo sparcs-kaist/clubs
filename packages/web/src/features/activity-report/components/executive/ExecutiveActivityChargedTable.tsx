@@ -21,6 +21,7 @@ import ChargedActivityModalTable, {
 } from "./ChargedActivityModalTable";
 
 interface ExecutiveActivityChargedTableProps {
+  searchText: string;
   executives?: ApiAct023ResponseOk["executiveProgresses"];
 }
 
@@ -152,24 +153,36 @@ const columns = [
 
 const ExecutiveActivityChargedTable: React.FC<
   ExecutiveActivityChargedTableProps
-> = ({ executives = [] }) => {
+> = ({ searchText, executives = [] }) => {
   const table = useReactTable({
     data: executives,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    enableSorting: true,
+    state: {
+      globalFilter: searchText,
+    },
+    enableSorting: false,
   });
 
   const totalCount = executives.length;
 
+  let countString = `총 ${totalCount}개`;
+  if (table.getRowModel().rows.length !== totalCount) {
+    countString = `검색 결과 ${table.getRowModel().rows.length}개 / 총 ${totalCount}개`;
+  }
+
   return (
-    <Table
-      count={totalCount}
-      table={table}
-      minWidth={800}
-      rowLink={row => `/executive/activity-report/charged/${row.executiveId}`}
-    />
+    <FlexWrapper direction="column" gap={8}>
+      <Typography fs={16} lh={20} style={{ flex: 1, textAlign: "right" }}>
+        {countString}
+      </Typography>
+      <Table
+        table={table}
+        minWidth={800}
+        rowLink={row => `/executive/activity-report/charged/${row.executiveId}`}
+      />
+    </FlexWrapper>
   );
 };
 
