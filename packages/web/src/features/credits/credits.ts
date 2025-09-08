@@ -32,7 +32,7 @@ const credits: SemesterCredit[] = [
       },
       {
         nickname: "edge",
-        name: "정재현현",
+        name: "정재현",
         role: "FE",
         roleType: RoleType.member,
         comment: "클럽스 짱",
