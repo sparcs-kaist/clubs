@@ -908,6 +908,7 @@ export class RegistrationService {
     // student 가 delegate 인 동아리 가져오기
     const clubTmp =
       await this.clubPublicService.findStudentClubDelegate(studentId);
+    console.log(clubTmp);
     const semester = await this.semesterPublicService.load();
     // 없을 경우 return null
     if (!clubTmp) return { club: null };
