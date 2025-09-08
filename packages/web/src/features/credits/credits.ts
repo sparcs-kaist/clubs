@@ -31,6 +31,13 @@ const credits: SemesterCredit[] = [
         comment: "Lorem ipsum dolor sit amet",
       },
       {
+        nickname: "ava",
+        name: "주영미",
+        role: "FE",
+        roleType: RoleType.member,
+        comment: "클럽스 코드가 그래도 쾌적한거였어..",
+      },
+      {
         nickname: "edge",
         name: "정재현",
         role: "FE",
