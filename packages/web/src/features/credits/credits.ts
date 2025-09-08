@@ -112,6 +112,13 @@ const credits: SemesterCredit[] = [
         roleType: RoleType.APM_BE,
         comment: "저스트 두잇",
       },
+      {
+        nickname: "gb",
+        name: "권혁원",
+        role: "APM(BE)",
+        roleType: RoleType.APM_BE,
+        comment: "저스트 두잇",
+      },
     ],
   },
   {
