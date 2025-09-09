@@ -38,7 +38,7 @@ const ProfessorRegisterClubDetailButton: React.FC<{
               { param: { applyId: +id } },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({
+                  queryClient.refetchQueries({
                     queryKey: [apiReg011.url(String(id)), id],
                   });
                   close();
