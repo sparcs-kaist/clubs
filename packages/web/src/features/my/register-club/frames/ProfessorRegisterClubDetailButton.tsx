@@ -1,17 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
-import apiReg011, {
-  ApiReg011ResponseOk,
-} from "@clubs/interface/api/registration/endpoint/apiReg011";
+import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/services/usePatchClubRegProfessorApprove";
 
@@ -19,7 +17,6 @@ const ProfessorRegisterClubDetailButton: React.FC<{
   clubDetail: ApiReg011ResponseOk;
 }> = ({ clubDetail }) => {
   const { id } = useParams();
-  const queryClient = useQueryClient();
 
   const { mutate } = usePatchClubRegProfessorApprove();
 
@@ -38,9 +35,12 @@ const ProfessorRegisterClubDetailButton: React.FC<{
               { param: { applyId: +id } },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({
-                    queryKey: [apiReg011.url(String(id)), id],
-                  });
+                  errorHandler("승인이 완료되었습니다.");
+                  close();
+                  window.location.reload();
+                },
+                onError: () => {
+                  errorHandler("승인에 실패하였습니다.");
                   close();
                 },
               },
