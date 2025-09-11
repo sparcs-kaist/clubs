@@ -1,10 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
 import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
-import apiReg022 from "@clubs/interface/api/registration/endpoint/apiReg022";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -19,7 +17,6 @@ const ProfessorRegisterClubDetailButton: React.FC<{
   clubDetail: ApiReg011ResponseOk;
 }> = ({ clubDetail }) => {
   const { id } = useParams();
-  const queryClient = useQueryClient();
 
   const { mutate } = usePatchClubRegProfessorApprove();
 
@@ -37,12 +34,10 @@ const ProfessorRegisterClubDetailButton: React.FC<{
             mutate(
               { param: { applyId: +id } },
               {
-                onSuccess: async () => {
-                  await queryClient.refetchQueries({
-                    queryKey: [apiReg022.url(String(id)), id],
-                  });
-                  close();
+                onSuccess: () => {
                   errorHandler("승인이 완료되었습니다.");
+                  close();
+                  window.location.reload();
                 },
                 onError: () => {
                   errorHandler("승인에 실패하였습니다.");
