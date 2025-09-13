@@ -1,6 +1,7 @@
 "use client";
 
 import { hangulIncludes } from "es-hangul";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
@@ -53,6 +54,7 @@ interface ConvertedSelectedCategories {
 }
 
 export const ExecutiveRegisterMember: React.FC = () => {
+  const t = useTranslations("club");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 200;
 
@@ -170,7 +172,7 @@ export const ExecutiveRegisterMember: React.FC = () => {
               <SearchInput
                 searchText={searchText}
                 handleChange={setSearchText}
-                placeholder="동아리 이름으로 검색하세요"
+                placeholder={t("placeholder")}
               />
               <MultiFilter
                 categories={categories}

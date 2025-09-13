@@ -12,7 +12,7 @@ export const useGetActivityReportsForPromotional = (
   query: ApiAct011RequestQuery,
 ) =>
   useQuery<ISuccessResponseType, Error>({
-    queryKey: [apiAct011.url()],
+    queryKey: [apiAct011.url(), query.clubId],
     queryFn: async (): Promise<ISuccessResponseType> => {
       const { data } = await axiosClientWithAuth.get(apiAct011.url(), {
         params: query,

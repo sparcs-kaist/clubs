@@ -75,7 +75,7 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
   };
 
   return (
-    <FlexWrapper direction="column" gap={4}>
+    <FlexWrapper direction="column" gap={4} style={{ width: "100%" }}>
       <Typography fw="MEDIUM" fs={16} lh={20}>
         활동 기간
       </Typography>
