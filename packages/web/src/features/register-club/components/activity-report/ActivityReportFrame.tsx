@@ -1,5 +1,5 @@
 import { overlay } from "overlay-kit";
-import React from "react";
+import React, { useCallback } from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -44,7 +44,7 @@ const ActivityReportFrame: React.FC<ActivityReportFrameProps> = ({
     clubId,
   });
 
-  const openCreateActivityReportModal = () => {
+  const openCreateActivityReportModal = useCallback(() => {
     overlay.open(({ isOpen, close }) => (
       <CreateActivityReportModal
         clubId={clubId}
@@ -52,7 +52,7 @@ const ActivityReportFrame: React.FC<ActivityReportFrameProps> = ({
         close={close}
       />
     ));
-  };
+  }, [clubId]);
 
   return (
     <FlexWrapper direction="column" gap={40}>

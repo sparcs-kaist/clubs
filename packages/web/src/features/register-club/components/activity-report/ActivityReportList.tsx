@@ -4,7 +4,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { overlay } from "overlay-kit";
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
 import { ApiAct011ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct011";
@@ -82,33 +82,42 @@ const ActivityReportList: React.FC<ActivityReportListProps> = ({
   refetch = () => {},
   clubId,
 }) => {
+  const processedData = useMemo(
+    () =>
+      data.map(item => ({
+        ...item,
+        durations: item.durations.map(duration => ({
+          startTerm: duration.startTerm!,
+          endTerm: duration.endTerm!,
+        })),
+      })),
+    [data],
+  );
+
   const table = useReactTable({
     columns,
-    data: data.map(item => ({
-      ...item,
-      durations: item.durations.map(duration => ({
-        startTerm: duration.startTerm!,
-        endTerm: duration.endTerm!,
-      })),
-    })),
+    data: processedData,
     getCoreRowModel: getCoreRowModel(),
     enableSorting: false,
   });
 
-  const openPastActivityReportModal = (activityId: number) => {
-    overlay.open(({ isOpen, close }) => (
-      <PastActivityReportModal
-        profile={profile}
-        activityId={activityId}
-        isOpen={isOpen}
-        close={() => {
-          close();
-          refetch();
-        }}
-        clubId={clubId}
-      />
-    ));
-  };
+  const openPastActivityReportModal = useCallback(
+    (activityId: number) => {
+      overlay.open(({ isOpen, close }) => (
+        <PastActivityReportModal
+          profile={profile}
+          activityId={activityId}
+          isOpen={isOpen}
+          close={() => {
+            close();
+            refetch();
+          }}
+          clubId={clubId}
+        />
+      ));
+    },
+    [profile, clubId],
+  );
 
   return (
     <TableOuter>
