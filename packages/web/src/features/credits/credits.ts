@@ -59,6 +59,13 @@ const credits: SemesterCredit[] = [
         comment: "졸업하자",
       },
       {
+        nickname: "cipher",
+        name: "장하진",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "Ad Astra, Per Aspera",
+      },
+      {
         nickname: "tom",
         name: "양지웅",
         role: "BE",
