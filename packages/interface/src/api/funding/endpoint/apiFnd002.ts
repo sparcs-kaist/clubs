@@ -16,7 +16,9 @@ const requestParam = z.object({
   id: z.coerce.number().int().min(1),
 });
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  operatingCommitteeSecret: z.string().max(255).optional(),
+});
 
 const requestBody = z.object({});
 
