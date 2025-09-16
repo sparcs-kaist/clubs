@@ -272,22 +272,18 @@ export default class FundingService {
     }
     const funding = await this.fundingRepository.fetch(id);
 
-    //시크릿키가 undefined이면 집행부원인지 확인
-    if (operatingCommitteeSecret === undefined) {
-      await this.userPublicService.getExecutiveById({
-        id: studentId,
-      });
-    } else {
-      const activeKey =
-        await this.operationCommitteeService.findOperationCommitteeSecretKey();
-      if (!activeKey || activeKey.length === 0) {
-        throw new Error("No active OperationCommittee secret key found.");
-      }
+    const activeKey =
+      await this.operationCommitteeService.findOperationCommitteeSecretKey();
+    if (activeKey.length === 0) {
+      throw new HttpException(
+        "No active OperationCommittee secret key found.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-      const validSecret = activeKey[0].secretKey;
-      if (operatingCommitteeSecret !== validSecret) {
-        throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
-      }
+    const validSecret = activeKey[0].secretKey;
+    if (operatingCommitteeSecret !== validSecret) {
+      throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
     }
 
     const fundingResponse = await this.buildFundingResponse(funding);

@@ -184,7 +184,10 @@ export default class ActivityService {
       const activeKey =
         await this.operationCommitteeService.findOperationCommitteeSecretKey();
       if (activeKey.length === 0) {
-        throw new Error("No active OperationCommittee secret key found.");
+        throw new HttpException(
+          "No active OperationCommittee secret key found.",
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       const validSecret = activeKey[0].secretKey;
