@@ -126,7 +126,6 @@ export class ClubOldRepository {
   }
 
   async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
-    // const crt = getKSTDate();
     const crt = getKSTDateForQuery();
     const clubs = await this.db
       .select({
