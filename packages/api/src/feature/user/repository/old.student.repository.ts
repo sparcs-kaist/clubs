@@ -128,10 +128,17 @@ export default class OldStudentRepository {
 
   async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
     const isUpdateSucceed = await this.db.transaction(async tx => {
+      const [student] = await tx
+        .select({ userId: Student.userId })
+        .from(Student)
+        .where(eq(Student.userId, userId));
+
+      if (!student) return false;
+
       const [result] = await tx
         .update(User)
         .set({ phoneNumber })
-        .where(and(eq(User.id, userId), isNull(User.deletedAt)));
+        .where(and(eq(User.id, student.userId), isNull(User.deletedAt)));
 
       if (result.affectedRows === 0) {
         tx.rollback();
