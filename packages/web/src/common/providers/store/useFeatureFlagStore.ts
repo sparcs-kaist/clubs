@@ -52,6 +52,24 @@ const useFeatureFlagStore = create(
     {
       name: "INTERNAL--feature-flag-state",
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => state => {
+        if (
+          !state ||
+          state.FLAGS.REGISTER_CLUB !==
+            parsedFeatureFlagState.FLAGS.REGISTER_CLUB ||
+          state.FLAGS.REGISTER_MEMBER !==
+            parsedFeatureFlagState.FLAGS.REGISTER_MEMBER ||
+          state.FLAGS.NO_RELEASE !== parsedFeatureFlagState.FLAGS.NO_RELEASE ||
+          state.DEV_MODE !== parsedFeatureFlagState.DEV_MODE
+        ) {
+          logger.debug("Feature Flag values changed, clearing cache", {
+            cached: state?.FLAGS,
+            current: parsedFeatureFlagState.FLAGS,
+          });
+          return parsedFeatureFlagState;
+        }
+        return state;
+      },
     },
   ),
 );
