@@ -2,8 +2,6 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { StudentStatusEnum } from "@clubs/domain/user/student";
-
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { AuthActivatedRefreshTokens } from "@sparcs-clubs/api/drizzle/schema/refresh-token.schema";
@@ -127,7 +125,7 @@ export class AuthRepository {
 
       // studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
       let studentEnum = 3;
-      let studentStatusEnum: StudentStatusEnum = 1;
+      let studentStatusEnum = 2;
       if (parseInt(studentNumber.slice(-4)) < 2000) {
         studentEnum = 1;
         studentStatusEnum = 1;
