@@ -52,6 +52,13 @@ const credits: SemesterCredit[] = [
         comment: "클럽스 짱",
       },
       {
+        nickname: "gb",
+        name: "권혁원",
+        role: "APM(BE)",
+        roleType: RoleType.APM_BE,
+        comment: "짜잔~ 내가 돌아왔다",
+      },
+      {
         nickname: "eel",
         name: "최우정",
         role: "FE",
@@ -118,6 +125,13 @@ const credits: SemesterCredit[] = [
         role: "BE",
         roleType: RoleType.member,
         comment: "여름학기 수면 패턴 삭제 완료",
+      },
+      {
+        nickname: "gb",
+        name: "권혁원",
+        role: "APM(BE)",
+        roleType: RoleType.APM_BE,
+        comment: "저스트 두잇",
       },
     ],
   },
