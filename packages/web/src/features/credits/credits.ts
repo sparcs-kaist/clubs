@@ -79,13 +79,6 @@ const credits: SemesterCredit[] = [
         roleType: RoleType.member,
         comment: "끝까지 화이팅..",
       },
-      {
-        nickname: "gb",
-        name: "권혁원",
-        role: "APM(BE)",
-        roleType: RoleType.APM_BE,
-        comment: "짜잔~ 내가 돌아왔다",
-      },
     ],
   },
   {
