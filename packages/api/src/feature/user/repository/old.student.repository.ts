@@ -5,6 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { StudentStatusEnum } from "@clubs/interface/common/enum/user.enum";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
@@ -128,32 +129,13 @@ export default class OldStudentRepository {
 
   async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
     const isUpdateSucceed = await this.db.transaction(async tx => {
-      let targetUserId: number | null = null;
-
-      //userId가 user_id인 경우
-      const [user] = await tx
-        .select({ id: User.id })
-        .from(User)
-        .where(and(eq(User.id, userId), isNull(User.deletedAt)));
-
-      if (user) {
-        targetUserId = user.id;
-      } else {
-        //student id인 경우, Student 테이블에 존재하는지 확인, user_id로 변환
-        const [student] = await tx
-          .select({ userId: Student.userId })
-          .from(Student)
-          .where(eq(Student.id, userId));
-
-        targetUserId = student.userId;
-      }
-
       const [result] = await tx
         .update(User)
         .set({ phoneNumber })
-        .where(and(eq(User.id, targetUserId), isNull(User.deletedAt)));
+        .where(and(eq(User.id, userId), isNull(User.deletedAt)));
 
       if (result.affectedRows === 0) {
+        logger.debug("[OldStudentRepository] Failed to update phone number");
         tx.rollback();
         return false;
       }
