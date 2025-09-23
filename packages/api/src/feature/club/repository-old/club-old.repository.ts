@@ -28,7 +28,11 @@ import {
   ClubTypeEnum,
 } from "@clubs/interface/common/enum/club.enum";
 
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
+import {
+  getKSTDate,
+  getKSTDateForQuery,
+  takeOne,
+} from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   ClubDelegate,
@@ -122,7 +126,7 @@ export class ClubOldRepository {
   }
 
   async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
-    const crt = getKSTDate();
+    const crt = getKSTDateForQuery();
     const clubs = await this.db
       .select({
         id: Division.id,

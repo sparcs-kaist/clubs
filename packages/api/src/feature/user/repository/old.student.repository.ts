@@ -5,6 +5,7 @@ import { MySql2Database } from "drizzle-orm/mysql2";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { StudentStatusEnum } from "@clubs/interface/common/enum/user.enum";
 
+import logger from "@sparcs-clubs/api/common/util/logger";
 import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
@@ -134,6 +135,7 @@ export default class OldStudentRepository {
         .where(and(eq(User.id, userId), isNull(User.deletedAt)));
 
       if (result.affectedRows === 0) {
+        logger.debug("[OldStudentRepository] Failed to update phone number");
         tx.rollback();
         return false;
       }
