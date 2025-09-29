@@ -10,6 +10,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
+import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 import { MyChangesFrame } from "@sparcs-clubs/web/features/my/frames/MyChangesFrame";
 import MyClubFrame from "@sparcs-clubs/web/features/my/frames/MyClubFrame";
 import MyInfoFrame from "@sparcs-clubs/web/features/my/frames/MyInfoFrame";
@@ -48,6 +49,15 @@ const My: React.FC = () => {
         items={[{ name: "마이페이지", path: "/my" }]}
         title="마이페이지"
       />
+      {profile?.type === UserTypeEnum.Professor && (
+        <Banner icon="warning">
+          동아리 등록 신청서는 이 페이지 하단에서 확인하실 수 있으며, 동아리
+          등록 신청서는 학기 역순으로 정렬되어 있습니다.
+          <br />
+          표에 나와있는 승인 상태는 지도교수님 승인 상태와는 별개이므로, 실제
+          승인 상태는 동아리 등록 신청서에서 확인하실 수 있습니다.
+        </Banner>
+      )}
       {profile?.type === UserTypeEnum.Undergraduate && <MyChangesFrame />}
       <MyInfoFrame profile={profile?.type as string} />
       {profile?.type !== UserTypeEnum.Executive &&
