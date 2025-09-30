@@ -49,13 +49,11 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      {filteredDivisions.length > 0 && (
-        <SearchInput
-          searchText={searchText}
-          handleChange={setSearchText}
-          placeholder={t("club.placeholder")}
-        />
-      )}
+      <SearchInput
+        searchText={searchText}
+        handleChange={setSearchText}
+        placeholder={t("club.placeholder")}
+      />
       <FlexWrapper direction="column" gap={40}>
         {filteredDivisions.map(division => (
           <ClubsSectionFrame

@@ -472,9 +472,13 @@ export default class ClubDelegateService {
       param.body.clubDelegateChangeRequestStatusEnum ===
       ClubDelegateChangeRequestStatusEnum.Approved
     ) {
+      const userId = await this.clubDelegateDRepository.findUserIdByStudentId(
+        param.studentId,
+      );
+
       if (
         !this.userPublicService.updateStudentPhoneNumber(
-          param.studentId,
+          userId,
           param.body.phoneNumber,
         )
       )

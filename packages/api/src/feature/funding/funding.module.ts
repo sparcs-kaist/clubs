@@ -5,6 +5,7 @@ import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
 import ActivityModule from "../activity/activity.module";
 import ClubModule from "../club/club.module";
 import FileModule from "../file/file.module";
+import { OperationCommitteeModule } from "../operation-committee/operation-committee.module";
 import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import FundingController from "./controller/funding.controller";
@@ -19,6 +20,7 @@ import FundingService from "./service/funding.service";
     ClubModule,
     ActivityModule,
     FileModule,
+    OperationCommitteeModule,
     SemesterModule,
   ],
   controllers: [FundingController],

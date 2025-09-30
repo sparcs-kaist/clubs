@@ -80,6 +80,7 @@ import { FundingDeadlinePublicService } from "@sparcs-clubs/api/feature/semester
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MFunding } from "../model/funding.model";
 import { FundingCommentRepository } from "../repository/funding.comment.repository";
 import FundingRepository from "../repository/funding.repository";
@@ -97,6 +98,7 @@ export default class FundingService {
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
     private readonly txManager: TransactionManagerService,
+    private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
   async postStudentFunding(
@@ -262,6 +264,7 @@ export default class FundingService {
   async getStudentFunding2(
     studentId: IStudent["id"],
     id: IFunding["id"],
+    operatingCommitteeSecret: string | undefined,
   ): Promise<ApiFnd002ResponseOk> {
     const user = await this.userPublicService.getStudentById({ id: studentId });
     if (!user) {
@@ -269,10 +272,25 @@ export default class FundingService {
     }
     const funding = await this.fundingRepository.fetch(id);
 
+    const activeKey =
+      await this.operationCommitteeService.findOperationCommitteeSecretKey();
+    if (activeKey.length === 0) {
+      throw new HttpException(
+        "No active OperationCommittee secret key found.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const validSecret = activeKey[0].secretKey;
+    if (operatingCommitteeSecret !== validSecret) {
+      throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
+    }
+
     const fundingResponse = await this.buildFundingResponse(funding);
     const comments = await this.fundingCommentRepository.find({
       fundingId: funding.id,
     });
+
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );

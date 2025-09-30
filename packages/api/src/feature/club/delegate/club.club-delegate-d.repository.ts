@@ -481,4 +481,13 @@ export class ClubDelegateDRepository {
     if (president !== 0) return true;
     return false;
   }
+
+  async findUserIdByStudentId(studentId: number) {
+    const result = await this.db
+      .select({ userId: Student.userId })
+      .from(Student)
+      .where(and(eq(Student.id, studentId), isNull(Student.deletedAt)))
+      .then(takeOne);
+    return result.userId;
+  }
 }

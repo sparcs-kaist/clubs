@@ -13,6 +13,7 @@ import {
 
 import apiFnd002, {
   type ApiFnd002RequestParam,
+  type ApiFnd002RequestQuery,
   type ApiFnd002ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd002";
 import apiFnd003, {
@@ -117,10 +118,12 @@ export default class FundingController {
   async getStudentFunding(
     @GetStudent() user: GetStudent,
     @Param() param: ApiFnd002RequestParam,
+    @Query() query: ApiFnd002RequestQuery,
   ): Promise<ApiFnd002ResponseOk> {
     const result = await this.fundingService.getStudentFunding2(
       user.studentId,
       param.id,
+      query.operatingCommitteeSecret,
     );
     return result;
   }
