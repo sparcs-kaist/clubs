@@ -130,7 +130,7 @@ export class AuthRepository {
         studentEnum = 1;
         studentStatusEnum = 1;
       } else if (parseInt(studentNumber.slice(-4)) < 6000) studentEnum = 2;
-      else if (parseInt(studentNumber.slice(-4)) < 7000) studentEnum = 1;
+      else if (parseInt(studentNumber.slice(-4)) < 7000) studentEnum = 2;
 
       // student 테이블에서 해당 user id를 모두 검색
       // undergraduate, master, doctor 중 해당하는 경우 result에 추가
@@ -145,7 +145,7 @@ export class AuthRepository {
         let studentEnum = 3;
         if (student.number % 10000 < 2000) studentEnum = 1;
         else if (student.number % 10000 < 6000) studentEnum = 2;
-        else if (student.number % 10000 < 7000) studentEnum = 1;
+        else if (student.number % 10000 < 7000) studentEnum = 2;
 
         if (studentEnum === 1) {
           result = {
