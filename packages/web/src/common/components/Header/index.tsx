@@ -91,9 +91,7 @@ const Header: React.FC = () => {
         </FlexWrapper>
         <FlexWrapper direction="row" gap={isSmallerThanMd ? 20 : 30}>
           <FlexWrapper gap={8} direction="row">
-            {process.env.NEXT_PUBLIC_APP_MODE !== "production" && (
-              <LanguageSwitcher isMobile={isMobile} />
-            )}
+            <LanguageSwitcher isMobile={isMobile} />
             <Login />
           </FlexWrapper>
           {isSmallerThanMd && (
