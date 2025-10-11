@@ -14,7 +14,12 @@
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-unit.json",
     "test:e2e": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-e2e.json",
+    "test:e2e:full": "pnpm test:db-up && pnpm test:db-migrate && pnpm test:e2e; pnpm test:db-down",
     "test:cov": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-unit.json --coverage",
+    "test:db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.test.yml -p ar-002-clubs-test up -d",
+    "test:db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs-test down",
+    "test:db-clean": "dotenv -e ../../.env -- docker compose -p ar-002-clubs-test down -v",
+    "test:db-migrate": "pnpm test:db-up --wait && dotenv -e ../../.env -- NODE_ENV=test pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts",
     "db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs up -d",
     "db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs down",
     "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
