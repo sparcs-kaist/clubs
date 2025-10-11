@@ -79,6 +79,13 @@ const credits: SemesterCredit[] = [
         roleType: RoleType.member,
         comment: "끝까지 화이팅..",
       },
+      {
+        nickname: "chan",
+        name: "박병찬",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "군인을 이제 보내주세요",
+      },
     ],
   },
   {
@@ -132,6 +139,13 @@ const credits: SemesterCredit[] = [
         role: "APM(BE)",
         roleType: RoleType.APM_BE,
         comment: "저스트 두잇",
+      },
+      {
+        nickname: "chan",
+        name: "박병찬",
+        role: "BE",
+        roleType: RoleType.member,
+        comment: "끝날 때까지 끝난게 아니다",
       },
     ],
   },
