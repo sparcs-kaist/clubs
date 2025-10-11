@@ -1,0 +1,99 @@
+---
+alwaysApply: true
+---
+
+# Serena MCP 강제 사용 규칙
+
+## 필수 사항
+
+**모든 코드 작업에서 Serena MCP 도구를 우선적으로 사용해야 합니다.**
+
+### 파일 조작 시 필수 사용 도구
+
+#### 파일 읽기
+
+- ❌ `read_file` (일반 도구) 사용 금지
+- ✅ `mcp_serena_read_file` 필수 사용
+
+#### 디렉터리 탐색
+
+- ❌ `list_dir` (일반 도구) 사용 금지
+- ✅ `mcp_serena_list_dir` 필수 사용
+
+#### 파일 검색
+
+- ❌ `glob_file_search` (일반 도구) 사용 금지
+- ✅ `mcp_serena_find_file` 필수 사용
+
+#### 코드 검색 및 분석
+
+- ❌ `codebase_search`, `grep` (일반 도구) 사용 금지
+- ✅ `mcp_serena_search_for_pattern` 필수 사용
+- ✅ `mcp_serena_find_symbol` 필수 사용
+- ✅ `mcp_serena_find_referencing_symbols` 필수 사용
+- ✅ `mcp_serena_get_symbols_overview` 필수 사용
+
+#### 파일 생성 및 편집
+
+- ❌ `write`, `search_replace`, `MultiEdit` (일반 도구) 사용 금지
+- ✅ `mcp_serena_create_text_file` 필수 사용
+- ✅ `mcp_serena_replace_regex` 필수 사용
+- ✅ `mcp_serena_replace_symbol_body` 필수 사용
+- ✅ `mcp_serena_insert_after_symbol` 필수 사용
+- ✅ `mcp_serena_insert_before_symbol` 필수 사용
+
+#### 명령 실행
+
+- ❌ `run_terminal_cmd` (일반 도구) 사용 금지
+- ✅ `mcp_serena_execute_shell_command` 필수 사용
+
+### 예외 사항
+
+다음의 경우에만 일반 도구 사용 허용:
+
+- Serena MCP에서 동등한 기능을 제공하지 않는 도구
+- 사용자가 명시적으로 일반 도구 사용을 요청한 경우
+
+### 워크플로우 강제 사항
+
+1. **항상 Serena 도구부터 시도**
+2. **Serena 도구가 실패한 경우에만 일반 도구 고려**
+3. **일반 도구 사용 시 사용자에게 이유 설명**
+
+### 메모리 활용
+
+- ✅ `mcp_serena_write_memory`: 중요한 정보는 메모리에 저장
+- ✅ `mcp_serena_read_memory`: 과거 정보 활용
+- ✅ `mcp_serena_list_memories`: 사용 가능한 메모리 확인
+
+### 사고 도구 활용
+
+정기적으로 다음 사고 도구들을 활용:
+
+- ✅ `mcp_serena_think_about_collected_information`
+- ✅ `mcp_serena_think_about_task_adherence`
+- ✅ `mcp_serena_think_about_whether_you_are_done`
+
+## 위반 시 경고
+
+일반 도구를 사용하려고 시도할 경우:
+
+- **즉시 중단하고 Serena MCP 도구로 전환**
+- **사용자에게 Serena 도구 사용 이유 설명**
+
+## 도구 사용 시 주의사항 및 에러 해결
+
+### mcp_serena_replace_regex 사용 중 빈 문자열 교체 시
+
+❌ **잘못된 방법** (에러 발생!)
+```
+regex: "import_line_to_remove"
+repl: ""  # 빈 문자열 직접 사용 불가!
+```
+
+✅ **올바른 해결책**
+```
+# 주변 문자열을 포함해서 전체 블록을 교체
+regex: "import \\(\n\\t\"unused_import\"\n\\t\"other_import\"\n\\)"
+repl: "import (\n\t\"other_import\"\n)"
+```
