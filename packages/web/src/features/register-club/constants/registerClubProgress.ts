@@ -22,7 +22,7 @@ const getRegisterClubProgress = (
       };
     case RegistrationStatusEnum.Approved:
       return {
-        labels: ["신청 완료", "동아리 연합회 승인 완료"],
+        labels: ["신청 완료", "동아리 연합회 신청 승인"],
         progress: [
           { status: ProgressCheckSectionStatusEnum.Approved, date: undefined },
           { status: ProgressCheckSectionStatusEnum.Approved, date },
