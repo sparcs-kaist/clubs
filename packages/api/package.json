@@ -19,7 +19,7 @@
     "test:db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.test.yml -p ar-002-clubs-test up -d",
     "test:db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs-test down",
     "test:db-clean": "dotenv -e ../../.env -- docker compose -p ar-002-clubs-test down -v",
-    "test:db-migrate": "pnpm test:db-up --wait && dotenv -e ../../.env -- NODE_ENV=test pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts",
+    "test:db-migrate": "pnpm test:db-up --wait && NODE_ENV=test dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts",
     "db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs up -d",
     "db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs down",
     "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
