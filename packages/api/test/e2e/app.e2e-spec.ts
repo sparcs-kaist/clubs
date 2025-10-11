@@ -5,8 +5,7 @@ import { App } from "supertest/types";
 
 import { AppModule } from "@sparcs-clubs/api/app.module";
 
-import { closeDatabase } from "./setup";
-// import { clearDatabase } from "./setup"; // TODO: 연결 문제 해결 후 활성화
+import { clearDatabase, closeDatabase } from "./setup";
 
 describe("AppController (e2e)", () => {
   let app: INestApplication<App>;
@@ -20,8 +19,7 @@ describe("AppController (e2e)", () => {
     await app.init();
 
     // 애플리케이션 초기화 후 DB 초기화
-    // TODO: clearDatabase() 연결 문제 해결 필요
-    // await clearDatabase();
+    await clearDatabase();
   }, 60000);
 
   it("/notices (GET)", () =>
