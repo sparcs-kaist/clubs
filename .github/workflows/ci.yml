@@ -92,7 +92,7 @@ jobs:
       - name: Run database migrations
         run: |
           cd packages/api
-          pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts
+          dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts
           
       - name: Run E2E tests
         run: pnpm --filter api test:e2e
