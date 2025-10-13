@@ -35,3 +35,63 @@ jobs:
         run: pnpm lint
       - name: Check build passing
         run: pnpm build
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        node-version: [22.12.0]
+        pnpm-version: [9.14.4]
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password_123
+          MYSQL_DATABASE: clubs_test
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          
+      - name: Install pnpm ${{ matrix.pnpm-version }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ matrix.pnpm-version }}
+          run_install: true
+          
+      - name: Build packages
+        run: pnpm build
+        
+      - name: Run database migrations
+        run: |
+          cd packages/api
+          pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: mysql://root:test_password_123@127.0.0.1:3307/clubs_test
+          DATABASE_URL: mysql://root:test_password_123@127.0.0.1:3307/clubs_test
+          SERVER_PORT: 3000
+          SECRET_KEY: test_secret_key_for_ci
+          
+      - name: Run E2E tests
+        run: pnpm --filter api test:e2e
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: mysql://root:test_password_123@127.0.0.1:3307/clubs_test
+          DATABASE_URL: mysql://root:test_password_123@127.0.0.1:3307/clubs_test
+          SERVER_PORT: 3000
+          SECRET_KEY: test_secret_key_for_ci
