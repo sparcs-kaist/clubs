@@ -17,7 +17,13 @@
     "test:cov": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-unit.json --coverage",
     "db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs up -d",
     "db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs down",
-    "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts"
+    "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "dotenv -e ../../.env -- pnpm typeorm migration:generate -d src/typeorm/data-source.ts",
+    "migration:create": "dotenv -e ../../.env -- pnpm typeorm migration:create -d src/typeorm/data-source.ts",
+    "migration:run": "dotenv -e ../../.env -- pnpm typeorm migration:run -d src/typeorm/data-source.ts",
+    "migration:revert": "dotenv -e ../../.env -- pnpm typeorm migration:revert -d src/typeorm/data-source.ts",
+    "migration:show": "dotenv -e ../../.env -- pnpm typeorm migration:show -d src/typeorm/data-source.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.609.0",
@@ -79,6 +85,7 @@
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "typeorm-model-generator": "^0.4.6",
     "typescript": "^5.9.2"
   },
   "packageManager": "pnpm@9.14.4"
