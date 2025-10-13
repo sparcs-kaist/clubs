@@ -440,9 +440,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
       `ALTER TABLE \`registration\` ADD CONSTRAINT \`FK_07027713306f23e41450ee04864\` FOREIGN KEY (\`semester_d_id\`) REFERENCES \`semester_d\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE \`registration\` ADD CONSTRAINT \`FK_07027713306f23e41450ee04864\` FOREIGN KEY (\`semester_d_id\`) REFERENCES \`semester_d\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
       `ALTER TABLE \`registration\` ADD CONSTRAINT \`FK_8347b33f38c6ff467cb7774824b\` FOREIGN KEY (\`student_id\`) REFERENCES \`student\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -638,9 +635,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
       `ALTER TABLE \`activity\` ADD CONSTRAINT \`FK_08f2f111ab010c7d4b225246d61\` FOREIGN KEY (\`charged_executive_id\`) REFERENCES \`executive\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE \`activity\` ADD CONSTRAINT \`FK_08f2f111ab010c7d4b225246d61\` FOREIGN KEY (\`charged_executive_id\`) REFERENCES \`executive\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
       `ALTER TABLE \`activity\` ADD CONSTRAINT \`FK_9e3fada8f2bbbcaf4ddc5cd3aae\` FOREIGN KEY (\`commented_executive_id\`) REFERENCES \`executive\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -684,9 +678,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE \`activity\` DROP FOREIGN KEY \`FK_9e3fada8f2bbbcaf4ddc5cd3aae\``,
-    );
-    await queryRunner.query(
-      `ALTER TABLE \`activity\` DROP FOREIGN KEY \`FK_08f2f111ab010c7d4b225246d61\``,
     );
     await queryRunner.query(
       `ALTER TABLE \`activity\` DROP FOREIGN KEY \`FK_08f2f111ab010c7d4b225246d61\``,
@@ -882,9 +873,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE \`registration\` DROP FOREIGN KEY \`FK_8347b33f38c6ff467cb7774824b\``,
-    );
-    await queryRunner.query(
-      `ALTER TABLE \`registration\` DROP FOREIGN KEY \`FK_07027713306f23e41450ee04864\``,
     );
     await queryRunner.query(
       `ALTER TABLE \`registration\` DROP FOREIGN KEY \`FK_07027713306f23e41450ee04864\``,
