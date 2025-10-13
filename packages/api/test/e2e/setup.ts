@@ -25,11 +25,14 @@ export async function clearDatabase(): Promise<void> {
     `);
 
     // 각 테이블의 데이터 삭제 (순차 처리)
-    const tableRows = (result.rows || result) as Array<{ table_name: string }>;
+    // result는 [[...]] 형태의 2차원 배열
+    const tables = Array.isArray(result) ? result[0] : result.rows || [];
+    const tableRows = tables as Array<{ TABLE_NAME: string }>;
+
     await tableRows.reduce(async (promise, row) => {
       await promise;
-      if (row.table_name) {
-        await db.execute(sql.raw(`TRUNCATE TABLE \`${row.table_name}\``));
+      if (row && row.TABLE_NAME) {
+        await db.execute(sql.raw(`TRUNCATE TABLE \`${row.TABLE_NAME}\``));
       }
     }, Promise.resolve());
 
