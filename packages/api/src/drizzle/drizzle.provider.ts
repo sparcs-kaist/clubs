@@ -75,7 +75,7 @@ export const getDbInstance = async () => {
         meetingSchema,
       },
       mode: "default",
-      logger: true,
+      logger: env.NODE_ENV !== "test",
     });
   }
   return dbInstance;
