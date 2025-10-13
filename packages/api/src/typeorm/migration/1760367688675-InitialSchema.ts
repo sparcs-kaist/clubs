@@ -362,12 +362,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
       `ALTER TABLE \`meeting_attendance_time_t\` ADD CONSTRAINT \`FK_0fee63e7a03fbb812972bf809cf\` FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE \`meeting_attendance_time_t\` ADD CONSTRAINT \`FK_96c6011e06e39f068feb50598a7\` FOREIGN KEY (\`meeting_id\`) REFERENCES \`meeting\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE \`meeting_attendance_time_t\` ADD CONSTRAINT \`FK_0fee63e7a03fbb812972bf809cf\` FOREIGN KEY (\`user_id\`) REFERENCES \`user\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
       `ALTER TABLE \`meeting_vote_result\` ADD CONSTRAINT \`FK_c0af915e38923c074c4d9abbebf\` FOREIGN KEY (\`vote_id\`) REFERENCES \`meeting_agenda_vote\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -969,12 +963,6 @@ export class InitialSchema1760367688675 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE \`meeting_vote_result\` DROP FOREIGN KEY \`FK_c0af915e38923c074c4d9abbebf\``,
-    );
-    await queryRunner.query(
-      `ALTER TABLE \`meeting_attendance_time_t\` DROP FOREIGN KEY \`FK_0fee63e7a03fbb812972bf809cf\``,
-    );
-    await queryRunner.query(
-      `ALTER TABLE \`meeting_attendance_time_t\` DROP FOREIGN KEY \`FK_96c6011e06e39f068feb50598a7\``,
     );
     await queryRunner.query(
       `ALTER TABLE \`meeting_attendance_time_t\` DROP FOREIGN KEY \`FK_0fee63e7a03fbb812972bf809cf\``,
