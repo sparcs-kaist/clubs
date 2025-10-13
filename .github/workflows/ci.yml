@@ -82,6 +82,8 @@ jobs:
           NODE_ENV=test
           SERVER_PORT=3000
           SECRET_KEY=test_secret_key_for_ci
+          ACCESS_TOKEN_SECRET_KEY=test_access_token_secret_for_ci
+          REFRESH_TOKEN_SECRET_KEY=test_refresh_token_secret_for_ci
           TEST_DB_PORT=3307
           TEST_DB_PASSWORD=test_password_123
           TEST_DB_NAME=clubs_test
@@ -97,6 +99,8 @@ jobs:
           TEST_DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test \
           SERVER_PORT=3000 \
           SECRET_KEY=test_secret_key_for_ci \
+          ACCESS_TOKEN_SECRET_KEY=test_access_token_secret_for_ci \
+          REFRESH_TOKEN_SECRET_KEY=test_refresh_token_secret_for_ci \
           pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts
           
       - name: Run E2E tests
@@ -106,4 +110,6 @@ jobs:
           TEST_DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test \
           SERVER_PORT=3000 \
           SECRET_KEY=test_secret_key_for_ci \
+          ACCESS_TOKEN_SECRET_KEY=test_access_token_secret_for_ci \
+          REFRESH_TOKEN_SECRET_KEY=test_refresh_token_secret_for_ci \
           pnpm --filter api test:e2e:ci
