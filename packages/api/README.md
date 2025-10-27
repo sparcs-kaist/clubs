@@ -58,6 +58,47 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## E2E 테스트 설정
+
+### 환경 변수 설정
+
+`.env` 파일에 테스트 DB 관련 환경 변수를 추가하세요:
+
+```bash
+# E2E 테스트용 데이터베이스 설정
+TEST_DB_PORT=3307
+TEST_DB_PASSWORD=test_password_123
+TEST_DB_NAME=clubs_test
+TEST_DATABASE_URL=mysql://root:test_password_123@localhost:3307/clubs_test
+```
+
+### 테스트 DB 관리
+
+```bash
+# 테스트 DB 시작
+$ pnpm test:db-up
+
+# 테스트 DB 마이그레이션
+$ pnpm test:db-migrate
+
+# E2E 테스트 실행
+$ pnpm test:e2e
+
+# 테스트 DB 중지
+$ pnpm test:db-down
+
+# 테스트 DB 완전 삭제 (볼륨 포함)
+$ pnpm test:db-clean
+```
+
+### 통합 실행
+
+DB 시작 → 마이그레이션 → 테스트 실행 → DB 정리를 한 번에:
+
+```bash
+$ pnpm test:e2e:full
+```
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
