@@ -105,6 +105,17 @@ export class AuthRepository {
       ((type === "Student" || type === "Ex-employee") &&
         !typeV2.startsWith("P")) // V1 fallback
     ) {
+      //HP 학번(6900~6999)인 경우 로그인 불가
+      if (
+        parseInt(studentNumber.slice(-4)) >= 6900 &&
+        parseInt(studentNumber.slice(-4)) < 7000
+      ) {
+        throw new HttpException(
+          "HP 학번은 로그인할 수 없습니다.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       await this.db
         .insert(Student)
         .values({
@@ -124,17 +135,6 @@ export class AuthRepository {
           ),
         )
         .then(takeOne);
-
-      //HP 학번(6900~6999)인 경우 로그인 불가
-      if (
-        parseInt(studentNumber.slice(-4)) >= 6900 &&
-        parseInt(studentNumber.slice(-4)) < 7000
-      ) {
-        throw new HttpException(
-          "HP 학번은 로그인할 수 없습니다.",
-          HttpStatus.BAD_REQUEST,
-        );
-      }
 
       //v2info 기반 학적 상태 및 학위 구분
       // v2Info 없는 경우, studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
