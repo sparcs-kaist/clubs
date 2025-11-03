@@ -59,8 +59,8 @@ export class AuthRepository {
     type: string,
     department: string,
     typeV2: string,
-    statusV2: string,
-    progCodeV2: string,
+    statusV2: string | null,
+    progCodeV2: string | null,
   ): Promise<FindOrCreateUserReturn> {
     // User table에 해당 email이 있는지 확인 후 upsert
     await this.db
