@@ -31,7 +31,7 @@ const SPARCSLogo = () => {
       target={isSmallView ? "_self" : "_blank"}
       rel={isSmallView ? undefined : "noopener noreferrer"}
     >
-      <Image src={sparcsSvg} alt="SPARCS" height={24} />
+      <Image src={sparcsSvg} alt="SPARCS" width={120} height={24} />
     </Link>
   );
 };
