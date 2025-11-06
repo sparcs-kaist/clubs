@@ -139,6 +139,8 @@ export class ClubService {
       studentSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
+            const now = new Date();
+            const isCurrentSemester = now <= semester.endTerm;
             const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
               semester.id,
@@ -152,7 +154,7 @@ export class ClubService {
             const representative =
               await this.clubDelegateDRepository.findRepresentativeName(
                 club.id,
-                semester.startTerm,
+                isCurrentSemester ? null : semester.startTerm,
               );
             const isPermanent =
               await this.divisionPermanentClubDRepository.findPermenantClub(
