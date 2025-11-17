@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "styled-components";
 
 import sparcsSvg from "@sparcs-clubs/web/assets/sparcs-black.svg";
@@ -31,9 +31,7 @@ const SPARCSLogo = () => {
       target={isSmallView ? "_self" : "_blank"}
       rel={isSmallView ? undefined : "noopener noreferrer"}
     >
-      <object data={sparcsSvg} type="image/svg+xml">
-        <Image src={sparcsSvg} alt="SPARCS" height={24} />
-      </object>
+      <Image src={sparcsSvg} alt="SPARCS" width={120} height={24} />
     </Link>
   );
 };

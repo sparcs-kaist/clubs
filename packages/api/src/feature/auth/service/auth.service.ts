@@ -94,6 +94,8 @@ export class AuthService {
     let userInfo: ExtractedUserInfo;
     let localSid = ssoProfile.sid;
     let socpsCd = "S"; // 기본값
+    let stdStatusKor: string | null = null;
+    let stdProgCode: string | null = null;
 
     if (process.env.NODE_ENV === "local") {
       logger.info(
@@ -133,6 +135,8 @@ export class AuthService {
       if (localExtractionResult.success) {
         userInfo = localExtractionResult.data;
         socpsCd = mockV2Info.socps_cd;
+        stdStatusKor = mockV2Info.std_status_kor;
+        stdProgCode = mockV2Info.std_prog_code;
 
         logger.info(
           "Successfully extracted user info from local V2 mock data",
@@ -186,6 +190,8 @@ export class AuthService {
 
       userInfo = extractionResult.data;
       socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
+      stdStatusKor = ssoProfile.kaist_v2_info?.std_status_kor || null;
+      stdProgCode = ssoProfile.kaist_v2_info?.std_prog_code || null;
 
       logger.info("Successfully extracted user info from V2 data", {
         sid: ssoProfile.sid,
@@ -206,6 +212,8 @@ export class AuthService {
       type,
       department,
       socpsCd,
+      stdStatusKor,
+      stdProgCode,
     );
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){

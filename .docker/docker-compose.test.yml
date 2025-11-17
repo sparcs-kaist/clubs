@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  test-db:
+    image: mysql:8.0
+    container_name: sparcs-clubs-test-db
+    ports:
+      - "${TEST_DB_PORT:?err}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${TEST_DB_PASSWORD:?err}
+      - MYSQL_DATABASE=${TEST_DB_NAME:?err}
+    volumes:
+      - test-db:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: "mysql -uroot -p$$MYSQL_ROOT_PASSWORD $$MYSQL_DATABASE -e 'select 1'"
+      start_period: 0s
+      interval: 1s
+      retries: 30
+
+volumes:
+  test-db:

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
@@ -59,6 +59,8 @@ export class AuthRepository {
     type: string,
     department: string,
     typeV2: string,
+    statusV2: string | null,
+    progCodeV2: string | null,
   ): Promise<FindOrCreateUserReturn> {
     // User table에 해당 email이 있는지 확인 후 upsert
     await this.db
@@ -103,6 +105,17 @@ export class AuthRepository {
       ((type === "Student" || type === "Ex-employee") &&
         !typeV2.startsWith("P")) // V1 fallback
     ) {
+      //HP 학번(6900~6999)인 경우 로그인 불가
+      if (
+        parseInt(studentNumber.slice(-4)) >= 6900 &&
+        parseInt(studentNumber.slice(-4)) < 7000
+      ) {
+        throw new HttpException(
+          "HP 학번은 로그인할 수 없습니다.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       await this.db
         .insert(Student)
         .values({
@@ -123,14 +136,30 @@ export class AuthRepository {
         )
         .then(takeOne);
 
-      // studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
+      //v2info 기반 학적 상태 및 학위 구분
+      // v2Info 없는 경우, studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
       let studentEnum = 3;
       let studentStatusEnum = 2;
-      if (parseInt(studentNumber.slice(-4)) < 2000) {
+
+      // 학적 상태 판별 (v2info)
+      if (statusV2 === "재학") {
+        studentStatusEnum = 1;
+      }
+
+      // 학위 구분 (v2info 기반)
+      if (progCodeV2) {
+        if (progCodeV2 === "0") studentEnum = 1;
+        else if (progCodeV2 === "1") studentEnum = 2;
+        else if (progCodeV2 === "2") studentEnum = 3;
+        // v2Info 없는 경우 기존 학번 기반 로직으로 fallback
+      } else if (parseInt(studentNumber.slice(-4)) < 2000) {
         studentEnum = 1;
         studentStatusEnum = 1;
-      } else if (parseInt(studentNumber.slice(-4)) < 6000) studentEnum = 2;
-      else if (parseInt(studentNumber.slice(-4)) < 7000) studentEnum = 2;
+      } else if (parseInt(studentNumber.slice(-4)) < 5000) {
+        studentEnum = 2;
+      } else if (parseInt(studentNumber.slice(-4)) < 6000) {
+        studentEnum = 1;
+      }
 
       // student 테이블에서 해당 user id를 모두 검색
       // undergraduate, master, doctor 중 해당하는 경우 result에 추가

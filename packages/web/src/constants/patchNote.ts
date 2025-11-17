@@ -6,6 +6,19 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.97",
+    date: new Date("2025.11.17"),
+    patchNoteContent: `Clubs v0.0.97
+신규 기능은 다음과 같습니다.
+- 페이지 번역이 일부 공개되었습니다.
+수정사항은 다음과 같습니다.
+- HP 학번 학우들의 로그인이 차단되었습니다.
+- 동연 정책과 일관되지 않는 안내가 일부 수정되었습니다.
+- 백엔드 orm이 변경되어 안정성이 향상되었습니다.
+- 동아리 대표자로 이전 대표자가 보이먼 문제가 수정되었습니다.
+`,
+  },
+  {
     version: "v.0.0.96",
     date: new Date("2025.09.20"),
     patchNoteContent: `Clubs v0.0.96
