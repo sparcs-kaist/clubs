@@ -26,6 +26,7 @@ const useExecutiveApproveActivityReport = (
                 UserTypeEnum.Executive,
                 activityId,
               ),
+              exact: false,
             });
             queryClient.invalidateQueries({
               queryKey: ["executiveChargedActivities"],
