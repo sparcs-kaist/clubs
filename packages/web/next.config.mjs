@@ -7,6 +7,20 @@ const nextConfig = {
     styledComponents: true,
   },
   output: "standalone",
+  headers: async () => {
+    return [
+      {
+        // Apply these headers to all routes in your application.
+        source: "/(.*)",
+        headers: [
+          {
+            key: "x-nextjs-version",
+            value: "14.2.25"
+          }
+        ],
+      },
+    ];
+  }
 };
 
 const withNextIntl = createNextIntlPlugin();

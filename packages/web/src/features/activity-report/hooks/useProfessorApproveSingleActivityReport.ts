@@ -25,6 +25,7 @@ const useProfessorApproveSingleActivityReport = () => {
                 UserTypeEnum.Professor,
                 activityId,
               ),
+              exact: false,
             });
           },
         },

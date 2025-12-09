@@ -36,6 +36,7 @@ const useUpdateActivityReport = (activityId: number) => {
                 UserTypeEnum.Undergraduate,
                 activityId,
               ),
+              exact: false,
             });
           },
         },

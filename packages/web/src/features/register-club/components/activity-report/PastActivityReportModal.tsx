@@ -73,7 +73,8 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
-            queryKey: [activityReportDetailQueryKey],
+            queryKey: activityReportDetailQueryKey(profile, activityId),
+            exact: false,
           });
           queryClient.invalidateQueries({ queryKey: [apiAct011.url()] });
           close();

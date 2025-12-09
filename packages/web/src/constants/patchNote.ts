@@ -6,6 +6,15 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.98",
+    date: new Date("2025.12.09"),
+    patchNoteContent: `Clubs v0.0.98
+신규 기능은 다음과 같습니다.
+- NextJS 버전을 응답에 포함합니다
+- 활동보고서 상세조회 기능이 개선되었습니다.
+`,
+  },
+  {
     version: "v.0.0.97",
     date: new Date("2025.11.17"),
     patchNoteContent: `Clubs v0.0.97
