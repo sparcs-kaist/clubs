@@ -15,7 +15,7 @@ const nextConfig = {
         headers: [
           {
             key: "x-nextjs-version",
-            value: "14.2.25"
+            value: "14.2.35"
           }
         ],
       },
