@@ -13,12 +13,12 @@ export const activityDeadlineEnumToString = (
   switch (deadline) {
     case ActivityDeadlineEnum.Writing:
       return "작성";
-    case ActivityDeadlineEnum.Late:
-      return "지연 제출";
+    case ActivityDeadlineEnum.Executive:
+      return "집행부 검토";
     case ActivityDeadlineEnum.Modification:
       return "수정";
     case ActivityDeadlineEnum.Exception:
-      return "예외";
+      return "이의제기";
     default:
       return "";
   }
@@ -27,7 +27,11 @@ export const activityDeadlineEnumToString = (
 export const newActivityReportListSectionInfoText = (
   data?: ApiAct018ResponseOk,
 ) => {
-  if (data?.deadline == null) {
+  // 기간이 없거나 이의제기 기간인 경우 기간 정보를 표시하지 않음
+  if (
+    data?.deadline == null ||
+    data?.deadline.activityDeadlineEnum === ActivityDeadlineEnum.Exception
+  ) {
     return "현재는 활동 보고서 기간이 아닙니다.";
   }
 

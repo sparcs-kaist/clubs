@@ -7,12 +7,12 @@ import { zSemester } from "@clubs/domain/semester/semester";
 extendZodWithOpenApi(z);
 
 // 활동보고서 기간 종류
-// 작성 | 지연 제출 | 수정 | 예외 기간 << 집행부 수정 정도?
+// 작성 | 집행부 검토 | 수정 제출 | 이의제기
 export enum ActivityDeadlineEnum {
-  Writing = 1, // 작성
-  Late, // 지연 제출기간, upload 기간 종료 후 수정제출 기간 전까지
-  Modification, // 수정 제출
-  Exception, // 예외: 이의제기를 어떻게 적용해주지? 일단 킵
+  Writing = 1, // 작성 (동아리 신규작성 및 수정 가능)
+  Executive, // 집행부 검토 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
+  Modification, // 수정 제출 (집행부 검토 가능, 동아리 신규작성 불가, 수정만 가능)
+  Exception, // 이의제기 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
 }
 
 export const zActivityDeadline = z.object({
@@ -26,9 +26,9 @@ export const zActivityDeadline = z.object({
   deadlineEnum: z.nativeEnum(ActivityDeadlineEnum).openapi({
     description: `활동보고서 업무 관련 기간 종류
     1: 작성(Writing)
-    2: 지연 제출(Late)
+    2: 집행부 검토(Executive)
     3: 수정 제출(Modification)
-    4: 예외(Exception)`,
+    4: 이의제기(Exception)`,
     examples: [1, 2, 3, 4],
   }),
   startTerm: z.coerce.date().openapi({
