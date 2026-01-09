@@ -7,9 +7,8 @@ import { formatDate } from "date-fns";
 import { ko } from "date-fns/locale";
 import React, { useCallback, useMemo } from "react";
 
-import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
-
 import { ApiSem007ResponseOK } from "@clubs/interface/api/semester/apiSem007";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Table from "@sparcs-clubs/web/common/components/Table";

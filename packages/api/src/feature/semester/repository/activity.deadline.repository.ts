@@ -8,7 +8,7 @@ import {
   SQL,
 } from "drizzle-orm";
 
-import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import {
   BaseTableFieldMapKeys,
