@@ -118,9 +118,9 @@ export class SemesterService {
         todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Writing ||
         todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Modification,
       canApprove:
-        todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Writing ||
+        todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Executive ||
         todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Modification ||
-        todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Late,
+        todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Exception,
       targetTerm: {
         id: term.id,
         name: term.name,

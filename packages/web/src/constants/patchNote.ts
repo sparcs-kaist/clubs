@@ -6,7 +6,15 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
-    version: "v.0.0.98",
+    version: "v.0.0.100",
+    date: new Date("2026.01.09"),
+    patchNoteContent: `Clubs v0.0.100
+신규 기능은 다음과 같습니다.
+- 활동보고서 기간 유형 변경
+`,
+  },
+  {
+    version: "v.0.0.99",
     date: new Date("2025.12.16"),
     patchNoteContent: `Clubs v0.0.99
 신규 기능은 다음과 같습니다.
