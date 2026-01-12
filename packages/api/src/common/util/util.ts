@@ -1,8 +1,9 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { addHours } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import { IdType, MEntity } from "../base/entity.model";
+import { BadRequestException } from "../exception/bad-request.exception";
+import { NotFoundException } from "../exception/not-found.exception";
 import { DB_TIMEZONE } from "./decorators/time-decorator";
 
 export const isEmptyObject = obj =>
@@ -171,10 +172,22 @@ export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType>(
     // 배열의 요소가 하나만 나왔는 지를 검증하는 함수
     // 배열의 요소가 하나가 아니면 예외 던짐
     if (array.length === 0)
-      throw new NotFoundException(`${getModelName(name, array)} is empty`);
+      throw new NotFoundException(
+        getModelName(name, array) ?? "Array",
+        undefined,
+        {
+          context: "takeOnlyOne",
+          arrayLength: array.length,
+        },
+      );
     if (array.length > 1)
       throw new BadRequestException(
-        `${getModelName(name, array)} is not only one`,
+        "Multiple items found when expecting one",
+        getModelName(name, array) ?? "array",
+        {
+          context: "takeOnlyOne",
+          arrayLength: array.length,
+        },
       );
     return array[0];
   };
@@ -187,7 +200,26 @@ export function takeOnlyOne<M extends MEntity<Id>, Id extends IdType>(
 export function getUniqueArray<
   T extends string | number | boolean | symbol | null | undefined | bigint,
 >(array: T[]): T[] {
+  // 중복을 제외하고 배열을 반환하는 함수
+  // JS 기본 자료형에 대해 잘 작동할듯??
   return [...new Set(array)];
+}
+
+export function checkContainAllId<T, K extends IdType>(
+  ids: K[],
+  array: T[],
+  name?: string,
+): asserts array is T[] & { [key in K]: T } {
+  // 중복을 제외하고, 넣은 id가 모두 값이 잘 나왔는지를 체크해서 값을 얻는 함수
+  const uniqueIds = getUniqueArray(ids);
+  if (ids.some(id => !uniqueIds.includes(id))) {
+    throw new NotFoundException(name ?? "Array", undefined, {
+      context: "checkContainAllId",
+      expectedLength: uniqueIds.length,
+      actualLength: array.length,
+      ids: uniqueIds,
+    });
+  }
 }
 
 /**
@@ -217,7 +249,14 @@ export function takeExist<M extends MEntity<Id>, Id extends IdType>(
 ): (array: M[]) => M[] {
   return (array: M[]) => {
     if (array.length === 0)
-      throw new NotFoundException(`${getModelName(name, array)} is empty`);
+      throw new NotFoundException(
+        getModelName(name, array) ?? "Array",
+        undefined,
+        {
+          context: "takeExist",
+          arrayLength: array.length,
+        },
+      );
     return array;
   };
 }

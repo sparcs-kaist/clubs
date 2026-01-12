@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import type { ApiAcf001RequestBody } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf001";
 import type {
@@ -10,6 +10,7 @@ import type {
   ApiAcf007ResponseOk,
 } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 
+import { ForbiddenException } from "@sparcs-clubs/api/common/exception/forbidden.exception";
 import { ClubDelegateDRepository } from "@sparcs-clubs/api/feature/club/delegate/club.club-delegate-d.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -56,7 +57,7 @@ export class ActivityCertificateService {
     if (
       representatives.find(e => e.studentId === tempStudentId) === undefined
     ) {
-      throw new HttpException("Permission denied", HttpStatus.FORBIDDEN);
+      throw new ForbiddenException("access", "activity certificate");
     }
 
     const total =

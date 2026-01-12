@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import type { ApiCms001ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms001";
 import type { ApiCms002ResponseOK } from "@clubs/interface/api/common-space/endpoint/apiCms002";
@@ -8,6 +8,10 @@ import type { ApiCms005ResponseCreated } from "@clubs/interface/api/common-space
 import type { ApiCms006ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms006";
 import type { ApiCms007ResponseOk } from "@clubs/interface/api/common-space/endpoint/apiCms007";
 
+import { BadRequestException } from "@sparcs-clubs/api/common/exception/bad-request.exception";
+import { ForbiddenException } from "@sparcs-clubs/api/common/exception/forbidden.exception";
+import { InvalidStateException } from "@sparcs-clubs/api/common/exception/invalid-state.exception";
+import { NotFoundException } from "@sparcs-clubs/api/common/exception/not-found.exception";
 import { getKSTDate, isEmptyObject } from "@sparcs-clubs/api/common/util/util";
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-student-t.repository";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
@@ -77,9 +81,11 @@ export class CommonSpaceService {
       endTerm,
     );
     if (isReserved.usageOrders.length > 0) {
-      throw new HttpException(
-        "Already used by other order.",
-        HttpStatus.BAD_REQUEST,
+      throw new InvalidStateException(
+        "Common space",
+        "reserved",
+        "make reservation",
+        { spaceId, startTerm, endTerm },
       );
     }
     const student =
@@ -88,10 +94,10 @@ export class CommonSpaceService {
         studentId,
       );
     if (isEmptyObject(student)) {
-      throw new HttpException(
-        "Student is not in the club.",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException("Student", studentId.toString(), {
+        clubId,
+        context: "club membership",
+      });
     }
 
     const startDateforPrevSearch = getWeekRange(startTerm).weekStart;
@@ -122,7 +128,11 @@ export class CommonSpaceService {
         );
       return result;
     }
-    throw new HttpException("Available time exceeded", HttpStatus.BAD_REQUEST);
+    throw new BadRequestException("Time limit exceeded", "reservation", {
+      spaceId,
+      availableHoursPerDay: commonSpace.availableHoursPerDay,
+      availableHoursPerWeek: commonSpace.availableHoursPerWeek,
+    });
   }
 
   // todo: spaceid와 orderid 기존 예약 검색했을 때 존재해야함.
@@ -141,16 +151,18 @@ export class CommonSpaceService {
         spaceId,
       );
     if (order.chargeStudentId !== studentId) {
-      throw new HttpException(
-        "You are not allowed to delete this order",
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenException("delete", "common space reservation", {
+        orderId,
+        requestedBy: studentId,
+        ownedBy: order.chargeStudentId,
+      });
     }
     if (order.startTerm < current) {
-      throw new HttpException(
-        "Reservation can only be deleted before the start time",
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new InvalidStateException("Reservation", "started", "delete", {
+        orderId,
+        startTerm: order.startTerm,
+        currentTime: current,
+      });
     }
     const result =
       await this.commonSpaceUsageOrderDRepository.deleteCommonSpaceUsageOrderD(
@@ -202,10 +214,10 @@ export class CommonSpaceService {
         studentId,
       );
     if (isEmptyObject(student)) {
-      throw new HttpException(
-        "Student is not in the club.",
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException("Student", studentId.toString(), {
+        clubId,
+        context: "student",
+      });
     }
     const result =
       await this.getCommonSpacesUsageOrderRepository.getStudentCommonSpacesUsageOrder(
