@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import qs from "qs";
 
 import { env } from "@sparcs-clubs/web/env";
@@ -35,15 +35,17 @@ function parseKST(data: unknown): unknown {
 }
 
 /**
- * 주어진 객체의 Date 프로퍼티들을 모두 DB에 넣을 수 있도록 KST 기준으로 변환
- * Query 객체에 사용
+ * 주어진 객체의 Date 프로퍼티들을 모두 KST 기준 ISO 문자열로 변환하여
+ * 시간대에 관계없이 날짜가 밀리지 않도록 합니다.
  * @param obj
  */
 export const makeObjectPropsToKST = (obj: unknown): unknown => {
   if (obj === null || obj === undefined) return obj;
 
   if (obj instanceof Date) {
-    return fromZonedTime(obj, TIMEZONE);
+    // KST 기준으로 ISO 문자열을 생성하여 날짜가 밀리지 않도록 함
+    // NOTE: Uses literal 'Z' suffix instead of timezone offset to maintain backend compatibility
+    return formatInTimeZone(obj, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
   }
 
   if (Array.isArray(obj)) {

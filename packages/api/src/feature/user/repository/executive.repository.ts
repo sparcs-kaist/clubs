@@ -14,11 +14,7 @@ import {
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import {
-  getKSTDate,
-  getKSTDateForQuery,
-  takeOne,
-} from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import {
   Executive,
@@ -370,7 +366,7 @@ export default class ExecutiveRepository {
   }
 
   async deleteExecutiveById(executiveId: number) {
-    const cur = getKSTDateForQuery();
+    const cur = getKSTDate();
     // const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
     try {
       await this.db.transaction(async tx => {

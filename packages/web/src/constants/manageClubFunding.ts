@@ -1,4 +1,4 @@
-import { subSeconds } from "date-fns";
+import { addDays, subSeconds } from "date-fns";
 
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
 
@@ -14,7 +14,7 @@ const newFundingListSectionInfoText = (data?: ApiFnd007ResponseOk) => {
   const targetDuration = data?.targetDuration;
   const status = fundingDeadlineEnumToString(data?.deadline.deadlineEnum);
   const endTerm = data?.deadline.endTerm;
-  return `현재는 ${targetDuration?.year}년 ${targetDuration?.name}학기 지원금 ${status} 기간입니다 (${status} 마감 : ${endTerm ? formatSimpleDateTime(subSeconds(endTerm, 1)) : "-"})`;
+  return `현재는 ${targetDuration?.year}년 ${targetDuration?.name}학기 지원금 ${status} 기간입니다 (${status} 마감 : ${endTerm ? formatSimpleDateTime(subSeconds(addDays(endTerm, 1), 1)) : "-"})`;
 };
 
 const newFundingOrderButtonText = "지원금 신청 내역 추가";
