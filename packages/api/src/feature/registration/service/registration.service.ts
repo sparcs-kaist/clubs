@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { addDays } from "date-fns";
 
 import type {
   ApiReg001RequestBody,
@@ -1018,8 +1019,9 @@ export class RegistrationService {
         startTerm: semester.startTerm,
         endTerm: semester.endTerm,
       },
+      // endTerm에 하루를 더해서 종료일 전체를 포함하도록 함
       deadline:
-        deadline.startTerm <= today && today <= deadline.endTerm
+        deadline.startTerm <= today && today < addDays(deadline.endTerm, 1)
           ? {
               startDate: deadline.startTerm,
               endTerm: deadline.endTerm,
@@ -1556,8 +1558,9 @@ export class RegistrationService {
         startTerm: semester.startTerm,
         endTerm: semester.endTerm,
       },
+      // endTerm에 하루를 더해서 종료일 전체를 포함하도록 함
       deadline:
-        deadline.startTerm <= today && today <= deadline.endTerm
+        deadline.startTerm <= today && today < addDays(deadline.endTerm, 1)
           ? {
               startDate: deadline.startTerm,
               endTerm: deadline.endTerm,

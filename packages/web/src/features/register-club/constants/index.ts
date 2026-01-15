@@ -1,4 +1,4 @@
-import { subSeconds } from "date-fns";
+import { addDays, subSeconds } from "date-fns";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -14,7 +14,7 @@ export const registerClubDeadlineInfoText = (
   date: Date,
   targetSemester?: Semester,
 ) =>
-  `현재는 ${targetSemester?.year}년 ${targetSemester?.name}학기 동아리 등록 기간입니다 (신청 마감 : ${formatDateTime(subSeconds(date, 1))})`;
+  `현재는 ${targetSemester?.year}년 ${targetSemester?.name}학기 동아리 등록 기간입니다 (신청 마감 : ${formatDateTime(subSeconds(addDays(date, 1), 1))})`;
 
 export const registerClubOptions = [
   {

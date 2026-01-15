@@ -3,7 +3,7 @@ import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import { getKSTDateForQuery } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
@@ -91,7 +91,7 @@ export class FundingDeadlineSqlRepository {
   }
 
   async deleteFundingDeadline(deadlineId: number): Promise<boolean> {
-    const cur = getKSTDateForQuery();
+    const cur = getKSTDate();
     try {
       await this.db.transaction(async tx => {
         const [result] = await tx

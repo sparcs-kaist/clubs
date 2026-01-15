@@ -1,5 +1,4 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { addHours } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import { IdType, MEntity } from "../base/entity.model";
@@ -9,30 +8,13 @@ export const isEmptyObject = obj =>
   obj && Object.keys(obj).length === 0 && obj.constructor === Object;
 
 /**
- * @deprecated 예전 시간대 조정을 위해 사용했던 함수로, 차차 삭제해나가야 함
  * @description 주어진 날짜를 KST 기준으로 변환
+ * @description date-fns-tz의 toZonedTime을 사용하여 서버 시간대와 관계없이 KST로 변환
+ * @param input 변환할 날짜 (없으면 현재 시간)
  */
-
 export function getKSTDate(input?: string | Date): Date {
-  let date: Date;
-
-  if (input === undefined || typeof input === "string") {
-    date = input ? new Date(input) : new Date();
-
-    // 현재 로컬 시간대의 오프셋을 구합니다 (분 단위).
-    const timezoneOffset = date.getTimezoneOffset() * 60000; // 분을 밀리초로 변환
-
-    // 오프셋을 적용하여 시간을 보정
-    date.setTime(date.getTime() - timezoneOffset);
-    return date;
-  }
-  return new Date(input);
-}
-
-export function getKSTDateForQuery(): Date {
-  const date = new Date();
-  const kstDateForQuery = addHours(date, 9); // KST는 UTC+9
-  return kstDateForQuery;
+  const date = input ? new Date(input) : new Date();
+  return toZonedTime(date, DB_TIMEZONE);
 }
 
 /**
