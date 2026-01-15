@@ -44,6 +44,7 @@ export const makeObjectPropsToKST = (obj: unknown): unknown => {
 
   if (obj instanceof Date) {
     // KST 기준으로 ISO 문자열을 생성하여 날짜가 밀리지 않도록 함
+    // NOTE: Uses literal 'Z' suffix instead of timezone offset to maintain backend compatibility
     return formatInTimeZone(obj, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
   }
 
