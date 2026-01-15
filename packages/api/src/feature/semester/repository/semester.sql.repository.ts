@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
-import { getKSTDateForQuery } from "@sparcs-clubs/api/common/util/util";
+import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
@@ -102,7 +102,7 @@ export class SemesterSQLRepository {
     name: string;
     year: number;
   }): Promise<{ id: number }> {
-    const now = getKSTDateForQuery();
+    const now = getKSTDate();
 
     await this.db
       .update(SemesterD)

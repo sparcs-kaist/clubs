@@ -6,6 +6,14 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.101",
+    date: new Date("2026.01.16"),
+    patchNoteContent: `Clubs v0.0.101
+신규 기능은 다음과 같습니다.
+- 잘못 계산되던 날짜 오류를 수정했습니다.
+`,
+  },
+  {
     version: "v.0.0.100",
     date: new Date("2026.01.09"),
     patchNoteContent: `Clubs v0.0.100

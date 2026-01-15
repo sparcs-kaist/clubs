@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { addDays } from "date-fns";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -108,8 +109,10 @@ export class SemesterService {
     const thisSemesterDeadlines = await this.activityDeadlineRepository.find({
       semesterId: semester.id,
     });
+    // endTerm에 하루를 더해서 종료일 전체를 포함하도록 함
+    // 예: 종료일이 1/16(1/16 00:00)이면, 1/16 23:59:59까지 유효하도록 함
     const todayDeadline = thisSemesterDeadlines.find(
-      e => e.startTerm <= now && now < e.endTerm,
+      e => e.startTerm <= now && now < addDays(e.endTerm, 1),
     );
 
     return {
