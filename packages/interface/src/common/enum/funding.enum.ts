@@ -6,12 +6,8 @@ export enum FundingStatusEnum {
   Partial, // 부분 승인
 }
 
-export enum FundingDeadlineEnum {
-  Writing = 1, // 작성
-  Late, // 지연 제출기간, writing 기간 종료 후 수정제출 기간 전까지
-  Modification, // 수정
-  Exception, // 이의 제기
-}
+// 지원금 기간 종류 - @clubs/domain에서 가져옴
+export { FundingDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 export enum FixtureEvidenceEnum {
   Purchase = 1, // 구매

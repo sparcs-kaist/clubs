@@ -1,6 +1,5 @@
-import { addDays, subSeconds } from "date-fns";
-
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { fundingDeadlineEnumToString } from "../features/manage-club/funding/constants/fundingDeadlineEnumToString";
 import { formatSimpleDateTime } from "../utils/Date/formatDate";
@@ -11,10 +10,18 @@ const manageClubFundingPagePath = "/manage-club/funding";
 
 const newFundingListSectionTitle = "신규 지원금 신청";
 const newFundingListSectionInfoText = (data?: ApiFnd007ResponseOk) => {
+  // 기간이 없거나 이의제기 기간인 경우 기간 정보를 표시하지 않음
+  if (
+    data?.deadline == null ||
+    data?.deadline.deadlineEnum === FundingDeadlineEnum.Exception
+  ) {
+    return "현재는 지원금 신청 기간이 아닙니다.";
+  }
+
   const targetDuration = data?.targetDuration;
   const status = fundingDeadlineEnumToString(data?.deadline.deadlineEnum);
   const endTerm = data?.deadline.endTerm;
-  return `현재는 ${targetDuration?.year}년 ${targetDuration?.name}학기 지원금 ${status} 기간입니다 (${status} 마감 : ${endTerm ? formatSimpleDateTime(subSeconds(addDays(endTerm, 1), 1)) : "-"})`;
+  return `현재는 ${targetDuration?.year}년 ${targetDuration?.name}학기 지원금 ${status} 기간입니다 (${status} 마감 : ${endTerm ? formatSimpleDateTime(endTerm) : "-"})`;
 };
 
 const newFundingOrderButtonText = "지원금 신청 내역 추가";

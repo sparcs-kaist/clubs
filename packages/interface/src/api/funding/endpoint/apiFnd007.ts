@@ -19,7 +19,7 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     targetDuration: zActivityDuration,
-    deadline: zFundingDeadline,
+    deadline: zFundingDeadline.optional(),
   }),
 };
 
