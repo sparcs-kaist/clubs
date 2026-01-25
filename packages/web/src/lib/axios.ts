@@ -19,13 +19,19 @@ function parseKST(data: unknown): unknown {
 
   try {
     return JSON.parse(data, (key, value) => {
-      if (
-        typeof value === "string" &&
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)
-      ) {
-        const parsedDate = new Date(value);
-        const toZoneTime = toZonedTime(parsedDate, TIMEZONE);
-        return toZoneTime;
+      if (typeof value === "string") {
+        // UTC 형식 (Z로 끝나는 경우)
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
+          const parsedDate = new Date(value);
+          const toZoneTime = toZonedTime(parsedDate, TIMEZONE);
+          return toZoneTime;
+        }
+        // KST 형식 (+09:00로 끝나는 경우) - 이미 KST이므로 Date 객체로 변환만
+        if (
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}\+\d{2}:\d{2}$/.test(value)
+        ) {
+          return new Date(value);
+        }
       }
       return value;
     });

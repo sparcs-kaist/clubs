@@ -248,7 +248,7 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
           >
             {!isPastFunding &&
               profile.type === UserTypeEnum.Undergraduate &&
-              fundingDeadline?.deadline.deadlineEnum !==
+              fundingDeadline?.deadline?.deadlineEnum !==
                 FundingDeadlineEnum.Exception && (
                 <FlexWrapper direction="row" gap={10}>
                   <Button

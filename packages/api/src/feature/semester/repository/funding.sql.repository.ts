@@ -1,9 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { MySql2Database } from "drizzle-orm/mysql2";
 
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
+import {
+  getKSTDate,
+  makeObjectPropsFromDBTimezone,
+} from "@sparcs-clubs/api/common/util/util";
 import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 
@@ -13,8 +16,8 @@ export class FundingDeadlineSqlRepository {
 
   async checkExistingFundingDeadline(
     semesterId: number,
-    startTermStr: string,
-    endTermStr: string,
+    startTerm: Date,
+    endTerm: Date,
   ): Promise<boolean> {
     const existingDeadlines = await this.db
       .select()
@@ -23,22 +26,22 @@ export class FundingDeadlineSqlRepository {
         and(
           or(
             and(
-              gt(sql`DATE(${FundingDeadlineD.endTerm})`, startTermStr),
-              lt(sql`DATE(${FundingDeadlineD.endTerm})`, endTermStr),
+              gt(FundingDeadlineD.endTerm, startTerm),
+              lt(FundingDeadlineD.endTerm, endTerm),
             ),
             and(
-              gt(sql`DATE(${FundingDeadlineD.startTerm})`, startTermStr),
-              lt(sql`DATE(${FundingDeadlineD.startTerm})`, endTermStr),
+              gt(FundingDeadlineD.startTerm, startTerm),
+              lt(FundingDeadlineD.startTerm, endTerm),
             ),
-            eq(sql`DATE(${FundingDeadlineD.startTerm})`, startTermStr),
-            eq(sql`DATE(${FundingDeadlineD.endTerm})`, endTermStr),
+            eq(FundingDeadlineD.startTerm, startTerm),
+            eq(FundingDeadlineD.endTerm, endTerm),
             and(
-              lt(sql`DATE(${FundingDeadlineD.startTerm})`, endTermStr),
-              gt(sql`DATE(${FundingDeadlineD.endTerm})`, endTermStr),
+              lt(FundingDeadlineD.startTerm, endTerm),
+              gt(FundingDeadlineD.endTerm, endTerm),
             ),
             and(
-              gt(sql`DATE(${FundingDeadlineD.startTerm})`, startTermStr),
-              lt(sql`DATE(${FundingDeadlineD.endTerm})`, startTermStr),
+              gt(FundingDeadlineD.startTerm, startTerm),
+              lt(FundingDeadlineD.endTerm, startTerm),
             ),
           ),
           eq(FundingDeadlineD.semesterId, semesterId),
@@ -50,16 +53,16 @@ export class FundingDeadlineSqlRepository {
   }
 
   async createFundingDeadline(
-    startTermStr: string,
-    endTermStr: string,
+    startTerm: Date,
+    endTerm: Date,
     deadlineEnum: number,
     semesterId: number,
   ): Promise<boolean> {
     try {
       await this.db.transaction(async tx => {
         const [result] = await tx.insert(FundingDeadlineD).values({
-          startTerm: sql`DATE(${startTermStr})`,
-          endTerm: sql`DATE(${endTermStr})`,
+          startTerm,
+          endTerm,
           deadlineEnum,
           semesterId,
         });
@@ -86,8 +89,10 @@ export class FundingDeadlineSqlRepository {
           eq(FundingDeadlineD.semesterId, semesterId),
           isNull(FundingDeadlineD.deletedAt),
         ),
-      );
-    return fundingDeadlines;
+      )
+      .execute();
+    // Date 객체로 변환 (내부 로직용)
+    return makeObjectPropsFromDBTimezone(fundingDeadlines);
   }
 
   async deleteFundingDeadline(deadlineId: number): Promise<boolean> {
