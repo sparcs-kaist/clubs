@@ -67,8 +67,8 @@ import {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import {
+  convertDateFieldsToISO,
   takeExist,
-  takeOne,
   takeOnlyOne,
 } from "@sparcs-clubs/api/common/util/util";
 import { TransactionManagerService } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
@@ -294,26 +294,34 @@ export default class FundingService {
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
-    const commentsWithExecutives = comments.map(comment => ({
-      ...comment,
-      executive: executives.find(
-        executive => executive.id === comment.executive.id,
-      ) || {
-        id: 0,
-        name: "알 수 없는 집행부원",
-        studentNumber: "0000000",
-      },
-    }));
+    // API 응답용: comments의 Date 필드를 ISO KST 문자열로 변환
+    const commentsWithExecutives = convertDateFieldsToISO(
+      comments.map(comment => ({
+        ...comment,
+        executive: executives.find(
+          executive => executive.id === comment.executive.id,
+        ) || {
+          id: 0,
+          name: "알 수 없는 집행부원",
+          studentNumber: "0000000",
+        },
+      })),
+    );
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }
 
   private async buildFundingResponse(
     funding: MFunding,
   ): Promise<IFundingResponse> {
-    const purposeActivity = funding.purposeActivity
+    const purposeActivityRaw = funding.purposeActivity
       ? await this.activityPublicService.fetchSummary(
           funding.purposeActivity.id,
         )
+      : undefined;
+
+    // API 응답용: purposeActivity의 Date 필드를 ISO KST 문자열로 변환
+    const purposeActivity = purposeActivityRaw
+      ? convertDateFieldsToISO(purposeActivityRaw)
       : undefined;
 
     // 채울 곳
@@ -365,12 +373,13 @@ export default class FundingService {
       };
     }
 
-    return {
+    // API 응답용: Date 필드를 ISO KST 문자열로 변환
+    return convertDateFieldsToISO({
       ...funding,
       purposeActivity,
       ...resolvedFiles,
       transportation,
-    };
+    });
   }
 
   // 메서드 오버로딩 선언부
@@ -534,20 +543,22 @@ export default class FundingService {
    * @returns 현재 시점의 지원금 신청 마감 기한과 대상 활동 기간을 리턴합니다.
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
-    const [targetDuration, deadline] = await Promise.all([
+    const now = new Date();
+    const [targetDuration, allDeadlines] = await Promise.all([
       this.activityDurationPublicService.load(),
-      this.fundingDeadlinePublicService
-        .search({
-          date: new Date(),
-        })
-        .then(takeExist())
-        .then(takeOne),
+      this.fundingDeadlinePublicService.search({}),
     ]);
 
-    return {
+    // 현재 날짜에 해당하는 deadline 찾기
+    const todayDeadline = allDeadlines.find(
+      deadline => deadline.startTerm <= now && now <= deadline.endTerm,
+    );
+
+    // API 응답용: Date 필드를 ISO KST 문자열로 변환
+    return convertDateFieldsToISO({
       targetDuration,
-      deadline,
-    };
+      deadline: todayDeadline,
+    });
   }
 
   async getExecutiveFundings(

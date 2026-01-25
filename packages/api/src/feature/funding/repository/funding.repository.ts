@@ -9,6 +9,7 @@ import {
   IFundingSummary,
 } from "@clubs/interface/api/funding/type/funding.type";
 
+import { makeObjectPropsFromDBTimezone } from "@sparcs-clubs/api/common/util/util";
 import {
   DrizzleAsyncProvider,
   DrizzleTransaction,
@@ -249,7 +250,7 @@ export default class FundingRepository {
     ]);
 
     return MFunding.fromDBResult({
-      funding: result[0].funding,
+      funding: makeObjectPropsFromDBTimezone(result[0].funding),
       tradeEvidenceFiles: tradeEvidenceFiles.map(file => ({
         id: file.fileId,
       })),

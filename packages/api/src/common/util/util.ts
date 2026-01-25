@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import { IdType, MEntity } from "../base/entity.model";
 import { DB_TIMEZONE } from "./decorators/time-decorator";
@@ -53,19 +53,30 @@ export const makeObjectPropsToDBTimezone = <T extends object | unknown>(
  * @param obj
  * @description 주어진 객체의 Date 프로퍼티들을 모두 DB에서 가져온 값을 UTC 기준으로 변환
  * @description FromDB에서 사용
+ * @description Drizzle 쿼리 결과 배열도 자동으로 처리
  * @example
  * ```ts
- * // IN from
+ * // 단일 객체
  * return new Model(makeObjectPropsFromDBTimezone(dbResult));
+ *
+ * // Drizzle 쿼리 결과 배열
+ * const results = await this.db.select().from(Table).execute();
+ * return makeObjectPropsFromDBTimezone(results);
  * ```
  */
-export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
+export function makeObjectPropsFromDBTimezone<T extends object | unknown>(
   obj: T,
-): T => {
+): T;
+export function makeObjectPropsFromDBTimezone<T extends object | unknown>(
+  obj: T[],
+): T[];
+export function makeObjectPropsFromDBTimezone<T extends object | unknown>(
+  obj: T | T[],
+): T | T[] {
   if (!obj) return obj;
   if (typeof obj !== "object") return obj;
   if (Array.isArray(obj))
-    return obj.map(item => makeObjectPropsFromDBTimezone(item)) as T;
+    return obj.map(item => makeObjectPropsFromDBTimezone(item)) as T[];
   if (obj instanceof Date) {
     return fromZonedTime(obj, DB_TIMEZONE) as T;
   }
@@ -74,7 +85,121 @@ export const makeObjectPropsFromDBTimezone = <T extends object | unknown>(
     acc[key] = makeObjectPropsFromDBTimezone(value);
     return acc;
   }, {} as T);
-};
+}
+
+/**
+ * @param obj
+ * @description 주어진 객체의 Date 프로퍼티들을 모두 DB에서 가져온 값을 KST 기준 ISO 문자열로 변환
+ * @description FromDB에서 사용하며, API 응답에 적합한 형식
+ * @description Drizzle 쿼리 결과 배열도 자동으로 처리
+ * @example
+ * ```ts
+ * // 단일 객체
+ * return new Model(makeObjectPropsFromDBTimezoneAsISO(dbResult));
+ *
+ * // Drizzle 쿼리 결과 배열
+ * const results = await this.db.select().from(Table).execute();
+ * return makeObjectPropsFromDBTimezoneAsISO(results);
+ * ```
+ */
+export function makeObjectPropsFromDBTimezoneAsISO<T extends object | unknown>(
+  obj: T,
+): T;
+export function makeObjectPropsFromDBTimezoneAsISO<T extends object | unknown>(
+  obj: T[],
+): T[];
+export function makeObjectPropsFromDBTimezoneAsISO<T extends object | unknown>(
+  obj: T | T[],
+): T | T[] {
+  if (!obj) return obj;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj))
+    return obj.map(item => makeObjectPropsFromDBTimezoneAsISO(item)) as T[];
+  if (obj instanceof Date) {
+    // UTC로 해석된 Date를 KST 기준 ISO 문자열로 변환
+    const kstDate = fromZonedTime(obj, DB_TIMEZONE);
+    return formatInTimeZone(
+      kstDate,
+      DB_TIMEZONE,
+      "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+    ) as unknown as T;
+  }
+
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    acc[key] = makeObjectPropsFromDBTimezoneAsISO(value);
+    return acc;
+  }, {} as T);
+}
+
+/**
+ * @description API 응답용: 객체의 Date 필드들을 KST ISO 문자열로 변환
+ * @description startTerm, endTerm, createdAt, updatedAt, editedAt, commentedAt, professorApprovedAt, expenditureDate 등의 필드를 자동으로 변환
+ * @description 배열도 처리 가능
+ * @example
+ * ```ts
+ * // 단일 객체
+ * return convertDateFieldsToISO({
+ *   id: 1,
+ *   startTerm: new Date(),
+ *   endTerm: new Date(),
+ *   name: "test"
+ * });
+ *
+ * // 배열
+ * return items.map(item => convertDateFieldsToISO(item));
+ * ```
+ */
+export function convertDateFieldsToISO<T extends object | unknown>(obj: T): T;
+export function convertDateFieldsToISO<T extends object | unknown>(
+  obj: T[],
+): T[];
+export function convertDateFieldsToISO<T extends object | unknown>(
+  obj: T | T[],
+): T | T[] {
+  if (!obj) return obj;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj))
+    return obj.map(item => convertDateFieldsToISO(item)) as T[];
+
+  // Date 필드 키 목록
+  const dateFieldKeys = [
+    "startTerm",
+    "endTerm",
+    "createdAt",
+    "updatedAt",
+    "editedAt",
+    "commentedAt",
+    "professorApprovedAt",
+    "expenditureDate",
+  ] as const;
+
+  const result = { ...obj } as Record<string, unknown>;
+
+  dateFieldKeys.forEach(key => {
+    if (key in result && result[key] instanceof Date) {
+      result[key] = formatInTimeZone(
+        result[key] as Date,
+        DB_TIMEZONE,
+        "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
+      ) as unknown as Date;
+    }
+  });
+
+  // 중첩 객체 처리 (durations, comments 등)
+  Object.entries(result).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      result[key] = value.map(item =>
+        typeof item === "object" && item !== null
+          ? convertDateFieldsToISO(item)
+          : item,
+      );
+    } else if (typeof value === "object" && value !== null) {
+      result[key] = convertDateFieldsToISO(value);
+    }
+  });
+
+  return result as T;
+}
 
 /**
  * @description: deletedAt:new Date() 를 시긴대 조정해서 반환

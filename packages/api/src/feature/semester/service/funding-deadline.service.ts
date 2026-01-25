@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { formatInTimeZone } from "date-fns-tz";
 
 import {
   ApiSem015RequestBody,
@@ -8,7 +7,10 @@ import {
   ApiSem017ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
-import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
+import {
+  convertDateFieldsToISO,
+  takeOnlyOne,
+} from "@sparcs-clubs/api/common/util/util";
 
 import UserPublicService from "../../user/service/user.public.service";
 import { MActivityDuration } from "../model/activity.duration.model";
@@ -33,12 +35,6 @@ export class FundingDeadlineService {
 
     await this.userpulicservice.checkCurrentExecutiveById(executiveId);
 
-    const startTermStr = formatInTimeZone(
-      startTerm,
-      "Asia/Seoul",
-      "yyyy-MM-dd",
-    );
-    const endTermStr = formatInTimeZone(endTerm, "Asia/Seoul", "yyyy-MM-dd");
     const activityDuration = await this.activityDurationRepository
       .find({ id: activityDId })
       .then(takeOnlyOne(MActivityDuration));
@@ -50,7 +46,7 @@ export class FundingDeadlineService {
       );
     }
 
-    if (startTermStr >= endTermStr) {
+    if (startTerm >= endTerm) {
       throw new HttpException(
         "시작날짜는 종료날짜보다 이전이어야 합니다.",
         HttpStatus.BAD_REQUEST,
@@ -60,8 +56,8 @@ export class FundingDeadlineService {
     if (
       await this.fundingDeadlineSqlRepository.checkExistingFundingDeadline(
         activityDuration.semester.id,
-        startTermStr,
-        endTermStr,
+        startTerm,
+        endTerm,
       )
     ) {
       throw new HttpException(
@@ -72,8 +68,8 @@ export class FundingDeadlineService {
 
     if (
       !(await this.fundingDeadlineSqlRepository.createFundingDeadline(
-        startTermStr,
-        endTermStr,
+        startTerm,
+        endTerm,
         deadlineEnum,
         activityDuration.semester.id,
       ))
@@ -115,14 +111,17 @@ export class FundingDeadlineService {
             await this.fundingDeadlineSqlRepository.getFundingDeadlines(
               duration.semester.id,
             );
-          return fundingDeadlines.map(deadline => ({
-            id: deadline.id,
-            startTerm: deadline.startTerm,
-            endTerm: deadline.endTerm,
-            deadlineEnum: deadline.deadlineEnum,
-            semesterId: duration.semester.id,
-            activityDId: duration.id,
-          }));
+          // API 응답용: Date 객체를 ISO KST 문자열로 변환
+          return convertDateFieldsToISO(
+            fundingDeadlines.map(deadline => ({
+              id: deadline.id,
+              startTerm: deadline.startTerm,
+              endTerm: deadline.endTerm,
+              deadlineEnum: deadline.deadlineEnum,
+              semesterId: duration.semester.id,
+              activityDId: duration.id,
+            })),
+          );
         }),
       )
     ).flat();
