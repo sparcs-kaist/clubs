@@ -272,18 +272,26 @@ export default class FundingService {
     }
     const funding = await this.fundingRepository.fetch(id);
 
-    const activeKey =
-      await this.operationCommitteeService.findOperationCommitteeSecretKey();
-    if (activeKey.length === 0) {
-      throw new HttpException(
-        "No active OperationCommittee secret key found.",
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
+    if (operatingCommitteeSecret === undefined) {
+      await this.clubPublicService.checkIsStudentDelegate({
+        studentId,
+        clubId: funding.club.id,
+      });
+    } else {
+      const activeKey =
+        await this.operationCommitteeService.findOperationCommitteeSecretKey();
+      if (activeKey.length === 0) {
+        throw new HttpException(
+          "No active OperationCommittee secret key found.",
+          HttpStatus.NOT_FOUND,
+        );
+      }
 
-    const validSecret = activeKey[0].secretKey;
-    if (operatingCommitteeSecret !== validSecret) {
-      throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
+      const validSecret = activeKey[0].secretKey;
+      if (operatingCommitteeSecret !== validSecret) {
+        throw new HttpException("Wrong secret", HttpStatus.BAD_REQUEST);
+      }
     }
 
     const fundingResponse = await this.buildFundingResponse(funding);
