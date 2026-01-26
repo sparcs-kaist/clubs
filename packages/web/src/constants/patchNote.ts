@@ -6,6 +6,14 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.103",
+    date: new Date("2026.01.26"),
+    patchNoteContent: `Clubs v0.0.103
+신규 기능은 다음과 같습니다.
+- 지원금 조회 불가 오류를 수정하였습니다.
+`,
+  },
+  {
     version: "v.0.0.102",
     date: new Date("2026.01.25"),
     patchNoteContent: `Clubs v0.0.102
