@@ -10,8 +10,9 @@ import styled, { css } from "styled-components";
 import FormError from "../FormError";
 import Label from "../FormLabel";
 
-interface UnitInputProps
-  extends InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
+interface UnitInputProps extends InputHTMLAttributes<
+  HTMLInputElement | HTMLTextAreaElement
+> {
   label?: string;
   placeholder: string;
   errorMessage?: string;

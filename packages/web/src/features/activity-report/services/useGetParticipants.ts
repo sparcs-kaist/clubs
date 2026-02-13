@@ -13,8 +13,10 @@ export const activityReportParticipantsQueryKey = (
   endTerm: Date | null,
 ) => [apiAct010.url(), clubId, startTerm, endTerm];
 
-interface UseGetParticipantsQuery
-  extends Omit<ApiAct010RequestQuery, "startTerm" | "endTerm"> {
+interface UseGetParticipantsQuery extends Omit<
+  ApiAct010RequestQuery,
+  "startTerm" | "endTerm"
+> {
   startTerm: Date | null;
   endTerm: Date | null;
 }

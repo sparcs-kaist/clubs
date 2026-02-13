@@ -14,8 +14,10 @@ export interface ParticipantTemp {
   name: string; // 이름
 }
 
-export interface ApiAct002ResponseOkTemp
-  extends Omit<ApiAct002ResponseOk, "participants"> {
+export interface ApiAct002ResponseOkTemp extends Omit<
+  ApiAct002ResponseOk,
+  "participants"
+> {
   advisorProfessorApproval: ActivityProfessorApprovalEnum; // 지도교수 승인 상태
   activityStatusEnumId: ActivityStatusEnum; // 신청 상태 (동연 승인 등)
   participants: ParticipantTemp[];
