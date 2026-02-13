@@ -59,6 +59,9 @@ export const productionReadyPaths: {
     "/my/register-club",
     "/executive/register-club",
     "/executive/register-member",
+    // 활동기간 / 등록 마감일 관리
+    "/executive/activity-duration",
+    "/executive/registration/deadline",
     // 상임동아리 대표자 대시보드
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
