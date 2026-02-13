@@ -31,6 +31,8 @@ jobs:
         with:
           version: ${{ matrix.pnpm-version }}
           run_install: true
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
       - name: Check coding styles and formatting
         run: pnpm lint
       - name: Check build passing
@@ -72,7 +74,10 @@ jobs:
         with:
           version: ${{ matrix.pnpm-version }}
           run_install: true
-          
+
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
+
       - name: Build packages
         run: pnpm build
         
@@ -94,14 +99,8 @@ jobs:
       - name: Run database migrations
         run: |
           cd packages/api
-          NODE_ENV=test \
           DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test \
-          TEST_DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test \
-          SERVER_PORT=3000 \
-          SECRET_KEY=test_secret_key_for_ci \
-          ACCESS_TOKEN_SECRET_KEY=test_access_token_secret_for_ci \
-          REFRESH_TOKEN_SECRET_KEY=test_refresh_token_secret_for_ci \
-          pnpm drizzle-kit push:mysql --config ./src/drizzle/drizzle.config.ts
+          pnpm exec prisma db push --skip-generate
           
       - name: Run Integration tests
         run: |
