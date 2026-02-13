@@ -1,28 +1,22 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { desc, eq, isNull, sql } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { OperationCommittee } from "@sparcs-clubs/api/drizzle/schema/operation-committee.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class OperationCommitteeRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async createOperationCommitteeSecretKey(secretKey: string) {
-    await this.db
-      .update(OperationCommittee)
-      .set({ deletedAt: sql`NOW()` })
-      .where(isNull(OperationCommittee.deletedAt));
+    // Soft-delete all existing active keys
+    await this.prisma.operationCommittee.updateMany({
+      where: { deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
 
-    await this.db.insert(OperationCommittee).values({ secretKey });
-
-    const [inserted] = await this.db
-      .select()
-      .from(OperationCommittee)
-      .where(eq(OperationCommittee.secretKey, secretKey))
-      .orderBy(desc(OperationCommittee.id))
-      .limit(1);
+    // Create a new key
+    const inserted = await this.prisma.operationCommittee.create({
+      data: { secretKey },
+    });
 
     if (!inserted) {
       throw new HttpException(
@@ -34,10 +28,9 @@ export class OperationCommitteeRepository {
   }
 
   async findOperationCommitteeSecretKey() {
-    const activeKeys = await this.db
-      .select()
-      .from(OperationCommittee)
-      .where(isNull(OperationCommittee.deletedAt));
+    const activeKeys = await this.prisma.operationCommittee.findMany({
+      where: { deletedAt: null },
+    });
 
     if (!activeKeys || activeKeys.length === 0) {
       throw new HttpException(
@@ -50,12 +43,10 @@ export class OperationCommitteeRepository {
   }
 
   async deleteOperationCommitteeSecretKey() {
-    const [recent] = await this.db
-      .select()
-      .from(OperationCommittee)
-      .where(isNull(OperationCommittee.deletedAt))
-      .orderBy(desc(OperationCommittee.createdAt))
-      .limit(1);
+    const recent = await this.prisma.operationCommittee.findFirst({
+      where: { deletedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
 
     if (!recent) {
       throw new HttpException(
@@ -64,9 +55,9 @@ export class OperationCommitteeRepository {
       );
     }
 
-    await this.db
-      .update(OperationCommittee)
-      .set({ deletedAt: sql`NOW()` })
-      .where(eq(OperationCommittee.id, recent.id));
+    await this.prisma.operationCommittee.update({
+      where: { id: recent.id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

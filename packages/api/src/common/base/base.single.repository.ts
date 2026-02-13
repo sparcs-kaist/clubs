@@ -1,180 +1,139 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  count,
-  eq,
-  InferInsertModel,
-  InferSelectModel,
-  SQL,
-  sql,
-} from "drizzle-orm";
-
-import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
 
 import { IdType, MEntity, ModelPatchFunction } from "../base/entity.model";
-import { getDeletedAtObject } from "../util/util";
 import {
   BaseRepository,
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  InferUpdateModel,
   ModelConstructor,
   PlainObject,
-  TableWithID,
+  PrismaTransactionClient,
 } from "./base.repository";
 
-type SelectModel<Table extends TableWithID> = InferSelectModel<Table>;
-type InsertModel<Table extends TableWithID> = InferInsertModel<Table>;
-type UpdateModel<Table extends TableWithID> = InferUpdateModel<Table>;
-
 ///////////////////////////////////////////////////////////////////////////////
-// 베이스 레포지토리 추상클래스
-// 사용 방법
-// 1. Model에 모델 클래스 넣기
-// 2. Table에 FromDB (InferSelectTable) 타입 넣기
-// 3. 쿼리 조건 추가 (id 등 제외)
-// 4. 추가 쿼리 조건이 있을 경우 specialKeys에 추가하여 makeWhereClause를 상속하여 구현
+// BaseSingleTableRepository (Prisma version)
+// 단일 Prisma 모델에 대한 CRUD 기본 구현
 @Injectable()
 export abstract class BaseSingleTableRepository<
   Model extends MEntity<Id> & IModelCreate,
-  IModelCreate, // single table 에서는 IModelCreate == InsertModel<Table> 을 보장
-  Table extends TableWithID, // &TableWith~ 를 통해 테이블에 ID와 deletedAt 필드가 항상 있음을 보장
+  IModelCreate,
+  // DbSelect/DbInsert/DbUpdate 는 Prisma에서 자동 생성된 타입을 사용
+  // 하위 레포지토리에서 구체 타입을 정의
   Query extends PlainObject,
-  OrderByKeys extends string = "id", // 정렬에 사용되는 필드들
-  QuerySupport extends PlainObject = {}, // 직접 쿼리는 안되지만, 쿼리 조건에 보조로 들어가는 필드들. ex) startTerm & EndTerm for duration and date
+  OrderByKeys extends string = "id",
+  QuerySupport extends PlainObject = {},
   Id extends IdType = number,
 > extends BaseRepository<
   Model,
   IModelCreate,
-  SelectModel<Table>,
-  InsertModel<Table>,
-  UpdateModel<Table>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any, // DbSelect: Prisma auto-generated, 하위에서 dbToModelMapping의 파라미터로 지정
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any, // DbInsert
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any, // DbUpdate
   Query,
   OrderByKeys,
   QuerySupport,
   Id
 > {
   constructor(
-    protected table: Table,
-    protected readonly modelConstructor: ModelConstructor<Model, Id>, // 모델엔티티 넣으면 됨
+    protected readonly prismaModelName: string,
+    protected readonly modelConstructor: ModelConstructor<Model, Id>,
   ) {
-    super(modelConstructor, table);
+    super(modelConstructor, prismaModelName);
   }
 
   /**
    * @description DB -> Model
-   * @description DB Result를 Model 인스턴스로 변환하는 작업
-   * @description find에서 사용
    */
-  protected abstract dbToModelMapping(result: SelectModel<Table>): Model;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected abstract dbToModelMapping(result: any): Model;
 
   /**
-   * @description Model -> DB
-   * @description Model 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
-   * @description update에서 사용
+   * @description Model -> DB (for update)
    */
-  protected abstract modelToDBMapping(model: Model): UpdateModel<Table>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected abstract modelToDBMapping(model: Model): any;
 
   /**
-   * @description ModelCreate -> DB
-   * @description ModelCreate 인스턴스를 DB에 저장할 수 있는 형태로 변환하는 작업
-   * @description create에서 사용
+   * @description ModelCreate -> DB (for create)
    */
-  protected abstract createToDBMapping(model: IModelCreate): InsertModel<Table>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected abstract createToDBMapping(model: IModelCreate): any;
 
   /**
-   * @description WhereClause를 만들기 위해 DB칼럼 <-> 필드 매핑 메서드
-   * @description getTableOfField에서 wrapping 해서 사용
-   * @returns 테이블 필드 또는 null (정상 작동)
-   * @returns 기본 값으로 undefined를 리턴시켜야 함 (존재하지 않는 필드인 경우)
-   * @warning 구현만 하고, 상속 레포지토리 클래스 내부에서 직접 사용하지 말 것
+   * @description 필드 매핑: query field name -> prisma field name
+   * @returns string (prisma 필드명), null (특수 조건), undefined (존재하지 않는 필드)
    */
   protected abstract fieldMap(
     field: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
-  ): TableWithID | null | undefined;
+  ): string | null | undefined;
 
-  // find, count는 왠만하면 makeWhereClause를 구현하면 처리 가능
+  // find implementation using Prisma
   protected async findImplementation(
     query: BaseRepositoryFindQuery<Query, OrderByKeys, Id>,
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<Model[]> {
-    let selectQuery = tx
-      .select()
-      .from(this.table)
-      .where(this.makeWhereClause(query))
-      .$dynamic();
+    const delegate = this.getDelegate(tx);
+    const where = this.makeWhereClause(query);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const findArgs: any = { where };
 
     if (query.pagination) {
-      selectQuery = selectQuery.limit(query.pagination.itemCount);
-      selectQuery = selectQuery.offset(
-        (query.pagination.offset - 1) * query.pagination.itemCount,
-      );
+      findArgs.take = query.pagination.itemCount;
+      findArgs.skip =
+        (query.pagination.offset - 1) * query.pagination.itemCount;
     }
 
     if (query.orderBy) {
-      selectQuery = selectQuery.orderBy(...this.makeOrderBy(query.orderBy));
+      findArgs.orderBy = this.makeOrderBy(query.orderBy);
     }
 
-    const result = await selectQuery.execute();
-    const ret = result.map(row => this.dbToModel(row));
-    return ret;
+    const results = await delegate.findMany(findArgs);
+    return results.map((row: unknown) => this.dbToModel(row));
   }
 
   protected async countImplementation(
     query: BaseRepositoryQuery<Query, Id>,
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<number> {
-    const [result] = await tx
-      .select({ count: count() })
-      .from(this.table)
-      .where(this.makeWhereClause(query));
-
-    return result.count;
+    const delegate = this.getDelegate(tx);
+    const where = this.makeWhereClause(query);
+    return delegate.count({ where });
   }
 
   protected async createImplementation(
     data: IModelCreate[],
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<Model[]> {
-    const dbData = data.map(d => this.createToDB(d));
-    // TODO: bulk로 보내고 $returningId로 동작하게 수정
-    // 참고: https://orm.drizzle.team/docs/insert insert $returningId part
-    // 원래 계획: $returningId를 사용해 insertIds를 이용해서 한번에 넣고 한번에 다시 쿼리
-    // 아래 코드는 작동하나, drizzle 0.32 (returningId가 생긴 버전) 에서는 strictNullChecks가 true 여야 작동하는 버그가 존재함.
-    // 나중에 strictNullChecks가 true 인 버전으로 바꾼 후 변경 필요
-    // const insert = await tx.insert(this.table).values(data).$returningId();
+    const delegate = this.getDelegate(tx);
 
-    // if (!Array.isArray(insert)) {
-    //   throw new Error(`insert is not an array : ${JSON.stringify(insert)}`);
-    // }
-
-    // const ids = insert.map(idObject => idObject.id) as Id[];
-    //지금은 returningId가 제네릭에서 인식이 안돼서 이렇게 하나씩 넣고 쿼리
-    // 참고: base.repository.ts 의 TableWithID 위 주석처리 부분
-
+    // Prisma doesn't have bulk create with returning IDs for MySQL,
+    // so we insert one by one and fetch
     const ids = await Promise.all(
-      dbData.map(async d => {
-        const [result] = await tx.insert(this.table).values(d);
-        return result.insertId as Id;
+      data.map(async d => {
+        const dbData = this.createToDB(d);
+        const created = await delegate.create({ data: dbData });
+        return created.id as Id;
       }),
     );
 
-    const results = await this.fetchAll(ids, tx);
-
-    return results;
+    return this.fetchAll(ids, tx);
   }
 
   protected async putImplementation(
     model: Model,
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<Model> {
+    const delegate = this.getDelegate(tx);
     const data = this.modelToDB(model);
-    await tx
-      .update(this.table)
-      .set(data as Record<string, unknown>)
-      .where(eq(this.table.id, model.id))
-      .execute();
+    await delegate.update({
+      where: { id: model.id },
+      data,
+    });
 
     return this.fetch(model.id, tx);
   }
@@ -182,7 +141,7 @@ export abstract class BaseSingleTableRepository<
   protected async patchImplementation(
     query: BaseRepositoryQuery<Query, Id>,
     patchFunction: ModelPatchFunction<Model, Id>,
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<Model[]> {
     const data = await this.find(query, tx);
     const updated = data.map(patchFunction);
@@ -194,44 +153,66 @@ export abstract class BaseSingleTableRepository<
 
   protected async deleteImplementation(
     query: BaseRepositoryQuery<Query, Id>,
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
   ): Promise<boolean> {
-    await tx
-      .update(this.table)
-      .set(getDeletedAtObject())
-      .where(this.makeWhereClause(query))
-      .execute();
+    const delegate = this.getDelegate(tx);
+    const where = this.makeWhereClause(query);
+    await delegate.updateMany({
+      where,
+      data: { deletedAt: new Date() },
+    });
     return true;
   }
 
   /**
-   * @description 락을 잡는 쿼리를 실행하는 메서드
-   * @description Single 테이블일 때랑 멀티 테이블일 때랑 구현이 다르기에, BaseRepository에서 구현해야 함
+   * @description 락을 잡는 쿼리를 실행하는 메서드 (raw SQL)
    */
   protected async executeLockQuery(
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
     query: BaseRepositoryQuery<Query, Id>,
     lockSql: string,
   ): Promise<void> {
-    const where = and(this.makeWhereClause(query));
-    await tx.execute(
-      sql`SELECT 1 FROM ${this.table} WHERE ${where} ${sql.raw(lockSql)}`,
+    // Prisma에서는 raw SQL로 lock을 잡아야 함
+    // 모델의 @@map 테이블 이름을 사용
+    const where = this.makeWhereClause(query);
+    const ids = await this.getDelegate(tx).findMany({
+      where,
+      select: { id: true },
+    });
+    const idValues = ids.map((r: { id: Id }) => r.id);
+    if (idValues.length === 0) return;
+
+    const placeholders = idValues.map(() => "?").join(",");
+    // We need the actual DB table name. For raw SQL locks, we use Prisma.$queryRawUnsafe
+    type RawClient = {
+      $queryRawUnsafe: (sql: string, ...values: unknown[]) => Promise<unknown>;
+    };
+    await (tx as unknown as RawClient).$queryRawUnsafe(
+      `SELECT 1 FROM \`${this.getDbTableName()}\` WHERE id IN (${placeholders}) ${lockSql}`,
+      ...idValues,
+    );
+  }
+
+  /**
+   * @description DB 테이블 이름을 반환하는 메서드
+   * @description 기본값은 prismaModelName을 snake_case로 변환. 하위에서 오버라이드 가능
+   */
+  protected getDbTableName(): string {
+    // Convert camelCase to snake_case
+    return this.prismaModelName.replace(
+      /[A-Z]/g,
+      letter => `_${letter.toLowerCase()}`,
     );
   }
 
   /**
    * @override SpecialCondition 이 존재할 때 구현해야 함
-   * @description 특수한 조건을 처리하는 메서드
-   * @description 모델 필드에는 없는 조건으로 처리하고자 할 때 구현하기
-   * @description 여기에 속하는 필드는 fieldMap에서 null로 처리되어야 함
-   * @description 예시: duration, date 등
-   * @description value의 타입은 상속할때 명시할 것
-   * @description 예시: { duration: { startTerm: new Date(), endTerm: new Date() } }, {date: new Date("2025-04-18T00:00:00.000Z")}
    */
   protected processSpecialCondition(
     key: BaseTableFieldMapKeys<Query, OrderByKeys, QuerySupport>,
     value: unknown,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     throw new Error(`Invalid special condition: ${String(key)} ${value}`);
   }
 }

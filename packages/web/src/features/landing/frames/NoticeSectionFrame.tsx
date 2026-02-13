@@ -57,8 +57,17 @@ const NoticeSectionFrame: React.FC = () => {
       <NoticeSectionFrameInner>
         <MoreSectionTitle title={t("common.notice")} path={paths.NOTICE.path} />
         <NoticeLastUpdateTime>
-          last update: {data?.lastUpdateTime?.toLocaleDateString() ?? "-"}{" "}
-          {data?.lastUpdateTime?.toLocaleTimeString() ?? ""}
+          last update:{" "}
+          {data?.lastUpdateTime
+            ? data.lastUpdateTime.toLocaleDateString("ko-KR", {
+                timeZone: "Asia/Seoul",
+              })
+            : "-"}{" "}
+          {data?.lastUpdateTime
+            ? data.lastUpdateTime.toLocaleTimeString("ko-KR", {
+                timeZone: "Asia/Seoul",
+              })
+            : ""}
         </NoticeLastUpdateTime>
         <NoticeWrapper>
           {data?.notices.map(noticeInfo => (

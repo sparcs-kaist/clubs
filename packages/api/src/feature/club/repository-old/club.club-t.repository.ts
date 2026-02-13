@@ -1,141 +1,127 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { Professor } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class ClubTRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findClubTById(clubId: number) {
-    const crt = getKSTDate();
-    return this.db
-      .select()
-      .from(ClubT)
-      .where(
-        and(
-          eq(ClubT.clubId, clubId),
-          or(
-            and(isNull(ClubT.endTerm), lte(ClubT.endTerm, crt)),
-            gte(ClubT.endTerm, crt),
-          ),
-        ),
-      )
-      .then(takeOne);
-  }
-
-  async findClubDetail(semesterId: number, clubId: number) {
-    return this.db
-      .select({
-        clubStatusEnumId: ClubT.clubStatusEnumId,
-        characteristicKr: ClubT.characteristicKr,
-        professorId: ClubT.professorId,
-        professorName: Professor.name,
-      })
-      .from(ClubT)
-      .where(and(eq(ClubT.semesterId, semesterId), eq(ClubT.clubId, clubId)))
-      .leftJoin(Professor, eq(Professor.id, ClubT.professorId))
-      .then(result => ({
-        clubStatusEnumId: result[0]?.clubStatusEnumId,
-        characteristicKr: result[0]?.characteristicKr,
-        advisor: result[0]?.professorId ? result[0].professorName : null,
-      }));
-  }
-
-  async findClubById(clubId: number): Promise<boolean> {
-    const crt = getKSTDate();
-    const result = !!(await this.db
-      .select({
-        id: ClubT.clubId,
-      })
-      .from(ClubT)
-      .where(
-        and(
-          eq(ClubT.clubId, clubId),
-          or(
-            and(isNull(ClubT.endTerm), lte(ClubT.endTerm, crt)),
-            gte(ClubT.endTerm, crt),
-          ),
-        ),
-      )
-      .limit(1)
-      .then(takeOne));
+    const crt = new Date();
+    const result = await this.prisma.clubT.findFirst({
+      where: {
+        clubId,
+        OR: [
+          { AND: [{ endTerm: null }, { endTerm: { lte: crt } }] },
+          { endTerm: { gte: crt } },
+        ],
+      },
+    });
     return result;
   }
 
+  async findClubDetail(semesterId: number, clubId: number) {
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        clubStatusEnumId: number;
+        characteristicKr: string | null;
+        professorId: number | null;
+        professorName: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT ct.club_status_enum_id AS clubStatusEnumId,
+             ct.characteristic_kr AS characteristicKr,
+             ct.professor_id AS professorId,
+             p.name AS professorName
+      FROM club_t ct
+      LEFT JOIN professor p ON p.id = ct.professor_id
+      WHERE ct.semester_id = ${semesterId} AND ct.club_id = ${clubId}
+    `);
+    const row = result[0];
+    return {
+      clubStatusEnumId: row?.clubStatusEnumId,
+      characteristicKr: row?.characteristicKr,
+      advisor: row?.professorId ? row.professorName : null,
+    };
+  }
+
+  async findClubById(clubId: number): Promise<boolean> {
+    const crt = new Date();
+    const result = await this.prisma.clubT.findFirst({
+      where: {
+        clubId,
+        OR: [
+          { AND: [{ endTerm: null }, { endTerm: { lte: crt } }] },
+          { endTerm: { gte: crt } },
+        ],
+      },
+      select: { clubId: true },
+    });
+    return !!result;
+  }
+
   async findSemesterByClubId(clubId: number) {
-    return this.db
-      .select({
-        id: SemesterD.id,
-        name: SemesterD.name,
-        year: SemesterD.year,
-        startTerm: SemesterD.startTerm,
-        endTerm: SemesterD.endTerm,
-      })
-      .from(SemesterD)
-      .innerJoin(ClubT, eq(SemesterD.id, ClubT.semesterId))
-      .where(and(eq(ClubT.clubId, clubId), isNull(ClubT.deletedAt)))
-      .orderBy(desc(SemesterD.id))
-      .then(result =>
-        result.map(row => ({
-          id: row.id,
-          year: row.year,
-          name: row.name,
-          startTerm: row.startTerm,
-          endTerm: row.endTerm,
-        })),
-      );
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        name: string;
+        year: number;
+        startTerm: Date;
+        endTerm: Date;
+      }>
+    >(Prisma.sql`
+      SELECT sd.id, sd.name, sd.year, sd.start_term AS startTerm, sd.end_term AS endTerm
+      FROM semester_d sd
+      INNER JOIN club_t ct ON sd.id = ct.semester_id
+      WHERE ct.club_id = ${clubId} AND ct.deleted_at IS NULL
+      ORDER BY sd.id DESC
+    `);
+    return result.map(row => ({
+      id: row.id,
+      year: row.year,
+      name: row.name,
+      startTerm: row.startTerm,
+      endTerm: row.endTerm,
+    }));
   }
 
   async findProfessorSemester(professorId: number) {
-    return this.db
-      .select({
-        id: SemesterD.id,
-        name: SemesterD.name,
-        year: SemesterD.year,
-        startTerm: SemesterD.startTerm,
-        endTerm: SemesterD.endTerm,
-        clubs: { id: ClubT.clubId },
-      })
-      .from(ClubT)
-      .leftJoin(SemesterD, eq(SemesterD.id, ClubT.semesterId))
-      .where(eq(ClubT.professorId, professorId))
-      .orderBy(desc(SemesterD.id))
-      .then(result =>
-        result.map(row => ({
-          id: row.id,
-          name: `${row.year} ${row.name}`,
-          startTerm: row.startTerm,
-          endTerm: row.endTerm,
-          clubs: [{ id: row.clubs.id }],
-        })),
-      );
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        name: string;
+        year: number;
+        startTerm: Date;
+        endTerm: Date;
+        clubId: number;
+      }>
+    >(Prisma.sql`
+      SELECT sd.id, sd.name, sd.year, sd.start_term AS startTerm,
+             sd.end_term AS endTerm, ct.club_id AS clubId
+      FROM club_t ct
+      LEFT JOIN semester_d sd ON sd.id = ct.semester_id
+      WHERE ct.professor_id = ${professorId}
+      ORDER BY sd.id DESC
+    `);
+    return result.map(row => ({
+      id: row.id,
+      name: `${row.year} ${row.name}`,
+      startTerm: row.startTerm,
+      endTerm: row.endTerm,
+      clubs: [{ id: row.clubId }],
+    }));
   }
 
   async selectBySemesterId(semesterId: number) {
-    return this.db
-      .select()
-      .from(ClubT)
-      .where(and(eq(ClubT.semesterId, semesterId), isNull(ClubT.deletedAt)))
-      .then(result => result);
+    return this.prisma.clubT.findMany({
+      where: { semesterId, deletedAt: null },
+    });
   }
 
   async findByClubIdAndSemesterId(clubId: number, semesterId: number) {
-    return this.db
-      .select()
-      .from(ClubT)
-      .where(
-        and(
-          eq(ClubT.clubId, clubId),
-          eq(ClubT.semesterId, semesterId),
-          isNull(ClubT.deletedAt),
-        ),
-      )
-      .then(takeOne);
+    return this.prisma.clubT.findFirst({
+      where: { clubId, semesterId, deletedAt: null },
+    });
   }
 }

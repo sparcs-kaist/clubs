@@ -1,7 +1,5 @@
 import { forwardRef, Module } from "@nestjs/common";
 
-import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
-
 import DivisionModule from "../division/division.module";
 import OldDivisionRepository from "../division/repository/old.division.repository";
 import RegistrationModule from "../registration/registration.module";
@@ -27,7 +25,6 @@ import { ClubService } from "./service/club.service";
 @Module({
   imports: [
     forwardRef(() => RegistrationModule),
-    DrizzleModule,
     UserModule,
     forwardRef(() => DelegateModule),
     DivisionModule,

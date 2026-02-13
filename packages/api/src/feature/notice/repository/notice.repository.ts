@@ -1,12 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Notice } from "@sparcs-clubs/api/drizzle/schema/notice.schema";
 import {
   INoticeCreate,
   MNotice,
@@ -24,10 +19,6 @@ export type NoticeQuery = {
 type NoticeOrderByKeys = "id" | "date" | "createdAt" | "articleId";
 type NoticeQuerySupport = {};
 
-type NoticeTable = typeof Notice;
-type NoticeDbSelect = InferSelectModel<NoticeTable>;
-type NoticeDbUpdate = Partial<NoticeDbSelect>;
-type NoticeDbInsert = InferInsertModel<NoticeTable>;
 type NoticeFieldMapKeys = BaseTableFieldMapKeys<
   NoticeQuery,
   NoticeOrderByKeys,
@@ -38,16 +29,16 @@ type NoticeFieldMapKeys = BaseTableFieldMapKeys<
 export class NoticeRepository extends BaseSingleTableRepository<
   MNotice,
   INoticeCreate,
-  NoticeTable,
   NoticeQuery,
   NoticeOrderByKeys,
   NoticeQuerySupport
 > {
   constructor() {
-    super(Notice, MNotice);
+    super("notice", MNotice);
   }
 
-  protected dbToModelMapping(result: NoticeDbSelect): MNotice {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MNotice {
     return {
       date: result.date,
       author: result.author,
@@ -59,7 +50,8 @@ export class NoticeRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected modelToDBMapping(model: MNotice): NoticeDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MNotice): any {
     return {
       id: model.id,
       author: model.author,
@@ -71,7 +63,8 @@ export class NoticeRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(model: INoticeCreate): NoticeDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: INoticeCreate): any {
     return {
       date: model.date,
       author: model.author,
@@ -82,22 +75,20 @@ export class NoticeRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: NoticeFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<NoticeFieldMapKeys, TableWithID | null> = {
-      id: Notice,
-      author: Notice,
-      createdAt: Notice,
-      title: Notice,
-      date: Notice,
-      articleId: Notice,
+  protected fieldMap(field: NoticeFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<NoticeFieldMapKeys, string | null> = {
+      id: "id",
+      author: "author",
+      createdAt: "createdAt",
+      title: "title",
+      date: "date",
+      articleId: "articleId",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { addDays } from "date-fns";
 
 import type {
   ApiReg001RequestBody,
@@ -1006,9 +1005,9 @@ export class RegistrationService {
     const today = new Date();
     const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 구현할 경우 수정
-    const deadline = await this.registrationDeadlinePublicService.load({
+    const deadline = await this.registrationDeadlinePublicService.searchOne({
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
-      date: today,
+      semesterId: semester.id,
     });
 
     return {
@@ -1019,9 +1018,8 @@ export class RegistrationService {
         startTerm: semester.startTerm,
         endTerm: semester.endTerm,
       },
-      // endTerm에 하루를 더해서 종료일 전체를 포함하도록 함
       deadline:
-        deadline.startTerm <= today && today < addDays(deadline.endTerm, 1)
+        deadline && deadline.startTerm <= today && today <= deadline.endTerm
           ? {
               startDate: deadline.startTerm,
               endTerm: deadline.endTerm,
@@ -1546,9 +1544,9 @@ export class RegistrationService {
     const today = new Date();
     const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 받도록 구현할 경우 수정
-    const deadline = await this.registrationDeadlinePublicService.load({
+    const deadline = await this.registrationDeadlinePublicService.searchOne({
       deadlineEnum: RegistrationDeadlineEnum.StudentRegistrationApplication,
-      date: today,
+      semesterId: semester.id,
     });
     return {
       semester: {
@@ -1558,9 +1556,8 @@ export class RegistrationService {
         startTerm: semester.startTerm,
         endTerm: semester.endTerm,
       },
-      // endTerm에 하루를 더해서 종료일 전체를 포함하도록 함
       deadline:
-        deadline.startTerm <= today && today < addDays(deadline.endTerm, 1)
+        deadline && deadline.startTerm <= today && today <= deadline.endTerm
           ? {
               startDate: deadline.startTerm,
               endTerm: deadline.endTerm,

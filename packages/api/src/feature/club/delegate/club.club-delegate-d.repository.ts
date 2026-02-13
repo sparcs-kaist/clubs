@@ -1,18 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common";
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gte,
-  isNotNull,
-  isNull,
-  lte,
-  not,
-  notInArray,
-  or,
-} from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import {
   ClubDelegateChangeRequestStatusEnum,
@@ -20,19 +7,12 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  ClubDelegate,
-  ClubDelegateChangeRequest,
-  ClubOld,
-  ClubStudentT,
-} from "@sparcs-clubs/api/drizzle/schema/club.schema";
-import { Student, User } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class ClubDelegateDRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * @param id 삭제할 변경 요청의 id
@@ -40,13 +20,11 @@ export class ClubDelegateDRepository {
   async deleteDelegateChangeRequestById(param: {
     id: number;
   }): Promise<boolean> {
-    const [result] = await this.db
-      .update(ClubDelegateChangeRequest)
-      .set({
-        deletedAt: getKSTDate(),
-      })
-      .where(eq(ClubDelegateChangeRequest.id, param.id));
-    return result.affectedRows > 0;
+    const result = await this.prisma.clubDelegateChangeRequest.updateMany({
+      where: { id: param.id },
+      data: { deletedAt: new Date() },
+    });
+    return result.count > 0;
   }
 
   /**
@@ -54,19 +32,14 @@ export class ClubDelegateDRepository {
    * @returns 해당 학생이 신청한 변경 요청의 목록, 로직에 문제가 없다면 배열의 길이가 항상 1 이하여야 합니다.
    */
   async findDelegateChangeRequestByPrevStudentId(param: { studentId: number }) {
-    const result = await this.db
-      .select()
-      .from(ClubDelegateChangeRequest)
-      .where(
-        and(
-          eq(
-            ClubDelegateChangeRequest.clubDelegateChangeRequestStatusEnumId,
-            ClubDelegateChangeRequestStatusEnum.Applied,
-          ),
-          eq(ClubDelegateChangeRequest.prevStudentId, param.studentId),
-          isNull(ClubDelegateChangeRequest.deletedAt),
-        ),
-      );
+    const result = await this.prisma.clubDelegateChangeRequest.findMany({
+      where: {
+        clubDelegateChangeRequestStatusEnumId:
+          ClubDelegateChangeRequestStatusEnum.Applied,
+        prevStudentId: param.studentId,
+        deletedAt: null,
+      },
+    });
     return result;
   }
 
@@ -77,16 +50,13 @@ export class ClubDelegateDRepository {
    * 최근에 신청된 요청이 가장 위에 위치합니다.
    */
   async findDelegateChangeRequestByClubId(param: { clubId: number }) {
-    const result = await this.db
-      .select()
-      .from(ClubDelegateChangeRequest)
-      .where(
-        and(
-          eq(ClubDelegateChangeRequest.clubId, param.clubId),
-          isNull(ClubDelegateChangeRequest.deletedAt),
-        ),
-      )
-      .orderBy(desc(ClubDelegateChangeRequest.createdAt));
+    const result = await this.prisma.clubDelegateChangeRequest.findMany({
+      where: {
+        clubId: param.clubId,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
     return result;
   }
@@ -98,15 +68,12 @@ export class ClubDelegateDRepository {
    id가 유일하기 때문에 배열의 길이가 항상 1 이하여야 합니다.
    */
   async findDelegateChangeRequestById(param: { id: number }) {
-    const result = await this.db
-      .select()
-      .from(ClubDelegateChangeRequest)
-      .where(
-        and(
-          eq(ClubDelegateChangeRequest.id, param.id),
-          isNull(ClubDelegateChangeRequest.deletedAt),
-        ),
-      );
+    const result = await this.prisma.clubDelegateChangeRequest.findMany({
+      where: {
+        id: param.id,
+        deletedAt: null,
+      },
+    });
     return result;
   }
 
@@ -119,20 +86,15 @@ export class ClubDelegateDRepository {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-    const result = await this.db
-      .select()
-      .from(ClubDelegateChangeRequest)
-      .where(
-        and(
-          eq(
-            ClubDelegateChangeRequest.clubDelegateChangeRequestStatusEnumId,
-            ClubDelegateChangeRequestStatusEnum.Applied,
-          ),
-          eq(ClubDelegateChangeRequest.studentId, param.studentId),
-          gte(ClubDelegateChangeRequest.createdAt, threeDaysAgo),
-          isNull(ClubDelegateChangeRequest.deletedAt),
-        ),
-      );
+    const result = await this.prisma.clubDelegateChangeRequest.findMany({
+      where: {
+        clubDelegateChangeRequestStatusEnumId:
+          ClubDelegateChangeRequestStatusEnum.Applied,
+        studentId: param.studentId,
+        createdAt: { gte: threeDaysAgo },
+        deletedAt: null,
+      },
+    });
     return result;
   }
 
@@ -141,28 +103,24 @@ export class ClubDelegateDRepository {
     clubId: number,
     startTerm?: Date,
   ): Promise<{ name: string }> {
-    const currentDate = getKSTDate();
+    const currentDate = new Date();
+    const refDate = startTerm || currentDate;
 
-    const representative = await this.db
-      .select({ name: Student.name })
-      .from(ClubDelegate)
-      .leftJoin(Student, eq(Student.id, ClubDelegate.studentId))
-      .where(
-        and(
-          eq(ClubDelegate.clubId, clubId),
-          eq(ClubDelegate.clubDelegateEnum, 1),
-          lte(ClubDelegate.startTerm, startTerm || currentDate),
-          or(
-            gte(ClubDelegate.endTerm, startTerm || currentDate),
-            isNull(ClubDelegate.endTerm),
-          ),
-        ),
-      )
-      .orderBy(ClubDelegate.endTerm)
-      .limit(1)
-      .then(takeOne);
+    const result = await this.prisma.$queryRaw<Array<{ name: string }>>(
+      Prisma.sql`
+        SELECT s.name
+        FROM club_delegate_d cd
+        LEFT JOIN student s ON s.id = cd.student_id
+        WHERE cd.club_id = ${clubId}
+          AND cd.club_delegate_enum_id = 1
+          AND cd.start_term <= ${refDate}
+          AND (cd.end_term >= ${refDate} OR cd.end_term IS NULL)
+        ORDER BY cd.end_term
+        LIMIT 1
+      `,
+    );
 
-    return representative;
+    return takeOne(result);
   }
 
   /**
@@ -182,23 +140,17 @@ export class ClubDelegateDRepository {
    * @returns 해당 동아리의 대표자 정보 목록을 가져옵니다.
    */
   async findDelegateByClubId(clubId: number) {
-    const currentDate = getKSTDate();
+    const currentDate = new Date();
 
-    const delegate = await this.db
-      .select()
-      .from(ClubDelegate)
-      .where(
-        and(
-          eq(ClubDelegate.clubId, clubId),
-          lte(ClubDelegate.startTerm, currentDate),
-          or(
-            gte(ClubDelegate.endTerm, currentDate),
-            isNull(ClubDelegate.endTerm),
-          ),
-          isNull(ClubDelegate.deletedAt),
-        ),
-      )
-      .orderBy(ClubDelegate.endTerm);
+    const delegate = await this.prisma.clubDelegateD.findMany({
+      where: {
+        clubId,
+        startTerm: { lte: currentDate },
+        OR: [{ endTerm: { gte: currentDate } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      orderBy: { endTerm: "asc" },
+    });
 
     return delegate;
   }
@@ -209,23 +161,17 @@ export class ClubDelegateDRepository {
    * 로직에 문제가 없을경우 크기가 0 또는 1인 리스트가 리턴됩니다.
    */
   async findDelegateByStudentId(studentId: number) {
-    const currentDate = getKSTDate();
+    const currentDate = new Date();
 
-    const delegate = await this.db
-      .select()
-      .from(ClubDelegate)
-      .where(
-        and(
-          eq(ClubDelegate.studentId, studentId),
-          lte(ClubDelegate.startTerm, currentDate),
-          or(
-            gte(ClubDelegate.endTerm, currentDate),
-            isNull(ClubDelegate.endTerm),
-          ),
-          isNull(ClubDelegate.deletedAt),
-        ),
-      )
-      .orderBy(ClubDelegate.endTerm);
+    const delegate = await this.prisma.clubDelegateD.findMany({
+      where: {
+        studentId,
+        startTerm: { lte: currentDate },
+        OR: [{ endTerm: { gte: currentDate } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      orderBy: { endTerm: "asc" },
+    });
 
     return delegate;
   }
@@ -234,21 +180,17 @@ export class ClubDelegateDRepository {
     studentId: number,
     clubId: number,
   ): Promise<boolean> {
-    const crt = getKSTDate();
-    const result = !!(await this.db
-      .select({ id: ClubDelegate.id })
-      .from(ClubDelegate)
-      .where(
-        and(
-          eq(ClubDelegate.clubId, clubId),
-          eq(ClubDelegate.studentId, studentId),
-          lte(ClubDelegate.startTerm, crt),
-          or(gte(ClubDelegate.endTerm, crt), isNull(ClubDelegate.endTerm)),
-        ),
-      )
-      .limit(1)
-      .then(takeOne));
-    return result;
+    const crt = new Date();
+    const result = await this.prisma.clubDelegateD.findFirst({
+      where: {
+        clubId,
+        studentId,
+        startTerm: { lte: crt },
+        OR: [{ endTerm: { gte: crt } }, { endTerm: null }],
+      },
+      select: { id: true },
+    });
+    return !!result;
   }
 
   /**
@@ -264,57 +206,65 @@ export class ClubDelegateDRepository {
     semesterId: number;
     filterClubDelegateEnum: Array<ClubDelegateEnum>;
   }) {
-    const today = getKSTDate();
+    const today = new Date();
     logger.debug(param.semesterId);
     logger.debug(today);
-    const result = await this.db
-      .select()
-      .from(ClubOld)
-      .innerJoin(
-        ClubStudentT,
-        and(
-          eq(ClubOld.id, ClubStudentT.clubId),
-          isNull(ClubStudentT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Student,
-        and(eq(ClubStudentT.studentId, Student.id), isNull(Student.deletedAt)),
-      )
-      .leftJoin(User, eq(User.id, Student.userId))
-      .leftJoin(
-        ClubDelegate,
-        and(
-          eq(ClubDelegate.studentId, Student.id),
-          lte(ClubDelegate.startTerm, today),
-          or(gte(ClubDelegate.endTerm, today), isNull(ClubDelegate.endTerm)),
-          isNull(ClubDelegate.deletedAt),
-        ),
-      )
-      .where(
-        and(
-          eq(ClubOld.id, param.clubId),
-          eq(ClubStudentT.semesterId, param.semesterId),
-          param.filterClubDelegateEnum.length !== 0
-            ? or(
-                notInArray(
-                  ClubDelegate.clubDelegateEnum,
-                  param.filterClubDelegateEnum,
-                ),
-                isNull(ClubDelegate.clubDelegateEnum),
-              )
-            : undefined,
-          not(
-            and(
-              not(eq(ClubDelegate.clubId, param.clubId)),
-              isNotNull(ClubDelegate.id),
-            ),
-          ),
-          isNull(ClubOld.deletedAt),
-        ),
-      );
+
+    const filterEnums = param.filterClubDelegateEnum;
+    const hasFilter = filterEnums.length !== 0;
+
+    // Build the filter clause for club_delegate_enum_id
+    const filterClause = hasFilter
+      ? Prisma.sql`AND (cd.club_delegate_enum_id NOT IN (${Prisma.join(filterEnums)}) OR cd.club_delegate_enum_id IS NULL)`
+      : Prisma.empty;
+
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        studentId: number;
+        studentNumber: number;
+        studentName: string;
+        phoneNumber: string | null;
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          s.id AS studentId,
+          s.number AS studentNumber,
+          s.name AS studentName,
+          u.phone_number AS phoneNumber
+        FROM club c
+        INNER JOIN club_student_t cst
+          ON c.id = cst.club_id
+          AND cst.deleted_at IS NULL
+        INNER JOIN student s
+          ON cst.student_id = s.id
+          AND s.deleted_at IS NULL
+        LEFT JOIN user u
+          ON u.id = s.user_id
+        LEFT JOIN club_delegate_d cd
+          ON cd.student_id = s.id
+          AND cd.start_term <= ${today}
+          AND (cd.end_term >= ${today} OR cd.end_term IS NULL)
+          AND cd.deleted_at IS NULL
+        WHERE c.id = ${param.clubId}
+          AND cst.semester_id = ${param.semesterId}
+          ${filterClause}
+          AND NOT (cd.club_id != ${param.clubId} AND cd.id IS NOT NULL)
+          AND c.deleted_at IS NULL
+      `,
+    );
+
     // logger.debug(result); // 로그가 너무 길어서 주석처리해 두었어요
-    return result;
+    return result.map(e => ({
+      student: {
+        id: e.studentId,
+        number: e.studentNumber,
+        name: e.studentName,
+      },
+      user: {
+        phoneNumber: e.phoneNumber,
+      },
+    }));
   }
 
   /**
@@ -333,24 +283,23 @@ export class ClubDelegateDRepository {
     clubId: number;
     clubDelegateEnumId: number;
   }): Promise<boolean> {
-    const now = getKSTDate();
+    const now = new Date();
 
-    const result = await this.db.transaction(async tx => {
-      const [requestInsertionResult] = await tx
-        .insert(ClubDelegateChangeRequest)
-        .values({
+    const result = await this.prisma.$transaction<boolean>(async tx => {
+      const requestInsertionResult = await tx.clubDelegateChangeRequest.create({
+        data: {
           clubId: param.clubId,
           prevStudentId: param.studentId,
           studentId: param.targetStudentId,
           clubDelegateChangeRequestStatusEnumId:
             ClubDelegateChangeRequestStatusEnum.Applied,
           createdAt: now,
-        });
+        },
+      });
 
-      if (requestInsertionResult.affectedRows !== 1) {
+      if (!requestInsertionResult) {
         logger.debug("[insertClubDelegateChangeRequest] failed to insert");
-        tx.rollback();
-        return false;
+        throw new Error("insertClubDelegateChangeRequest failed");
       }
 
       return true;
@@ -374,67 +323,64 @@ export class ClubDelegateDRepository {
     clubDelegateEnumId: number;
     studentId: number;
   }): Promise<boolean> {
-    const now = getKSTDate();
+    const now = new Date();
 
-    const result = await this.db.transaction(async tx => {
+    const result = await this.prisma.$transaction<boolean>(async tx => {
       // 기존 대표자의 임기를 종료
-      const [prevDelegateUpdateResult] = await tx
-        .update(ClubDelegate)
-        .set({
-          endTerm: now,
-        })
-        .where(
-          and(
-            eq(ClubDelegate.clubId, param.clubId),
-            eq(ClubDelegate.clubDelegateEnum, param.clubDelegateEnumId),
-            lte(ClubDelegate.startTerm, now),
-            or(gte(ClubDelegate.endTerm, now), isNull(ClubDelegate.endTerm)),
-            isNull(ClubDelegate.deletedAt),
-          ),
-        );
+      const prevDelegateUpdateResult = await tx.clubDelegateD.updateMany({
+        where: {
+          clubId: param.clubId,
+          clubDelegateEnum: param.clubDelegateEnumId,
+          startTerm: { lte: now },
+          OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+          deletedAt: null,
+        },
+        data: { endTerm: now },
+      });
+
       // 신규 delegate가 맡고 있던 지위를 해제
-      const [delegateUpdateResult] = await tx
-        .update(ClubDelegate)
-        .set({
-          endTerm: now,
-        })
-        .where(
-          and(
-            eq(ClubDelegate.clubId, param.clubId),
-            eq(ClubDelegate.studentId, param.studentId),
-            lte(ClubDelegate.startTerm, now),
-            or(gte(ClubDelegate.endTerm, now), isNull(ClubDelegate.endTerm)),
-            isNull(ClubDelegate.deletedAt),
-          ),
-        );
+      const delegateUpdateResult = await tx.clubDelegateD.updateMany({
+        where: {
+          clubId: param.clubId,
+          studentId: param.studentId,
+          startTerm: { lte: now },
+          OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+          deletedAt: null,
+        },
+        data: { endTerm: now },
+      });
+
       // 변경된 row는 각각 0줄 또는 한줄이어야 합니다.
       if (
-        prevDelegateUpdateResult.affectedRows > 1 ||
-        delegateUpdateResult.affectedRows > 1
+        prevDelegateUpdateResult.count > 1 ||
+        delegateUpdateResult.count > 1
       ) {
         const errorReason =
-          prevDelegateUpdateResult.affectedRows > 1
+          prevDelegateUpdateResult.count > 1
             ? "Previous Delegate"
             : "New Delegate";
         logger.debug(
           `[updateDelegate] ${errorReason}: more than 1 row is modified. Rollback.`,
         );
-        tx.rollback();
-        return false;
+        throw new Error(
+          `[updateDelegate] ${errorReason}: more than 1 row is modified.`,
+        );
       }
 
       if (param.studentId === 0) return true;
 
-      const [delegateInsertResult] = await tx.insert(ClubDelegate).values({
-        clubId: param.clubId,
-        studentId: param.studentId,
-        clubDelegateEnum: param.clubDelegateEnumId,
-        startTerm: now,
+      const delegateInsertResult = await tx.clubDelegateD.create({
+        data: {
+          clubId: param.clubId,
+          studentId: param.studentId,
+          clubDelegateEnum: param.clubDelegateEnumId,
+          startTerm: now,
+        },
       });
-      if (delegateInsertResult.affectedRows !== 1) {
+
+      if (!delegateInsertResult) {
         logger.debug("[updateDelegate] insertion is failed Rollback.");
-        tx.rollback();
-        return false;
+        throw new Error("[updateDelegate] insertion failed");
       }
 
       return true;
@@ -447,44 +393,39 @@ export class ClubDelegateDRepository {
     id: number;
     clubDelegateChangeRequestStatusEnumId: ClubDelegateChangeRequestStatusEnum;
   }): Promise<boolean> {
-    const [result] = await this.db
-      .update(ClubDelegateChangeRequest)
-      .set({
+    const result = await this.prisma.clubDelegateChangeRequest.updateMany({
+      where: { id: param.id },
+      data: {
         clubDelegateChangeRequestStatusEnumId:
           param.clubDelegateChangeRequestStatusEnumId,
-      })
-      .where(eq(ClubDelegateChangeRequest.id, param.id));
+      },
+    });
 
-    return result.affectedRows === 1;
+    return result.count === 1;
   }
 
   async isPresidentByStudentIdAndClubId(studentId: number, clubId: number) {
-    const cur = getKSTDate();
+    const cur = new Date();
     const presidentEnumId = ClubDelegateEnum.Representative;
-    const { president } = await this.db
-      .select({ president: count(ClubDelegate.id) })
-      .from(ClubDelegate)
-      .where(
-        and(
-          eq(ClubDelegate.studentId, studentId),
-          eq(ClubDelegate.clubId, clubId),
-          eq(ClubDelegate.clubDelegateEnum, presidentEnumId),
-          lte(ClubDelegate.startTerm, cur),
-          or(gte(ClubDelegate.endTerm, cur), isNull(ClubDelegate.endTerm)),
-          isNull(ClubDelegate.deletedAt),
-        ),
-      )
-      .then(takeOne);
+    const president = await this.prisma.clubDelegateD.count({
+      where: {
+        studentId,
+        clubId,
+        clubDelegateEnum: presidentEnumId,
+        startTerm: { lte: cur },
+        OR: [{ endTerm: { gte: cur } }, { endTerm: null }],
+        deletedAt: null,
+      },
+    });
     if (president !== 0) return true;
     return false;
   }
 
   async findUserIdByStudentId(studentId: number) {
-    const result = await this.db
-      .select({ userId: Student.userId })
-      .from(Student)
-      .where(and(eq(Student.id, studentId), isNull(Student.deletedAt)))
-      .then(takeOne);
-    return result.userId;
+    const result = await this.prisma.student.findMany({
+      where: { id: studentId, deletedAt: null },
+      select: { userId: true },
+    });
+    return takeOne(result).userId;
   }
 }

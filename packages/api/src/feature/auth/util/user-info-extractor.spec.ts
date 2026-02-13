@@ -539,7 +539,7 @@ describe("User Info Extractor (Unit)", () => {
     });
 
     it("should return error result for invalid input", () => {
-      const invalidInfo = { email: "invalid-email" };
+      const invalidInfo = { email: "invalid-email" } as unknown as KaistV2Info;
       const result = safeExtractUserInfoFromV2(invalidInfo);
 
       expect(result.success).toBe(false);
@@ -560,7 +560,7 @@ describe("User Info Extractor (Unit)", () => {
         email: "invalid-email", // 잘못된 이메일
         socps_cd: "X", // 잘못된 소속 코드
         user_nm: "", // 빈 이름
-      };
+      } as unknown as KaistV2Info;
       const result = safeExtractUserInfoFromV2(invalidInfo);
 
       expect(result.success).toBe(false);

@@ -1,14 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ActivityClubChargedExecutive } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
 import {
   ActivityClubChargedExecutiveCreate,
   MActivityClubChargedExecutive,
@@ -23,14 +20,6 @@ export type ActivityClubChargedExecutiveQuery = {
 
 type ActivityClubChargedExecutiveOrderByKeys = "id";
 type ActivityClubChargedExecutiveQuerySupport = {}; // Query Support 용
-
-type ActivityClubChargedExecutiveTable = typeof ActivityClubChargedExecutive;
-type ActivityClubChargedExecutiveDbSelect =
-  InferSelectModel<ActivityClubChargedExecutiveTable>;
-type ActivityClubChargedExecutiveDbUpdate =
-  Partial<ActivityClubChargedExecutiveDbSelect>;
-type ActivityClubChargedExecutiveDbInsert =
-  InferInsertModel<ActivityClubChargedExecutiveTable>;
 
 type ActivityClubChargedExecutiveFieldMapKeys = BaseTableFieldMapKeys<
   ActivityClubChargedExecutiveQuery,
@@ -50,18 +39,16 @@ export type ActivityClubChargedExecutiveRepositoryQuery =
 export class ActivityClubChargedExecutiveRepository extends BaseSingleTableRepository<
   MActivityClubChargedExecutive,
   ActivityClubChargedExecutiveCreate,
-  ActivityClubChargedExecutiveTable,
   ActivityClubChargedExecutiveQuery,
   ActivityClubChargedExecutiveOrderByKeys,
   ActivityClubChargedExecutiveQuerySupport
 > {
   constructor() {
-    super(ActivityClubChargedExecutive, MActivityClubChargedExecutive);
+    super("activityClubChargedExecutive", MActivityClubChargedExecutive);
   }
 
-  protected dbToModelMapping(
-    result: ActivityClubChargedExecutiveDbSelect,
-  ): MActivityClubChargedExecutive {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MActivityClubChargedExecutive {
     return new MActivityClubChargedExecutive({
       id: result.id,
       activityDuration: { id: result.activityDId },
@@ -70,9 +57,8 @@ export class ActivityClubChargedExecutiveRepository extends BaseSingleTableRepos
     });
   }
 
-  protected modelToDBMapping(
-    model: MActivityClubChargedExecutive,
-  ): ActivityClubChargedExecutiveDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MActivityClubChargedExecutive): any {
     return {
       id: model.id,
       activityDId: model.activityDuration.id,
@@ -81,9 +67,8 @@ export class ActivityClubChargedExecutiveRepository extends BaseSingleTableRepos
     };
   }
 
-  protected createToDBMapping(
-    model: ActivityClubChargedExecutiveCreate,
-  ): ActivityClubChargedExecutiveDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: ActivityClubChargedExecutiveCreate): any {
     return {
       activityDId: model.activityDuration.id,
       clubId: model.club.id,
@@ -93,21 +78,21 @@ export class ActivityClubChargedExecutiveRepository extends BaseSingleTableRepos
 
   protected fieldMap(
     field: ActivityClubChargedExecutiveFieldMapKeys,
-  ): TableWithID | null | undefined {
+  ): string | null | undefined {
     const fieldMappings: Record<
       ActivityClubChargedExecutiveFieldMapKeys,
-      TableWithID | null
+      string | null
     > = {
-      id: ActivityClubChargedExecutive,
-      activityDId: ActivityClubChargedExecutive,
-      clubId: ActivityClubChargedExecutive,
-      executiveId: ActivityClubChargedExecutive,
+      id: "id",
+      activityDId: "activityDId",
+      clubId: "clubId",
+      executiveId: "executiveId",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

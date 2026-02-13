@@ -1,42 +1,32 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
 
 import type { ApiAcf003RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
 import type { ApiAcf007RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
 
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  ActivityCertificate,
-  ActivityCertificateItem,
-} from "@sparcs-clubs/api/drizzle/schema/activity-certificate.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class ActivityCertificateRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async countActivityCertificatesByClubIdAndCreatedAtIn(
     clubId: number,
     startDate?: Date,
     endTerm?: Date,
   ): Promise<number> {
-    const numberOfOrders = (
-      await this.db
-        .select({ count: count() })
-        .from(ActivityCertificate)
-        .where(
-          and(
-            eq(ActivityCertificate.clubId, clubId),
-            startDate !== undefined
-              ? gte(ActivityCertificate.createdAt, startDate)
-              : undefined,
-            endTerm !== undefined
-              ? lte(ActivityCertificate.createdAt, endTerm)
-              : undefined,
-          ),
-        )
-    ).at(0).count;
+    const numberOfOrders = await this.prisma.activityCertificate.count({
+      where: {
+        clubId,
+        ...(startDate !== undefined && { createdAt: { gte: startDate } }),
+        ...(endTerm !== undefined && {
+          createdAt: {
+            ...(startDate !== undefined && { gte: startDate }),
+            lte: endTerm,
+          },
+        }),
+      },
+    });
 
     return numberOfOrders;
   }
@@ -46,22 +36,18 @@ export class ActivityCertificateRepository {
     startDate?: Date,
     endTerm?: Date,
   ): Promise<number> {
-    const numberOfOrders = (
-      await this.db
-        .select({ count: count() })
-        .from(ActivityCertificate)
-        .where(
-          and(
-            eq(ActivityCertificate.studentId, StudentId),
-            startDate !== undefined
-              ? gte(ActivityCertificate.createdAt, startDate)
-              : undefined,
-            endTerm !== undefined
-              ? lte(ActivityCertificate.createdAt, endTerm)
-              : undefined,
-          ),
-        )
-    ).at(0).count;
+    const numberOfOrders = await this.prisma.activityCertificate.count({
+      where: {
+        studentId: StudentId,
+        ...(startDate !== undefined && { createdAt: { gte: startDate } }),
+        ...(endTerm !== undefined && {
+          createdAt: {
+            ...(startDate !== undefined && { gte: startDate }),
+            lte: endTerm,
+          },
+        }),
+      },
+    });
 
     return numberOfOrders;
   }
@@ -71,23 +57,22 @@ export class ActivityCertificateRepository {
   ) {
     const startIndex = (query.pageOffset - 1) * query.itemCount + 1;
 
-    const orders = await this.db
-      .select()
-      .from(ActivityCertificate)
-      .where(
-        and(
-          eq(ActivityCertificate.clubId, query.clubId),
-          query.startDate !== undefined
-            ? gte(ActivityCertificate.createdAt, query.startDate)
-            : undefined,
-          query.endTerm !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endTerm)
-            : undefined,
-        ),
-      )
-      .orderBy(desc(ActivityCertificate.createdAt))
-      .limit(query.itemCount)
-      .offset(startIndex - 1);
+    // Build where clause dynamically
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { clubId: query.clubId };
+    if (query.startDate !== undefined) {
+      where.createdAt = { ...(where.createdAt || {}), gte: query.startDate };
+    }
+    if (query.endTerm !== undefined) {
+      where.createdAt = { ...(where.createdAt || {}), lte: query.endTerm };
+    }
+
+    const orders = await this.prisma.activityCertificate.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: query.itemCount,
+      skip: startIndex - 1,
+    });
 
     return orders;
   }
@@ -98,23 +83,21 @@ export class ActivityCertificateRepository {
   ) {
     const offset = (query.pageOffset - 1) * query.itemCount;
 
-    const orders = await this.db
-      .select()
-      .from(ActivityCertificate)
-      .where(
-        and(
-          eq(ActivityCertificate.studentId, studentId),
-          query.startDate !== undefined
-            ? gte(ActivityCertificate.createdAt, query.startDate)
-            : undefined,
-          query.endTerm !== undefined
-            ? lte(ActivityCertificate.createdAt, query.endTerm)
-            : undefined,
-        ),
-      )
-      .orderBy(desc(ActivityCertificate.createdAt))
-      .limit(query.itemCount)
-      .offset(offset);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { studentId };
+    if (query.startDate !== undefined) {
+      where.createdAt = { ...(where.createdAt || {}), gte: query.startDate };
+    }
+    if (query.endTerm !== undefined) {
+      where.createdAt = { ...(where.createdAt || {}), lte: query.endTerm };
+    }
+
+    const orders = await this.prisma.activityCertificate.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: query.itemCount,
+      skip: offset,
+    });
 
     return orders;
   }
@@ -133,25 +116,31 @@ export class ActivityCertificateRepository {
     items: { startMonth: Date; endMonth: Date; detail: string }[];
   }) {
     // TODO: transaction 실패했을 때 에러핸들링
-    await this.db.transaction(async tx => {
-      const result = await tx.insert(ActivityCertificate).values({
-        clubId,
-        studentId,
-        studentPhoneNumber,
-        issueNumber: issuedNumber,
-        activityCertificateStatusEnum:
-          ActivityCertificateOrderStatusEnum.Applied,
+    await this.prisma.$transaction(async tx => {
+      const certificate = await tx.activityCertificate.create({
+        data: {
+          clubId,
+          studentId,
+          studentPhoneNumber,
+          issueNumber: issuedNumber,
+          activityCertificateStatusEnum:
+            ActivityCertificateOrderStatusEnum.Applied,
+        },
       });
 
-      items.forEach(async item => {
-        await tx.insert(ActivityCertificateItem).values({
-          activityCertificateId: result[0].insertId,
-          order: items.indexOf(item),
-          startMonth: item.startMonth,
-          endMonth: item.endMonth,
-          detail: item.detail,
-        });
-      });
+      await Promise.all(
+        items.map((item, index) =>
+          tx.activityCertificateItem.create({
+            data: {
+              activityCertificateId: certificate.id,
+              order: index,
+              startMonth: item.startMonth,
+              endMonth: item.endMonth,
+              detail: item.detail,
+            },
+          }),
+        ),
+      );
     });
   }
 }

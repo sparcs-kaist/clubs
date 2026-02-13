@@ -1,64 +1,61 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { IDivisionSummary } from "@clubs/interface/api/club/type/club.type";
 import { IDivision } from "@clubs/interface/api/division/type/division.type";
 
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import {
-  DrizzleAsyncProvider,
-  DrizzleTransaction,
-} from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Division,
-  DivisionPresidentD,
-} from "@sparcs-clubs/api/drizzle/schema/division.schema";
+import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { OldMDivision } from "../model/old.division.model";
 
 @Injectable()
 export default class OldDivisionRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async withTransaction<Result>(
-    callback: (tx: DrizzleTransaction) => Promise<Result>,
+    callback: (tx: PrismaTransactionClient) => Promise<Result>,
   ): Promise<Result> {
-    return this.db.transaction(callback);
+    return this.prisma.$transaction(callback);
   }
-  async selectDivisionsAndDivisionPresidents() {
-    const today = getKSTDate();
 
-    const result = await this.db
-      .select()
-      .from(Division)
-      .innerJoin(
-        DivisionPresidentD,
-        and(
-          isNull(Division.deletedAt),
-          isNull(DivisionPresidentD.deletedAt),
-          eq(Division.id, DivisionPresidentD.divisionId),
-          lte(DivisionPresidentD.startTerm, today),
-          gte(DivisionPresidentD.endTerm, today),
-        ),
-      );
-    return result;
+  async selectDivisionsAndDivisionPresidents() {
+    const today = new Date();
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        divisionId: number;
+        divisionName: string;
+        presidentStudentId: number;
+      }>
+    >(Prisma.sql`
+      SELECT d.id AS divisionId, d.name AS divisionName, dp.student_id AS presidentStudentId
+      FROM division d
+      INNER JOIN division_president_d dp
+        ON d.deleted_at IS NULL
+        AND dp.deleted_at IS NULL
+        AND d.id = dp.division_id
+        AND dp.start_term <= ${today}
+        AND dp.end_term >= ${today}
+    `);
+    return rows.map(row => ({
+      division: { id: row.divisionId, name: row.divisionName },
+      division_president_d: { studentId: row.presidentStudentId },
+    }));
   }
 
   async findDivisionById(divisionId: number): Promise<number | undefined> {
-    const result = await this.db
-      .select({ id: Division.id })
-      .from(Division)
-      .where(and(eq(Division.id, divisionId), isNull(Division.deletedAt)))
-      .then(takeOne);
+    const result = await this.prisma.division.findFirst({
+      where: { id: divisionId, deletedAt: null },
+      select: { id: true },
+    });
     return result ? result.id : undefined;
   }
 
   async selectDivisionById(param: { id: number }) {
-    const result = await this.db
-      .select()
-      .from(Division)
-      .where(and(eq(Division.id, param.id), isNull(Division.deletedAt)));
+    const result = await this.prisma.division.findMany({
+      where: { id: param.id, deletedAt: null },
+    });
     return result;
   }
 
@@ -67,24 +64,18 @@ export default class OldDivisionRepository {
       return [];
     }
 
-    const result = await this.db
-      .select({
-        id: Division.id,
-        name: Division.name,
-      })
-      .from(Division)
-      .where(inArray(Division.id, ids));
+    const result = await this.prisma.division.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true },
+    });
     return result;
   }
 
   async fetchSummary(id: number): Promise<IDivisionSummary> {
-    const result = await this.db
-      .select({
-        id: Division.id,
-        name: Division.name,
-      })
-      .from(Division)
-      .where(and(eq(Division.id, id), isNull(Division.deletedAt)));
+    const result = await this.prisma.division.findMany({
+      where: { id, deletedAt: null },
+      select: { id: true, name: true },
+    });
 
     if (result.length !== 1) {
       throw new NotFoundException("Division not found");
@@ -94,39 +85,33 @@ export default class OldDivisionRepository {
   }
 
   async fetchAllTx(
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
     arg1: Date | number[],
   ): Promise<IDivision[]> {
-    // find part
-    const whereCondition = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereCondition: any = { deletedAt: null };
 
     if (arg1 instanceof Date) {
-      whereCondition.push(lte(Division.startTerm, arg1));
-      whereCondition.push(
-        or(gte(Division.endTerm, arg1), isNull(Division.endTerm)),
-      );
+      whereCondition.startTerm = { lte: arg1 };
+      whereCondition.OR = [{ endTerm: { gte: arg1 } }, { endTerm: null }];
     }
 
     if (arg1 instanceof Array) {
-      whereCondition.push(inArray(Division.id, arg1));
+      whereCondition.id = { in: arg1 };
     }
-    whereCondition.push(isNull(Division.deletedAt));
 
-    const result = await tx
-      .select()
-      .from(Division)
-      .where(and(...whereCondition));
+    const result = await (tx as PrismaService).division.findMany({
+      where: whereCondition,
+    });
 
     // fetch validation part
     if (arg1 instanceof Date) {
-      // Date인 경우 결과가 없으면 예외 발생
       if (result.length === 0) {
         throw new NotFoundException("Division not found");
       }
     }
 
     if (arg1 instanceof Array) {
-      // ID Array의 경우 주어진 값이 모두 나오지 않으면 예외 발생
       if (result.length !== Array.from(new Set(arg1)).length) {
         throw new NotFoundException("Division not found");
       }

@@ -1,44 +1,36 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Department,
-  Student,
-  StudentT,
-  User,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class UserRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findStudentById(studentId: number) {
     const crt = new Date();
-    const user = await this.db
-      .select({
-        id: Student.id,
-        name: Student.name,
-        email: Student.email,
-        department: Department.name,
-        studentNumber: Student.number,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(Student)
-      .where(eq(Student.id, studentId))
-      .leftJoin(User, eq(User.id, Student.userId))
-      .leftJoin(
-        StudentT,
-        and(
-          eq(StudentT.studentId, Student.id),
-          lte(StudentT.startTerm, crt),
-          or(gte(StudentT.endTerm, crt), isNull(StudentT.endTerm)),
-        ),
-      )
-      .leftJoin(Department, eq(Department.id, StudentT.department));
+    const user = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        name: string;
+        email: string | null;
+        department: string | null;
+        studentNumber: number;
+        phoneNumber: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT s.id, s.name, s.email, d.name AS department,
+             s.number AS studentNumber, u.phone_number AS phoneNumber
+      FROM student s
+      LEFT JOIN user u ON u.id = s.user_id
+      LEFT JOIN student_t st ON st.student_id = s.id
+        AND st.start_term <= ${crt}
+        AND (st.end_term >= ${crt} OR st.end_term IS NULL)
+      LEFT JOIN department d ON d.id = st.department
+      WHERE s.id = ${studentId}
+    `);
     return user;
   }
 
@@ -49,66 +41,54 @@ export default class UserRepository {
     endTerm: string,
   ) {
     const studentnumber = parseInt(studentNumber);
-    const user = await this.db
-      .select()
-      .from(Student)
-      .where(
-        and(
-          eq(Student.number, studentnumber),
-          eq(Student.name, name),
-          isNull(Student.deletedAt),
-        ),
-      )
-      .innerJoin(
-        StudentT,
-        and(
-          eq(StudentT.studentId, Student.id),
-          lte(sql`DATE(${StudentT.startTerm})`, startTerm),
-          or(
-            gte(sql`DATE(${StudentT.endTerm})`, endTerm),
-            isNull(StudentT.endTerm),
-          ),
-        ),
-      );
+    const user = await this.prisma.$queryRaw(Prisma.sql`
+      SELECT s.*, st.*
+      FROM student s
+      INNER JOIN student_t st ON st.student_id = s.id
+        AND DATE(st.start_term) <= ${startTerm}
+        AND (DATE(st.end_term) >= ${endTerm} OR st.end_term IS NULL)
+      WHERE s.number = ${studentnumber}
+        AND s.name = ${name}
+        AND s.deleted_at IS NULL
+    `);
     return user;
   }
 
   async create(studentId: number) {
-    const user = await this.db
-      .select()
-      .from(Student)
-      .where(eq(Student.id, studentId))
-      .leftJoin(User, eq(User.id, Student.userId));
+    const user = await this.prisma.$queryRaw(Prisma.sql`
+      SELECT s.*, u.*
+      FROM student s
+      LEFT JOIN user u ON u.id = s.user_id
+      WHERE s.id = ${studentId}
+    `);
     return user;
   }
 
   async findUserNameById(userId: number) {
-    const userName = await this.db
-      .select({ name: User.name })
-      .from(User)
-      .where(eq(User.id, userId));
+    const userName = await this.prisma.user.findMany({
+      where: { id: userId },
+      select: { name: true },
+    });
     return userName;
   }
 
   async getPhoneNumber(userId: number) {
-    const phoneNumber = await this.db
-      .select({ phoneNumber: User.phoneNumber })
-      .from(User)
-      .where(and(eq(User.id, userId), isNull(User.deletedAt)))
-      .then(takeOne);
-    return phoneNumber;
+    const result = await this.prisma.user.findMany({
+      where: { id: userId, deletedAt: null },
+      select: { phoneNumber: true },
+    });
+    return takeOne(result);
   }
 
   async updatePhoneNumber(userId: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(User)
-        .set({ phoneNumber })
-        .where(and(eq(User.id, userId), isNull(User.deletedAt)));
-      if (result.affectedRows !== 1) {
+    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
+      const result = await tx.user.updateMany({
+        where: { id: userId, deletedAt: null },
+        data: { phoneNumber },
+      });
+      if (result.count !== 1) {
         logger.debug("[updatePhoneNumber] rollback occurs");
-        tx.rollback();
-        return false;
+        throw new Error("updatePhoneNumber failed");
       }
       return true;
     });

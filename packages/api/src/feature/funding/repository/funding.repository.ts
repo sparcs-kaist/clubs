@@ -1,6 +1,5 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq, exists, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import {
   IFunding,
@@ -9,34 +8,8 @@ import {
   IFundingSummary,
 } from "@clubs/interface/api/funding/type/funding.type";
 
-import { makeObjectPropsFromDBTimezone } from "@sparcs-clubs/api/common/util/util";
-import {
-  DrizzleAsyncProvider,
-  DrizzleTransaction,
-} from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Funding,
-  FundingClubSuppliesImageFile,
-  FundingClubSuppliesSoftwareEvidenceFile,
-  FundingEtcExpenseFile,
-  FundingExternalEventParticipationFeeFile,
-  FundingFeedback,
-  FundingFixtureImageFile,
-  FundingFixtureSoftwareEvidenceFile,
-  FundingFoodExpenseFile,
-  FundingJointExpenseFile,
-  FundingLaborContractFile,
-  FundingNonCorporateTransactionFile,
-  FundingProfitMakingActivityFile,
-  FundingPublicationFile,
-  FundingTradeDetailFile,
-  FundingTradeEvidenceFile,
-  FundingTransportationPassenger,
-} from "@sparcs-clubs/api/drizzle/schema/funding.schema";
-import {
-  Student,
-  StudentT,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
 import {
@@ -46,12 +19,12 @@ import {
 
 @Injectable()
 export default class FundingRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async withTransaction<Result>(
-    callback: (tx: DrizzleTransaction) => Promise<Result>,
+    callback: (tx: PrismaTransactionClient) => Promise<Result>,
   ): Promise<Result> {
-    return this.db.transaction(callback);
+    return this.prisma.$transaction(callback);
   }
 
   async fetch(id: number): Promise<MFunding> {
@@ -63,12 +36,9 @@ export default class FundingRepository {
   }
 
   async find(id: number): Promise<MFunding | null> {
-    const result = await this.db
-      .select({
-        funding: Funding,
-      })
-      .from(Funding)
-      .where(and(eq(Funding.id, id), isNull(Funding.deletedAt)));
+    const result = await this.prisma.funding.findMany({
+      where: { id, deletedAt: null },
+    });
 
     if (result.length === 0) {
       return null;
@@ -91,166 +61,77 @@ export default class FundingRepository {
       etcExpenseFiles,
       transportationPassengers,
     ] = await Promise.all([
-      this.db
-        .select()
-        .from(FundingTradeEvidenceFile)
-        .where(
-          and(
-            eq(FundingTradeEvidenceFile.fundingId, id),
-            isNull(FundingTradeEvidenceFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingTradeDetailFile)
-        .where(
-          and(
-            eq(FundingTradeDetailFile.fundingId, id),
-            isNull(FundingTradeDetailFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingClubSuppliesImageFile)
-        .where(
-          and(
-            eq(FundingClubSuppliesImageFile.fundingId, id),
-            isNull(FundingClubSuppliesImageFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingClubSuppliesSoftwareEvidenceFile)
-        .where(
-          and(
-            eq(FundingClubSuppliesSoftwareEvidenceFile.fundingId, id),
-            isNull(FundingClubSuppliesSoftwareEvidenceFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingFixtureImageFile)
-        .where(
-          and(
-            eq(FundingFixtureImageFile.fundingId, id),
-            isNull(FundingFixtureImageFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingFixtureSoftwareEvidenceFile)
-        .where(
-          and(
-            eq(FundingFixtureSoftwareEvidenceFile.fundingId, id),
-            isNull(FundingFixtureSoftwareEvidenceFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingNonCorporateTransactionFile)
-        .where(
-          and(
-            eq(FundingNonCorporateTransactionFile.fundingId, id),
-            isNull(FundingNonCorporateTransactionFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingFoodExpenseFile)
-        .where(
-          and(
-            eq(FundingFoodExpenseFile.fundingId, id),
-            isNull(FundingFoodExpenseFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingLaborContractFile)
-        .where(
-          and(
-            eq(FundingLaborContractFile.fundingId, id),
-            isNull(FundingLaborContractFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingExternalEventParticipationFeeFile)
-        .where(
-          and(
-            eq(FundingExternalEventParticipationFeeFile.fundingId, id),
-            isNull(FundingExternalEventParticipationFeeFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingPublicationFile)
-        .where(
-          and(
-            eq(FundingPublicationFile.fundingId, id),
-            isNull(FundingPublicationFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingProfitMakingActivityFile)
-        .where(
-          and(
-            eq(FundingProfitMakingActivityFile.fundingId, id),
-            isNull(FundingProfitMakingActivityFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingJointExpenseFile)
-        .where(
-          and(
-            eq(FundingJointExpenseFile.fundingId, id),
-            isNull(FundingJointExpenseFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select()
-        .from(FundingEtcExpenseFile)
-        .where(
-          and(
-            eq(FundingEtcExpenseFile.fundingId, id),
-            isNull(FundingEtcExpenseFile.deletedAt),
-          ),
-        ),
-      this.db
-        .select({
-          fundingId: FundingTransportationPassenger.fundingId,
-          studentId: FundingTransportationPassenger.studentId,
-          studentNumber: Student.number,
-          name: Student.name,
-        })
-        .from(FundingTransportationPassenger)
-        .where(
-          and(
-            eq(FundingTransportationPassenger.fundingId, id),
-            isNull(FundingTransportationPassenger.deletedAt),
-          ),
-        )
-        .innerJoin(
-          Student,
-          and(
-            eq(Student.id, FundingTransportationPassenger.studentId),
-            isNull(Student.deletedAt),
-          ),
-        )
-        .innerJoin(
-          StudentT,
-          and(
-            eq(StudentT.studentId, Student.id),
-            lte(StudentT.startTerm, new Date()),
-            or(gte(StudentT.endTerm, new Date()), isNull(StudentT.endTerm)),
-            isNull(StudentT.deletedAt),
-          ),
-        ),
+      this.prisma.fundingTradeEvidenceFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingTradeDetailFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingClubSuppliesImageFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingClubSuppliesSoftwareEvidenceFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingFixtureImageFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingFixtureSoftwareEvidenceFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingNonCorporateTransactionFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingFoodExpenseFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingLaborContractFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingExternalEventParticipationFeeFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingPublicationFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingProfitMakingActivityFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingJointExpenseFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.fundingEtcExpenseFile.findMany({
+        where: { fundingId: id, deletedAt: null },
+      }),
+      this.prisma.$queryRaw<
+        Array<{
+          fundingId: number;
+          studentId: number;
+          studentNumber: number;
+          name: string;
+        }>
+      >(Prisma.sql`
+        SELECT
+          ftp.funding_id AS fundingId,
+          ftp.student_id AS studentId,
+          s.number AS studentNumber,
+          s.name AS name
+        FROM funding_transportation_passenger ftp
+        INNER JOIN student s
+          ON s.id = ftp.student_id
+          AND s.deleted_at IS NULL
+        INNER JOIN student_t st
+          ON st.student_id = s.id
+          AND st.start_term <= NOW()
+          AND (st.end_term >= NOW() OR st.end_term IS NULL)
+          AND st.deleted_at IS NULL
+        WHERE ftp.funding_id = ${id}
+          AND ftp.deleted_at IS NULL
+      `),
     ]);
 
     return MFunding.fromDBResult({
-      funding: makeObjectPropsFromDBTimezone(result[0].funding),
+      funding: result[0],
       tradeEvidenceFiles: tradeEvidenceFiles.map(file => ({
         id: file.fileId,
       })),
@@ -322,19 +203,22 @@ export default class FundingRepository {
       }
 
       if (arg2 === undefined) {
-        const fundings = await this.db
-          .select({
-            id: Funding.id,
-            name: Funding.name,
-            expenditureAmount: Funding.expenditureAmount,
-            approvedAmount: Funding.approvedAmount,
-            fundingStatusEnum: Funding.fundingStatusEnum,
-            purposeActivityId: Funding.purposeActivityId,
-            clubId: Funding.clubId,
-            chargedExecutiveId: Funding.chargedExecutiveId,
-          })
-          .from(Funding)
-          .where(and(inArray(Funding.id, arg1), isNull(Funding.deletedAt)));
+        const fundings = await this.prisma.funding.findMany({
+          select: {
+            id: true,
+            name: true,
+            expenditureAmount: true,
+            approvedAmount: true,
+            fundingStatusEnum: true,
+            purposeActivityId: true,
+            clubId: true,
+            chargedExecutiveId: true,
+          },
+          where: {
+            id: { in: arg1 },
+            deletedAt: null,
+          },
+        });
 
         return fundings.map(funding => ({
           ...funding,
@@ -350,25 +234,23 @@ export default class FundingRepository {
         }));
       }
 
-      const fundings = await this.db
-        .select({
-          id: Funding.id,
-          name: Funding.name,
-          expenditureAmount: Funding.expenditureAmount,
-          approvedAmount: Funding.approvedAmount,
-          fundingStatusEnum: Funding.fundingStatusEnum,
-          purposeActivityId: Funding.purposeActivityId,
-          clubId: Funding.clubId,
-          chargedExecutiveId: Funding.chargedExecutiveId,
-        })
-        .from(Funding)
-        .where(
-          and(
-            inArray(Funding.clubId, arg1),
-            eq(Funding.activityDId, arg2),
-            isNull(Funding.deletedAt),
-          ),
-        );
+      const fundings = await this.prisma.funding.findMany({
+        select: {
+          id: true,
+          name: true,
+          expenditureAmount: true,
+          approvedAmount: true,
+          fundingStatusEnum: true,
+          purposeActivityId: true,
+          clubId: true,
+          chargedExecutiveId: true,
+        },
+        where: {
+          clubId: { in: arg1 },
+          activityDId: arg2,
+          deletedAt: null,
+        },
+      });
 
       return fundings.map(funding => ({
         ...funding,
@@ -385,19 +267,22 @@ export default class FundingRepository {
     }
 
     if (arg2 === undefined) {
-      const fundings = await this.db
-        .select({
-          id: Funding.id,
-          name: Funding.name,
-          expenditureAmount: Funding.expenditureAmount,
-          approvedAmount: Funding.approvedAmount,
-          fundingStatusEnum: Funding.fundingStatusEnum,
-          purposeActivityId: Funding.purposeActivityId,
-          clubId: Funding.clubId,
-          chargedExecutiveId: Funding.chargedExecutiveId,
-        })
-        .from(Funding)
-        .where(and(eq(Funding.activityDId, arg1), isNull(Funding.deletedAt)));
+      const fundings = await this.prisma.funding.findMany({
+        select: {
+          id: true,
+          name: true,
+          expenditureAmount: true,
+          approvedAmount: true,
+          fundingStatusEnum: true,
+          purposeActivityId: true,
+          clubId: true,
+          chargedExecutiveId: true,
+        },
+        where: {
+          activityDId: arg1,
+          deletedAt: null,
+        },
+      });
 
       if (fundings.length === 0) {
         return [];
@@ -417,25 +302,23 @@ export default class FundingRepository {
       }));
     }
 
-    const fundings = await this.db
-      .select({
-        id: Funding.id,
-        name: Funding.name,
-        expenditureAmount: Funding.expenditureAmount,
-        approvedAmount: Funding.approvedAmount,
-        fundingStatusEnum: Funding.fundingStatusEnum,
-        purposeActivityId: Funding.purposeActivityId,
-        clubId: Funding.clubId,
-        chargedExecutiveId: Funding.chargedExecutiveId,
-      })
-      .from(Funding)
-      .where(
-        and(
-          eq(Funding.clubId, arg1),
-          eq(Funding.activityDId, arg2),
-          isNull(Funding.deletedAt),
-        ),
-      );
+    const fundings = await this.prisma.funding.findMany({
+      select: {
+        id: true,
+        name: true,
+        expenditureAmount: true,
+        approvedAmount: true,
+        fundingStatusEnum: true,
+        purposeActivityId: true,
+        clubId: true,
+        chargedExecutiveId: true,
+      },
+      where: {
+        clubId: arg1,
+        activityDId: arg2,
+        deletedAt: null,
+      },
+    });
 
     if (fundings.length === 0) {
       return [];
@@ -458,38 +341,39 @@ export default class FundingRepository {
   async fetchCommentedSummaries(
     executiveId: number,
   ): Promise<IFundingSummary[]> {
-    const fundings = await this.db
-      .select({
-        id: Funding.id,
-        fundingStatusEnum: Funding.fundingStatusEnum,
-        name: Funding.name,
-        expenditureAmount: Funding.expenditureAmount,
-        approvedAmount: Funding.approvedAmount,
-        purposeActivityId: Funding.purposeActivityId,
-        clubId: Funding.clubId,
-        chargedExecutiveId: Funding.chargedExecutiveId,
-      })
-      .from(Funding)
-      .where(
-        and(
-          isNull(Funding.deletedAt),
-          or(
-            eq(Funding.chargedExecutiveId, executiveId),
-            exists(
-              this.db
-                .select()
-                .from(FundingFeedback)
-                .where(
-                  and(
-                    eq(FundingFeedback.fundingId, Funding.id),
-                    eq(FundingFeedback.executiveId, executiveId),
-                    isNull(FundingFeedback.deletedAt),
-                  ),
-                ),
-            ),
-          ),
-        ),
-      );
+    const fundings = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        fundingStatusEnum: number;
+        name: string;
+        expenditureAmount: number;
+        approvedAmount: number | null;
+        purposeActivityId: number | null;
+        clubId: number;
+        chargedExecutiveId: number | null;
+      }>
+    >(Prisma.sql`
+      SELECT
+        f.id,
+        f.funding_status_enum AS fundingStatusEnum,
+        f.name,
+        f.expenditure_amount AS expenditureAmount,
+        f.approved_amount AS approvedAmount,
+        f.purpose_activity_id AS purposeActivityId,
+        f.club_id AS clubId,
+        f.charged_executive_id AS chargedExecutiveId
+      FROM funding f
+      WHERE f.deleted_at IS NULL
+        AND (
+          f.charged_executive_id = ${executiveId}
+          OR EXISTS (
+            SELECT 1 FROM funding_feedback ff
+            WHERE ff.funding_id = f.id
+              AND ff.executive_id = ${executiveId}
+              AND ff.deleted_at IS NULL
+          )
+        )
+    `);
 
     return fundings.map(funding => ({
       ...funding,
@@ -509,99 +393,109 @@ export default class FundingRepository {
     funding: IFundingRequest,
     extra: IFundingExtra,
   ): Promise<MFunding> {
-    const result = await this.db.transaction(async tx => {
+    const result = await this.prisma.$transaction<number>(async tx => {
       // 1. Insert funding order
-      const [fundingOrder] = await tx.insert(Funding).values({
-        clubId: funding.club.id,
-        purposeActivityId: funding.purposeActivity.id,
-        activityDId: extra.activityD.id,
-        fundingStatusEnum: extra.fundingStatusEnum,
-        name: funding.name,
-        expenditureDate: funding.expenditureDate,
-        expenditureAmount: funding.expenditureAmount,
-        approvedAmount: extra.approvedAmount,
-        isFixture: funding.isFixture,
-        isTransportation: funding.isTransportation,
-        isFoodExpense: funding.isFoodExpense,
-        isLaborContract: funding.isLaborContract,
-        isExternalEventParticipationFee:
-          funding.isExternalEventParticipationFee,
-        isPublication: funding.isPublication,
-        isProfitMakingActivity: funding.isProfitMakingActivity,
-        isJointExpense: funding.isJointExpense,
-        isEtcExpense: funding.isEtcExpense,
-        isNonCorporateTransaction: funding.isNonCorporateTransaction,
-        tradeDetailExplanation: funding.tradeDetailExplanation,
-        // ClubOld supplies fields
-        clubSuppliesName: funding.clubSupplies?.name,
-        clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
-        clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
-        clubSuppliesPurpose: funding.clubSupplies?.purpose,
-        clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
-        numberOfClubSupplies: funding.clubSupplies?.number,
-        priceOfClubSupplies: funding.clubSupplies?.price,
-        // Fixture fields
-        fixtureName: funding.fixture?.name,
-        fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
-        fixtureClassEnum: funding.fixture?.classEnum,
-        fixturePurpose: funding.fixture?.purpose,
-        fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
-        numberOfFixture: funding.fixture?.number,
-        priceOfFixture: funding.fixture?.price,
-        // Transportation fields
-        transportationEnum: funding.transportation?.enum,
-        origin: funding.transportation?.origin,
-        destination: funding.transportation?.destination,
-        purposeOfTransportation: funding.transportation?.purpose,
-        // Trader fields
-        traderName: funding.nonCorporateTransaction?.traderName,
-        traderAccountNumber:
-          funding.nonCorporateTransaction?.traderAccountNumber,
-        wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
-        // Expense explanations
-        foodExpenseExplanation: funding.foodExpense?.explanation,
-        laborContractExplanation: funding.laborContract?.explanation,
-        externalEventParticipationFeeExplanation:
-          funding.externalEventParticipationFee?.explanation,
-        publicationExplanation: funding.publication?.explanation,
-        profitMakingActivityExplanation:
-          funding.profitMakingActivity?.explanation,
-        jointExpenseExplanation: funding.jointExpense?.explanation,
-        etcExpenseExplanation: funding.etcExpense?.explanation,
+      const fundingOrder = await tx.funding.create({
+        data: {
+          clubId: funding.club.id,
+          purposeActivityId: funding.purposeActivity.id,
+          activityDId: extra.activityD.id,
+          fundingStatusEnum: extra.fundingStatusEnum,
+          name: funding.name,
+          expenditureDate: funding.expenditureDate,
+          expenditureAmount: funding.expenditureAmount,
+          approvedAmount: extra.approvedAmount,
+          isFixture: funding.isFixture,
+          isTransportation: funding.isTransportation,
+          isFoodExpense: funding.isFoodExpense,
+          isLaborContract: funding.isLaborContract,
+          isExternalEventParticipationFee:
+            funding.isExternalEventParticipationFee,
+          isPublication: funding.isPublication,
+          isProfitMakingActivity: funding.isProfitMakingActivity,
+          isJointExpense: funding.isJointExpense,
+          isEtcExpense: funding.isEtcExpense,
+          isNonCorporateTransaction: funding.isNonCorporateTransaction,
+          tradeDetailExplanation: funding.tradeDetailExplanation,
+          // ClubOld supplies fields
+          clubSuppliesName: funding.clubSupplies?.name,
+          clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
+          clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
+          clubSuppliesPurpose: funding.clubSupplies?.purpose,
+          clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
+          numberOfClubSupplies: funding.clubSupplies?.number,
+          priceOfClubSupplies: funding.clubSupplies?.price,
+          // Fixture fields
+          fixtureName: funding.fixture?.name,
+          fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
+          fixtureClassEnum: funding.fixture?.classEnum,
+          fixturePurpose: funding.fixture?.purpose,
+          fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
+          numberOfFixture: funding.fixture?.number,
+          priceOfFixture: funding.fixture?.price,
+          // Transportation fields
+          transportationEnum: funding.transportation?.enum,
+          origin: funding.transportation?.origin,
+          destination: funding.transportation?.destination,
+          purposeOfTransportation: funding.transportation?.purpose,
+          // Trader fields
+          traderName: funding.nonCorporateTransaction?.traderName,
+          traderAccountNumber:
+            funding.nonCorporateTransaction?.traderAccountNumber,
+          wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
+          // Expense explanations
+          foodExpenseExplanation: funding.foodExpense?.explanation,
+          laborContractExplanation: funding.laborContract?.explanation,
+          externalEventParticipationFeeExplanation:
+            funding.externalEventParticipationFee?.explanation,
+          publicationExplanation: funding.publication?.explanation,
+          profitMakingActivityExplanation:
+            funding.profitMakingActivity?.explanation,
+          jointExpenseExplanation: funding.jointExpense?.explanation,
+          etcExpenseExplanation: funding.etcExpense?.explanation,
+        },
       });
 
-      const fundingId = Number(fundingOrder.insertId);
+      const fundingId = fundingOrder.id;
 
       // 3. Insert files and related data
       await Promise.all([
         // Trade files
         ...funding.tradeEvidenceFiles.map(file =>
-          tx.insert(FundingTradeEvidenceFile).values({
-            fundingId,
-            fileId: file.id,
+          tx.fundingTradeEvidenceFile.create({
+            data: {
+              fundingId,
+              fileId: file.id,
+            },
           }),
         ),
         ...funding.tradeDetailFiles.map(file =>
-          tx.insert(FundingTradeDetailFile).values({
-            fundingId,
-            fileId: file.id,
+          tx.fundingTradeDetailFile.create({
+            data: {
+              fundingId,
+              fileId: file.id,
+            },
           }),
         ),
 
         // ClubOld supplies files
         ...(funding.clubSupplies && funding.clubSupplies.imageFiles
           ? funding.clubSupplies.imageFiles.map(file =>
-              tx.insert(FundingClubSuppliesImageFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingClubSuppliesImageFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
         ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
           ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
-              tx.insert(FundingClubSuppliesSoftwareEvidenceFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingClubSuppliesSoftwareEvidenceFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -609,17 +503,21 @@ export default class FundingRepository {
         // Fixture files
         ...(funding.isFixture && funding.fixture.imageFiles
           ? funding.fixture.imageFiles.map(file =>
-              tx.insert(FundingFixtureImageFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingFixtureImageFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
         ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
           ? funding.fixture.softwareEvidenceFiles.map(file =>
-              tx.insert(FundingFixtureSoftwareEvidenceFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingFixtureSoftwareEvidenceFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -627,9 +525,11 @@ export default class FundingRepository {
         // NonCorporateTransaction files
         ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
           ? funding.nonCorporateTransaction.files.map(file =>
-              tx.insert(FundingNonCorporateTransactionFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingNonCorporateTransactionFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -637,9 +537,11 @@ export default class FundingRepository {
         // Food expense files
         ...(funding.isFoodExpense && funding.foodExpense
           ? funding.foodExpense.files.map(file =>
-              tx.insert(FundingFoodExpenseFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingFoodExpenseFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -647,9 +549,11 @@ export default class FundingRepository {
         // Labor contract files
         ...(funding.isLaborContract && funding.laborContract
           ? funding.laborContract.files.map(file =>
-              tx.insert(FundingLaborContractFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingLaborContractFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -658,9 +562,11 @@ export default class FundingRepository {
         ...(funding.isExternalEventParticipationFee &&
         funding.externalEventParticipationFee
           ? funding.externalEventParticipationFee.files.map(file =>
-              tx.insert(FundingExternalEventParticipationFeeFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingExternalEventParticipationFeeFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -668,9 +574,11 @@ export default class FundingRepository {
         // Publication files
         ...(funding.isPublication && funding.publication
           ? funding.publication.files.map(file =>
-              tx.insert(FundingPublicationFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingPublicationFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -678,9 +586,11 @@ export default class FundingRepository {
         // Profit making activity files
         ...(funding.isProfitMakingActivity && funding.profitMakingActivity
           ? funding.profitMakingActivity.files.map(file =>
-              tx.insert(FundingProfitMakingActivityFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingProfitMakingActivityFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -688,9 +598,11 @@ export default class FundingRepository {
         // Joint expense files
         ...(funding.isJointExpense && funding.jointExpense
           ? funding.jointExpense.files.map(file =>
-              tx.insert(FundingJointExpenseFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingJointExpenseFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -698,9 +610,11 @@ export default class FundingRepository {
         // Etc expense files
         ...(funding.isEtcExpense && funding.etcExpense
           ? funding.etcExpense.files.map(file =>
-              tx.insert(FundingEtcExpenseFile).values({
-                fundingId,
-                fileId: file.id,
+              tx.fundingEtcExpenseFile.create({
+                data: {
+                  fundingId,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -708,9 +622,11 @@ export default class FundingRepository {
         // Transportation passengers
         ...(funding.isTransportation && funding.transportation
           ? funding.transportation.passengers.map(passenger =>
-              tx.insert(FundingTransportationPassenger).values({
-                fundingId,
-                studentId: passenger.id,
+              tx.fundingTransportationPassenger.create({
+                data: {
+                  fundingId,
+                  studentId: passenger.id,
+                },
               }),
             )
           : []),
@@ -724,80 +640,79 @@ export default class FundingRepository {
   }
 
   async delete(id: number): Promise<void> {
-    await this.db.transaction(async tx => {
+    await this.prisma.$transaction(async tx => {
       const now = new Date();
 
       // Soft delete funding order and all related records
       await Promise.all([
-        tx
-          .update(Funding)
-          .set({ deletedAt: now, editedAt: now })
-          .where(eq(Funding.id, id)),
-        tx
-          .update(FundingFeedback)
-          .set({ deletedAt: now })
-          .where(eq(FundingFeedback.fundingId, id)),
-        tx
-          .update(FundingTradeEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingTradeEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingTradeDetailFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingTradeDetailFile.fundingId, id)),
-        tx
-          .update(FundingClubSuppliesImageFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingClubSuppliesImageFile.fundingId, id)),
-        tx
-          .update(FundingClubSuppliesSoftwareEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingClubSuppliesSoftwareEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingFixtureImageFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFixtureImageFile.fundingId, id)),
-        tx
-          .update(FundingFixtureSoftwareEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFixtureSoftwareEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingNonCorporateTransactionFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingNonCorporateTransactionFile.fundingId, id)),
-
-        tx
-          .update(FundingFoodExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFoodExpenseFile.fundingId, id)),
-        tx
-          .update(FundingLaborContractFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingLaborContractFile.fundingId, id)),
-        tx
-          .update(FundingExternalEventParticipationFeeFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingExternalEventParticipationFeeFile.fundingId, id)),
-        tx
-          .update(FundingPublicationFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingPublicationFile.fundingId, id)),
-        tx
-          .update(FundingProfitMakingActivityFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingProfitMakingActivityFile.fundingId, id)),
-        tx
-          .update(FundingJointExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingJointExpenseFile.fundingId, id)),
-        tx
-          .update(FundingEtcExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingEtcExpenseFile.fundingId, id)),
-        tx
-          .update(FundingTransportationPassenger)
-          .set({ deletedAt: now })
-          .where(eq(FundingTransportationPassenger.fundingId, id)),
+        tx.funding.updateMany({
+          where: { id },
+          data: { deletedAt: now, editedAt: now },
+        }),
+        tx.fundingFeedback.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingTradeEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingTradeDetailFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingClubSuppliesImageFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFixtureImageFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFixtureSoftwareEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingNonCorporateTransactionFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFoodExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingLaborContractFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingExternalEventParticipationFeeFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingPublicationFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingProfitMakingActivityFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingJointExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingEtcExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingTransportationPassenger.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
       ]);
     });
   }
@@ -807,13 +722,13 @@ export default class FundingRepository {
     funding: IFundingRequest,
     extra: IFundingExtra,
   ): Promise<MFunding> {
-    return this.db.transaction(async tx => {
+    return this.prisma.$transaction(async tx => {
       const now = new Date();
 
       // Update funding table
-      await tx
-        .update(Funding)
-        .set({
+      await tx.funding.update({
+        where: { id },
+        data: {
           purposeActivityId: funding.purposeActivity.id,
           fundingStatusEnum: extra.fundingStatusEnum,
           name: funding.name,
@@ -869,103 +784,111 @@ export default class FundingRepository {
           jointExpenseExplanation: funding.jointExpense?.explanation,
           etcExpenseExplanation: funding.etcExpense?.explanation,
           editedAt: now,
-        })
-        .where(eq(Funding.id, id));
+        },
+      });
 
       // Soft delete all related records
       await Promise.all([
-        tx
-          .update(FundingTradeEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingTradeEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingTradeDetailFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingTradeDetailFile.fundingId, id)),
-        tx
-          .update(FundingClubSuppliesImageFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingClubSuppliesImageFile.fundingId, id)),
-        tx
-          .update(FundingClubSuppliesSoftwareEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingClubSuppliesSoftwareEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingFixtureImageFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFixtureImageFile.fundingId, id)),
-        tx
-          .update(FundingFixtureSoftwareEvidenceFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFixtureSoftwareEvidenceFile.fundingId, id)),
-        tx
-          .update(FundingNonCorporateTransactionFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingNonCorporateTransactionFile.fundingId, id)),
-        tx
-          .update(FundingFoodExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingFoodExpenseFile.fundingId, id)),
-        tx
-          .update(FundingLaborContractFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingLaborContractFile.fundingId, id)),
-        tx
-          .update(FundingExternalEventParticipationFeeFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingExternalEventParticipationFeeFile.fundingId, id)),
-        tx
-          .update(FundingPublicationFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingPublicationFile.fundingId, id)),
-        tx
-          .update(FundingProfitMakingActivityFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingProfitMakingActivityFile.fundingId, id)),
-        tx
-          .update(FundingJointExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingJointExpenseFile.fundingId, id)),
-        tx
-          .update(FundingEtcExpenseFile)
-          .set({ deletedAt: now })
-          .where(eq(FundingEtcExpenseFile.fundingId, id)),
-        tx
-          .update(FundingTransportationPassenger)
-          .set({ deletedAt: now })
-          .where(eq(FundingTransportationPassenger.fundingId, id)),
+        tx.fundingTradeEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingTradeDetailFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingClubSuppliesImageFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFixtureImageFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFixtureSoftwareEvidenceFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingNonCorporateTransactionFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingFoodExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingLaborContractFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingExternalEventParticipationFeeFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingPublicationFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingProfitMakingActivityFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingJointExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingEtcExpenseFile.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
+        tx.fundingTransportationPassenger.updateMany({
+          where: { fundingId: id },
+          data: { deletedAt: now },
+        }),
       ]);
 
       // Insert new related records
       await Promise.all([
         // Trade files
         ...funding.tradeEvidenceFiles.map(file =>
-          tx.insert(FundingTradeEvidenceFile).values({
-            fundingId: id,
-            fileId: file.id,
+          tx.fundingTradeEvidenceFile.create({
+            data: {
+              fundingId: id,
+              fileId: file.id,
+            },
           }),
         ),
         ...funding.tradeDetailFiles.map(file =>
-          tx.insert(FundingTradeDetailFile).values({
-            fundingId: id,
-            fileId: file.id,
+          tx.fundingTradeDetailFile.create({
+            data: {
+              fundingId: id,
+              fileId: file.id,
+            },
           }),
         ),
 
         // ClubOld supplies files
         ...(funding.clubSupplies && funding.clubSupplies.imageFiles
           ? funding.clubSupplies.imageFiles.map(file =>
-              tx.insert(FundingClubSuppliesImageFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingClubSuppliesImageFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
         ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
           ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
-              tx.insert(FundingClubSuppliesSoftwareEvidenceFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingClubSuppliesSoftwareEvidenceFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -973,17 +896,21 @@ export default class FundingRepository {
         // Fixture files
         ...(funding.isFixture && funding.fixture.imageFiles
           ? funding.fixture.imageFiles.map(file =>
-              tx.insert(FundingFixtureImageFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingFixtureImageFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
         ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
           ? funding.fixture.softwareEvidenceFiles.map(file =>
-              tx.insert(FundingFixtureSoftwareEvidenceFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingFixtureSoftwareEvidenceFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -991,9 +918,11 @@ export default class FundingRepository {
         // NonCorporateTransaction files
         ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
           ? funding.nonCorporateTransaction.files.map(file =>
-              tx.insert(FundingNonCorporateTransactionFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingNonCorporateTransactionFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1001,9 +930,11 @@ export default class FundingRepository {
         // Food expense files
         ...(funding.isFoodExpense && funding.foodExpense
           ? funding.foodExpense.files.map(file =>
-              tx.insert(FundingFoodExpenseFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingFoodExpenseFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1011,9 +942,11 @@ export default class FundingRepository {
         // Labor contract files
         ...(funding.isLaborContract && funding.laborContract
           ? funding.laborContract.files.map(file =>
-              tx.insert(FundingLaborContractFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingLaborContractFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1022,9 +955,11 @@ export default class FundingRepository {
         ...(funding.isExternalEventParticipationFee &&
         funding.externalEventParticipationFee
           ? funding.externalEventParticipationFee.files.map(file =>
-              tx.insert(FundingExternalEventParticipationFeeFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingExternalEventParticipationFeeFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1032,9 +967,11 @@ export default class FundingRepository {
         // Publication files
         ...(funding.isPublication && funding.publication
           ? funding.publication.files.map(file =>
-              tx.insert(FundingPublicationFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingPublicationFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1042,9 +979,11 @@ export default class FundingRepository {
         // Profit making activity files
         ...(funding.isProfitMakingActivity && funding.profitMakingActivity
           ? funding.profitMakingActivity.files.map(file =>
-              tx.insert(FundingProfitMakingActivityFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingProfitMakingActivityFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1052,9 +991,11 @@ export default class FundingRepository {
         // Joint expense files
         ...(funding.isJointExpense && funding.jointExpense
           ? funding.jointExpense.files.map(file =>
-              tx.insert(FundingJointExpenseFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingJointExpenseFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1062,9 +1003,11 @@ export default class FundingRepository {
         // Etc expense files
         ...(funding.isEtcExpense && funding.etcExpense
           ? funding.etcExpense.files.map(file =>
-              tx.insert(FundingEtcExpenseFile).values({
-                fundingId: id,
-                fileId: file.id,
+              tx.fundingEtcExpenseFile.create({
+                data: {
+                  fundingId: id,
+                  fileId: file.id,
+                },
               }),
             )
           : []),
@@ -1072,9 +1015,11 @@ export default class FundingRepository {
         // Transportation passengers
         ...(funding.isTransportation && funding.transportation
           ? funding.transportation.passengers.map(passenger =>
-              tx.insert(FundingTransportationPassenger).values({
-                fundingId: id,
-                studentId: passenger.id,
+              tx.fundingTransportationPassenger.create({
+                data: {
+                  fundingId: id,
+                  studentId: passenger.id,
+                },
               }),
             )
           : []),
@@ -1085,18 +1030,15 @@ export default class FundingRepository {
   }
 
   async patchSummaryTx(
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
     oldbie: IFundingSummary,
     consumer: (
       _oldbie: IFundingSummary,
     ) => Partial<FundingDBResult> & { id: number },
   ): Promise<IFundingSummary> {
     const param = consumer(oldbie);
-    await tx
-      .update(Funding)
-      .set(param)
-      .where(eq(Funding.id, param.id))
-      .execute();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (tx as any).funding.update({ where: { id: param.id }, data: param });
 
     return this.fetch(oldbie.id);
   }
@@ -1105,29 +1047,27 @@ export default class FundingRepository {
     oldbie: IFundingSummary,
     consumer: (_oldbie: IFundingSummary) => IFundingSummary,
   ): Promise<IFundingSummary> {
-    return this.db.transaction(async tx =>
+    return this.prisma.$transaction(async tx =>
       this.patchSummaryTx(tx, oldbie, consumer),
     );
   }
 
   async fetchSummary(id: number): Promise<VFundingSummary> {
-    return this.db.transaction(async tx => this.fetchSummaryTx(tx, id));
+    return this.prisma.$transaction(async tx => this.fetchSummaryTx(tx, id));
   }
 
   async fetchSummaryTx(
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
     id: number,
   ): Promise<VFundingSummary> {
-    const result = (await tx
-      .select()
-      .from(Funding)
-      .where(eq(Funding.id, id))) as FundingSummaryDBResult[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (tx as any).funding.findFirst({ where: { id } });
 
-    if (result.length === 0) {
+    if (!result) {
       throw new NotFoundException(`Funding: ${id} not found`);
     }
 
-    return VFundingSummary.fromDBResult(result[0]);
+    return VFundingSummary.fromDBResult(result as FundingSummaryDBResult);
   }
 
   async patchStatus(param: {
@@ -1136,11 +1076,11 @@ export default class FundingRepository {
     approvedAmount: IFunding["approvedAmount"];
     commentedAt: IFunding["commentedAt"];
   }): Promise<VFundingSummary> {
-    return this.db.transaction(async tx => this.patchStatusTx(tx, param));
+    return this.prisma.$transaction(async tx => this.patchStatusTx(tx, param));
   }
 
   async patchStatusTx(
-    tx: DrizzleTransaction,
+    tx: PrismaTransactionClient,
     param: {
       id: IFunding["id"];
       fundingStatusEnum: IFunding["fundingStatusEnum"];
@@ -1150,15 +1090,16 @@ export default class FundingRepository {
   ): Promise<VFundingSummary> {
     const now = new Date();
 
-    await tx
-      .update(Funding)
-      .set({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (tx as any).funding.update({
+      where: { id: param.id },
+      data: {
         fundingStatusEnum: param.fundingStatusEnum,
         approvedAmount: param.approvedAmount,
         commentedAt: param.commentedAt,
         editedAt: now,
-      })
-      .where(eq(Funding.id, param.id));
+      },
+    });
 
     return this.fetchSummaryTx(tx, param.id);
   }

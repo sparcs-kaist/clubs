@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { formatInTimeZone } from "date-fns-tz";
+import { format } from "date-fns";
 
 import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { ApiUsr006RequestBody } from "@clubs/interface/api/user/endpoint/apiUsr006";
@@ -104,18 +104,10 @@ export class UserService {
     if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
-    const startTermStr = formatInTimeZone(
-      body.startTerm,
-      "Asia/Seoul",
-      "yyyy-MM-dd",
-    );
+    const startTermStr = format(body.startTerm, "yyyy-MM-dd");
     // let endTermStr: string | null = null;
     // if (body.endTerm) {
-    const endTermStr = formatInTimeZone(
-      body.endTerm,
-      "Asia/Seoul",
-      "yyyy-MM-dd",
-    );
+    const endTermStr = format(body.endTerm, "yyyy-MM-dd");
     if (startTermStr >= endTermStr) {
       throw new HttpException(
         "시작날짜는 종료날짜보다 이전이어야 합니다.",

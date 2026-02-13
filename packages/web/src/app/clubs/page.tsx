@@ -1,6 +1,5 @@
 "use client";
 
-import { addDays, subSeconds } from "date-fns";
 import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
@@ -51,9 +50,7 @@ const Clubs: React.FC = () => {
               color="GRAY.600"
               style={{ whiteSpace: "pre-line" }}
             >
-              {/* endTerm에 하루를 더해서 종료일 전체를 포함하도록 함 */}
-              {/* 예: 종료일이 1/16(1/16 00:00)이면, 1/16 23:59:59까지 유효하도록 함 */}
-              {`"${formatDate(data?.deadline?.startDate)} - ${formatDate(subSeconds(addDays(data?.deadline?.endTerm, 1), 1))}"은 동아리 등록 기간입니다.
+              {`"${formatDate(data?.deadline?.startDate)} - ${formatDate(data?.deadline?.endTerm)}"은 동아리 등록 기간입니다.
               가을학기 동아리가 확정되지 않아 동아리 목록이 비어있어요. 동아리 대표자들께선 동아리 → 동아리 등록 기능을 통해 동아리 등록을 제출해주세요!`}
             </Typography>
           </Banner>

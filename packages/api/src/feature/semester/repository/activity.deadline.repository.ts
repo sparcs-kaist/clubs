@@ -1,22 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  lte,
-  SQL,
-} from "drizzle-orm";
 
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ActivityDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   IActivityDeadlineCreate,
   MActivityDeadline,
@@ -34,11 +24,6 @@ type ActivityDeadlineQuerySupport = {
   endTerm: string;
 };
 
-type ActivityDeadlineTable = typeof ActivityDeadlineD;
-type ActivityDeadlineDbSelect = InferSelectModel<ActivityDeadlineTable>;
-type ActivityDeadlineDbUpdate = Partial<ActivityDeadlineDbSelect>;
-type ActivityDeadlineDbInsert = InferInsertModel<ActivityDeadlineTable>;
-
 type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   ActivityDeadlineQuery,
   ActivityDeadlineOrderByKeys,
@@ -49,18 +34,16 @@ type ActivityDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 export class ActivityDeadlineRepository extends BaseSingleTableRepository<
   MActivityDeadline,
   IActivityDeadlineCreate,
-  ActivityDeadlineTable,
   ActivityDeadlineQuery,
   ActivityDeadlineOrderByKeys,
   ActivityDeadlineQuerySupport
 > {
   constructor() {
-    super(ActivityDeadlineD, MActivityDeadline);
+    super("activityDeadlineD", MActivityDeadline);
   }
 
-  protected dbToModelMapping(
-    result: ActivityDeadlineDbSelect,
-  ): MActivityDeadline {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MActivityDeadline {
     return new MActivityDeadline({
       id: result.id,
       semester: { id: result.semesterId },
@@ -70,9 +53,8 @@ export class ActivityDeadlineRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(
-    model: MActivityDeadline,
-  ): ActivityDeadlineDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MActivityDeadline): any {
     return {
       id: model.id,
       semesterId: model.semester.id,
@@ -82,9 +64,8 @@ export class ActivityDeadlineRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IActivityDeadlineCreate,
-  ): ActivityDeadlineDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IActivityDeadlineCreate): any {
     return {
       semesterId: model.semester.id,
       deadlineEnum: model.deadlineEnum,
@@ -95,16 +76,13 @@ export class ActivityDeadlineRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ActivityDeadlineFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      ActivityDeadlineFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: ActivityDeadlineD,
-      semesterId: ActivityDeadlineD,
-      deadlineEnum: ActivityDeadlineD,
-      startTerm: ActivityDeadlineD,
-      endTerm: ActivityDeadlineD,
+  ): string | null | undefined {
+    const fieldMappings: Record<ActivityDeadlineFieldMapKeys, string | null> = {
+      id: "id",
+      semesterId: "semesterId",
+      deadlineEnum: "deadlineEnum",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -112,18 +90,18 @@ export class ActivityDeadlineRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: ActivityDeadlineFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return and(
-        lte(ActivityDeadlineD.startTerm, value),
-        gt(ActivityDeadlineD.endTerm, value),
-      );
+      return {
+        AND: [{ startTerm: { lte: value } }, { endTerm: { gt: value } }],
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

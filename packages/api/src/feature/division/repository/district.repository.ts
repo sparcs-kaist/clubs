@@ -1,14 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { District } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import {
   IDistrictCreate,
   MDistrict,
@@ -21,11 +18,6 @@ export type DistrictQuery = {
 
 type DistrictOrderByKeys = "id";
 type DistrictQuerySupport = {}; // Query Support 용
-
-type DistrictTable = typeof District;
-type DistrictDbSelect = InferSelectModel<DistrictTable>;
-type DistrictDbUpdate = Partial<DistrictDbSelect>;
-type DistrictDbInsert = InferInsertModel<DistrictTable>;
 
 type DistrictFieldMapKeys = BaseTableFieldMapKeys<
   DistrictQuery,
@@ -43,47 +35,47 @@ export type DistrictRepositoryQuery = BaseRepositoryQuery<DistrictQuery>;
 export class DistrictRepository extends BaseSingleTableRepository<
   MDistrict,
   IDistrictCreate,
-  DistrictTable,
   DistrictQuery,
   DistrictOrderByKeys,
   DistrictQuerySupport
 > {
   constructor() {
-    super(District, MDistrict);
+    super("district", MDistrict);
   }
 
-  protected dbToModelMapping(result: DistrictDbSelect): MDistrict {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MDistrict {
     return new MDistrict({
       id: result.id,
       name: result.name,
     });
   }
 
-  protected modelToDBMapping(model: MDistrict): DistrictDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MDistrict): any {
     return {
       id: model.id,
       name: model.name,
     };
   }
 
-  protected createToDBMapping(model: IDistrictCreate): DistrictDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IDistrictCreate): any {
     return {
       name: model.name,
     };
   }
 
-  protected fieldMap(
-    field: DistrictFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<DistrictFieldMapKeys, TableWithID | null> = {
-      id: District,
-      name: District,
+  protected fieldMap(field: DistrictFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<DistrictFieldMapKeys, string | null> = {
+      id: "id",
+      name: "name",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

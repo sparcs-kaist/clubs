@@ -1,5 +1,9 @@
+import { toZonedTime } from "date-fns-tz";
+
+const KST = "Asia/Seoul";
+
 export const getActualYear = (date: Date | string) =>
-  new Date(date).getFullYear();
+  toZonedTime(new Date(date), KST).getFullYear();
 
 export const getActualMonth = (date: Date | string) =>
-  new Date(date).getMonth() + 1;
+  toZonedTime(new Date(date), KST).getMonth() + 1;

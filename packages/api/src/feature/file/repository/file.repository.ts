@@ -1,15 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { randomUUID } from "crypto";
 
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { File } from "@sparcs-clubs/api/drizzle/schema/file.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { MFile } from "../model/file.model";
 
 @Injectable()
 export class FileRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(
     name: string,
@@ -18,33 +16,23 @@ export class FileRepository {
     signedAt: Date,
     userId: number,
   ) {
-    await this.db.insert(File).values({
-      name,
-      extension,
-      size,
-      signedAt,
-      userId,
+    const file = await this.prisma.file.create({
+      data: {
+        id: randomUUID(),
+        name,
+        extension,
+        size,
+        signedAt,
+        userId,
+      },
     });
-    const fileId = await this.db
-      .select()
-      .from(File)
-      .where(
-        and(
-          eq(File.name, name),
-          eq(File.signedAt, signedAt),
-          eq(File.userId, userId),
-        ),
-      )
-      .then(result => result);
-    return fileId[0].id;
+    return file.id;
   }
 
   async findById(id: string) {
-    const file = await this.db
-      .select()
-      .from(File)
-      .where(eq(File.id, id))
-      .then(result => result[0]);
+    const file = await this.prisma.file.findUnique({
+      where: { id },
+    });
     return file;
   }
 
@@ -53,11 +41,9 @@ export class FileRepository {
       return [];
     }
 
-    const files = await this.db
-      .select()
-      .from(File)
-      .where(inArray(File.id, ids))
-      .then(result => result);
+    const files = await this.prisma.file.findMany({
+      where: { id: { in: ids } },
+    });
 
     return files.map(
       (file): Omit<MFile, "url"> => ({

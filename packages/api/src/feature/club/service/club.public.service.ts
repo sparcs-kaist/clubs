@@ -502,7 +502,9 @@ export default class ClubPublicService {
         clubDelegates.map(c => c.student.id),
       ),
       this.userPublicService.getProfessorsByIds(
-        clubSemesters.filter(c => c.professor).map(c => c.professor.id),
+        clubSemesters
+          .filter(c => c.professor?.id != null)
+          .map(c => c.professor.id),
       ),
     ]);
 

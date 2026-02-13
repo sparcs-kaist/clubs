@@ -1,22 +1,17 @@
-import { InferSelectModel } from "drizzle-orm";
-
 import { IFundingSummary } from "@clubs/interface/api/funding/type/funding.type";
-
-import { Funding } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 
 import { MFunding } from "./funding.model";
 
-export type FundingSummaryDBResult = Pick<
-  InferSelectModel<typeof Funding>,
-  | "id"
-  | "name"
-  | "fundingStatusEnum"
-  | "expenditureAmount"
-  | "purposeActivityId"
-  | "approvedAmount"
-  | "clubId"
-  | "chargedExecutiveId"
->;
+export type FundingSummaryDBResult = {
+  id: number;
+  name: string;
+  fundingStatusEnum: number;
+  expenditureAmount: number;
+  purposeActivityId: number | null;
+  approvedAmount: number;
+  clubId: number;
+  chargedExecutiveId: number | null;
+};
 
 export class VFundingSummary implements IFundingSummary {
   id: IFundingSummary["id"];

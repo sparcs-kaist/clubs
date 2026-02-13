@@ -7,7 +7,6 @@ import {
 } from "@clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 
 import { RMProfessor } from "../model/professor.model";
 import { MStudent } from "../model/student.model";
@@ -76,7 +75,7 @@ export default class UserPublicService {
    * 느려요~
    * */
   async getCurrentExecutives() {
-    const today = getKSTDate();
+    const today = new Date();
     const executives = await this.executiveRepository.selectExecutiveByDate({
       date: today,
     });
@@ -190,7 +189,7 @@ export default class UserPublicService {
    * Entity 적용 버전
    * */
   async getCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
-    const today = getKSTDate();
+    const today = new Date();
     const executives =
       await this.executiveRepository.fetchExecutiveSummaries(today);
 
@@ -206,7 +205,7 @@ export default class UserPublicService {
   }
 
   async fetchCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
-    const today = getKSTDate();
+    const today = new Date();
     const executives =
       await this.executiveRepository.fetchExecutiveSummaries(today);
     return executives;
@@ -236,7 +235,7 @@ export default class UserPublicService {
    * 유효하면 아무런 일도 일어나지 않습니다.
    * */
   async checkCurrentExecutive(executiveId: number): Promise<void> {
-    const today = getKSTDate();
+    const today = new Date();
     const executives = await this.executiveRepository.selectExecutiveByDate({
       date: today,
     });

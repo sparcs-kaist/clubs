@@ -1,11 +1,6 @@
-import { getDbInstance } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { ClubOld as Club } from "@sparcs-clubs/api/drizzle/schema/club.schema";
-import {
-  District,
-  Division,
-} from "@sparcs-clubs/api/drizzle/schema/division.schema";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { Student, User } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 /**
  * 테스트용 기본 사용자 데이터
@@ -66,16 +61,16 @@ export const TEST_DIVISION = {
  * @returns 생성된 사용자 객체
  */
 export async function seedTestUser() {
-  const db = await getDbInstance();
-
-  const result = await db.insert(User).values({
-    sid: TEST_USER.sid,
-    name: TEST_USER.name,
-    email: TEST_USER.email,
-    phoneNumber: TEST_USER.phoneNumber,
+  const result = await prisma.user.create({
+    data: {
+      sid: TEST_USER.sid,
+      name: TEST_USER.name,
+      email: TEST_USER.email,
+      phoneNumber: TEST_USER.phoneNumber,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  return { id: result.id };
 }
 
 /**
@@ -84,16 +79,16 @@ export async function seedTestUser() {
  * @returns 생성된 학생 객체
  */
 export async function seedTestStudent(userId?: number) {
-  const db = await getDbInstance();
-
-  const result = await db.insert(Student).values({
-    userId: userId ?? null,
-    number: TEST_STUDENT.number,
-    name: TEST_STUDENT.name,
-    email: TEST_STUDENT.email,
+  const result = await prisma.student.create({
+    data: {
+      userId: userId ?? null,
+      number: TEST_STUDENT.number,
+      name: TEST_STUDENT.name,
+      email: TEST_STUDENT.email,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  return { id: result.id };
 }
 
 /**
@@ -101,13 +96,13 @@ export async function seedTestStudent(userId?: number) {
  * @returns 생성된 지구 객체
  */
 export async function seedTestDistrict() {
-  const db = await getDbInstance();
-
-  const result = await db.insert(District).values({
-    name: TEST_DISTRICT.name,
+  const result = await prisma.district.create({
+    data: {
+      name: TEST_DISTRICT.name,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  return { id: result.id };
 }
 
 /**
@@ -116,18 +111,18 @@ export async function seedTestDistrict() {
  * @returns 생성된 분과 객체
  */
 export async function seedTestDivision(districtId?: number) {
-  const db = await getDbInstance();
-
   // districtId가 없으면 새로 생성
   const finalDistrictId = districtId ?? (await seedTestDistrict()).id;
 
-  const result = await db.insert(Division).values({
-    name: TEST_DIVISION.name,
-    startTerm: TEST_DIVISION.startTerm,
-    districtId: finalDistrictId,
+  const result = await prisma.division.create({
+    data: {
+      name: TEST_DIVISION.name,
+      startTerm: TEST_DIVISION.startTerm,
+      districtId: finalDistrictId,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  return { id: result.id };
 }
 
 /**
@@ -136,20 +131,28 @@ export async function seedTestDivision(districtId?: number) {
  * @returns 생성된 동아리 객체
  */
 export async function seedTestClub(divisionId?: number) {
-  const db = await getDbInstance();
-
   // divisionId가 없으면 새로 생성
   const finalDivisionId = divisionId ?? (await seedTestDivision()).id;
 
-  const result = await db.insert(Club).values({
-    nameKr: TEST_CLUB.nameKr,
-    nameEn: TEST_CLUB.nameEn,
-    description: TEST_CLUB.description,
-    foundingYear: TEST_CLUB.foundingYear,
-    divisionId: finalDivisionId,
+  const result = await prisma.club.create({
+    data: {
+      nameKr: TEST_CLUB.nameKr,
+      nameEn: TEST_CLUB.nameEn,
+      description: TEST_CLUB.description,
+      foundingYear: TEST_CLUB.foundingYear,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  // Club과 Division의 관계는 ClubDivisionHistory를 통해 설정
+  await prisma.clubDivisionHistory.create({
+    data: {
+      clubId: result.id,
+      divisionId: finalDivisionId,
+      startTerm: new Date(),
+    },
+  });
+
+  return { id: result.id };
 }
 
 /**
@@ -157,16 +160,16 @@ export async function seedTestClub(divisionId?: number) {
  * @returns 생성된 학기 객체
  */
 export async function seedTestSemester() {
-  const db = await getDbInstance();
-
-  const result = await db.insert(SemesterD).values({
-    year: TEST_SEMESTER.year,
-    name: TEST_SEMESTER.name,
-    startTerm: TEST_SEMESTER.startTerm,
-    endTerm: TEST_SEMESTER.endTerm,
+  const result = await prisma.semesterD.create({
+    data: {
+      year: TEST_SEMESTER.year,
+      name: TEST_SEMESTER.name,
+      startTerm: TEST_SEMESTER.startTerm,
+      endTerm: TEST_SEMESTER.endTerm,
+    },
   });
 
-  return { id: Number(result[0].insertId) };
+  return { id: result.id };
 }
 
 /**

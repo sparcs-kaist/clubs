@@ -1,12 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Student } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 import {
   IStudentCreate,
   MStudent,
@@ -16,11 +11,6 @@ export type StudentQuery = {};
 
 type StudentOrderByKeys = "id";
 type StudentQuerySupport = {};
-
-type StudentTable = typeof Student;
-type StudentDbSelect = InferSelectModel<StudentTable>;
-type StudentDbUpdate = Partial<StudentDbSelect>;
-type StudentDbInsert = InferInsertModel<StudentTable>;
 
 type StudentFieldMapKeys = BaseTableFieldMapKeys<
   StudentQuery,
@@ -32,16 +22,16 @@ type StudentFieldMapKeys = BaseTableFieldMapKeys<
 export class StudentRepository extends BaseSingleTableRepository<
   MStudent,
   IStudentCreate,
-  StudentTable,
   StudentQuery,
   StudentOrderByKeys,
   StudentQuerySupport
 > {
   constructor() {
-    super(Student, MStudent);
+    super("student", MStudent);
   }
 
-  protected dbToModelMapping(result: StudentDbSelect): MStudent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MStudent {
     return new MStudent({
       id: result.id,
       name: result.name,
@@ -51,7 +41,8 @@ export class StudentRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MStudent): StudentDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MStudent): any {
     return {
       id: model.id,
       name: model.name,
@@ -61,7 +52,8 @@ export class StudentRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(model: IStudentCreate): StudentDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IStudentCreate): any {
     return {
       name: model.name,
       number: Number(model.studentNumber),
@@ -70,17 +62,15 @@ export class StudentRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: StudentFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<StudentFieldMapKeys, TableWithID | null> = {
-      id: Student,
+  protected fieldMap(field: StudentFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<StudentFieldMapKeys, string | null> = {
+      id: "id",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

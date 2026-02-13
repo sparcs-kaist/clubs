@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "exclude": [
     "node_modules",
-    "lagacy_source",
+    "legacy_source",
     "test",
     "dist",
     "**/*spec.ts",

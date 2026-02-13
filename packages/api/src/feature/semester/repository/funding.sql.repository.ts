@@ -1,53 +1,45 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
 
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import {
-  getKSTDate,
-  makeObjectPropsFromDBTimezone,
-} from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class FundingDeadlineSqlRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async checkExistingFundingDeadline(
     semesterId: number,
     startTerm: Date,
     endTerm: Date,
   ): Promise<boolean> {
-    const existingDeadlines = await this.db
-      .select()
-      .from(FundingDeadlineD)
-      .where(
-        and(
-          or(
-            and(
-              gt(FundingDeadlineD.endTerm, startTerm),
-              lt(FundingDeadlineD.endTerm, endTerm),
-            ),
-            and(
-              gt(FundingDeadlineD.startTerm, startTerm),
-              lt(FundingDeadlineD.startTerm, endTerm),
-            ),
-            eq(FundingDeadlineD.startTerm, startTerm),
-            eq(FundingDeadlineD.endTerm, endTerm),
-            and(
-              lt(FundingDeadlineD.startTerm, endTerm),
-              gt(FundingDeadlineD.endTerm, endTerm),
-            ),
-            and(
-              gt(FundingDeadlineD.startTerm, startTerm),
-              lt(FundingDeadlineD.endTerm, startTerm),
-            ),
-          ),
-          eq(FundingDeadlineD.semesterId, semesterId),
-          isNull(FundingDeadlineD.deletedAt),
-        ),
-      );
+    const existingDeadlines = await this.prisma.fundingDeadlineD.findMany({
+      where: {
+        semesterId,
+        deletedAt: null,
+        OR: [
+          {
+            AND: [{ endTerm: { gt: startTerm } }, { endTerm: { lt: endTerm } }],
+          },
+          {
+            AND: [
+              { startTerm: { gt: startTerm } },
+              { startTerm: { lt: endTerm } },
+            ],
+          },
+          { startTerm: { equals: startTerm } },
+          { endTerm: { equals: endTerm } },
+          {
+            AND: [{ startTerm: { lt: endTerm } }, { endTerm: { gt: endTerm } }],
+          },
+          {
+            AND: [
+              { startTerm: { gt: startTerm } },
+              { endTerm: { lt: startTerm } },
+            ],
+          },
+        ],
+      },
+    });
 
     return existingDeadlines.length > 0;
   }
@@ -59,14 +51,16 @@ export class FundingDeadlineSqlRepository {
     semesterId: number,
   ): Promise<boolean> {
     try {
-      await this.db.transaction(async tx => {
-        const [result] = await tx.insert(FundingDeadlineD).values({
-          startTerm,
-          endTerm,
-          deadlineEnum,
-          semesterId,
+      await this.prisma.$transaction(async tx => {
+        const result = await tx.fundingDeadlineD.create({
+          data: {
+            startTerm,
+            endTerm,
+            deadlineEnum,
+            semesterId,
+          },
         });
-        if (result.affectedRows === 0) {
+        if (!result) {
           throw new IntentionalRollback();
         }
         return true;
@@ -81,34 +75,28 @@ export class FundingDeadlineSqlRepository {
   }
 
   async getFundingDeadlines(semesterId: number) {
-    const fundingDeadlines = await this.db
-      .select()
-      .from(FundingDeadlineD)
-      .where(
-        and(
-          eq(FundingDeadlineD.semesterId, semesterId),
-          isNull(FundingDeadlineD.deletedAt),
-        ),
-      )
-      .execute();
-    // Date 객체로 변환 (내부 로직용)
-    return makeObjectPropsFromDBTimezone(fundingDeadlines);
+    // Prisma middleware handles timezone conversion automatically
+    const fundingDeadlines = await this.prisma.fundingDeadlineD.findMany({
+      where: {
+        semesterId,
+        deletedAt: null,
+      },
+    });
+    return fundingDeadlines;
   }
 
   async deleteFundingDeadline(deadlineId: number): Promise<boolean> {
-    const cur = getKSTDate();
+    const cur = new Date();
     try {
-      await this.db.transaction(async tx => {
-        const [result] = await tx
-          .update(FundingDeadlineD)
-          .set({ deletedAt: cur })
-          .where(
-            and(
-              eq(FundingDeadlineD.id, deadlineId),
-              isNull(FundingDeadlineD.deletedAt),
-            ),
-          );
-        if (result.affectedRows === 0) {
+      await this.prisma.$transaction(async tx => {
+        const result = await tx.fundingDeadlineD.updateMany({
+          where: {
+            id: deadlineId,
+            deletedAt: null,
+          },
+          data: { deletedAt: cur },
+        });
+        if (result.count === 0) {
           throw new IntentionalRollback();
         }
         return true;

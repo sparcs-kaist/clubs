@@ -1,20 +1,41 @@
-import { InferSelectModel } from "drizzle-orm";
-
 import { IClub } from "@clubs/interface/api/club/type/club.type";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
-import {
-  ClubDelegate,
-  ClubOld,
-  ClubRoomT,
-  ClubT,
-} from "@sparcs-clubs/api/drizzle/schema/club.schema";
-
 type ClubDBResult = {
-  club: InferSelectModel<typeof ClubOld>;
-  club_t: InferSelectModel<typeof ClubT>;
-  club_room_t: InferSelectModel<typeof ClubRoomT>;
-  club_delegate_d: InferSelectModel<typeof ClubDelegate>[];
+  club: {
+    id: number;
+    nameKr: string;
+    nameEn: string;
+    description: string;
+    foundingYear: number;
+    divisionId: number;
+    deletedAt: Date | null;
+    [key: string]: unknown;
+  };
+  club_t: {
+    id: number;
+    clubId: number;
+    semesterId: number;
+    clubStatusEnumId: number;
+    characteristicKr: string;
+    characteristicEn: string;
+    professorId: number | null;
+    deletedAt: Date | null;
+    [key: string]: unknown;
+  };
+  club_room_t: {
+    id: number;
+    [key: string]: unknown;
+  } | null;
+  club_delegate_d: Array<{
+    id: number;
+    clubId: number;
+    studentId: number;
+    clubDelegateEnum: number;
+    startTerm: Date;
+    endTerm: Date | null;
+    deletedAt: Date | null;
+  }>;
 };
 
 export class MClubOld implements IClub {

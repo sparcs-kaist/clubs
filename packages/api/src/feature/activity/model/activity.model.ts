@@ -1,25 +1,66 @@
-import { InferSelectModel } from "drizzle-orm";
-
 import { IActivity } from "@clubs/interface/api/activity/type/activity.type";
 
-import {
-  Activity,
-  ActivityClubChargedExecutive,
-  ActivityEvidenceFile,
-  ActivityFeedback,
-  ActivityParticipant,
-  ActivityT,
-} from "@sparcs-clubs/api/drizzle/schema/activity.schema";
-
 type ActivityDbResult = {
-  activity: InferSelectModel<typeof Activity>;
-  activityT: InferSelectModel<typeof ActivityT>[];
-  activityParticipant: InferSelectModel<typeof ActivityParticipant>[];
-  activityEvidenceFile: InferSelectModel<typeof ActivityEvidenceFile>[];
-  activityFeedback: InferSelectModel<typeof ActivityFeedback>[];
-  activityClubChargedExecutive: InferSelectModel<
-    typeof ActivityClubChargedExecutive
-  >[];
+  activity: {
+    id: number;
+    clubId: number;
+    originalName: string;
+    name: string;
+    activityTypeEnumId: number;
+    location: string;
+    purpose: string;
+    detail: string;
+    evidence: string;
+    activityDId: number;
+    activityStatusEnumId: number;
+    chargedExecutiveId: number | null;
+    professorApprovedAt: Date | null;
+    commentedAt: Date | null;
+    commentedExecutiveId: number | null;
+    editedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+  };
+  activityT: Array<{
+    id: number;
+    activityId: number;
+    startTerm: Date;
+    endTerm: Date;
+    createdAt: Date;
+    deletedAt: Date | null;
+  }>;
+  activityParticipant: Array<{
+    id: number;
+    activityId: number;
+    studentId: number;
+    createdAt: Date;
+    deletedAt: Date | null;
+  }>;
+  activityEvidenceFile: Array<{
+    id: number;
+    activityId: number;
+    fileId: string;
+    createdAt: Date;
+    deletedAt: Date | null;
+  }>;
+  activityFeedback: Array<{
+    id: number;
+    activityId: number;
+    executiveId: number;
+    comment: string;
+    activityStatusEnum: number;
+    createdAt: Date;
+    deletedAt: Date | null;
+  }>;
+  activityClubChargedExecutive: Array<{
+    id: number;
+    activityDId: number;
+    clubId: number;
+    executiveId: number | null;
+    createdAt: Date;
+    deletedAt: Date | null;
+  }>;
 };
 
 export class MActivity implements IActivity {

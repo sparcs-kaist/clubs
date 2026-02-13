@@ -3,8 +3,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { formatDate } from "date-fns";
 import { ko } from "date-fns/locale";
+import { formatInTimeZone } from "date-fns-tz";
 import React, { useCallback, useMemo } from "react";
 
 import { ApiSem007ResponseOK } from "@clubs/interface/api/semester/apiSem007";
@@ -71,14 +71,18 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
     columnHelper.accessor("startTerm", {
       header: "시작일",
       cell: info =>
-        formatDate(info.getValue(), "yyyy-MM-dd (ccc)", { locale: ko }),
+        formatInTimeZone(info.getValue(), "Asia/Seoul", "yyyy-MM-dd (ccc)", {
+          locale: ko,
+        }),
       size: 150,
       enableSorting: false,
     }),
     columnHelper.accessor("endTerm", {
       header: "종료일",
       cell: info =>
-        formatDate(info.getValue(), "yyyy-MM-dd (ccc)", { locale: ko }),
+        formatInTimeZone(info.getValue(), "Asia/Seoul", "yyyy-MM-dd (ccc)", {
+          locale: ko,
+        }),
       size: 150,
       enableSorting: false,
     }),

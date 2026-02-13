@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 
@@ -7,10 +6,8 @@ import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ClubSemester } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   IClubSemesterCreate,
   MClubSemester,
@@ -26,11 +23,6 @@ export type ClubSemesterQuery = {
 
 type ClubSemesterOrderByKeys = "id";
 type ClubSemesterQuerySupport = {}; // Query Support 용
-
-type ClubSemesterTable = typeof ClubSemester;
-type ClubSemesterDbSelect = InferSelectModel<ClubSemesterTable>;
-type ClubSemesterDbUpdate = Partial<ClubSemesterDbSelect>;
-type ClubSemesterDbInsert = InferInsertModel<ClubSemesterTable>;
 
 type ClubSemesterFieldMapKeys = BaseTableFieldMapKeys<
   ClubSemesterQuery,
@@ -49,21 +41,21 @@ export type ClubSemesterRepositoryQuery =
 export class ClubSemesterRepository extends BaseSingleTableRepository<
   MClubSemester,
   IClubSemesterCreate,
-  ClubSemesterTable,
   ClubSemesterQuery,
   ClubSemesterOrderByKeys,
   ClubSemesterQuerySupport
 > {
   constructor() {
-    super(ClubSemester, MClubSemester);
+    super("clubT", MClubSemester);
   }
 
-  protected dbToModelMapping(result: ClubSemesterDbSelect): MClubSemester {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MClubSemester {
     return new MClubSemester({
       id: result.id,
       club: { id: result.clubId },
       semester: { id: result.semesterId },
-      clubTypeEnum: result.clubTypeEnum,
+      clubTypeEnum: result.clubStatusEnumId,
       characteristicKr: result.characteristicKr,
       characteristicEn: result.characteristicEn,
       professor: { id: result.professorId },
@@ -72,12 +64,13 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MClubSemester): ClubSemesterDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MClubSemester): any {
     return {
       id: model.id,
       clubId: model.club.id,
       semesterId: model.semester.id,
-      clubTypeEnum: model.clubTypeEnum,
+      clubStatusEnumId: model.clubTypeEnum,
       characteristicKr: model.characteristicKr,
       characteristicEn: model.characteristicEn,
       professorId: model.professor.id,
@@ -86,13 +79,12 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IClubSemesterCreate,
-  ): ClubSemesterDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IClubSemesterCreate): any {
     return {
       clubId: model.club.id,
       semesterId: model.semester.id,
-      clubTypeEnum: model.clubTypeEnum,
+      clubStatusEnumId: model.clubTypeEnum,
       characteristicKr: model.characteristicKr,
       characteristicEn: model.characteristicEn,
       professorId: model.professor.id,
@@ -103,20 +95,19 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ClubSemesterFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<ClubSemesterFieldMapKeys, TableWithID | null> =
-      {
-        id: ClubSemester,
-        clubId: ClubSemester,
-        semesterId: ClubSemester,
-        clubTypeEnum: ClubSemester,
-        professorId: ClubSemester,
-      };
+  ): string | null | undefined {
+    const fieldMappings: Record<ClubSemesterFieldMapKeys, string | null> = {
+      id: "id",
+      clubId: "clubId",
+      semesterId: "semesterId",
+      clubTypeEnum: "clubStatusEnumId",
+      professorId: "professorId",
+    };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }
