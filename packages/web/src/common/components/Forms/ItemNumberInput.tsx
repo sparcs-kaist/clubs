@@ -13,8 +13,10 @@ import FormError from "../FormError";
 import Label from "../FormLabel";
 import { TextInputProps } from "./TextInput";
 
-export interface ItemNumberInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+export interface ItemNumberInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> {
   label?: string;
   placeholder: string;
   disabled?: boolean;

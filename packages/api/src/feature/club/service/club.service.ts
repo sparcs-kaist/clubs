@@ -106,12 +106,6 @@ export class ClubService {
     if (!clubDetails) {
       throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
     }
-    if (!totalMemberCnt || !representative) {
-      throw new NotFoundException(
-        `Some details for club ID ${clubId} are missing.`,
-      );
-    }
-
     return {
       id: clubDetails.id,
       nameKr: clubDetails.nameKr,
@@ -123,8 +117,8 @@ export class ClubService {
       description: clubDetails.description ? clubDetails.description : "",
       isPermanent,
       foundingYear: clubDetails.foundingYear,
-      totalMemberCnt,
-      representative: representative.name,
+      totalMemberCnt: totalMemberCnt ?? 0,
+      representative: representative?.name ?? "",
       room: roomDetails
         ? `${roomDetails.buildingName} ${roomDetails.room}`
         : "",

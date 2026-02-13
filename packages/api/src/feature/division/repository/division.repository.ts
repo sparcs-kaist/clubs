@@ -1,24 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  isNotNull,
-  lte,
-  not,
-  or,
-  SQL,
-} from "drizzle-orm";
 
 import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 import {
   IDivisionCreate,
   MDivision,
@@ -37,11 +24,6 @@ type DivisionQuerySupport = {
   endTerm: Date;
 }; // Query Support 용
 
-type DivisionTable = typeof Division;
-type DivisionDbSelect = InferSelectModel<DivisionTable>;
-type DivisionDbUpdate = Partial<DivisionDbSelect>;
-type DivisionDbInsert = InferInsertModel<DivisionTable>;
-
 type DivisionFieldMapKeys = BaseTableFieldMapKeys<
   DivisionQuery,
   DivisionOrderByKeys,
@@ -58,16 +40,16 @@ export type DivisionRepositoryQuery = BaseRepositoryQuery<DivisionQuery>;
 export class DivisionRepository extends BaseSingleTableRepository<
   MDivision,
   IDivisionCreate,
-  DivisionTable,
   DivisionQuery,
   DivisionOrderByKeys,
   DivisionQuerySupport
 > {
   constructor() {
-    super(Division, MDivision);
+    super("division", MDivision);
   }
 
-  protected dbToModelMapping(result: DivisionDbSelect): MDivision {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MDivision {
     return new MDivision({
       id: result.id,
       name: result.name,
@@ -77,7 +59,8 @@ export class DivisionRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MDivision): DivisionDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MDivision): any {
     return {
       id: model.id,
       name: model.name,
@@ -87,7 +70,8 @@ export class DivisionRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(model: IDivisionCreate): DivisionDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IDivisionCreate): any {
     return {
       name: model.name,
       districtId: model.district.id,
@@ -96,15 +80,13 @@ export class DivisionRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: DivisionFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<DivisionFieldMapKeys, TableWithID | null> = {
-      id: Division,
-      name: Division,
-      districtId: Division,
-      startTerm: Division,
-      endTerm: Division,
+  protected fieldMap(field: DivisionFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<DivisionFieldMapKeys, string | null> = {
+      id: "id",
+      name: "name",
+      districtId: "districtId",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -112,20 +94,23 @@ export class DivisionRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: DivisionFieldMapKeys,
     value: unknown,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return not(
-        or(
-          gt(Division.startTerm, value),
-          and(isNotNull(Division.endTerm), lte(Division.endTerm, value)),
-        ),
-      );
+      return {
+        NOT: {
+          OR: [
+            { startTerm: { gt: value } },
+            { AND: [{ endTerm: { not: null } }, { endTerm: { lte: value } }] },
+          ],
+        },
+      };
     }
 
     throw Error(`Invalid key value: ${key} ${value}`);

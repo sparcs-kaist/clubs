@@ -1,7 +1,5 @@
 import { Module } from "@nestjs/common";
 
-import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
-
 import ClubModule from "../club/club.module";
 import DivisionModule from "../division/division.module";
 import FileModule from "../file/file.module";
@@ -22,7 +20,6 @@ import ActivityService from "./service/activity.service.new";
   imports: [
     ClubModule,
     DivisionModule,
-    DrizzleModule,
     FileModule,
     RegistrationModule,
     UserModule,

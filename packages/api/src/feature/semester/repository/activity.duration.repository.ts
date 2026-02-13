@@ -1,22 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  lte,
-  SQL,
-} from "drizzle-orm";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ActivityD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   IActivityDurationCreate,
   MActivityDuration,
@@ -39,10 +29,6 @@ type ActivityDurationQuerySupport = {
   endTerm: string;
 };
 
-type ActivityDurationTable = typeof ActivityD;
-type ActivityDbSelect = InferSelectModel<ActivityDurationTable>;
-type ActivityDbUpdate = Partial<ActivityDbSelect>;
-type ActivityDurationDbInsert = InferInsertModel<ActivityDurationTable>;
 type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
   ActivityDurationQuery,
   ActivityDurationOrderByKeys,
@@ -53,16 +39,16 @@ type ActivityDurationFieldMapKeys = BaseTableFieldMapKeys<
 export class ActivityDurationRepository extends BaseSingleTableRepository<
   MActivityDuration,
   IActivityDurationCreate,
-  ActivityDurationTable,
   ActivityDurationQuery,
   ActivityDurationOrderByKeys,
   ActivityDurationQuerySupport
 > {
   constructor() {
-    super(ActivityD, MActivityDuration);
+    super("activityD", MActivityDuration);
   }
 
-  protected dbToModelMapping(result: ActivityDbSelect): MActivityDuration {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MActivityDuration {
     return new MActivityDuration({
       id: result.id,
       semester: { id: result.semesterId },
@@ -74,7 +60,8 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MActivityDuration): ActivityDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MActivityDuration): any {
     return {
       id: model.id,
       semesterId: model.semester.id,
@@ -84,9 +71,8 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IActivityDurationCreate,
-  ): ActivityDurationDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IActivityDurationCreate): any {
     return {
       semesterId: model.semester.id,
       activityDurationTypeEnum: model.activityDurationTypeEnum,
@@ -99,16 +85,13 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ActivityDurationFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      ActivityDurationFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: ActivityD,
-      semesterId: ActivityD,
-      activityDurationTypeEnum: ActivityD,
-      startTerm: ActivityD,
-      endTerm: ActivityD,
+  ): string | null | undefined {
+    const fieldMappings: Record<ActivityDurationFieldMapKeys, string | null> = {
+      id: "id",
+      semesterId: "semesterId",
+      activityDurationTypeEnum: "activityDurationTypeEnum",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -116,15 +99,18 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: ActivityDurationFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return and(lte(ActivityD.startTerm, value), gt(ActivityD.endTerm, value));
+      return {
+        AND: [{ startTerm: { lte: value } }, { endTerm: { gt: value } }],
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

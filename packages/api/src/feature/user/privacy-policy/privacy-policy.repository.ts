@@ -1,13 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { and, eq, isNull } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { UserPrivacyPolicyAgreement } from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class PrivacyPolicyRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * @param userId User 테이블의 id
@@ -16,34 +13,28 @@ export default class PrivacyPolicyRepository {
    * 실패의 경우 exception을 발생시키기 때문에 항상 true를 리턴해야 합니다.
    */
   async insertAgreementByUserId(param: { userId: number }): Promise<boolean> {
-    const isInsertionSucceed = await this.db.transaction(async tx => {
-      // 이미 개인정보 제공동의를 제출한 유저인지 검사합니다.
-      const agreements = await tx
-        .select()
-        .from(UserPrivacyPolicyAgreement)
-        .where(
-          and(
-            eq(UserPrivacyPolicyAgreement.userId, param.userId),
-            isNull(UserPrivacyPolicyAgreement.deletedAt),
-          ),
-        );
-      if (agreements.length !== 0)
-        throw new HttpException(
-          "You already agreed to privacy-policy",
-          HttpStatus.BAD_REQUEST,
-        );
+    const isInsertionSucceed = await this.prisma.$transaction<boolean>(
+      async tx => {
+        // 이미 개인정보 제공동의를 제출한 유저인지 검사합니다.
+        const agreements = await tx.userPrivacyPolicyAgreement.findMany({
+          where: {
+            userId: param.userId,
+            deletedAt: null,
+          },
+        });
+        if (agreements.length !== 0)
+          throw new HttpException(
+            "You already agreed to privacy-policy",
+            HttpStatus.BAD_REQUEST,
+          );
 
-      const [insertionResult] = await tx
-        .insert(UserPrivacyPolicyAgreement)
-        .values({ userId: param.userId });
-      if (insertionResult.affectedRows !== 1)
-        throw new HttpException(
-          "Failed to post agreement",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        await tx.userPrivacyPolicyAgreement.create({
+          data: { userId: param.userId },
+        });
 
-      return true;
-    });
+        return true;
+      },
+    );
 
     return isInsertionSucceed;
   }
@@ -54,15 +45,12 @@ export default class PrivacyPolicyRepository {
    * 리턴 배열의 길이가 1인지 검사하지 않습니다.
    */
   async selectAgreementByUserId(param: { userId: number }) {
-    const result = await this.db
-      .select()
-      .from(UserPrivacyPolicyAgreement)
-      .where(
-        and(
-          eq(UserPrivacyPolicyAgreement.userId, param.userId),
-          isNull(UserPrivacyPolicyAgreement.deletedAt),
-        ),
-      );
+    const result = await this.prisma.userPrivacyPolicyAgreement.findMany({
+      where: {
+        userId: param.userId,
+        deletedAt: null,
+      },
+    });
 
     return result;
   }

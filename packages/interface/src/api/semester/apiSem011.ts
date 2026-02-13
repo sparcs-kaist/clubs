@@ -7,7 +7,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 활동반기를 추가합니다. (구현 예정)
+ * @description 활동반기를 추가합니다.
  */
 
 const url = () => `/executive/semesters/activity-durations`;
@@ -27,7 +27,7 @@ const requestBody = z.object({
 });
 
 const responseBodyMap = {
-  [HttpStatusCode.NotImplemented]: z.object({}),
+  [HttpStatusCode.Created]: z.object({}),
 };
 
 const responseErrorMap = {};
@@ -45,22 +45,22 @@ export const apiSem011 = {
 type ApiSem011RequestParam = z.infer<typeof apiSem011.requestParam>;
 type ApiSem011RequestQuery = z.infer<typeof apiSem011.requestQuery>;
 type ApiSem011RequestBody = z.infer<typeof apiSem011.requestBody>;
-type ApiSem011ResponseNotImplemented = z.infer<
-  (typeof apiSem011.responseBodyMap)[501]
+type ApiSem011ResponseCreated = z.infer<
+  (typeof apiSem011.responseBodyMap)[201]
 >;
 
 export type {
   ApiSem011RequestParam,
   ApiSem011RequestQuery,
   ApiSem011RequestBody,
-  ApiSem011ResponseNotImplemented,
+  ApiSem011ResponseCreated,
 };
 
 registry.registerPath({
   tags: ["semester"],
   method: "post",
   path: "/executive/semesters/activity-durations",
-  summary: "SEM-011: 활동반기 추가하기 (미구현)",
+  summary: "SEM-011: 활동반기 추가하기",
   description: `
   활동반기를 추가합니다. 활동반기는 학기, 활동반기 분류, 년도, 이름, 시작/종료일로 구성되어 있습니다.
   1. (활동반기명, 년도) 쌍은 유일해야 합니다.
@@ -80,8 +80,19 @@ registry.registerPath({
     },
   },
   responses: {
-    501: {
-      description: "아직 구현되지 않은 기능입니다.",
+    201: {
+      description: "활동반기가 추가되었습니다.",
+      content: {
+        "application/json": {
+          schema: apiSem011.responseBodyMap[HttpStatusCode.Created],
+        },
+      },
+    },
+    400: {
+      description: "잘못된 요청입니다.",
+    },
+    404: {
+      description: "해당 학기를 찾을 수 없습니다.",
     },
   },
 });

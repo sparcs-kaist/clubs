@@ -1,22 +1,31 @@
-export function toKSTDate(input?: string | Date): Date {
-  let date: Date;
+// ============================================================================
+// Timezone handling is now managed server-side by Prisma middleware.
+// These functions simply convert string values to Date objects.
+// No manual KST offset adjustment is needed.
+// ============================================================================
 
-  if (input === undefined || typeof input === "string") {
-    date = input ? new Date(input) : new Date();
-
-    // 현재 로컬 시간대의 오프셋을 구합니다 (분 단위).
-    const timezoneOffset = date.getTimezoneOffset() * 60000; // 분을 밀리초로 변환
-
-    // 오프셋을 적용하여 시간을 보정
-    date.setTime(date.getTime() - timezoneOffset);
-    return date;
-  }
+/**
+ * Convert a string or Date input to a Date object.
+ * Used for parsing date values from API responses and form inputs.
+ */
+export function toDate(input?: string | Date): Date {
+  if (input === undefined) return new Date();
+  if (typeof input === "string") return new Date(input);
   return new Date(input);
 }
 
+/**
+ * @deprecated Use toDate instead. Kept for backward compatibility.
+ */
+export const toKSTDate = toDate;
+
+/**
+ * Zod preprocessor: converts string date values to Date objects.
+ * Used in z.preprocess(getKSTDate, z.date()) patterns.
+ */
 export function getKSTDate(val: unknown) {
   if (typeof val === "string") {
-    return toKSTDate(val);
+    return new Date(val);
   }
   return val;
 }

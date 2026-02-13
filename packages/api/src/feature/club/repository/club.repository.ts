@@ -1,14 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { Club } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   IClubCreate,
   MClub,
@@ -22,11 +19,6 @@ export type ClubQuery = {
 
 type ClubOrderByKeys = "id";
 type ClubQuerySupport = {}; // Query Support 용
-
-type ClubTable = typeof Club;
-type ClubDbSelect = InferSelectModel<ClubTable>;
-type ClubDbUpdate = Partial<ClubDbSelect>;
-type ClubDbInsert = InferInsertModel<ClubTable>;
 
 type ClubFieldMapKeys = BaseTableFieldMapKeys<
   ClubQuery,
@@ -44,16 +36,16 @@ export type ClubRepositoryQuery = BaseRepositoryQuery<ClubQuery>;
 export class ClubRepository extends BaseSingleTableRepository<
   MClub,
   IClubCreate,
-  ClubTable,
   ClubQuery,
   ClubOrderByKeys,
   ClubQuerySupport
 > {
   constructor() {
-    super(Club, MClub);
+    super("club", MClub);
   }
 
-  protected dbToModelMapping(result: ClubDbSelect): MClub {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MClub {
     return new MClub({
       id: result.id,
       nameKr: result.nameKr,
@@ -63,7 +55,8 @@ export class ClubRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MClub): ClubDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MClub): any {
     return {
       id: model.id,
       nameKr: model.nameKr,
@@ -73,7 +66,8 @@ export class ClubRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(model: IClubCreate): ClubDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IClubCreate): any {
     return {
       nameKr: model.nameKr,
       nameEn: model.nameEn,
@@ -82,17 +76,17 @@ export class ClubRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected fieldMap(field: ClubFieldMapKeys): TableWithID | null | undefined {
-    const fieldMappings: Record<ClubFieldMapKeys, TableWithID | null> = {
-      id: Club,
-      nameKr: Club,
-      nameEn: Club,
+  protected fieldMap(field: ClubFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<ClubFieldMapKeys, string | null> = {
+      id: "id",
+      nameKr: "nameKr",
+      nameEn: "nameEn",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

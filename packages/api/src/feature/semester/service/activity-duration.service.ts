@@ -5,8 +5,11 @@ import type {
   ApiSem006ResponseCreated,
   ApiSem007RequestQuery,
   ApiSem007ResponseOK,
+  ApiSem011RequestBody,
+  ApiSem011ResponseCreated,
   ApiSem012RequestQuery,
   ApiSem012ResponseOK,
+  ApiSem014ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
@@ -135,6 +138,88 @@ export class ActivityDurationService {
     await this.activityDeadlineRepository.delete({ id: deadlineId });
 
     return { id: deadlineId };
+  }
+
+  async createActivityDuration(
+    body: ApiSem011RequestBody,
+  ): Promise<ApiSem011ResponseCreated> {
+    const {
+      semesterId,
+      activityDurationTypeEnum,
+      year,
+      name,
+      startTerm,
+      endTerm,
+    } = body;
+
+    // Validate semester exists
+    const semesters = await this.semesterRepository.find({ id: semesterId });
+    if (!semesters || semesters.length === 0) {
+      throw new HttpException(
+        "해당 학기를 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (new Date(startTerm) >= new Date(endTerm)) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Check for duplicate (name, year) pair
+    const existing = await this.activityDurationRepository.find({});
+    const hasDuplicate = existing.some(d => d.name === name && d.year === year);
+    if (hasDuplicate) {
+      throw new HttpException(
+        "동일한 (활동반기명, 년도) 쌍이 이미 존재합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.activityDurationRepository.create({
+      semester: { id: semesterId },
+      activityDurationTypeEnum,
+      year,
+      name,
+      startTerm,
+      endTerm,
+    });
+
+    return {};
+  }
+
+  async deleteActivityDuration(
+    activityDurationId: number,
+  ): Promise<ApiSem014ResponseOk> {
+    const existing = await this.activityDurationRepository.find({
+      id: activityDurationId,
+    } as Parameters<typeof this.activityDurationRepository.find>[0]);
+
+    if (!existing || existing.length === 0) {
+      throw new HttpException(
+        "해당 활동반기를 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Check if there are connected activity deadlines
+    const deadlines = await this.activityDeadlineRepository.find({
+      semesterId: existing[0].semester.id,
+    });
+    if (deadlines.length > 0) {
+      throw new HttpException(
+        "활동반기에 연결된 활동보고서 기한이 있어 삭제할 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.activityDurationRepository.delete({
+      id: activityDurationId,
+    } as Parameters<typeof this.activityDurationRepository.delete>[0]);
+
+    return {};
   }
 
   async getActivityDurations(param: {

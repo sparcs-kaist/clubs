@@ -2,8 +2,6 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
-
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 
 @Injectable()
@@ -18,7 +16,7 @@ export class RegistrationPublicService {
    * @description 오늘 날짜가 enums배열에 존재하는 이벤트의 마감일에 속하는지 확인합니다.
    */
   async checkDeadline(param: { enums: Array<RegistrationDeadlineEnum> }) {
-    const today = getKSTDate();
+    const today = new Date();
     await this.clubRegistrationRepository
       .selectDeadlineByDate(today, param.enums)
       .then(arr => {

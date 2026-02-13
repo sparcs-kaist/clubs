@@ -1,12 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 import {
   IFundingCommentCreate,
   MFundingComment,
@@ -16,25 +11,20 @@ export type FundingCommentQuery = {
   fundingId: number;
 };
 
-type FundingCommentTable = typeof FundingFeedback;
-type FundingCommentDbSelect = InferSelectModel<FundingCommentTable>;
-type FundingCommentDbUpdate = Partial<FundingCommentDbSelect>;
-type FundingCommentDbInsert = InferInsertModel<FundingCommentTable>;
-
 type FundingCommentFieldMapKeys = BaseTableFieldMapKeys<FundingCommentQuery>;
 
 @Injectable()
 export class FundingCommentRepository extends BaseSingleTableRepository<
   MFundingComment,
   IFundingCommentCreate,
-  FundingCommentTable,
   FundingCommentQuery
 > {
   constructor() {
-    super(FundingFeedback, MFundingComment);
+    super("fundingFeedback", MFundingComment);
   }
 
-  protected dbToModelMapping(result: FundingCommentDbSelect): MFundingComment {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MFundingComment {
     return new MFundingComment({
       id: result.id,
       funding: { id: result.fundingId },
@@ -48,7 +38,8 @@ export class FundingCommentRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MFundingComment): FundingCommentDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MFundingComment): any {
     return {
       id: model.id,
       fundingId: model.funding.id,
@@ -60,9 +51,8 @@ export class FundingCommentRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IFundingCommentCreate,
-  ): FundingCommentDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IFundingCommentCreate): any {
     return {
       fundingId: model.funding.id,
       executiveId: model.executive.id,
@@ -74,19 +64,16 @@ export class FundingCommentRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: FundingCommentFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      FundingCommentFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: FundingFeedback,
-      fundingId: FundingFeedback,
+  ): string | null | undefined {
+    const fieldMappings: Record<FundingCommentFieldMapKeys, string | null> = {
+      id: "id",
+      fundingId: "fundingId",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

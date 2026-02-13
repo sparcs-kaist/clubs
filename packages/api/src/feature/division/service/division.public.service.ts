@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
-
 import { RMDivision } from "../model/division.model";
 import { DistrictRepository } from "../repository/district.repository";
 import { DivisionRepository } from "../repository/division.repository";
@@ -26,7 +24,7 @@ export default class DivisionPublicService {
   }
 
   async getCurrentDivisions() {
-    const result = await this.oldDivisionRepository.fetchAll(getKSTDate());
+    const result = await this.oldDivisionRepository.fetchAll(new Date());
     return result;
   }
 

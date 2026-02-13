@@ -1,104 +1,74 @@
-import { Inject, Injectable } from "@nestjs/common";
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gt,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lt,
-  lte,
-  not,
-  or,
-} from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  ClubDelegate,
-  ClubOld,
-  ClubStudentT,
-} from "@sparcs-clubs/api/drizzle/schema/club.schema";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import { Student, User } from "@sparcs-clubs/api/drizzle/schema/user.schema";
 import { MOldStudent } from "@sparcs-clubs/api/feature/user/model/old.student.model";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class ClubStudentTRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findByClubIdAndSemesterId(clubId: number, semesterId: number) {
-    const result = await this.db
-      .select()
-      .from(ClubStudentT)
-      .where(
-        and(
-          eq(ClubStudentT.clubId, clubId),
-          eq(ClubStudentT.semesterId, semesterId),
-          isNull(ClubStudentT.deletedAt),
-        ),
-      );
+    const result = await this.prisma.clubStudentT.findMany({
+      where: {
+        clubId,
+        semesterId,
+        deletedAt: null,
+      },
+    });
 
     return result;
   }
 
-  // 아래는 common 폴더에 있던 club.club-student-t.repository.ts를 그대로 옮겨온 메소드들입니다.
   async findTotalMemberCnt(
     clubId: number,
     semesterId: number,
   ): Promise<number> {
     const today = new Date();
 
-    const totalMemberCnt = await this.db
-      .select({ totalMemberCnt: count() })
-      .from(ClubStudentT)
-      .where(
-        and(
-          eq(ClubStudentT.clubId, clubId),
-          semesterId
-            ? eq(ClubStudentT.semesterId, semesterId)
-            : and(
-                lte(ClubStudentT.startTerm, today),
-                or(
-                  gte(ClubStudentT.endTerm, today),
-                  isNull(ClubStudentT.endTerm),
-                ),
-                isNull(ClubStudentT.deletedAt),
-              ),
-        ),
-      )
-      .then(result => result[0].totalMemberCnt);
-    return totalMemberCnt;
+    if (semesterId) {
+      return this.prisma.clubStudentT.count({
+        where: { clubId, semesterId },
+      });
+    }
+
+    return this.prisma.clubStudentT.count({
+      where: {
+        clubId,
+        startTerm: { lte: today },
+        OR: [{ endTerm: { gte: today } }, { endTerm: null }],
+        deletedAt: null,
+      },
+    });
   }
 
   async findStudentSemester(studentId: number) {
-    return this.db
-      .select({
-        id: SemesterD.id,
-        name: SemesterD.name,
-        year: SemesterD.year,
-        startTerm: SemesterD.startTerm,
-        endTerm: SemesterD.endTerm,
-        clubs: { id: ClubStudentT.clubId },
-      })
-      .from(ClubStudentT)
-      .leftJoin(SemesterD, eq(SemesterD.id, ClubStudentT.semesterId))
-      .where(eq(ClubStudentT.studentId, studentId))
-      .orderBy(desc(SemesterD.id))
-      .then(result =>
-        result.map(row => ({
-          id: row.id,
-          name: `${row.year} ${row.name}`,
-          startTerm: row.startTerm,
-          endTerm: row.endTerm,
-          clubs: [{ id: row.clubs.id }],
-        })),
-      );
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        name: string;
+        year: number;
+        startTerm: Date;
+        endTerm: Date;
+        clubId: number;
+      }>
+    >(Prisma.sql`
+      SELECT sd.id, sd.name, sd.year, sd.start_term AS startTerm,
+             sd.end_term AS endTerm, cst.club_id AS clubId
+      FROM club_student_t cst
+      LEFT JOIN semester_d sd ON sd.id = cst.semester_id
+      WHERE cst.student_id = ${studentId}
+      ORDER BY sd.id DESC
+    `);
+    return result.map(row => ({
+      id: row.id,
+      name: `${row.year} ${row.name}`,
+      startTerm: row.startTerm,
+      endTerm: row.endTerm,
+      clubs: [{ id: row.clubId }],
+    }));
   }
 
   async findClubStudentByClubIdAndStudentId(
@@ -112,46 +82,44 @@ export default class ClubStudentTRepository {
     phoneNumber: string;
     email: string;
   }> {
-    const student = await this.db
-      .select({
-        club_student_id: ClubStudentT.id,
-        student_id: Student.id,
-        club_id: ClubStudentT.clubId,
-        name: Student.name,
-        phoneNumber: User.phoneNumber,
-        email: Student.email,
-      })
-      .from(ClubStudentT)
-      .leftJoin(Student, eq(Student.id, studentId))
-      .leftJoin(User, eq(User.id, Student.userId))
-      .where(
-        and(
-          eq(ClubStudentT.clubId, clubId),
-          eq(ClubStudentT.studentId, studentId),
-        ),
-      )
-      .then(takeOne);
-    // Todo: 현재 학기에 활동 중인지 필터링 해야함.
-    return student;
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        club_student_id: number;
+        student_id: number;
+        club_id: number;
+        name: string;
+        phoneNumber: string;
+        email: string;
+      }>
+    >(Prisma.sql`
+      SELECT cst.id AS club_student_id, s.id AS student_id,
+             cst.club_id AS club_id, s.name,
+             u.phone_number AS phoneNumber, s.email
+      FROM club_student_t cst
+      LEFT JOIN student s ON s.id = ${studentId}
+      LEFT JOIN user u ON u.id = s.user_id
+      WHERE cst.club_id = ${clubId} AND cst.student_id = ${studentId}
+      LIMIT 1
+    `);
+    return takeOne(result);
   }
 
   async getClubsByStudentId(studentId: number) {
     const today = new Date();
-    const clubs = await this.db
-      .select({
-        id: ClubStudentT.clubId,
-        nameKr: ClubOld.nameKr,
-        nameEn: ClubOld.nameEn,
-      })
-      .from(ClubStudentT)
-      .leftJoin(ClubOld, eq(ClubOld.id, ClubStudentT.clubId))
-      .where(
-        and(
-          eq(ClubStudentT.studentId, studentId),
-          lte(ClubStudentT.startTerm, today),
-          or(gte(ClubStudentT.endTerm, today), eq(ClubStudentT.endTerm, null)),
-        ),
-      );
+    const clubs = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        nameKr: string | null;
+        nameEn: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT cst.club_id AS id, c.name_kr AS nameKr, c.name_en AS nameEn
+      FROM club_student_t cst
+      LEFT JOIN club c ON c.id = cst.club_id
+      WHERE cst.student_id = ${studentId}
+        AND cst.start_term <= ${today}
+        AND (cst.end_term >= ${today} OR cst.end_term IS NULL)
+    `);
     return clubs;
   }
 
@@ -161,15 +129,14 @@ export default class ClubStudentTRepository {
     semesterId: number,
     startTerm: Date,
   ): Promise<void> {
-    await this.db
-      .insert(ClubStudentT)
-      .values({
+    await this.prisma.clubStudentT.create({
+      data: {
         studentId,
         clubId,
         semesterId,
         startTerm,
-      })
-      .execute();
+      },
+    });
   }
 
   // ** 주의: delegate 또는 일반 부원을 제거합니다.
@@ -181,27 +148,21 @@ export default class ClubStudentTRepository {
     isTargetStudentDelegate: boolean,
   ): Promise<void> {
     if (isTargetStudentDelegate)
-      await this.db
-        .delete(ClubDelegate)
-        .where(
-          and(
-            eq(ClubDelegate.studentId, studentId),
-            eq(ClubDelegate.clubId, clubId),
-            isNull(ClubDelegate.deletedAt),
-          ),
-        )
-        .execute();
-    await this.db
-      .delete(ClubStudentT)
-      .where(
-        and(
-          eq(ClubStudentT.studentId, studentId),
-          eq(ClubStudentT.clubId, clubId),
-          eq(ClubStudentT.semesterId, semesterId),
-          isNull(ClubStudentT.deletedAt),
-        ),
-      )
-      .execute();
+      await this.prisma.clubDelegateD.deleteMany({
+        where: {
+          studentId,
+          clubId,
+          deletedAt: null,
+        },
+      });
+    await this.prisma.clubStudentT.deleteMany({
+      where: {
+        studentId,
+        clubId,
+        semesterId,
+        deletedAt: null,
+      },
+    });
   }
 
   /**
@@ -216,41 +177,39 @@ export default class ClubStudentTRepository {
       endTerm: Date;
     };
   }) {
-    // startTerm과 endTerm 의 값을 한국시간대에 맞게 변형합니다.
-    function toKST(date) {
-      const KST_OFFSET = -9 * 60 * 60 * 1000; // UTC+9
-      return new Date(date.getTime() + KST_OFFSET);
-    }
+    const startTermDate = new Date(param.duration.startTerm);
+    const endTermDate = new Date(param.duration.endTerm);
 
-    const startTermKST = toKST(new Date(param.duration.startTerm));
-    const endTermKST = toKST(new Date(param.duration.endTerm));
+    // Find student IDs within the duration (overlap logic)
+    const clubStudents = await this.prisma.clubStudentT.findMany({
+      where: {
+        clubId: param.clubId,
+        deletedAt: null,
+        NOT: {
+          OR: [
+            { startTerm: { gt: endTermDate } },
+            {
+              AND: [
+                { endTerm: { not: null } },
+                { endTerm: { lt: startTermDate } },
+              ],
+            },
+          ],
+        },
+      },
+      select: { studentId: true },
+    });
 
-    const studentIds = await this.db
-      .select()
-      .from(ClubStudentT)
-      .where(
-        and(
-          eq(ClubStudentT.clubId, param.clubId),
-          not(
-            or(
-              gt(ClubStudentT.startTerm, endTermKST), // 날짜에 대한 컨벤션: 포함관계이므로 not 이니 gt, lt 사용
-              and(
-                isNotNull(ClubStudentT.endTerm),
-                lt(ClubStudentT.endTerm, startTermKST),
-              ),
-            ),
-          ),
-          isNull(ClubStudentT.deletedAt),
-        ),
-      )
-      .then(result => result.map(row => row.studentId));
+    const studentIds = clubStudents.map(row => row.studentId);
     logger.debug(studentIds);
 
     if (studentIds.length === 0) return [];
-    const result = await this.db
-      .select()
-      .from(Student)
-      .where(and(inArray(Student.id, studentIds), isNull(Student.deletedAt)));
+    const result = await this.prisma.student.findMany({
+      where: {
+        id: { in: studentIds },
+        deletedAt: null,
+      },
+    });
 
     return result;
   }
@@ -261,65 +220,63 @@ export default class ClubStudentTRepository {
    * 만약 이런 회원들에 대한 처리가 필요해지면 endTerm을 고려하여 로직 수정 필요
    */
   async selectMemberByClubIdAndSemesterId(clubId: number, semesterId: number) {
-    return this.db
-      .select({
-        name: Student.name,
-        studentId: Student.id,
-        studentNumber: Student.number,
-        email: Student.email,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(ClubStudentT)
-      .innerJoin(Student, eq(Student.id, ClubStudentT.studentId))
-      .leftJoin(User, eq(User.id, Student.userId))
-      .where(
-        and(
-          eq(ClubStudentT.clubId, clubId),
-          eq(ClubStudentT.semesterId, semesterId),
-          isNull(ClubStudentT.deletedAt),
-        ),
-      );
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        name: string;
+        studentId: number;
+        studentNumber: number;
+        email: string | null;
+        phoneNumber: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT s.name, s.id AS studentId, s.number AS studentNumber,
+             s.email, u.phone_number AS phoneNumber
+      FROM club_student_t cst
+      INNER JOIN student s ON s.id = cst.student_id
+      LEFT JOIN user u ON u.id = s.user_id
+      WHERE cst.club_id = ${clubId}
+        AND cst.semester_id = ${semesterId}
+        AND cst.deleted_at IS NULL
+    `);
+    return result;
   }
 
   /**
    * Semester랑 ClubIds 로 해당 동아리들을 하는 모든 Member의 IStudentSummary의 Union을 가져옵니다.
-   *
-   * @param semesterId 학기의 ID
-   * @param clubIds 동아리의 ID []
-   * @returns MOldStudent[]
-   *
    */
-
   async findUnionByClubIdsAndSemesterId(
     clubIds: number[],
     semesterId: number,
   ): Promise<MOldStudent[]> {
-    const result = await this.db
-      .select({
-        id: ClubStudentT.studentId,
-        userId: Student.userId,
-        name: Student.name,
-        studentNumber: Student.number,
-        email: Student.email,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(ClubStudentT)
-      .where(
-        and(
-          eq(ClubStudentT.semesterId, semesterId),
-          inArray(ClubStudentT.clubId, clubIds),
-          and(isNull(ClubStudentT.deletedAt), isNull(ClubStudentT.deletedAt)),
-        ),
-      )
-      .innerJoin(Student, eq(Student.id, ClubStudentT.studentId))
-      .leftJoin(User, eq(User.id, Student.userId));
+    if (clubIds.length === 0) return [];
+
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        userId: number | null;
+        name: string;
+        studentNumber: number;
+        email: string | null;
+        phoneNumber: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT cst.student_id AS id, s.user_id AS userId,
+             s.name, s.number AS studentNumber,
+             s.email, u.phone_number AS phoneNumber
+      FROM club_student_t cst
+      INNER JOIN student s ON s.id = cst.student_id
+      LEFT JOIN user u ON u.id = s.user_id
+      WHERE cst.semester_id = ${semesterId}
+        AND cst.club_id IN (${Prisma.join(clubIds)})
+        AND cst.deleted_at IS NULL
+    `);
 
     return result.map(
       row =>
         new MOldStudent({
           ...row,
           studentNumber: row.studentNumber.toString(),
-        }), // TODO: studentNumber가 string으로 바뀌면 변경 필요
+        }),
     );
   }
 }

@@ -1,482 +1,203 @@
-# DB 시간 처리 가이드라인
+# DB Timezone Handling Guide
 
-이 문서는 프로젝트에서 데이터베이스의 시간(datetime) 필드를 처리하는 방법에 대한 가이드라인입니다.
+This document describes how datetime fields are handled in the project after the Prisma migration.
 
-## 개요
+## Overview
 
-- **DB 저장**: KST (Asia/Seoul, UTC+9) 기준으로 저장
-- **DB 스키마**: `datetime` 타입 사용 (시간 정보 포함)
-- **애플리케이션 내부**: UTC로 해석된 Date 객체 사용
-- **API 응답**: KST 기준 ISO 문자열 (`+09:00` 포함)로 변환
+- **DB storage**: KST (Asia/Seoul, UTC+9) — MySQL stores datetimes without timezone info, values are in KST
+- **Server runtime**: `TZ=UTC` — Node.js interprets `new Date()` as UTC
+- **Prisma Proxy**: Automatically converts between UTC (app) and KST (DB)
+- **API responses**: Standard UTC ISO 8601 strings (ending in `Z`)
+- **Frontend**: Receives UTC dates, always displays in KST (`Asia/Seoul`) regardless of user's local timezone
 
-## 핵심 원칙
+## How It Works — Backend
 
-1. **DB 스키마는 `datetime` 사용**: `date` 타입 대신 `datetime` 타입을 사용하여 시간 정보를 포함합니다.
-2. **Repository 레벨에서 변환**: Drizzle 쿼리 결과는 Repository에서 자동으로 변환합니다.
-3. **내부 로직은 Date 객체 사용**: Repository와 Service 내부 로직에서는 항상 Date 객체를 사용합니다.
-4. **API 응답만 ISO KST 문자열**: **클라이언트로 전송할 때만** KST 기준 ISO 문자열로 변환합니다.
+The `PrismaService` (`src/prisma/prisma.service.ts`) implements a Proxy that intercepts all Prisma model delegate access and `$transaction`:
 
-### ⚠️ 중요: ISO 변환 사용 시점
+### Write operations (create, update, upsert)
+- Date values are shifted **+9 hours** before being sent to the DB
+- This converts UTC dates from the application to KST for DB storage
 
-- ❌ **Repository에서 ISO 변환 금지**: Repository는 항상 Date 객체를 반환해야 합니다.
-- ❌ **Service 내부 로직에서 ISO 변환 금지**: 내부 로직에서는 Date 객체를 그대로 사용합니다.
-- ✅ **Service API 응답에서만 ISO 변환**: API 응답을 만들 때만 `convertDateFieldsToISO` (권장), `formatInTimeZone`, 또는 `makeObjectPropsFromDBTimezoneAsISO`를 사용합니다.
+### Read operations (query results)
+- Date values in results are shifted **-9 hours** after being read from the DB
+- This converts KST dates from the DB back to UTC for the application
 
-## DB 스키마 정의
+### Where clauses
+- Date values in `where` conditions are shifted **+9 hours**
+- This ensures date comparisons work correctly against KST-stored data
 
-### ✅ 올바른 방법
+### Proxy implementation notes
+- Uses `target[prop]` (not `Reflect.get(target, prop, receiver)`) — Prisma lazy getters break with `receiver`
+- `$transaction` is also overridden to wrap the transaction client in the same Proxy
 
+## Rules for Backend Developers
+
+### Use `new Date()` for current time
 ```typescript
-// packages/api/src/drizzle/schema/example.schema.ts
-import { datetime } from "drizzle-orm/mysql-core";
+const now = new Date(); // UTC — Proxy handles conversion
+```
 
-export const ExampleTable = mysqlTable("example_table", {
-  id: int("id").primaryKey().autoincrement(),
-  startTerm: datetime("start_term"), // ✅ datetime 사용
-  endTerm: datetime("end_term"),     // ✅ datetime 사용
+### Do NOT use any manual timezone conversion
+All of the following functions have been removed:
+- ~~`getKSTDate()`~~ → Use `new Date()`
+- ~~`makeObjectPropsToDBTimezone()`~~ → Handled by Proxy
+- ~~`makeObjectPropsFromDBTimezone()`~~ → Handled by Proxy
+- ~~`convertDateFieldsToISO()`~~ → No longer needed
+- ~~`makeObjectPropsFromDBTimezoneAsISO()`~~ → No longer needed
+
+### Repository pattern
+```typescript
+// Simple CRUD — use Prisma typed API
+const result = await this.prisma.activity.findMany({
+  where: { clubId, deletedAt: null },
+});
+
+// Complex queries — use raw SQL
+const results = await this.prisma.$queryRaw`
+  SELECT a.id, a.name FROM activity a
+  WHERE a.club_id = ${clubId}
+`;
+```
+
+### Transactions
+```typescript
+// Prisma transactions auto-rollback on throw
+await this.prisma.$transaction(async tx => {
+  const result = await tx.activity.create({ data: {...} });
+  if (!result) {
+    throw new Error("Creation failed"); // auto-rollback
+  }
 });
 ```
 
-### ❌ 잘못된 방법
+### Raw SQL and timezone
+For `$queryRaw` / `$executeRaw`, the Proxy does NOT apply.
+Date values in raw SQL results and parameters are NOT automatically converted.
+If your raw query returns Date columns, be aware they will be in KST.
+
+## How It Works — Frontend
+
+The frontend always displays dates in **KST (Asia/Seoul)** regardless of the user's browser timezone. This is achieved through three layers:
+
+### 1. Centralized format functions (`packages/web/src/utils/Date/formatDate.ts`)
+
+All 13 format functions use `formatInTimeZone` from `date-fns-tz`:
 
 ```typescript
-import { date } from "drizzle-orm/mysql-core";
-
-export const ExampleTable = mysqlTable("example_table", {
-  startTerm: date("start_term"), // ❌ date 타입은 시간 정보가 없음
-  endTerm: date("end_term"),     // ❌ 시간대 변환 시 문제 발생
-});
-```
-
-## Repository 레벨 처리
-
-### Drizzle 쿼리 결과 변환
-
-Drizzle ORM은 DB의 `datetime` 값을 UTC로 해석한 Date 객체로 반환합니다. 하지만 실제로는 KST 기준이므로 변환이 필요합니다.
-
-#### 단일 쿼리 결과
-
-```typescript
-// packages/api/src/feature/example/repository/example.repository.ts
-import { makeObjectPropsFromDBTimezone } from "@sparcs-clubs/api/common/util/util";
-
-async getExample(id: number) {
-  const result = await this.db
-    .select()
-    .from(ExampleTable)
-    .where(eq(ExampleTable.id, id))
-    .execute()
-    .then(takeOnlyOne);
-  
-  // ✅ 자동으로 타임존 변환
-  return makeObjectPropsFromDBTimezone(result);
-}
-```
-
-#### 배열 쿼리 결과
-
-```typescript
-async getExamples() {
-  const results = await this.db
-    .select()
-    .from(ExampleTable)
-    .where(isNull(ExampleTable.deletedAt))
-    .execute();
-  
-  // ✅ 배열도 자동으로 처리
-  return makeObjectPropsFromDBTimezone(results);
-}
-```
-
-### BaseRepository 사용 시
-
-`BaseRepository`를 상속받은 경우, `dbToModel` 메서드에서 자동으로 변환됩니다.
-
-```typescript
-// packages/api/src/feature/example/repository/example.repository.ts
-@Injectable()
-export class ExampleRepository extends BaseSingleTableRepository<...> {
-  // dbToModel이 자동으로 makeObjectPropsFromDBTimezone을 호출
-  // 추가 작업 불필요
-}
-```
-
-### ⚠️ 중요: ISO 변환은 API 응답에만 사용
-
-**핵심 원칙**: `makeObjectPropsFromDBTimezoneAsISO`는 **API 응답으로 클라이언트에 보낼 때만** 사용합니다. 내부 로직에서는 항상 Date 객체를 사용합니다.
-
-- ✅ **Repository**: 항상 `makeObjectPropsFromDBTimezone` 사용 (Date 객체 반환)
-- ✅ **Service 내부 로직**: Date 객체 그대로 사용
-- ✅ **Service API 응답**: `formatInTimeZone` 또는 `makeObjectPropsFromDBTimezoneAsISO` 사용 (ISO 문자열 반환)
-
-## Service 레벨 처리
-
-### 내부 로직 (Date 객체 사용)
-
-Repository에서 변환된 Date 객체를 받아서 내부 로직에서 사용합니다.
-
-```typescript
-// packages/api/src/feature/example/service/example.service.ts
-async getExamples() {
-  // Repository에서 변환된 Date 객체 반환
-  const examples = await this.exampleRepository.find({});
-  
-  // ✅ Date 객체를 그대로 사용 (내부 로직)
-  const activeExamples = examples.filter(
-    e => e.startTerm <= now && now <= e.endTerm
-  );
-  
-  return { examples: activeExamples };
-}
-```
-
-### API 응답 (ISO 문자열 변환)
-
-**API 응답으로 클라이언트에 보낼 때만** ISO KST 문자열로 변환합니다.
-
-#### ✅ 권장 방법: `convertDateFieldsToISO` 사용
-
-`convertDateFieldsToISO` 함수를 사용하면 Date 필드를 자동으로 변환할 수 있습니다.
-
-```typescript
-// packages/api/src/feature/example/service/example.service.ts
-import { convertDateFieldsToISO } from "@sparcs-clubs/api/common/util/util";
-
-async getPublicExamples() {
-  // Repository에서 Date 객체 반환
-  const examples = await this.exampleRepository.find({});
-  
-  // ✅ API 응답용: Date 필드를 자동으로 ISO KST 문자열로 변환
-  return {
-    examples: convertDateFieldsToISO(examples),
-  };
-}
-```
-
-`convertDateFieldsToISO`는 다음 Date 필드를 자동으로 변환합니다:
-- `startTerm`, `endTerm`
-- `createdAt`, `updatedAt`, `editedAt`, `commentedAt`
-- `professorApprovedAt`, `expenditureDate`
-
-중첩 객체와 배열도 자동으로 처리됩니다:
-
-```typescript
-async getPublicExample(id: number) {
-  const example = await this.exampleRepository.find({ id });
-  
-  // ✅ 중첩 객체(durations, comments 등)도 자동 변환
-  return convertDateFieldsToISO({
-    ...example,
-    durations: example.durations,
-    comments: example.comments.map(c => ({
-      content: c.content,
-      createdAt: c.createdAt,
-    })),
-  });
-}
-```
-
-#### 대안: `formatInTimeZone` 직접 사용
-
-필요한 경우 `formatInTimeZone`을 직접 사용할 수도 있습니다:
-
-```typescript
-// packages/api/src/feature/example/service/example.service.ts
 import { formatInTimeZone } from "date-fns-tz";
-import { DB_TIMEZONE } from "@sparcs-clubs/api/common/util/decorators/time-decorator";
+import { ko } from "date-fns/locale";
 
-async getPublicExamples() {
-  const examples = await this.exampleRepository.find({});
-  
-  // ✅ API 응답용: ISO KST 문자열로 변환
-  return {
-    examples: examples.map(example => ({
-      ...example,
-      startTerm: formatInTimeZone(
-        example.startTerm,
-        DB_TIMEZONE,
-        "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-      ) as unknown as Date,
-      endTerm: formatInTimeZone(
-        example.endTerm,
-        DB_TIMEZONE,
-        "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-      ) as unknown as Date,
-    })),
-  };
-}
+// Example: formatDate, formatDateTime, formatMonth, etc.
+export const formatDate = (date: Date) =>
+  formatInTimeZone(date, "Asia/Seoul", "yyyy년 M월 d일", { locale: ko });
 ```
 
-#### 대안: `makeObjectPropsFromDBTimezoneAsISO` 사용
+~50 consumer files automatically get KST formatting through these utilities.
 
-모든 Date 필드를 자동으로 변환하려면 `makeObjectPropsFromDBTimezoneAsISO`를 사용할 수도 있습니다:
+### 2. Date extraction utilities
+
+- `getKSTDate.ts` — `getLocalDateOnly()` and `getLocalDateLastTime()` use `toZonedTime()` to extract KST date components
+- `extractDate.ts` — `getActualYear()` and `getActualMonth()` use `toZonedTime()` for KST year/month
 
 ```typescript
-import { makeObjectPropsFromDBTimezoneAsISO } from "@sparcs-clubs/api/common/util/util";
+import { toZonedTime } from "date-fns-tz";
 
-async getPublicExamples() {
-  const examples = await this.exampleRepository.find({});
-  
-  // ✅ API 응답용: 모든 Date 필드를 ISO KST 문자열로 변환
-  return {
-    examples: makeObjectPropsFromDBTimezoneAsISO(examples),
-  };
-}
+const kstDate = toZonedTime(date, "Asia/Seoul");
+const year = kstDate.getFullYear();
+const month = kstDate.getMonth();
 ```
 
-## 날짜 비교 로직
+### 3. Axios date handling (`packages/web/src/lib/axios.ts`)
 
-### ✅ 올바른 방법
+- **Response**: Parses ISO date strings (ending in `Z`) to `Date` objects
+- **Request**: Serializes `Date` objects back to ISO strings
+
+## Rules for Frontend Developers
+
+### Use `formatInTimeZone` for new date formatting
 
 ```typescript
-// DB에서 가져온 Date 객체를 직접 비교
-const now = new Date();
-const isActive = deadline.startTerm <= now && now <= deadline.endTerm;
+import { formatInTimeZone } from "date-fns-tz";
+import { ko } from "date-fns/locale";
 
-// 날짜만 비교하는 경우
-const isSameDay = 
-  deadline.startTerm.toDateString() === now.toDateString();
+// Correct
+formatInTimeZone(date, "Asia/Seoul", "yyyy-MM-dd (ccc)", { locale: ko });
+
+// WRONG — uses browser's local timezone
+import { format } from "date-fns";
+format(date, "yyyy-MM-dd (ccc)", { locale: ko });
 ```
 
-### ❌ 잘못된 방법
+### Prefer the centralized formatDate utilities
 
 ```typescript
-// ❌ addDays 같은 변환 로직 사용 금지
-const isActive = now < addDays(deadline.endTerm, 1);
+import { formatDate, formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
-// ❌ 수동 타임존 변환 금지
-const kstDate = toZonedTime(dbDate, "Asia/Seoul");
+// These already use Asia/Seoul timezone internally
+formatDate(someDate);      // "2026년 2월 14일"
+formatDateTime(someDate);  // "2026년 2월 14일 15:30"
 ```
 
-## 새로운 날짜 생성
-
-### DB에 저장할 날짜
+### Use `toZonedTime` when extracting date components
 
 ```typescript
-// packages/api/src/feature/example/service/example.service.ts
-import { getKSTDate, makeObjectPropsToDBTimezone } from "@sparcs-clubs/api/common/util/util";
+import { toZonedTime } from "date-fns-tz";
 
-async createExample(data: CreateExampleDto) {
-  const now = getKSTDate(); // 현재 시간을 KST로 가져오기
-  
-  // 또는 특정 날짜를 KST로 변환
-  const startTerm = makeObjectPropsToDBTimezone({ 
-    startTerm: data.startTerm 
-  }).startTerm;
-  
-  await this.exampleRepository.create({
-    startTerm,
-    endTerm: data.endTerm,
-  });
-}
+// Correct — extracts KST date parts
+const kst = toZonedTime(date, "Asia/Seoul");
+const year = kst.getFullYear();
+const month = kst.getMonth() + 1;
+const day = kst.getDate();
+
+// WRONG — uses browser's local timezone
+const year = date.getFullYear();
 ```
 
-### 종료일을 하루 끝으로 설정
+### Use `timeZone` option with `toLocaleDateString` / `toLocaleTimeString`
 
 ```typescript
-// packages/web/src/utils/Date/getKSTDate.ts의 getLocalDateLastTime 사용
-import { getLocalDateLastTime } from "@sparcs-clubs/web/utils/Date/getKSTDate";
+// Correct
+date.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
+date.toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul" });
 
-const endTerm = getLocalDateLastTime(selectedDate); // 23:59:59로 설정
+// WRONG — uses browser's local timezone
+date.toLocaleDateString();
+date.toLocaleTimeString();
 ```
 
-## API 응답 형식
-
-### KST 기준 ISO 문자열
-
-API 응답에서 날짜는 다음과 같은 형식으로 반환됩니다:
-
-```json
-{
-  "startTerm": "2026-01-26T00:00:00.000+09:00",
-  "endTerm": "2026-02-01T23:59:59.000+09:00"
-}
-```
-
-### 프론트엔드 처리
-
-프론트엔드의 `parseKST` 함수가 자동으로 `+09:00` 형식의 문자열을 Date 객체로 변환합니다.
+### Do NOT use `format` or `formatDate` from `date-fns` directly
 
 ```typescript
-// packages/web/src/lib/axios.ts의 parseKST 함수가 자동 처리
-// 추가 작업 불필요
+// WRONG — these use browser local timezone
+import { format, formatDate } from "date-fns";
+format(date, "yyyy-MM-dd");
+formatDate(date, "yyyy-MM-dd", { locale: ko });
+
+// Correct — always specify Asia/Seoul
+import { formatInTimeZone } from "date-fns-tz";
+formatInTimeZone(date, "Asia/Seoul", "yyyy-MM-dd");
 ```
 
-## 유틸리티 함수 요약
+## Architecture
 
-### `makeObjectPropsFromDBTimezone`
-
-- **용도**: DB에서 가져온 Date 객체를 UTC로 변환 (내부 로직용)
-- **입력**: 단일 객체 또는 배열
-- **출력**: Date 객체 (UTC 기준)
-
-```typescript
-const result = makeObjectPropsFromDBTimezone(dbResult);
-const results = makeObjectPropsFromDBTimezone(dbResults);
+```
+Frontend (always displays KST via date-fns-tz)
+    ↕ ISO 8601 UTC strings
+API Server (TZ=UTC)
+    ↕ Prisma Proxy (+9h write, -9h read)
+MySQL DB (KST datetimes, no TZ info)
 ```
 
-### `convertDateFieldsToISO` ⭐ 권장
+## Key Files
 
-- **용도**: 객체의 Date 필드들을 KST 기준 ISO 문자열로 변환 (API 응답용)
-- **사용 시점**: **API 응답으로 클라이언트에 보낼 때만** 사용
-- **입력**: 단일 객체 또는 배열
-- **출력**: ISO 문자열 (`+09:00` 포함)
-- **자동 변환 필드**: `startTerm`, `endTerm`, `createdAt`, `updatedAt`, `editedAt`, `commentedAt`, `professorApprovedAt`, `expenditureDate`
-- **특징**: 중첩 객체와 배열도 자동으로 처리
+### Backend
+- `src/prisma/prisma.service.ts` — PrismaService with timezone Proxy
+- `src/prisma/prisma.module.ts` — Global NestJS module
+- `prisma/schema.prisma` — Complete database schema
 
-```typescript
-// ✅ Service 레이어에서 API 응답 생성 시
-const results = await this.repository.find({});
-return { data: convertDateFieldsToISO(results) };
-
-// ✅ 중첩 객체도 자동 처리
-return convertDateFieldsToISO({
-  id: 1,
-  startTerm: new Date(),
-  durations: [
-    { startTerm: new Date(), endTerm: new Date() }
-  ],
-  comments: [
-    { content: "test", createdAt: new Date() }
-  ]
-});
-
-// ❌ Repository에서 사용 금지
-async getExamples() {
-  return convertDateFieldsToISO(results); // ❌
-}
-```
-
-### `makeObjectPropsFromDBTimezoneAsISO`
-
-- **용도**: DB에서 가져온 Date 객체를 KST 기준 ISO 문자열로 변환 (모든 Date 필드)
-- **사용 시점**: **API 응답으로 클라이언트에 보낼 때만** 사용
-- **입력**: 단일 객체 또는 배열
-- **출력**: ISO 문자열 (`+09:00` 포함)
-- **특징**: 모든 Date 필드를 자동으로 변환 (특정 필드만 선택 불가)
-
-```typescript
-// ✅ Service 레이어에서 API 응답 생성 시
-const results = await this.repository.find({});
-return { data: makeObjectPropsFromDBTimezoneAsISO(results) };
-
-// ❌ Repository에서 사용 금지
-async getExamples() {
-  return makeObjectPropsFromDBTimezoneAsISO(results); // ❌
-}
-```
-
-### `makeObjectPropsToDBTimezone`
-
-- **용도**: 애플리케이션의 Date 객체를 DB에 저장하기 전 KST로 변환
-- **입력**: 단일 객체 또는 배열
-- **출력**: Date 객체 (KST 기준)
-
-```typescript
-const dbData = makeObjectPropsToDBTimezone(applicationData);
-```
-
-### `getKSTDate`
-
-- **용도**: 현재 시간을 KST 기준으로 가져오기
-- **출력**: Date 객체 (KST 기준)
-
-```typescript
-const now = getKSTDate();
-```
-
-## 체크리스트
-
-새로운 시간 관련 기능을 추가할 때 확인할 사항:
-
-- [ ] DB 스키마에 `datetime` 타입 사용
-- [ ] Repository에서 `makeObjectPropsFromDBTimezone` 사용 (Date 객체 반환)
-- [ ] Service 내부 로직에서는 Date 객체 그대로 사용
-- [ ] **API 응답에서만** `convertDateFieldsToISO` (권장) 또는 `formatInTimeZone` 또는 `makeObjectPropsFromDBTimezoneAsISO` 사용
-- [ ] Repository에서 ISO 변환하지 않음 (항상 Date 객체 반환)
-- [ ] 날짜 비교 시 `addDays` 같은 변환 로직 사용하지 않음
-- [ ] DB에 저장할 날짜는 `makeObjectPropsToDBTimezone`으로 변환
-- [ ] 종료일을 하루 끝으로 설정할 때 `getLocalDateLastTime` 사용
-
-## 예제: 지원금 기간 관리
-
-### Repository (Date 객체 반환)
-
-```typescript
-// packages/api/src/feature/semester/repository/funding.sql.repository.ts
-async getFundingDeadlines(semesterId: number) {
-  const fundingDeadlines = await this.db
-    .select()
-    .from(FundingDeadlineD)
-    .where(and(
-      eq(FundingDeadlineD.semesterId, semesterId),
-      isNull(FundingDeadlineD.deletedAt),
-    ))
-    .execute();
-  
-  // ✅ Date 객체로 변환 (내부 로직용)
-  return makeObjectPropsFromDBTimezone(fundingDeadlines);
-}
-```
-
-### Service (API 응답에서만 ISO 변환)
-
-```typescript
-// packages/api/src/feature/semester/service/funding-deadline.service.ts
-import { convertDateFieldsToISO } from "@sparcs-clubs/api/common/util/util";
-
-async getFundingDeadlines() {
-  // Repository에서 Date 객체 반환
-  const fundingDeadlines = await this.fundingDeadlineSqlRepository
-    .getFundingDeadlines(semesterId);
-  
-  // ✅ API 응답용: Date 필드를 자동으로 ISO KST 문자열로 변환
-  return convertDateFieldsToISO(
-    fundingDeadlines.map(deadline => ({
-      id: deadline.id,
-      startTerm: deadline.startTerm,
-      endTerm: deadline.endTerm,
-      deadlineEnum: deadline.deadlineEnum,
-      semesterId: deadline.semesterId,
-      activityDId: deadline.activityDId,
-    })),
-  );
-}
-```
-
-### ❌ 잘못된 예제
-
-```typescript
-// ❌ Repository에서 ISO 변환 (금지!)
-async getFundingDeadlines(semesterId: number) {
-  const results = await this.db.select()...execute();
-  return makeObjectPropsFromDBTimezoneAsISO(results); // ❌
-}
-
-// ❌ Service 내부 로직에서 ISO 변환 (금지!)
-async checkDeadline(deadlineId: number) {
-  const deadline = await this.repository.getDeadline(deadlineId);
-  const isoString = formatInTimeZone(...); // ❌ 내부 로직에서는 불필요
-  // Date 객체를 그대로 사용해야 함
-}
-```
-
-## 주의사항
-
-1. **ISO 변환은 API 응답에만**: `convertDateFieldsToISO`, `makeObjectPropsFromDBTimezoneAsISO`, `formatInTimeZone`은 **API 응답으로 클라이언트에 보낼 때만** 사용합니다. Repository나 Service 내부 로직에서는 사용하지 않습니다.
-
-2. **Repository는 항상 Date 객체 반환**: Repository는 `makeObjectPropsFromDBTimezone`만 사용하여 Date 객체를 반환합니다.
-
-3. **절대 수동 타임존 변환 금지**: `toZonedTime`, `fromZonedTime`을 직접 사용하지 말고 유틸리티 함수를 사용하세요.
-
-4. **`addDays` 사용 금지**: 날짜 비교 시 `addDays`를 사용하여 하루를 더하는 로직을 사용하지 마세요. DB에 이미 정확한 시간이 저장되어 있습니다.
-
-5. **일관성 유지**: 모든 시간 관련 로직은 이 가이드라인을 따르세요. 예외적인 경우는 팀과 논의 후 결정하세요.
-
-6. **테스트**: 시간 관련 로직은 다양한 시간대에서 테스트하세요.
-
-## 참고
-
-- `packages/api/src/common/util/util.ts`: 핵심 유틸리티 함수
-- `packages/api/src/common/base/base.repository.ts`: BaseRepository의 변환 로직
-- `packages/web/src/lib/axios.ts`: 프론트엔드의 `parseKST` 함수
+### Frontend
+- `packages/web/src/utils/Date/formatDate.ts` — 13 centralized format functions (all use `formatInTimeZone`)
+- `packages/web/src/utils/Date/getKSTDate.ts` — `getLocalDateOnly`, `getLocalDateLastTime` (use `toZonedTime`)
+- `packages/web/src/utils/Date/extractDate.ts` — `getActualYear`, `getActualMonth` (use `toZonedTime`)
+- `packages/web/src/lib/axios.ts` — ISO string ↔ Date object conversion
+- `packages/interface/src/common/util.ts` — Zod schema date preprocessor

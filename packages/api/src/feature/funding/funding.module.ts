@@ -1,7 +1,5 @@
 import { Module } from "@nestjs/common";
 
-import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
-
 import ActivityModule from "../activity/activity.module";
 import ClubModule from "../club/club.module";
 import FileModule from "../file/file.module";
@@ -15,7 +13,6 @@ import FundingService from "./service/funding.service";
 
 @Module({
   imports: [
-    DrizzleModule,
     UserModule,
     ClubModule,
     ActivityModule,

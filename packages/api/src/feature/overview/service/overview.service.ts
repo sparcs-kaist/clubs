@@ -196,8 +196,8 @@ export class OverviewService {
         fieldsOfActivity: club.characteristicKr || "", // todo: 활동분야가 없는 경우 확인
         foundingYear: club.foundingYear,
         professor: club.advisor,
-        totalMemberCnt: club.totalMemberCnt,
-        regularMemberCnt: club.regularMemberCnt,
+        totalMemberCnt: Number(club.totalMemberCnt),
+        regularMemberCnt: Number(club.regularMemberCnt),
         clubBuildingEnum: club.clubBuildingEnum as ClubBuildingEnum,
         roomLocation: club.roomLocation || undefined,
         roomPassword: club.roomPassword?.trim(),

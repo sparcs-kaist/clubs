@@ -9,6 +9,8 @@ import Info from "@sparcs-clubs/web/common/components/Info";
 import MoreDetailTitle from "@sparcs-clubs/web/common/components/MoreDetailTitle";
 import { newFundingListSectionInfoText } from "@sparcs-clubs/web/constants/manageClubFunding";
 import CurrentActivityReportTable from "@sparcs-clubs/web/features/activity-report/components/CurrentActivityReportTable";
+import { newActivityReportListSectionInfoText } from "@sparcs-clubs/web/features/activity-report/constants";
+import useGetActivityDeadline from "@sparcs-clubs/web/features/activity-report/services/useGetActivityDeadline";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 
 import NewFundingListTable from "../funding/components/_atomic/NewFundingListTable";
@@ -36,6 +38,12 @@ const ActivityManageFrame: React.FC = () => {
     isError: isErrorFundingDeadline,
   } = useGetFundingDeadline();
 
+  const {
+    data: activityDeadline,
+    isLoading: isLoadingActivityDeadline,
+    isError: isErrorActivityDeadline,
+  } = useGetActivityDeadline();
+
   return (
     <FoldableSectionTitle title="동아리 활동">
       <FlexWrapper direction="column" gap={40}>
@@ -45,6 +53,14 @@ const ActivityManageFrame: React.FC = () => {
             moreDetail="내역 더보기"
             moreDetailPath="/manage-club/activity-report"
           />
+          <AsyncBoundary
+            isLoading={isLoadingActivityDeadline}
+            isError={isErrorActivityDeadline}
+          >
+            <Info
+              text={newActivityReportListSectionInfoText(activityDeadline)}
+            />
+          </AsyncBoundary>
           <CurrentActivityReportTable clubId={data.clubId} />
         </FlexWrapper>
 

@@ -47,8 +47,14 @@ const ExecutiveDashboardFrame = () => {
             style={{ justifyContent: "space-between" }}
           >
             <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
-              <DashboardButton text="동아리 등록 기간" link="" />
-              <DashboardButton text="회원 등록 기간" link="" />
+              <DashboardButton
+                text="동아리 / 회원 등록 기간"
+                link="/executive/registration/deadline"
+              />
+              <DashboardButton
+                text="활동기간"
+                link="/executive/activity-duration"
+              />
             </FlexWrapper>
             <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
               <DashboardButton

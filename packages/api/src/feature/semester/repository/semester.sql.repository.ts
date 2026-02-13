@@ -1,35 +1,25 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, isNull } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class SemesterSQLRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
-  // This class is a placeholder for the SemesterRepository.
-  // It can be extended with methods to interact with the database
-  // for semester-related operations.
+  constructor(private readonly prisma: PrismaService) {}
 
   async findSemesterByNameAndYear(key: {
     name: string;
     year: number;
   }): Promise<{ id: number | undefined }> {
-    const result = await this.db
-      .select()
-      .from(SemesterD)
-      .where(
-        and(
-          eq(SemesterD.name, key.name),
-          eq(SemesterD.year, key.year),
-          isNull(SemesterD.deletedAt),
-        ),
-      );
+    const result = await this.prisma.semesterD.findFirst({
+      where: {
+        name: key.name,
+        year: key.year,
+        deletedAt: null,
+      },
+    });
 
     return {
-      id: result.length > 0 ? result[0].id : undefined,
+      id: result?.id,
     };
   }
 
@@ -39,25 +29,16 @@ export class SemesterSQLRepository {
     startTerm: Date;
     endTerm: Date;
   }): Promise<{ id: number }> {
-    const _ = await this.db.insert(SemesterD).values({
-      year: value.year,
-      name: value.name,
-      startTerm: value.startTerm,
-      endTerm: value.endTerm,
+    const created = await this.prisma.semesterD.create({
+      data: {
+        year: value.year,
+        name: value.name,
+        startTerm: value.startTerm,
+        endTerm: value.endTerm,
+      },
     });
 
-    const result = await this.db
-      .select()
-      .from(SemesterD)
-      .where(
-        and(
-          eq(SemesterD.name, value.name),
-          eq(SemesterD.year, value.year),
-          isNull(SemesterD.deletedAt),
-        ),
-      );
-
-    return { id: result[0].id };
+    return { id: created.id };
   }
 
   async updateSemester(
@@ -70,58 +51,56 @@ export class SemesterSQLRepository {
       endTerm: Date;
     },
   ): Promise<{ id: number }> {
-    await this.db
-      .update(SemesterD)
-      .set({
+    // Find the semester first
+    const existing = await this.prisma.semesterD.findFirst({
+      where: {
+        name: key.name,
+        year: key.year,
+        deletedAt: null,
+      },
+    });
+
+    await this.prisma.semesterD.updateMany({
+      where: {
+        name: key.name,
+        year: key.year,
+        deletedAt: null,
+      },
+      data: {
         startTerm: value.startTerm,
         endTerm: value.endTerm,
-      })
-      .where(
-        and(
-          eq(SemesterD.name, key.name),
-          eq(SemesterD.year, key.year),
-          isNull(SemesterD.deletedAt),
-        ),
-      );
+      },
+    });
 
-    const result = await this.db
-      .select()
-      .from(SemesterD)
-      .where(
-        and(
-          eq(SemesterD.name, key.name),
-          eq(SemesterD.year, key.year),
-          isNull(SemesterD.deletedAt),
-        ),
-      );
-
-    return { id: result[0].id };
+    return { id: existing.id };
   }
 
   async softDeleteSemester(key: {
     name: string;
     year: number;
   }): Promise<{ id: number }> {
-    const now = getKSTDate();
+    const now = new Date();
 
-    await this.db
-      .update(SemesterD)
-      .set({
+    // Find before soft deleting to return the id
+    const existing = await this.prisma.semesterD.findFirst({
+      where: {
+        name: key.name,
+        year: key.year,
+        deletedAt: null,
+      },
+    });
+
+    await this.prisma.semesterD.updateMany({
+      where: {
+        name: key.name,
+        year: key.year,
+        deletedAt: null,
+      },
+      data: {
         deletedAt: now,
-      })
-      .where(
-        and(
-          eq(SemesterD.name, key.name),
-          eq(SemesterD.year, key.year),
-          isNull(SemesterD.deletedAt),
-        ),
-      );
+      },
+    });
 
-    const result = await this.db
-      .select()
-      .from(SemesterD)
-      .where(and(eq(SemesterD.name, key.name), eq(SemesterD.year, key.year)));
-
-    return { id: result[0].id };
+    return { id: existing.id };
   }
 }

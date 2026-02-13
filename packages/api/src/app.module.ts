@@ -1,10 +1,8 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { DrizzleModule } from "./drizzle/drizzle.module";
 import ActivityModule from "./feature/activity/activity.module";
 import { ActivityCertificateModule } from "./feature/activity-certificate/activity-certificate.module";
 import { AuthModule } from "./feature/auth/auth.module";
@@ -19,13 +17,12 @@ import { OverviewModule } from "./feature/overview/overview.module";
 import RegistrationModule from "./feature/registration/registration.module";
 import { SemesterModule } from "./feature/semester/semester.module";
 import UserModule from "./feature/user/user.module";
-import { typeOrmConfig } from "./typeorm/typeorm.config";
+import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
   imports: [
-    // Database ORM Modules (병렬 운영)
-    DrizzleModule, // 기존 Drizzle (유지)
-    TypeOrmModule.forRoot(typeOrmConfig), // 신규 TypeORM 추가
+    // Database ORM Module
+    PrismaModule,
 
     // Feature Modules
     ActivityModule,

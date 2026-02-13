@@ -1,14 +1,25 @@
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-
 import { IMemberRegistration } from "@clubs/domain/registration/member-registration";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
-import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 
-export type FromDb = InferSelectModel<typeof RegistrationApplicationStudent>;
-export type ToDb = InferInsertModel<typeof RegistrationApplicationStudent>;
+export type FromDb = {
+  id: number;
+  studentId: number;
+  clubId: number;
+  semesterId: number;
+  registrationApplicationStudentEnumId: number;
+  createdAt: Date;
+  deletedAt: Date | null;
+};
+
+export type ToDb = {
+  studentId: number;
+  clubId: number;
+  semesterId: number;
+  registrationApplicationStudentEnumId: number;
+};
 
 export type MemberRegistrationQuery = {
   studentId: number;

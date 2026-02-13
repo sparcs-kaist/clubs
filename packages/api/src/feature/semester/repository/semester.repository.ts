@@ -1,20 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  lte,
-  SQL,
-} from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   ISemesterCreate,
   MSemester,
@@ -28,11 +18,6 @@ type SemesterQuerySupport = {
   endTerm: string;
 };
 
-type SemesterTable = typeof SemesterD;
-type SemesterDbSelect = InferSelectModel<SemesterTable>;
-type SemesterDbUpdate = Partial<SemesterDbSelect>;
-type SemesterDbInsert = InferInsertModel<SemesterTable>;
-
 type SemesterFieldMapKeys = BaseTableFieldMapKeys<
   SemesterQuery,
   SemesterOrderByKeys,
@@ -43,16 +28,16 @@ type SemesterFieldMapKeys = BaseTableFieldMapKeys<
 export class SemesterRepository extends BaseSingleTableRepository<
   MSemester,
   ISemesterCreate,
-  SemesterTable,
   SemesterQuery,
   SemesterOrderByKeys,
   SemesterQuerySupport
 > {
   constructor() {
-    super(SemesterD, MSemester);
+    super("semesterD", MSemester);
   }
 
-  protected dbToModelMapping(result: SemesterDbSelect): MSemester {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MSemester {
     return new MSemester({
       id: result.id,
       year: result.year,
@@ -62,7 +47,8 @@ export class SemesterRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MSemester): SemesterDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MSemester): any {
     return {
       id: model.id,
       year: model.year,
@@ -72,7 +58,8 @@ export class SemesterRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(model: ISemesterCreate): SemesterDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: ISemesterCreate): any {
     return {
       year: model.year,
       name: model.name,
@@ -81,15 +68,13 @@ export class SemesterRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: SemesterFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<SemesterFieldMapKeys, TableWithID | null> = {
-      id: SemesterD,
-      year: SemesterD,
-      name: SemesterD,
-      startTerm: SemesterD,
-      endTerm: SemesterD,
+  protected fieldMap(field: SemesterFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<SemesterFieldMapKeys, string | null> = {
+      id: "id",
+      year: "year",
+      name: "name",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -97,16 +82,18 @@ export class SemesterRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: SemesterFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      // console.log(`semester date: ${value}`);
-      return and(lte(SemesterD.startTerm, value), gt(SemesterD.endTerm, value));
+      return {
+        AND: [{ startTerm: { lte: value } }, { endTerm: { gt: value } }],
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

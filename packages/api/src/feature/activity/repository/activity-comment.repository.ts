@@ -1,14 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ActivityFeedback } from "@sparcs-clubs/api/drizzle/schema/activity.schema";
 import {
   IActivityCommentCreate,
   MActivityComment,
@@ -22,10 +17,6 @@ export type ActivityCommentQuery = {
 type ActivityCommentOrderByKeys = "id" | "createdAt";
 type ActivityCommentQuerySupport = {};
 
-type ActivityCommentTable = typeof ActivityFeedback;
-type ActivityDbSelect = InferSelectModel<ActivityCommentTable>;
-type ActivityDbUpdate = Partial<ActivityDbSelect>;
-type ActivityCommentDbInsert = InferInsertModel<ActivityCommentTable>;
 type ActivityCommentFieldMapKeys = BaseTableFieldMapKeys<
   ActivityCommentQuery,
   ActivityCommentOrderByKeys,
@@ -36,16 +27,16 @@ type ActivityCommentFieldMapKeys = BaseTableFieldMapKeys<
 export class ActivityCommentRepository extends BaseSingleTableRepository<
   MActivityComment,
   IActivityCommentCreate,
-  ActivityCommentTable,
   ActivityCommentQuery,
   ActivityCommentOrderByKeys,
   ActivityCommentQuerySupport
 > {
   constructor() {
-    super(ActivityFeedback, MActivityComment);
+    super("activityFeedback", MActivityComment);
   }
 
-  protected dbToModelMapping(result: ActivityDbSelect): MActivityComment {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MActivityComment {
     return new MActivityComment({
       id: result.id,
       activity: { id: result.activityId },
@@ -56,7 +47,8 @@ export class ActivityCommentRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MActivityComment): ActivityDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MActivityComment): any {
     return {
       id: model.id,
       activityId: model.activity.id,
@@ -67,9 +59,8 @@ export class ActivityCommentRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IActivityCommentCreate,
-  ): ActivityCommentDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IActivityCommentCreate): any {
     return {
       activityId: model.activity.id,
       executiveId: model.executive.id,
@@ -80,21 +71,18 @@ export class ActivityCommentRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ActivityCommentFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      ActivityCommentFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: ActivityFeedback,
-      activityId: ActivityFeedback,
-      activityStatusEnum: ActivityFeedback,
-      createdAt: ActivityFeedback,
+  ): string | null | undefined {
+    const fieldMappings: Record<ActivityCommentFieldMapKeys, string | null> = {
+      id: "id",
+      activityId: "activityId",
+      activityStatusEnum: "activityStatusEnum",
+      createdAt: "createdAt",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

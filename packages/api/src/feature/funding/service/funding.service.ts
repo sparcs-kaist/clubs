@@ -66,12 +66,7 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import {
-  convertDateFieldsToISO,
-  takeExist,
-  takeOnlyOne,
-} from "@sparcs-clubs/api/common/util/util";
-import { TransactionManagerService } from "@sparcs-clubs/api/drizzle/drizzle.transaction-manager";
+import { takeExist, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -79,6 +74,7 @@ import { ActivityDurationPublicService } from "@sparcs-clubs/api/feature/semeste
 import { FundingDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/funding.deadline.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MFunding } from "../model/funding.model";
@@ -97,7 +93,7 @@ export default class FundingService {
     private readonly semesterPublicService: SemesterPublicService,
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
-    private readonly txManager: TransactionManagerService,
+    private readonly prisma: PrismaService,
     private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
@@ -302,19 +298,16 @@ export default class FundingService {
     const executives = await this.userPublicService.fetchExecutiveSummaries(
       comments.map(comment => comment.executive.id),
     );
-    // API 응답용: comments의 Date 필드를 ISO KST 문자열로 변환
-    const commentsWithExecutives = convertDateFieldsToISO(
-      comments.map(comment => ({
-        ...comment,
-        executive: executives.find(
-          executive => executive.id === comment.executive.id,
-        ) || {
-          id: 0,
-          name: "알 수 없는 집행부원",
-          studentNumber: "0000000",
-        },
-      })),
-    );
+    const commentsWithExecutives = comments.map(comment => ({
+      ...comment,
+      executive: executives.find(
+        executive => executive.id === comment.executive.id,
+      ) || {
+        id: 0,
+        name: "알 수 없는 집행부원",
+        studentNumber: "0000000",
+      },
+    }));
     return { funding: fundingResponse, comments: commentsWithExecutives };
   }
 
@@ -327,10 +320,7 @@ export default class FundingService {
         )
       : undefined;
 
-    // API 응답용: purposeActivity의 Date 필드를 ISO KST 문자열로 변환
-    const purposeActivity = purposeActivityRaw
-      ? convertDateFieldsToISO(purposeActivityRaw)
-      : undefined;
+    const purposeActivity = purposeActivityRaw ?? undefined;
 
     // 채울 곳
     const resolvedFiles = {
@@ -381,13 +371,12 @@ export default class FundingService {
       };
     }
 
-    // API 응답용: Date 필드를 ISO KST 문자열로 변환
-    return convertDateFieldsToISO({
+    return {
       ...funding,
       purposeActivity,
       ...resolvedFiles,
       transportation,
-    });
+    } as IFundingResponse;
   }
 
   // 메서드 오버로딩 선언부
@@ -562,11 +551,10 @@ export default class FundingService {
       deadline => deadline.startTerm <= now && now <= deadline.endTerm,
     );
 
-    // API 응답용: Date 필드를 ISO KST 문자열로 변환
-    return convertDateFieldsToISO({
+    return {
       targetDuration,
       deadline: todayDeadline,
-    });
+    };
   }
 
   async getExecutiveFundings(
@@ -1052,7 +1040,7 @@ export default class FundingService {
       );
     }
 
-    const fundingComment = await this.txManager.runInTransaction(async tx => {
+    const fundingComment = await this.prisma.$transaction(async tx => {
       const comment = await this.fundingCommentRepository
         .create(
           {

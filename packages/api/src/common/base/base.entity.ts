@@ -1,24 +1,12 @@
-import {
-  CreateDateColumn,
-  DeleteDateColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from "typeorm";
-
 /**
- * 모든 TypeORM Entity의 Base 클래스
+ * 모든 Entity의 Base 클래스 (TypeORM 의존성 제거됨)
  * 공통 필드: id, createdAt, updatedAt, deletedAt
+ * 참고: Prisma에서는 schema.prisma에서 모델이 정의되므로
+ *       이 클래스는 도메인 모델의 공통 인터페이스로만 사용됨
  */
 export abstract class BaseEntity {
-  @PrimaryGeneratedColumn()
   id: number;
-
-  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
-
-  @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
-
-  @DeleteDateColumn({ name: "deleted_at" })
   deletedAt: Date | null;
 }
