@@ -28,7 +28,6 @@ export type MultiSelectModel<_T = any> = {
   oneToMany: Record<string, Record<string, any>[]>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MultiInsertModel<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _T = any,

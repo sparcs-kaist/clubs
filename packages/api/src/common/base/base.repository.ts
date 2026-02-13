@@ -275,7 +275,6 @@ export abstract class BaseRepository<
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected makeOrderBy(order: OrderByQuery<OrderByKeys>): any[] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return Object.entries(order).map(([field, direction]) => {
       const prismaField = this.getPrismaField(field as keyof Query);
       if (prismaField === null) {
