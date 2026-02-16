@@ -6,6 +6,15 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.105",
+    date: new Date("2026.02.17"),
+    patchNoteContent: `Clubs v0.0.105
+오류 수정은 다음과 같습니다.
+- 지원금 조회 불가 오류를 수정하였습니다.
+- 집행부원 지원금 검토 페이지가 표시되지 않던 문제를 수정하였습니다.
+`,
+  },
+  {
     version: "v.0.0.104",
     date: new Date("2026.02.16"),
     patchNoteContent: `Clubs v0.0.104
