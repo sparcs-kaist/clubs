@@ -1,59 +1,49 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { IProfessor } from "@clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Professor,
-  ProfessorT,
-  User,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class OldProfessorRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getProfessorPhoneNumber(id: number) {
-    const crt = getKSTDate();
-    const result = await this.db
-      .select({ phoneNumber: User.phoneNumber })
-      .from(Professor)
-      .leftJoin(User, eq(User.id, Professor.userId))
-      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)))
-      .leftJoin(
-        ProfessorT,
-        and(
-          eq(ProfessorT.professorId, Professor.id),
-          or(gte(ProfessorT.endTerm, crt), isNull(ProfessorT.endTerm)),
-          lte(ProfessorT.startTerm, crt),
-          isNull(ProfessorT.deletedAt),
-        ),
-      )
-      .then(takeOne);
-    return result;
+    const crt = new Date();
+    const result = await this.prisma.$queryRaw<
+      Array<{ phoneNumber: string | null }>
+    >(Prisma.sql`
+      SELECT u.phone_number AS phoneNumber
+      FROM professor p
+      LEFT JOIN user u ON u.id = p.user_id
+      LEFT JOIN professor_t pt ON pt.professor_id = p.id
+        AND (pt.end_term >= ${crt} OR pt.end_term IS NULL)
+        AND pt.start_term <= ${crt}
+        AND pt.deleted_at IS NULL
+      WHERE p.user_id = ${id} AND p.deleted_at IS NULL
+      LIMIT 1
+    `);
+    return takeOne(result);
   }
 
   async selectProfessorById(id: number) {
-    return this.db
-      .select()
-      .from(Professor)
-      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)));
+    return this.prisma.professor.findMany({
+      where: { userId: id, deletedAt: null },
+    });
   }
 
   async updateProfessorPhoneNumber(id: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(User)
-        .set({ phoneNumber })
-        .where(and(eq(User.id, id), isNull(User.deletedAt)));
-      if (result.affectedRows === 0) {
+    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
+      const result = await tx.user.updateMany({
+        where: { id, deletedAt: null },
+        data: { phoneNumber },
+      });
+      if (result.count === 0) {
         logger.debug("[updatePhoneNumber] rollback occurs");
-        tx.rollback();
-        return false;
+        throw new Error("updatePhoneNumber failed");
       }
       return true;
     });
@@ -65,38 +55,30 @@ export default class OldProfessorRepository {
       return [];
     }
 
-    const professors = await this.db
-      .select({
-        id: Professor.id,
-        name: Professor.name,
-        userId: Professor.userId,
-        email: Professor.email,
-        professorEnum: ProfessorT.professorEnum,
-        department: ProfessorT.department,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(Professor)
-      .leftJoin(User, eq(User.id, Professor.userId))
-      .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
-      .where(inArray(Professor.id, ids));
+    const professors = await this.prisma.$queryRaw<IProfessor[]>(Prisma.sql`
+      SELECT p.id, p.name, p.user_id AS userId, p.email,
+             pt.professor_enum AS professorEnum,
+             pt.department,
+             u.phone_number AS phoneNumber
+      FROM professor p
+      LEFT JOIN user u ON u.id = p.user_id
+      LEFT JOIN professor_t pt ON pt.professor_id = p.id
+      WHERE p.id IN (${Prisma.join(ids)})
+    `);
     return professors;
   }
 
   async find(id: number): Promise<IProfessor> {
-    const result = await this.db
-      .select({
-        id: Professor.id,
-        name: Professor.name,
-        userId: Professor.userId,
-        email: Professor.email,
-        professorEnum: ProfessorT.professorEnum,
-        department: ProfessorT.department,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(Professor)
-      .leftJoin(User, eq(User.id, Professor.userId))
-      .leftJoin(ProfessorT, eq(ProfessorT.professorId, Professor.id))
-      .where(and(eq(Professor.id, id), isNull(Professor.deletedAt)));
+    const result = await this.prisma.$queryRaw<IProfessor[]>(Prisma.sql`
+      SELECT p.id, p.name, p.user_id AS userId, p.email,
+             pt.professor_enum AS professorEnum,
+             pt.department,
+             u.phone_number AS phoneNumber
+      FROM professor p
+      LEFT JOIN user u ON u.id = p.user_id
+      LEFT JOIN professor_t pt ON pt.professor_id = p.id
+      WHERE p.id = ${id} AND p.deleted_at IS NULL
+    `);
 
     if (result.length !== 1) {
       return null;

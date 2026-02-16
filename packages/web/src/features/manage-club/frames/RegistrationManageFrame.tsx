@@ -118,7 +118,7 @@ const RegistrationManageFrame: React.FC = () => {
         }
       >
         <FlexWrapper direction="column" gap={20}>
-          {memberData && clubData && (
+          {memberData && clubData && delegatesNow && (
             <>
               <MoreDetailTitle
                 title={isMobileView ? mobileTitle : title}

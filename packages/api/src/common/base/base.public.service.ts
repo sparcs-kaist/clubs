@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 
-import { DrizzleTransaction } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-
 import { takeOne, takeOnlyOne } from "../util/util";
+import { PrismaTransactionClient } from "./base.repository";
 import { IdType, MEntity } from "./entity.model";
 
 type ModelClass = { modelName: string };
@@ -26,8 +25,8 @@ interface IBaseRepository<
   fetchAll(ids: Id[]): Promise<Model[]>;
   find(query: RepositoryQuery<ModelQuery, Id>): Promise<Model[]>;
   count(query: RepositoryQuery<ModelQuery, Id>): Promise<number>;
-  getLockKey(): string;
-  acquireLock(tx: DrizzleTransaction, query: ModelQuery): Promise<void>;
+  getLockKey?(): string;
+  acquireLock?(tx: PrismaTransactionClient, query: ModelQuery): Promise<void>;
 }
 
 @Injectable()
@@ -40,16 +39,22 @@ export abstract class BasePublicService<
   Id extends IdType = number,
 > {
   constructor(
-    protected repository: IBaseRepository<Model, ModelQuery, Id>, // Repository 생성자가 들어가는 부분. 그런데 실제 구현 시에 DI로 inject해야 함
-    protected modelClass: ModelClass, // 모델엔티티 생성자가 들어가는 부분, static 프로퍼티 사용을 위해서
+    protected repository: IBaseRepository<Model, ModelQuery, Id>,
+    protected modelClass: ModelClass,
   ) {}
 
   getLockKey(): string {
+    if (!this.repository.getLockKey) {
+      throw new Error("getLockKey not implemented on repository");
+    }
     return this.repository.getLockKey();
   }
 
-  acquireLock(tx: DrizzleTransaction, query: ModelQuery): Promise<void> {
-    return this.repository.acquireLock(tx, query); // 타입이 맞으면 그냥 넘기면 됨!
+  acquireLock(tx: PrismaTransactionClient, query: ModelQuery): Promise<void> {
+    if (!this.repository.acquireLock) {
+      throw new Error("acquireLock not implemented on repository");
+    }
+    return this.repository.acquireLock(tx, query);
   }
 
   /**

@@ -11,7 +11,10 @@ import {
 } from "../repository/registration.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
-type RegistrationDeadlineSearchQuery = {};
+type RegistrationDeadlineSearchQuery = {
+  semesterId?: number;
+  deadlineEnum?: RegistrationDeadlineEnum;
+};
 
 type RegistrationDeadlineLoadQuery = {
   semesterId?: number;

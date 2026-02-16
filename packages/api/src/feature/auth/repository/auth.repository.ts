@@ -1,22 +1,8 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import { AuthActivatedRefreshTokens } from "@sparcs-clubs/api/drizzle/schema/refresh-token.schema";
-import { SemesterD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
-import {
-  Employee,
-  EmployeeT,
-  Executive,
-  ExecutiveT,
-  Professor,
-  ProfessorT,
-  Student,
-  StudentT,
-  User,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 interface FindOrCreateUserReturn {
   id: number;
@@ -49,7 +35,7 @@ interface FindOrCreateUserReturn {
 
 @Injectable()
 export class AuthRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOrCreateUser(
     email: string,
@@ -63,17 +49,16 @@ export class AuthRepository {
     progCodeV2: string | null,
   ): Promise<FindOrCreateUserReturn> {
     // User table에 해당 email이 있는지 확인 후 upsert
-    await this.db
-      .insert(User)
-      .values({ sid, name, email })
-      .onDuplicateKeyUpdate({
-        set: { name, email },
-      });
+    await this.prisma.$executeRaw(Prisma.sql`
+      INSERT INTO user (sid, name, email)
+      VALUES (${sid}, ${name}, ${email})
+      ON DUPLICATE KEY UPDATE name = ${name}, email = ${email}
+    `);
 
-    const user = await this.db
-      .select()
-      .from(User)
-      .where(and(eq(User.email, email), isNull(User.deletedAt)))
+    const user = await this.prisma.user
+      .findMany({
+        where: { email, deletedAt: null },
+      })
       .then(takeOne);
 
     let result: FindOrCreateUserReturn = {
@@ -85,16 +70,14 @@ export class AuthRepository {
 
     // 오늘 날짜를 기준으로 semester_d 테이블에서 해당 학기를 찾아서 semester_id, startTerm, endTerm을 가져옴
     const currentDate = new Date();
-    const semester = await this.db
-      .select()
-      .from(SemesterD)
-      .where(
-        and(
-          lte(SemesterD.startTerm, currentDate),
-          gte(SemesterD.endTerm, currentDate),
-          isNull(SemesterD.deletedAt),
-        ),
-      )
+    const semester = await this.prisma.semesterD
+      .findMany({
+        where: {
+          startTerm: { lte: currentDate },
+          endTerm: { gte: currentDate },
+          deletedAt: null,
+        },
+      })
       .then(takeOne);
 
     // V2 기반 사용자 타입 결정 (하위 호환성을 위해 V1 타입도 고려)
@@ -116,24 +99,21 @@ export class AuthRepository {
         );
       }
 
-      await this.db
-        .insert(Student)
-        .values({
-          name,
-          number: parseInt(studentNumber),
-          userId: user.id,
-          email,
+      const studentNum = parseInt(studentNumber);
+
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO student (name, number, user_id, email)
+        VALUES (${name}, ${studentNum}, ${user.id}, ${email})
+        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}, email = ${email}
+      `);
+
+      const student = await this.prisma.student
+        .findMany({
+          where: {
+            number: studentNum,
+            deletedAt: null,
+          },
         })
-        .onDuplicateKeyUpdate({ set: { userId: user.id, name, email } });
-      const student = await this.db
-        .select()
-        .from(Student)
-        .where(
-          and(
-            eq(Student.number, parseInt(studentNumber)),
-            isNull(Student.deletedAt),
-          ),
-        )
         .then(takeOne);
 
       //v2info 기반 학적 상태 및 학위 구분
@@ -163,10 +143,9 @@ export class AuthRepository {
 
       // student 테이블에서 해당 user id를 모두 검색
       // undergraduate, master, doctor 중 해당하는 경우 result에 추가
-      const students = await this.db
-        .select()
-        .from(Student)
-        .where(and(eq(Student.userId, user.id), isNull(Student.deletedAt)));
+      const students = await this.prisma.student.findMany({
+        where: { userId: user.id, deletedAt: null },
+      });
 
       /* eslint-disable no-shadow */
       // eslint-disable-next-line no-restricted-syntax
@@ -201,56 +180,41 @@ export class AuthRepository {
           ? parseInt(department)
           : null;
 
-      await this.db
-        .insert(StudentT)
-        .values({
-          studentId: student.id,
-          studentEnum,
-          studentStatusEnum,
-          department: departmentId,
-          semesterId: semester.id,
-          startTerm: semester.startTerm,
-          endTerm: semester.endTerm,
-        })
-        .onDuplicateKeyUpdate({
-          set: {
-            studentEnum,
-            studentStatusEnum,
-            department: departmentId,
-          },
-        });
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO student_t (student_id, student_enum, student_status_enum, department, semester_id, start_term, end_term)
+        VALUES (${student.id}, ${studentEnum}, ${studentStatusEnum}, ${departmentId}, ${semester.id}, ${semester.startTerm}, ${semester.endTerm})
+        ON DUPLICATE KEY UPDATE student_enum = ${studentEnum}, student_status_enum = ${studentStatusEnum}, department = ${departmentId}
+      `);
 
       // type이 "Student"인 경우 executive table에서 해당 studentNumber이 있는지 확인
       // 있으면 해당 칼럼의 user_id를 업데이트
-      await this.db
-        .update(Executive)
-        .set({ userId: user.id })
-        .where(eq(Executive.studentId, student.id))
-        .execute();
+      await this.prisma.executive.updateMany({
+        where: { studentId: student.id },
+        data: { userId: user.id },
+      });
 
-      const executive = await this.db
-        .select()
-        .from(Executive)
-        .innerJoin(
-          ExecutiveT,
-          and(
-            eq(ExecutiveT.executiveId, Executive.id),
-            lte(ExecutiveT.startTerm, currentDate),
-            or(
-              gte(ExecutiveT.endTerm, currentDate),
-              isNull(ExecutiveT.endTerm),
-            ),
-            isNull(ExecutiveT.deletedAt),
-          ),
-        )
-        .where(
-          and(eq(Executive.studentId, student.id), isNull(Executive.deletedAt)),
-        )
-        .then(takeOne);
+      const executiveRows = await this.prisma.$queryRaw<
+        Array<{
+          id: number;
+          studentId: number;
+        }>
+      >(Prisma.sql`
+        SELECT e.id, e.student_id AS studentId
+        FROM executive e
+        INNER JOIN executive_t et ON et.executive_id = e.id
+          AND et.start_term <= ${currentDate}
+          AND (et.end_term >= ${currentDate} OR et.end_term IS NULL)
+          AND et.deleted_at IS NULL
+        WHERE e.student_id = ${student.id}
+          AND e.deleted_at IS NULL
+        LIMIT 1
+      `);
+
+      const executive = takeOne(executiveRows);
       if (executive) {
         result.executive = {
-          id: executive.executive.id,
-          studentId: executive.executive.studentId,
+          id: executive.id,
+          studentId: executive.studentId,
         };
       }
     }
@@ -263,36 +227,30 @@ export class AuthRepository {
       type.includes("Teacher") ||
       typeV2.startsWith("P") // V1 fallback
     ) {
-      await this.db
-        .insert(Professor)
-        .values({ userId: user.id, name, email })
-        .onDuplicateKeyUpdate({ set: { userId: user.id, name } });
-      const professor = await this.db
-        .select()
-        .from(Professor)
-        .where(and(eq(Professor.userId, user.id), isNull(Professor.deletedAt)))
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO professor (user_id, name, email)
+        VALUES (${user.id}, ${name}, ${email})
+        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}
+      `);
+
+      const professor = await this.prisma.professor
+        .findMany({
+          where: { userId: user.id, deletedAt: null },
+        })
         .then(takeOne);
+
       // 부서 ID를 안전하게 정수로 변환 (NaN 방지)
       const departmentId =
         department && !Number.isNaN(parseInt(department))
           ? parseInt(department)
           : null;
 
-      await this.db
-        .insert(ProfessorT)
-        .values({
-          department: departmentId,
-          professorId: professor.id,
-          professorEnum: 3,
-          startTerm: semester.startTerm,
-        })
-        .onDuplicateKeyUpdate({
-          set: {
-            department: departmentId,
-            professorId: professor.id,
-            startTerm: semester.startTerm,
-          },
-        });
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO professor_t (department, professor_id, professor_enum, start_term)
+        VALUES (${departmentId}, ${professor.id}, ${3}, ${semester.startTerm})
+        ON DUPLICATE KEY UPDATE department = ${departmentId}, professor_id = ${professor.id}, start_term = ${semester.startTerm}
+      `);
+
       result.professor = {
         id: professor.id,
       };
@@ -304,31 +262,24 @@ export class AuthRepository {
       typeV2 === "R" || // V2: 직원/연구원
       type === "Employee" // V1 fallback
     ) {
-      await this.db
-        .insert(Employee)
-        .values({
-          userId: user.id,
-          name,
-          email,
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO employee (user_id, name, email)
+        VALUES (${user.id}, ${name}, ${email})
+        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}, email = ${email}
+      `);
+
+      const employee = await this.prisma.employee
+        .findMany({
+          where: { userId: user.id, deletedAt: null },
         })
-        .onDuplicateKeyUpdate({ set: { userId: user.id, name, email } });
-      const employee = await this.db
-        .select()
-        .from(Employee)
-        .where(and(eq(Employee.userId, user.id), isNull(Employee.deletedAt)))
         .then(takeOne);
-      await this.db
-        .insert(EmployeeT)
-        .values({
-          employeeId: employee.id,
-          startTerm: semester.startTerm,
-        })
-        .onDuplicateKeyUpdate({
-          set: {
-            employeeId: employee.id,
-            startTerm: semester.startTerm,
-          },
-        });
+
+      await this.prisma.$executeRaw(Prisma.sql`
+        INSERT INTO employee_t (employee_id, start_term)
+        VALUES (${employee.id}, ${semester.startTerm})
+        ON DUPLICATE KEY UPDATE employee_id = ${employee.id}, start_term = ${semester.startTerm}
+      `);
+
       result.employee = {
         id: employee.id,
       };
@@ -367,10 +318,10 @@ export class AuthRepository {
       email: string;
     };
   }> {
-    const user = await this.db
-      .select()
-      .from(User)
-      .where(and(eq(User.id, id), isNull(User.deletedAt)))
+    const user = await this.prisma.user
+      .findMany({
+        where: { id, deletedAt: null },
+      })
       .then(takeOne);
 
     const result: {
@@ -409,13 +360,12 @@ export class AuthRepository {
       email: user.email,
     };
 
-    const students = this.db
-      .select()
-      .from(Student)
-      .where(and(eq(Student.userId, id), isNull(Student.deletedAt)));
+    const students = await this.prisma.student.findMany({
+      where: { userId: id, deletedAt: null },
+    });
 
     // eslint-disable-next-line no-restricted-syntax
-    for (const student of await students) {
+    for (const student of students) {
       let studentEnum = 3;
       if (student.number % 10000 < 2000) studentEnum = 1;
       else if (student.number % 10000 < 6000) studentEnum = 2;
@@ -430,10 +380,10 @@ export class AuthRepository {
       }
     }
 
-    const executive = await this.db
-      .select()
-      .from(Executive)
-      .where(and(eq(Executive.userId, id), isNull(Executive.deletedAt)))
+    const executive = await this.prisma.executive
+      .findMany({
+        where: { userId: id, deletedAt: null },
+      })
       .then(takeOne);
 
     if (executive) {
@@ -443,10 +393,10 @@ export class AuthRepository {
       };
     }
 
-    const professor = await this.db
-      .select()
-      .from(Professor)
-      .where(and(eq(Professor.userId, id), isNull(Professor.deletedAt)))
+    const professor = await this.prisma.professor
+      .findMany({
+        where: { userId: id, deletedAt: null },
+      })
       .then(takeOne);
 
     if (professor) {
@@ -456,10 +406,10 @@ export class AuthRepository {
       };
     }
 
-    const employee = await this.db
-      .select()
-      .from(Employee)
-      .where(and(eq(Employee.userId, id), isNull(Employee.deletedAt)))
+    const employee = await this.prisma.employee
+      .findMany({
+        where: { userId: id, deletedAt: null },
+      })
       .then(takeOne);
 
     if (employee) {
@@ -476,19 +426,19 @@ export class AuthRepository {
     userId: number,
     refreshToken: string,
   ): Promise<boolean> {
-    const cur = getKSTDate();
-    const result = await this.db
-      .select()
-      .from(User)
-      .innerJoin(
-        AuthActivatedRefreshTokens,
-        and(
-          eq(User.id, AuthActivatedRefreshTokens.userId),
-          eq(AuthActivatedRefreshTokens.refreshToken, refreshToken),
-          gte(AuthActivatedRefreshTokens.expiresAt, cur),
-        ),
-      )
-      .where(and(eq(User.id, userId), isNull(User.deletedAt)));
+    const cur = new Date();
+    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT u.id
+        FROM user u
+        INNER JOIN auth_activated_refresh_tokens art
+          ON u.id = art.user_id
+          AND art.refresh_token = ${refreshToken}
+          AND art.expires_at >= ${cur}
+        WHERE u.id = ${userId}
+          AND u.deleted_at IS NULL
+      `,
+    );
     return result.length > 0;
   }
 
@@ -497,13 +447,12 @@ export class AuthRepository {
     refreshToken: string,
     expiresAt: Date,
   ): Promise<boolean> {
-    return this.db.transaction(async tx => {
-      const [result] = await this.db
-        .insert(AuthActivatedRefreshTokens)
-        .values({ userId, expiresAt, refreshToken });
-      const { affectedRows } = result;
-      if (affectedRows !== 1) {
-        await tx.rollback();
+    return this.prisma.$transaction(async tx => {
+      const result = await tx.authActivatedRefreshTokens.create({
+        data: { userId, expiresAt, refreshToken },
+      });
+      if (!result) {
+        throw new Error("createRefreshTokenRecord failed");
       }
       return true;
     });
@@ -513,20 +462,17 @@ export class AuthRepository {
     userId: number,
     refreshToken: string,
   ): Promise<boolean> {
-    const cur = getKSTDate();
-    return this.db.transaction(async tx => {
-      const [result] = await this.db
-        .delete(AuthActivatedRefreshTokens)
-        .where(
-          and(
-            eq(AuthActivatedRefreshTokens.userId, userId),
-            eq(AuthActivatedRefreshTokens.refreshToken, refreshToken),
-            gte(AuthActivatedRefreshTokens.expiresAt, cur),
-          ),
-        );
-      const { affectedRows } = result;
-      if (affectedRows !== 1) {
-        await tx.rollback();
+    const cur = new Date();
+    return this.prisma.$transaction(async tx => {
+      const result = await tx.authActivatedRefreshTokens.deleteMany({
+        where: {
+          userId,
+          refreshToken,
+          expiresAt: { gte: cur },
+        },
+      });
+      if (result.count !== 1) {
+        throw new Error("deleteRefreshTokenRecord failed");
       }
       return true;
     });

@@ -1,43 +1,37 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { sql } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  ClubOld,
-  ClubRoomT,
-  ClubT,
-} from "@sparcs-clubs/api/drizzle/schema/club.schema";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class ClubPutStudentClubBrief {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async putStudentClubBrief(
     clubId: number,
     description: string,
     roomPassword: string,
   ): Promise<boolean> {
-    const crt = getKSTDate();
-    await this.db.transaction(async tx => {
-      const [result] = await this.db.execute(sql`
-      UPDATE ${ClubT}
-      LEFT JOIN ${ClubOld} ON (${ClubT.clubId} = ${ClubOld.id} AND (${ClubOld.deletedAt} IS NULL))
-      LEFT JOIN ${ClubRoomT} ON 
-        (${ClubT.clubId} = ${ClubRoomT.clubId} AND 
-          (
-            (${ClubRoomT.endTerm} IS NULL AND ${ClubRoomT.startTerm} <= ${crt})
-            OR (${ClubRoomT.endTerm} >= ${crt})
+    const crt = new Date();
+    await this.prisma.$transaction(async tx => {
+      // This is a complex multi-table UPDATE with JOINs - preserve as raw SQL
+      const result = await tx.$executeRaw(Prisma.sql`
+        UPDATE club_t ct
+        LEFT JOIN club c ON (ct.club_id = c.id AND (c.deleted_at IS NULL))
+        LEFT JOIN club_room_t crt ON
+          (ct.club_id = crt.club_id AND
+            (
+              (crt.end_term IS NULL AND crt.start_term <= ${crt})
+              OR (crt.end_term >= ${crt})
+            )
           )
-        )
-      SET ${ClubOld.description} = ${description}, ${ClubRoomT.roomPassword} = ${roomPassword}
-      WHERE (${ClubT.clubId} = ${clubId}
-      AND ((${ClubT.endTerm} IS NULL AND ${ClubT.startTerm} <= ${crt})
-      OR (${ClubT.endTerm} >= ${crt})));`); // 수정 필요. 트랜잭션 넣어야 할거 같음.
-      const { affectedRows } = result;
-      if (affectedRows !== 1) {
-        await tx.rollback();
+        SET c.description = ${description}, crt.room_password = ${roomPassword}
+        WHERE (ct.club_id = ${clubId}
+        AND ((ct.end_term IS NULL AND ct.start_term <= ${crt})
+        OR (ct.end_term >= ${crt})))
+      `);
+      if (result !== 1) {
+        throw new Error("putStudentClubBrief failed");
       }
     });
     return true;

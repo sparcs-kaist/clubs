@@ -76,7 +76,7 @@ const DebugBadge: React.FC = () => {
 
   React.useEffect(() => {
     setDate(
-      `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+      `${new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })} ${new Date().toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul" })}`,
     );
   });
 

@@ -26,6 +26,7 @@ COPY --from=prunner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=prunner /app/out/full/ .
 RUN corepack enable
 RUN pnpm install
+RUN pnpm --filter api exec prisma generate
 RUN pnpm dlx turbo run build --filter=api
 
 

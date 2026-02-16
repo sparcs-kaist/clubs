@@ -2,8 +2,6 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 
-import { DrizzleModule } from "@sparcs-clubs/api/drizzle/drizzle.module";
-
 import UserModule from "../user/user.module";
 import { AuthController } from "./controller/auth.controller";
 import { AuthRepository } from "./repository/auth.repository";
@@ -13,7 +11,6 @@ import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
 
 @Module({
   imports: [
-    DrizzleModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: {

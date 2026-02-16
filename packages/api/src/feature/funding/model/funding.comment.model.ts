@@ -1,15 +1,28 @@
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
-
 import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
-import { FundingFeedback } from "@sparcs-clubs/api/drizzle/schema/funding.schema";
 
 import { MFunding } from "./funding.model";
 import { VFundingSummary } from "./funding.summary.model";
 
-export type FromDb = InferSelectModel<typeof FundingFeedback>;
-export type ToDb = InferInsertModel<typeof FundingFeedback>;
+export type FromDb = {
+  id: number;
+  fundingId: number;
+  executiveId: number;
+  content: string;
+  fundingStatusEnum: number;
+  approvedAmount: number;
+  createdAt: Date;
+  deletedAt: Date | null;
+};
+
+export type ToDb = {
+  fundingId: number;
+  executiveId: number;
+  content: string;
+  fundingStatusEnum: number;
+  approvedAmount: number;
+};
 
 export interface IFundingCommentCreate {
   funding: IFundingComment["funding"];

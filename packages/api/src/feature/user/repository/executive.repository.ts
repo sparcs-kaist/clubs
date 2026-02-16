@@ -1,118 +1,89 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { formatInTimeZone } from "date-fns-tz";
-import {
-  and,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Executive,
-  ExecutiveT,
-  Student,
-  User,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import logger from "@sparcs-clubs/api/common/util/logger";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { VExecutiveSummary } from "../model/executive.summary.model";
 
 @Injectable()
 export default class ExecutiveRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findExecutiveById(id: number): Promise<boolean> {
-    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
-    const result = await this.db
-      .select()
-      .from(ExecutiveT)
-      .where(
-        and(
-          eq(ExecutiveT.executiveId, id),
-          or(
-            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
-            isNull(ExecutiveT.endTerm),
-          ),
-          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
-        ),
-      );
+    const now = new Date();
+    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT et.id
+        FROM executive_t et
+        WHERE et.executive_id = ${id}
+          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(${now})
+      `,
+    );
     return result.length > 0;
   }
 
   async findExecutiveByUserId(id: number): Promise<boolean> {
-    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
-    const result = await this.db
-      .select()
-      .from(Executive)
-      .where(and(eq(Executive.userId, id), isNull(Executive.deletedAt)))
-      .innerJoin(
-        ExecutiveT,
-        and(
-          eq(ExecutiveT.executiveId, Executive.id),
-          or(
-            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
-            isNull(ExecutiveT.endTerm),
-          ),
-          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
-        ),
-      );
+    const now = new Date();
+    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT e.id
+        FROM executive e
+        INNER JOIN executive_t et ON et.executive_id = e.id
+          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(${now})
+        WHERE e.user_id = ${id}
+          AND e.deleted_at IS NULL
+      `,
+    );
     return result.length > 0;
   }
 
-  // 주의: Executive를 조회하는 것이 아닌 ExecutiveT를 조회합니다.
   async getExecutiveById(id: number) {
-    const crt = getKSTDate();
-    const result = await this.db
-      .select()
-      .from(ExecutiveT)
-      .where(
-        and(
-          eq(ExecutiveT.executiveId, id),
-          or(gte(ExecutiveT.endTerm, crt), isNull(ExecutiveT.endTerm)),
-          lte(ExecutiveT.startTerm, crt),
-          isNull(ExecutiveT.deletedAt),
-        ),
-      );
+    const crt = new Date();
+    const result = await this.prisma.executiveT.findMany({
+      where: {
+        executiveId: id,
+        startTerm: { lte: crt },
+        deletedAt: null,
+        OR: [{ endTerm: { gte: crt } }, { endTerm: null }],
+      },
+    });
     return result;
   }
 
   async getExecutivePhoneNumber(id: number) {
-    const crt = getKSTDate();
-    const result = await this.db
-      .select({ phoneNumber: User.phoneNumber })
-      .from(Executive)
-      .leftJoin(User, eq(User.id, Executive.userId))
-      .where(eq(Executive.userId, id))
-      .leftJoin(
-        ExecutiveT,
-        and(
-          eq(ExecutiveT.executiveId, Executive.id),
-          or(gte(ExecutiveT.endTerm, crt), isNull(ExecutiveT.endTerm)),
-          lte(ExecutiveT.startTerm, crt),
-          isNull(ExecutiveT.deletedAt),
-        ),
-      )
-      .then(takeOne);
-    return result;
+    const crt = new Date();
+    const result = await this.prisma.$queryRaw<
+      Array<{ phoneNumber: string | null }>
+    >(
+      Prisma.sql`
+        SELECT u.phone_number AS phoneNumber
+        FROM executive e
+        LEFT JOIN user u ON u.id = e.user_id
+        LEFT JOIN executive_t et ON et.executive_id = e.id
+          AND (et.end_term >= ${crt} OR et.end_term IS NULL)
+          AND et.start_term <= ${crt}
+          AND et.deleted_at IS NULL
+        WHERE e.user_id = ${id}
+        LIMIT 1
+      `,
+    );
+    return takeOne(result);
   }
 
   async updateExecutivePhoneNumber(id: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(User)
-        .set({ phoneNumber })
-        .where(and(eq(User.id, id), isNull(User.deletedAt)));
-      if (result.affectedRows === 0) {
-        tx.rollback();
-        return false;
+    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
+      const result = await tx.user.updateMany({
+        where: { id, deletedAt: null },
+        data: { phoneNumber },
+      });
+      if (result.count === 0) {
+        logger.debug("[updateExecutivePhoneNumber] rollback occurs");
+        throw new Error("updateExecutivePhoneNumber failed");
       }
       return true;
     });
@@ -120,59 +91,109 @@ export default class ExecutiveRepository {
   }
 
   async selectExecutiveById(param: { id: number }) {
-    const result = await this.db
-      .select()
-      .from(Executive)
-      .where(and(eq(Executive.id, param.id), isNull(Executive.deletedAt)));
-
+    const result = await this.prisma.executive.findMany({
+      where: { id: param.id, deletedAt: null },
+    });
     return result;
   }
 
   async selectExecutiveByDate(param: { date: Date }) {
-    const result = await this.db
-      .select()
-      .from(ExecutiveT)
-      .where(
-        and(
-          lte(ExecutiveT.startTerm, param.date),
-          or(gte(ExecutiveT.endTerm, param.date), isNull(ExecutiveT.endTerm)),
-          isNull(ExecutiveT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Executive,
-        and(
-          eq(Executive.id, ExecutiveT.executiveId),
-          isNull(Executive.deletedAt),
-        ),
-      );
-
-    return result;
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        executive_t: {
+          id: number;
+          executive_id: number;
+          executive_status_enum: number;
+          executive_bureau_enum: number;
+          start_term: Date;
+          end_term: Date | null;
+          created_at: Date | null;
+          deleted_at: Date | null;
+        };
+        executive: {
+          id: number;
+          user_id: number | null;
+          student_id: number;
+          name: string;
+          email: string | null;
+          created_at: Date | null;
+          deleted_at: Date | null;
+        };
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          et.id AS et_id, et.executive_id, et.executive_status_enum,
+          et.executive_bureau_enum, et.start_term, et.end_term,
+          et.created_at AS et_created_at, et.deleted_at AS et_deleted_at,
+          e.id AS e_id, e.user_id, e.student_id, e.name AS e_name,
+          e.email AS e_email, e.created_at AS e_created_at,
+          e.deleted_at AS e_deleted_at
+        FROM executive_t et
+        INNER JOIN executive e ON e.id = et.executive_id
+          AND e.deleted_at IS NULL
+        WHERE et.start_term <= ${param.date}
+          AND (et.end_term >= ${param.date} OR et.end_term IS NULL)
+          AND et.deleted_at IS NULL
+      `,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return result.map((row: any) => ({
+      executive_t: {
+        id: row.et_id,
+        executiveId: row.executive_id,
+        executiveStatusEnum: row.executive_status_enum,
+        executiveBureauEnum: row.executive_bureau_enum,
+        startTerm: row.start_term,
+        endTerm: row.end_term,
+        createdAt: row.et_created_at,
+        deletedAt: row.et_deleted_at,
+      },
+      executive: {
+        id: row.e_id,
+        userId: row.user_id,
+        studentId: row.student_id,
+        name: row.e_name,
+        email: row.e_email,
+        createdAt: row.e_created_at,
+        deletedAt: row.e_deleted_at,
+      },
+    }));
   }
 
   async fetchExecutiveSummaries(date: Date): Promise<VExecutiveSummary[]> {
-    const result = await this.db
-      .select()
-      .from(ExecutiveT)
-      .where(
-        and(
-          lte(ExecutiveT.startTerm, date),
-          or(gte(ExecutiveT.endTerm, date), isNull(ExecutiveT.endTerm)),
-          isNull(ExecutiveT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Executive,
-        and(
-          eq(Executive.id, ExecutiveT.executiveId),
-          isNull(Executive.deletedAt),
-        ),
-      )
-      .innerJoin(
-        Student,
-        and(eq(Student.userId, Executive.userId), isNull(Student.deletedAt)),
-      );
-    return result.map(VExecutiveSummary.fromDBResult);
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        e_id: number;
+        e_name: string;
+        user_id: number;
+        number: number;
+      }>
+    >(
+      Prisma.sql`
+        SELECT e.id AS e_id, e.name AS e_name, e.user_id, s.number
+        FROM executive_t et
+        INNER JOIN executive e ON e.id = et.executive_id
+          AND e.deleted_at IS NULL
+        INNER JOIN student s ON s.user_id = e.user_id
+          AND s.deleted_at IS NULL
+        WHERE et.start_term <= ${date}
+          AND (et.end_term >= ${date} OR et.end_term IS NULL)
+          AND et.deleted_at IS NULL
+      `,
+    );
+    return result.map(row =>
+      VExecutiveSummary.fromDBResult({
+        executive: {
+          id: row.e_id,
+          name: row.e_name,
+          userId: row.user_id,
+        },
+        student: {
+          number: row.number,
+        },
+      }),
+    );
   }
 
   async fetchSummaries(executiveIds: number[]): Promise<VExecutiveSummary[]> {
@@ -180,18 +201,36 @@ export default class ExecutiveRepository {
       return [];
     }
 
-    const result = await this.db
-      .select()
-      .from(Executive)
-      .where(
-        and(inArray(Executive.id, executiveIds), isNull(Executive.deletedAt)),
-      )
-      .innerJoin(
-        Student,
-        and(eq(Student.userId, Executive.userId), isNull(Student.deletedAt)),
-      );
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        e_id: number;
+        e_name: string;
+        user_id: number;
+        number: number;
+      }>
+    >(
+      Prisma.sql`
+        SELECT e.id AS e_id, e.name AS e_name, e.user_id, s.number
+        FROM executive e
+        INNER JOIN student s ON s.user_id = e.user_id
+          AND s.deleted_at IS NULL
+        WHERE e.id IN (${Prisma.join(executiveIds)})
+          AND e.deleted_at IS NULL
+      `,
+    );
 
-    return result.map(VExecutiveSummary.fromDBResult);
+    return result.map(row =>
+      VExecutiveSummary.fromDBResult({
+        executive: {
+          id: row.e_id,
+          name: row.e_name,
+          userId: row.user_id,
+        },
+        student: {
+          number: row.number,
+        },
+      }),
+    );
   }
 
   async fetchSummary(id: number): Promise<VExecutiveSummary> {
@@ -203,17 +242,38 @@ export default class ExecutiveRepository {
   }
 
   async findSummary(id: number): Promise<VExecutiveSummary | null> {
-    const result = await this.db
-      .select()
-      .from(Executive)
-      .where(and(eq(Executive.id, id), isNull(Executive.deletedAt)))
-      .innerJoin(
-        Student,
-        and(eq(Student.userId, Executive.userId), isNull(Student.deletedAt)),
-      )
-      .then(takeOne);
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        e_id: number;
+        e_name: string;
+        user_id: number;
+        number: number;
+      }>
+    >(
+      Prisma.sql`
+        SELECT e.id AS e_id, e.name AS e_name, e.user_id, s.number
+        FROM executive e
+        INNER JOIN student s ON s.user_id = e.user_id
+          AND s.deleted_at IS NULL
+        WHERE e.id = ${id}
+          AND e.deleted_at IS NULL
+        LIMIT 1
+      `,
+    );
 
-    return result ? VExecutiveSummary.fromDBResult(result) : null;
+    const row = takeOne(result);
+    return row
+      ? VExecutiveSummary.fromDBResult({
+          executive: {
+            id: row.e_id,
+            name: row.e_name,
+            userId: row.user_id,
+          },
+          student: {
+            number: row.number,
+          },
+        })
+      : null;
   }
 
   async checkExistExecutiveByIdDate(
@@ -221,56 +281,33 @@ export default class ExecutiveRepository {
     startTerm: string,
     endTerm: string,
   ) {
-    const result = await this.db
-      .select()
-      .from(Executive)
-      .where(
-        and(eq(Executive.studentId, studentId), isNull(Executive.deletedAt)),
-      )
-      .innerJoin(
-        ExecutiveT,
-        and(
-          eq(ExecutiveT.executiveId, Executive.id),
-          isNull(ExecutiveT.deletedAt),
-          or(
-            // 경우 1: ExecutiveT.endTerm이 null이 아닐 때
-            and(
-              // ExecutiveT.endTerm이 null이 아님
-              isNotNull(ExecutiveT.endTerm),
-              or(
-                // ExecutiveT.startTerm이 param의 startTerm~endTerm 사이
-                and(
-                  gte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
-                  lte(sql`DATE(${ExecutiveT.startTerm})`, endTerm),
-                ),
-                // ExecutiveT.endTerm이 param의 startTerm~endTerm 사이
-                and(
-                  gte(sql`DATE(${ExecutiveT.endTerm})`, startTerm),
-                  lte(sql`DATE(${ExecutiveT.endTerm})`, endTerm),
-                ),
-                // param의 startTerm~endTerm이 ExecutiveT의 startTerm~endTerm 사이
-                and(
-                  lte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
-                  gte(sql`DATE(${ExecutiveT.endTerm})`, endTerm),
-                ),
-              ),
-            ),
-            // 경우 2: ExecutiveT.endTerm이 null일 때
-            and(
-              isNull(ExecutiveT.endTerm),
-              or(
-                // ExecutiveT.startTerm이 param의 startTerm~endTerm 사이
-                and(
-                  gte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
-                  lte(sql`DATE(${ExecutiveT.startTerm})`, endTerm),
-                ),
-                // ExecutiveT.startTerm이 param의 startTerm보다 이른 것
-                lte(sql`DATE(${ExecutiveT.startTerm})`, startTerm),
-              ),
-            ),
-          ),
-        ),
-      );
+    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT e.id
+        FROM executive e
+        INNER JOIN executive_t et ON et.executive_id = e.id
+          AND et.deleted_at IS NULL
+          AND (
+            (
+              et.end_term IS NOT NULL
+              AND (
+                (DATE(et.start_term) >= ${startTerm} AND DATE(et.start_term) <= ${endTerm})
+                OR (DATE(et.end_term) >= ${startTerm} AND DATE(et.end_term) <= ${endTerm})
+                OR (DATE(et.start_term) <= ${startTerm} AND DATE(et.end_term) >= ${endTerm})
+              )
+            )
+            OR (
+              et.end_term IS NULL
+              AND (
+                (DATE(et.start_term) >= ${startTerm} AND DATE(et.start_term) <= ${endTerm})
+                OR DATE(et.start_term) <= ${startTerm}
+              )
+            )
+          )
+        WHERE e.student_id = ${studentId}
+          AND e.deleted_at IS NULL
+      `,
+    );
     return result.length > 0;
   }
 
@@ -283,40 +320,36 @@ export default class ExecutiveRepository {
     endTerm: string,
   ) {
     try {
-      await this.db.transaction(async tx => {
+      await this.prisma.$transaction(async tx => {
         let executiveId: number;
-        const existingExecutives = await tx
-          .select({ id: Executive.id, deletedAt: Executive.deletedAt })
-          .from(Executive)
-          .where(eq(Executive.studentId, studentId));
+
+        const existingExecutives = await tx.executive.findMany({
+          where: { studentId },
+          select: { id: true, deletedAt: true },
+        });
+
         if (existingExecutives.length > 0) {
           if (existingExecutives[0].deletedAt) {
-            // If the existing executive is soft-deleted, restore it
-            await tx
-              .update(Executive)
-              .set({ deletedAt: null })
-              .where(eq(Executive.id, existingExecutives[0].id));
+            await tx.executive.update({
+              where: { id: existingExecutives[0].id },
+              data: { deletedAt: null },
+            });
           }
           executiveId = existingExecutives[0].id;
         } else {
-          const [newExecutive] = await tx
-            .insert(Executive)
-            .values({ userId, studentId, email, name });
-          executiveId = newExecutive.insertId;
+          const newExecutive = await tx.executive.create({
+            data: { userId, studentId, email, name },
+          });
+          executiveId = newExecutive.id;
         }
-        const executiveT = await tx.insert(ExecutiveT).values({
-          executiveId,
-          executiveStatusEnum: 1,
-          executiveBureauEnum: 1,
-          startTerm: sql`DATE(${startTerm})`,
-          endTerm: sql`DATE(${endTerm})`,
-        });
-        if (executiveT[0].affectedRows === 0) {
-          throw new IntentionalRollback();
-        }
+
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO executive_t (executive_id, executive_status_enum, executive_bureau_enum, start_term, end_term)
+          VALUES (${executiveId}, 1, 1, DATE(${startTerm}), DATE(${endTerm}))
+        `);
+
         return true;
       });
-      // isolation level과 accessmode를 지정하고 싶었지만 에러가 발생하여 일단 지워둠.
 
       return true;
     } catch (error) {
@@ -328,72 +361,51 @@ export default class ExecutiveRepository {
   }
 
   async getExecutives() {
-    const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
-    const result = await this.db
-      .select({
-        id: Executive.id,
-        userId: Executive.userId,
-        studentNumber: Student.number,
-        name: User.name,
-        email: User.email,
-        phoneNumber: User.phoneNumber,
-        startTerm: ExecutiveT.startTerm,
-        endTerm: ExecutiveT.endTerm,
-      })
-      .from(Executive)
-      .where(isNull(Executive.deletedAt))
-      .innerJoin(
-        ExecutiveT,
-        and(
-          eq(ExecutiveT.executiveId, Executive.id),
-          or(
-            gte(sql`DATE(${ExecutiveT.endTerm})`, date),
-            isNull(ExecutiveT.endTerm),
-          ),
-          lte(sql`DATE(${ExecutiveT.startTerm})`, date),
-          isNull(ExecutiveT.deletedAt),
-        ),
-      )
-      .innerJoin(
-        User,
-        and(eq(User.id, Executive.userId), isNull(User.deletedAt)),
-      )
-      .innerJoin(
-        Student,
-        and(eq(Student.id, Executive.studentId), isNull(Student.deletedAt)),
-      );
+    const now = new Date();
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        userId: number | null;
+        studentNumber: number;
+        name: string;
+        email: string | null;
+        phoneNumber: string | null;
+        startTerm: Date;
+        endTerm: Date | null;
+      }>
+    >(
+      Prisma.sql`
+        SELECT e.id, e.user_id AS userId, s.number AS studentNumber,
+               u.name, u.email, u.phone_number AS phoneNumber,
+               et.start_term AS startTerm, et.end_term AS endTerm
+        FROM executive e
+        INNER JOIN executive_t et ON et.executive_id = e.id
+          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(${now})
+          AND et.deleted_at IS NULL
+        INNER JOIN user u ON u.id = e.user_id
+          AND u.deleted_at IS NULL
+        INNER JOIN student s ON s.id = e.student_id
+          AND s.deleted_at IS NULL
+        WHERE e.deleted_at IS NULL
+      `,
+    );
     return result;
   }
 
   async deleteExecutiveById(executiveId: number) {
-    const cur = getKSTDate();
-    // const date = formatInTimeZone(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+    const cur = new Date();
     try {
-      await this.db.transaction(async tx => {
-        const executiveUpdate = await tx
-          .update(Executive)
-          .set({ deletedAt: cur })
-          .where(
-            and(eq(Executive.id, executiveId), isNull(Executive.deletedAt)),
-          );
-        const executiveTUpdate = await tx
-          .update(ExecutiveT)
-          .set({ deletedAt: cur })
-          .where(
-            and(
-              eq(ExecutiveT.executiveId, executiveId),
-              // 모든 이력 삭제되도록 변경하면서 주석처리함.
-              // or(
-              //   gte(sql`DATE(${ExecutiveT.endTerm})`, date),
-              //   isNull(ExecutiveT.endTerm),
-              // ),
-              isNull(ExecutiveT.deletedAt),
-            ),
-          );
-        if (
-          executiveUpdate[0].affectedRows === 0 ||
-          executiveTUpdate[0].affectedRows === 0
-        ) {
+      await this.prisma.$transaction(async tx => {
+        const executiveUpdate = await tx.executive.updateMany({
+          where: { id: executiveId, deletedAt: null },
+          data: { deletedAt: cur },
+        });
+        const executiveTUpdate = await tx.executiveT.updateMany({
+          where: { executiveId, deletedAt: null },
+          data: { deletedAt: cur },
+        });
+        if (executiveUpdate.count === 0 || executiveTUpdate.count === 0) {
           throw new IntentionalRollback();
         }
         return true;

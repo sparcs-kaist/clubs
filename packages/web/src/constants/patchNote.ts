@@ -6,6 +6,20 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.104",
+    date: new Date("2026.02.16"),
+    patchNoteContent: `Clubs v0.0.104
+신규 기능은 다음과 같습니다.
+- 집행부원 대시보드에 활동기간 관리 기능이 추가되었습니다.
+- 집행부원 대시보드에 동아리/회원 등록 마감일 관리 기능이 추가되었습니다.
+- 동아리 등록 승인 시 동아리 정보가 자동으로 생성됩니다.
+
+오류 수정은 다음과 같습니다.
+- 날짜 및 시간이 잘못 표시되던 문제를 수정하였습니다.
+- 회원 등록 신청 페이지에서 로딩이 멈추던 문제를 수정하였습니다.
+`,
+  },
+  {
     version: "v.0.0.103",
     date: new Date("2026.01.26"),
     patchNoteContent: `Clubs v0.0.103

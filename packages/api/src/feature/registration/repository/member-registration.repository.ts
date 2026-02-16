@@ -1,14 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { RegistrationApplicationStudent } from "@sparcs-clubs/api/drizzle/schema/registration.schema";
 import {
   IMemberRegistrationCreate,
   MMemberRegistration,
@@ -22,11 +17,6 @@ export type MemberRegistrationQuery = {
 };
 type MemberRegistrationOrderByKeys = "id" | "createdAt";
 
-type MemberRegistrationTable = typeof RegistrationApplicationStudent;
-type MemberRegistrationDbSelect = InferSelectModel<MemberRegistrationTable>;
-type MemberRegistrationDbUpdate = Partial<MemberRegistrationDbSelect>;
-type MemberRegistrationDbInsert = InferInsertModel<MemberRegistrationTable>;
-
 type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
   MemberRegistrationQuery,
   MemberRegistrationOrderByKeys
@@ -36,17 +26,15 @@ type MemberRegistrationFieldMapKeys = BaseTableFieldMapKeys<
 export class MemberRegistrationRepository extends BaseSingleTableRepository<
   MMemberRegistration,
   IMemberRegistrationCreate,
-  MemberRegistrationTable,
   MemberRegistrationQuery,
   MemberRegistrationOrderByKeys
 > {
   constructor() {
-    super(RegistrationApplicationStudent, MMemberRegistration);
+    super("registrationApplicationStudent", MMemberRegistration);
   }
 
-  protected dbToModelMapping(
-    result: MemberRegistrationDbSelect,
-  ): MMemberRegistration {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MMemberRegistration {
     const res = new MMemberRegistration({
       id: result.id,
       student: { id: result.studentId },
@@ -60,9 +48,8 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
     return res;
   }
 
-  protected modelToDBMapping(
-    model: MMemberRegistration,
-  ): MemberRegistrationDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MMemberRegistration): any {
     return {
       id: model.id,
       studentId: model.student.id,
@@ -74,9 +61,8 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IMemberRegistrationCreate,
-  ): MemberRegistrationDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IMemberRegistrationCreate): any {
     return {
       studentId: model.student.id,
       clubId: model.club.id,
@@ -88,23 +74,22 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: MemberRegistrationFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      MemberRegistrationFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: RegistrationApplicationStudent,
-      studentId: RegistrationApplicationStudent,
-      clubId: RegistrationApplicationStudent,
-      semesterId: RegistrationApplicationStudent,
-      registrationApplicationStudentEnum: RegistrationApplicationStudent,
-      createdAt: RegistrationApplicationStudent,
-    };
+  ): string | null | undefined {
+    const fieldMappings: Record<MemberRegistrationFieldMapKeys, string | null> =
+      {
+        id: "id",
+        studentId: "studentId",
+        clubId: "clubId",
+        semesterId: "semesterId",
+        registrationApplicationStudentEnum:
+          "registrationApplicationStudentEnum",
+        createdAt: "createdAt",
+      };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

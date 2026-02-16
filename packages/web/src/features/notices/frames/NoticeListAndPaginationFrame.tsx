@@ -44,8 +44,13 @@ const NoticeListAndPaginationFrame = () => {
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <NoticeListAndPaginationFrameInner>
         <NoticeLastUpdateTimeListAndPagination>
-          last update: {data?.lastUpdateTime.toLocaleDateString()}{" "}
-          {data?.lastUpdateTime.toLocaleTimeString()}
+          last update:{" "}
+          {data?.lastUpdateTime.toLocaleDateString("ko-KR", {
+            timeZone: "Asia/Seoul",
+          })}{" "}
+          {data?.lastUpdateTime.toLocaleTimeString("ko-KR", {
+            timeZone: "Asia/Seoul",
+          })}
         </NoticeLastUpdateTimeListAndPagination>
         <NoticeList infos={data?.notices ?? []} />
         <Pagination

@@ -90,115 +90,120 @@ export class AuthService {
       }
     }
 
-    // 로컬 환경에서는 ENV 기반 Mock 데이터를 우선 사용
-    let userInfo: ExtractedUserInfo;
+    let userInfo: ExtractedUserInfo | undefined;
     let localSid = ssoProfile.sid;
     let socpsCd = "S"; // 기본값
     let stdStatusKor: string | null = null;
     let stdProgCode: string | null = null;
 
-    if (process.env.NODE_ENV === "local") {
-      logger.info(
-        "Using local V2 mock data for development (priority over SSO data)",
-      );
-
-      // 로컬 환경에서는 ENV 기반 Mock 데이터 생성 및 사용
-      const mockV2Info: KaistV2Info = {
-        std_no: process.env.USER_V2_STD_NO!,
-        email: process.env.USER_V2_EMAIL!,
-        user_nm: process.env.USER_V2_USER_NM!,
-        socps_cd: process.env.USER_V2_SOCPS_CD!,
-        std_dept_id: process.env.USER_V2_STD_DEPT_ID!,
-        kaist_uid: process.env.USER_V2_KAIST_UID!,
-        user_id: process.env.USER_V2_USER_ID!,
-
-        // 로컬 개발용 기본값들
-        user_eng_nm: "Test User",
-        login_type: "L004",
-        std_dept_kor_nm: "테스트 학과",
-        std_dept_eng_nm: "Test Department",
-        busn_phone: null,
-        std_status_kor: "재학",
-        ebs_user_status_kor: null,
-        camps_div_cd: "D",
-        std_prog_code: "0",
-        kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
-        emp_dept_id: process.env.USER_V2_EMP_DEPT_ID || "20686",
-        emp_dept_kor_nm: "테스트 교수부서",
-        emp_dept_eng_nm: "Test Professor Department",
-        emp_no: "1267",
-        emp_status_kor: "재직",
-      };
-
-      // Mock V2 정보에서 사용자 정보 추출
-      const localExtractionResult = safeExtractUserInfoFromV2(mockV2Info);
-      if (localExtractionResult.success) {
-        userInfo = localExtractionResult.data;
-        socpsCd = mockV2Info.socps_cd;
-        stdStatusKor = mockV2Info.std_status_kor;
-        stdProgCode = mockV2Info.std_prog_code;
-
-        logger.info(
-          "Successfully extracted user info from local V2 mock data",
-          {
-            userType: userInfo.type,
-            socpsCd: mockV2Info.socps_cd,
-          },
-        );
-      } else {
-        logger.error("Failed to extract user info from local V2 mock data", {
-          error: localExtractionResult.error,
-        });
-        return {
-          nextUrl: "/error/invalid-login",
-          refreshToken: null,
-          refreshTokenOptions: null,
-        };
+    // SSO에서 받은 V2 정보 파싱
+    if (typeof ssoProfile.kaist_v2_info === "string") {
+      try {
+        ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
+      } catch (e) {
+        logger.error("Failed to parse kaist_v2_info", e);
+        ssoProfile.kaist_v2_info = null;
       }
+    }
 
-      localSid = process.env.USER_SID || localSid;
-    } else {
-      // 프로덕션 환경에서만 SSO에서 받은 V2 정보 파싱 및 검증
-      if (typeof ssoProfile.kaist_v2_info === "string") {
-        try {
-          ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
-        } catch (e) {
-          logger.error("Failed to parse kaist_v2_info", e);
+    // SSO에서 받은 V2 정보가 있으면 우선 사용
+    if (ssoProfile.kaist_v2_info) {
+      const extractionResult = safeExtractUserInfoFromV2(
+        ssoProfile.kaist_v2_info,
+      );
+      if (extractionResult.success) {
+        userInfo = extractionResult.data;
+        socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
+        stdStatusKor = ssoProfile.kaist_v2_info?.std_status_kor || null;
+        stdProgCode = ssoProfile.kaist_v2_info?.std_prog_code || null;
+
+        logger.info("Successfully extracted user info from SSO V2 data", {
+          sid: ssoProfile.sid,
+          userType: userInfo.type,
+          hasStudentNumber: !!userInfo.studentNumber,
+          hasEmail: !!userInfo.email,
+        });
+      } else {
+        logger.error("Invalid kaist_v2_info from SSO", {
+          error: extractionResult.error,
+          sid: ssoProfile.sid,
+        });
+
+        if (process.env.NODE_ENV !== "local") {
           return {
             nextUrl: "/error/invalid-login",
             refreshToken: null,
             refreshTokenOptions: null,
           };
         }
+        // local 환경이면 아래 fallback으로 진행
+        ssoProfile.kaist_v2_info = null;
       }
+    }
 
-      // V2 정보 안전 추출 (검증 포함)
-      const extractionResult = safeExtractUserInfoFromV2(
-        ssoProfile.kaist_v2_info,
-      );
-      if (!extractionResult.success) {
-        logger.error("Invalid kaist_v2_info", {
-          error: extractionResult.error,
-          sid: ssoProfile.sid,
-        });
+    // SSO V2 정보가 없거나 추출 실패한 경우, local 환경에서만 ENV fallback 사용
+    if (!userInfo) {
+      if (process.env.NODE_ENV === "local") {
+        logger.info(
+          "SSO V2 info not available, falling back to ENV mock data for local development",
+        );
+
+        const mockV2Info: KaistV2Info = {
+          std_no: process.env.USER_V2_STD_NO!,
+          email: process.env.USER_V2_EMAIL!,
+          user_nm: process.env.USER_V2_USER_NM!,
+          socps_cd: process.env.USER_V2_SOCPS_CD!,
+          std_dept_id: process.env.USER_V2_STD_DEPT_ID!,
+          kaist_uid: process.env.USER_V2_KAIST_UID!,
+          user_id: process.env.USER_V2_USER_ID!,
+
+          user_eng_nm: "Test User",
+          login_type: "L004",
+          std_dept_kor_nm: "테스트 학과",
+          std_dept_eng_nm: "Test Department",
+          busn_phone: null,
+          std_status_kor: "재학",
+          ebs_user_status_kor: null,
+          camps_div_cd: "D",
+          std_prog_code: "0",
+          kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
+          emp_dept_id: process.env.USER_V2_EMP_DEPT_ID || "20686",
+          emp_dept_kor_nm: "테스트 교수부서",
+          emp_dept_eng_nm: "Test Professor Department",
+          emp_no: "1267",
+          emp_status_kor: "재직",
+        };
+
+        const localExtractionResult = safeExtractUserInfoFromV2(mockV2Info);
+        if (localExtractionResult.success) {
+          userInfo = localExtractionResult.data;
+          socpsCd = mockV2Info.socps_cd;
+          stdStatusKor = mockV2Info.std_status_kor;
+          stdProgCode = mockV2Info.std_prog_code;
+
+          logger.info("Successfully extracted user info from ENV mock data", {
+            userType: userInfo.type,
+            socpsCd: mockV2Info.socps_cd,
+          });
+        } else {
+          logger.error("Failed to extract user info from ENV mock data", {
+            error: localExtractionResult.error,
+          });
+          return {
+            nextUrl: "/error/invalid-login",
+            refreshToken: null,
+            refreshTokenOptions: null,
+          };
+        }
+
+        localSid = process.env.USER_SID || localSid;
+      } else {
         return {
           nextUrl: "/error/invalid-login",
           refreshToken: null,
           refreshTokenOptions: null,
         };
       }
-
-      userInfo = extractionResult.data;
-      socpsCd = ssoProfile.kaist_v2_info?.socps_cd || "S";
-      stdStatusKor = ssoProfile.kaist_v2_info?.std_status_kor || null;
-      stdProgCode = ssoProfile.kaist_v2_info?.std_prog_code || null;
-
-      logger.info("Successfully extracted user info from V2 data", {
-        sid: ssoProfile.sid,
-        userType: userInfo.type,
-        hasStudentNumber: !!userInfo.studentNumber,
-        hasEmail: !!userInfo.email,
-      });
     }
 
     // 최종 사용자 정보

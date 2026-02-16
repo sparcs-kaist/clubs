@@ -5,15 +5,9 @@ import {
   MultiInsertModel,
   MultiSelectModel,
   MultiUpdateModel,
+  PrismaMultiTableConfig,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
-import {
-  Professor,
-  ProfessorT,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import {
   IProfessorCreate,
   MProfessor,
@@ -27,16 +21,9 @@ export type ProfessorQuery = {
 type ProfessorOrderByKeys = "id";
 type ProfessorQuerySupport = {};
 
-type ProfessorTable = {
-  main: typeof Professor;
-  oneToOne: {
-    professorT: typeof ProfessorT;
-  };
-  oneToMany: {};
-};
-type ProfessorDbSelect = MultiSelectModel<ProfessorTable>;
-type ProfessorDbUpdate = MultiUpdateModel<ProfessorTable>;
-type ProfessorDbInsert = MultiInsertModel<ProfessorTable, "professorId">;
+type ProfessorDbSelect = MultiSelectModel;
+type ProfessorDbUpdate = MultiUpdateModel;
+type ProfessorDbInsert = MultiInsertModel<unknown, "professorId">;
 
 type ProfessorFieldMapKeys = BaseTableFieldMapKeys<
   ProfessorQuery,
@@ -44,29 +31,31 @@ type ProfessorFieldMapKeys = BaseTableFieldMapKeys<
   ProfessorQuerySupport
 >;
 
+const professorTableConfig: PrismaMultiTableConfig = {
+  main: "professor",
+  oneToOne: {
+    professorT: {
+      prismaModelName: "professorT",
+      relationField: "professorTs",
+      foreignKey: "professorId",
+    },
+  },
+  oneToMany: {},
+};
+
 @Injectable()
 export class ProfessorRepository extends BaseMultiTableRepository<
   MProfessor,
   IProfessorCreate,
   "professorId",
-  ProfessorTable,
   ProfessorQuery,
   ProfessorOrderByKeys,
   ProfessorQuerySupport
 > {
   constructor() {
-    super(
-      {
-        main: Professor,
-        oneToOne: {
-          professorT: ProfessorT,
-        },
-        oneToMany: {},
-      },
-      MProfessor,
-      "professorId",
-    );
+    super(professorTableConfig, MProfessor, "professorId");
   }
+
   protected dbToModelMapping(result: ProfessorDbSelect): MProfessor {
     return new MProfessor({
       id: result.main.id,
@@ -116,19 +105,17 @@ export class ProfessorRepository extends BaseMultiTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: ProfessorFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<ProfessorFieldMapKeys, TableWithID | null> = {
-      id: Professor,
-      userId: Professor,
-      email: Professor,
+  protected fieldMap(field: ProfessorFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<ProfessorFieldMapKeys, string | null> = {
+      id: "id",
+      userId: "userId",
+      email: "email",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

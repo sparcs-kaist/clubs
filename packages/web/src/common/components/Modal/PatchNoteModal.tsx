@@ -1,3 +1,4 @@
+import { toZonedTime } from "date-fns-tz";
 import React from "react";
 import styled from "styled-components";
 
@@ -64,7 +65,10 @@ const PatchNoteModal: React.FC<AgreementModalProps> = ({
               날짜
             </Typography>
             <Typography fs={16} lh={24} fw="MEDIUM">
-              {`${String(latestPatchNote.date.getFullYear())}.${String(latestPatchNote.date.getMonth() + 1).padStart(2, "0")}.${String(latestPatchNote.date.getDate()).padStart(2, "0")}`}
+              {(() => {
+                const d = toZonedTime(latestPatchNote.date, "Asia/Seoul");
+                return `${String(d.getFullYear())}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+              })()}
             </Typography>
           </StyledTextContainer>
         </StyledVersionDateContainer>

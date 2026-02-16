@@ -10,17 +10,9 @@ import {
   MultiInsertModel,
   MultiSelectModel,
   MultiUpdateModel,
+  PrismaMultiTableConfig,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
-import {
-  BaseTableFieldMapKeys,
-  TableWithID,
-} from "@sparcs-clubs/api/common/base/base.repository";
-import {
-  Activity,
-  ActivityEvidenceFile,
-  ActivityParticipant,
-  ActivityT,
-} from "@sparcs-clubs/api/drizzle/schema/activity.schema";
+import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import {
   IActivityCreate,
   MActivity,
@@ -36,18 +28,9 @@ export type ActivityQuery = {
 type ActivityOrderByKeys = "id";
 type ActivityQuerySupport = {};
 
-type ActivityTable = {
-  main: typeof Activity;
-  oneToOne: {};
-  oneToMany: {
-    activityT: typeof ActivityT;
-    activityEvidenceFile: typeof ActivityEvidenceFile;
-    activityParticipant: typeof ActivityParticipant;
-  };
-};
-type ActivityDbSelect = MultiSelectModel<ActivityTable>;
-type ActivityDbUpdate = MultiUpdateModel<ActivityTable>;
-type ActivityDbInsert = MultiInsertModel<ActivityTable, "activityId">;
+type ActivityDbSelect = MultiSelectModel;
+type ActivityDbUpdate = MultiUpdateModel;
+type ActivityDbInsert = MultiInsertModel<unknown, "activityId">;
 
 type ActivityFieldMapKeys = BaseTableFieldMapKeys<
   ActivityQuery,
@@ -55,31 +38,41 @@ type ActivityFieldMapKeys = BaseTableFieldMapKeys<
   ActivityQuerySupport
 >;
 
+const activityTableConfig: PrismaMultiTableConfig = {
+  main: "activity",
+  oneToOne: {},
+  oneToMany: {
+    activityT: {
+      prismaModelName: "activityT",
+      relationField: "activityTs",
+      foreignKey: "activityId",
+    },
+    activityEvidenceFile: {
+      prismaModelName: "activityEvidenceFile",
+      relationField: "activityEvidenceFiles",
+      foreignKey: "activityId",
+    },
+    activityParticipant: {
+      prismaModelName: "activityParticipant",
+      relationField: "activityParticipants",
+      foreignKey: "activityId",
+    },
+  },
+};
+
 @Injectable()
 export class ActivityNewRepository extends BaseMultiTableRepository<
   MActivity,
   IActivityCreate,
   "activityId",
-  ActivityTable,
   ActivityQuery,
   ActivityOrderByKeys,
   ActivityQuerySupport
 > {
   constructor() {
-    super(
-      {
-        main: Activity,
-        oneToOne: {},
-        oneToMany: {
-          activityT: ActivityT,
-          activityEvidenceFile: ActivityEvidenceFile,
-          activityParticipant: ActivityParticipant,
-        },
-      },
-      MActivity,
-      "activityId",
-    );
+    super(activityTableConfig, MActivity, "activityId");
   }
+
   protected dbToModelMapping(result: ActivityDbSelect): MActivity {
     return new MActivity({
       id: result.main.id,
@@ -105,7 +98,10 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       commentedAt: result.main.commentedAt,
       editedAt: result.main.editedAt,
       professorApprovedAt: result.main.professorApprovedAt,
-      durations: result.oneToMany.activityT,
+      durations: result.oneToMany.activityT as {
+        startTerm: Date;
+        endTerm: Date;
+      }[],
     });
   }
 
@@ -177,21 +173,19 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     };
   }
 
-  protected fieldMap(
-    field: ActivityFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<ActivityFieldMapKeys, TableWithID | null> = {
-      id: Activity,
-      clubId: Activity,
-      activityTypeEnumId: Activity,
-      activityStatusEnumId: Activity,
-      activityDId: Activity,
+  protected fieldMap(field: ActivityFieldMapKeys): string | null | undefined {
+    const fieldMappings: Record<ActivityFieldMapKeys, string | null> = {
+      id: "id",
+      clubId: "clubId",
+      activityTypeEnumId: "activityTypeEnumId",
+      activityStatusEnumId: "activityStatusEnumId",
+      activityDId: "activityDId",
     };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 }

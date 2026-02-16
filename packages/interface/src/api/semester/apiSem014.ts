@@ -7,7 +7,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 활동반기를 삭제합니다. (구현 예정)
+ * @description 활동반기를 삭제합니다.
  */
 
 const url = (activityDurationId: number) =>
@@ -23,7 +23,7 @@ const requestQuery = z.object({});
 const requestBody = z.object({});
 
 const responseBodyMap = {
-  [HttpStatusCode.NotImplemented]: z.object({}),
+  [HttpStatusCode.Ok]: z.object({}),
 };
 
 const responseErrorMap = {};
@@ -41,22 +41,20 @@ export const apiSem014 = {
 type ApiSem014RequestParam = z.infer<typeof apiSem014.requestParam>;
 type ApiSem014RequestQuery = z.infer<typeof apiSem014.requestQuery>;
 type ApiSem014RequestBody = z.infer<typeof apiSem014.requestBody>;
-type ApiSem014ResponseNotImplemented = z.infer<
-  (typeof apiSem014.responseBodyMap)[501]
->;
+type ApiSem014ResponseOk = z.infer<(typeof apiSem014.responseBodyMap)[200]>;
 
 export type {
   ApiSem014RequestParam,
   ApiSem014RequestQuery,
   ApiSem014RequestBody,
-  ApiSem014ResponseNotImplemented,
+  ApiSem014ResponseOk,
 };
 
 registry.registerPath({
   tags: ["semester"],
   method: "delete",
   path: "/executive/semesters/activity-durations/{activityDurationId}",
-  summary: "SEM-014: 활동반기 삭제하기 (미구현)",
+  summary: "SEM-014: 활동반기 삭제하기",
   description: `
   활동반기를 삭제합니다 (soft delete). 활동반기는 ID로 식별됩니다.
   1. 삭제하려는 활동반기가 존재해야 합니다.
@@ -68,8 +66,16 @@ registry.registerPath({
     params: apiSem014.requestParam,
   },
   responses: {
-    501: {
-      description: "아직 구현되지 않은 기능입니다.",
+    200: {
+      description: "활동반기가 삭제되었습니다.",
+      content: {
+        "application/json": {
+          schema: apiSem014.responseBodyMap[HttpStatusCode.Ok],
+        },
+      },
+    },
+    404: {
+      description: "해당 활동반기를 찾을 수 없습니다.",
     },
   },
 });

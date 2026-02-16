@@ -28,7 +28,6 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -61,7 +60,7 @@ export default class ClubDelegateService {
         clubId: param.clubId,
       });
 
-    const threeDaysAgo = getKSTDate();
+    const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     await Promise.all(

@@ -10,8 +10,10 @@ import TextInput, {
 import FormError from "../FormError";
 import Typography from "../Typography";
 
-interface DateRangeInputProps
-  extends Omit<TextInputProps, "onChange" | "label"> {
+interface DateRangeInputProps extends Omit<
+  TextInputProps,
+  "onChange" | "label"
+> {
   label?: [start: string, end: string];
   startValue: string;
   endValue: string;

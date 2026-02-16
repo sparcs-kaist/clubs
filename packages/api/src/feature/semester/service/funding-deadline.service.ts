@@ -7,10 +7,7 @@ import {
   ApiSem017ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
-import {
-  convertDateFieldsToISO,
-  takeOnlyOne,
-} from "@sparcs-clubs/api/common/util/util";
+import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import UserPublicService from "../../user/service/user.public.service";
 import { MActivityDuration } from "../model/activity.duration.model";
@@ -111,17 +108,14 @@ export class FundingDeadlineService {
             await this.fundingDeadlineSqlRepository.getFundingDeadlines(
               duration.semester.id,
             );
-          // API 응답용: Date 객체를 ISO KST 문자열로 변환
-          return convertDateFieldsToISO(
-            fundingDeadlines.map(deadline => ({
-              id: deadline.id,
-              startTerm: deadline.startTerm,
-              endTerm: deadline.endTerm,
-              deadlineEnum: deadline.deadlineEnum,
-              semesterId: duration.semester.id,
-              activityDId: duration.id,
-            })),
-          );
+          return fundingDeadlines.map(deadline => ({
+            id: deadline.id,
+            startTerm: deadline.startTerm,
+            endTerm: deadline.endTerm,
+            deadlineEnum: deadline.deadlineEnum,
+            semesterId: duration.semester.id,
+            activityDId: duration.id,
+          }));
         }),
       )
     ).flat();

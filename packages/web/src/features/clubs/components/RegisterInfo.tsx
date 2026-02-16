@@ -76,7 +76,7 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
           : "회원 등록 신청을 진행합니다."}
       </AsyncBoundary>
     ),
-    [semester, club, isRegistered],
+    [semester, club, isRegistered, isLoading, isError],
   );
 
   const submitHandler = useCallback(() => {
@@ -119,7 +119,7 @@ export const RegisterInfo: React.FC<RegisterInfoProps> = ({
         회원 등록 신청
       </Button>
     );
-  }, [registrationStatus]);
+  }, [registrationStatus, submitHandler]);
 
   return (
     <RegisterInfoWrapper>

@@ -1,22 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  lte,
-  SQL,
-} from "drizzle-orm";
 
 import { RegistrationDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { RegistrationDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   IRegistrationDeadlineCreate,
   MRegistrationDeadline,
@@ -34,11 +24,6 @@ type RegistrationDeadlineQuerySupport = {
   endTerm: string;
 };
 
-type RegistrationDeadlineTable = typeof RegistrationDeadlineD;
-type RegistrationDeadlineDbSelect = InferSelectModel<RegistrationDeadlineTable>;
-type RegistrationDeadlineDbUpdate = Partial<RegistrationDeadlineDbSelect>;
-type RegistrationDeadlineDbInsert = InferInsertModel<RegistrationDeadlineTable>;
-
 type RegistrationDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   RegistrationDeadlineQuery,
   RegistrationDeadlineOrderByKeys,
@@ -49,18 +34,16 @@ type RegistrationDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
   MRegistrationDeadline,
   IRegistrationDeadlineCreate,
-  RegistrationDeadlineTable,
   RegistrationDeadlineQuery,
   RegistrationDeadlineOrderByKeys,
   RegistrationDeadlineQuerySupport
 > {
   constructor() {
-    super(RegistrationDeadlineD, MRegistrationDeadline);
+    super("registrationDeadlineD", MRegistrationDeadline);
   }
 
-  protected dbToModelMapping(
-    result: RegistrationDeadlineDbSelect,
-  ): MRegistrationDeadline {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MRegistrationDeadline {
     return new MRegistrationDeadline({
       id: result.id,
       semester: { id: result.semesterId },
@@ -70,9 +53,8 @@ export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(
-    model: MRegistrationDeadline,
-  ): RegistrationDeadlineDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MRegistrationDeadline): any {
     return {
       id: model.id,
       semesterId: model.semester.id,
@@ -82,9 +64,8 @@ export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IRegistrationDeadlineCreate,
-  ): RegistrationDeadlineDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IRegistrationDeadlineCreate): any {
     return {
       semesterId: model.semester.id,
       deadlineEnum: model.deadlineEnum,
@@ -95,16 +76,16 @@ export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: RegistrationDeadlineFieldMapKeys,
-  ): TableWithID | null | undefined {
+  ): string | null | undefined {
     const fieldMappings: Record<
       RegistrationDeadlineFieldMapKeys,
-      TableWithID | null
+      string | null
     > = {
-      id: RegistrationDeadlineD,
-      semesterId: RegistrationDeadlineD,
-      deadlineEnum: RegistrationDeadlineD,
-      startTerm: RegistrationDeadlineD,
-      endTerm: RegistrationDeadlineD,
+      id: "id",
+      semesterId: "semesterId",
+      deadlineEnum: "deadlineEnum",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -112,18 +93,18 @@ export class RegistrationDeadlineRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: RegistrationDeadlineFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return and(
-        lte(RegistrationDeadlineD.startTerm, value),
-        gt(RegistrationDeadlineD.endTerm, value),
-      );
+      return {
+        AND: [{ startTerm: { lte: value } }, { endTerm: { gt: value } }],
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

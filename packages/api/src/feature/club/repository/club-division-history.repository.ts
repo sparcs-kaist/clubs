@@ -1,23 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  isNotNull,
-  lte,
-  not,
-  or,
-  SQL,
-} from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ClubDivisionHistory } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   IClubDivisionHistoryCreate,
   MClubDivisionHistory,
@@ -34,11 +21,6 @@ export type ClubDivisionHistoryQuery = {
 type ClubDivisionHistoryOrderByKeys = "id";
 type ClubDivisionHistoryQuerySupport = { startTerm: Date; endTerm: Date }; // Query Support 용
 
-type ClubDivisionHistoryTable = typeof ClubDivisionHistory;
-type ClubDivisionHistoryDbSelect = InferSelectModel<ClubDivisionHistoryTable>;
-type ClubDivisionHistoryDbUpdate = Partial<ClubDivisionHistoryDbSelect>;
-type ClubDivisionHistoryDbInsert = InferInsertModel<ClubDivisionHistoryTable>;
-
 type ClubDivisionHistoryFieldMapKeys = BaseTableFieldMapKeys<
   ClubDivisionHistoryQuery,
   ClubDivisionHistoryOrderByKeys,
@@ -49,18 +31,16 @@ type ClubDivisionHistoryFieldMapKeys = BaseTableFieldMapKeys<
 export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
   MClubDivisionHistory,
   IClubDivisionHistoryCreate,
-  ClubDivisionHistoryTable,
   ClubDivisionHistoryQuery,
   ClubDivisionHistoryOrderByKeys,
   ClubDivisionHistoryQuerySupport
 > {
   constructor() {
-    super(ClubDivisionHistory, MClubDivisionHistory);
+    super("clubDivisionHistory", MClubDivisionHistory);
   }
 
-  protected dbToModelMapping(
-    result: ClubDivisionHistoryDbSelect,
-  ): MClubDivisionHistory {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MClubDivisionHistory {
     return new MClubDivisionHistory({
       id: result.id,
       club: { id: result.clubId },
@@ -70,9 +50,8 @@ export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(
-    model: MClubDivisionHistory,
-  ): ClubDivisionHistoryDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MClubDivisionHistory): any {
     return {
       id: model.id,
       clubId: model.club.id,
@@ -82,9 +61,8 @@ export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IClubDivisionHistoryCreate,
-  ): ClubDivisionHistoryDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IClubDivisionHistoryCreate): any {
     return {
       clubId: model.club.id,
       divisionId: model.division.id,
@@ -95,16 +73,16 @@ export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ClubDivisionHistoryFieldMapKeys,
-  ): TableWithID | null | undefined {
+  ): string | null | undefined {
     const fieldMappings: Record<
       ClubDivisionHistoryFieldMapKeys,
-      TableWithID | null
+      string | null
     > = {
-      id: ClubDivisionHistory,
-      clubId: ClubDivisionHistory,
-      divisionId: ClubDivisionHistory,
-      startTerm: ClubDivisionHistory,
-      endTerm: ClubDivisionHistory,
+      id: "id",
+      clubId: "clubId",
+      divisionId: "divisionId",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -112,22 +90,23 @@ export class ClubDivisionHistoryRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
+
   protected processSpecialCondition(
     key: ClubDivisionHistoryFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return not(
-        or(
-          gt(ClubDivisionHistory.startTerm, value),
-          and(
-            isNotNull(ClubDivisionHistory.endTerm),
-            lte(ClubDivisionHistory.endTerm, value),
-          ),
-        ),
-      );
+      return {
+        NOT: {
+          OR: [
+            { startTerm: { gt: value } },
+            { AND: [{ endTerm: { not: null } }, { endTerm: { lte: value } }] },
+          ],
+        },
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

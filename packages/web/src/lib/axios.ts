@@ -1,6 +1,5 @@
 import axios, { AxiosError } from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import qs from "qs";
 
 import { env } from "@sparcs-clubs/web/env";
@@ -11,24 +10,27 @@ import mockInterceptor, {
   mockResponseInterceptor,
 } from "./_axios/axiosMockInterceptor";
 
-// Timezone 설정
-const TIMEZONE = "Asia/Seoul";
+// ============================================================================
+// Timezone handling is now managed server-side by Prisma middleware.
+// The API returns proper UTC dates (ISO 8601 with Z suffix).
+// No client-side KST conversion is needed.
+// ============================================================================
 
-function parseKST(data: unknown): unknown {
+/**
+ * Parse JSON response, converting ISO date strings to Date objects.
+ */
+function parseDates(data: unknown): unknown {
   if (typeof data !== "string") return data;
 
   try {
-    return JSON.parse(data, (key, value) => {
+    return JSON.parse(data, (_key, value) => {
       if (typeof value === "string") {
-        // UTC 형식 (Z로 끝나는 경우)
-        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value)) {
-          const parsedDate = new Date(value);
-          const toZoneTime = toZonedTime(parsedDate, TIMEZONE);
-          return toZoneTime;
-        }
-        // KST 형식 (+09:00로 끝나는 경우) - 이미 KST이므로 Date 객체로 변환만
+        // ISO date format (ending in Z or with timezone offset)
         if (
-          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}\+\d{2}:\d{2}$/.test(value)
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value) ||
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}[+-]\d{2}:\d{2}$/.test(
+            value,
+          )
         ) {
           return new Date(value);
         }
@@ -41,27 +43,23 @@ function parseKST(data: unknown): unknown {
 }
 
 /**
- * 주어진 객체의 Date 프로퍼티들을 모두 KST 기준 ISO 문자열로 변환하여
- * 시간대에 관계없이 날짜가 밀리지 않도록 합니다.
- * @param obj
+ * Serialize Date objects in request data to ISO strings for JSON transport.
  */
-export const makeObjectPropsToKST = (obj: unknown): unknown => {
+const serializeDates = (obj: unknown): unknown => {
   if (obj === null || obj === undefined) return obj;
 
   if (obj instanceof Date) {
-    // KST 기준으로 ISO 문자열을 생성하여 날짜가 밀리지 않도록 함
-    // NOTE: Uses literal 'Z' suffix instead of timezone offset to maintain backend compatibility
-    return formatInTimeZone(obj, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    return obj.toISOString();
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => makeObjectPropsToKST(item));
+    return obj.map(item => serializeDates(item));
   }
 
   if (typeof obj === "object") {
     const result: Record<string, unknown> = {};
     Object.entries(obj).forEach(([key, value]) => {
-      result[key] = makeObjectPropsToKST(value);
+      result[key] = serializeDates(value);
     });
     return result;
   }
@@ -79,11 +77,11 @@ export const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  transformRequest: [data => JSON.stringify(makeObjectPropsToKST(data))],
-  transformResponse: [data => parseKST(data)],
+  transformRequest: [data => JSON.stringify(serializeDates(data))],
+  transformResponse: [data => parseDates(data)],
   paramsSerializer: {
     serialize: params =>
-      qs.stringify(makeObjectPropsToKST(params), {
+      qs.stringify(serializeDates(params), {
         arrayFormat: "repeat", // TODO: 나중에 arrayFormat:bracket으로 변경 (len(1) 인 배열 넘기는 경우 해결)
       }),
   },
@@ -116,11 +114,11 @@ export const axiosClientWithAuth = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  transformRequest: [data => JSON.stringify(makeObjectPropsToKST(data))],
-  transformResponse: [data => parseKST(data)],
+  transformRequest: [data => JSON.stringify(serializeDates(data))],
+  transformResponse: [data => parseDates(data)],
   paramsSerializer: {
     serialize: params => {
-      const changedParam = makeObjectPropsToKST(params);
+      const changedParam = serializeDates(params);
       const res = qs.stringify(changedParam, {
         arrayFormat: "repeat", // TODO: 나중에 arrayFormat:bracket으로 변경 (len(1) 인 배열 넘기는 경우 해결)
       });

@@ -1,22 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  lte,
-  SQL,
-} from "drizzle-orm";
 
 import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { FundingDeadlineD } from "@sparcs-clubs/api/drizzle/schema/semester.schema";
 import {
   IFundingDeadlineCreate,
   MFundingDeadline,
@@ -34,11 +24,6 @@ type FundingDeadlineQuerySupport = {
   endTerm: string;
 };
 
-type FundingDeadlineTable = typeof FundingDeadlineD;
-type FundingDeadlineDbSelect = InferSelectModel<FundingDeadlineTable>;
-type FundingDeadlineDbUpdate = Partial<FundingDeadlineDbSelect>;
-type FundingDeadlineDbInsert = InferInsertModel<FundingDeadlineTable>;
-
 type FundingDeadlineFieldMapKeys = BaseTableFieldMapKeys<
   FundingDeadlineQuery,
   FundingDeadlineOrderByKeys,
@@ -49,18 +34,16 @@ type FundingDeadlineFieldMapKeys = BaseTableFieldMapKeys<
 export class FundingDeadlineRepository extends BaseSingleTableRepository<
   MFundingDeadline,
   IFundingDeadlineCreate,
-  FundingDeadlineTable,
   FundingDeadlineQuery,
   FundingDeadlineOrderByKeys,
   FundingDeadlineQuerySupport
 > {
   constructor() {
-    super(FundingDeadlineD, MFundingDeadline);
+    super("fundingDeadlineD", MFundingDeadline);
   }
 
-  protected dbToModelMapping(
-    result: FundingDeadlineDbSelect,
-  ): MFundingDeadline {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MFundingDeadline {
     return new MFundingDeadline({
       id: result.id,
       semester: { id: result.semesterId },
@@ -70,7 +53,8 @@ export class FundingDeadlineRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MFundingDeadline): FundingDeadlineDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MFundingDeadline): any {
     return {
       id: model.id,
       semesterId: model.semester.id,
@@ -80,9 +64,8 @@ export class FundingDeadlineRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IFundingDeadlineCreate,
-  ): FundingDeadlineDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IFundingDeadlineCreate): any {
     return {
       semesterId: model.semester.id,
       deadlineEnum: model.deadlineEnum,
@@ -90,18 +73,16 @@ export class FundingDeadlineRepository extends BaseSingleTableRepository<
       endTerm: model.endTerm,
     };
   }
+
   protected fieldMap(
     field: FundingDeadlineFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<
-      FundingDeadlineFieldMapKeys,
-      TableWithID | null
-    > = {
-      id: FundingDeadlineD,
-      semesterId: FundingDeadlineD,
-      deadlineEnum: FundingDeadlineD,
-      startTerm: FundingDeadlineD,
-      endTerm: FundingDeadlineD,
+  ): string | null | undefined {
+    const fieldMappings: Record<FundingDeadlineFieldMapKeys, string | null> = {
+      id: "id",
+      semesterId: "semesterId",
+      deadlineEnum: "deadlineEnum",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
       date: null,
     };
 
@@ -109,18 +90,18 @@ export class FundingDeadlineRepository extends BaseSingleTableRepository<
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
 
   protected processSpecialCondition(
     key: FundingDeadlineFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return and(
-        lte(FundingDeadlineD.startTerm, value),
-        gt(FundingDeadlineD.endTerm, value),
-      );
+      return {
+        AND: [{ startTerm: { lte: value } }, { endTerm: { gt: value } }],
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

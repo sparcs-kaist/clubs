@@ -1,3 +1,5 @@
+import { toZonedTime } from "date-fns-tz";
+
 import { ManageClubTagColorsInterface } from "./ManageClubTable";
 
 export const ManageClubTagColors: ManageClubTagColorsInterface = {
@@ -54,10 +56,12 @@ export const formattedString = (
   const days = "일월화수목금토";
 
   if (dateAndTimeFormatKeys.includes(key)) {
-    return `${(value as Date).getFullYear()}년 ${(value as Date).getMonth() + 1}월 ${(value as Date).getDate()}일 (${days[(value as Date).getDay()]}) ${(value as Date).getHours().toString().padStart(2, "0")}:${(value as Date).getMinutes().toString().padStart(2, "0")}`;
+    const d = toZonedTime(value as Date, "Asia/Seoul");
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]}) ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   }
   if (dateFormatKeys.includes(key)) {
-    return `${(value as Date).getFullYear()}년 ${(value as Date).getMonth() + 1}월 ${(value as Date).getDate()}일 (${days[(value as Date).getDay()]})`;
+    const d = toZonedTime(value as Date, "Asia/Seoul");
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
   }
   if (startEndTimeFormatKeys.includes(key)) {
     return value as string;

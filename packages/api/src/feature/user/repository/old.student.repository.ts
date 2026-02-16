@@ -1,38 +1,37 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, count, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { MySql2Database } from "drizzle-orm/mysql2";
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { StudentStatusEnum } from "@clubs/interface/common/enum/user.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getKSTDate, takeOne } from "@sparcs-clubs/api/common/util/util";
-import { DrizzleAsyncProvider } from "@sparcs-clubs/api/drizzle/drizzle.provider";
-import {
-  Student,
-  StudentT,
-  User,
-} from "@sparcs-clubs/api/drizzle/schema/user.schema";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class OldStudentRepository {
-  constructor(@Inject(DrizzleAsyncProvider) private db: MySql2Database) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async selectStudentById(id: number) {
-    const result = await this.db
-      .select({
-        id: Student.id,
-        userId: Student.userId,
-        number: Student.number,
-        name: Student.name,
-        email: Student.email,
-        createdAt: Student.createdAt,
-        deletedAt: Student.deletedAt,
-        phoneNumber: User.phoneNumber,
-      })
-      .from(Student)
-      .leftJoin(User, eq(User.id, Student.userId))
-      .where(and(eq(Student.id, id), isNull(Student.deletedAt)));
+    const result = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        userId: number | null;
+        number: number;
+        name: string;
+        email: string | null;
+        createdAt: Date | null;
+        deletedAt: Date | null;
+        phoneNumber: string | null;
+      }>
+    >(Prisma.sql`
+      SELECT s.id, s.user_id AS userId, s.number, s.name, s.email,
+             s.created_at AS createdAt, s.deleted_at AS deletedAt,
+             u.phone_number AS phoneNumber
+      FROM student s
+      LEFT JOIN user u ON u.id = s.user_id
+      WHERE s.id = ${id} AND s.deleted_at IS NULL
+    `);
 
     return result;
   }
@@ -43,31 +42,24 @@ export default class OldStudentRepository {
   ): Promise<boolean> {
     const leaveOfAbsence = StudentStatusEnum.LeaveOfAbsence;
     const attending = StudentStatusEnum.Attending;
-    const { isAvailable } = await this.db
-      .select({ isAvailable: count(StudentT.id) })
-      .from(StudentT)
-      .where(
-        and(
-          eq(StudentT.semesterId, semesterId),
-          eq(StudentT.studentId, studentId),
-          or(
-            eq(StudentT.studentStatusEnum, attending),
-            eq(StudentT.studentStatusEnum, leaveOfAbsence),
-          ),
-        ),
-      )
-      .then(takeOne);
-    if (isAvailable !== 0) {
-      return true;
-    }
-    return false;
+    const result = await this.prisma.studentT.count({
+      where: {
+        semesterId,
+        studentId,
+        OR: [
+          { studentStatusEnum: attending },
+          { studentStatusEnum: leaveOfAbsence },
+        ],
+      },
+    });
+    return result !== 0;
   }
 
   async selectStudentIdByStudentTId(studentTId: number) {
-    const result = await this.db
-      .select({ studentId: StudentT.studentId })
-      .from(StudentT)
-      .where(and(eq(StudentT.id, studentTId), isNull(StudentT.deletedAt)));
+    const result = await this.prisma.studentT.findMany({
+      where: { id: studentTId, deletedAt: null },
+      select: { studentId: true },
+    });
 
     return result;
   }
@@ -76,68 +68,60 @@ export default class OldStudentRepository {
     studentId: number,
     semesterId: number,
   ) {
-    const result = await this.db
-      .select({ studentEnumId: StudentT.studentEnum })
-      .from(StudentT)
-      .where(
-        and(
-          eq(StudentT.studentId, studentId),
-          eq(StudentT.semesterId, semesterId),
-          isNull(StudentT.deletedAt),
-        ),
-      )
-      .then(takeOne);
-    return result;
+    const result = await this.prisma.studentT.findMany({
+      where: {
+        studentId,
+        semesterId,
+        deletedAt: null,
+      },
+      select: { studentEnum: true },
+    });
+    return takeOne(result.map(r => ({ studentEnumId: r.studentEnum })));
   }
 
   async getStudentEnumsByIdsAndSemesterId(
     studentIds: number[],
     semesterId: number,
   ) {
-    const result = await this.db
-      .select({ id: StudentT.studentId, studentEnumId: StudentT.studentEnum })
-      .from(StudentT)
-      .where(
-        and(
-          inArray(StudentT.studentId, studentIds),
-          eq(StudentT.semesterId, semesterId),
-          isNull(StudentT.deletedAt),
-        ),
-      );
-    return result;
+    const result = await this.prisma.studentT.findMany({
+      where: {
+        studentId: { in: studentIds },
+        semesterId,
+        deletedAt: null,
+      },
+      select: { studentId: true, studentEnum: true },
+    });
+    return result.map(r => ({ id: r.studentId, studentEnumId: r.studentEnum }));
   }
 
   async getStudentPhoneNumber(id: number) {
-    const crt = getKSTDate();
-    const result = await this.db
-      .select({ phoneNumber: User.phoneNumber })
-      .from(Student)
-      .leftJoin(User, eq(User.id, Student.userId))
-      .where(eq(Student.userId, id))
-      .leftJoin(
-        StudentT,
-        and(
-          eq(StudentT.studentId, Student.id),
-          or(gte(StudentT.endTerm, crt), isNull(StudentT.endTerm)),
-          lte(StudentT.startTerm, crt),
-          isNull(StudentT.deletedAt),
-        ),
-      )
-      .then(takeOne);
-    return result;
+    const crt = new Date();
+    const result = await this.prisma.$queryRaw<
+      Array<{ phoneNumber: string | null }>
+    >(Prisma.sql`
+      SELECT u.phone_number AS phoneNumber
+      FROM student s
+      LEFT JOIN user u ON u.id = s.user_id
+      LEFT JOIN student_t st ON st.student_id = s.id
+        AND (st.end_term >= ${crt} OR st.end_term IS NULL)
+        AND st.start_term <= ${crt}
+        AND st.deleted_at IS NULL
+      WHERE s.user_id = ${id}
+      LIMIT 1
+    `);
+    return takeOne(result);
   }
 
   async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.db.transaction(async tx => {
-      const [result] = await tx
-        .update(User)
-        .set({ phoneNumber })
-        .where(and(eq(User.id, userId), isNull(User.deletedAt)));
+    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
+      const result = await tx.user.updateMany({
+        where: { id: userId, deletedAt: null },
+        data: { phoneNumber },
+      });
 
-      if (result.affectedRows === 0) {
+      if (result.count === 0) {
         logger.debug("[OldStudentRepository] Failed to update phone number");
-        tx.rollback();
-        return false;
+        throw new Error("updateStudentPhoneNumber failed");
       }
       return true;
     });
@@ -150,10 +134,9 @@ export default class OldStudentRepository {
     if (studentIds.length === 0) {
       return [];
     }
-    const students = await this.db
-      .select()
-      .from(Student)
-      .where(and(inArray(Student.id, studentIds), isNull(Student.deletedAt)));
+    const students = await this.prisma.student.findMany({
+      where: { id: { in: studentIds }, deletedAt: null },
+    });
 
     return students.map(student => ({
       id: student.id,

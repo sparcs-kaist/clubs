@@ -1,0 +1,1588 @@
+// Prisma Schema - migrated from Drizzle ORM
+// All DateTime fields stored as KST in MySQL.
+// Timezone conversion handled by PrismaService middleware.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Auth
+// ============================================================================
+
+model User {
+  id          Int       @id @default(autoincrement())
+  sid         String?   @unique @db.VarChar(30)
+  name        String    @db.VarChar(255)
+  email       String?   @db.VarChar(255)
+  phoneNumber String?   @map("phone_number") @db.VarChar(30)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  students                    Student[]
+  executives                  Executive[]
+  professors                  Professor[]
+  employees                   Employee[]
+  files                       File[]
+  authActivatedRefreshTokens  AuthActivatedRefreshTokens[]
+  meetingAttendanceTimes      MeetingAttendanceTimeT[]
+  meetingVoteResults          MeetingVoteResult[]
+  userPrivacyPolicyAgreements UserPrivacyPolicyAgreement[]
+
+  @@map("user")
+}
+
+model Student {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  number    Int       @unique
+  name      String    @db.VarChar(255)
+  email     String?   @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user                            User?                            @relation(fields: [userId], references: [id])
+  studentTs                       StudentT[]
+  activityParticipants            ActivityParticipant[]
+  activityCertificates            ActivityCertificate[]
+  clubStudentTs                   ClubStudentT[]
+  clubDelegateDs                  ClubDelegateD[]
+  commonSpaceUsageOrders          CommonSpaceUsageOrderD[]
+  divisionPresidentDs             DivisionPresidentD[]
+  registrations                   Registration[]
+  registrationApplicationStudents RegistrationApplicationStudent[]
+  rentalOrders                    RentalOrder[]
+  promotionalPrintingOrders       PromotionalPrintingOrder[]
+  fundingTransportationPassengers FundingTransportationPassenger[]
+  clubDelegateChangeRequestsPrev  ClubDelegateChangeRequest[]      @relation("PrevStudent")
+  clubDelegateChangeRequestsNew   ClubDelegateChangeRequest[]      @relation("NewStudent")
+  executive                       Executive?
+
+  @@map("student")
+}
+
+model StudentT {
+  id                Int       @id @default(autoincrement())
+  studentId         Int       @map("student_id")
+  studentEnum       Int       @map("student_enum")
+  studentStatusEnum Int       @map("student_status_enum")
+  department        Int?
+  semesterId        Int       @map("semester_id")
+  startTerm         DateTime  @map("start_term") @db.Date
+  endTerm           DateTime? @map("end_term") @db.Date
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, semesterId], map: "student_t_student_id_semester_id_unique_key")
+  @@map("student_t")
+}
+
+model Executive {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  studentId Int       @unique(map: "student_id_unique") @map("student_id")
+  name      String    @db.VarChar(255)
+  email     String?   @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user                          User?                          @relation(fields: [userId], references: [id])
+  student                       Student                        @relation(fields: [studentId], references: [id])
+  executiveTs                   ExecutiveT[]
+  activityChargedActivities     Activity[]                     @relation("ChargedExecutive")
+  activityCommentedActivities   Activity[]                     @relation("CommentedExecutive")
+  activityFeedbacks             ActivityFeedback[]
+  activityClubChargedExecutives ActivityClubChargedExecutive[]
+  fundingChargedFundings        Funding[]
+  fundingFeedbacks              FundingFeedback[]
+  registrationExecutiveComments RegistrationExecutiveComment[]
+
+  @@map("executive")
+}
+
+model ExecutiveStatusEnum {
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  executiveTs ExecutiveT[]
+
+  @@map("executive_status_enum")
+}
+
+model ExecutiveBureauEnum {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(31)
+
+  executiveTs ExecutiveT[]
+
+  @@map("executive_bureau_enum")
+}
+
+model ExecutiveT {
+  id                  Int       @id @default(autoincrement())
+  executiveId         Int       @map("executive_id")
+  executiveStatusEnum Int       @map("executive_status_enum")
+  executiveBureauEnum Int       @map("executive_bureau_enum")
+  startTerm           DateTime  @map("start_term") @db.Date
+  endTerm             DateTime? @map("end_term") @db.Date
+  createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  executive          Executive           @relation(fields: [executiveId], references: [id])
+  executiveStatusRel ExecutiveStatusEnum @relation(fields: [executiveStatusEnum], references: [id])
+  executiveBureauRel ExecutiveBureauEnum @relation(fields: [executiveBureauEnum], references: [id])
+
+  @@map("executive_t")
+}
+
+model Professor {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  name      String    @db.VarChar(255)
+  email     String?   @unique @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user          User?          @relation(fields: [userId], references: [id])
+  professorTs   ProfessorT[]
+  clubTs        ClubT[]
+  registrations Registration[]
+
+  @@map("professor")
+}
+
+model ProfessorT {
+  id            Int       @id @default(autoincrement())
+  professorId   Int       @unique @map("professor_id")
+  professorEnum Int?      @map("professor_enum")
+  department    Int?
+  startTerm     DateTime  @map("start_term") @db.Date
+  endTerm       DateTime? @map("end_term") @db.Date
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  professor Professor @relation(fields: [professorId], references: [id])
+
+  @@map("professor_t")
+}
+
+model Employee {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  name      String    @db.VarChar(255)
+  email     String?   @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user       User?       @relation(fields: [userId], references: [id])
+  employeeTs EmployeeT[]
+
+  @@map("employee")
+}
+
+model EmployeeT {
+  id         Int       @id @default(autoincrement())
+  employeeId Int       @unique @map("employee_id")
+  startTerm  DateTime  @map("start_term") @db.Date
+  endTerm    DateTime? @map("end_term") @db.Date
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_t")
+}
+
+model StudentStatusEnum {
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("student_status_enum")
+}
+
+model StudentEnum {
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("student_enum")
+}
+
+model ProfessorEnum {
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("professor_enum")
+}
+
+model Department {
+  id           Int       @id @default(autoincrement())
+  departmentId Int?      @unique @map("department_id")
+  name         String    @db.VarChar(255)
+  nameEn       String?   @map("name_en") @db.VarChar(255)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("department")
+}
+
+model UserPrivacyPolicyAgreement {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_privacy_policy_agreement")
+}
+
+model AuthActivatedRefreshTokens {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  expiresAt    DateTime @map("expires_at") @db.DateTime(0)
+  refreshToken String   @map("refresh_token") @db.Text
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([expiresAt], map: "expires_at_idx")
+  @@map("auth_activated_refresh_tokens")
+}
+
+// ============================================================================
+// Club
+// ============================================================================
+
+model Club {
+  id           Int       @id @default(autoincrement())
+  nameKr       String?   @unique @map("name_kr") @db.VarChar(30)
+  nameEn       String?   @unique @map("name_en") @db.VarChar(100)
+  description  String?   @db.Text
+  foundingYear Int       @map("founding_year")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  clubTs                          ClubT[]
+  clubDivisionHistories           ClubDivisionHistory[]
+  clubStudentTs                   ClubStudentT[]
+  clubRoomTs                      ClubRoomT[]
+  clubDelegateDs                  ClubDelegateD[]
+  clubDelegateChangeRequests      ClubDelegateChangeRequest[]
+  activities                      Activity[]
+  activityCertificates            ActivityCertificate[]
+  activityClubChargedExecutives   ActivityClubChargedExecutive[]
+  professorSignStatuses           ProfessorSignStatus[]
+  commonSpaceUsageOrders          CommonSpaceUsageOrderD[]
+  divisionPermanentClubDs         DivisionPermanentClubD[]
+  fundings                        Funding[]
+  registrations                   Registration[]
+  registrationApplicationStudents RegistrationApplicationStudent[]
+  rentalOrders                    RentalOrder[]
+  promotionalPrintingOrders       PromotionalPrintingOrder[]
+  meetingAttendanceDays           MeetingAttendanceDay[]
+
+  @@map("club")
+}
+
+model ClubStatusEnum {
+  id         Int       @id @default(autoincrement())
+  statusName String?   @map("status_name") @db.VarChar(30)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  clubTs ClubT[]
+
+  @@map("club_status_enum")
+}
+
+model ClubT {
+  id               Int       @id @default(autoincrement())
+  clubId           Int       @map("club_id")
+  clubStatusEnumId Int       @map("club_status_enum_id")
+  characteristicKr String?   @map("characteristic_kr") @db.VarChar(255)
+  characteristicEn String?   @map("characteristic_en") @db.VarChar(255)
+  professorId      Int?      @map("professor_id")
+  semesterId       Int       @map("semester_id")
+  startTerm        DateTime  @map("start_term") @db.Date
+  endTerm          DateTime? @map("end_term") @db.Date
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club           Club           @relation(fields: [clubId], references: [id])
+  clubStatusEnum ClubStatusEnum @relation(fields: [clubStatusEnumId], references: [id])
+  professor      Professor?     @relation(fields: [professorId], references: [id])
+  semester       SemesterD      @relation(fields: [semesterId], references: [id])
+
+  @@map("club_t")
+}
+
+// NOTE: ClubSemester was an alias of ClubT in Drizzle (same DB table club_t).
+// In Prisma, use the ClubT model for both old ClubT and ClubSemester queries.
+
+model ClubDivisionHistory {
+  id         Int       @id @default(autoincrement())
+  clubId     Int       @map("club_id")
+  divisionId Int       @map("division_id")
+  startTerm  DateTime  @map("start_term") @db.Date
+  endTerm    DateTime? @map("end_term") @db.Date
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club     Club     @relation(fields: [clubId], references: [id])
+  division Division @relation(fields: [divisionId], references: [id])
+
+  @@map("club_division_t")
+}
+
+model ClubStudentT {
+  id         Int       @id @default(autoincrement())
+  studentId  Int       @map("student_id")
+  clubId     Int       @map("club_id")
+  semesterId Int       @map("semester_id")
+  startTerm  DateTime  @map("start_term") @db.Date
+  endTerm    DateTime? @map("end_term") @db.Date
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  student  Student   @relation(fields: [studentId], references: [id])
+  club     Club      @relation(fields: [clubId], references: [id])
+  semester SemesterD @relation(fields: [semesterId], references: [id])
+
+  @@map("club_student_t")
+}
+
+model ClubBuildingEnum {
+  id           Int       @id @default(autoincrement())
+  buildingName String?   @map("building_name") @db.VarChar(30)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  clubRoomTs ClubRoomT[]
+
+  @@map("club_building_enum")
+}
+
+model ClubRoomT {
+  id               Int       @id @default(autoincrement())
+  clubId           Int       @map("club_id")
+  clubBuildingEnum Int       @map("club_building_enum")
+  roomLocation     String?   @map("room_location") @db.VarChar(20)
+  roomPassword     String?   @map("room_password") @db.VarChar(20)
+  semesterId       Int       @map("semester_id")
+  startTerm        DateTime  @map("start_term") @db.Date
+  endTerm          DateTime? @map("end_term") @db.Date
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club            Club             @relation(fields: [clubId], references: [id])
+  clubBuildingRel ClubBuildingEnum @relation(fields: [clubBuildingEnum], references: [id])
+  semester        SemesterD        @relation(fields: [semesterId], references: [id])
+
+  @@map("club_room_t")
+}
+
+model ClubDelegateEnum {
+  id        Int       @id @default(autoincrement())
+  name      String?   @map("enum_name") @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("club_delegate_enum")
+}
+
+model ClubDelegateD {
+  id               Int       @id @default(autoincrement())
+  clubId           Int       @map("club_id")
+  studentId        Int       @map("student_id")
+  clubDelegateEnum Int       @map("club_delegate_enum_id")
+  startTerm        DateTime  @map("start_term") @db.DateTime(0)
+  endTerm          DateTime? @map("end_term") @db.DateTime(0)
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club    Club    @relation(fields: [clubId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([clubDelegateEnum], map: "club_delegate_d_club_delegate_enum_id_fk")
+  @@map("club_delegate_d")
+}
+
+model ClubDelegateChangeRequestStatusEnum {
+  id        Int       @id @default(autoincrement()) @map("enum_id")
+  enumName  String    @map("enum_name") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  clubDelegateChangeRequests ClubDelegateChangeRequest[]
+
+  @@map("club_delegate_change_request_status_enum")
+}
+
+model ClubDelegateChangeRequest {
+  id                                    Int       @id @default(autoincrement())
+  clubId                                Int       @map("club_id")
+  prevStudentId                         Int       @map("prev_student_id")
+  studentId                             Int       @map("student_id")
+  clubDelegateChangeRequestStatusEnumId Int       @map("club_delegate_change_request_status_enum_id")
+  createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club        Club                                @relation(fields: [clubId], references: [id])
+  prevStudent Student                             @relation("PrevStudent", fields: [prevStudentId], references: [id])
+  student     Student                             @relation("NewStudent", fields: [studentId], references: [id])
+  statusEnum  ClubDelegateChangeRequestStatusEnum @relation(fields: [clubDelegateChangeRequestStatusEnumId], references: [id], map: "club_delegate_change_request_fk")
+
+  @@map("club_delegate_change_request")
+}
+
+// ============================================================================
+// Division
+// ============================================================================
+
+model District {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(10)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  divisions Division[]
+
+  @@map("district")
+}
+
+model Division {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(10)
+  startTerm  DateTime  @default(dbgenerated("'2017-03-01'")) @map("start_term") @db.Date
+  endTerm    DateTime? @map("end_term") @db.Date
+  districtId Int       @map("district_id")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  district              District               @relation(fields: [districtId], references: [id])
+  clubDivisionHistories ClubDivisionHistory[]
+  divisionPresidentDs   DivisionPresidentD[]
+  registrations         Registration[]
+  meetingAttendanceDays MeetingAttendanceDay[]
+
+  @@map("division")
+}
+
+model DivisionPresidentD {
+  id               Int       @id @default(autoincrement())
+  divisionId       Int       @map("division_id")
+  studentId        Int       @map("student_id")
+  startTerm        DateTime  @map("start_term") @db.Date
+  endTerm          DateTime? @map("end_term") @db.Date
+  originatedClubId Int       @map("originated_club_id")
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  division Division @relation(fields: [divisionId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+
+  @@map("division_president_d")
+}
+
+model DivisionPermanentClubD {
+  id        Int       @id @default(autoincrement())
+  clubId    Int       @map("club_id")
+  startTerm DateTime  @map("start_term") @db.Date
+  endTerm   DateTime? @map("end_term") @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club Club @relation(fields: [clubId], references: [id])
+
+  @@unique([clubId, startTerm], map: "division_permanent_club_d_club_id_start_term_unique")
+  @@map("division_permanent_club_d")
+}
+
+// ============================================================================
+// Semester
+// ============================================================================
+
+model SemesterD {
+  id        Int       @id @default(autoincrement())
+  year      Int
+  name      String    @db.VarChar(10)
+  startTerm DateTime  @map("start_term") @db.Date
+  endTerm   DateTime  @map("end_term") @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  clubTs                          ClubT[]
+  clubStudentTs                   ClubStudentT[]
+  clubRoomTs                      ClubRoomT[]
+  professorSignStatuses           ProfessorSignStatus[]
+  registrations                   Registration[]
+  registrationApplicationStudents RegistrationApplicationStudent[]
+  registrationDeadlineDs          RegistrationDeadlineD[]
+
+  @@map("semester_d")
+}
+
+model ActivityD {
+  id                       Int       @id @default(autoincrement())
+  semesterId               Int       @map("semester_id")
+  year                     Int
+  name                     String    @db.VarChar(10)
+  startTerm                DateTime  @map("start_term") @db.Date
+  endTerm                  DateTime  @map("end_term") @db.Date
+  activityDurationTypeEnum Int       @map("activity_duration_type_enum")
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt                DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activities                    Activity[]
+  activityClubChargedExecutives ActivityClubChargedExecutive[]
+  fundings                      Funding[]
+
+  @@map("activity_d")
+}
+
+model ActivityDeadlineD {
+  id           Int       @id @default(autoincrement())
+  semesterId   Int       @map("semester_id")
+  deadlineEnum Int       @map("deadline_enum_id")
+  startTerm    DateTime  @map("start_term") @db.DateTime(0)
+  endTerm      DateTime  @map("end_term") @db.DateTime(0)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("activity_deadline_d")
+}
+
+model FundingDeadlineD {
+  id           Int       @id @default(autoincrement())
+  semesterId   Int       @map("semester_id")
+  deadlineEnum Int       @map("deadline_enum")
+  startTerm    DateTime  @map("start_term") @db.DateTime(0)
+  endTerm      DateTime  @map("end_term") @db.DateTime(0)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("funding_deadline_d")
+}
+
+model RegistrationDeadlineD {
+  id           Int       @id @default(autoincrement())
+  semesterId   Int?      @map("semester_d_id")
+  deadlineEnum Int       @map("registration_deadline_enum_id")
+  startTerm    DateTime  @map("start_term") @db.DateTime(0)
+  endTerm      DateTime  @map("end_term") @db.DateTime(0)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  semester SemesterD? @relation(fields: [semesterId], references: [id])
+
+  @@map("registration_deadline_d")
+}
+
+// ============================================================================
+// Activity
+// ============================================================================
+
+model ActivityTypeEnum {
+  id        Int       @id @default(autoincrement())
+  typeName  String    @map("type_name") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("activity_type_enum")
+}
+
+model ActivityStatusEnum {
+  id         Int       @id @default(autoincrement())
+  statusName String    @map("status_name") @db.VarChar(255)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activities        Activity[]
+  activityFeedbacks ActivityFeedback[]
+
+  @@map("activity_status_enum")
+}
+
+model Activity {
+  id                   Int       @id @default(autoincrement())
+  clubId               Int       @map("club_id")
+  originalName         String    @map("original_name") @db.VarChar(255)
+  name                 String    @db.VarChar(255)
+  activityTypeEnumId   Int       @map("activity_type_enum_id")
+  location             String    @db.VarChar(255)
+  purpose              String    @db.Text
+  detail               String    @db.Text
+  evidence             String    @db.Text
+  activityDId          Int       @map("activity_d_id")
+  activityStatusEnumId Int       @map("activity_status_enum_id")
+  chargedExecutiveId   Int?      @map("charged_executive_id")
+  professorApprovedAt  DateTime? @map("professor_approved_at") @db.Timestamp(0)
+  commentedAt          DateTime? @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId Int?      @map("commented_executive_id")
+  editedAt             DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club                  Club                   @relation(fields: [clubId], references: [id])
+  activityD             ActivityD              @relation(fields: [activityDId], references: [id])
+  activityStatusEnum    ActivityStatusEnum     @relation(fields: [activityStatusEnumId], references: [id])
+  chargedExecutive      Executive?             @relation("ChargedExecutive", fields: [chargedExecutiveId], references: [id], map: "activity_charged_executive_id_fk")
+  commentedExecutive    Executive?             @relation("CommentedExecutive", fields: [commentedExecutiveId], references: [id])
+  activityParticipants  ActivityParticipant[]
+  activityTs            ActivityT[]
+  activityFeedbacks     ActivityFeedback[]
+  activityEvidenceFiles ActivityEvidenceFile[]
+  fundings              Funding[]
+
+  @@map("activity")
+}
+
+model ActivityParticipant {
+  id         Int       @id @default(autoincrement())
+  activityId Int       @map("activity_id")
+  studentId  Int       @map("student_id")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activity Activity @relation(fields: [activityId], references: [id], map: "activity_participant_activity_id_fk")
+  student  Student  @relation(fields: [studentId], references: [id], map: "activity_participant_student_id_fk")
+
+  @@map("activity_participant")
+}
+
+model ActivityT {
+  id         Int       @id @default(autoincrement())
+  activityId Int       @map("activity_id")
+  startTerm  DateTime  @map("start_term") @db.DateTime(0)
+  endTerm    DateTime  @map("end_term") @db.DateTime(0)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activity Activity @relation(fields: [activityId], references: [id])
+
+  @@map("activity_t")
+}
+
+model ActivityFeedback {
+  id                 Int       @id @default(autoincrement())
+  activityId         Int       @map("activity_id")
+  executiveId        Int       @map("executive_id")
+  comment            String    @db.Text
+  activityStatusEnum Int       @map("activity_status_enum")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activity          Activity           @relation(fields: [activityId], references: [id])
+  executive         Executive          @relation(fields: [executiveId], references: [id])
+  activityStatusRel ActivityStatusEnum @relation(fields: [activityStatusEnum], references: [id])
+
+  @@map("activity_feedback")
+}
+
+model ActivityEvidenceFile {
+  id         Int       @id @default(autoincrement())
+  activityId Int       @map("activity_id")
+  fileId     String    @map("file_id") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activity Activity @relation(fields: [activityId], references: [id], map: "activity_evidence_file_activity_id_fk")
+
+  @@map("activity_evidence_file")
+}
+
+model ProfessorSignStatus {
+  id         Int       @id @default(autoincrement())
+  clubId     Int       @map("club_id")
+  semesterId Int       @map("semester_id")
+  signed     Boolean   @default(false)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club     Club      @relation(fields: [clubId], references: [id], map: "professor_sign_status_club_id_fk")
+  semester SemesterD @relation(fields: [semesterId], references: [id], map: "professor_sign_status_semester_id_fk")
+
+  @@map("professor_sign_status")
+}
+
+model ActivityClubChargedExecutive {
+  id          Int       @id @default(autoincrement())
+  activityDId Int       @map("activity_d_id")
+  clubId      Int       @map("club_id")
+  executiveId Int?      @map("executive_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activityD ActivityD  @relation(fields: [activityDId], references: [id], map: "activity_club_charged_executive_activity_d_id_fk")
+  club      Club       @relation(fields: [clubId], references: [id], map: "activity_club_charged_executive_club_id_fk")
+  executive Executive? @relation(fields: [executiveId], references: [id], map: "activity_club_charged_executive_executive_id_fk")
+
+  @@map("activity_club_charged_executive")
+}
+
+// ============================================================================
+// Activity Certificate
+// ============================================================================
+
+model ActivityCertificateStatusEnum {
+  id         Int       @id @default(autoincrement())
+  statusName String    @map("status_name") @db.VarChar(30)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("activity_certificate_status_enum")
+}
+
+model ActivityCertificate {
+  id                            Int       @id @default(autoincrement())
+  clubId                        Int       @map("club_id")
+  studentId                     Int       @map("student_id")
+  studentPhoneNumber            String?   @map("student_phone_number") @db.VarChar(30)
+  activityCertificateStatusEnum Int       @map("activity_certificate_status_enum")
+  issueNumber                   Int?      @map("issue_number")
+  issuedAt                      DateTime? @map("issued_at") @db.DateTime(0)
+  createdAt                     DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                     DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt                     DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club    Club                      @relation(fields: [clubId], references: [id])
+  student Student                   @relation(fields: [studentId], references: [id])
+  items   ActivityCertificateItem[]
+
+  @@index([activityCertificateStatusEnum], map: "activity_certificate_d_activity_certificate_enum_id_fk")
+  @@map("activity_certificate")
+}
+
+model ActivityCertificateItem {
+  id                    Int       @id @default(autoincrement())
+  activityCertificateId Int       @map("activity_certificate_id")
+  order                 Int
+  startMonth            DateTime  @map("start_month") @db.Date
+  endMonth              DateTime  @map("end_month") @db.Date
+  detail                String?   @db.VarChar(100)
+  createdAt             DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  activityCertificate ActivityCertificate @relation(fields: [activityCertificateId], references: [id])
+
+  @@index([activityCertificateId], map: "activity_certificate_id_d_activity_certificate_id_enum_id_fk")
+  @@map("activity_certificate_item")
+}
+
+// ============================================================================
+// Common Space
+// ============================================================================
+
+model CommonSpaceEnum {
+  id        Int       @id @default(autoincrement())
+  typeName  String    @map("type_name") @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  commonSpaces CommonSpace[]
+
+  @@map("common_space_enum")
+}
+
+model CommonSpace {
+  id                    Int       @id @default(autoincrement())
+  commonSpaceEnum       Int       @map("common_space_enum")
+  availableHoursPerWeek Int       @map("available_hours_per_week")
+  availableHoursPerDay  Int       @map("available_hours_per_day")
+  spaceName             String    @map("space_name") @db.VarChar(30)
+  createdAt             DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  commonSpaceEnumRel CommonSpaceEnum          @relation(fields: [commonSpaceEnum], references: [id])
+  usageOrders        CommonSpaceUsageOrderD[]
+
+  @@map("common_space")
+}
+
+model CommonSpaceUsageOrderD {
+  id                 Int       @id @default(autoincrement())
+  commonSpaceId      Int       @map("common_space_id")
+  clubId             Int       @map("club_id")
+  chargeStudentId    Int       @map("charge_student_id")
+  studentPhoneNumber String    @map("student_phone_number") @db.VarChar(30)
+  startTerm          DateTime  @map("start_term") @db.DateTime(0)
+  endTerm            DateTime  @map("end_term") @db.DateTime(0)
+  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  commonSpace CommonSpace @relation(fields: [commonSpaceId], references: [id])
+  club        Club        @relation(fields: [clubId], references: [id])
+  student     Student     @relation(fields: [chargeStudentId], references: [id])
+
+  @@map("common_space_usage_order_d")
+}
+
+// ============================================================================
+// File
+// ============================================================================
+
+model File {
+  id        String    @id @db.VarChar(128)
+  name      String    @db.VarChar(255)
+  extension String    @db.VarChar(30)
+  size      Int
+  userId    Int       @map("user_id")
+  signedAt  DateTime  @map("signed_at") @db.DateTime(0)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("file")
+}
+
+// ============================================================================
+// Funding
+// ============================================================================
+
+model Funding {
+  id                                       Int       @id @default(autoincrement())
+  clubId                                   Int       @map("club_id")
+  activityDId                              Int       @map("activity_d_id")
+  fundingStatusEnum                        Int       @default(1) @map("funding_status_enum")
+  purposeActivityId                        Int?      @map("purpose_activity_id")
+  name                                     String    @db.VarChar(255)
+  expenditureDate                          DateTime  @map("expenditure_date") @db.DateTime(0)
+  expenditureAmount                        Int       @map("expenditure_amount")
+  approvedAmount                           Int?      @map("approved_amount")
+  tradeDetailExplanation                   String?   @map("trade_detail_explanation") @db.Text
+  clubSuppliesName                         String?   @map("club_supplies_name") @db.VarChar(255)
+  clubSuppliesEvidenceEnum                 Int?      @map("club_supplies_evidence_enum")
+  clubSuppliesClassEnum                    Int?      @map("club_supplies_class_enum")
+  clubSuppliesPurpose                      String?   @map("club_supplies_purpose") @db.Text
+  clubSuppliesSoftwareEvidence             String?   @map("club_supplies_software_evidence") @db.Text
+  numberOfClubSupplies                     Int?      @map("number_of_club_supplies")
+  priceOfClubSupplies                      Int?      @map("price_of_club_supplies")
+  isFixture                                Boolean?  @map("is_fixture")
+  fixtureName                              String?   @map("fixture_name") @db.VarChar(255)
+  fixtureEvidenceEnum                      Int?      @map("fixture_evidence_enum")
+  fixtureClassEnum                         Int?      @map("fixture_class_enum")
+  fixturePurpose                           String?   @map("fixture_purpose") @db.Text
+  fixtureSoftwareEvidence                  String?   @map("fixture_software_evidence") @db.Text
+  numberOfFixture                          Int?      @map("number_of_fixture")
+  priceOfFixture                           Int?      @map("price_of_fixture")
+  isTransportation                         Boolean   @map("is_transportation")
+  transportationEnum                       Int?      @map("transportation_enum")
+  origin                                   String?   @db.VarChar(255)
+  destination                              String?   @db.VarChar(255)
+  purposeOfTransportation                  String?   @map("purpose_of_transportation") @db.Text
+  isNonCorporateTransaction                Boolean   @map("is_non_corporate_transaction")
+  traderName                               String?   @map("trader_name") @db.VarChar(255)
+  traderAccountNumber                      String?   @map("trader_account_number") @db.VarChar(255)
+  wasteExplanation                         String?   @map("waste_explanation") @db.Text
+  isFoodExpense                            Boolean   @map("is_food_expense")
+  foodExpenseExplanation                   String?   @map("food_expense_explanation") @db.Text
+  isLaborContract                          Boolean   @map("is_labor_contract")
+  laborContractExplanation                 String?   @map("labor_contract_explanation") @db.Text
+  isExternalEventParticipationFee          Boolean   @map("is_external_event_participation_fee")
+  externalEventParticipationFeeExplanation String?   @map("external_event_participation_fee_explanation") @db.Text
+  isPublication                            Boolean   @map("is_publication")
+  publicationExplanation                   String?   @map("publication_explanation") @db.Text
+  isProfitMakingActivity                   Boolean   @map("is_profit_making_activity")
+  profitMakingActivityExplanation          String?   @map("profit_making_activity_explanation") @db.Text
+  isJointExpense                           Boolean   @map("is_joint_expense")
+  jointExpenseExplanation                  String?   @map("joint_expense_explanation") @db.Text
+  isEtcExpense                             Boolean   @map("is_etc_expense")
+  etcExpenseExplanation                    String?   @map("etc_expense_explanation") @db.Text
+  chargedExecutiveId                       Int?      @map("charged_executive_id")
+  editedAt                                 DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
+  commentedAt                              DateTime? @map("commented_at") @db.Timestamp(0)
+  createdAt                                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                                DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club             Club       @relation(fields: [clubId], references: [id], map: "funding_club_id_fk")
+  activityD        ActivityD  @relation(fields: [activityDId], references: [id])
+  purposeActivity  Activity?  @relation(fields: [purposeActivityId], references: [id], map: "funding_purpose_id_fk")
+  chargedExecutive Executive? @relation(fields: [chargedExecutiveId], references: [id], map: "funding_charged_executive_id_fk")
+
+  tradeEvidenceFiles                 FundingTradeEvidenceFile[]
+  tradeDetailFiles                   FundingTradeDetailFile[]
+  nonCorporateTransactionFiles       FundingNonCorporateTransactionFile[]
+  foodExpenseFiles                   FundingFoodExpenseFile[]
+  laborContractFiles                 FundingLaborContractFile[]
+  externalEventParticipationFeeFiles FundingExternalEventParticipationFeeFile[]
+  publicationFiles                   FundingPublicationFile[]
+  profitMakingActivityFiles          FundingProfitMakingActivityFile[]
+  jointExpenseFiles                  FundingJointExpenseFile[]
+  etcExpenseFiles                    FundingEtcExpenseFile[]
+  clubSuppliesImageFiles             FundingClubSuppliesImageFile[]
+  fixtureImageFiles                  FundingFixtureImageFile[]
+  clubSuppliesSoftwareEvidenceFiles  FundingClubSuppliesSoftwareEvidenceFile[]
+  fixtureSoftwareEvidenceFiles       FundingFixtureSoftwareEvidenceFile[]
+  transportationPassengers           FundingTransportationPassenger[]
+  feedbacks                          FundingFeedback[]
+
+  @@map("funding")
+}
+
+model FundingTradeEvidenceFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "trade_evidence_file_funding_id_fk")
+
+  @@map("funding_trade_evidence_file")
+}
+
+model FundingTradeDetailFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "trade_detail_file_funding_id_fk")
+
+  @@map("funding_trade_detail_file")
+}
+
+model FundingNonCorporateTransactionFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "non_corporate_transaction_file_funding_id_fk")
+
+  @@map("funding_non_corporate_transaction_file")
+}
+
+model FundingFoodExpenseFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "food_expense_file_funding_id_fk")
+
+  @@map("funding_food_expense_file")
+}
+
+model FundingLaborContractFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "labor_contract_file_funding_id_fk")
+
+  @@map("funding_labor_contract_file")
+}
+
+model FundingExternalEventParticipationFeeFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "external_event_participation_fee_file_funding_id_fk")
+
+  @@map("funding_external_event_participation_fee_file")
+}
+
+model FundingPublicationFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "publication_file_funding_id_fk")
+
+  @@map("funding_publication_file")
+}
+
+model FundingProfitMakingActivityFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "profit_making_activity_file_funding_id_fk")
+
+  @@map("funding_profit_making_activity_file")
+}
+
+model FundingJointExpenseFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "joint_expense_file_funding_id_fk")
+
+  @@map("funding_joint_expense_file")
+}
+
+model FundingEtcExpenseFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "etc_expense_file_funding_id_fk")
+
+  @@map("funding_etc_expense_file")
+}
+
+model FundingClubSuppliesImageFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "club_supplies_image_file_funding_id_fk")
+
+  @@map("funding_club_supplies_image_file")
+}
+
+model FundingFixtureImageFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "fixture_image_file_funding_id_fk")
+
+  @@map("funding_fixture_image_file")
+}
+
+model FundingClubSuppliesSoftwareEvidenceFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "club_supplies_software_evidence_file_funding_id_fk")
+
+  @@map("funding_club_supplies_software_evidence_file")
+}
+
+model FundingFixtureSoftwareEvidenceFile {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  fileId    String    @map("file_id") @db.VarChar(128)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "fixture_software_evidence_file_funding_id_fk")
+
+  @@map("funding_fixture_software_evidence_file")
+}
+
+model FundingTransportationPassenger {
+  id        Int       @id @default(autoincrement())
+  fundingId Int       @map("funding_id")
+  studentId Int       @map("student_id")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding Funding @relation(fields: [fundingId], references: [id], map: "transportation_passenger_funding_id_fk")
+  student Student @relation(fields: [studentId], references: [id], map: "transportation_passenger_student_id_fk")
+
+  @@map("funding_transportation_passenger")
+}
+
+model FundingFeedback {
+  id                Int       @id @default(autoincrement())
+  fundingId         Int       @map("funding_id")
+  executiveId       Int       @map("executive_id")
+  content           String    @map("feedback") @db.Text
+  fundingStatusEnum Int       @map("funding_status_enum")
+  approvedAmount    Int       @map("approved_amount")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  funding   Funding   @relation(fields: [fundingId], references: [id], map: "funding_feedback_funding_id_fk")
+  executive Executive @relation(fields: [executiveId], references: [id], map: "funding_feedback_executive_id_fk")
+
+  @@map("funding_feedback")
+}
+
+// ============================================================================
+// Notice
+// ============================================================================
+
+model Notice {
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar(255)
+  author    String    @db.VarChar(30)
+  date      DateTime  @db.Date
+  link      String    @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  articleId Int?      @map("article_id")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("notice")
+}
+
+// ============================================================================
+// Operation Committee
+// ============================================================================
+
+model OperationCommittee {
+  id        Int       @id @default(autoincrement())
+  secretKey String    @map("secret_key") @db.Text
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("operation_committee")
+}
+
+// ============================================================================
+// Promotional Printing
+// ============================================================================
+
+model PromotionalPrintingOrderStatusEnum {
+  id         Int       @id @default(autoincrement())
+  statusName String?   @map("status_name") @db.VarChar(30)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("promotional_printing_order_status_enum")
+}
+
+model PromotionalPrintingSizeEnum {
+  id           Int       @id @default(autoincrement())
+  printingSize String?   @map("printing_size") @db.VarChar(30)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  @@map("promotional_printing_size_enum")
+}
+
+model PromotionalPrintingOrder {
+  id                                 Int       @id @default(autoincrement())
+  clubId                             Int       @map("club_id")
+  studentId                          Int       @map("student_id")
+  studentPhoneNumber                 String?   @map("student_phone_number") @db.VarChar(30)
+  promotionalPrintingOrderStatusEnum Int       @map("promotional_printing_order_status_enum")
+  documentFileLink                   String?   @map("document_file_link") @db.Text
+  isColorPrint                       Boolean   @default(true) @map("is_color_print")
+  fitPrintSizeToPaper                Boolean   @default(true) @map("fit_print_size_to_paper")
+  requireMarginChopping              Boolean   @default(false) @map("require_margin_chopping")
+  desiredPickUpTime                  DateTime  @map("desired_pick_up_time") @db.DateTime(0)
+  pickUpAt                           DateTime? @map("pick_up_at") @db.DateTime(0)
+  createdAt                          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                          DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                          DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club    Club                           @relation(fields: [clubId], references: [id])
+  student Student                        @relation(fields: [studentId], references: [id])
+  sizes   PromotionalPrintingOrderSize[]
+
+  @@index([promotionalPrintingOrderStatusEnum], map: "pp_order_pp_order_status_enum_id_fk")
+  @@map("promotional_printing_order")
+}
+
+model PromotionalPrintingOrderSize {
+  id                            Int       @id @default(autoincrement())
+  promotionalPrintingOrderId    Int       @map("promotional_printing_order_id")
+  promotionalPrintingSizeEnumId Int       @map("promotional_printing_size_enum_id")
+  numberOfPrints                Int       @map("number_of_prints")
+  createdAt                     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                     DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                     DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  order PromotionalPrintingOrder @relation(fields: [promotionalPrintingOrderId], references: [id])
+
+  @@index([promotionalPrintingOrderId], map: "pp_order_size_pp_order_id_fk")
+  @@index([promotionalPrintingSizeEnumId], map: "pp_order_size_pp_size_enum_id_fk")
+  @@map("promotional_printing_order_size")
+}
+
+// ============================================================================
+// Registration
+// ============================================================================
+
+model RegistrationTypeEnum {
+  id        Int       @id @default(autoincrement()) @map("enum_id")
+  enumName  String    @map("enum_name") @db.VarChar(30)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  registrations Registration[]
+
+  @@map("registration_type_enum")
+}
+
+model RegistrationStatusEnum {
+  id        Int       @id @default(autoincrement()) @map("enum_id")
+  enumName  String    @map("enum_name") @db.VarChar(30)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  registrations Registration[]
+
+  @@map("registration_status_enum")
+}
+
+model Registration {
+  id                                    Int       @id @default(autoincrement())
+  clubId                                Int?      @map("club_id")
+  semesterId                            Int?      @map("semester_d_id")
+  registrationApplicationTypeEnumId     Int       @map("registration_application_type_enum_id")
+  registrationApplicationStatusEnumId   Int       @map("registration_application_status_enum_id")
+  clubNameKr                            String?   @map("club_name_kr") @db.VarChar(30)
+  clubNameEn                            String?   @map("club_name_en") @db.VarChar(100)
+  studentId                             Int       @map("student_id")
+  phoneNumber                           String?   @map("phone_number") @db.VarChar(30)
+  foundedAt                             DateTime  @map("founded_at") @db.Date
+  divisionId                            Int       @map("division_id")
+  activityFieldKr                       String?   @map("activity_field_kr") @db.VarChar(255)
+  activityFieldEn                       String?   @map("activity_field_en") @db.VarChar(255)
+  professorId                           Int?      @map("professor_id")
+  divisionConsistency                   String?   @map("division_consistency") @db.Text
+  foundationPurpose                     String?   @map("foundation_purpose") @db.Text
+  activityPlan                          String?   @map("activity_plan") @db.Text
+  registrationActivityPlanFileId        String?   @map("registration_activity_plan_file_id") @db.VarChar(128)
+  registrationClubRuleFileId            String?   @map("registration_club_rule_file_id") @db.VarChar(128)
+  registrationExternalInstructionFileId String?   @map("registration_external_instruction_file_id") @db.VarChar(128)
+  professorApprovedAt                   DateTime? @map("professor_approved_at") @db.Timestamp(0)
+  reviewedAt                            DateTime? @map("reviewed_at") @db.Timestamp(0)
+  createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                             DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  club              Club?                          @relation(fields: [clubId], references: [id])
+  semester          SemesterD?                     @relation(fields: [semesterId], references: [id], map: "registration_semester_d_id_fk")
+  typeEnum          RegistrationTypeEnum           @relation(fields: [registrationApplicationTypeEnumId], references: [id], map: "registration_registration_type_enum_id_fk")
+  statusEnum        RegistrationStatusEnum         @relation(fields: [registrationApplicationStatusEnumId], references: [id], map: "registration_registration_status_enum_id_fk")
+  student           Student                        @relation(fields: [studentId], references: [id])
+  division          Division                       @relation(fields: [divisionId], references: [id])
+  professor         Professor?                     @relation(fields: [professorId], references: [id])
+  executiveComments RegistrationExecutiveComment[]
+
+  @@map("registration")
+}
+
+model RegistrationExecutiveComment {
+  id             Int       @id @default(autoincrement())
+  registrationId Int       @map("registration_id")
+  executiveId    Int       @map("executive_id")
+  content        String    @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  registration Registration @relation(fields: [registrationId], references: [id], map: "registration_executive_comment_registration_id_fk")
+  executive    Executive    @relation(fields: [executiveId], references: [id], map: "registration_executive_comment_executive_id_fk")
+
+  @@map("registration_executive_comment")
+}
+
+model RegistrationApplicationStudentStatusEnum {
+  id        Int       @id @default(autoincrement()) @map("enum_id")
+  enumName  String?   @map("enum_name") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  registrationApplicationStudents RegistrationApplicationStudent[]
+
+  @@map("registration_application_student_status_enum")
+}
+
+model RegistrationApplicationStudent {
+  id                                 Int       @id @default(autoincrement())
+  studentId                          Int       @map("student_id")
+  clubId                             Int       @map("club_id")
+  semesterId                         Int?      @map("semester_d_id")
+  registrationApplicationStudentEnum Int       @map("registration_application_student_status_enum")
+  createdAt                          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  deletedAt                          DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  student    Student                                  @relation(fields: [studentId], references: [id])
+  club       Club                                     @relation(fields: [clubId], references: [id])
+  semester   SemesterD?                               @relation(fields: [semesterId], references: [id])
+  statusEnum RegistrationApplicationStudentStatusEnum @relation(fields: [registrationApplicationStudentEnum], references: [id], map: "registration_application_student_status_enum_id_fk")
+
+  @@map("registration_application_student")
+}
+
+// ============================================================================
+// Rental
+// ============================================================================
+
+model RentalOrder {
+  id                 Int       @id @default(autoincrement())
+  studentId          Int       @map("student_id")
+  studentPhoneNumber String?   @map("student_phone_number") @db.VarChar(30)
+  clubId             Int       @map("club_id")
+  purpose            String?   @db.Text
+  desiredStart       DateTime  @map("desired_start") @db.DateTime(0)
+  desiredEnd         DateTime  @map("desired_end") @db.DateTime(0)
+  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  student Student            @relation(fields: [studentId], references: [id])
+  club    Club               @relation(fields: [clubId], references: [id])
+  items   RentalOrderItemD[]
+
+  @@map("rental_order")
+}
+
+model RentalEnum {
+  id        Int       @id @default(autoincrement())
+  typeName  String?   @map("type_name") @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  rentalObjects RentalObject[]
+
+  @@map("rental_enum")
+}
+
+model RentalObject {
+  id         Int       @id @default(autoincrement())
+  rentalEnum Int       @map("rental_enum")
+  objectName String?   @map("object_name") @db.VarChar(30)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  rentalEnumRel RentalEnum         @relation(fields: [rentalEnum], references: [id])
+  orderItems    RentalOrderItemD[]
+
+  @@map("rental_object")
+}
+
+model RentalOrderItemD {
+  id            Int       @id @default(autoincrement())
+  rentalOrderId Int       @map("rental_order_id")
+  objectId      Int       @map("object_id")
+  startTerm     DateTime? @map("start_term") @db.DateTime(0)
+  endTerm       DateTime? @map("end_term") @db.DateTime(0)
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime? @map("updated_at") @db.Timestamp(0)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  rentalOrder RentalOrder  @relation(fields: [rentalOrderId], references: [id])
+  object      RentalObject @relation(fields: [objectId], references: [id])
+
+  @@map("rental_order_item_d")
+}
+
+// ============================================================================
+// Meeting
+// ============================================================================
+
+model MeetingRoleEnum {
+  id        Int       @id
+  name      String    @db.VarChar(30)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meetingAttendanceDays MeetingAttendanceDay[]
+
+  @@map("meeting_role_enum")
+}
+
+model MeetingAnnouncement {
+  id                  Int       @id @default(autoincrement())
+  announcementTitle   String    @map("title") @db.VarChar(255)
+  announcementContent String    @map("content") @db.Text
+  createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meetings Meeting[]
+
+  @@map("meeting_announcement")
+}
+
+model Meeting {
+  id             Int       @id @default(autoincrement())
+  announcementId Int?      @map("meeting_announcement_id")
+  meetingEnumId  Int       @map("meeting_type_enum")
+  isRegular      Boolean   @map("is_regular_meeting")
+  location       String?   @map("location_kr") @db.VarChar(255)
+  locationEn     String?   @map("location_en") @db.VarChar(255)
+  startDate      DateTime  @map("start_datetime") @db.DateTime(0)
+  endTerm        DateTime? @map("end_datetime") @db.DateTime(0)
+  tag            String    @map("meeting_group_tag") @db.VarChar(255)
+  statusEnumId   Int       @default(1) @map("meeting_status_enum")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  announcement           MeetingAnnouncement?     @relation(fields: [announcementId], references: [id], map: "meeting_announcement_id_fk")
+  meetingAttendanceDays  MeetingAttendanceDay[]
+  meetingAttendanceTimes MeetingAttendanceTimeT[]
+  meetingMappings        MeetingMapping[]
+
+  @@map("meeting")
+}
+
+model MeetingAgenda {
+  id                          Int       @id @default(autoincrement())
+  meetingAgendaEnum           Int       @map("enum")
+  title                       String    @db.VarChar(255)
+  description                 String    @db.Text
+  isEditableDivisionPresident Boolean   @map("is_editable_divisionPresident")
+  isEditableRepresentative    Boolean   @map("is_editable_representative")
+  isEditableSelf              Boolean   @map("is_editable_self")
+  createdAt                   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                   DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meetingMappings MeetingMapping[]
+
+  @@map("meeting_agenda")
+}
+
+model MeetingAgendaContent {
+  id        Int       @id @default(autoincrement())
+  content   String    @db.Text
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meetingMappings MeetingMapping[]
+
+  @@map("meeting_agenda_content")
+}
+
+model MeetingAttendanceDay {
+  id              Int       @id @default(autoincrement())
+  meetingId       Int       @map("meeting_id")
+  meetingRoleEnum Int       @map("meeting_role_enum")
+  whichClubId     Int?      @map("which_club_id")
+  whichDivisionId Int?      @map("which_division_id")
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meeting     Meeting         @relation(fields: [meetingId], references: [id], map: "meeting_meeting_attendance_day_id_fk")
+  meetingRole MeetingRoleEnum @relation(fields: [meetingRoleEnum], references: [id], map: "meeting_attendance_day_role_enum_fk")
+  club        Club?           @relation(fields: [whichClubId], references: [id])
+  division    Division?       @relation(fields: [whichDivisionId], references: [id])
+
+  @@map("meeting_attendance_day")
+}
+
+model MeetingAttendanceTimeT {
+  id        Int       @id @default(autoincrement())
+  meetingId Int       @map("meeting_id")
+  userId    Int       @map("user_id")
+  startTerm DateTime  @map("start_term") @db.DateTime(0)
+  endTerm   DateTime? @map("end_term") @db.DateTime(0)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], map: "meeting_meeting_attendance_time_t_id_fk")
+  user    User    @relation(fields: [userId], references: [id], map: "user_meeting_attendance_time_t_id_fk")
+
+  @@map("meeting_attendance_time_t")
+}
+
+model MeetingAgendaVote {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String    @db.Text
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  voteChoices     MeetingVoteChoice[]
+  voteResults     MeetingVoteResult[]
+  meetingMappings MeetingMapping[]
+
+  @@map("meeting_agenda_vote")
+}
+
+model MeetingVoteChoice {
+  id        Int       @id @default(autoincrement())
+  voteId    Int       @map("vote_id")
+  choice    String    @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  vote        MeetingAgendaVote   @relation(fields: [voteId], references: [id], map: "meeting_agenda_vote_choice_id_fk")
+  voteResults MeetingVoteResult[]
+
+  @@map("meeting_vote_choice")
+}
+
+model MeetingVoteResult {
+  id        Int       @id @default(autoincrement())
+  voteId    Int       @map("vote_id")
+  userId    Int       @map("user_id")
+  choiceId  Int       @map("choice_id")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  vote   MeetingAgendaVote @relation(fields: [voteId], references: [id], map: "meeting_agenda_vote_result_id_fk")
+  user   User              @relation(fields: [userId], references: [id], map: "user_meeting_vote_result_id_fk")
+  choice MeetingVoteChoice @relation(fields: [choiceId], references: [id], map: "meeting_vote_choice_result_id_fk")
+
+  @@map("meeting_vote_result")
+}
+
+model MeetingMapping {
+  id                          Int       @id @default(autoincrement())
+  meetingId                   Int       @map("meeting_id")
+  meetingAgendaId             Int       @map("meeting_agenda_id")
+  meetingAgendaPosition       Int       @map("meeting_agenda_position")
+  meetingAgendaEntityType     Int       @map("meeting_agenda_entity_type")
+  meetingAgendaContentId      Int?      @map("meeting_agenda_content_id")
+  meetingAgendaVoteId         Int?      @map("meeting_agenda_vote_id")
+  meetingAgendaEntityPosition Int?      @map("meeting_agenda_entity_position")
+  createdAt                   DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                   DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt                   DateTime? @map("deleted_at") @db.Timestamp(0)
+
+  meeting              Meeting               @relation(fields: [meetingId], references: [id], map: "meeting_meeting_mapping_id_fk")
+  meetingAgenda        MeetingAgenda         @relation(fields: [meetingAgendaId], references: [id], map: "meeting_agenda_meeting_mapping_id_fk")
+  meetingAgendaContent MeetingAgendaContent? @relation(fields: [meetingAgendaContentId], references: [id], map: "meeting_agenda_content_meeting_mapping_id_fk")
+  meetingAgendaVote    MeetingAgendaVote?    @relation(fields: [meetingAgendaVoteId], references: [id], map: "meeting_agenda_vote_meeting_mapping_id_fk")
+
+  @@map("meeting_mapping")
+}

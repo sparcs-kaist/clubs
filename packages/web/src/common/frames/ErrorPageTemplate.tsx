@@ -9,8 +9,7 @@ import logoImg from "@sparcs-clubs/web/assets/only-logo.svg";
 import Button from "../components/Button";
 import Typography from "../components/Typography";
 
-export interface ErrorPageTemplateProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ErrorPageTemplateProps extends React.HTMLAttributes<HTMLDivElement> {
   message?: React.ReactNode;
   buttons?: { text: string; onClick: () => void }[];
 }

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
+import { useState } from "react";
 import styled from "styled-components";
 
 import { Locale } from "@sparcs-clubs/web/i18n/config";
-import { getUserLocale, setUserLocale } from "@sparcs-clubs/web/i18n/locale";
+import { setUserLocale } from "@sparcs-clubs/web/i18n/locale";
 
 import Icon from "./Icon";
 import Typography from "./Typography";
@@ -21,15 +22,8 @@ const LanguageSwitcherLine = styled.div`
 `;
 
 const LanguageSwitcher = ({ isMobile }: { isMobile: boolean }) => {
-  const [locale, setLocale] = useState<Locale>("ko");
-  // TODO: suspense query 활용하면 아래 useEffect 필요없음
-  useEffect(() => {
-    const fetchLocale = async () => {
-      const currentLocale = await getUserLocale();
-      setLocale(currentLocale as Locale);
-    };
-    fetchLocale();
-  }, []);
+  const currentLocale = useLocale() as Locale;
+  const [locale, setLocale] = useState<Locale>(currentLocale);
 
   if (isMobile) {
     return (

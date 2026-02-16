@@ -1,23 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import {
-  and,
-  gt,
-  InferInsertModel,
-  InferSelectModel,
-  isNotNull,
-  lte,
-  not,
-  or,
-  SQL,
-} from "drizzle-orm";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
-  TableWithID,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
-import { ClubDelegate } from "@sparcs-clubs/api/drizzle/schema/club.schema";
 import {
   IClubDelegateCreate,
   MClubDelegate,
@@ -34,11 +21,6 @@ export type ClubDelegateQuery = {
 type ClubDelegateOrderByKeys = "id";
 type ClubDelegateQuerySupport = { startTerm: Date; endTerm: Date }; // Query Support 용
 
-type ClubDelegateTable = typeof ClubDelegate;
-type ClubDelegateDbSelect = InferSelectModel<ClubDelegateTable>;
-type ClubDelegateDbUpdate = Partial<ClubDelegateDbSelect>;
-type ClubDelegateDbInsert = InferInsertModel<ClubDelegateTable>;
-
 type ClubDelegateFieldMapKeys = BaseTableFieldMapKeys<
   ClubDelegateQuery,
   ClubDelegateOrderByKeys,
@@ -49,16 +31,16 @@ type ClubDelegateFieldMapKeys = BaseTableFieldMapKeys<
 export class ClubDelegateRepository extends BaseSingleTableRepository<
   MClubDelegate,
   IClubDelegateCreate,
-  ClubDelegateTable,
   ClubDelegateQuery,
   ClubDelegateOrderByKeys,
   ClubDelegateQuerySupport
 > {
   constructor() {
-    super(ClubDelegate, MClubDelegate);
+    super("clubDelegateD", MClubDelegate);
   }
 
-  protected dbToModelMapping(result: ClubDelegateDbSelect): MClubDelegate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected dbToModelMapping(result: any): MClubDelegate {
     return new MClubDelegate({
       id: result.id,
       student: { id: result.studentId },
@@ -69,7 +51,8 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     });
   }
 
-  protected modelToDBMapping(model: MClubDelegate): ClubDelegateDbUpdate {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected modelToDBMapping(model: MClubDelegate): any {
     return {
       id: model.id,
       studentId: model.student.id,
@@ -80,9 +63,8 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     };
   }
 
-  protected createToDBMapping(
-    model: IClubDelegateCreate,
-  ): ClubDelegateDbInsert {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected createToDBMapping(model: IClubDelegateCreate): any {
     return {
       studentId: model.student.id,
       clubId: model.club.id,
@@ -94,38 +76,38 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
 
   protected fieldMap(
     field: ClubDelegateFieldMapKeys,
-  ): TableWithID | null | undefined {
-    const fieldMappings: Record<ClubDelegateFieldMapKeys, TableWithID | null> =
-      {
-        id: ClubDelegate,
-        studentId: ClubDelegate,
-        clubId: ClubDelegate,
-        clubDelegateEnum: ClubDelegate,
-        startTerm: ClubDelegate,
-        endTerm: ClubDelegate,
-        date: null,
-      };
+  ): string | null | undefined {
+    const fieldMappings: Record<ClubDelegateFieldMapKeys, string | null> = {
+      id: "id",
+      studentId: "studentId",
+      clubId: "clubId",
+      clubDelegateEnum: "clubDelegateEnum",
+      startTerm: "startTerm",
+      endTerm: "endTerm",
+      date: null,
+    };
 
     if (!(field in fieldMappings)) {
       return undefined;
     }
 
-    return fieldMappings[field];
+    return fieldMappings[field as keyof typeof fieldMappings];
   }
+
   protected processSpecialCondition(
     key: ClubDelegateFieldMapKeys,
     value: PrimitiveConditionValue,
-  ): SQL {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
     if (key === "date" && value instanceof Date) {
-      return not(
-        or(
-          gt(ClubDelegate.startTerm, value),
-          and(
-            isNotNull(ClubDelegate.endTerm),
-            lte(ClubDelegate.endTerm, value),
-          ),
-        ),
-      );
+      return {
+        NOT: {
+          OR: [
+            { startTerm: { gt: value } },
+            { AND: [{ endTerm: { not: null } }, { endTerm: { lte: value } }] },
+          ],
+        },
+      };
     }
 
     throw new Error(`Invalid key: ${key}`);

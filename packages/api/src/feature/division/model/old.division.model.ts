@@ -1,11 +1,16 @@
-import { InferSelectModel } from "drizzle-orm";
-
 import { IDivision } from "@clubs/interface/api/division/type/division.type";
 
 import { MEntity } from "@sparcs-clubs/api/common/base/entity.model";
-import { Division } from "@sparcs-clubs/api/drizzle/schema/division.schema";
 
-export type DivisionDBResult = InferSelectModel<typeof Division>;
+export type DivisionDBResult = {
+  id: number;
+  name: string;
+  startTerm: Date;
+  endTerm: Date | null;
+  districtId: number;
+  createdAt: Date;
+  deletedAt: Date | null;
+};
 
 export class OldMDivision extends MEntity implements IDivision {
   static modelName = "division";

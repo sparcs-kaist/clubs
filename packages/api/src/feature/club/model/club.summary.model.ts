@@ -1,13 +1,18 @@
-import { InferSelectModel } from "drizzle-orm";
-
 import { IClubSummary } from "@clubs/interface/api/club/type/club.type";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
-import { ClubOld, ClubT } from "@sparcs-clubs/api/drizzle/schema/club.schema";
-
 type ClubSummaryDBResult = {
-  club: InferSelectModel<typeof ClubOld>;
-  club_t?: InferSelectModel<typeof ClubT>;
+  club: {
+    id: number;
+    nameKr: string;
+    nameEn: string;
+    divisionId: number;
+    [key: string]: unknown;
+  };
+  club_t?: {
+    clubStatusEnumId: number;
+    [key: string]: unknown;
+  };
 };
 
 export class VClubSummary implements IClubSummary {
