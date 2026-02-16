@@ -431,10 +431,14 @@ export default class ActivityOldService {
       this.userPublicService.getCurrentExecutiveSummaries(),
     ]);
 
-    const clubMemberUserIds = clubMembers.map(e => e.userId);
+    const clubMemberUserIds = clubMembers
+      .map(e => e.userId)
+      .filter((id): id is number => id != null);
     // clubMemberUserIds에 없는 executive만 필터링
     return {
-      executives: executives.filter(e => !clubMemberUserIds.includes(e.userId)),
+      executives: executives.filter(
+        e => e.userId == null || !clubMemberUserIds.includes(e.userId),
+      ),
     };
   }
 

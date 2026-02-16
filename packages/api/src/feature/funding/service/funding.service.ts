@@ -472,9 +472,11 @@ export default class FundingService {
       activityD.id,
     );
 
-    const activities = await this.activityPublicService.fetchSummaries(
-      fundings.map(funding => funding.purposeActivity.id),
-    );
+    const activityIds = fundings
+      .map(funding => funding.purposeActivity?.id)
+      .filter((id): id is number => id != null);
+    const activities =
+      await this.activityPublicService.fetchSummaries(activityIds);
 
     const clubs = await this.clubPublicService.fetchSummaries(
       fundings.map(funding => funding.club.id),
@@ -484,9 +486,11 @@ export default class FundingService {
       fundings: fundings.map(funding => ({
         id: funding.id,
         fundingStatusEnum: funding.fundingStatusEnum,
-        purposeActivity: activities.find(
-          activity => activity.id === funding.purposeActivity.id,
-        ),
+        purposeActivity: funding.purposeActivity?.id
+          ? activities.find(
+              activity => activity.id === funding.purposeActivity.id,
+            )
+          : undefined,
         name: funding.name,
         expenditureAmount: funding.expenditureAmount,
         approvedAmount: funding.approvedAmount,
@@ -511,9 +515,11 @@ export default class FundingService {
       param.activityDId,
     );
 
-    const activities = await this.activityPublicService.fetchSummaries(
-      fundings.map(funding => funding.purposeActivity.id),
-    );
+    const activityIds = fundings
+      .map(funding => funding.purposeActivity?.id)
+      .filter((id): id is number => id != null);
+    const activities =
+      await this.activityPublicService.fetchSummaries(activityIds);
 
     const clubs = await this.clubPublicService.fetchSummaries(
       fundings.map(funding => funding.club.id),
@@ -523,9 +529,11 @@ export default class FundingService {
       fundings: fundings.map(funding => ({
         id: funding.id,
         fundingStatusEnum: funding.fundingStatusEnum,
-        purposeActivity: activities.find(
-          activity => activity.id === funding.purposeActivity.id,
-        ),
+        purposeActivity: funding.purposeActivity?.id
+          ? activities.find(
+              activity => activity.id === funding.purposeActivity.id,
+            )
+          : undefined,
         name: funding.name,
         expenditureAmount: funding.expenditureAmount,
         approvedAmount: funding.approvedAmount,
@@ -793,23 +801,23 @@ export default class FundingService {
       }),
     );
 
-    const activities = await this.activityPublicService.fetchSummaries(
-      fundingsWithCommentedExecutive.map(
-        funding => funding.purposeActivity?.id,
-      ),
-    );
+    const activityIds = fundingsWithCommentedExecutive
+      .map(funding => funding.purposeActivity?.id)
+      .filter((id): id is number => id != null);
+    const activities =
+      await this.activityPublicService.fetchSummaries(activityIds);
 
-    const executiveIds = new Set([
+    const executiveIds = [
       ...fundingsWithCommentedExecutive.map(
         funding => funding.chargedExecutive?.id,
       ),
       ...fundingsWithCommentedExecutive.map(
         funding => funding.commentedExecutive?.id,
       ),
-    ]);
+    ].filter((id): id is number => id != null);
 
     const executives = await this.userPublicService.fetchExecutiveSummaries(
-      Array.from(executiveIds),
+      Array.from(new Set(executiveIds)),
     );
 
     const clubs = await this.clubPublicService.fetchSummaries(
@@ -886,22 +894,22 @@ export default class FundingService {
       }),
     );
 
-    const activities = await this.activityPublicService.fetchSummaries(
-      fundingsWithCommentedExecutive.map(
-        funding => funding.purposeActivity?.id,
-      ),
-    );
+    const activityIds = fundingsWithCommentedExecutive
+      .map(funding => funding.purposeActivity?.id)
+      .filter((id): id is number => id != null);
+    const activities =
+      await this.activityPublicService.fetchSummaries(activityIds);
 
-    const executiveIds = new Set([
+    const executiveIds = [
       ...fundingsWithCommentedExecutive.map(
         funding => funding.chargedExecutive?.id,
       ),
       ...fundingsWithCommentedExecutive.map(
         funding => funding.commentedExecutive?.id,
       ),
-    ]);
+    ].filter((id): id is number => id != null);
     const executives = await this.userPublicService.fetchExecutiveSummaries(
-      Array.from(executiveIds),
+      Array.from(new Set(executiveIds)),
     );
 
     const clubs = await this.clubPublicService.fetchSummaries(
@@ -1139,10 +1147,14 @@ export default class FundingService {
       this.userPublicService.getCurrentExecutiveSummaries(),
     ]);
 
-    const clubMemberUserIds = clubMembers.map(e => e.userId);
+    const clubMemberUserIds = clubMembers
+      .map(e => e.userId)
+      .filter((id): id is number => id != null);
     // clubMemberUserIds에 없는 executive만 필터링
     return {
-      executives: executives.filter(e => !clubMemberUserIds.includes(e.userId)),
+      executives: executives.filter(
+        e => e.userId == null || !clubMemberUserIds.includes(e.userId),
+      ),
     };
   }
 
