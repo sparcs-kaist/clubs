@@ -6,6 +6,14 @@ export interface patchNote {
 
 const patchNoteList: patchNote[] = [
   {
+    version: "v.0.0.106",
+    date: new Date("2026.02.26"),
+    patchNoteContent: `Clubs v0.0.106
+오류 수정은 다음과 같습니다.
+- 입학 예정자가 로그인 시 오류가 발생하던 문제를 수정했습니다.
+`,
+  },
+  {
     version: "v.0.0.105",
     date: new Date("2026.02.17"),
     patchNoteContent: `Clubs v0.0.105
