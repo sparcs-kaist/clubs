@@ -30,7 +30,7 @@ export interface UserInfoExtractionResult {
 
 /**
  * V2의 socps_cd를 기존 시스템의 사용자 타입으로 변환
- * @param socpsCd - V2 소속 구분 코드 ('S': 학생, 'P': 교수, 'E': 직원 등)
+ * @param socpsCd - V2 소속 구분 코드 ('S': 학생, 'G': 입학예정자, 'P': 교수, 'E': 직원 등)
  * @returns 기존 시스템 호환 타입 문자열
  */
 export const getUserTypeFromSocpsCd = (
@@ -43,6 +43,8 @@ export const getUserTypeFromSocpsCd = (
   switch (socpsCd.toUpperCase().trim()) {
     case "S":
       return "Student"; // 학생
+    case "G":
+      return "Student"; // 입학예정자
     case "P":
       return "Professor"; // 교수
     case "PA":
@@ -134,13 +136,13 @@ export const validateKaistV2Info = (
     // 학생 필수 필드
     {
       field: "std_no",
-      condition: (info: KaistV2Info) => info.socps_cd === "S",
-      description: "학생인 경우 학번",
+      condition: (info: KaistV2Info) => ["S", "G"].includes(info.socps_cd),
+      description: "학생/입학예정자인 경우 학번",
     },
     {
       field: "std_dept_id",
-      condition: (info: KaistV2Info) => info.socps_cd === "S",
-      description: "학생인 경우 학과 ID",
+      condition: (info: KaistV2Info) => ["S", "G"].includes(info.socps_cd),
+      description: "학생/입학예정자인 경우 학과 ID",
     },
     // 교수/직원 필수 필드
     {
@@ -182,14 +184,14 @@ export const validateKaistV2Info = (
   }
 
   // 학번 형식 검증 (학생인 경우)
-  if (kaistV2Info.socps_cd === "S" && kaistV2Info.std_no) {
+  if (["S", "G"].includes(kaistV2Info.socps_cd) && kaistV2Info.std_no) {
     if (!/^\d{6,10}$/.test(kaistV2Info.std_no)) {
       errors.push("Invalid student number format - should be 6-10 digits");
     }
   }
 
   // socps_cd 유효성 검증
-  const validSocpsCodes = ["S", "P", "PA", "E", "F", "R"];
+  const validSocpsCodes = ["S", "G", "P", "PA", "E", "F", "R"];
   if (
     kaistV2Info.socps_cd &&
     !validSocpsCodes.includes(kaistV2Info.socps_cd.toUpperCase())
