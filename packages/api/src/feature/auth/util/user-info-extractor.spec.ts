@@ -32,6 +32,10 @@ describe("User Info Extractor (Unit)", () => {
       expect(getUserTypeFromSocpsCd("R")).toBe("Employee");
     });
 
+    it("should return Student for G (입학예정자)", () => {
+      expect(getUserTypeFromSocpsCd("G")).toBe("Student");
+    });
+
     it("should default to Student for unknown codes", () => {
       expect(getUserTypeFromSocpsCd("X")).toBe("Student");
       expect(getUserTypeFromSocpsCd("Z")).toBe("Student");
@@ -155,7 +159,7 @@ describe("User Info Extractor (Unit)", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Invalid socps_cd 'X' - must be one of: S, P, PA, E, F, R",
+        "Invalid socps_cd 'X' - must be one of: S, G, P, PA, E, F, R",
       );
     });
 
@@ -168,7 +172,7 @@ describe("User Info Extractor (Unit)", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Required field 'std_no' is missing or empty (학생인 경우 학번)",
+        "Required field 'std_no' is missing or empty (학생/입학예정자인 경우 학번)",
       );
     });
 
@@ -181,7 +185,43 @@ describe("User Info Extractor (Unit)", () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        "Required field 'std_dept_id' is missing or empty (학생인 경우 학과 ID)",
+        "Required field 'std_dept_id' is missing or empty (학생/입학예정자인 경우 학과 ID)",
+      );
+    });
+
+    it("should validate correct V2 info for 입학예정자 (G)", () => {
+      const validInfo = createValidV2Info({
+        socps_cd: "G",
+      });
+      const result = validateKaistV2Info(validInfo);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should require std_no for 입학예정자 (G)", () => {
+      const invalidInfo = createValidV2Info({
+        socps_cd: "G",
+        std_no: "",
+      });
+      const result = validateKaistV2Info(invalidInfo);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Required field 'std_no' is missing or empty (학생/입학예정자인 경우 학번)",
+      );
+    });
+
+    it("should require std_dept_id for 입학예정자 (G)", () => {
+      const invalidInfo = createValidV2Info({
+        socps_cd: "G",
+        std_dept_id: "",
+      });
+      const result = validateKaistV2Info(invalidInfo);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        "Required field 'std_dept_id' is missing or empty (학생/입학예정자인 경우 학과 ID)",
       );
     });
 
@@ -375,6 +415,7 @@ describe("User Info Extractor (Unit)", () => {
     it("should map all socps_cd types correctly", () => {
       const testCases = [
         { socps_cd: "S", expectedType: "Student" },
+        { socps_cd: "G", expectedType: "Student" },
         { socps_cd: "P", expectedType: "Professor" },
         { socps_cd: "PA", expectedType: "Professor" },
         { socps_cd: "E", expectedType: "Employee" },
