@@ -10,6 +10,10 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { activityDeadlineEnumToString } from "@sparcs-clubs/web/features/activity-report/constants";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import useCreateActivityDeadline from "../services/useCreateActivityDeadline";
 import useGetActivityDurations from "../services/useGetActivityDurations";
@@ -38,8 +42,8 @@ const ActivityDeadlineFormModal = ({
       createActivityDeadline({
         activityDId,
         deadlineEnum,
-        startTerm,
-        endTerm,
+        startTerm: getLocalDateOnly(startTerm),
+        endTerm: getLocalDateLastTime(endTerm),
       });
       onClose();
     }

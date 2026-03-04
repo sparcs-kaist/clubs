@@ -12,6 +12,10 @@ import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
 import useCreateActivityDuration from "@sparcs-clubs/web/features/executive/services/useCreateActivityDuration";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import { activityDurationTypeEnumToString } from "./ActivityDurationTable";
 
@@ -47,8 +51,8 @@ const ActivityDurationFormModal = ({
         activityDurationTypeEnum: typeEnum,
         year: Number(year),
         name,
-        startTerm,
-        endTerm,
+        startTerm: getLocalDateOnly(startTerm),
+        endTerm: getLocalDateLastTime(endTerm),
       });
       onClose();
     }

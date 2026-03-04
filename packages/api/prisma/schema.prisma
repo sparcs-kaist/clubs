@@ -74,8 +74,8 @@ model StudentT {
   studentStatusEnum Int       @map("student_status_enum")
   department        Int?
   semesterId        Int       @map("semester_id")
-  startTerm         DateTime  @map("start_term") @db.Date
-  endTerm           DateTime? @map("end_term") @db.Date
+  startTerm         DateTime  @map("start_term") @db.DateTime(0)
+  endTerm           DateTime? @map("end_term") @db.DateTime(0)
   createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -133,8 +133,8 @@ model ExecutiveT {
   executiveId         Int       @map("executive_id")
   executiveStatusEnum Int       @map("executive_status_enum")
   executiveBureauEnum Int       @map("executive_bureau_enum")
-  startTerm           DateTime  @map("start_term") @db.Date
-  endTerm             DateTime? @map("end_term") @db.Date
+  startTerm           DateTime  @map("start_term") @db.DateTime(0)
+  endTerm             DateTime? @map("end_term") @db.DateTime(0)
   createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt           DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -166,8 +166,8 @@ model ProfessorT {
   professorId   Int       @unique @map("professor_id")
   professorEnum Int?      @map("professor_enum")
   department    Int?
-  startTerm     DateTime  @map("start_term") @db.Date
-  endTerm       DateTime? @map("end_term") @db.Date
+  startTerm     DateTime  @map("start_term") @db.DateTime(0)
+  endTerm       DateTime? @map("end_term") @db.DateTime(0)
   createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt     DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -193,8 +193,8 @@ model Employee {
 model EmployeeT {
   id         Int       @id @default(autoincrement())
   employeeId Int       @unique @map("employee_id")
-  startTerm  DateTime  @map("start_term") @db.Date
-  endTerm    DateTime? @map("end_term") @db.Date
+  startTerm  DateTime  @map("start_term") @db.DateTime(0)
+  endTerm    DateTime? @map("end_term") @db.DateTime(0)
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -318,8 +318,8 @@ model ClubT {
   characteristicEn String?   @map("characteristic_en") @db.VarChar(255)
   professorId      Int?      @map("professor_id")
   semesterId       Int       @map("semester_id")
-  startTerm        DateTime  @map("start_term") @db.Date
-  endTerm          DateTime? @map("end_term") @db.Date
+  startTerm        DateTime  @map("start_term") @db.DateTime(0)
+  endTerm          DateTime? @map("end_term") @db.DateTime(0)
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -338,8 +338,8 @@ model ClubDivisionHistory {
   id         Int       @id @default(autoincrement())
   clubId     Int       @map("club_id")
   divisionId Int       @map("division_id")
-  startTerm  DateTime  @map("start_term") @db.Date
-  endTerm    DateTime? @map("end_term") @db.Date
+  startTerm  DateTime  @map("start_term") @db.DateTime(0)
+  endTerm    DateTime? @map("end_term") @db.DateTime(0)
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -354,8 +354,8 @@ model ClubStudentT {
   studentId  Int       @map("student_id")
   clubId     Int       @map("club_id")
   semesterId Int       @map("semester_id")
-  startTerm  DateTime  @map("start_term") @db.Date
-  endTerm    DateTime? @map("end_term") @db.Date
+  startTerm  DateTime  @map("start_term") @db.DateTime(0)
+  endTerm    DateTime? @map("end_term") @db.DateTime(0)
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -384,8 +384,8 @@ model ClubRoomT {
   roomLocation     String?   @map("room_location") @db.VarChar(20)
   roomPassword     String?   @map("room_password") @db.VarChar(20)
   semesterId       Int       @map("semester_id")
-  startTerm        DateTime  @map("start_term") @db.Date
-  endTerm          DateTime? @map("end_term") @db.Date
+  startTerm        DateTime  @map("start_term") @db.DateTime(0)
+  endTerm          DateTime? @map("end_term") @db.DateTime(0)
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -468,8 +468,8 @@ model District {
 model Division {
   id         Int       @id @default(autoincrement())
   name       String    @db.VarChar(10)
-  startTerm  DateTime  @default(dbgenerated("'2017-03-01'")) @map("start_term") @db.Date
-  endTerm    DateTime? @map("end_term") @db.Date
+  startTerm  DateTime  @default(dbgenerated("'2017-03-01 00:00:00'")) @map("start_term") @db.DateTime(0)
+  endTerm    DateTime? @map("end_term") @db.DateTime(0)
   districtId Int       @map("district_id")
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
@@ -487,8 +487,8 @@ model DivisionPresidentD {
   id               Int       @id @default(autoincrement())
   divisionId       Int       @map("division_id")
   studentId        Int       @map("student_id")
-  startTerm        DateTime  @map("start_term") @db.Date
-  endTerm          DateTime? @map("end_term") @db.Date
+  startTerm        DateTime  @map("start_term") @db.DateTime(0)
+  endTerm          DateTime? @map("end_term") @db.DateTime(0)
   originatedClubId Int       @map("originated_club_id")
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
@@ -502,8 +502,8 @@ model DivisionPresidentD {
 model DivisionPermanentClubD {
   id        Int       @id @default(autoincrement())
   clubId    Int       @map("club_id")
-  startTerm DateTime  @map("start_term") @db.Date
-  endTerm   DateTime? @map("end_term") @db.Date
+  startTerm DateTime  @map("start_term") @db.DateTime(0)
+  endTerm   DateTime? @map("end_term") @db.DateTime(0)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -521,8 +521,8 @@ model SemesterD {
   id        Int       @id @default(autoincrement())
   year      Int
   name      String    @db.VarChar(10)
-  startTerm DateTime  @map("start_term") @db.Date
-  endTerm   DateTime  @map("end_term") @db.Date
+  startTerm DateTime  @map("start_term") @db.DateTime(0)
+  endTerm   DateTime  @map("end_term") @db.DateTime(0)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
@@ -542,8 +542,8 @@ model ActivityD {
   semesterId               Int       @map("semester_id")
   year                     Int
   name                     String    @db.VarChar(10)
-  startTerm                DateTime  @map("start_term") @db.Date
-  endTerm                  DateTime  @map("end_term") @db.Date
+  startTerm                DateTime  @map("start_term") @db.DateTime(0)
+  endTerm                  DateTime  @map("end_term") @db.DateTime(0)
   activityDurationTypeEnum Int       @map("activity_duration_type_enum")
   createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                DateTime? @map("deleted_at") @db.Timestamp(0)

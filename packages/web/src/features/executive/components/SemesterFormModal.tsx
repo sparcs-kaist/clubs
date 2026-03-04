@@ -6,6 +6,10 @@ import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 interface SemesterData {
   id: number;
@@ -42,8 +46,8 @@ const SemesterFormModal = ({
       onSave({
         year: parseInt(year),
         name,
-        startTerm,
-        endTerm,
+        startTerm: getLocalDateOnly(startTerm),
+        endTerm: getLocalDateLastTime(endTerm),
       });
       onClose();
     }
