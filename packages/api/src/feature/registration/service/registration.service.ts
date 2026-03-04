@@ -108,16 +108,20 @@ export class RegistrationService {
     // - 이미 해당 동아리 id로 신청이 진행중일 경우 신청이 불가합니다.
 
     const semesterId = await this.semesterPublicService.loadId();
-    const clubRegistrationList =
-      await this.clubRegistrationRepository.findByClubAndSemesterId(
-        body.clubId,
-        semesterId,
-      );
-    if (clubRegistrationList.length !== 0) {
-      throw new HttpException(
-        "your club request already exists",
-        HttpStatus.BAD_REQUEST,
-      );
+    // clubId가 있는 경우에만 동일 동아리 중복 등록 체크
+    // 신규 가등록(NewProvisional)은 clubId가 null이므로 체크하지 않음
+    if (body.clubId) {
+      const clubRegistrationList =
+        await this.clubRegistrationRepository.findByClubAndSemesterId(
+          body.clubId,
+          semesterId,
+        );
+      if (clubRegistrationList.length !== 0) {
+        throw new HttpException(
+          "your club request already exists",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
     }
     const myRegistrationList =
       await this.clubRegistrationRepository.findByStudentAndSemesterId(
@@ -131,7 +135,7 @@ export class RegistrationService {
       );
     }
     logger.debug(
-      `[postRegistration] registration existence checked. ${clubRegistrationList} ${myRegistrationList}`,
+      `[postRegistration] registration existence checked. clubId=${body.clubId}, myRegistrations=${myRegistrationList.length}`,
     );
     // - foundedAt의 경우 가동아리 신청인 경우 설립연월의 정보가 처리됩니다. 신규등록|재등록인 경우 설립연도만을 처리합니다.
     const transformedBody = {
@@ -236,6 +240,11 @@ export class RegistrationService {
       await this.clubPublicService.getClubsExistedSemesters({
         clubId: clubTemp.id,
       });
+
+    // 신규 가등록 동아리는 club_t 레코드가 없어 registeredSemesters가 빈 배열일 수 있음
+    if (registeredSemesters.length === 0) {
+      return { clubs: [] };
+    }
 
     const maxSemesterId = Math.max(...registeredSemesters.map(e => e.id));
     const club = await this.clubPublicService.fetch(clubTemp.id, {
