@@ -51,7 +51,7 @@ const Clubs: React.FC = () => {
               style={{ whiteSpace: "pre-line" }}
             >
               {`"${formatDate(data?.deadline?.startDate)} - ${formatDate(data?.deadline?.endTerm)}"은 동아리 등록 기간입니다.
-              가을학기 동아리가 확정되지 않아 동아리 목록이 비어있어요. 동아리 대표자들께선 동아리 → 동아리 등록 기능을 통해 동아리 등록을 제출해주세요!`}
+              ${data?.semester?.year}년 ${data?.semester?.name}학기 동아리가 확정되지 않아 동아리 목록이 비어있어요. 동아리 대표자들께선 동아리 → 동아리 등록 기능을 통해 동아리 등록을 제출해주세요!`}
             </Typography>
           </Banner>
         )}

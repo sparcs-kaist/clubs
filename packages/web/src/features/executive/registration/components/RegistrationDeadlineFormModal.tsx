@@ -10,7 +10,10 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
-import { getLocalDateLastTime } from "@sparcs-clubs/web/utils/Date/getKSTDate";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import useCreateRegistrationDeadline from "../services/useCreateRegistrationDeadline";
 import { registrationDeadlineEnumToString } from "./RegistrationDeadlineTable";
@@ -43,7 +46,7 @@ const RegistrationDeadlineFormModal = ({
       createRegistrationDeadline({
         semesterId,
         deadlineEnum,
-        startTerm,
+        startTerm: getLocalDateOnly(startTerm),
         endTerm: getLocalDateLastTime(endTerm),
       });
       onClose();

@@ -12,7 +12,10 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useCreateFundingDeadline from "@sparcs-clubs/web/features/executive/funding/services/useCreateFundingDeadline";
 import useGetActivityDurations from "@sparcs-clubs/web/features/executive/services/useGetActivityDurations";
 import { fundingDeadlineEnumToString } from "@sparcs-clubs/web/features/manage-club/funding/constants/fundingDeadlineEnumToString";
-import { getLocalDateLastTime } from "@sparcs-clubs/web/utils/Date/getKSTDate";
+import {
+  getLocalDateLastTime,
+  getLocalDateOnly,
+} from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 interface FundingDeadlineFormModalProps {
   isOpen: boolean;
@@ -38,7 +41,7 @@ const FundingDeadlineFormModal = ({
       createFundingDeadline({
         activityDId,
         deadlineEnum,
-        startTerm,
+        startTerm: getLocalDateOnly(startTerm),
         endTerm: getLocalDateLastTime(endTerm),
       });
       onClose();

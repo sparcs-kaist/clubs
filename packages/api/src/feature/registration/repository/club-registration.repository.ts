@@ -130,12 +130,13 @@ export class ClubRegistrationRepository {
           `,
         );
         // For INSERT via $queryRaw, we need to fetch the last insert ID
+        // LAST_INSERT_ID() returns BigInt in MySQL, so we cast to Number
         const lastInsertResult = await (
           tx as unknown as PrismaClient
-        ).$queryRaw<Array<{ id: number }>>(
+        ).$queryRaw<Array<{ id: bigint }>>(
           Prisma.sql`SELECT LAST_INSERT_ID() AS id`,
         );
-        clubId = lastInsertResult[0].id;
+        clubId = Number(lastInsertResult[0].id);
         if (!clubId) {
           throw new HttpException(
             "ClubOld creation failed",
@@ -508,11 +509,13 @@ export class ClubRegistrationRepository {
           divisionId: registration.divisionId,
           activityFieldKr: registration.activityFieldKr,
           activityFieldEn: registration.activityFieldEn,
-          professor: {
-            name: registration.professorName,
-            email: registration.professorEmail,
-            professorEnumId: registration.professorEnumId,
-          },
+          professor: registration.professorName
+            ? {
+                name: registration.professorName,
+                email: registration.professorEmail,
+                professorEnumId: registration.professorEnumId,
+              }
+            : undefined,
           divisionConsistency: registration.divisionConsistency,
           foundationPurpose: registration.foundationPurpose,
           activityPlan: registration.activityPlan,
@@ -778,11 +781,13 @@ export class ClubRegistrationRepository {
           divisionId: registration.divisionId,
           activityFieldKr: registration.activityFieldKr,
           activityFieldEn: registration.activityFieldEn,
-          professor: {
-            name: registration.professorName,
-            email: registration.professorEmail,
-            professorEnumId: registration.professorEnumId,
-          },
+          professor: registration.professorName
+            ? {
+                name: registration.professorName,
+                email: registration.professorEmail,
+                professorEnumId: registration.professorEnumId,
+              }
+            : undefined,
           divisionConsistency: registration.divisionConsistency,
           foundationPurpose: registration.foundationPurpose,
           activityPlan: registration.activityPlan,
