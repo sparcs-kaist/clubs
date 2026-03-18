@@ -53,7 +53,6 @@ export class ClubOldRepository {
   }
 
   async findClubDetail(clubId: number) {
-    const crt = new Date();
     const clubInfoRows = await this.prisma.$queryRaw<
       Array<{
         id: number;
@@ -79,8 +78,8 @@ export class ClubOldRepository {
       LEFT JOIN professor p ON p.id = ct.professor_id
       WHERE c.id = ${clubId}
         AND (
-          (ct.end_term IS NULL AND ct.start_term <= ${crt})
-          OR ct.end_term >= ${crt}
+          (ct.end_term IS NULL AND ct.start_term <= NOW())
+          OR ct.end_term >= NOW()
         )
         AND (ct.club_status_enum_id = 1 OR ct.club_status_enum_id = 2)
       LIMIT 1
@@ -104,7 +103,6 @@ export class ClubOldRepository {
   }
 
   async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
-    const crt = new Date();
     const clubs = await this.prisma.$queryRaw<
       Array<{
         divId: number;
@@ -137,23 +135,25 @@ export class ClubOldRepository {
       LEFT JOIN club c ON c.division_id = d.id
       INNER JOIN club_t ct ON c.id = ct.club_id
         AND (
-          (ct.end_term IS NULL AND ct.start_term <= ${crt})
-          OR ct.end_term >= ${crt}
+          (ct.end_term IS NULL AND ct.start_term <= NOW())
+          OR ct.end_term >= NOW()
         )
         AND (ct.club_status_enum_id = 1 OR ct.club_status_enum_id = 2)
         AND ct.deleted_at IS NULL
       LEFT JOIN professor p ON ct.professor_id = p.id
       LEFT JOIN club_student_t cst ON c.id = cst.club_id
-        AND cst.start_term <= ${crt}
-        AND (cst.end_term IS NULL OR cst.end_term >= ${crt})
+        AND cst.start_term <= NOW()
+        AND (cst.end_term IS NULL OR cst.end_term >= NOW())
         AND cst.deleted_at IS NULL
       LEFT JOIN club_delegate_d cdd ON c.id = cdd.club_id
         AND cdd.club_delegate_enum_id = 1
-        AND (cdd.end_term IS NULL OR cdd.end_term >= ${crt})
+        AND cdd.start_term <= NOW()
+        AND (cdd.end_term IS NULL OR cdd.end_term >= NOW())
+        AND cdd.deleted_at IS NULL
       LEFT JOIN student s ON cdd.student_id = s.id
       LEFT JOIN division_permanent_club_d dpcd ON dpcd.club_id = c.id
-        AND dpcd.start_term <= ${crt}
-        AND (dpcd.end_term >= ${crt} OR dpcd.end_term IS NULL)
+        AND dpcd.start_term <= NOW()
+        AND (dpcd.end_term >= NOW() OR dpcd.end_term IS NULL)
       GROUP BY d.id, d.name, c.id, c.name_kr, c.name_en,
                ct.club_status_enum_id, ct.characteristic_kr,
                s.name, p.name, dpcd.id
@@ -302,8 +302,6 @@ export class ClubOldRepository {
   ) {
     const result = await this.prisma.$transaction(
       async (tx: PrismaTransactionClient) => {
-        const cur = new Date();
-
         const club = await tx.$queryRaw<
           Array<{
             id: number;
@@ -329,21 +327,21 @@ export class ClubOldRepository {
             SELECT p.id, p.name, p.email
             FROM professor p
             INNER JOIN professor_t pt ON p.id = pt.professor_id
-              AND pt.start_term <= ${cur}
-              AND (pt.end_term > ${cur} OR pt.end_term IS NULL)
+              AND pt.start_term <= NOW()
+              AND (pt.end_term > NOW() OR pt.end_term IS NULL)
               AND pt.deleted_at IS NULL
             WHERE p.deleted_at IS NULL
           ) AS prof ON prof.id = ct.professor_id
           LEFT JOIN professor_t pt ON pt.professor_id = prof.id
-            AND pt.start_term <= ${cur}
-            AND (pt.end_term > ${cur} OR pt.end_term IS NULL)
+            AND pt.start_term <= NOW()
+            AND (pt.end_term > NOW() OR pt.end_term IS NULL)
             AND pt.deleted_at IS NULL
           WHERE c.id IN (
             SELECT cdd.club_id
             FROM club_delegate_d cdd
             WHERE cdd.student_id = ${studentId}
-              AND cdd.start_term <= ${cur}
-              AND (cdd.end_term >= ${cur} OR cdd.end_term IS NULL)
+              AND cdd.start_term <= NOW()
+              AND (cdd.end_term >= NOW() OR cdd.end_term IS NULL)
               AND cdd.deleted_at IS NULL
           )
           AND c.deleted_at IS NULL
@@ -375,8 +373,6 @@ export class ClubOldRepository {
 
     const result = await this.prisma.$transaction(
       async (tx: PrismaTransactionClient) => {
-        const cur = new Date();
-
         const response = await tx.$queryRaw<
           Array<{
             id: number;
@@ -406,8 +402,8 @@ export class ClubOldRepository {
                     SELECT cdd.club_id
                     FROM club_delegate_d cdd
                     WHERE cdd.student_id = ${studentId}
-                      AND cdd.start_term <= ${cur}
-                      AND (cdd.end_term >= ${cur} OR cdd.end_term IS NULL)
+                      AND cdd.start_term <= NOW()
+                      AND (cdd.end_term >= NOW() OR cdd.end_term IS NULL)
                       AND cdd.deleted_at IS NULL
                   )
                   AND ct2.deleted_at IS NULL
@@ -425,29 +421,29 @@ export class ClubOldRepository {
                     SELECT cdd.club_id
                     FROM club_delegate_d cdd
                     WHERE cdd.student_id = ${studentId}
-                      AND cdd.start_term <= ${cur}
-                      AND (cdd.end_term >= ${cur} OR cdd.end_term IS NULL)
+                      AND cdd.start_term <= NOW()
+                      AND (cdd.end_term >= NOW() OR cdd.end_term IS NULL)
                       AND cdd.deleted_at IS NULL
                   )
                   AND ct3.deleted_at IS NULL
                 GROUP BY c3.id
               ) AS sq
             )
-            AND ct.start_term <= ${cur}
+            AND ct.start_term <= NOW()
             AND ct.deleted_at IS NULL
-            AND (ct.end_term IS NULL OR ct.end_term > ${cur})
+            AND (ct.end_term IS NULL OR ct.end_term > NOW())
           LEFT JOIN (
             SELECT p.id, p.name, p.email
             FROM professor p
             INNER JOIN professor_t ppt ON p.id = ppt.professor_id
-              AND ppt.start_term <= ${cur}
-              AND (ppt.end_term > ${cur} OR ppt.end_term IS NULL)
+              AND ppt.start_term <= NOW()
+              AND (ppt.end_term > NOW() OR ppt.end_term IS NULL)
               AND ppt.deleted_at IS NULL
             WHERE p.deleted_at IS NULL
           ) AS prof ON prof.id = ct.professor_id
           LEFT JOIN professor_t pt ON pt.professor_id = prof.id
-            AND pt.start_term <= ${cur}
-            AND (pt.end_term > ${cur} OR pt.end_term IS NULL)
+            AND pt.start_term <= NOW()
+            AND (pt.end_term > NOW() OR pt.end_term IS NULL)
             AND pt.deleted_at IS NULL
           WHERE c.deleted_at IS NULL
         `);
@@ -568,9 +564,8 @@ export class ClubOldRepository {
         Prisma.sql`ct.semester_id IN (${Prisma.join(semesterIds)})`,
       );
     } else {
-      const cur = new Date();
       whereConditions.push(
-        Prisma.sql`ct.start_term <= ${cur} AND (ct.end_term >= ${cur} OR ct.end_term IS NULL)`,
+        Prisma.sql`ct.start_term <= NOW() AND (ct.end_term >= NOW() OR ct.end_term IS NULL)`,
       );
     }
     whereConditions.push(Prisma.sql`c.deleted_at IS NULL`);

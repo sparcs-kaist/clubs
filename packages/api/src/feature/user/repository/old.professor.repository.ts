@@ -12,7 +12,6 @@ export default class OldProfessorRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async getProfessorPhoneNumber(id: number) {
-    const crt = new Date();
     const result = await this.prisma.$queryRaw<
       Array<{ phoneNumber: string | null }>
     >(Prisma.sql`
@@ -20,8 +19,8 @@ export default class OldProfessorRepository {
       FROM professor p
       LEFT JOIN user u ON u.id = p.user_id
       LEFT JOIN professor_t pt ON pt.professor_id = p.id
-        AND (pt.end_term >= ${crt} OR pt.end_term IS NULL)
-        AND pt.start_term <= ${crt}
+        AND (pt.end_term >= NOW() OR pt.end_term IS NULL)
+        AND pt.start_term <= NOW()
         AND pt.deleted_at IS NULL
       WHERE p.user_id = ${id} AND p.deleted_at IS NULL
       LIMIT 1

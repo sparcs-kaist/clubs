@@ -12,7 +12,6 @@ export class ClubPutStudentClubBrief {
     description: string,
     roomPassword: string,
   ): Promise<boolean> {
-    const crt = new Date();
     await this.prisma.$transaction(async tx => {
       // This is a complex multi-table UPDATE with JOINs - preserve as raw SQL
       const result = await tx.$executeRaw(Prisma.sql`
@@ -21,14 +20,14 @@ export class ClubPutStudentClubBrief {
         LEFT JOIN club_room_t crt ON
           (ct.club_id = crt.club_id AND
             (
-              (crt.end_term IS NULL AND crt.start_term <= ${crt})
-              OR (crt.end_term >= ${crt})
+              (crt.end_term IS NULL AND crt.start_term <= NOW())
+              OR (crt.end_term >= NOW())
             )
           )
         SET c.description = ${description}, crt.room_password = ${roomPassword}
         WHERE (ct.club_id = ${clubId}
-        AND ((ct.end_term IS NULL AND ct.start_term <= ${crt})
-        OR (ct.end_term >= ${crt})))
+        AND ((ct.end_term IS NULL AND ct.start_term <= NOW())
+        OR (ct.end_term >= NOW())))
       `);
       if (result !== 1) {
         throw new Error("putStudentClubBrief failed");

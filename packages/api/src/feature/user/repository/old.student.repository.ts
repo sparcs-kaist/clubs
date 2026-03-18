@@ -95,7 +95,6 @@ export default class OldStudentRepository {
   }
 
   async getStudentPhoneNumber(id: number) {
-    const crt = new Date();
     const result = await this.prisma.$queryRaw<
       Array<{ phoneNumber: string | null }>
     >(Prisma.sql`
@@ -103,8 +102,8 @@ export default class OldStudentRepository {
       FROM student s
       LEFT JOIN user u ON u.id = s.user_id
       LEFT JOIN student_t st ON st.student_id = s.id
-        AND (st.end_term >= ${crt} OR st.end_term IS NULL)
-        AND st.start_term <= ${crt}
+        AND (st.end_term >= NOW() OR st.end_term IS NULL)
+        AND st.start_term <= NOW()
         AND st.deleted_at IS NULL
       WHERE s.user_id = ${id}
       LIMIT 1
