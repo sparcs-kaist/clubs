@@ -638,7 +638,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.registrationPublicService.resetClubRegistrationStatusEnum(body.clubId);
+    await this.registrationPublicService.resetClubRegistrationStatusEnum(body.clubId);
   }
 
   async putStudentActivityProvisional(
@@ -688,7 +688,7 @@ export default class ActivityService {
       );
 
     // PUT 처리를 시작합니다.
-    const isUpdateSucceed = this.activityRepository.put({
+    const isUpdateSucceed = await this.activityRepository.put({
       ...activity,
       id: param.activityId,
       name: body.name,
@@ -713,7 +713,7 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    this.registrationPublicService.resetClubRegistrationStatusEnum(
+    await this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.club.id,
     );
   }
