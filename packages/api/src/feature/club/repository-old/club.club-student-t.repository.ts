@@ -105,7 +105,6 @@ export default class ClubStudentTRepository {
   }
 
   async getClubsByStudentId(studentId: number) {
-    const today = new Date();
     const clubs = await this.prisma.$queryRaw<
       Array<{
         id: number;
@@ -117,8 +116,8 @@ export default class ClubStudentTRepository {
       FROM club_student_t cst
       LEFT JOIN club c ON c.id = cst.club_id
       WHERE cst.student_id = ${studentId}
-        AND cst.start_term <= ${today}
-        AND (cst.end_term >= ${today} OR cst.end_term IS NULL)
+        AND cst.start_term <= NOW()
+        AND (cst.end_term >= NOW() OR cst.end_term IS NULL)
     `);
     return clubs;
   }

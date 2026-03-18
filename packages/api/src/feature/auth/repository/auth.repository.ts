@@ -202,8 +202,8 @@ export class AuthRepository {
         SELECT e.id, e.student_id AS studentId
         FROM executive e
         INNER JOIN executive_t et ON et.executive_id = e.id
-          AND et.start_term <= ${currentDate}
-          AND (et.end_term >= ${currentDate} OR et.end_term IS NULL)
+          AND et.start_term <= NOW()
+          AND (et.end_term >= NOW() OR et.end_term IS NULL)
           AND et.deleted_at IS NULL
         WHERE e.student_id = ${student.id}
           AND e.deleted_at IS NULL
