@@ -13,28 +13,26 @@ export default class ExecutiveRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findExecutiveById(id: number): Promise<boolean> {
-    const now = new Date();
     const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
       Prisma.sql`
         SELECT et.id
         FROM executive_t et
         WHERE et.executive_id = ${id}
-          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
-          AND DATE(et.start_term) <= DATE(${now})
+          AND (DATE(et.end_term) >= DATE(NOW()) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(NOW())
       `,
     );
     return result.length > 0;
   }
 
   async findExecutiveByUserId(id: number): Promise<boolean> {
-    const now = new Date();
     const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
       Prisma.sql`
         SELECT e.id
         FROM executive e
         INNER JOIN executive_t et ON et.executive_id = e.id
-          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
-          AND DATE(et.start_term) <= DATE(${now})
+          AND (DATE(et.end_term) >= DATE(NOW()) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(NOW())
         WHERE e.user_id = ${id}
           AND e.deleted_at IS NULL
       `,
@@ -56,7 +54,6 @@ export default class ExecutiveRepository {
   }
 
   async getExecutivePhoneNumber(id: number) {
-    const crt = new Date();
     const result = await this.prisma.$queryRaw<
       Array<{ phoneNumber: string | null }>
     >(
@@ -65,8 +62,8 @@ export default class ExecutiveRepository {
         FROM executive e
         LEFT JOIN user u ON u.id = e.user_id
         LEFT JOIN executive_t et ON et.executive_id = e.id
-          AND (et.end_term >= ${crt} OR et.end_term IS NULL)
-          AND et.start_term <= ${crt}
+          AND (et.end_term >= NOW() OR et.end_term IS NULL)
+          AND et.start_term <= NOW()
           AND et.deleted_at IS NULL
         WHERE e.user_id = ${id}
         LIMIT 1
@@ -361,7 +358,6 @@ export default class ExecutiveRepository {
   }
 
   async getExecutives() {
-    const now = new Date();
     const result = await this.prisma.$queryRaw<
       Array<{
         id: number;
@@ -380,8 +376,8 @@ export default class ExecutiveRepository {
                et.start_term AS startTerm, et.end_term AS endTerm
         FROM executive e
         INNER JOIN executive_t et ON et.executive_id = e.id
-          AND (DATE(et.end_term) >= DATE(${now}) OR et.end_term IS NULL)
-          AND DATE(et.start_term) <= DATE(${now})
+          AND (DATE(et.end_term) >= DATE(NOW()) OR et.end_term IS NULL)
+          AND DATE(et.start_term) <= DATE(NOW())
           AND et.deleted_at IS NULL
         INNER JOIN user u ON u.id = e.user_id
           AND u.deleted_at IS NULL

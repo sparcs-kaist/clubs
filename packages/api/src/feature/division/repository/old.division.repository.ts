@@ -20,8 +20,6 @@ export default class OldDivisionRepository {
   }
 
   async selectDivisionsAndDivisionPresidents() {
-    const today = new Date();
-
     const rows = await this.prisma.$queryRaw<
       Array<{
         divisionId: number;
@@ -35,8 +33,8 @@ export default class OldDivisionRepository {
         ON d.deleted_at IS NULL
         AND dp.deleted_at IS NULL
         AND d.id = dp.division_id
-        AND dp.start_term <= ${today}
-        AND dp.end_term >= ${today}
+        AND dp.start_term <= NOW()
+        AND dp.end_term >= NOW()
     `);
     return rows.map(row => ({
       division: { id: row.divisionId, name: row.divisionName },

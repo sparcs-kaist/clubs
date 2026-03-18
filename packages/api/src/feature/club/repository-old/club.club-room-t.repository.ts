@@ -11,8 +11,6 @@ export class ClubRoomTRepository {
   async findClubLocationById(
     clubId: number,
   ): Promise<{ room: string; buildingName: string }> {
-    const currentDate = new Date();
-
     const roomDetails = await this.prisma.$queryRaw<
       Array<{ room: string | null; buildingName: string | null }>
     >(Prisma.sql`
@@ -20,8 +18,8 @@ export class ClubRoomTRepository {
       FROM club_room_t crt
       LEFT JOIN club_building_enum cbe ON crt.club_building_enum = cbe.id
       WHERE crt.club_id = ${clubId}
-        AND crt.start_term <= ${currentDate}
-        AND (crt.end_term >= ${currentDate} OR crt.end_term IS NULL)
+        AND crt.start_term <= NOW()
+        AND (crt.end_term >= NOW() OR crt.end_term IS NULL)
       ORDER BY crt.created_at DESC
       LIMIT 1
     `);

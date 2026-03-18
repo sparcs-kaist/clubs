@@ -10,7 +10,6 @@ export default class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findStudentById(studentId: number) {
-    const crt = new Date();
     const user = await this.prisma.$queryRaw<
       Array<{
         id: number;
@@ -26,8 +25,8 @@ export default class UserRepository {
       FROM student s
       LEFT JOIN user u ON u.id = s.user_id
       LEFT JOIN student_t st ON st.student_id = s.id
-        AND st.start_term <= ${crt}
-        AND (st.end_term >= ${crt} OR st.end_term IS NULL)
+        AND st.start_term <= NOW()
+        AND (st.end_term >= NOW() OR st.end_term IS NULL)
       LEFT JOIN department d ON d.id = st.department
       WHERE s.id = ${studentId}
     `);

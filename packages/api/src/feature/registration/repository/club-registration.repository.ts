@@ -88,8 +88,8 @@ export class ClubRegistrationRepository {
           FROM club_delegate_d cd
           WHERE cd.student_id = ${studentId}
             AND cd.club_id = ${body.clubId}
-            AND cd.start_term <= ${cur}
-            AND (cd.end_term >= ${cur} OR cd.end_term IS NULL)
+            AND cd.start_term <= NOW()
+            AND (cd.end_term >= NOW() OR cd.end_term IS NULL)
             AND cd.deleted_at IS NULL
           FOR SHARE
         `);

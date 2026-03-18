@@ -103,22 +103,31 @@ export class ClubDelegateDRepository {
     clubId: number,
     startTerm?: Date,
   ): Promise<{ name: string }> {
-    const currentDate = new Date();
-    const refDate = startTerm || currentDate;
+    const query = startTerm
+      ? Prisma.sql`
+          SELECT s.name
+          FROM club_delegate_d cd
+          LEFT JOIN student s ON s.id = cd.student_id
+          WHERE cd.club_id = ${clubId}
+            AND cd.club_delegate_enum_id = 1
+            AND cd.start_term <= ${startTerm}
+            AND (cd.end_term >= ${startTerm} OR cd.end_term IS NULL)
+          ORDER BY cd.end_term
+          LIMIT 1
+        `
+      : Prisma.sql`
+          SELECT s.name
+          FROM club_delegate_d cd
+          LEFT JOIN student s ON s.id = cd.student_id
+          WHERE cd.club_id = ${clubId}
+            AND cd.club_delegate_enum_id = 1
+            AND cd.start_term <= NOW()
+            AND (cd.end_term >= NOW() OR cd.end_term IS NULL)
+          ORDER BY cd.end_term
+          LIMIT 1
+        `;
 
-    const result = await this.prisma.$queryRaw<Array<{ name: string }>>(
-      Prisma.sql`
-        SELECT s.name
-        FROM club_delegate_d cd
-        LEFT JOIN student s ON s.id = cd.student_id
-        WHERE cd.club_id = ${clubId}
-          AND cd.club_delegate_enum_id = 1
-          AND cd.start_term <= ${refDate}
-          AND (cd.end_term >= ${refDate} OR cd.end_term IS NULL)
-        ORDER BY cd.end_term
-        LIMIT 1
-      `,
-    );
+    const result = await this.prisma.$queryRaw<Array<{ name: string }>>(query);
 
     return takeOne(result);
   }
@@ -206,9 +215,7 @@ export class ClubDelegateDRepository {
     semesterId: number;
     filterClubDelegateEnum: Array<ClubDelegateEnum>;
   }) {
-    const today = new Date();
     logger.debug(param.semesterId);
-    logger.debug(today);
 
     const filterEnums = param.filterClubDelegateEnum;
     const hasFilter = filterEnums.length !== 0;
@@ -243,8 +250,8 @@ export class ClubDelegateDRepository {
           ON u.id = s.user_id
         LEFT JOIN club_delegate_d cd
           ON cd.student_id = s.id
-          AND cd.start_term <= ${today}
-          AND (cd.end_term >= ${today} OR cd.end_term IS NULL)
+          AND cd.start_term <= NOW()
+          AND (cd.end_term >= NOW() OR cd.end_term IS NULL)
           AND cd.deleted_at IS NULL
         WHERE c.id = ${param.clubId}
           AND cst.semester_id = ${param.semesterId}

@@ -238,11 +238,11 @@ export default class ClubDelegateService {
         break;
       default:
         if (
-          !this.clubDelegateDRepository.updateDelegate({
+          !(await this.clubDelegateDRepository.updateDelegate({
             clubId: param.clubId,
             clubDelegateEnumId: param.clubDelegateEnumId,
             studentId: param.targetStudentId,
-          })
+          }))
         )
           throw new HttpException(
             "Failed to change delegate",
@@ -454,11 +454,11 @@ export default class ClubDelegateService {
       ClubDelegateChangeRequestStatusEnum.Approved
     ) {
       if (
-        !this.clubDelegateDRepository.updateDelegate({
+        !(await this.clubDelegateDRepository.updateDelegate({
           clubId: request.clubId,
           clubDelegateEnumId: ClubDelegateEnum.Representative,
           studentId: param.studentId,
-        })
+        }))
       )
         throw new HttpException(
           "Failed to change delegate",
@@ -475,25 +475,19 @@ export default class ClubDelegateService {
         param.studentId,
       );
 
-      if (
-        !this.userPublicService.updateStudentPhoneNumber(
-          userId,
-          param.body.phoneNumber,
-        )
-      )
-        throw new HttpException(
-          "Failed to update phone number",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+      await this.userPublicService.updateStudentPhoneNumber(
+        userId,
+        param.body.phoneNumber,
+      );
     }
 
     // 대표자 변경 요청을 승인/거절로 변경합니다.
     if (
-      !this.clubDelegateDRepository.updateClubDelegateChangeRequest({
+      !(await this.clubDelegateDRepository.updateClubDelegateChangeRequest({
         id: request.id,
         clubDelegateChangeRequestStatusEnumId:
           param.body.clubDelegateChangeRequestStatusEnum,
-      })
+      }))
     )
       throw new HttpException(
         "Failed to modify request status",
