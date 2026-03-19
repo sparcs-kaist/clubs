@@ -902,6 +902,27 @@ export class ClubRegistrationRepository {
         });
       }
 
+      // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
+      const existingClubDivision = await tx.clubDivisionT.findFirst({
+        where: {
+          clubId: registration.clubId,
+          deletedAt: null,
+          startTerm: { lte: registration.semester!.endTerm },
+          endTerm: { gte: registration.semester!.startTerm },
+        },
+      });
+
+      if (!existingClubDivision) {
+        await tx.clubDivisionT.create({
+          data: {
+            clubId: registration.clubId,
+            divisionId: registration.divisionId,
+            startTerm: registration.semester!.startTerm,
+            endTerm: registration.semester!.endTerm,
+          },
+        });
+      }
+
       return {};
     });
     return response;
