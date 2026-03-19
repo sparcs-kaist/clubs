@@ -127,6 +127,7 @@ export default class ClubStudentTRepository {
     clubId: number,
     semesterId: number,
     startTerm: Date,
+    endTerm: Date,
   ): Promise<void> {
     await this.prisma.clubStudentT.create({
       data: {
@@ -134,6 +135,7 @@ export default class ClubStudentTRepository {
         clubId,
         semesterId,
         startTerm,
+        endTerm,
       },
     });
   }
