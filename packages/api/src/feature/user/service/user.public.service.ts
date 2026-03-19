@@ -263,13 +263,13 @@ export default class UserPublicService {
   async getStudentStatusEnumIdByStudentIdSemesterId(
     studentId: number,
     semesterId,
-  ): Promise<number> {
+  ): Promise<number | null> {
     const studentEnumId =
       await this.oldStudentRepository.selectStudentStatusEnumIdByStudentIdSemesterId(
         studentId,
         semesterId,
       );
-    return studentEnumId.studentEnumId;
+    return studentEnumId?.studentEnumId ?? null;
   }
 
   async getStudentEnumsByIdsAndSemesterId(

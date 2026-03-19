@@ -1505,7 +1505,7 @@ export class RegistrationService {
       ).length,
       // 정회원의 enum이 1이라고 가정
       regularMemberRegistrations: memberRegistrations.filter(
-        e2 => e2.studentEnum.studentEnumId === 1 && e2.clubId === e.clubId,
+        e2 => e2.studentEnum?.studentEnumId === 1 && e2.clubId === e.clubId,
       ).length,
       totalApprovals: memberRegistrations.filter(
         e2 =>
@@ -1515,7 +1515,7 @@ export class RegistrationService {
       ).length,
       regularMemberApprovals: memberRegistrations.filter(
         e2 =>
-          e2.studentEnum.studentEnumId === 1 &&
+          e2.studentEnum?.studentEnumId === 1 &&
           e2.clubId === e.clubId &&
           e2.registrationApplicationStudentEnum ===
             RegistrationApplicationStudentStatusEnum.Approved,
