@@ -19,3 +19,6 @@
 
 # turbo cache
 .turbo
+
+# Claude
+.claude

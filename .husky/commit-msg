@@ -1,4 +1,11 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+export NVM_DIR="$HOME/.nvm"
+NODE_VER=$(cat .nvmrc 2>/dev/null)
+case "$NODE_VER" in v*) ;; *) NODE_VER="v$NODE_VER" ;; esac
+if [ -d "$NVM_DIR/versions/node/$NODE_VER/bin" ]; then
+  export PATH="$NVM_DIR/versions/node/$NODE_VER/bin:$PATH"
+fi
+
 npx --no -- commitlint --edit ${1}
