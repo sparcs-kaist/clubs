@@ -638,7 +638,9 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
-    await this.registrationPublicService.resetClubRegistrationStatusEnum(body.clubId);
+    await this.registrationPublicService.resetClubRegistrationStatusEnum(
+      body.clubId,
+    );
   }
 
   async putStudentActivityProvisional(

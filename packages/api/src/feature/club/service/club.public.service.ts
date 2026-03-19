@@ -285,6 +285,7 @@ export default class ClubPublicService {
       clubId,
       semesterId,
       clubT.startTerm,
+      clubT.endTerm,
     );
   }
 

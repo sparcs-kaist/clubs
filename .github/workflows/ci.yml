@@ -12,13 +12,12 @@ on:
 jobs:
   lint-and-format:
     name: Lint and Format
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     strategy:
       matrix:
-        node-version: [22.12.0]
+        node-version: [22.22.1]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        pnpm-version: [9.14.4]
 
     steps:
       - uses: actions/checkout@v4
@@ -26,10 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm ${{ matrix.pnpm-version }}
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ matrix.pnpm-version }}
           run_install: true
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
@@ -40,12 +38,11 @@ jobs:
 
   integration-tests:
     name: Integration Tests
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     strategy:
       matrix:
-        node-version: [22.12.0]
-        pnpm-version: [9.14.4]
+        node-version: [22.22.1]
 
     services:
       mysql:
@@ -69,10 +66,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           
-      - name: Install pnpm ${{ matrix.pnpm-version }}
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ matrix.pnpm-version }}
           run_install: true
 
       - name: Generate Prisma Client
