@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
@@ -146,11 +146,16 @@ const ChangeRepresentativeCard: React.FC<{
     );
   };
 
+  const delegate1Req = useRef(0);
+  const delegate2Req = useRef(0);
+
   useEffect(() => {
     const prevDelegate1 = delegatesNow?.delegates
       .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1)
       ?.studentId?.toString();
     if (delegate1 !== prevDelegate1 && type !== "Applied" && delegate1 !== "") {
+      delegate1Req.current += 1;
+      const token = delegate1Req.current;
       (async () => {
         try {
           await updateClubDelegates(
@@ -160,9 +165,11 @@ const ChangeRepresentativeCard: React.FC<{
               studentId: Number(delegate1),
             },
           );
-          updateCandidateItems();
+          if (token === delegate1Req.current) updateCandidateItems();
         } catch {
-          setDelegate1(prevDelegate1 ?? "");
+          if (token === delegate1Req.current) {
+            setDelegate1(prevDelegate1 ?? "");
+          }
         }
       })();
     }
@@ -173,6 +180,8 @@ const ChangeRepresentativeCard: React.FC<{
       .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2)
       ?.studentId?.toString();
     if (delegate2 !== prevDelegate2 && type !== "Applied" && delegate2 !== "") {
+      delegate2Req.current += 1;
+      const token = delegate2Req.current;
       (async () => {
         try {
           await updateClubDelegates(
@@ -182,9 +191,11 @@ const ChangeRepresentativeCard: React.FC<{
               studentId: Number(delegate2),
             },
           );
-          updateCandidateItems();
+          if (token === delegate2Req.current) updateCandidateItems();
         } catch {
-          setDelegate2(prevDelegate2 ?? "");
+          if (token === delegate2Req.current) {
+            setDelegate2(prevDelegate2 ?? "");
+          }
         }
       })();
     }
