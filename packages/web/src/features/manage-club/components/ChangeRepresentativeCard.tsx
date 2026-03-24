@@ -275,6 +275,7 @@ const ChangeRepresentativeCard: React.FC<{
                 ),
               );
               setDelegate1("");
+              delegate1Req.current += 1;
               await updateClubDelegates(
                 { clubId },
                 { delegateEnumId: ClubDelegateEnum.Delegate1, studentId: 0 },
@@ -314,6 +315,7 @@ const ChangeRepresentativeCard: React.FC<{
                 ),
               );
               setDelegate2("");
+              delegate2Req.current += 1;
               await updateClubDelegates(
                 { clubId },
                 { delegateEnumId: ClubDelegateEnum.Delegate2, studentId: 0 },
