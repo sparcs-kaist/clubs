@@ -742,15 +742,6 @@ export class RegistrationService {
     registrationId: number;
     professorId: number;
   }): Promise<ApiReg022ResponseOk> {
-    // 동아리 등록 기간인지 검사합니다.
-    await this.registrationPublicService.checkDeadline({
-      enums: [
-        RegistrationDeadlineEnum.ClubRegistrationApplication,
-        // RegistrationDeadlineEnum.ClubRegistrationModification,
-        // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
-      ],
-    });
-
     const result =
       await this.clubRegistrationRepository.getProfessorRegistrationsClubRegistration(
         {
