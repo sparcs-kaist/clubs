@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
@@ -146,47 +146,58 @@ const ChangeRepresentativeCard: React.FC<{
     );
   };
 
+  const delegate1Req = useRef(0);
+  const delegate2Req = useRef(0);
+
   useEffect(() => {
-    if (
-      delegate1 !==
-        delegatesNow?.delegates
-          .find(
-            delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1,
-          )
-          ?.studentId?.toString() &&
-      type !== "Applied" &&
-      delegate1 !== ""
-    ) {
-      updateClubDelegates(
-        { clubId },
-        {
-          delegateEnumId: ClubDelegateEnum.Delegate1,
-          studentId: delegate1 === "" ? 0 : Number(delegate1),
-        },
-      );
-      updateCandidateItems();
+    const prevDelegate1 = delegatesNow?.delegates
+      .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1)
+      ?.studentId?.toString();
+    if (delegate1 !== prevDelegate1 && type !== "Applied" && delegate1 !== "") {
+      delegate1Req.current += 1;
+      const token = delegate1Req.current;
+      (async () => {
+        try {
+          await updateClubDelegates(
+            { clubId },
+            {
+              delegateEnumId: ClubDelegateEnum.Delegate1,
+              studentId: Number(delegate1),
+            },
+          );
+          if (token === delegate1Req.current) updateCandidateItems();
+        } catch {
+          if (token === delegate1Req.current) {
+            setDelegate1(prevDelegate1 ?? "");
+          }
+        }
+      })();
     }
   }, [delegate1, delegatesNow]);
 
   useEffect(() => {
-    if (
-      delegate2 !==
-        delegatesNow?.delegates
-          .find(
-            delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2,
-          )
-          ?.studentId?.toString() &&
-      type !== "Applied" &&
-      delegate2 !== ""
-    ) {
-      updateClubDelegates(
-        { clubId },
-        {
-          delegateEnumId: ClubDelegateEnum.Delegate2,
-          studentId: delegate2 === "" ? 0 : Number(delegate2),
-        },
-      );
-      updateCandidateItems();
+    const prevDelegate2 = delegatesNow?.delegates
+      .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2)
+      ?.studentId?.toString();
+    if (delegate2 !== prevDelegate2 && type !== "Applied" && delegate2 !== "") {
+      delegate2Req.current += 1;
+      const token = delegate2Req.current;
+      (async () => {
+        try {
+          await updateClubDelegates(
+            { clubId },
+            {
+              delegateEnumId: ClubDelegateEnum.Delegate2,
+              studentId: Number(delegate2),
+            },
+          );
+          if (token === delegate2Req.current) updateCandidateItems();
+        } catch {
+          if (token === delegate2Req.current) {
+            setDelegate2(prevDelegate2 ?? "");
+          }
+        }
+      })();
     }
   }, [delegate2, delegatesNow]);
 
@@ -264,6 +275,7 @@ const ChangeRepresentativeCard: React.FC<{
                 ),
               );
               setDelegate1("");
+              delegate1Req.current += 1;
               await updateClubDelegates(
                 { clubId },
                 { delegateEnumId: ClubDelegateEnum.Delegate1, studentId: 0 },
@@ -303,6 +315,7 @@ const ChangeRepresentativeCard: React.FC<{
                 ),
               );
               setDelegate2("");
+              delegate2Req.current += 1;
               await updateClubDelegates(
                 { clubId },
                 { delegateEnumId: ClubDelegateEnum.Delegate2, studentId: 0 },
