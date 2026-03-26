@@ -233,6 +233,10 @@ export class PrismaService
               { emit: "stdout", level: "warn" },
               { emit: "stdout", level: "error" },
             ],
+      transactionOptions: {
+        maxWait: 20000,
+        timeout: 25000,
+      },
     });
 
     // PrismaService 자체를 timezone proxy로 감싸서 반환

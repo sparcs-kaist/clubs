@@ -18,7 +18,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@clubs/domain": "workspace:*",
-    "axios": "^1.6.7"
+    "axios": "^1.7.9"
   },
   "devDependencies": {
     "@clubs/eslint-config": "workspace:*",
