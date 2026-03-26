@@ -1219,12 +1219,7 @@ export class RegistrationService {
     if (
       applyStatusEnumId === RegistrationApplicationStudentStatusEnum.Approved
     ) {
-      if (isAlreadyMember)
-        throw new HttpException(
-          "student is already belongs to this club",
-          HttpStatus.BAD_REQUEST,
-        );
-      else
+      if (!isAlreadyMember)
         await this.clubPublicService.addStudentToClub(
           applicationStudentId,
           clubId,
