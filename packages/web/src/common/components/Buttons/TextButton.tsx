@@ -51,6 +51,7 @@ const TextButton: React.FC<TextButtonProps> = ({
 }) => {
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    event.stopPropagation();
     onClick();
   };
 
