@@ -2,7 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
-import { StudentStatusEnum } from "@clubs/interface/common/enum/user.enum";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
@@ -40,19 +39,31 @@ export default class OldStudentRepository {
     studentId: number,
     semesterId: number,
   ): Promise<boolean> {
-    const leaveOfAbsence = StudentStatusEnum.LeaveOfAbsence;
-    const attending = StudentStatusEnum.Attending;
-    const result = await this.prisma.studentT.count({
+    // student_t is refreshed on login, so fall back to the latest known row
+    // when a valid student session predates the current semester rollover.
+    const currentSemesterRecord = await this.prisma.studentT.findFirst({
       where: {
-        semesterId,
         studentId,
-        OR: [
-          { studentStatusEnum: attending },
-          { studentStatusEnum: leaveOfAbsence },
-        ],
+        semesterId,
+        deletedAt: null,
       },
     });
-    return result !== 0;
+
+    if (currentSemesterRecord) {
+      return true;
+    }
+
+    const latestStudentRecord = await this.prisma.studentT.findFirst({
+      where: {
+        studentId,
+        deletedAt: null,
+      },
+      orderBy: {
+        semesterId: "desc",
+      },
+    });
+
+    return latestStudentRecord !== null;
   }
 
   async selectStudentIdByStudentTId(studentTId: number) {
