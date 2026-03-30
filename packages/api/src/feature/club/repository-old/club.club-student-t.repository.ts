@@ -30,7 +30,7 @@ export default class ClubStudentTRepository {
 
     if (semesterId) {
       return this.prisma.clubStudentT.count({
-        where: { clubId, semesterId },
+        where: { clubId, semesterId, deletedAt: null },
       });
     }
 
@@ -60,6 +60,7 @@ export default class ClubStudentTRepository {
       FROM club_student_t cst
       LEFT JOIN semester_d sd ON sd.id = cst.semester_id
       WHERE cst.student_id = ${studentId}
+        AND cst.deleted_at IS NULL
       ORDER BY sd.id DESC
     `);
     return result.map(row => ({
