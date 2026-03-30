@@ -105,7 +105,7 @@ export class OverviewRepository {
              cbe.id AS clubBuildingEnum,
              crt.room_location AS roomLocation,
              crt.room_password AS roomPassword,
-             COUNT(DISTINCT cst.id) AS totalMemberCnt,
+             COUNT(DISTINCT cst.student_id) AS totalMemberCnt,
              COUNT(DISTINCT ras.student_id) AS regularMemberCnt
       FROM club_t ct
       INNER JOIN semester_d sd ON sd.id = ct.semester_id

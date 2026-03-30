@@ -130,7 +130,7 @@ export class ClubOldRepository {
              ct.characteristic_kr AS characteristic,
              s.name AS representative,
              p.name AS advisor,
-             COUNT(cst.id) AS totalMemberCnt
+             COUNT(DISTINCT cst.student_id) AS totalMemberCnt
       FROM division d
       LEFT JOIN club c ON c.division_id = d.id
       INNER JOIN club_t ct ON c.id = ct.club_id

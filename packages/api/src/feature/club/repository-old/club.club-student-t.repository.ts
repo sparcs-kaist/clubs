@@ -29,19 +29,31 @@ export default class ClubStudentTRepository {
     const today = new Date();
 
     if (semesterId) {
-      return this.prisma.clubStudentT.count({
-        where: { clubId, semesterId, deletedAt: null },
-      });
+      const result = await this.prisma.$queryRaw<Array<{ count: bigint }>>(
+        Prisma.sql`
+          SELECT COUNT(DISTINCT cst.student_id) AS count
+          FROM club_student_t cst
+          WHERE cst.club_id = ${clubId}
+            AND cst.semester_id = ${semesterId}
+            AND cst.deleted_at IS NULL
+        `,
+      );
+
+      return Number(result[0]?.count ?? 0);
     }
 
-    return this.prisma.clubStudentT.count({
-      where: {
-        clubId,
-        startTerm: { lte: today },
-        OR: [{ endTerm: { gte: today } }, { endTerm: null }],
-        deletedAt: null,
-      },
-    });
+    const result = await this.prisma.$queryRaw<Array<{ count: bigint }>>(
+      Prisma.sql`
+        SELECT COUNT(DISTINCT cst.student_id) AS count
+        FROM club_student_t cst
+        WHERE cst.club_id = ${clubId}
+          AND cst.start_term <= ${today}
+          AND (cst.end_term >= ${today} OR cst.end_term IS NULL)
+          AND cst.deleted_at IS NULL
+      `,
+    );
+
+    return Number(result[0]?.count ?? 0);
   }
 
   async findStudentSemester(studentId: number) {
@@ -55,7 +67,7 @@ export default class ClubStudentTRepository {
         clubId: number;
       }>
     >(Prisma.sql`
-      SELECT sd.id, sd.name, sd.year, sd.start_term AS startTerm,
+      SELECT DISTINCT sd.id, sd.name, sd.year, sd.start_term AS startTerm,
              sd.end_term AS endTerm, cst.club_id AS clubId
       FROM club_student_t cst
       LEFT JOIN semester_d sd ON sd.id = cst.semester_id
@@ -113,7 +125,7 @@ export default class ClubStudentTRepository {
         nameEn: string | null;
       }>
     >(Prisma.sql`
-      SELECT cst.club_id AS id, c.name_kr AS nameKr, c.name_en AS nameEn
+      SELECT DISTINCT cst.club_id AS id, c.name_kr AS nameKr, c.name_en AS nameEn
       FROM club_student_t cst
       LEFT JOIN club c ON c.id = cst.club_id
       WHERE cst.student_id = ${studentId}
@@ -130,14 +142,39 @@ export default class ClubStudentTRepository {
     startTerm: Date,
     endTerm: Date,
   ): Promise<void> {
-    await this.prisma.clubStudentT.create({
-      data: {
-        studentId,
-        clubId,
-        semesterId,
-        startTerm,
-        endTerm,
-      },
+    await this.prisma.$transaction(async tx => {
+      await tx.$queryRaw(
+        Prisma.sql`
+          SELECT s.id
+          FROM student s
+          WHERE s.id = ${studentId}
+          FOR UPDATE
+        `,
+      );
+
+      const existingMember = await tx.clubStudentT.findFirst({
+        where: {
+          studentId,
+          clubId,
+          semesterId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      if (existingMember) {
+        return;
+      }
+
+      await tx.clubStudentT.create({
+        data: {
+          studentId,
+          clubId,
+          semesterId,
+          startTerm,
+          endTerm,
+        },
+      });
     });
   }
 
@@ -231,7 +268,7 @@ export default class ClubStudentTRepository {
         phoneNumber: string | null;
       }>
     >(Prisma.sql`
-      SELECT s.name, s.id AS studentId, s.number AS studentNumber,
+      SELECT DISTINCT s.name, s.id AS studentId, s.number AS studentNumber,
              s.email, u.phone_number AS phoneNumber
       FROM club_student_t cst
       INNER JOIN student s ON s.id = cst.student_id
@@ -262,7 +299,7 @@ export default class ClubStudentTRepository {
         phoneNumber: string | null;
       }>
     >(Prisma.sql`
-      SELECT cst.student_id AS id, s.user_id AS userId,
+      SELECT DISTINCT cst.student_id AS id, s.user_id AS userId,
              s.name, s.number AS studentNumber,
              s.email, u.phone_number AS phoneNumber
       FROM club_student_t cst

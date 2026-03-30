@@ -272,7 +272,7 @@ export default class ClubPublicService {
       clubId,
       semesterId,
     );
-    if (!semesterId) {
+    if (!clubT) {
       throw new HttpException(
         "The club is not found at that semester.",
         HttpStatus.NOT_FOUND,
