@@ -1341,7 +1341,7 @@ export class RegistrationService {
             registration.student,
           )),
           StudentEnumId:
-            await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterId(
+            await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterIdWithRollover(
               registration.student.id,
               semesterId,
             ),
@@ -1422,7 +1422,7 @@ export class RegistrationService {
 
     const [divisions, studentEnums] = await Promise.all([
       this.divisionPublicService.getCurrentDivisions(),
-      this.userPublicService.getStudentEnumsByIdsAndSemesterId(
+      this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
         registrations.map(e => e.student.id),
         semesterId,
       ),

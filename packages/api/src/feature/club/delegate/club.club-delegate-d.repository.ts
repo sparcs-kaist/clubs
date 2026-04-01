@@ -420,7 +420,6 @@ export class ClubDelegateDRepository {
             startTerm: clubT.startTerm,
             endTerm: clubT.endTerm,
             studentIds: [param.studentId],
-            referenceDate: now,
           });
         }
       }

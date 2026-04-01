@@ -92,6 +92,23 @@ export default class OldStudentRepository {
       return { studentEnumId: currentSemesterRecord.studentEnum };
     }
 
+    return undefined;
+  }
+
+  async selectStudentStatusEnumIdByStudentIdSemesterIdWithRollover(
+    studentId: number,
+    semesterId: number,
+  ) {
+    const currentSemesterRecord =
+      await this.selectStudentStatusEnumIdByStudentIdSemesterId(
+        studentId,
+        semesterId,
+      );
+
+    if (currentSemesterRecord) {
+      return currentSemesterRecord;
+    }
+
     const latestStudentEnumMap = await this.getLatestStudentEnumMap([
       studentId,
     ]);
@@ -127,6 +144,31 @@ export default class OldStudentRepository {
       currentSemesterRecords.map(record => [
         record.studentId,
         record.studentEnum,
+      ]),
+    );
+
+    return uniqueStudentIds.flatMap(studentId => {
+      const studentEnumId = studentEnumMap.get(studentId);
+
+      if (studentEnumId === undefined) {
+        return [];
+      }
+
+      return [{ id: studentId, studentEnumId }];
+    });
+  }
+
+  async getStudentEnumsByIdsAndSemesterIdWithRollover(
+    studentIds: number[],
+    semesterId: number,
+  ) {
+    const exactSemesterStudentEnums =
+      await this.getStudentEnumsByIdsAndSemesterId(studentIds, semesterId);
+    const uniqueStudentIds = [...new Set(studentIds)];
+    const studentEnumMap = new Map<number, number>(
+      exactSemesterStudentEnums.map(record => [
+        record.id,
+        record.studentEnumId,
       ]),
     );
 

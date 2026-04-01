@@ -10,7 +10,6 @@ type SyncDelegateMemberRegistrationsParam = {
   startTerm: Date;
   endTerm: Date;
   studentIds?: number[];
-  referenceDate?: Date;
 };
 
 export async function syncDelegateMemberRegistrations({
@@ -20,7 +19,6 @@ export async function syncDelegateMemberRegistrations({
   startTerm,
   endTerm,
   studentIds,
-  referenceDate = new Date(),
 }: SyncDelegateMemberRegistrationsParam): Promise<void> {
   const targetStudentIds = studentIds?.length
     ? [...new Set(studentIds)]
@@ -30,8 +28,8 @@ export async function syncDelegateMemberRegistrations({
             await tx.clubDelegateD.findMany({
               where: {
                 clubId,
-                startTerm: { lte: referenceDate },
-                OR: [{ endTerm: { gte: referenceDate } }, { endTerm: null }],
+                startTerm: { lte: endTerm },
+                OR: [{ endTerm: { gte: startTerm } }, { endTerm: null }],
                 deletedAt: null,
               },
               select: { studentId: true },
@@ -44,12 +42,25 @@ export async function syncDelegateMemberRegistrations({
     return;
   }
 
+  const existingStudents = await tx.student.findMany({
+    where: {
+      id: { in: targetStudentIds },
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+  const validStudentIds = existingStudents.map(student => student.id);
+
+  if (validStudentIds.length === 0) {
+    return;
+  }
+
   const existingApplications = await tx.registrationApplicationStudent.findMany(
     {
       where: {
         clubId,
         semesterId,
-        studentId: { in: targetStudentIds },
+        studentId: { in: validStudentIds },
         deletedAt: null,
       },
       select: {
@@ -63,7 +74,7 @@ export async function syncDelegateMemberRegistrations({
   const applicationStudentIdSet = new Set(
     existingApplications.map(application => application.studentId),
   );
-  const missingApplicationStudentIds = targetStudentIds.filter(
+  const missingApplicationStudentIds = validStudentIds.filter(
     studentId => !applicationStudentIdSet.has(studentId),
   );
 
@@ -76,7 +87,6 @@ export async function syncDelegateMemberRegistrations({
         registrationApplicationStudentEnum:
           RegistrationApplicationStudentStatusEnum.Approved,
       })),
-      skipDuplicates: true,
     });
   }
 
@@ -105,7 +115,7 @@ export async function syncDelegateMemberRegistrations({
     where: {
       clubId,
       semesterId,
-      studentId: { in: targetStudentIds },
+      studentId: { in: validStudentIds },
       deletedAt: null,
     },
     select: { studentId: true },
@@ -114,7 +124,7 @@ export async function syncDelegateMemberRegistrations({
   const clubMemberStudentIdSet = new Set(
     existingClubMembers.map(member => member.studentId),
   );
-  const missingClubMemberStudentIds = targetStudentIds.filter(
+  const missingClubMemberStudentIds = validStudentIds.filter(
     studentId => !clubMemberStudentIdSet.has(studentId),
   );
 
@@ -127,14 +137,13 @@ export async function syncDelegateMemberRegistrations({
         startTerm,
         endTerm,
       })),
-      skipDuplicates: true,
     });
   }
 
   logger.debug("[syncDelegateMemberRegistrations] synchronized delegate data", {
     clubId,
     semesterId,
-    delegateCount: targetStudentIds.length,
+    delegateCount: validStudentIds.length,
     createdApplications: missingApplicationStudentIds.length,
     approvedApplications: applicationIdsToApprove.length,
     createdClubMembers: missingClubMemberStudentIds.length,

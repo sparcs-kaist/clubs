@@ -888,8 +888,9 @@ export class ClubRegistrationRepository {
       });
 
       // 5. 없으면 club_t 레코드 생성
-      if (!existingClubT) {
-        await tx.clubT.create({
+      const clubT =
+        existingClubT ??
+        (await tx.clubT.create({
           data: {
             clubId: registration.clubId,
             semesterId: registration.semesterId,
@@ -900,8 +901,7 @@ export class ClubRegistrationRepository {
             startTerm: registration.semester!.startTerm,
             endTerm: registration.semester!.endTerm,
           },
-        });
-      }
+        }));
 
       // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
       const existingClubDivision = await tx.clubDivisionT.findFirst({
@@ -924,12 +924,30 @@ export class ClubRegistrationRepository {
         });
       }
 
+      const clubTEndTerm = clubT.endTerm ?? registration.semester.endTerm;
+      const delegateStudentIds: number[] = [
+        ...new Set<number>(
+          (
+            await tx.clubDelegateD.findMany({
+              where: {
+                clubId: registration.clubId,
+                startTerm: { lte: clubTEndTerm },
+                OR: [{ endTerm: { gte: clubT.startTerm } }, { endTerm: null }],
+                deletedAt: null,
+              },
+              select: { studentId: true },
+            })
+          ).map(delegate => delegate.studentId),
+        ),
+      ];
+
       await syncDelegateMemberRegistrations({
         tx,
         clubId: registration.clubId,
         semesterId: registration.semesterId,
-        startTerm: registration.semester.startTerm,
-        endTerm: registration.semester.endTerm,
+        startTerm: clubT.startTerm,
+        endTerm: clubTEndTerm,
+        studentIds: delegateStudentIds,
       });
 
       return {};
