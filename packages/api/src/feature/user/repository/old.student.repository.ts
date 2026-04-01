@@ -79,7 +79,7 @@ export default class OldStudentRepository {
     studentId: number,
     semesterId: number,
   ) {
-    const result = await this.prisma.studentT.findMany({
+    const currentSemesterRecord = await this.prisma.studentT.findFirst({
       where: {
         studentId,
         semesterId,
@@ -87,22 +87,97 @@ export default class OldStudentRepository {
       },
       select: { studentEnum: true },
     });
-    return takeOne(result.map(r => ({ studentEnumId: r.studentEnum })));
+
+    if (currentSemesterRecord) {
+      return { studentEnumId: currentSemesterRecord.studentEnum };
+    }
+
+    const latestStudentEnumMap = await this.getLatestStudentEnumMap([
+      studentId,
+    ]);
+    const latestStudentEnum = latestStudentEnumMap.get(studentId);
+
+    if (latestStudentEnum === undefined) {
+      return undefined;
+    }
+
+    return { studentEnumId: latestStudentEnum };
   }
 
   async getStudentEnumsByIdsAndSemesterId(
     studentIds: number[],
     semesterId: number,
   ) {
-    const result = await this.prisma.studentT.findMany({
+    const uniqueStudentIds = [...new Set(studentIds)];
+
+    if (uniqueStudentIds.length === 0) {
+      return [];
+    }
+
+    const currentSemesterRecords = await this.prisma.studentT.findMany({
       where: {
-        studentId: { in: studentIds },
+        studentId: { in: uniqueStudentIds },
         semesterId,
         deletedAt: null,
       },
       select: { studentId: true, studentEnum: true },
     });
-    return result.map(r => ({ id: r.studentId, studentEnumId: r.studentEnum }));
+
+    const studentEnumMap = new Map<number, number>(
+      currentSemesterRecords.map(record => [
+        record.studentId,
+        record.studentEnum,
+      ]),
+    );
+
+    const missingStudentIds = uniqueStudentIds.filter(
+      studentId => !studentEnumMap.has(studentId),
+    );
+    const latestStudentEnumMap =
+      await this.getLatestStudentEnumMap(missingStudentIds);
+
+    latestStudentEnumMap.forEach((studentEnumId, studentId) => {
+      if (!studentEnumMap.has(studentId)) {
+        studentEnumMap.set(studentId, studentEnumId);
+      }
+    });
+
+    return uniqueStudentIds.flatMap(studentId => {
+      const studentEnumId = studentEnumMap.get(studentId);
+
+      if (studentEnumId === undefined) {
+        return [];
+      }
+
+      return [{ id: studentId, studentEnumId }];
+    });
+  }
+
+  private async getLatestStudentEnumMap(studentIds: number[]) {
+    if (studentIds.length === 0) {
+      return new Map<number, number>();
+    }
+
+    // student_t is refreshed on login, so the current semester row can be
+    // missing right after semester rollover. Fall back to the latest known row.
+    const latestRecords = await this.prisma.studentT.findMany({
+      where: {
+        studentId: { in: studentIds },
+        deletedAt: null,
+      },
+      orderBy: [{ studentId: "asc" }, { semesterId: "desc" }],
+      select: { studentId: true, studentEnum: true },
+    });
+
+    const latestStudentEnumMap = new Map<number, number>();
+
+    latestRecords.forEach(record => {
+      if (!latestStudentEnumMap.has(record.studentId)) {
+        latestStudentEnumMap.set(record.studentId, record.studentEnum);
+      }
+    });
+
+    return latestStudentEnumMap;
   }
 
   async getStudentPhoneNumber(id: number) {

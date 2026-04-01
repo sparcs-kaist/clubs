@@ -8,6 +8,7 @@ import {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
@@ -388,6 +389,40 @@ export class ClubDelegateDRepository {
       if (!delegateInsertResult) {
         logger.debug("[updateDelegate] insertion is failed Rollback.");
         throw new Error("[updateDelegate] insertion failed");
+      }
+
+      const currentSemester = await tx.semesterD.findFirst({
+        where: {
+          startTerm: { lte: now },
+          endTerm: { gte: now },
+          deletedAt: null,
+        },
+      });
+
+      if (currentSemester) {
+        const clubT = await tx.clubT.findFirst({
+          where: {
+            clubId: param.clubId,
+            semesterId: currentSemester.id,
+            deletedAt: null,
+          },
+          select: {
+            startTerm: true,
+            endTerm: true,
+          },
+        });
+
+        if (clubT) {
+          await syncDelegateMemberRegistrations({
+            tx,
+            clubId: param.clubId,
+            semesterId: currentSemester.id,
+            startTerm: clubT.startTerm,
+            endTerm: clubT.endTerm,
+            studentIds: [param.studentId],
+            referenceDate: now,
+          });
+        }
       }
 
       return true;

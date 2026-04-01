@@ -25,6 +25,7 @@ import {
 
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
@@ -922,6 +923,14 @@ export class ClubRegistrationRepository {
           },
         });
       }
+
+      await syncDelegateMemberRegistrations({
+        tx,
+        clubId: registration.clubId,
+        semesterId: registration.semesterId,
+        startTerm: registration.semester.startTerm,
+        endTerm: registration.semester.endTerm,
+      });
 
       return {};
     });
