@@ -64,7 +64,7 @@ export default class UserPublicService {
     return executives[0];
   }
 
-  async checkCurrentExecutiveById(executiveId) {
+  async checkCurrentExecutiveById(executiveId: number) {
     if (!(await this.executiveRepository.findExecutiveByUserId(executiveId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
@@ -262,10 +262,22 @@ export default class UserPublicService {
   //student의 studentstatusenum을 가져옵니다.
   async getStudentStatusEnumIdByStudentIdSemesterId(
     studentId: number,
-    semesterId,
+    semesterId: number,
   ): Promise<number | null> {
     const studentEnumId =
       await this.oldStudentRepository.selectStudentStatusEnumIdByStudentIdSemesterId(
+        studentId,
+        semesterId,
+      );
+    return studentEnumId?.studentEnumId ?? null;
+  }
+
+  async getStudentStatusEnumIdByStudentIdSemesterIdWithRollover(
+    studentId: number,
+    semesterId: number,
+  ): Promise<number | null> {
+    const studentEnumId =
+      await this.oldStudentRepository.selectStudentStatusEnumIdByStudentIdSemesterIdWithRollover(
         studentId,
         semesterId,
       );
@@ -278,6 +290,18 @@ export default class UserPublicService {
   ): Promise<{ id: number; studentEnumId: number }[]> {
     const studentEnums =
       await this.oldStudentRepository.getStudentEnumsByIdsAndSemesterId(
+        studentIds,
+        semesterId,
+      );
+    return studentEnums;
+  }
+
+  async getStudentEnumsByIdsAndSemesterIdWithRollover(
+    studentIds: number[],
+    semesterId: number,
+  ): Promise<{ id: number; studentEnumId: number }[]> {
+    const studentEnums =
+      await this.oldStudentRepository.getStudentEnumsByIdsAndSemesterIdWithRollover(
         studentIds,
         semesterId,
       );
