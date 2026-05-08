@@ -6,6 +6,7 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
+import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -42,9 +43,13 @@ const RowStretchWrapper = styled.div`
 const MeetingDetailFrame: React.FC = () => {
   const router = useRouter();
   const { id: idParam } = useParams<{ id: string }>();
-  const id = Number(idParam);
+  const parsedId = Number(idParam);
+  const isValidId = Number.isInteger(parsedId) && parsedId > 0;
+  const id = isValidId ? parsedId : 0;
 
-  const { data, isLoading, isError } = useGetMeetingDetail(id);
+  const { data, isLoading, isError } = useGetMeetingDetail(id, {
+    enabled: isValidId,
+  });
   const { mutate, isPending: isDeleteLoading } = useDeleteMeeting();
 
   const deleteHandler = useCallback(() => {
@@ -114,6 +119,10 @@ const MeetingDetailFrame: React.FC = () => {
 
     return content;
   }, [data]);
+
+  if (!isValidId) {
+    return <Custom404 />;
+  }
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

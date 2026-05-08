@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getDisplayNameRegistration } from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
+import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -26,14 +27,20 @@ const MyRegisterClubEdit = () => {
   }, [isLoggedIn, profile]);
 
   const { id: applyIdParam } = useParams<{ id: string }>();
-  const applyId = Number(applyIdParam);
+  const parsedApplyId = Number(applyIdParam);
+  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
+  const applyId = isValidApplyId ? parsedApplyId : 0;
   const {
     data: detail,
     isLoading,
     isError,
-  } = useGetRegisterClubDetail(profile?.type as UserTypeEnum, {
-    applyId,
-  });
+  } = useGetRegisterClubDetail(
+    profile?.type as UserTypeEnum,
+    {
+      applyId,
+    },
+    { enabled: isValidApplyId },
+  );
 
   if (loading) {
     return <AsyncBoundary isLoading={loading} isError />;
@@ -41,6 +48,10 @@ const MyRegisterClubEdit = () => {
 
   if (!isLoggedIn) {
     return <LoginRequired login={login} />;
+  }
+
+  if (!isValidApplyId) {
+    return <Custom404 />;
   }
 
   if (profile?.type === UserTypeEnum.Executive) {

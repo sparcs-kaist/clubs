@@ -34,12 +34,17 @@ const ChargedChangeActivityModalContent: React.FC<
 > = ({ isOpen, close, selectedActivityIds, selectedActivityInfos }) => {
   const queryClient = useQueryClient();
   const { id: idParam } = useParams<{ id: string }>();
-  const id = Number(idParam);
+  const parsedId = Number(idParam);
+  const isValidId = Number.isInteger(parsedId) && parsedId > 0;
+  const id = isValidId ? parsedId : 0;
 
   const { data, isLoading, isError } =
-    useGetActivityClubChargeAvailableExecutives({
-      clubIds: [id],
-    });
+    useGetActivityClubChargeAvailableExecutives(
+      {
+        clubIds: isValidId ? [id] : [],
+      },
+      { enabled: isValidId },
+    );
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<number | null>(
     null,
   );
@@ -60,6 +65,10 @@ const ChargedChangeActivityModalContent: React.FC<
       );
     }
   }, [data]);
+
+  if (!isValidId) {
+    return null;
+  }
 
   return (
     <Modal isOpen={isOpen}>

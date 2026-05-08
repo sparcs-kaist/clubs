@@ -11,9 +11,17 @@ import {
 
 import { mockupMeetingDetail } from "./_mock/mockupMeetingDetail";
 
-const useGetMeetingDetail = (id: number) =>
+interface UseGetMeetingDetailOptions {
+  enabled?: boolean;
+}
+
+const useGetMeetingDetail = (
+  id: number,
+  options: UseGetMeetingDetailOptions = {},
+) =>
   useQuery<ApiMee002ResponseOk, Error>({
     queryKey: [apiMee002.url(id)],
+    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiMee002ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiMee002.url(id), {});
 

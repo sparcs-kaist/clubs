@@ -21,7 +21,9 @@ const RegisterClubDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const { id: applyIdParam } = useParams<{ id: string }>();
-  const applyId = Number(applyIdParam);
+  const parsedApplyId = Number(applyIdParam);
+  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
+  const applyId = isValidApplyId ? parsedApplyId : 0;
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -37,7 +39,7 @@ const RegisterClubDetail: React.FC = () => {
     return <LoginRequired login={login} />;
   }
 
-  if (profile?.type !== UserTypeEnum.Executive) {
+  if (!isValidApplyId || profile?.type !== UserTypeEnum.Executive) {
     return <Custom404 />;
   }
 

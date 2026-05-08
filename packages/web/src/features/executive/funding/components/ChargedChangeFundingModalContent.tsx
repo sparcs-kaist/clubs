@@ -38,12 +38,17 @@ const ChargedChangeFundingModalContent: React.FC<
 > = ({ isOpen, close, selectedFundingIds, selectedFundingInfos }) => {
   const queryClient = useQueryClient();
   const { id: idParam } = useParams<{ id: string }>();
-  const id = Number(idParam);
+  const parsedId = Number(idParam);
+  const isValidId = Number.isInteger(parsedId) && parsedId > 0;
+  const id = isValidId ? parsedId : 0;
 
   const { data, isLoading, isError } =
-    useGetFundingClubChargeAvailableExecutives({
-      clubIds: [id],
-    });
+    useGetFundingClubChargeAvailableExecutives(
+      {
+        clubIds: isValidId ? [id] : [],
+      },
+      { enabled: isValidId },
+    );
   const { mutate: patchFundingChargedExecutive } = usePatchFundingStatus();
 
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<number | null>(
@@ -114,6 +119,10 @@ const ChargedChangeFundingModalContent: React.FC<
     setSelectedExecutiveId(null);
     close();
   }, [close]);
+
+  if (!isValidId) {
+    return null;
+  }
 
   return (
     <Modal isOpen={isOpen}>

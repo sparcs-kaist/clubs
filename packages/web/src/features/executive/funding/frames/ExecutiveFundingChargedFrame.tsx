@@ -1,6 +1,7 @@
 import { useParams } from "next/navigation";
 import React, { useMemo } from "react";
 
+import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -12,12 +13,16 @@ import useGetChargedFundings from "../services/useGetChargedFundings";
 
 const ExecutiveFundingChargedFrame: React.FC = () => {
   const { id: executiveIdParam } = useParams<{ id: string }>();
-  const executiveId = Number(executiveIdParam);
-  const { data, isLoading, isError } = useGetChargedFundings({
-    executiveId,
-  });
-
-  window.history.replaceState({ isClubView: false }, "");
+  const parsedExecutiveId = Number(executiveIdParam);
+  const isValidExecutiveId =
+    Number.isInteger(parsedExecutiveId) && parsedExecutiveId > 0;
+  const executiveId = isValidExecutiveId ? parsedExecutiveId : 0;
+  const { data, isLoading, isError } = useGetChargedFundings(
+    {
+      executiveId,
+    },
+    { enabled: isValidExecutiveId },
+  );
 
   const defaultData = {
     totalCount: 0,
@@ -64,6 +69,12 @@ const ExecutiveFundingChargedFrame: React.FC = () => {
       ),
     [data],
   );
+
+  if (!isValidExecutiveId) {
+    return <Custom404 />;
+  }
+
+  window.history.replaceState({ isClubView: false }, "");
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

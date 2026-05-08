@@ -3,6 +3,7 @@ import React from "react";
 
 import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
+import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -13,10 +14,20 @@ import useGetExecutiveChargedActivities from "@sparcs-clubs/web/features/activit
 
 const ExecutiveActivityReportChargedFrame: React.FC = () => {
   const { id: executiveIdParam } = useParams<{ id: string }>();
-  const executiveId = Number(executiveIdParam);
-  const { data, isLoading, isError } = useGetExecutiveChargedActivities({
-    executiveId,
-  });
+  const parsedExecutiveId = Number(executiveIdParam);
+  const isValidExecutiveId =
+    Number.isInteger(parsedExecutiveId) && parsedExecutiveId > 0;
+  const executiveId = isValidExecutiveId ? parsedExecutiveId : 0;
+  const { data, isLoading, isError } = useGetExecutiveChargedActivities(
+    {
+      executiveId,
+    },
+    { enabled: isValidExecutiveId },
+  );
+
+  if (!isValidExecutiveId) {
+    return <Custom404 />;
+  }
 
   window.history.replaceState({ isClubView: false }, "");
 
