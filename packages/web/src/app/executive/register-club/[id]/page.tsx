@@ -6,12 +6,13 @@ import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import NoPermission from "@sparcs-clubs/web/common/frames/NoPermission";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ClubRegisterApproveFrame from "@sparcs-clubs/web/features/executive/register-club/frames/ClubRegisterApproveFrame";
 import RegisterClubDetailAuthFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailAuthFrame";
@@ -39,8 +40,12 @@ const RegisterClubDetail: React.FC = () => {
     return <LoginRequired login={login} />;
   }
 
-  if (!isValidApplyId || profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
+  if (!isValidApplyId) {
+    return <NotFound />;
+  }
+
+  if (profile?.type !== UserTypeEnum.Executive) {
+    return <NoPermission />;
   }
 
   return (
