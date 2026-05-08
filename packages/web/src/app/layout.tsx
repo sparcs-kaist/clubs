@@ -1,5 +1,5 @@
 import "@sparcs-clubs/web/styles/globals.css";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import classNames from "classnames";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
