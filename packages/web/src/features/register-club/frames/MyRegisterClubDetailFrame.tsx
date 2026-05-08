@@ -21,7 +21,8 @@ const ButtonWrapper = styled.div`
 `;
 
 const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const applyId = Number(idParam);
   const router = useRouter();
 
   const isProfessor = profile === UserTypeEnum.Professor;
@@ -30,7 +31,7 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
     data: clubDetail,
     isLoading,
     isError,
-  } = useGetRegisterClubDetail(profile, { applyId: +id });
+  } = useGetRegisterClubDetail(profile, { applyId });
 
   if (!clubDetail) {
     return null;

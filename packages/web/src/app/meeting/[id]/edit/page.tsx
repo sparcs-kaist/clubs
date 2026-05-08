@@ -28,7 +28,8 @@ const ButtonWrapper = styled.div`
 
 const EditMeetingPage: React.FC = () => {
   const router = useRouter();
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = Number(idParam);
   const queryClient = useQueryClient();
 
   const formCtx = useForm<MeetingAnnouncementModel>({
@@ -45,7 +46,7 @@ const EditMeetingPage: React.FC = () => {
   const announcementTitle = watch("announcementTitle");
   const announcementContent = watch("announcementContent");
 
-  const { data, isLoading, isError, isSuccess } = useGetMeetingDetail(+id);
+  const { data, isLoading, isError, isSuccess } = useGetMeetingDetail(id);
   const { mutate: updateMeeting, isPending: isUpdateLoading } =
     useUpdateMeeting();
 
@@ -58,7 +59,7 @@ const EditMeetingPage: React.FC = () => {
     const values = getValues();
     updateMeeting(
       {
-        requestParam: { announcementId: +id },
+        requestParam: { announcementId: id },
         body: {
           ...values,
           isRegular: values.isRegular === "true",
@@ -66,7 +67,7 @@ const EditMeetingPage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: [apiMee002.url(+id)] });
+          queryClient.invalidateQueries({ queryKey: [apiMee002.url(id)] });
           router.replace(`/meeting/${id}`);
         },
         onError: () => errorHandler("수정에 실패하였습니다"),

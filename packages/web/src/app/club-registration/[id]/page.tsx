@@ -21,7 +21,8 @@ const ClubRegistrationDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const { id: applyId } = useParams();
+  const { id: applyIdParam } = useParams<{ id: string }>();
+  const applyId = Number(applyIdParam);
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -45,7 +46,7 @@ const ClubRegistrationDetail: React.FC = () => {
         enableLast
       />
       <RegisterClubDetailAuthFrame
-        applyId={+applyId}
+        applyId={applyId}
         profile={UserTypeEnum.Undergraduate}
       />
       <Link href="/club-registration">

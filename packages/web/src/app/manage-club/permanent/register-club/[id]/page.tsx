@@ -19,7 +19,8 @@ const RegisterClubDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const { id: applyId } = useParams();
+  const { id: applyIdParam } = useParams<{ id: string }>();
+  const applyId = Number(applyIdParam);
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -56,7 +57,7 @@ const RegisterClubDetail: React.FC = () => {
         title="동아리 등록 신청 내역"
         enableLast
       />
-      <RegisterClubDetailAuthFrame applyId={+applyId} profile={"permanent"} />
+      <RegisterClubDetailAuthFrame applyId={applyId} profile={"permanent"} />
       <Link href="/manage-club/permanent/register-club">
         <Button>목록으로 돌아가기</Button>
       </Link>

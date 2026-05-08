@@ -12,7 +12,7 @@
     "@clubs/typescript-config": "workspace:*",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.24.0",
-    "@next/eslint-plugin-next": "^14.2.28",
+    "@next/eslint-plugin-next": "^15.5.16",
     "@stylistic/eslint-plugin": "^3.1.0",
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.24.0",

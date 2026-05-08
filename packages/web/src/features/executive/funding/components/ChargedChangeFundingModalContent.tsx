@@ -37,11 +37,12 @@ const ChargedChangeFundingModalContent: React.FC<
   ChargedChangeFundingModalContentProps
 > = ({ isOpen, close, selectedFundingIds, selectedFundingInfos }) => {
   const queryClient = useQueryClient();
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = Number(idParam);
 
   const { data, isLoading, isError } =
     useGetFundingClubChargeAvailableExecutives({
-      clubIds: [Number(id)],
+      clubIds: [id],
     });
   const { mutate: patchFundingChargedExecutive } = usePatchFundingStatus();
 
@@ -81,7 +82,7 @@ const ChargedChangeFundingModalContent: React.FC<
             queryKey: [apiFnd008.url()],
           });
           queryClient.invalidateQueries({
-            queryKey: [apiFnd009.url(Number(id))],
+            queryKey: [apiFnd009.url(id)],
           });
           queryClient.invalidateQueries({
             queryKey: [apiFnd010.url(selectedExecutiveId)],

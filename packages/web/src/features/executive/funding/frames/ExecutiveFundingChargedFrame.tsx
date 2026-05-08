@@ -11,9 +11,10 @@ import FundingChargedStatistic from "../components/FundingChargedStatistic";
 import useGetChargedFundings from "../services/useGetChargedFundings";
 
 const ExecutiveFundingChargedFrame: React.FC = () => {
-  const { id: executiveId } = useParams();
+  const { id: executiveIdParam } = useParams<{ id: string }>();
+  const executiveId = Number(executiveIdParam);
   const { data, isLoading, isError } = useGetChargedFundings({
-    executiveId: Number(executiveId),
+    executiveId,
   });
 
   window.history.replaceState({ isClubView: false }, "");
@@ -27,7 +28,7 @@ const ExecutiveFundingChargedFrame: React.FC = () => {
     partialCount: 0,
     fundings: [],
     chargedExecutive: {
-      id: Number(executiveId),
+      id: executiveId,
       name: "",
       studentNumber: "",
     },

@@ -25,13 +25,14 @@ const MyRegisterClubEdit = () => {
     }
   }, [isLoggedIn, profile]);
 
-  const { id: applyId } = useParams();
+  const { id: applyIdParam } = useParams<{ id: string }>();
+  const applyId = Number(applyIdParam);
   const {
     data: detail,
     isLoading,
     isError,
   } = useGetRegisterClubDetail(profile?.type as UserTypeEnum, {
-    applyId: +applyId,
+    applyId,
   });
 
   if (loading) {
@@ -63,7 +64,7 @@ const MyRegisterClubEdit = () => {
         enableLast
       />
       <AsyncBoundary isLoading={isLoading} isError={isError}>
-        <MyRegisterClubEditFrame applyId={+applyId} initialData={detail} />
+        <MyRegisterClubEditFrame applyId={applyId} initialData={detail} />
       </AsyncBoundary>
     </FlexWrapper>
   );

@@ -12,9 +12,10 @@ import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/
 import useGetExecutiveChargedActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveChargedActivities";
 
 const ExecutiveActivityReportChargedFrame: React.FC = () => {
-  const { id: executiveId } = useParams();
+  const { id: executiveIdParam } = useParams<{ id: string }>();
+  const executiveId = Number(executiveIdParam);
   const { data, isLoading, isError } = useGetExecutiveChargedActivities({
-    executiveId: Number(executiveId),
+    executiveId,
   });
 
   window.history.replaceState({ isClubView: false }, "");

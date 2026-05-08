@@ -33,11 +33,12 @@ const ChargedChangeActivityModalContent: React.FC<
   ChargedChangeActivityModalContentProps
 > = ({ isOpen, close, selectedActivityIds, selectedActivityInfos }) => {
   const queryClient = useQueryClient();
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = Number(idParam);
 
   const { data, isLoading, isError } =
     useGetActivityClubChargeAvailableExecutives({
-      clubIds: [Number(id)],
+      clubIds: [id],
     });
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<number | null>(
     null,

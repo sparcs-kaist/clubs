@@ -41,9 +41,10 @@ const RowStretchWrapper = styled.div`
 
 const MeetingDetailFrame: React.FC = () => {
   const router = useRouter();
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = Number(idParam);
 
-  const { data, isLoading, isError } = useGetMeetingDetail(+id);
+  const { data, isLoading, isError } = useGetMeetingDetail(id);
   const { mutate, isPending: isDeleteLoading } = useDeleteMeeting();
 
   const deleteHandler = useCallback(() => {
@@ -52,7 +53,7 @@ const MeetingDetailFrame: React.FC = () => {
         <CancellableModalContent
           onConfirm={() => {
             mutate(
-              { param: { announcementId: +id } },
+              { param: { announcementId: id } },
               {
                 onSuccess: () => {
                   router.replace("/meeting");

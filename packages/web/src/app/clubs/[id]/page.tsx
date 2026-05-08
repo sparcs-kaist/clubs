@@ -14,7 +14,7 @@ const ClubDetail = () => {
   // 이스터에그_리크루팅
   useEasterEgg();
 
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError } = useGetClubDetail(String(id));
   const { isLoggedIn, profile } = useAuth();
 

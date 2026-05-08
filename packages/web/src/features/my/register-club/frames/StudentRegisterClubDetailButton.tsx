@@ -12,7 +12,8 @@ import { deleteMyClubRegistration } from "@sparcs-clubs/web/features/my/services
 import { useGetMyClubRegistration } from "@sparcs-clubs/web/features/my/services/getMyClubRegistration";
 
 const StudentRegisterClubDetailButton: React.FC = () => {
-  const { id } = useParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  const applyId = Number(idParam);
   const router = useRouter();
 
   const {
@@ -34,7 +35,7 @@ const StudentRegisterClubDetailButton: React.FC = () => {
       <Modal isOpen={isOpen}>
         <CancellableModalContent
           onConfirm={async () => {
-            await deleteMyClubRegistration({ applyId: +id });
+            await deleteMyClubRegistration({ applyId });
             close();
             window.location.href = "/my";
           }}
@@ -54,7 +55,7 @@ const StudentRegisterClubDetailButton: React.FC = () => {
       <Modal isOpen={isOpen}>
         <CancellableModalContent
           onConfirm={() => {
-            router.push(`/my/register-club/${id}/edit`);
+            router.push(`/my/register-club/${applyId}/edit`);
             close();
           }}
           onClose={close}
