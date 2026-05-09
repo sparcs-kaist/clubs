@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 
 const IGNORED_COPY_CANDIDATES = [".env", ".clubs-secrets", ".claude"];
 const BOOTSTRAP_COMMANDS = [
-  "source ~/.nvm/nvm.sh && (nvm use 22.22.1 || nvm install 22.22.1)",
   "pnpm install",
   "pnpm rebuild @prisma/client prisma",
   "pnpm --filter api prisma:generate",
@@ -130,13 +129,39 @@ function localBranchExists(repoRoot, branch) {
   return result.status === 0;
 }
 
-function runShell(command, cwd, dryRun) {
+function readNodeVersion(repoRoot) {
+  const nvmrcPath = join(repoRoot, ".nvmrc");
+  if (!existsSync(nvmrcPath)) {
+    return "";
+  }
+
+  return readFileSync(nvmrcPath, "utf8").trim();
+}
+
+function withNodeVersion(command, nodeVersion) {
+  if (process.platform === "win32" || !nodeVersion) {
+    return command;
+  }
+
+  return [
+    'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"',
+    '[ -s "$NVM_DIR/nvm.sh" ]',
+    '. "$NVM_DIR/nvm.sh"',
+    `nvm use ${nodeVersion} >/dev/null || nvm install ${nodeVersion} >/dev/null`,
+    command,
+  ].join(" && ");
+}
+
+function runShell(command, cwd, dryRun, nodeVersion = "") {
   console.log(`$ (cd ${cwd} && ${command})`);
   if (dryRun) return;
   const shellCommand =
     process.platform === "win32"
-      ? { file: "cmd.exe", args: ["/c", command] }
-      : { file: process.env.SHELL || "/bin/bash", args: ["-lc", command] };
+      ? { file: "cmd.exe", args: ["/c", withNodeVersion(command, nodeVersion)] }
+      : {
+          file: process.env.SHELL || "/bin/bash",
+          args: ["-lc", withNodeVersion(command, nodeVersion)],
+        };
   const result = spawnSync(shellCommand.file, shellCommand.args, {
     cwd,
     stdio: "inherit",
@@ -177,6 +202,7 @@ function main() {
 
   const repoRoot = gitRoot();
   const sourceRoot = primaryWorktreeRoot(repoRoot);
+  const nodeVersion = readNodeVersion(sourceRoot);
   const worktreesRoot = resolve(sourceRoot, "..", "clubs-worktrees");
   const worktreeName = options.worktreeName || options.branch.replaceAll("/", "-");
   const target = join(worktreesRoot, worktreeName);
@@ -251,7 +277,7 @@ function main() {
 
   if (!options.skipBootstrap) {
     for (const command of BOOTSTRAP_COMMANDS) {
-      runShell(command, target, options.dryRun);
+      runShell(command, target, options.dryRun, nodeVersion);
     }
   }
 
