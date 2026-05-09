@@ -29,8 +29,6 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           run_install: true
-      - name: Generate Prisma Client
-        run: pnpm --filter api exec prisma generate
       - name: Check coding styles and formatting
         run: pnpm lint
       - name: Check build passing
@@ -70,9 +68,6 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           run_install: true
-
-      - name: Generate Prisma Client
-        run: pnpm --filter api exec prisma generate
 
       - name: Build packages
         run: pnpm build

@@ -5,10 +5,13 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "dev": "turbo watch dev",
-    "dev-mock": "turbo watch dev-mock",
-    "dev-no-d": "turbo run dev --no-daemon",
+    "dev": "turbo run dev:setup && turbo watch dev",
+    "dev:api": "turbo run dev:setup && turbo watch dev --filter=api",
+    "dev:setup": "node -e \"\"",
+    "dev-mock": "turbo run dev:setup && turbo watch dev-mock",
+    "dev-no-d": "turbo run dev:setup && turbo run dev --no-daemon",
     "build": "turbo run build --force",
+    "build:api": "turbo run build --filter=api",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
@@ -16,8 +19,10 @@
     "db-up": "turbo run db-up",
     "db-down": "turbo run db-down",
     "db-generate": "turbo run db-generate",
+    "prisma:generate": "turbo run prisma:generate --filter=api",
     "prepare": "husky",
-    "test": "pnpm --filter=api test"
+    "test": "turbo run test --filter=api",
+    "test:api": "turbo run test --filter=api"
   },
   "lint-staged": {
     "./packages/api/**/*.ts": [
@@ -67,7 +72,10 @@
   "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@nestjs/core"
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
     ]
   },
   "dependencies": {
