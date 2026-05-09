@@ -46,7 +46,8 @@ const Profile: React.FC<ProfileProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const t = useTranslations();
+  const t = useTranslations("common");
+  const profileLabel = t.has(profileName) ? t(profileName) : profileName;
   const profileText = (number: number, mail: string) => {
     if (number && mail) return `${number} / ${mail}`;
     if (number === undefined || number === null) return `${mail}`;
@@ -58,7 +59,7 @@ const Profile: React.FC<ProfileProps> = ({
     <ProfileWrapper selected={isSelected} onClick={onClick}>
       <ProfileText>
         <Typography fw="MEDIUM" fs={16} lh={20} color="BLACK">
-          {t(`common.${profileName}`)}
+          {profileLabel}
         </Typography>
         <Typography fs={14} lh={16} color="GRAY.600">
           {profileText(profileNumber, email)}

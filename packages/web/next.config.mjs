@@ -15,12 +15,12 @@ const nextConfig = {
         headers: [
           {
             key: "x-nextjs-version",
-            value: "14.2.35"
-          }
+            value: "15.5.18",
+          },
         ],
       },
     ];
-  }
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();

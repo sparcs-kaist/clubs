@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -13,7 +14,8 @@ import ActivityReportEditFrame from "@sparcs-clubs/web/features/activity-report/
 import useGetActivityDeadline from "@sparcs-clubs/web/features/activity-report/services/useGetActivityDeadline";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 
-const ActivityReport = ({ params }: { params: { id: string } }) => {
+const ActivityReport = () => {
+  const { id } = useParams<{ id: string }>();
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +59,7 @@ const ActivityReport = ({ params }: { params: { id: string } }) => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <ActivityReportEditFrame id={params.id} clubId={data.clubId} />
+      <ActivityReportEditFrame id={String(id)} clubId={data.clubId} />
     </AsyncBoundary>
   );
 };

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -21,7 +22,10 @@ const ClubRegistrationDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const { id: applyId } = useParams();
+  const { id: applyIdParam } = useParams<{ id: string }>();
+  const parsedApplyId = Number(applyIdParam);
+  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
+  const applyId = isValidApplyId ? parsedApplyId : 0;
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -37,6 +41,10 @@ const ClubRegistrationDetail: React.FC = () => {
     return <LoginRequired login={login} />;
   }
 
+  if (!isValidApplyId) {
+    return <NotFound />;
+  }
+
   return (
     <FlexWrapper gap={40} direction="column">
       <PageHead
@@ -45,7 +53,7 @@ const ClubRegistrationDetail: React.FC = () => {
         enableLast
       />
       <RegisterClubDetailAuthFrame
-        applyId={+applyId}
+        applyId={applyId}
         profile={UserTypeEnum.Undergraduate}
       />
       <Link href="/club-registration">
