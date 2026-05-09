@@ -5,10 +5,12 @@
     "dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "build": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "clean": {
       "cache": false
@@ -22,7 +24,8 @@
     },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "web#storybook": {
       "persistent": true

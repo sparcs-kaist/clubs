@@ -5,9 +5,10 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "dev": "turbo watch dev",
-    "dev-mock": "turbo watch dev-mock",
-    "dev-no-d": "turbo run dev --no-daemon",
+    "dev": "pnpm dev:prepare && turbo watch dev",
+    "dev:prepare": "pnpm --filter @clubs/domain build && pnpm --filter @clubs/interface build && pnpm prisma:generate",
+    "dev-mock": "pnpm dev:prepare && turbo watch dev-mock",
+    "dev-no-d": "pnpm dev:prepare && turbo run dev --no-daemon",
     "build": "turbo run build --force",
     "start": "turbo run start",
     "clean": "turbo run clean",
