@@ -43,4 +43,16 @@ pnpm prisma:generate
 pnpm dev
 ```
 
+API만 실행하고 싶다면 아래 커맨드를 사용합니다.
+```bash
+pnpm dev:api
+```
+
+API 빌드만 실행하고 싶다면 아래 커맨드를 사용합니다.
+```bash
+pnpm build:api
+```
+
+패키지 직접 실행 대신 루트 `pnpm` 커맨드를 공식 진입점으로 사용합니다.
+
 Clubs 최고! :)

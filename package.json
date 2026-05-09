@@ -5,11 +5,13 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
-    "dev": "pnpm dev:prepare && turbo watch dev",
-    "dev:prepare": "pnpm --filter @clubs/domain build && pnpm --filter @clubs/interface build && pnpm prisma:generate",
-    "dev-mock": "pnpm dev:prepare && turbo watch dev-mock",
-    "dev-no-d": "pnpm dev:prepare && turbo run dev --no-daemon",
+    "dev": "turbo run dev:setup && turbo watch dev",
+    "dev:api": "turbo run dev:setup && turbo watch dev --filter=api",
+    "dev:setup": "node -e \"\"",
+    "dev-mock": "turbo run dev:setup && turbo watch dev-mock",
+    "dev-no-d": "turbo run dev:setup && turbo run dev --no-daemon",
     "build": "turbo run build --force",
+    "build:api": "turbo run build --filter=api",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
@@ -17,10 +19,11 @@
     "db-up": "turbo run db-up",
     "db-down": "turbo run db-down",
     "db-generate": "turbo run db-generate",
-    "prisma:generate": "pnpm --filter api prisma:generate",
-    "postinstall": "if [ -f packages/api/package.json ]; then pnpm prisma:generate; fi",
+    "prisma:generate": "turbo run prisma:generate --filter=api",
+    "postinstall": "if [ -f packages/api/package.json ]; then turbo run prisma:generate --filter=api; fi",
     "prepare": "husky",
-    "test": "pnpm --filter=api test"
+    "test": "turbo run test --filter=api",
+    "test:api": "turbo run test --filter=api"
   },
   "lint-staged": {
     "./packages/api/**/*.ts": [

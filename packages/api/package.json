@@ -6,9 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "predev": "if [ -z \"$TURBO_HASH\" ]; then (cd ../.. && pnpm --filter @clubs/domain build && pnpm --filter @clubs/interface build); fi && pnpm prisma:generate",
     "dev": "dotenv -e ../../.env -- nest start --watch",
-    "prebuild": "if [ -z \"$TURBO_HASH\" ]; then (cd ../.. && pnpm --filter @clubs/domain build && pnpm --filter @clubs/interface build); fi && pnpm prisma:generate",
     "build": "nest build",
     "clean": "rm -rf dist",
     "start": "nest start",
