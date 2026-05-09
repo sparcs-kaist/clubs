@@ -6,7 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "predev": "pnpm prisma:generate",
     "dev": "dotenv -e ../../.env -- nest start --watch",
+    "prebuild": "pnpm prisma:generate",
     "build": "nest build",
     "clean": "rm -rf dist",
     "start": "nest start",

@@ -28,7 +28,12 @@ pnpm i
 백그라운드에 Docker가 실행되어 있는지 확인합니다.
 그리고, 아래 커맨드를 통해 로컬 DB를 실행하고, 현재 Schema와 동기화할 수 있습니다.
 ```bash
-pnpm generate
+pnpm db-generate
+```
+
+Prisma Client만 다시 생성하고 싶다면 아래 커맨드를 사용할 수 있습니다.
+```bash
+pnpm prisma:generate
 ```
 
 ### 개발 모드로 실행하기
