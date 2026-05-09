@@ -99,9 +99,9 @@ Only do these when the task needs the app or DB to run:
 
 ## Preferred execution path
 
-Use the helper script:
+Use the helper command:
 
-`python3 plugins/worktree-tools/skills/create-worktree/scripts/create_worktree.py --branch <branch> [--start-point <ref>] [--reuse-remote-branch]`
+`pnpm create-worktree -- --branch <branch> [--start-point <ref>] [--reuse-remote-branch]`
 
 ### Use these modes
 

@@ -3,8 +3,6 @@
 .env.prod
 **/node_modules
 *.log
-__pycache__/
-*.pyc
 
 # IDE Configurations
 .idea
