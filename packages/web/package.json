@@ -52,7 +52,7 @@
     "immer": "^10.0.4",
     "jwt-decode": "^4.0.0",
     "loglevel": "^1.9.1",
-    "next": "15.5.16",
+    "next": "15.5.18",
     "next-intl": "^4.0.2",
     "overlay-kit": "^1.2.1",
     "qs": "^6.14.0",
@@ -91,7 +91,7 @@
     "@types/react-dom": "^18",
     "dotenv-cli": "^7.4.4",
     "eslint": "^9.24.0",
-    "eslint-config-next": "15.5.16",
+    "eslint-config-next": "15.5.18",
     "storybook": "^8.4.5",
     "typescript": "^5"
   },
