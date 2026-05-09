@@ -17,6 +17,7 @@
     "db-down": "turbo run db-down",
     "db-generate": "turbo run db-generate",
     "prisma:generate": "pnpm --filter api prisma:generate",
+    "postinstall": "if [ -f packages/api/package.json ]; then pnpm prisma:generate; fi",
     "prepare": "husky",
     "test": "pnpm --filter=api test"
   },
