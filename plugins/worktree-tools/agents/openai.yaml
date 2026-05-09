@@ -1,0 +1,4 @@
+interface:
+  display_name: "Worktree Tools"
+  short_description: "Create ready-to-run worktrees for TU tasks and PR follow-up work"
+  default_prompt: "Create a ready-to-run worktree for this repo from a TU task, Notion spec, or PR link."

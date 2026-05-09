@@ -1,0 +1,20 @@
+{
+  "name": "codex-marketplace-ar-002-clubs-local",
+  "interface": {
+    "displayName": "Codex Plugins (ar-002-clubs)"
+  },
+  "plugins": [
+    {
+      "name": "worktree-tools",
+      "source": {
+        "source": "local",
+        "path": "./plugins/worktree-tools"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "NONE"
+      },
+      "category": "Coding"
+    }
+  ]
+}

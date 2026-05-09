@@ -1,0 +1,32 @@
+{
+  "name": "worktree-tools",
+  "version": "0.1.0",
+  "description": "Project-local workflows for creating ready-to-run worktrees for ar-002-clubs tasks.",
+  "author": {
+    "name": "SPARCS Clubs",
+    "url": "https://github.com/sparcs-kaist/clubs"
+  },
+  "repository": "https://github.com/sparcs-kaist/clubs",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "worktree",
+    "bootstrap",
+    "dx",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Worktree Tools",
+    "shortDescription": "Create ready-to-run worktrees for TU tasks and PR follow-up work",
+    "longDescription": "Project-local worktree setup workflows for ar-002-clubs. Reads PR or task context, chooses the correct branch, creates a sibling worktree under ../clubs-worktrees, copies required ignored files, and bootstraps the repo so Codex can start coding immediately.",
+    "developerName": "SPARCS Clubs",
+    "category": "Coding",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/sparcs-kaist/clubs",
+    "defaultPrompt": "Create a ready-to-run worktree for this repo from a TU task, Notion spec, or PR link"
+  }
+}
