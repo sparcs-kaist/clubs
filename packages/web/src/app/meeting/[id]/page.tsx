@@ -6,7 +6,7 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -121,7 +121,7 @@ const MeetingDetailFrame: React.FC = () => {
   }, [data]);
 
   if (!isValidId) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   return (

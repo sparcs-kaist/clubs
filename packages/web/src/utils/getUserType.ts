@@ -5,20 +5,20 @@ import {
 
 export const getUserType = (type: UserTypeEnum | string) => {
   switch (type) {
-    case UserTypeEnum.Undergraduate || "undergraduate":
+    case UserTypeEnum.Undergraduate:
       return "학부생";
-    case UserTypeEnum.Master || "master":
+    case UserTypeEnum.Master:
       return "석사과정";
-    case UserTypeEnum.Doctor || "doctor":
+    case UserTypeEnum.Doctor:
       return "박사과정";
-    case UserTypeEnum.Executive || "executive":
+    case UserTypeEnum.Executive:
       return "집행부원";
-    case UserTypeEnum.Professor || "professor":
+    case UserTypeEnum.Professor:
       return "지도교수";
-    case UserTypeEnum.Employee || "employee":
+    case UserTypeEnum.Employee:
       return "교직원";
     default:
-      return "None";
+      return undefined;
   }
 };
 

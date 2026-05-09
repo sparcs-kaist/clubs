@@ -5,7 +5,7 @@ import { styled } from "styled-components";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ProfessorRegisterClubDetailButton from "@sparcs-clubs/web/features/my/register-club/frames/ProfessorRegisterClubDetailButton";
@@ -43,7 +43,7 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
   );
 
   if (!isValidApplyId) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   if (!clubDetail) {

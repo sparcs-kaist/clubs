@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -36,7 +36,7 @@ const ExecutiveFundingClub = () => {
   }
 
   if (profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   return (

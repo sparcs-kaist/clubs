@@ -9,7 +9,7 @@ import styled from "styled-components";
 import apiMee002 from "@clubs/interface/api/meeting/apiMee002";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -87,7 +87,7 @@ const EditMeetingPage: React.FC = () => {
   }, [data, isSuccess, reset]);
 
   if (!isValidId) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   return (

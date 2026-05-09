@@ -16,11 +16,11 @@ const nextConfig = {
           {
             key: "x-nextjs-version",
             value: "15.5.18",
-          }
+          },
         ],
       },
     ];
-  }
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();

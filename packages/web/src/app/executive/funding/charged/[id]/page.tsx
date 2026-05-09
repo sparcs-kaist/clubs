@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
@@ -29,7 +29,7 @@ const ExecutiveFundingCharged = () => {
   }
 
   if (profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   return <ExecutiveFundingChargedFrame />;
