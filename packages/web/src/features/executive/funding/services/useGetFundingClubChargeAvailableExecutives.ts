@@ -10,17 +10,11 @@ interface UseGetFundingClubChargeAvailableExecutivesProps {
   clubIds: number[];
 }
 
-interface UseGetFundingClubChargeAvailableExecutivesOptions {
-  enabled?: boolean;
-}
-
-const useGetFundingClubChargeAvailableExecutives = (
-  { clubIds }: UseGetFundingClubChargeAvailableExecutivesProps,
-  options: UseGetFundingClubChargeAvailableExecutivesOptions = {},
-) =>
+const useGetFundingClubChargeAvailableExecutives = ({
+  clubIds,
+}: UseGetFundingClubChargeAvailableExecutivesProps) =>
   useQuery<ApiFnd016ResponseOk, Error>({
     queryKey: [apiFnd016.url(), clubIds],
-    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiFnd016ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiFnd016.url(), {
         params: { clubIds },

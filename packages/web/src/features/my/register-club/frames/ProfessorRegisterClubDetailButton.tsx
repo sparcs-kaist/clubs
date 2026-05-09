@@ -16,8 +16,7 @@ import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/servi
 const ProfessorRegisterClubDetailButton: React.FC<{
   clubDetail: ApiReg011ResponseOk;
 }> = ({ clubDetail }) => {
-  const { id: idParam } = useParams<{ id: string }>();
-  const applyId = Number(idParam);
+  const { id } = useParams();
 
   const { mutate } = usePatchClubRegProfessorApprove();
 
@@ -33,7 +32,7 @@ const ProfessorRegisterClubDetailButton: React.FC<{
         <CancellableModalContent
           onConfirm={() => {
             mutate(
-              { param: { applyId } },
+              { param: { applyId: +id } },
               {
                 onSuccess: () => {
                   errorHandler("승인이 완료되었습니다.");

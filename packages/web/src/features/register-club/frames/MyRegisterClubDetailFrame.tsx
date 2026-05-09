@@ -5,7 +5,6 @@ import { styled } from "styled-components";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import ProfessorRegisterClubDetailButton from "@sparcs-clubs/web/features/my/register-club/frames/ProfessorRegisterClubDetailButton";
@@ -22,10 +21,7 @@ const ButtonWrapper = styled.div`
 `;
 
 const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
-  const { id: idParam } = useParams<{ id: string }>();
-  const parsedApplyId = Number(idParam);
-  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
-  const applyId = isValidApplyId ? parsedApplyId : 0;
+  const { id } = useParams();
   const router = useRouter();
 
   const isProfessor = profile === UserTypeEnum.Professor;
@@ -34,17 +30,7 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
     data: clubDetail,
     isLoading,
     isError,
-  } = useGetRegisterClubDetail(
-    profile,
-    { applyId },
-    {
-      enabled: isValidApplyId,
-    },
-  );
-
-  if (!isValidApplyId) {
-    return <NotFound />;
-  }
+  } = useGetRegisterClubDetail(profile, { applyId: +id });
 
   if (!clubDetail) {
     return null;

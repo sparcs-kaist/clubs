@@ -6,13 +6,12 @@ import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
+import Custom404 from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
-import NoPermission from "@sparcs-clubs/web/common/frames/NoPermission";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import RegisterClubDetailAuthFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailAuthFrame";
 
@@ -20,10 +19,7 @@ const RegisterClubDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const { id: applyIdParam } = useParams<{ id: string }>();
-  const parsedApplyId = Number(applyIdParam);
-  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
-  const applyId = isValidApplyId ? parsedApplyId : 0;
+  const { id: applyId } = useParams();
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -39,12 +35,8 @@ const RegisterClubDetail: React.FC = () => {
     return <LoginRequired login={login} />;
   }
 
-  if (!isValidApplyId) {
-    return <NotFound />;
-  }
-
   if (profile?.type !== UserTypeEnum.Undergraduate) {
-    return <NoPermission />;
+    return <Custom404 />;
   }
 
   return (
@@ -64,7 +56,7 @@ const RegisterClubDetail: React.FC = () => {
         title="동아리 등록 신청 내역"
         enableLast
       />
-      <RegisterClubDetailAuthFrame applyId={applyId} profile={"permanent"} />
+      <RegisterClubDetailAuthFrame applyId={+applyId} profile={"permanent"} />
       <Link href="/manage-club/permanent/register-club">
         <Button>목록으로 돌아가기</Button>
       </Link>

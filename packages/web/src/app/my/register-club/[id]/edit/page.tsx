@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { getDisplayNameRegistration } from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -26,21 +25,14 @@ const MyRegisterClubEdit = () => {
     }
   }, [isLoggedIn, profile]);
 
-  const { id: applyIdParam } = useParams<{ id: string }>();
-  const parsedApplyId = Number(applyIdParam);
-  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
-  const applyId = isValidApplyId ? parsedApplyId : 0;
+  const { id: applyId } = useParams();
   const {
     data: detail,
     isLoading,
     isError,
-  } = useGetRegisterClubDetail(
-    profile?.type as UserTypeEnum,
-    {
-      applyId,
-    },
-    { enabled: isValidApplyId },
-  );
+  } = useGetRegisterClubDetail(profile?.type as UserTypeEnum, {
+    applyId: +applyId,
+  });
 
   if (loading) {
     return <AsyncBoundary isLoading={loading} isError />;
@@ -48,10 +40,6 @@ const MyRegisterClubEdit = () => {
 
   if (!isLoggedIn) {
     return <LoginRequired login={login} />;
-  }
-
-  if (!isValidApplyId) {
-    return <NotFound />;
   }
 
   if (profile?.type === UserTypeEnum.Executive) {
@@ -75,7 +63,7 @@ const MyRegisterClubEdit = () => {
         enableLast
       />
       <AsyncBoundary isLoading={isLoading} isError={isError}>
-        <MyRegisterClubEditFrame applyId={applyId} initialData={detail} />
+        <MyRegisterClubEditFrame applyId={+applyId} initialData={detail} />
       </AsyncBoundary>
     </FlexWrapper>
   );

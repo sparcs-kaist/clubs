@@ -46,20 +46,17 @@ const Login = () => {
         setSelectedToken(token);
         const decoded: { name?: string; type?: string } = jwtDecode(token);
         setUserName(decoded.name || "Unknown User");
-        setType(decoded.type || "");
+        setType(decoded.type || "Unknown Type");
       }
     }
   }, [isLoggedIn, selectedToken]);
-
-  const userType = getUserType(type);
 
   return (
     <>
       {isLoggedIn ? (
         <LoginInner onClick={() => setIsMenuOpen(!isMenuOpen)}>
           <Icon type="person" size={16} />
-          {userName}
-          {userType ? ` (${t(`common.${userType}`)})` : ""}
+          {userName} ({t(`common.${getUserType(type)}`)})
         </LoginInner>
       ) : (
         <LoginInner onClick={login}>

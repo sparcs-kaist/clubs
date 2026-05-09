@@ -9,7 +9,6 @@ import styled from "styled-components";
 import apiMee002 from "@clubs/interface/api/meeting/apiMee002";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -29,10 +28,7 @@ const ButtonWrapper = styled.div`
 
 const EditMeetingPage: React.FC = () => {
   const router = useRouter();
-  const { id: idParam } = useParams<{ id: string }>();
-  const parsedId = Number(idParam);
-  const isValidId = Number.isInteger(parsedId) && parsedId > 0;
-  const id = isValidId ? parsedId : 0;
+  const { id } = useParams();
   const queryClient = useQueryClient();
 
   const formCtx = useForm<MeetingAnnouncementModel>({
@@ -49,9 +45,7 @@ const EditMeetingPage: React.FC = () => {
   const announcementTitle = watch("announcementTitle");
   const announcementContent = watch("announcementContent");
 
-  const { data, isLoading, isError, isSuccess } = useGetMeetingDetail(id, {
-    enabled: isValidId,
-  });
+  const { data, isLoading, isError, isSuccess } = useGetMeetingDetail(+id);
   const { mutate: updateMeeting, isPending: isUpdateLoading } =
     useUpdateMeeting();
 
@@ -64,7 +58,7 @@ const EditMeetingPage: React.FC = () => {
     const values = getValues();
     updateMeeting(
       {
-        requestParam: { announcementId: id },
+        requestParam: { announcementId: +id },
         body: {
           ...values,
           isRegular: values.isRegular === "true",
@@ -72,7 +66,7 @@ const EditMeetingPage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: [apiMee002.url(id)] });
+          queryClient.invalidateQueries({ queryKey: [apiMee002.url(+id)] });
           router.replace(`/meeting/${id}`);
         },
         onError: () => errorHandler("수정에 실패하였습니다"),
@@ -85,10 +79,6 @@ const EditMeetingPage: React.FC = () => {
       reset({ ...data, isRegular: data.isRegular ? "true" : "false" });
     }
   }, [data, isSuccess, reset]);
-
-  if (!isValidId) {
-    return <NotFound />;
-  }
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

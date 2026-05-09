@@ -6,7 +6,6 @@ import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -42,14 +41,9 @@ const RowStretchWrapper = styled.div`
 
 const MeetingDetailFrame: React.FC = () => {
   const router = useRouter();
-  const { id: idParam } = useParams<{ id: string }>();
-  const parsedId = Number(idParam);
-  const isValidId = Number.isInteger(parsedId) && parsedId > 0;
-  const id = isValidId ? parsedId : 0;
+  const { id } = useParams();
 
-  const { data, isLoading, isError } = useGetMeetingDetail(id, {
-    enabled: isValidId,
-  });
+  const { data, isLoading, isError } = useGetMeetingDetail(+id);
   const { mutate, isPending: isDeleteLoading } = useDeleteMeeting();
 
   const deleteHandler = useCallback(() => {
@@ -58,7 +52,7 @@ const MeetingDetailFrame: React.FC = () => {
         <CancellableModalContent
           onConfirm={() => {
             mutate(
-              { param: { announcementId: id } },
+              { param: { announcementId: +id } },
               {
                 onSuccess: () => {
                   router.replace("/meeting");
@@ -119,10 +113,6 @@ const MeetingDetailFrame: React.FC = () => {
 
     return content;
   }, [data]);
-
-  if (!isValidId) {
-    return <NotFound />;
-  }
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

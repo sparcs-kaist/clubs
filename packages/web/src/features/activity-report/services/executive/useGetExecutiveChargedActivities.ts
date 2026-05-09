@@ -7,17 +7,9 @@ import apiAct028, {
 
 import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
-interface UseGetExecutiveChargedActivitiesOptions {
-  enabled?: boolean;
-}
-
-const useGetExecutiveChargedActivities = (
-  query: ApiAct028RequestParam,
-  options: UseGetExecutiveChargedActivitiesOptions = {},
-) =>
+const useGetExecutiveChargedActivities = (query: ApiAct028RequestParam) =>
   useQuery<ApiAct028ResponseOk, Error>({
     queryKey: ["executiveChargedActivities", query.executiveId],
-    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiAct028ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(
         apiAct028.url(query.executiveId),

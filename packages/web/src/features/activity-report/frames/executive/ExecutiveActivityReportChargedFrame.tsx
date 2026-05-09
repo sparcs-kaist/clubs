@@ -3,7 +3,6 @@ import React from "react";
 
 import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
-import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
@@ -13,21 +12,10 @@ import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/
 import useGetExecutiveChargedActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveChargedActivities";
 
 const ExecutiveActivityReportChargedFrame: React.FC = () => {
-  const { id: executiveIdParam } = useParams<{ id: string }>();
-  const parsedExecutiveId = Number(executiveIdParam);
-  const isValidExecutiveId =
-    Number.isInteger(parsedExecutiveId) && parsedExecutiveId > 0;
-  const executiveId = isValidExecutiveId ? parsedExecutiveId : 0;
-  const { data, isLoading, isError } = useGetExecutiveChargedActivities(
-    {
-      executiveId,
-    },
-    { enabled: isValidExecutiveId },
-  );
-
-  if (!isValidExecutiveId) {
-    return <NotFound />;
-  }
+  const { id: executiveId } = useParams();
+  const { data, isLoading, isError } = useGetExecutiveChargedActivities({
+    executiveId: Number(executiveId),
+  });
 
   window.history.replaceState({ isClubView: false }, "");
 

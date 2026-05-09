@@ -10,17 +10,9 @@ interface UseGetChargedFundingsProps {
   executiveId: number;
 }
 
-interface UseGetChargedFundingsOptions {
-  enabled?: boolean;
-}
-
-const useGetChargedFundings = (
-  { executiveId }: UseGetChargedFundingsProps,
-  options: UseGetChargedFundingsOptions = {},
-) =>
+const useGetChargedFundings = ({ executiveId }: UseGetChargedFundingsProps) =>
   useQuery<ApiFnd010ResponseOk, Error>({
     queryKey: [apiFnd010.url(executiveId)],
-    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiFnd010ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(
         apiFnd010.url(executiveId),

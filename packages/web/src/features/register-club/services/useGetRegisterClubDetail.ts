@@ -10,21 +10,15 @@ import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 import { registerClubDetailGet } from "./_atomic/registerClubApiList";
 
-interface UseGetRegisterClubDetailOptions {
-  enabled?: boolean;
-}
-
 const useGetRegisterClubDetail = (
   profile: UserTypeEnum,
   requestParam: ApiReg011RequestParam,
-  options: UseGetRegisterClubDetailOptions = {},
 ) =>
   useQuery<ApiReg011ResponseOk, Error>({
     queryKey: [
       registerClubDetailGet(profile, requestParam.applyId.toString()),
       requestParam.applyId,
     ],
-    enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiReg011ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(
         registerClubDetailGet(profile, requestParam.applyId.toString()),
