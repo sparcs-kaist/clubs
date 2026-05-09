@@ -21,4 +21,6 @@
 .turbo
 
 # Claude
-.claude
+.claude/*
+!.claude/skills/
+!.claude/skills/**
