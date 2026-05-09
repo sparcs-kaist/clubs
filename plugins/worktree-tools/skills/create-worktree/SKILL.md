@@ -55,6 +55,7 @@ Always inspect the task source before creating the worktree.
 - Existing PR: reuse the PR head branch exactly.
 - Fresh task with a TU number: use `TU-<number>`.
 - If the task source does not contain a TU number and no PR branch exists, ask the user for the TU number instead of inventing one.
+- Fresh branch creation should sync `dev` first by running a `git pull origin dev` from the primary repo worktree.
 
 ## Worktree location rules
 
@@ -115,6 +116,11 @@ Use `--dry-run` first when:
 - the branch name came from a long PR head ref
 - the repo state looks unusual
 - you want to show the user the exact operations before doing them
+
+When a fresh branch must be created, the helper should:
+
+1. sync the primary repo worktree to the latest `dev`
+2. only then create the new worktree branch from `origin/dev`
 
 ## Validation after setup
 

@@ -3,6 +3,8 @@
 import { existsSync, rmSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 function parseArgs(argv) {
   const options = {
@@ -115,6 +117,24 @@ function currentBranch(repoRoot) {
   return runGit(["branch", "--show-current"], repoRoot);
 }
 
+async function confirmDeleteCurrentWorktree(currentRoot) {
+  if (!input.isTTY) {
+    throw new Error(
+      `No target was provided. Re-run with --branch/--worktree-path, or run interactively to confirm deleting the current worktree: ${currentRoot}`,
+    );
+  }
+
+  const rl = readline.createInterface({ input, output });
+  try {
+    const answer = await rl.question(
+      `No worktree target was provided. Delete the current worktree at ${currentRoot}? [y/N] `,
+    );
+    return /^y(es)?$/i.test(answer.trim());
+  } finally {
+    rl.close();
+  }
+}
+
 function runGitCommand(args, cwd, dryRun, { allowFailure = false } = {}) {
   console.log(`$ git ${args.join(" ")}`);
   if (dryRun) return { ok: true, skipped: true };
@@ -128,15 +148,11 @@ function runGitCommand(args, cwd, dryRun, { allowFailure = false } = {}) {
   return { ok: true, skipped: false };
 }
 
-function main() {
+async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
     printHelp();
     return;
-  }
-
-  if (!options.branch && !options.worktreePath) {
-    throw new Error("Either --branch or --worktree-path is required");
   }
 
   const repoRoot = gitRoot();
@@ -145,9 +161,19 @@ function main() {
   const worktreesRoot = resolve(primaryRepoRoot, "..", "clubs-worktrees");
   const currentRoot = repoRoot;
   const primaryRoot = worktrees[0]?.worktree;
-  const targetBranch = normalizeBranch(options.branch);
-  const targetPath = options.worktreePath ? resolve(options.worktreePath) : "";
+  let targetBranch = normalizeBranch(options.branch);
+  let targetPath = options.worktreePath ? resolve(options.worktreePath) : "";
   const currentBranchName = currentBranch(repoRoot);
+
+  if (!targetBranch && !targetPath) {
+    const confirmed = await confirmDeleteCurrentWorktree(currentRoot);
+    if (!confirmed) {
+      console.log("Cancelled.");
+      return;
+    }
+    targetPath = resolve(currentRoot);
+    targetBranch = currentBranchName;
+  }
 
   const matched = worktrees.find(entry => {
     if (targetPath && resolve(entry.worktree) === targetPath) return true;
@@ -238,7 +264,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);

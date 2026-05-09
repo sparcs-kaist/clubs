@@ -31,6 +31,7 @@ Prefer one of these:
 - worktree path, for example `/Users/kwonhyukwon/developer/clubs-worktrees/TU-408`
 
 If the user gives only a TU number, convert it to `TU-<number>`.
+If the user gives no target, the helper should ask whether the current worktree should be deleted.
 
 ## Safety rules
 
@@ -58,6 +59,9 @@ Optional modes:
   - `pnpm delete-worktree -- --branch TU-408 --force`
 - Preview only:
   - `pnpm delete-worktree -- --branch TU-408 --dry-run`
+- No explicit target:
+  - `pnpm delete-worktree`
+  - ask whether the current worktree should be deleted before doing anything
 
 ## Expected behavior
 

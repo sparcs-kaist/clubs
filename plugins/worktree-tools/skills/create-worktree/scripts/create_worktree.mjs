@@ -129,6 +129,28 @@ function localBranchExists(repoRoot, branch) {
   return result.status === 0;
 }
 
+function currentBranch(repoRoot) {
+  return runGit(["branch", "--show-current"], repoRoot);
+}
+
+function isWorktreeClean(repoRoot) {
+  return runGit(["status", "--short"], repoRoot) === "";
+}
+
+function runGitCommand(args, cwd, dryRun) {
+  console.log(`$ git ${args.join(" ")}`);
+  if (dryRun) {
+    return;
+  }
+  const result = spawnSync("git", args, {
+    cwd,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    throw new Error(`git ${args[0]} failed`);
+  }
+}
+
 function readNodeVersion(repoRoot) {
   const nvmrcPath = join(repoRoot, ".nvmrc");
   if (!existsSync(nvmrcPath)) {
@@ -221,6 +243,27 @@ function main() {
     console.log(`$ mkdir -p ${worktreesRoot}`);
   } else {
     mkdirSync(worktreesRoot, { recursive: true });
+  }
+
+  const shouldCreateFreshBranch =
+    !options.reuseRemoteBranch || !remoteBranchExists(sourceRoot, options.branch);
+
+  if (shouldCreateFreshBranch) {
+    const sourceBranch = currentBranch(sourceRoot);
+
+    if (sourceBranch === "dev") {
+      runGitCommand(["pull", "origin", "dev"], sourceRoot, options.dryRun);
+    } else {
+      if (!isWorktreeClean(sourceRoot)) {
+        throw new Error(
+          "Primary repo worktree must be clean before syncing dev for a fresh branch. Switch or clean the primary repo first.",
+        );
+      }
+
+      runGitCommand(["switch", "dev"], sourceRoot, options.dryRun);
+      runGitCommand(["pull", "origin", "dev"], sourceRoot, options.dryRun);
+      runGitCommand(["switch", sourceBranch], sourceRoot, options.dryRun);
+    }
   }
 
   let worktreeArgs;
