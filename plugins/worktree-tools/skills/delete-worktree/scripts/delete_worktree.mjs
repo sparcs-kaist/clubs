@@ -66,6 +66,11 @@ function gitRoot() {
   return runGit(["rev-parse", "--show-toplevel"], process.cwd());
 }
 
+function primaryWorktreeRoot(repoRoot) {
+  const worktrees = parseWorktreeList(repoRoot);
+  return worktrees[0]?.worktree ? resolve(worktrees[0].worktree) : repoRoot;
+}
+
 function parseWorktreeList(repoRoot) {
   const output = runGit(["worktree", "list", "--porcelain"], repoRoot);
   const blocks = output.split("\n\n").filter(Boolean);
@@ -96,13 +101,31 @@ function normalizeBranch(input) {
   return input;
 }
 
-function runGitCommand(args, cwd, dryRun) {
+function localBranchExists(repoRoot, branch) {
+  if (!branch) return false;
+  const result = spawnSync(
+    "git",
+    ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`],
+    { cwd: repoRoot },
+  );
+  return result.status === 0;
+}
+
+function currentBranch(repoRoot) {
+  return runGit(["branch", "--show-current"], repoRoot);
+}
+
+function runGitCommand(args, cwd, dryRun, { allowFailure = false } = {}) {
   console.log(`$ git ${args.join(" ")}`);
-  if (dryRun) return;
+  if (dryRun) return { ok: true, skipped: true };
   const result = spawnSync("git", args, { cwd, stdio: "inherit" });
   if (result.status !== 0) {
+    if (allowFailure) {
+      return { ok: false, skipped: false };
+    }
     throw new Error(`git ${args[0]} failed`);
   }
+  return { ok: true, skipped: false };
 }
 
 function main() {
@@ -118,10 +141,13 @@ function main() {
 
   const repoRoot = gitRoot();
   const worktrees = parseWorktreeList(repoRoot);
+  const primaryRepoRoot = primaryWorktreeRoot(repoRoot);
+  const worktreesRoot = resolve(primaryRepoRoot, "..", "clubs-worktrees");
   const currentRoot = repoRoot;
   const primaryRoot = worktrees[0]?.worktree;
   const targetBranch = normalizeBranch(options.branch);
   const targetPath = options.worktreePath ? resolve(options.worktreePath) : "";
+  const currentBranchName = currentBranch(repoRoot);
 
   const matched = worktrees.find(entry => {
     if (targetPath && resolve(entry.worktree) === targetPath) return true;
@@ -129,12 +155,10 @@ function main() {
     return false;
   });
 
-  if (!matched) {
-    throw new Error("Could not find the requested worktree");
-  }
-
-  const resolvedPath = resolve(matched.worktree);
-  const resolvedBranch = matched.branch || targetBranch || basename(resolvedPath);
+  const resolvedPath = matched
+    ? resolve(matched.worktree)
+    : targetPath || resolve(worktreesRoot, (targetBranch || "").replaceAll("/", "-"));
+  const resolvedBranch = matched?.branch || targetBranch || basename(resolvedPath);
 
   if (resolvedPath === resolve(currentRoot)) {
     throw new Error("Refusing to delete the current worktree");
@@ -144,32 +168,72 @@ function main() {
     throw new Error("Refusing to delete the primary repository worktree");
   }
 
-  const status = runGit(["status", "--short"], resolvedPath);
-  if (status && !options.force) {
-    throw new Error("Target worktree has uncommitted changes. Re-run with --force if you really want to delete it.");
+  if (resolvedBranch && resolvedBranch === currentBranchName) {
+    throw new Error("Refusing to delete the branch checked out in the current worktree");
   }
 
-  const removeArgs = ["worktree", "remove"];
-  if (options.force) {
-    removeArgs.push("--force");
+  if (matched && existsSync(resolvedPath)) {
+    const status = runGit(["status", "--short"], resolvedPath);
+    if (status && !options.force) {
+      throw new Error("Target worktree has uncommitted changes. Re-run with --force if you really want to delete it.");
+    }
   }
-  removeArgs.push(resolvedPath);
-  runGitCommand(removeArgs, repoRoot, options.dryRun);
+
+  let removedWorktree = false;
+  if (matched) {
+    const removeArgs = ["worktree", "remove"];
+    if (options.force) {
+      removeArgs.push("--force");
+    }
+    removeArgs.push(resolvedPath);
+    const removeResult = runGitCommand(removeArgs, repoRoot, options.dryRun, {
+      allowFailure: true,
+    });
+
+    if (options.dryRun) {
+      removedWorktree = true;
+    } else {
+      const remaining = parseWorktreeList(repoRoot).some(
+        entry => resolve(entry.worktree) === resolvedPath || entry.branch === resolvedBranch,
+      );
+      removedWorktree = removeResult.ok || !remaining;
+      if (!removedWorktree) {
+        throw new Error(`Worktree removal is incomplete for ${resolvedPath}`);
+      }
+    }
+  }
 
   if (existsSync(resolvedPath)) {
     console.log(`$ rm -rf ${resolvedPath}`);
     if (!options.dryRun) {
       rmSync(resolvedPath, { recursive: true, force: true });
     }
+    removedWorktree = true;
   }
 
+  let removedBranch = false;
   if (resolvedBranch) {
-    runGitCommand(["branch", "-D", resolvedBranch], repoRoot, options.dryRun);
+    const deleteResult = runGitCommand(["branch", "-D", resolvedBranch], repoRoot, options.dryRun, {
+      allowFailure: true,
+    });
+    removedBranch = options.dryRun || deleteResult.ok || !localBranchExists(repoRoot, resolvedBranch);
+  }
+
+  if (!matched && !existsSync(resolvedPath) && !localBranchExists(repoRoot, resolvedBranch)) {
+    console.log(`Worktree already absent: ${resolvedPath}`);
+    if (resolvedBranch) {
+      console.log(`Local branch already absent: ${resolvedBranch}`);
+    }
+    return;
   }
 
   console.log(`Deleted worktree: ${resolvedPath}`);
   if (resolvedBranch) {
-    console.log(`Deleted local branch: ${resolvedBranch}`);
+    if (removedBranch) {
+      console.log(`Deleted local branch: ${resolvedBranch}`);
+    } else {
+      console.log(`Local branch already absent: ${resolvedBranch}`);
+    }
   }
 }
 

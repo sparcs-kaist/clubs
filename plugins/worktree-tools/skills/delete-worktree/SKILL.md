@@ -67,6 +67,7 @@ The helper should:
 2. remove the local worktree directory if anything is left behind
 3. delete the local branch
 4. leave remote branches untouched
+5. treat already-removed branch/worktree state as success instead of failing
 
 ## Validation
 
