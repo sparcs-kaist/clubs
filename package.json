@@ -20,7 +20,6 @@
     "db-down": "turbo run db-down",
     "db-generate": "turbo run db-generate",
     "prisma:generate": "turbo run prisma:generate --filter=api",
-    "postinstall": "if [ -f packages/api/package.json ]; then turbo run prisma:generate --filter=api; fi",
     "prepare": "husky",
     "test": "turbo run test --filter=api",
     "test:api": "turbo run test --filter=api"

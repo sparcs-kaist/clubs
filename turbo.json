@@ -5,8 +5,7 @@
     "//#dev:setup": {
       "dependsOn": [
         "@clubs/domain#build",
-        "@clubs/interface#build",
-        "api#prisma:generate"
+        "@clubs/interface#build"
       ],
       "cache": false
     },
