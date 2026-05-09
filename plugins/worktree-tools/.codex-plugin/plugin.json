@@ -1,7 +1,7 @@
 {
   "name": "worktree-tools",
   "version": "0.1.0",
-  "description": "Project-local workflows for creating ready-to-run worktrees and standardizing TU branch/PR creation for ar-002-clubs tasks.",
+  "description": "Project-local workflows for creating and deleting ready-to-run worktrees and standardizing TU branch/PR creation for ar-002-clubs tasks.",
   "author": {
     "name": "SPARCS Clubs",
     "url": "https://github.com/sparcs-kaist/clubs"
@@ -18,8 +18,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Worktree Tools",
-    "shortDescription": "Create ready-to-run worktrees and standardize TU branch and PR setup",
-    "longDescription": "Project-local workflow helpers for ar-002-clubs. Reads Notion or PR task context, creates sibling worktrees under ../clubs-worktrees, copies required ignored files, bootstraps the repo, and standardizes TU-based branch and PR creation.",
+    "shortDescription": "Create and delete worktrees and standardize TU branch and PR setup",
+    "longDescription": "Project-local workflow helpers for ar-002-clubs. Reads Notion or PR task context, creates sibling worktrees under ../clubs-worktrees, copies required ignored files, bootstraps the repo, deletes completed worktrees, and standardizes TU-based branch and PR creation.",
     "developerName": "SPARCS Clubs",
     "category": "Coding",
     "capabilities": [
@@ -27,6 +27,6 @@
       "Write"
     ],
     "websiteURL": "https://github.com/sparcs-kaist/clubs",
-    "defaultPrompt": "Create a ready-to-run worktree, branch, or PR for this repo from a TU task, Notion spec, or PR link"
+    "defaultPrompt": "Create or delete a repo worktree, or standardize branch and PR setup from a TU task, Notion spec, or PR link"
   }
 }
