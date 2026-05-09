@@ -134,11 +134,12 @@ Branch options:
 
 PR options:
   --title <text>              PR title body without or with TU prefix
-  --notion-url <url>          Notion task/spec URL for PR body context
+  --notion-url <url>          Optional Notion task/spec URL for PR body context
   --base <branch>             Base branch (default: dev)
   --head <branch>             Head branch (default: current branch)
   --body-file <path>          Use an explicit PR body file
   --summary <text>            Repeatable summary bullet for generated PR body
+                              Required when --body-file is omitted
   --draft                     Create a draft PR
 `);
 }
@@ -212,19 +213,17 @@ function switchOrCreateBranch(branch, startPoint, reuseRemoteBranch, dryRun) {
   return currentBranch();
 }
 
-function generatedPrBody({ notionUrl, summary }) {
-  const bullets = summary.length > 0 ? summary : ["TODO"];
+function generatedPrBody({ notionUrl, summary, taskId }) {
   const lines = [
     "## Summary",
-    ...bullets.map(item => `- ${item}`),
+    ...summary.map(item => `- ${item}`),
     "",
     "## Task Context",
+    `- Task ID: ${normalizeTaskId(taskId)}`,
   ];
 
   if (notionUrl) {
     lines.push(`- Notion: ${notionUrl}`);
-  } else {
-    lines.push("- Notion: TODO");
   }
 
   lines.push("");
@@ -233,17 +232,28 @@ function generatedPrBody({ notionUrl, summary }) {
 
 function createPullRequest(options) {
   const head = options.head || currentBranch();
+  const taskId = normalizeTaskId(options.taskId);
   const title = formatPrTitle(options.taskId, options.title);
 
   let bodyFile = options.bodyFile;
   let tempDir = "";
+
+  if (!bodyFile && options.summary.length === 0) {
+    throw new Error(
+      "PR creation requires either --body-file or at least one --summary. Use --notion-url when you have the task page URL.",
+    );
+  }
 
   if (!bodyFile) {
     tempDir = mkdtempSync(join(tmpdir(), "create-branch-pr-"));
     bodyFile = join(tempDir, "pr-body.md");
     writeFileSync(
       bodyFile,
-      generatedPrBody({ notionUrl: options.notionUrl, summary: options.summary }),
+      generatedPrBody({
+        notionUrl: options.notionUrl,
+        summary: options.summary,
+        taskId,
+      }),
       "utf8",
     );
   }
@@ -270,7 +280,13 @@ function createPullRequest(options) {
   if (options.dryRun) {
     if (tempDir) {
       console.log("--- generated body ---");
-      console.log(generatedPrBody({ notionUrl: options.notionUrl, summary: options.summary }).trimEnd());
+      console.log(
+        generatedPrBody({
+          notionUrl: options.notionUrl,
+          summary: options.summary,
+          taskId,
+        }).trimEnd(),
+      );
       console.log("--- end body ---");
     }
     return;

@@ -2,7 +2,6 @@
 
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 
 const IGNORED_COPY_CANDIDATES = [".env", ".clubs-secrets", ".claude"];
@@ -134,7 +133,11 @@ function localBranchExists(repoRoot, branch) {
 function runShell(command, cwd, dryRun) {
   console.log(`$ (cd ${cwd} && ${command})`);
   if (dryRun) return;
-  const result = spawnSync("/bin/zsh", ["-lc", command], {
+  const shellCommand =
+    process.platform === "win32"
+      ? { file: "cmd.exe", args: ["/c", command] }
+      : { file: process.env.SHELL || "/bin/bash", args: ["-lc", command] };
+  const result = spawnSync(shellCommand.file, shellCommand.args, {
     cwd,
     stdio: "inherit",
   });

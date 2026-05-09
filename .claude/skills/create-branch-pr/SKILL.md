@@ -19,12 +19,13 @@ Use this skill when:
 
 Before creating a branch or PR, confirm the task document.
 
-### Preferred source order
+### Supported starting states
 
-1. Existing Notion task page
-2. Existing GitHub PR
-3. A new task page created in the Notion task DB
-4. User-provided TU number and summary only as a fallback
+1. Existing Notion task page link
+2. Existing task number when the task page already exists in Notion
+3. No task page yet, but the user gives the task contents so a new Notion task page can be created first
+
+Always resolve these into a confirmed TU number before you create the branch or PR.
 
 ### If the user gives a Notion task/spec page
 
@@ -35,6 +36,12 @@ Before creating a branch or PR, confirm the task document.
    - task summary
    - acceptance criteria
 3. Save the Notion page URL for PR context.
+
+### If the user gives only a task number
+
+1. Treat the task number as the source of truth for branch naming.
+2. If Notion tools are available, fetch the matching task page and pull the summary from there.
+3. If Notion tools are unavailable, ask the user for the task title and summary before creating the PR body.
 
 ### If the user gives a PR link
 
@@ -47,7 +54,7 @@ Before creating a branch or PR, confirm the task document.
 2. If the task page is linked in the PR body, keep using that Notion page as the task source.
 3. Reuse the PR head branch instead of inventing a new branch.
 
-### If the user does not give a task document
+### If the user needs a new task page
 
 1. Use the Notion task DB:
    - `https://www.notion.so/sparcs/19cc25603b0b8050bc8ff9d4807e5f3a?v=19cc25603b0b8001a7e4000cfc41151a&source=copy_link`
@@ -95,9 +102,13 @@ Examples:
 Examples:
 
 - Auto body:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url>`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills"`
 - With explicit summary bullets:
   - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper"`
+- Existing task number without page URL:
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --summary "add project-local Codex and Claude Code skills"`
+
+The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
 
 ## Validation
 
