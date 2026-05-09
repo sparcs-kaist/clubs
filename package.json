@@ -5,6 +5,7 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
+    "create-branch-pr": "node plugins/worktree-tools/skills/create-branch-pr/scripts/create_branch_pr.mjs",
     "create-worktree": "node plugins/worktree-tools/skills/create-worktree/scripts/create_worktree.mjs",
     "dev": "turbo run dev:setup && turbo watch dev",
     "dev:api": "turbo run dev:setup && turbo watch dev --filter=api",
