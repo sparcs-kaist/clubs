@@ -2,15 +2,41 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": [".env"],
   "tasks": {
+    "//#dev:setup": {
+      "dependsOn": [
+        "@clubs/domain#build",
+        "@clubs/interface#build"
+      ],
+      "cache": false
+    },
     "dev": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "build": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "api#dev": {
+      "dependsOn": [
+        "@clubs/interface#build",
+        "@clubs/domain#build",
+        "prisma:generate"
+      ],
+      "cache": false,
+      "persistent": true,
+      "interruptible": true
+    },
+    "api#build": {
+      "dependsOn": ["^build", "prisma:generate"],
+      "outputs": ["dist/**"]
     },
     "clean": {
+      "cache": false
+    },
+    "prisma:generate": {
       "cache": false
     },
     "db-up": {
@@ -22,11 +48,13 @@
     },
     "web#dev-mock": {
       "dependsOn": ["@clubs/interface#build", "@clubs/domain#build"],
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
     },
     "web#storybook": {
       "persistent": true
     },
-    "lint": {}
+    "lint": {},
+    "test": {}
   }
 }

@@ -66,7 +66,7 @@ const MyMenu: React.FC<MyMenuProps> = ({
   const parsedToken = JSON.parse(localStorage.getItem("responseToken") || "{}");
 
   const profiles = Object.keys(parsedToken).map(type => ({
-    profileType: getUserType(type),
+    profileType: getUserType(type) ?? type,
     token: parsedToken[type],
   }));
 

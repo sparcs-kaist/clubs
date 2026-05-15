@@ -6,12 +6,13 @@ import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import NoPermission from "@sparcs-clubs/web/common/frames/NoPermission";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ClubRegisterApproveFrame from "@sparcs-clubs/web/features/executive/register-club/frames/ClubRegisterApproveFrame";
 import RegisterClubDetailAuthFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailAuthFrame";
@@ -20,7 +21,10 @@ const RegisterClubDetail: React.FC = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const { id: applyId } = useParams();
+  const { id: applyIdParam } = useParams<{ id: string }>();
+  const parsedApplyId = Number(applyIdParam);
+  const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
+  const applyId = isValidApplyId ? parsedApplyId : 0;
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -36,8 +40,12 @@ const RegisterClubDetail: React.FC = () => {
     return <LoginRequired login={login} />;
   }
 
+  if (!isValidApplyId) {
+    return <NotFound />;
+  }
+
   if (profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
+    return <NoPermission />;
   }
 
   return (
@@ -51,10 +59,10 @@ const RegisterClubDetail: React.FC = () => {
         enableLast
       />
       <RegisterClubDetailAuthFrame
-        applyId={+applyId}
+        applyId={applyId}
         profile={UserTypeEnum.Executive}
       />
-      <ClubRegisterApproveFrame applyId={+applyId} />
+      <ClubRegisterApproveFrame applyId={applyId} />
       <Link href="/executive/register-club">
         <Button>목록으로 돌아가기</Button>
       </Link>

@@ -62,6 +62,9 @@ const DateInput: React.FC<
   ...props
 }) => {
   const datePickerRef = useRef<DatePicker | null>(null);
+  const popperClassName = ["sparcs-date-input-popper", props.popperClassName]
+    .filter(Boolean)
+    .join(" ");
 
   const handleInputClick = () => {
     if (
@@ -88,6 +91,9 @@ const DateInput: React.FC<
             props.showTimeInput ? "20XX.XX.XX XX:XX" : "20XX.XX.XX"
           }
           {...props}
+          portalId={props.portalId ?? "sparcs-date-input-portal"}
+          popperClassName={popperClassName}
+          popperProps={{ strategy: "fixed", ...props.popperProps }}
         />
         {showIcon && (
           <Icon type="event" size={20} color={disabled ? "#DDDDDD" : "BLACK"} />

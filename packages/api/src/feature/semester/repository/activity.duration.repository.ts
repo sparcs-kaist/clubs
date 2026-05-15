@@ -7,6 +7,7 @@ import {
   PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import {
   IActivityDurationCreate,
   MActivityDuration,
@@ -114,5 +115,54 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
     }
 
     throw new Error(`Invalid key: ${key}`);
+  }
+
+  async findActivitiesByDurationId(
+    activityDurationId: MActivityDuration["id"],
+  ): Promise<MActivity[]> {
+    const activities = await this.prisma.activity.findMany({
+      where: {
+        activityDId: activityDurationId,
+        deletedAt: null,
+      },
+      include: {
+        activityTs: {
+          where: {
+            deletedAt: null,
+          },
+        },
+      },
+    });
+
+    return activities.map(
+      activity =>
+        new MActivity({
+          id: activity.id,
+          club: { id: activity.clubId },
+          name: activity.name,
+          activityTypeEnum: activity.activityTypeEnumId,
+          activityStatusEnum: activity.activityStatusEnumId,
+          activityDuration: { id: activity.activityDId },
+          durations: activity.activityTs.map(duration => ({
+            startTerm: duration.startTerm,
+            endTerm: duration.endTerm,
+          })),
+          location: activity.location,
+          purpose: activity.purpose,
+          detail: activity.detail,
+          evidence: activity.evidence,
+          evidenceFiles: [],
+          participants: [],
+          chargedExecutive: activity.chargedExecutiveId
+            ? { id: activity.chargedExecutiveId }
+            : null,
+          editedAt: activity.editedAt,
+          professorApprovedAt: activity.professorApprovedAt,
+          commentedAt: activity.commentedAt,
+          commentedExecutive: activity.commentedExecutiveId
+            ? { id: activity.commentedExecutiveId }
+            : null,
+        }),
+    );
   }
 }

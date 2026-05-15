@@ -1,4 +1,3 @@
-import { addDays, subDays } from "date-fns";
 import React, { useCallback, useMemo } from "react";
 import { Control, useFieldArray } from "react-hook-form";
 
@@ -104,17 +103,8 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
                   renderItem={({ value, onChange, errorMessage }) => (
                     <DateInput
                       selectsRange
-                      minDate={
-                        deadline?.targetTerm?.startTerm
-                          ? addDays(deadline.targetTerm.startTerm, 1)
-                          : undefined
-                      }
-                      maxDate={
-                        deadline?.targetTerm?.endTerm == null ||
-                        new Date() < deadline?.targetTerm?.endTerm
-                          ? new Date()
-                          : subDays(deadline.targetTerm.endTerm, 1)
-                      }
+                      minDate={deadline?.targetTerm?.startTerm ?? undefined}
+                      maxDate={deadline?.targetTerm?.endTerm ?? undefined}
                       startDate={value?.startTerm}
                       endDate={value?.endTerm}
                       onChange={(dates: [Date, Date] | null) => {

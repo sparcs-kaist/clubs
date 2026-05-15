@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
-import Custom404 from "@sparcs-clubs/web/app/not-found";
+import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -34,7 +34,7 @@ const ExecutiveRegistrationDeadline = () => {
   }
 
   if (profile?.type !== UserTypeEnum.Executive) {
-    return <Custom404 />;
+    return <NotFound />;
   }
 
   const openRegistrationDeadlineModal = () => {

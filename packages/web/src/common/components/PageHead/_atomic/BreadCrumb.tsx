@@ -38,7 +38,7 @@ const BreadCrumb: React.FC<BreadCrumbProps> = ({
   return (
     <BreadCrumbContainer>
       {itemsWithMain.map((item, index) => (
-        <React.Fragment key={item.name}>
+        <React.Fragment key={`${item.path}-${item.name}-${index}`}>
           <BreadCrumbItem
             text={item.name}
             disabled={index === itemsWithMain.length - 1 ? !enableLast : false}

@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 import { ko } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -15,6 +15,8 @@ import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import useDeleteActivityDuration from "@sparcs-clubs/web/features/executive/services/useDeleteActivityDuration";
+
+import ActivityDurationEditModal from "./ActivityDurationEditModal";
 
 const activityDurationTypeEnumToString = (
   value: ActivityDurationTypeEnum,
@@ -42,6 +44,8 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
     mutate: deleteActivityDuration,
     isPending: isDeletingActivityDuration,
   } = useDeleteActivityDuration();
+  const [editingDuration, setEditingDuration] =
+    useState<ActivityDurationItem | null>(null);
 
   const sortedDurations = useMemo(() => {
     if (!durations) return [];
@@ -55,12 +59,15 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
     deleteActivityDuration({ activityDurationId: id });
   };
 
-  const actionsCellRenderer = (id: number) => (
-    <TextButton
-      text="삭제"
-      onClick={() => handleDelete(id)}
-      disabled={isDeletingActivityDuration}
-    />
+  const actionsCellRenderer = (duration: ActivityDurationItem) => (
+    <FlexWrapper direction="row" gap={8}>
+      <TextButton text="수정" onClick={() => setEditingDuration(duration)} />
+      <TextButton
+        text="삭제"
+        onClick={() => handleDelete(duration.id)}
+        disabled={isDeletingActivityDuration}
+      />
+    </FlexWrapper>
   );
 
   const columnHelper = createColumnHelper<ActivityDurationItem>();
@@ -111,8 +118,8 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
     columnHelper.display({
       id: "actions",
       header: "관리",
-      cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 120,
+      cell: ({ row }) => actionsCellRenderer(row.original),
+      size: 140,
     }),
   ];
 
@@ -126,6 +133,11 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
   return (
     <FlexWrapper direction="column" gap={8}>
       <Table count={sortedDurations.length} table={table} />
+      <ActivityDurationEditModal
+        isOpen={editingDuration != null}
+        duration={editingDuration}
+        onClose={() => setEditingDuration(null)}
+      />
     </FlexWrapper>
   );
 };

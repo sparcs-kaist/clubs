@@ -9,6 +9,8 @@ import type {
   ApiSem011ResponseCreated,
   ApiSem012RequestQuery,
   ApiSem012ResponseOK,
+  ApiSem013RequestBody,
+  ApiSem013ResponseOk,
   ApiSem014ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
@@ -220,6 +222,61 @@ export class ActivityDurationService {
     } as Parameters<typeof this.activityDurationRepository.delete>[0]);
 
     return {};
+  }
+
+  async updateActivityDuration(
+    activityDurationId: number,
+    body: ApiSem013RequestBody,
+  ): Promise<ApiSem013ResponseOk> {
+    const activityDuration = await this.activityDurationRepository
+      .find({
+        id: activityDurationId,
+      } as Parameters<typeof this.activityDurationRepository.find>[0])
+      .then(takeOnlyOne(MActivityDuration));
+
+    if (!activityDuration) {
+      throw new HttpException(
+        "해당 활동반기를 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const { startTerm, endTerm } = body;
+    if (new Date(startTerm) >= new Date(endTerm)) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const activities =
+      await this.activityDurationRepository.findActivitiesByDurationId(
+        activityDurationId,
+      );
+
+    const hasOutOfRangeActivityTerm = activities.some(activity =>
+      activity.durations.some(
+        duration =>
+          duration.startTerm < startTerm || duration.endTerm > endTerm,
+      ),
+    );
+
+    if (hasOutOfRangeActivityTerm) {
+      throw new HttpException(
+        "수정하려는 활동반기 밖에 위치한 활동보고서 기간이 있어 수정할 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.activityDurationRepository.put(
+      new MActivityDuration({
+        ...activityDuration,
+        startTerm,
+        endTerm,
+      }),
+    );
+
+    return { id: activityDurationId };
   }
 
   async getActivityDurations(param: {
