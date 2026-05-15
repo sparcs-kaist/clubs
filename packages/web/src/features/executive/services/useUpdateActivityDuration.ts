@@ -9,10 +9,13 @@ import {
   ApiSem013ResponseOk,
 } from "@clubs/interface/api/semester/apiSem013";
 
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import {
   axiosClientWithAuth,
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
+
+import getApiErrorMessage from "./getApiErrorMessage";
 
 type UpdateActivityDurationParams = ApiSem013RequestParam & {
   body: ApiSem013RequestBody;
@@ -36,6 +39,11 @@ const useUpdateActivityDuration = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiSem012.url()] });
       queryClient.invalidateQueries({ queryKey: [apiAct018.url()] });
+    },
+    onError: error => {
+      errorHandler(
+        getApiErrorMessage(error, "활동기간 수정에 실패하였습니다."),
+      );
     },
   });
 };
