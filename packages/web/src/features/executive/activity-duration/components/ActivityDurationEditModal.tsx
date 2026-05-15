@@ -28,7 +28,10 @@ const ActivityDurationEditModal = ({
 }: ActivityDurationEditModalProps) => {
   const [startTerm, setStartTerm] = useState<Date | null>(null);
   const [endTerm, setEndTerm] = useState<Date | null>(null);
-  const { mutate: updateActivityDuration } = useUpdateActivityDuration();
+  const {
+    mutate: updateActivityDuration,
+    isPending: isUpdatingActivityDuration,
+  } = useUpdateActivityDuration();
 
   useEffect(() => {
     if (!isOpen || !duration) return;
@@ -44,14 +47,18 @@ const ActivityDurationEditModal = ({
   const handleSave = () => {
     if (!duration || !startTerm || !endTerm) return;
 
-    updateActivityDuration({
-      activityDurationId: duration.id,
-      body: {
-        startTerm: getLocalDateOnly(startTerm),
-        endTerm: getLocalDateLastTime(endTerm),
+    updateActivityDuration(
+      {
+        activityDurationId: duration.id,
+        body: {
+          startTerm: getLocalDateOnly(startTerm),
+          endTerm: getLocalDateLastTime(endTerm),
+        },
       },
-    });
-    onClose();
+      {
+        onSuccess: onClose,
+      },
+    );
   };
 
   return (
@@ -61,7 +68,9 @@ const ActivityDurationEditModal = ({
         onClose={handleClose}
         confirmButtonText="저장"
         closeButtonText="취소"
-        confirmDisabled={!duration || !startTerm || !endTerm}
+        confirmDisabled={
+          !duration || !startTerm || !endTerm || isUpdatingActivityDuration
+        }
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
           <Typography fs={18} lh={24} fw="MEDIUM">
