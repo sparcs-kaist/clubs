@@ -271,7 +271,8 @@ export default class ActivityService {
         ],
       })
       .then(takeExist());
-    const activityDId = await this.activityDurationPublicService.loadId();
+    const activityD = await this.activityDurationPublicService.load();
+    const activityDId = activityD.id;
     const activities = await this.activityRepository.count({
       clubId: body.clubId,
       activityDId,
@@ -288,7 +289,19 @@ export default class ActivityService {
     const participants = await Promise.all(
       body.participants.map(async e => e.studentId),
     );
-    // TODO: ActivityDuration 과 입력된 Duration들이 유효한 지 확인하는 로직
+    body.duration.forEach(duration => {
+      if (
+        activityD.startTerm <= duration.startTerm &&
+        duration.endTerm <= activityD.endTerm
+      ) {
+        return;
+      }
+      throw new HttpException(
+        "Some duration is not in the last activity duration",
+        HttpStatus.BAD_REQUEST,
+      );
+    });
+
     // TODO: 해당 학기에 활동한 인원인지 검사하는 로직
     // TODO: 파일 유효한지 검사하는 로직도 필요해요! 이건 파일 모듈 구성되면 public할듯
 

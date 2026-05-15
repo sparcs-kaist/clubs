@@ -9,10 +9,13 @@ import type {
   ApiSem011ResponseCreated,
   ApiSem012RequestQuery,
   ApiSem012ResponseOK,
+  ApiSem013RequestBody,
+  ApiSem013ResponseOk,
   ApiSem014ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
+import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { MActivityDuration } from "../model/activity.duration.model";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
@@ -25,6 +28,7 @@ export class ActivityDurationService {
     private readonly activityDurationRepository: ActivityDurationRepository,
     private readonly activityDeadlineRepository: ActivityDeadlineRepository,
     private readonly semesterRepository: SemesterRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async createActivityDeadline(param: {
@@ -220,6 +224,71 @@ export class ActivityDurationService {
     } as Parameters<typeof this.activityDurationRepository.delete>[0]);
 
     return {};
+  }
+
+  async updateActivityDuration(
+    activityDurationId: number,
+    body: ApiSem013RequestBody,
+  ): Promise<ApiSem013ResponseOk> {
+    const existing = await this.activityDurationRepository.find({
+      id: activityDurationId,
+    } as Parameters<typeof this.activityDurationRepository.find>[0]);
+
+    if (!existing || existing.length === 0) {
+      throw new HttpException(
+        "해당 활동반기를 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const { startTerm, endTerm } = body;
+    if (new Date(startTerm) >= new Date(endTerm)) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const activityIds = (
+      await this.prisma.activity.findMany({
+        where: {
+          activityDId: activityDurationId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+        },
+      })
+    ).map(activity => activity.id);
+
+    const outOfRangeActivityTerm = await this.prisma.activityT.findFirst({
+      where: {
+        activityId: { in: activityIds },
+        deletedAt: null,
+        OR: [{ startTerm: { lt: startTerm } }, { endTerm: { gt: endTerm } }],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (outOfRangeActivityTerm) {
+      throw new HttpException(
+        "수정하려는 활동반기 밖에 위치한 활동보고서 기간이 있어 수정할 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const activityDuration = existing[0];
+    await this.activityDurationRepository.put(
+      new MActivityDuration({
+        ...activityDuration,
+        startTerm,
+        endTerm,
+      }),
+    );
+
+    return { id: activityDurationId };
   }
 
   async getActivityDurations(param: {

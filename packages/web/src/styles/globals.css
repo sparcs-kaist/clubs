@@ -60,3 +60,7 @@ main {
   margin-left: 5px;
   margin-right: 5px;
 }
+
+.sparcs-date-input-popper {
+  z-index: 120;
+}
