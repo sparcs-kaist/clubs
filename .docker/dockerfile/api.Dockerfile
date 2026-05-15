@@ -24,6 +24,8 @@ WORKDIR /app
 COPY --from=prunner /app/out/json/ .
 COPY --from=prunner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=prunner /app/out/full/ .
+COPY --from=prunner /app/.prettierrc ./.prettierrc
+COPY --from=prunner /app/.prettierignore ./.prettierignore
 RUN corepack enable
 RUN pnpm install
 RUN pnpm dlx turbo run build --filter=api
