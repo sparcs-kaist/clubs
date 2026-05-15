@@ -61,6 +61,11 @@ main {
   margin-right: 5px;
 }
 
-.sparcs-date-input-popper {
-  z-index: 120;
+#sparcs-date-input-portal {
+  position: relative;
+  z-index: 1000;
+}
+
+#sparcs-date-input-portal .react-datepicker-popper.sparcs-date-input-popper {
+  z-index: 1000;
 }
