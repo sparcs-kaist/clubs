@@ -7,10 +7,13 @@ import {
   ApiSem014ResponseOk,
 } from "@clubs/interface/api/semester/apiSem014";
 
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import {
   axiosClientWithAuth,
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
+
+import getApiErrorMessage from "./getApiErrorMessage";
 
 const useDeleteActivityDuration = () => {
   const queryClient = useQueryClient();
@@ -25,6 +28,11 @@ const useDeleteActivityDuration = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiSem012.url()] });
+    },
+    onError: error => {
+      errorHandler(
+        getApiErrorMessage(error, "활동기간 삭제에 실패하였습니다."),
+      );
     },
   });
 };

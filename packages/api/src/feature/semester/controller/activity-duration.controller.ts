@@ -30,7 +30,7 @@ import type {
   ApiSem012ResponseOK,
   ApiSem013RequestBody,
   ApiSem013RequestParam,
-  ApiSem013ResponseNotImplemented,
+  ApiSem013ResponseOk,
   ApiSem014RequestParam,
   ApiSem014ResponseOk,
   ApiSem015RequestBody,
@@ -159,14 +159,13 @@ export class ActivityDurationController {
   @Put("/executive/semesters/activity-durations/:activityDurationId")
   @UsePipes(new ZodPipe(apiSem013))
   async updateActivityDuration(
-    @GetExecutive() executive: GetExecutive,
-    @Param() _param: ApiSem013RequestParam,
-    @Body() _body: ApiSem013RequestBody,
-  ): Promise<ApiSem013ResponseNotImplemented> {
-    logger.info(
-      `User executive_id: ${executive.id} trying to call unimplemented feature`,
+    @Param() param: ApiSem013RequestParam,
+    @Body() body: ApiSem013RequestBody,
+  ): Promise<ApiSem013ResponseOk> {
+    return this.activityDurationService.updateActivityDuration(
+      param.activityDurationId,
+      body,
     );
-    throw new NotImplementedException();
   }
 
   @Executive()
