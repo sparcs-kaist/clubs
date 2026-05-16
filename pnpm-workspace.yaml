@@ -1,2 +1,5 @@
 packages:
   - "packages/*"
+
+nodeVersion: 22.22.1
+useNodeVersion: 22.22.1
