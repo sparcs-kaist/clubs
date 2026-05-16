@@ -1,0 +1,116 @@
+import UserRepository from "./user.repository";
+
+describe("UserRepository", () => {
+  describe("findStudentByStudentNumberNameDate", () => {
+    it("finds students with prisma query and maps them to the shape used by user service", async () => {
+      const prisma = {
+        student: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 1,
+              userId: 2,
+              email: "student@kaist.ac.kr",
+            },
+          ]),
+        },
+      };
+      const repository = new UserRepository(
+        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+      );
+      const startTerm = new Date("2025-02-28T15:00:00.000Z");
+      const endTerm = new Date("2025-03-31T14:59:00.000Z");
+
+      const result = await repository.findStudentByStudentNumberNameDate(
+        "20201234",
+        "홍길동",
+        startTerm,
+        endTerm,
+      );
+
+      expect(prisma.student.findMany).toHaveBeenCalledWith({
+        where: {
+          number: 20201234,
+          name: "홍길동",
+          deletedAt: null,
+          studentTs: {
+            some: {
+              deletedAt: null,
+              startTerm: { lte: startTerm },
+              OR: [{ endTerm: { gte: endTerm } }, { endTerm: null }],
+            },
+          },
+        },
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+        },
+      });
+      expect(result).toEqual([
+        {
+          student: {
+            id: 1,
+            userId: 2,
+            email: "student@kaist.ac.kr",
+          },
+        },
+      ]);
+    });
+
+    it("returns empty results for invalid student numbers", async () => {
+      const prisma = {
+        student: {
+          findMany: jest.fn(),
+        },
+      };
+      const repository = new UserRepository(
+        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+      );
+      const startTerm = new Date("2025-02-28T15:00:00.000Z");
+      const endTerm = new Date("2025-03-31T14:59:00.000Z");
+
+      const result = await repository.findStudentByStudentNumberNameDate(
+        "invalid",
+        "홍길동",
+        startTerm,
+        endTerm,
+      );
+
+      expect(prisma.student.findMany).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
+
+    it("uses the start date as the student term boundary when end date is null", async () => {
+      const prisma = {
+        student: {
+          findMany: jest.fn().mockResolvedValue([]),
+        },
+      };
+      const repository = new UserRepository(
+        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+      );
+      const startTerm = new Date("2025-02-28T15:00:00.000Z");
+
+      await repository.findStudentByStudentNumberNameDate(
+        "20201234",
+        "홍길동",
+        startTerm,
+        null,
+      );
+
+      expect(prisma.student.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            studentTs: {
+              some: {
+                deletedAt: null,
+                startTerm: { lte: startTerm },
+                OR: [{ endTerm: { gte: startTerm } }, { endTerm: null }],
+              },
+            },
+          }),
+        }),
+      );
+    });
+  });
+});

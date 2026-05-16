@@ -36,21 +36,41 @@ export default class UserRepository {
   async findStudentByStudentNumberNameDate(
     studentNumber: string,
     name: string,
-    startTerm: string,
-    endTerm: string,
+    startTerm: Date,
+    endTerm: Date | null,
   ) {
-    const studentnumber = parseInt(studentNumber);
-    const user = await this.prisma.$queryRaw(Prisma.sql`
-      SELECT s.*, st.*
-      FROM student s
-      INNER JOIN student_t st ON st.student_id = s.id
-        AND DATE(st.start_term) <= ${startTerm}
-        AND (DATE(st.end_term) >= ${endTerm} OR st.end_term IS NULL)
-      WHERE s.number = ${studentnumber}
-        AND s.name = ${name}
-        AND s.deleted_at IS NULL
-    `);
-    return user;
+    const studentnumber = Number.parseInt(studentNumber);
+    if (Number.isNaN(studentnumber)) {
+      return [];
+    }
+
+    const targetEndTerm = endTerm ?? startTerm;
+    const users = await this.prisma.student.findMany({
+      where: {
+        number: studentnumber,
+        name,
+        deletedAt: null,
+        studentTs: {
+          some: {
+            deletedAt: null,
+            startTerm: { lte: startTerm },
+            OR: [{ endTerm: { gte: targetEndTerm } }, { endTerm: null }],
+          },
+        },
+      },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+      },
+    });
+    return users.map(user => ({
+      student: {
+        id: user.id,
+        userId: user.userId,
+        email: user.email,
+      },
+    }));
   }
 
   async create(studentId: number) {

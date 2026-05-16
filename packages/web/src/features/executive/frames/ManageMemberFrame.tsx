@@ -10,23 +10,30 @@ import { useMemo } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
 
 import ExecutiveMemberFormModal, {
   ExecutiveMemberData,
+  ExecutiveMemberFormData,
 } from "../components/ExecutiveMemberFormModal";
 import useDeleteExecutiveMember from "../services/deleteExecutiveMember";
 import useGetExecutiveMembers from "../services/getExecutiveMembers";
 import usePostExecutiveMember from "../services/postExecutiveMember";
+import usePutExecutiveMember from "../services/putExecutiveMember";
 
 const openExecutiveMemberModal = (
-  onSave: (data: Omit<ExecutiveMemberData, "id">) => void,
+  onSave: (data: ExecutiveMemberFormData) => void,
+  initialData?: ExecutiveMemberData,
 ) => {
   overlay.open(({ isOpen, close }) => (
-    <ExecutiveMemberFormModal isOpen={isOpen} onClose={close} onSave={onSave} />
+    <ExecutiveMemberFormModal
+      isOpen={isOpen}
+      onClose={close}
+      onSave={onSave}
+      initialData={initialData}
+    />
   ));
 };
 
@@ -34,6 +41,7 @@ const ManageMemberFrame = () => {
   const { data, isLoading, isError } = useGetExecutiveMembers();
 
   const postExecutiveMember = usePostExecutiveMember();
+  const putExecutiveMember = usePutExecutiveMember();
   const deleteExecutiveMember = useDeleteExecutiveMember();
 
   const sortedMembers = useMemo(() => {
@@ -43,15 +51,26 @@ const ManageMemberFrame = () => {
     );
   }, [data?.executives]);
 
-  const handleAddExecutiveMember = (
-    member: Omit<ExecutiveMemberData, "id">,
-  ) => {
+  const handleAddExecutiveMember = (member: ExecutiveMemberFormData) => {
     postExecutiveMember.mutate({
       body: {
         name: member.name,
         studentNumber: member.studentNumber,
         startTerm: member.startTerm,
-        endTerm: member.endTerm,
+      },
+    });
+  };
+
+  const handleEditExecutiveMember = (member: ExecutiveMemberFormData) => {
+    if (member.executiveTId === undefined) return;
+
+    putExecutiveMember.mutate({
+      param: {
+        executiveTId: member.executiveTId,
+      },
+      body: {
+        startTerm: member.startTerm,
+        endTerm: member.endTerm ?? null,
       },
     });
   };
@@ -69,12 +88,31 @@ const ManageMemberFrame = () => {
 
   const columnHelper = createColumnHelper<ExecutiveMemberData>();
 
-  const actionsCellRenderer = (id: number) => (
-    <TextButton
-      text="삭제"
-      onClick={() => handleDeleteExecutiveMember(id)}
-      disabled={deleteExecutiveMember.isPending}
-    />
+  const actionsCellRenderer = (member: ExecutiveMemberData) => (
+    <FlexWrapper direction="row" gap={8}>
+      <Button
+        type={putExecutiveMember.isPending ? "disabled" : "outlined"}
+        style={{ padding: "6px 10px", fontSize: 14, lineHeight: "18px" }}
+        onClick={event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openExecutiveMemberModal(handleEditExecutiveMember, member);
+        }}
+      >
+        수정
+      </Button>
+      <Button
+        type={deleteExecutiveMember.isPending ? "disabled" : "outlined"}
+        style={{ padding: "6px 10px", fontSize: 14, lineHeight: "18px" }}
+        onClick={event => {
+          event.preventDefault();
+          event.stopPropagation();
+          handleDeleteExecutiveMember(member.id);
+        }}
+      >
+        삭제
+      </Button>
+    </FlexWrapper>
   );
 
   const columns = [
@@ -106,23 +144,22 @@ const ManageMemberFrame = () => {
     }),
     columnHelper.accessor("endTerm", {
       header: "종료일",
-      cell: info =>
-        info.getValue()
-          ? formatInTimeZone(
-              info.getValue(),
-              "Asia/Seoul",
-              "yyyy-MM-dd (ccc)",
-              { locale: ko },
-            )
-          : "-",
+      cell: info => {
+        const endTerm = info.getValue();
+        return endTerm
+          ? formatInTimeZone(endTerm, "Asia/Seoul", "yyyy-MM-dd (ccc)", {
+              locale: ko,
+            })
+          : "-";
+      },
       size: 150,
       enableSorting: false,
     }),
     columnHelper.display({
       id: "actions",
       header: "관리",
-      cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 120,
+      cell: ({ row }) => actionsCellRenderer(row.original),
+      size: 140,
     }),
   ];
 
