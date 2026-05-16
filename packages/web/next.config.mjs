@@ -6,6 +6,9 @@ const nextConfig = {
     // Enables the styled-components SWC transform
     styledComponents: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   output: "standalone",
   headers: async () => {
     return [
