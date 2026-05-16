@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import { ClockService } from "@sparcs-clubs/api/common/clock/clock.service";
 
@@ -9,12 +9,16 @@ export const ACTIVITY_DURATION_FUTURE_ERROR =
 
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-type ActivityDurationRange = {
+export type ActivityDurationRange = {
   startTerm: Date;
   endTerm: Date;
 };
 
-export const getKstEndOfToday = (now = new Date()): Date => {
+export type ActivityDurationValidationError =
+  | typeof ACTIVITY_DURATION_OUT_OF_TARGET_ERROR
+  | typeof ACTIVITY_DURATION_FUTURE_ERROR;
+
+export const getKstEndOfToday = (now: Date): Date => {
   const kstNow = new Date(now.getTime() + KST_OFFSET_MS);
 
   return new Date(
@@ -30,6 +34,30 @@ export const getKstEndOfToday = (now = new Date()): Date => {
   );
 };
 
+export const getActivityDurationValidationError = (
+  durations: ActivityDurationRange[],
+  activityD: ActivityDurationRange,
+  now: Date,
+): ActivityDurationValidationError | null => {
+  const hasOutOfTargetDuration = durations.some(
+    duration =>
+      duration.startTerm > duration.endTerm ||
+      duration.startTerm < activityD.startTerm ||
+      duration.endTerm > activityD.endTerm,
+  );
+
+  if (hasOutOfTargetDuration) {
+    return ACTIVITY_DURATION_OUT_OF_TARGET_ERROR;
+  }
+
+  const todayEndTerm = getKstEndOfToday(now);
+  const hasFutureDuration = durations.some(
+    duration => duration.endTerm > todayEndTerm,
+  );
+
+  return hasFutureDuration ? ACTIVITY_DURATION_FUTURE_ERROR : null;
+};
+
 @Injectable()
 export class ActivityDurationValidatorService {
   constructor(private readonly clockService: ClockService) {}
@@ -37,34 +65,11 @@ export class ActivityDurationValidatorService {
   getValidationError(
     durations: ActivityDurationRange[],
     activityD: ActivityDurationRange,
-  ): string | null {
-    const hasOutOfTargetDuration = durations.some(
-      duration =>
-        duration.startTerm > duration.endTerm ||
-        duration.startTerm < activityD.startTerm ||
-        duration.endTerm > activityD.endTerm,
+  ): ActivityDurationValidationError | null {
+    return getActivityDurationValidationError(
+      durations,
+      activityD,
+      this.clockService.now(),
     );
-
-    if (hasOutOfTargetDuration) {
-      return ACTIVITY_DURATION_OUT_OF_TARGET_ERROR;
-    }
-
-    const todayEndTerm = getKstEndOfToday(this.clockService.now());
-    const hasFutureDuration = durations.some(
-      duration => duration.endTerm > todayEndTerm,
-    );
-
-    return hasFutureDuration ? ACTIVITY_DURATION_FUTURE_ERROR : null;
-  }
-
-  assertSubmittable(
-    durations: ActivityDurationRange[],
-    activityD: ActivityDurationRange,
-  ): void {
-    const errorMessage = this.getValidationError(durations, activityD);
-
-    if (errorMessage !== null) {
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
-    }
   }
 }

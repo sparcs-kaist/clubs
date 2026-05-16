@@ -6,6 +6,7 @@ import {
   ACTIVITY_DURATION_FUTURE_ERROR,
   ACTIVITY_DURATION_OUT_OF_TARGET_ERROR,
   ActivityDurationValidatorService,
+  getActivityDurationValidationError,
   getKstEndOfToday,
 } from "./activity-duration.validator";
 
@@ -44,10 +45,10 @@ describe("activity-duration.validator", () => {
       },
     ];
 
-    expect(validator.getValidationError(durations, activityD)).toBeNull();
     expect(() =>
-      validator.assertSubmittable(durations, activityD),
+      validator.getValidationError(durations, activityD),
     ).not.toThrow();
+    expect(validator.getValidationError(durations, activityD)).toBeNull();
     expect(clockService.now).toHaveBeenCalled();
   });
 
@@ -109,5 +110,20 @@ describe("activity-duration.validator", () => {
     expect(getKstEndOfToday(new Date("2026-05-17T03:00:00.000Z"))).toEqual(
       new Date("2026-05-17T14:59:59.999Z"),
     );
+  });
+
+  it("returns validation errors from the pure function without using DI", () => {
+    expect(
+      getActivityDurationValidationError(
+        [
+          {
+            startTerm: new Date("2026-05-17T00:00:00.000Z"),
+            endTerm: new Date("2026-05-18T14:59:00.000Z"),
+          },
+        ],
+        activityD,
+        new Date("2026-05-17T03:00:00.000Z"),
+      ),
+    ).toBe(ACTIVITY_DURATION_FUTURE_ERROR);
   });
 });

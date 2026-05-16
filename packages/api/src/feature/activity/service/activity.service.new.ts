@@ -65,7 +65,10 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
-import { ActivityDurationValidatorService } from "./activity-duration.validator";
+import {
+  type ActivityDurationRange,
+  ActivityDurationValidatorService,
+} from "./activity-duration.validator";
 
 @Injectable()
 export default class ActivityService {
@@ -84,6 +87,21 @@ export default class ActivityService {
     private readonly userPublicService: UserPublicService,
     private readonly activityDurationValidatorService: ActivityDurationValidatorService,
   ) {}
+
+  private assertActivityDurationsAreSubmittable(
+    durations: ActivityDurationRange[],
+    activityD: ActivityDurationRange,
+  ): void {
+    const errorMessage =
+      this.activityDurationValidatorService.getValidationError(
+        durations,
+        activityD,
+      );
+
+    if (errorMessage !== null) {
+      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+  }
 
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
@@ -291,10 +309,7 @@ export default class ActivityService {
     const participants = await Promise.all(
       body.participants.map(async e => e.studentId),
     );
-    this.activityDurationValidatorService.assertSubmittable(
-      body.duration,
-      activityD,
-    );
+    this.assertActivityDurationsAreSubmittable(body.duration, activityD);
 
     // TODO: 해당 학기에 활동한 인원인지 검사하는 로직
     // TODO: 파일 유효한지 검사하는 로직도 필요해요! 이건 파일 모듈 구성되면 public할듯
@@ -345,10 +360,7 @@ export default class ActivityService {
         HttpStatus.BAD_REQUEST,
       );
     // 제출한 활동 기간들이 지난 활동기간 이내인지 확인합니다.
-    this.activityDurationValidatorService.assertSubmittable(
-      body.durations,
-      activityD,
-    );
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
     // 파일 uuid의 유효성을 검사하지 않습니다.
     // 참여 학생이 지난 활동기간 동아리의 소속원이였는지 확인합니다.
     const activityDStartSemesterId = await this.semesterPublicService.loadId({
