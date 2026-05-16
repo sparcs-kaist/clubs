@@ -3,7 +3,7 @@
 # 참고자료
 # - https://hanyunseong-log.dev/post/build-and-run-nextjs-monorepo-with-docker
 
-FROM node:22-alpine AS base
+FROM node:22.22.1-alpine AS base
 
 
 
