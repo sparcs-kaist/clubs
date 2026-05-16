@@ -28,6 +28,9 @@
     "test:api": "turbo run test --filter=api"
   },
   "lint-staged": {
+    "**/*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css,scss,md,mdx,yml,yaml}": [
+      "prettier --check --ignore-unknown"
+    ],
     "./packages/api/**/*.ts": [
       "pnpm --filter=api lint"
     ],
