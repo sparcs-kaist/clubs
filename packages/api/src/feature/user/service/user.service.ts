@@ -1,8 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { format } from "date-fns";
 
 import { ApiUsr002ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { ApiUsr006RequestBody } from "@clubs/interface/api/user/endpoint/apiUsr006";
+import {
+  ApiUsr009RequestBody,
+  ApiUsr009RequestParam,
+} from "@clubs/interface/api/user/endpoint/apiUsr009";
 
 import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-old/club.club-student-t.repository";
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";
@@ -104,40 +107,59 @@ export class UserService {
     if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
-    const startTermStr = format(body.startTerm, "yyyy-MM-dd");
-    // let endTermStr: string | null = null;
-    // if (body.endTerm) {
-    const endTermStr = format(body.endTerm, "yyyy-MM-dd");
-    if (startTermStr >= endTermStr) {
+
+    const studentNumber = body.studentNumber.trim();
+    const name = body.name.trim();
+
+    if (!/^\d+$/.test(studentNumber)) {
       throw new HttpException(
-        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        "학번은 숫자만 입력해주세요.",
         HttpStatus.BAD_REQUEST,
       );
     }
-    // }
+
+    const studentByNumber =
+      await this.userRepository.findStudentByStudentNumber(studentNumber);
+    if (!studentByNumber) {
+      throw new HttpException(
+        "해당 학번의 학생을 찾을 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (studentByNumber.name !== name) {
+      throw new HttpException(
+        "학번과 이름이 일치하지 않습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const studentRaw =
       await this.userRepository.findStudentByStudentNumberNameDate(
-        body.studentNumber,
-        body.name,
-        startTermStr,
-        endTermStr,
+        studentNumber,
+        name,
+        body.startTerm,
+        null,
       );
     const student =
       Array.isArray(studentRaw) && studentRaw.length === 1
         ? studentRaw[0]
         : null;
     if (!student) {
-      throw new HttpException("잘못된 입력입니다.", HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        "집행부원 시작일이 해당 학생의 학적 기간과 겹치지 않습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (
       await this.executiveRepository.checkExistExecutiveByIdDate(
         student.student.id,
-        startTermStr,
-        endTermStr,
+        body.startTerm,
+        null,
       )
     ) {
       throw new HttpException(
-        "이미 존재하는 집행부원입니다.",
+        "해당 기간에 이미 집행부원 임기가 존재합니다.",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -146,9 +168,9 @@ export class UserService {
         student.student.id,
         student.student.userId,
         student.student.email,
-        body.name,
-        startTermStr,
-        endTermStr,
+        name,
+        body.startTerm,
+        null,
       ))
     ) {
       throw new HttpException(
@@ -156,6 +178,63 @@ export class UserService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    return {};
+  }
+
+  async updateExecutiveTerm(
+    userId: number,
+    param: ApiUsr009RequestParam,
+    body: ApiUsr009RequestBody,
+  ) {
+    if (!(await this.executiveRepository.findExecutiveByUserId(userId))) {
+      throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
+    }
+
+    if (body.endTerm !== null && body.startTerm >= body.endTerm) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const executiveTerm =
+      await this.executiveRepository.selectExecutiveTermById(
+        param.executiveTId,
+      );
+    if (!executiveTerm) {
+      throw new HttpException(
+        "집행부원 임기를 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (
+      await this.executiveRepository.checkExistExecutiveByIdDate(
+        executiveTerm.executive.studentId,
+        body.startTerm,
+        body.endTerm,
+        param.executiveTId,
+      )
+    ) {
+      throw new HttpException(
+        "수정하려는 기간이 같은 학생의 다른 집행부원 임기와 겹칩니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      !(await this.executiveRepository.updateExecutiveTerm(
+        param.executiveTId,
+        body.startTerm,
+        body.endTerm,
+      ))
+    ) {
+      throw new HttpException(
+        "Failed to update executive term",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     return {};
   }
 

@@ -3,6 +3,7 @@ import { registry } from "@clubs/interface/open-api";
 export * from "./apiUsr006";
 export * from "./apiUsr007";
 export * from "./apiUsr008";
+export * from "./apiUsr009";
 
 registry.registerPath({
   tags: ["executive"],

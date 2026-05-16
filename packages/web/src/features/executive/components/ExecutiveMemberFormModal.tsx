@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import DateInput from "@sparcs-clubs/web/common/components/Forms/DateInput";
@@ -13,36 +13,75 @@ import {
 
 interface ExecutiveMemberData {
   id: number;
+  executiveTId: number;
   studentNumber: string;
   name: string;
   startTerm: Date;
-  endTerm: Date;
+  endTerm: Date | null;
+}
+
+interface ExecutiveMemberFormData {
+  executiveTId?: number;
+  studentNumber: string;
+  name: string;
+  startTerm: Date;
+  endTerm?: Date | null;
 }
 
 interface ExecutiveMemberFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Omit<ExecutiveMemberData, "id">) => void;
+  onSave: (data: ExecutiveMemberFormData) => void;
+  initialData?: ExecutiveMemberData;
 }
 
 const ExecutiveMemberFormModal = ({
   isOpen,
   onClose,
   onSave,
+  initialData,
 }: ExecutiveMemberFormModalProps) => {
-  const [studentNumber, setStudentNumber] = useState("");
-  const [name, setName] = useState("");
-  const [startTerm, setStartTerm] = useState<Date | null>(null);
-  const [endTerm, setEndTerm] = useState<Date | null>(null);
+  const [studentNumber, setStudentNumber] = useState(
+    initialData?.studentNumber ?? "",
+  );
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [startTerm, setStartTerm] = useState<Date | null>(
+    initialData?.startTerm ?? null,
+  );
+  const [endTerm, setEndTerm] = useState<Date | null>(
+    initialData?.endTerm ?? null,
+  );
+  const isEditing = initialData != null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setStudentNumber(initialData?.studentNumber ?? "");
+    setName(initialData?.name ?? "");
+    setStartTerm(initialData?.startTerm ?? null);
+    setEndTerm(initialData?.endTerm ?? null);
+  }, [initialData, isOpen]);
+
+  const isTermRangeInvalid =
+    startTerm !== null && endTerm !== null && startTerm > endTerm;
 
   const handleSave = () => {
-    if (studentNumber && name && startTerm && endTerm) {
-      onSave({
+    if (studentNumber && name && startTerm && !isTermRangeInvalid) {
+      const baseData = {
         studentNumber,
         name,
         startTerm: getLocalDateOnly(startTerm),
-        endTerm: getLocalDateLastTime(endTerm),
-      });
+      };
+
+      onSave(
+        isEditing
+          ? {
+              ...baseData,
+              executiveTId: initialData.executiveTId,
+              endTerm: endTerm === null ? null : getLocalDateLastTime(endTerm),
+            }
+          : baseData,
+      );
       onClose();
     }
   };
@@ -55,12 +94,15 @@ const ExecutiveMemberFormModal = ({
         confirmButtonText="저장"
         closeButtonText="취소"
         confirmDisabled={
-          !studentNumber.trim() || !name.trim() || !startTerm || !endTerm
+          !studentNumber.trim() ||
+          !name.trim() ||
+          !startTerm ||
+          isTermRangeInvalid
         }
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
           <Typography fs={18} lh={24} fw="MEDIUM">
-            새 집행부원 추가
+            {isEditing ? "집행부원 임기 수정" : "새 집행부원 추가"}
           </Typography>
 
           <TextInput
@@ -68,6 +110,7 @@ const ExecutiveMemberFormModal = ({
             placeholder="학번을 입력해주세요"
             value={studentNumber}
             onChange={e => setStudentNumber(e.target.value)}
+            disabled={isEditing}
           />
 
           <TextInput
@@ -75,6 +118,7 @@ const ExecutiveMemberFormModal = ({
             placeholder="이름을 입력해주세요"
             value={name}
             onChange={e => setName(e.target.value)}
+            disabled={isEditing}
           />
 
           <DateInput
@@ -83,16 +127,23 @@ const ExecutiveMemberFormModal = ({
             onChange={(date: Date | null) => setStartTerm(date)}
           />
 
-          <DateInput
-            label="종료일"
-            selected={endTerm}
-            onChange={(date: Date | null) => setEndTerm(date)}
-          />
+          {isEditing && (
+            <DateInput
+              label="종료일"
+              selected={endTerm}
+              onChange={(date: Date | null) => setEndTerm(date)}
+              isClearable
+            />
+          )}
         </FlexWrapper>
       </CancellableModalContent>
     </Modal>
   );
 };
 
-export type { ExecutiveMemberData, ExecutiveMemberFormModalProps };
+export type {
+  ExecutiveMemberData,
+  ExecutiveMemberFormData,
+  ExecutiveMemberFormModalProps,
+};
 export default ExecutiveMemberFormModal;

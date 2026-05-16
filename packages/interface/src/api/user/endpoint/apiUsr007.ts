@@ -23,13 +23,14 @@ const responseBodyMap = {
     executives: z.array(
       z.object({
         id: zExecutive.shape.id,
-        userId: zExecutive.shape.userId,
-        studentNumber: zExecutive.shape.studentNumber,
+        executiveTId: z.coerce.number().int().min(1),
+        userId: zExecutive.shape.userId.nullable(),
+        studentNumber: z.coerce.string(),
         name: zExecutive.shape.name,
-        email: zExecutive.shape.email,
-        phoneNumber: zExecutive.shape.phoneNumber,
+        email: zExecutive.shape.email.nullable(),
+        phoneNumber: zExecutive.shape.phoneNumber.nullable(),
         startTerm: z.coerce.date(),
-        endTerm: z.coerce.date(),
+        endTerm: z.coerce.date().nullable(),
       }),
     ),
   }),
@@ -67,7 +68,7 @@ registry.registerPath({
   description: `
 		집행부원 목록을 조회하는 API입니다.
 		1. 현재 날짜 기준으로 유효한 모든 집행부원의 정보를 반환합니다.
-		2. id, userId, 학번, 이름, 이메일, 전화번호, 시작날짜, 종료날짜가 포함됩니다.
+			2. id, executiveTId, userId, 학번, 이름, 이메일, 전화번호, 시작날짜, 종료날짜가 포함됩니다.
     3. userId가 없는 집행부원의 경우 조회되지 않습니다.
 	`,
   request: {},
