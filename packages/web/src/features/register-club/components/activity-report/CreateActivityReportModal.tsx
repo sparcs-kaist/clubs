@@ -7,6 +7,7 @@ import Modal from "@sparcs-clubs/web/common/components/Modal";
 import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import RestoreDraftModal from "@sparcs-clubs/web/common/components/Modal/RestoreDraftModal";
 import useTemporaryStorage from "@sparcs-clubs/web/common/hooks/useTemporaryStorage";
+import getApiErrorMessage from "@sparcs-clubs/web/common/services/getApiErrorMessage";
 import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
 import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import { ActivityReportFormData } from "@sparcs-clubs/web/features/activity-report/types/form";
@@ -63,7 +64,11 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
             queryClient.invalidateQueries({ queryKey: [apiAct011.url()] });
             close();
           },
-          onError: () => errorHandler("생성에 실패하였습니다"),
+          onError: error => {
+            errorHandler(
+              getApiErrorMessage(error, "활동보고서 생성에 실패하였습니다"),
+            );
+          },
         },
       );
     },

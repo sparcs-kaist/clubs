@@ -3,9 +3,9 @@ import { Inject, Injectable } from "@nestjs/common";
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 export const ACTIVITY_DURATION_OUT_OF_TARGET_ERROR =
-  "Some duration is not in the last activity duration";
+  "활동보고서 활동 기간은 활동 기한 내에 포함되어야 합니다";
 export const ACTIVITY_DURATION_FUTURE_ERROR =
-  "Activity duration cannot include future dates";
+  "활동보고서 활동 기간에는 작성일 이후의 날짜를 포함할 수 없습니다";
 
 export type ActivityDurationRange = {
   startTerm: Date;
