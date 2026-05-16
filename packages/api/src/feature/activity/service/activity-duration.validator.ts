@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
-import { ClockService } from "@sparcs-clubs/api/common/clock/clock.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 export const ACTIVITY_DURATION_OUT_OF_TARGET_ERROR =
   "Some duration is not in the last activity duration";
@@ -60,7 +60,7 @@ export const getActivityDurationValidationError = (
 
 @Injectable()
 export class ActivityDurationValidatorService {
-  constructor(private readonly clockService: ClockService) {}
+  constructor(@Inject(CLOCK) private readonly clock: Clock) {}
 
   getValidationError(
     durations: ActivityDurationRange[],
@@ -69,7 +69,7 @@ export class ActivityDurationValidatorService {
     return getActivityDurationValidationError(
       durations,
       activityD,
-      this.clockService.now(),
+      this.clock.now(),
     );
   }
 }

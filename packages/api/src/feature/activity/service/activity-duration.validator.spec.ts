@@ -1,6 +1,6 @@
 import { Test } from "@nestjs/testing";
 
-import { ClockService } from "@sparcs-clubs/api/common/clock/clock.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import {
   ACTIVITY_DURATION_FUTURE_ERROR,
@@ -19,11 +19,11 @@ describe("activity-duration.validator", () => {
   const createValidator = async (now: Date) => {
     const clockService = {
       now: jest.fn(() => now),
-    };
+    } satisfies Clock;
     const moduleRef = await Test.createTestingModule({
       providers: [
         ActivityDurationValidatorService,
-        { provide: ClockService, useValue: clockService },
+        { provide: CLOCK, useValue: clockService },
       ],
     }).compile();
 
