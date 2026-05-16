@@ -7,8 +7,6 @@ export const ACTIVITY_DURATION_OUT_OF_TARGET_ERROR =
 export const ACTIVITY_DURATION_FUTURE_ERROR =
   "Activity duration cannot include future dates";
 
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
-
 export type ActivityDurationRange = {
   startTerm: Date;
   endTerm: Date;
@@ -18,26 +16,10 @@ export type ActivityDurationValidationError =
   | typeof ACTIVITY_DURATION_OUT_OF_TARGET_ERROR
   | typeof ACTIVITY_DURATION_FUTURE_ERROR;
 
-export const getKstEndOfToday = (now: Date): Date => {
-  const kstNow = new Date(now.getTime() + KST_OFFSET_MS);
-
-  return new Date(
-    Date.UTC(
-      kstNow.getUTCFullYear(),
-      kstNow.getUTCMonth(),
-      kstNow.getUTCDate(),
-      14,
-      59,
-      59,
-      999,
-    ),
-  );
-};
-
 export const getActivityDurationValidationError = (
   durations: ActivityDurationRange[],
   activityD: ActivityDurationRange,
-  now: Date,
+  endOfToday: Date,
 ): ActivityDurationValidationError | null => {
   const hasOutOfTargetDuration = durations.some(
     duration =>
@@ -50,9 +32,8 @@ export const getActivityDurationValidationError = (
     return ACTIVITY_DURATION_OUT_OF_TARGET_ERROR;
   }
 
-  const todayEndTerm = getKstEndOfToday(now);
   const hasFutureDuration = durations.some(
-    duration => duration.endTerm > todayEndTerm,
+    duration => duration.endTerm > endOfToday,
   );
 
   return hasFutureDuration ? ACTIVITY_DURATION_FUTURE_ERROR : null;
@@ -69,7 +50,7 @@ export class ActivityDurationValidatorService {
     return getActivityDurationValidationError(
       durations,
       activityD,
-      this.clock.now(),
+      this.clock.endOfToday(),
     );
   }
 }
