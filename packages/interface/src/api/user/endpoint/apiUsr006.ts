@@ -64,7 +64,8 @@ registry.registerPath({
 			3. 시작날짜는 반드시 지정되어야 합니다.
 	    4. 기존에 존재하는 집행부원의 임기와 추가하는 집행부원의 시작날짜 이후 임기가 겹치면 에러를 반환합니다.
 	    5. student, studentT 테이블에서 학생을 먼저 찾고 추가하기 때문에 studentT의 한개의 row에 있는 startTerm, endTerm 단위 내에 추가하려는 startTerm이 존재해야 합니다.
-		`,
+	    6. 학번 형식 오류, 존재하지 않는 학번, 학번/이름 불일치, 학적 기간 불일치는 각각 다른 에러 메시지를 반환합니다.
+			`,
   request: {
     body: {
       content: {

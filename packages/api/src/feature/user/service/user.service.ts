@@ -108,10 +108,36 @@ export class UserService {
       throw new HttpException("권한이 없습니다.", HttpStatus.FORBIDDEN);
     }
 
+    const studentNumber = body.studentNumber.trim();
+    const name = body.name.trim();
+
+    if (!/^\d+$/.test(studentNumber)) {
+      throw new HttpException(
+        "학번은 숫자만 입력해주세요.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const studentByNumber =
+      await this.userRepository.findStudentByStudentNumber(studentNumber);
+    if (!studentByNumber) {
+      throw new HttpException(
+        "해당 학번의 학생을 찾을 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (studentByNumber.name !== name) {
+      throw new HttpException(
+        "학번과 이름이 일치하지 않습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const studentRaw =
       await this.userRepository.findStudentByStudentNumberNameDate(
-        body.studentNumber,
-        body.name,
+        studentNumber,
+        name,
         body.startTerm,
         null,
       );
@@ -120,7 +146,10 @@ export class UserService {
         ? studentRaw[0]
         : null;
     if (!student) {
-      throw new HttpException("잘못된 입력입니다.", HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        "집행부원 시작일이 해당 학생의 학적 기간과 겹치지 않습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (
       await this.executiveRepository.checkExistExecutiveByIdDate(
@@ -130,7 +159,7 @@ export class UserService {
       )
     ) {
       throw new HttpException(
-        "이미 존재하는 집행부원입니다.",
+        "해당 기간에 이미 집행부원 임기가 존재합니다.",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -139,7 +168,7 @@ export class UserService {
         student.student.id,
         student.student.userId,
         student.student.email,
-        body.name,
+        name,
         body.startTerm,
         null,
       ))
@@ -188,7 +217,7 @@ export class UserService {
       )
     ) {
       throw new HttpException(
-        "이미 존재하는 집행부원입니다.",
+        "수정하려는 기간이 같은 학생의 다른 집행부원 임기와 겹칩니다.",
         HttpStatus.BAD_REQUEST,
       );
     }

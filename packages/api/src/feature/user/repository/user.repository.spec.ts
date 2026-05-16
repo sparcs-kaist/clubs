@@ -113,4 +113,55 @@ describe("UserRepository", () => {
       );
     });
   });
+
+  describe("findStudentByStudentNumber", () => {
+    it("finds a student by student number for detailed validation", async () => {
+      const student = {
+        id: 1,
+        userId: 2,
+        email: "student@kaist.ac.kr",
+        name: "홍길동",
+      };
+      const prisma = {
+        student: {
+          findFirst: jest.fn().mockResolvedValue(student),
+        },
+      };
+      const repository = new UserRepository(
+        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+      );
+
+      const result = await repository.findStudentByStudentNumber("20201234");
+
+      expect(prisma.student.findFirst).toHaveBeenCalledWith({
+        where: {
+          number: 20201234,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+          name: true,
+        },
+      });
+      expect(result).toEqual(student);
+    });
+
+    it("returns null for invalid student numbers", async () => {
+      const prisma = {
+        student: {
+          findFirst: jest.fn(),
+        },
+      };
+      const repository = new UserRepository(
+        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+      );
+
+      const result = await repository.findStudentByStudentNumber("invalid");
+
+      expect(prisma.student.findFirst).not.toHaveBeenCalled();
+      expect(result).toBeNull();
+    });
+  });
 });

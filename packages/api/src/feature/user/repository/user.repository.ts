@@ -73,6 +73,26 @@ export default class UserRepository {
     }));
   }
 
+  async findStudentByStudentNumber(studentNumber: string) {
+    const studentnumber = Number.parseInt(studentNumber);
+    if (Number.isNaN(studentnumber)) {
+      return null;
+    }
+
+    return this.prisma.student.findFirst({
+      where: {
+        number: studentnumber,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        name: true,
+      },
+    });
+  }
+
   async create(studentId: number) {
     const user = await this.prisma.$queryRaw(Prisma.sql`
       SELECT s.*, u.*
