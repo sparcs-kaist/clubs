@@ -1,7 +1,7 @@
 # 시험공부하기 싫은 hama@sparcs.org의 빌드 개조
 # turbo 편하네요
 
-FROM node:22-alpine AS base
+FROM node:22.22.1-alpine AS base
 
 
 
