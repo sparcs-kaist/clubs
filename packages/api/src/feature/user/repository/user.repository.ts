@@ -5,6 +5,13 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
+const parseStudentNumber = (studentNumber: string) => {
+  if (!/^\d+$/.test(studentNumber)) {
+    return null;
+  }
+  return Number(studentNumber);
+};
+
 @Injectable()
 export default class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -39,8 +46,8 @@ export default class UserRepository {
     startTerm: Date,
     endTerm: Date | null,
   ) {
-    const studentnumber = Number.parseInt(studentNumber);
-    if (Number.isNaN(studentnumber)) {
+    const studentnumber = parseStudentNumber(studentNumber);
+    if (studentnumber === null) {
       return [];
     }
 
@@ -74,8 +81,8 @@ export default class UserRepository {
   }
 
   async findStudentByStudentNumber(studentNumber: string) {
-    const studentnumber = Number.parseInt(studentNumber);
-    if (Number.isNaN(studentnumber)) {
+    const studentnumber = parseStudentNumber(studentNumber);
+    if (studentnumber === null) {
       return null;
     }
 

@@ -175,6 +175,89 @@ describe("UserService", () => {
         status: 400,
       });
     });
+
+    it("rejects non-executive users", async () => {
+      const userRepository = {
+        findStudentByStudentNumber: jest.fn(),
+        findStudentByStudentNumberNameDate: jest.fn(),
+      };
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(false),
+      };
+      const service = new UserService(
+        userRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.createExecutive(10, {
+          studentNumber: "20201234",
+          name: "홍길동",
+          startTerm: new Date("2025-02-28T15:00:00.000Z"),
+        }),
+      ).rejects.toMatchObject({
+        message: "권한이 없습니다.",
+        status: 403,
+      });
+      expect(userRepository.findStudentByStudentNumber).not.toHaveBeenCalled();
+    });
+
+    it("reports when an executive term already overlaps", async () => {
+      const userRepository = {
+        findStudentByStudentNumber: jest.fn().mockResolvedValue({
+          id: 1,
+          userId: 2,
+          email: "student@kaist.ac.kr",
+          name: "홍길동",
+        }),
+        findStudentByStudentNumberNameDate: jest.fn().mockResolvedValue([
+          {
+            student: {
+              id: 1,
+              userId: 2,
+              email: "student@kaist.ac.kr",
+            },
+          },
+        ]),
+      };
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(true),
+        checkExistExecutiveByIdDate: jest.fn().mockResolvedValue(true),
+        createExecutive: jest.fn(),
+      };
+      const service = new UserService(
+        userRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.createExecutive(10, {
+          studentNumber: "20201234",
+          name: "홍길동",
+          startTerm: new Date("2025-02-28T15:00:00.000Z"),
+        }),
+      ).rejects.toMatchObject({
+        message: "해당 기간에 이미 집행부원 임기가 존재합니다.",
+        status: 400,
+      });
+      expect(executiveRepository.createExecutive).not.toHaveBeenCalled();
+    });
   });
 
   describe("updateExecutiveTerm", () => {
@@ -222,6 +305,148 @@ describe("UserService", () => {
         startTerm,
         null,
       );
+    });
+
+    it("rejects non-executive users", async () => {
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(false),
+        selectExecutiveTermById: jest.fn(),
+      };
+      const service = new UserService(
+        {} as ConstructorParameters<typeof UserService>[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.updateExecutiveTerm(
+          10,
+          { executiveTId: 5 },
+          {
+            startTerm: new Date("2025-02-28T15:00:00.000Z"),
+            endTerm: null,
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: "권한이 없습니다.",
+        status: 403,
+      });
+      expect(
+        executiveRepository.selectExecutiveTermById,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("rejects invalid term ordering", async () => {
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(true),
+        selectExecutiveTermById: jest.fn(),
+      };
+      const service = new UserService(
+        {} as ConstructorParameters<typeof UserService>[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.updateExecutiveTerm(
+          10,
+          { executiveTId: 5 },
+          {
+            startTerm: new Date("2025-03-31T14:59:00.000Z"),
+            endTerm: new Date("2025-02-28T15:00:00.000Z"),
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: "시작날짜는 종료날짜보다 이전이어야 합니다.",
+        status: 400,
+      });
+      expect(
+        executiveRepository.selectExecutiveTermById,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("reports when the target executive term does not exist", async () => {
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(true),
+        selectExecutiveTermById: jest.fn().mockResolvedValue(null),
+        checkExistExecutiveByIdDate: jest.fn(),
+      };
+      const service = new UserService(
+        {} as ConstructorParameters<typeof UserService>[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.updateExecutiveTerm(
+          10,
+          { executiveTId: 5 },
+          {
+            startTerm: new Date("2025-02-28T15:00:00.000Z"),
+            endTerm: null,
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: "집행부원 임기를 찾을 수 없습니다.",
+        status: 404,
+      });
+      expect(
+        executiveRepository.checkExistExecutiveByIdDate,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("reports when the updated term overlaps another term", async () => {
+      const executiveRepository = {
+        findExecutiveByUserId: jest.fn().mockResolvedValue(true),
+        selectExecutiveTermById: jest.fn().mockResolvedValue({
+          id: 5,
+          executive: {
+            studentId: 1,
+          },
+        }),
+        checkExistExecutiveByIdDate: jest.fn().mockResolvedValue(true),
+        updateExecutiveTerm: jest.fn(),
+      };
+      const service = new UserService(
+        {} as ConstructorParameters<typeof UserService>[0],
+        {} as ConstructorParameters<typeof UserService>[1],
+        executiveRepository as unknown as ConstructorParameters<
+          typeof UserService
+        >[2],
+        {} as ConstructorParameters<typeof UserService>[3],
+        {} as ConstructorParameters<typeof UserService>[4],
+        {} as ConstructorParameters<typeof UserService>[5],
+      );
+
+      await expect(
+        service.updateExecutiveTerm(
+          10,
+          { executiveTId: 5 },
+          {
+            startTerm: new Date("2025-02-28T15:00:00.000Z"),
+            endTerm: null,
+          },
+        ),
+      ).rejects.toMatchObject({
+        message: "수정하려는 기간이 같은 학생의 다른 집행부원 임기와 겹칩니다.",
+        status: 400,
+      });
+      expect(executiveRepository.updateExecutiveTerm).not.toHaveBeenCalled();
     });
   });
 });

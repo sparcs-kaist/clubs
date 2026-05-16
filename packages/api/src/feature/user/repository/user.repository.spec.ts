@@ -57,28 +57,31 @@ describe("UserRepository", () => {
       ]);
     });
 
-    it("returns empty results for invalid student numbers", async () => {
-      const prisma = {
-        student: {
-          findMany: jest.fn(),
-        },
-      };
-      const repository = new UserRepository(
-        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
-      );
-      const startTerm = new Date("2025-02-28T15:00:00.000Z");
-      const endTerm = new Date("2025-03-31T14:59:00.000Z");
+    it.each(["invalid", "20201234foo"])(
+      "returns empty results for invalid student numbers: %s",
+      async studentNumber => {
+        const prisma = {
+          student: {
+            findMany: jest.fn(),
+          },
+        };
+        const repository = new UserRepository(
+          prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+        );
+        const startTerm = new Date("2025-02-28T15:00:00.000Z");
+        const endTerm = new Date("2025-03-31T14:59:00.000Z");
 
-      const result = await repository.findStudentByStudentNumberNameDate(
-        "invalid",
-        "홍길동",
-        startTerm,
-        endTerm,
-      );
+        const result = await repository.findStudentByStudentNumberNameDate(
+          studentNumber,
+          "홍길동",
+          startTerm,
+          endTerm,
+        );
 
-      expect(prisma.student.findMany).not.toHaveBeenCalled();
-      expect(result).toEqual([]);
-    });
+        expect(prisma.student.findMany).not.toHaveBeenCalled();
+        expect(result).toEqual([]);
+      },
+    );
 
     it("uses the start date as the student term boundary when end date is null", async () => {
       const prisma = {
@@ -148,20 +151,24 @@ describe("UserRepository", () => {
       expect(result).toEqual(student);
     });
 
-    it("returns null for invalid student numbers", async () => {
-      const prisma = {
-        student: {
-          findFirst: jest.fn(),
-        },
-      };
-      const repository = new UserRepository(
-        prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
-      );
+    it.each(["invalid", "20201234foo"])(
+      "returns null for invalid student numbers: %s",
+      async studentNumber => {
+        const prisma = {
+          student: {
+            findFirst: jest.fn(),
+          },
+        };
+        const repository = new UserRepository(
+          prisma as unknown as ConstructorParameters<typeof UserRepository>[0],
+        );
 
-      const result = await repository.findStudentByStudentNumber("invalid");
+        const result =
+          await repository.findStudentByStudentNumber(studentNumber);
 
-      expect(prisma.student.findFirst).not.toHaveBeenCalled();
-      expect(result).toBeNull();
-    });
+        expect(prisma.student.findFirst).not.toHaveBeenCalled();
+        expect(result).toBeNull();
+      },
+    );
   });
 });

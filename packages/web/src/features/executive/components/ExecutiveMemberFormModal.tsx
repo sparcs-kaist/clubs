@@ -63,7 +63,7 @@ const ExecutiveMemberFormModal = ({
   }, [initialData, isOpen]);
 
   const isTermRangeInvalid =
-    startTerm !== null && endTerm !== null && startTerm >= endTerm;
+    startTerm !== null && endTerm !== null && startTerm > endTerm;
 
   const handleSave = () => {
     if (studentNumber && name && startTerm && !isTermRangeInvalid) {
