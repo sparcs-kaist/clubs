@@ -44,12 +44,12 @@ const openAssignModal = (data: ApiFnd008ResponseOk["executives"][number]) => {
       clubTypeEnum: club.typeEnum,
       divisionName: club.division.name,
       clubName: club.name,
-      totalCount: data.totalCount,
-      appliedCount: data.appliedCount,
-      approvedCount: data.approvedCount,
-      rejectedCount: data.rejectedCount,
-      committeeCount: data.committeeCount,
-      partialCount: data.partialCount,
+      totalCount: club.totalCount,
+      appliedCount: club.appliedCount,
+      approvedCount: club.approvedCount,
+      rejectedCount: club.rejectedCount,
+      committeeCount: club.committeeCount,
+      partialCount: club.partialCount,
     }),
   );
 
