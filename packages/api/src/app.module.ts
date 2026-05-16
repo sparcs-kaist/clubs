@@ -3,6 +3,7 @@ import { APP_GUARD } from "@nestjs/core";
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
+import { ClockModule } from "./common/clock/clock.module";
 import ActivityModule from "./feature/activity/activity.module";
 import { ActivityCertificateModule } from "./feature/activity-certificate/activity-certificate.module";
 import { AuthModule } from "./feature/auth/auth.module";
@@ -23,6 +24,7 @@ import { PrismaModule } from "./prisma/prisma.module";
   imports: [
     // Database ORM Module
     PrismaModule,
+    ClockModule,
 
     // Feature Modules
     ActivityModule,

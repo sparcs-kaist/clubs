@@ -1,7 +1,11 @@
+import { Test } from "@nestjs/testing";
+
+import { ClockService } from "@sparcs-clubs/api/common/clock/clock.service";
+
 import {
   ACTIVITY_DURATION_FUTURE_ERROR,
   ACTIVITY_DURATION_OUT_OF_TARGET_ERROR,
-  getActivityDurationValidationError,
+  ActivityDurationValidatorService,
   getKstEndOfToday,
 } from "./activity-duration.validator";
 
@@ -11,23 +15,48 @@ describe("activity-duration.validator", () => {
     endTerm: new Date("2026-06-30T14:59:59.999Z"),
   };
 
-  it("allows durations ending today when the activity duration continues", () => {
-    const result = getActivityDurationValidationError(
-      [
-        {
-          startTerm: new Date("2026-05-17T00:00:00.000Z"),
-          endTerm: new Date("2026-05-17T14:59:00.000Z"),
-        },
+  const createValidator = async (now: Date) => {
+    const clockService = {
+      now: jest.fn(() => now),
+    };
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        ActivityDurationValidatorService,
+        { provide: ClockService, useValue: clockService },
       ],
-      activityD,
+    }).compile();
+
+    return {
+      clockService,
+      validator: moduleRef.get(ActivityDurationValidatorService),
+    };
+  };
+
+  it("allows durations ending today when the activity duration continues", async () => {
+    const { clockService, validator } = await createValidator(
       new Date("2026-05-17T03:00:00.000Z"),
     );
 
-    expect(result).toBeNull();
+    const durations = [
+      {
+        startTerm: new Date("2026-05-17T00:00:00.000Z"),
+        endTerm: new Date("2026-05-17T14:59:00.000Z"),
+      },
+    ];
+
+    expect(validator.getValidationError(durations, activityD)).toBeNull();
+    expect(() =>
+      validator.assertSubmittable(durations, activityD),
+    ).not.toThrow();
+    expect(clockService.now).toHaveBeenCalled();
   });
 
-  it("rejects durations ending after today with a future-date message", () => {
-    const result = getActivityDurationValidationError(
+  it("rejects durations ending after today with a future-date message", async () => {
+    const { validator } = await createValidator(
+      new Date("2026-05-17T03:00:00.000Z"),
+    );
+
+    const result = validator.getValidationError(
       [
         {
           startTerm: new Date("2026-05-17T00:00:00.000Z"),
@@ -35,14 +64,17 @@ describe("activity-duration.validator", () => {
         },
       ],
       activityD,
-      new Date("2026-05-17T03:00:00.000Z"),
     );
 
     expect(result).toBe(ACTIVITY_DURATION_FUTURE_ERROR);
   });
 
-  it("keeps the target-duration message for dates outside ActivityD", () => {
-    const result = getActivityDurationValidationError(
+  it("keeps the target-duration message for dates outside ActivityD", async () => {
+    const { validator } = await createValidator(
+      new Date("2026-06-29T03:00:00.000Z"),
+    );
+
+    const result = validator.getValidationError(
       [
         {
           startTerm: new Date("2026-06-30T00:00:00.000Z"),
@@ -50,7 +82,24 @@ describe("activity-duration.validator", () => {
         },
       ],
       activityD,
-      new Date("2026-06-29T03:00:00.000Z"),
+    );
+
+    expect(result).toBe(ACTIVITY_DURATION_OUT_OF_TARGET_ERROR);
+  });
+
+  it("rejects reversed durations with the target-duration message", async () => {
+    const { validator } = await createValidator(
+      new Date("2026-05-17T03:00:00.000Z"),
+    );
+
+    const result = validator.getValidationError(
+      [
+        {
+          startTerm: new Date("2026-05-18T00:00:00.000Z"),
+          endTerm: new Date("2026-05-17T14:59:00.000Z"),
+        },
+      ],
+      activityD,
     );
 
     expect(result).toBe(ACTIVITY_DURATION_OUT_OF_TARGET_ERROR);
