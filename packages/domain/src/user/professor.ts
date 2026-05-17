@@ -11,7 +11,7 @@ export enum ProfessorEnum {
 export const zProfessor = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().optional(),
-  name: z.string(),
+  name: z.string().max(255),
   email: z.string(),
   phoneNumber: z.string().optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),

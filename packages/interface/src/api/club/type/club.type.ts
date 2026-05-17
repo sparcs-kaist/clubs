@@ -10,6 +10,11 @@ import {
 } from "@clubs/interface/api/division/type/division.type";
 import { zProfessor, zStudent } from "@clubs/interface/api/user/type/user.type";
 import {
+  zClubCharacteristic,
+  zClubNameEn,
+  zClubNameKr,
+} from "@clubs/interface/common/commonString";
+import {
   ClubBuildingEnum,
   ClubDelegateEnum,
   ClubTypeEnum,
@@ -40,11 +45,11 @@ export const zClub = z.object({
     examples: [1, 2, 3],
   }),
   // plain schema
-  nameKr: z.string().max(255).min(1).openapi({
+  nameKr: zClubNameKr.min(1).openapi({
     description: "동아리의 한국어 이름입니다.",
     example: "술박스",
   }),
-  nameEn: z.string().max(255).min(1).openapi({
+  nameEn: zClubNameEn.min(1).openapi({
     description: "동아리의 영어 이름입니다.",
     example: "sulbox",
   }),
@@ -52,8 +57,8 @@ export const zClub = z.object({
   foundingYear: z.coerce.number(),
   // clubT schema
   typeEnum: z.nativeEnum(ClubTypeEnum),
-  characteristicKr: z.string().max(30).nullable(),
-  characteristicEn: z.string().max(30).nullable(),
+  characteristicKr: zClubCharacteristic.nullable(),
+  characteristicEn: zClubCharacteristic.nullable(),
   semester: zSemester.pick({ id: true }),
   clubRoom: zClubRoom.pick({ id: true }).nullable(),
   // delegate schema

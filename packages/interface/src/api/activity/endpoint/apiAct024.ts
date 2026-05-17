@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
 
+import { zUserName } from "@clubs/interface/common/commonString";
 import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
@@ -30,7 +31,7 @@ const responseBodyMap = {
     chargedExecutive: z
       .object({
         id: zId,
-        name: z.string().max(30),
+        name: zUserName,
       })
       .optional(),
     items: z.array(
@@ -43,13 +44,13 @@ const responseBodyMap = {
         commentedExecutive: z
           .object({
             id: zId,
-            name: z.string().max(30),
+            name: zUserName,
           })
           .optional(),
         chargedExecutive: z
           .object({
             id: zId,
-            name: z.string().max(30),
+            name: zUserName,
           })
           .optional(),
         updatedAt: z.coerce.date(),
