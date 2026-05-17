@@ -1314,7 +1314,7 @@ export class RegistrationService {
   }): Promise<ApiReg020ResponseOk> {
     const semesterId = await this.semesterPublicService.loadId();
     // logger.debug(semesterId);
-    const [registrations, allRegistrations, total] = await Promise.all([
+    const [registrations, allRegistrations] = await Promise.all([
       this.memberRegistrationRepository.find({
         clubId: param.query.clubId,
         semesterId,
@@ -1330,11 +1330,8 @@ export class RegistrationService {
         clubId: param.query.clubId,
         semesterId,
       }),
-      this.memberRegistrationRepository.count({
-        clubId: param.query.clubId,
-        semesterId,
-      }),
     ]);
+    const total = allRegistrations.length;
     const studentEnums =
       await this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
         allRegistrations.map(registration => registration.student.id),
