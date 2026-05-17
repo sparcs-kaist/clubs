@@ -130,9 +130,11 @@ export class ActivityDurationService {
     const { deadlineId, body } = param;
     const { startTerm, endTerm } = body;
 
-    const [activityDeadline] = await this.activityDeadlineRepository.find({
-      id: deadlineId,
-    });
+    const activityDeadlines =
+      (await this.activityDeadlineRepository.find({
+        id: deadlineId,
+      })) ?? [];
+    const [activityDeadline] = activityDeadlines;
 
     if (!activityDeadline) {
       throw new HttpException(

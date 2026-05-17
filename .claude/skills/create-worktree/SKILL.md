@@ -48,8 +48,9 @@ Always inspect the task source before creating the worktree.
 1. Confirm the TU number from the task source when possible.
 2. If the task has no TU number yet, create a new task page in the Notion task DB first:
    - `https://www.notion.so/sparcs/19cc25603b0b8050bc8ff9d4807e5f3a?v=19cc25603b0b8001a7e4000cfc41151a&source=copy_link`
-3. Store the task title, summary, scope, and acceptance criteria there, then obtain the generated task number.
-4. Use the TU number to build the branch name.
+3. Use the available Notion integration to create the page. If page creation is unavailable, ask the user to create the task page manually and paste the generated TU number before creating the branch.
+4. Store the task title, summary, scope, and acceptance criteria there, then obtain the generated task number.
+5. Use the TU number to build the branch name.
 
 ## Branch naming rules
 

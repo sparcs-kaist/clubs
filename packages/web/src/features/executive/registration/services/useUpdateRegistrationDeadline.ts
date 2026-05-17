@@ -8,6 +8,7 @@ import {
   ApiSem022ResponseOk,
 } from "@clubs/interface/api/semester/apiSem022";
 
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import {
   axiosClientWithAuth,
   defineAxiosMock,
@@ -38,6 +39,9 @@ const useUpdateRegistrationDeadline = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiSem019.url] });
+    },
+    onError: () => {
+      errorHandler("등록 기간 수정에 실패하였습니다");
     },
   });
 };

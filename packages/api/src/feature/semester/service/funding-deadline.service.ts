@@ -155,9 +155,11 @@ export class FundingDeadlineService {
 
     await this.userpulicservice.checkCurrentExecutiveById(executiveId);
 
-    const [fundingDeadline] = await this.fundingDeadlineRepository.find({
-      id: deadlineId,
-    });
+    const fundingDeadlines =
+      (await this.fundingDeadlineRepository.find({
+        id: deadlineId,
+      })) ?? [];
+    const [fundingDeadline] = fundingDeadlines;
 
     if (!fundingDeadline) {
       throw new HttpException(

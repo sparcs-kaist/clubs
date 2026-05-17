@@ -39,8 +39,11 @@ const DeadlineEditModal = ({
     setEndTerm(initialEndTerm ?? null);
   }, [initialEndTerm, initialStartTerm, isOpen]);
 
+  const isInvalidTerm =
+    startTerm !== null && endTerm !== null && startTerm > endTerm;
+
   const handleSave = () => {
-    if (!startTerm || !endTerm) return;
+    if (!startTerm || !endTerm || isInvalidTerm) return;
 
     onSave(getLocalDateOnly(startTerm), getLocalDateLastTime(endTerm));
   };
@@ -52,7 +55,7 @@ const DeadlineEditModal = ({
         onClose={onClose}
         confirmButtonText="저장"
         closeButtonText="취소"
-        confirmDisabled={!startTerm || !endTerm || isPending}
+        confirmDisabled={!startTerm || !endTerm || isInvalidTerm || isPending}
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
           <Typography fs={18} lh={24} fw="MEDIUM">

@@ -137,10 +137,12 @@ export class RegistrationDeadlineService {
 
     await this.userPublicService.checkCurrentExecutiveById(executiveId);
 
-    const [registrationDeadline] =
-      await this.registrationDeadlineRepository.find({
+    const registrationDeadlines =
+      (await this.registrationDeadlineRepository.find({
         id: deadlineId,
-      } as Parameters<typeof this.registrationDeadlineRepository.find>[0]);
+      } as Parameters<typeof this.registrationDeadlineRepository.find>[0])) ??
+      [];
+    const [registrationDeadline] = registrationDeadlines;
 
     if (!registrationDeadline) {
       throw new HttpException(

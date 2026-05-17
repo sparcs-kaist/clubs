@@ -8,6 +8,7 @@ import {
   ApiSem021ResponseOk,
 } from "@clubs/interface/api/semester/apiSem021";
 
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import {
   axiosClientWithAuth,
   defineAxiosMock,
@@ -34,6 +35,9 @@ const useUpdateFundingDeadline = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [apiSem016.url] });
+    },
+    onError: () => {
+      errorHandler("지원금 신청 기간 수정에 실패하였습니다");
     },
   });
 };
