@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { zSemester } from "@clubs/domain/semester/semester";
 
-import { zClubName } from "@clubs/interface/common/commonString";
+import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
@@ -44,7 +44,7 @@ const responseBodyMap = {
         representativeName: z.string(),
         activityFieldKr: z.string().max(255),
         activityFieldEn: z.string().max(255),
-        professorName: z.string().optional(),
+        professorName: zUserName.optional(),
       }),
     ),
     total: z.coerce.number().int().min(1),

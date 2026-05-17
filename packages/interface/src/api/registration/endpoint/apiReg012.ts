@@ -2,7 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zClub } from "@clubs/interface/api/club/type/club.type";
-import { zClubName } from "@clubs/interface/common/commonString";
+import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
@@ -38,7 +38,7 @@ const responseBodyMap = {
         clubId: zClub.pick({ id: true }).shape.id,
         activityFieldKr: z.string().max(255),
         activityFieldEn: z.string().max(255),
-        professorName: z.string().max(255),
+        professorName: zUserName,
       }),
     ),
   }),
