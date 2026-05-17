@@ -16,6 +16,7 @@ import {
   FundingSummaryDBResult,
   VFundingSummary,
 } from "../model/funding.summary.model";
+import { buildFundingTransportationPassengerWhere } from "./funding.repository.util";
 
 @Injectable()
 export default class FundingRepository {
@@ -103,31 +104,13 @@ export default class FundingRepository {
       this.prisma.fundingEtcExpenseFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.$queryRaw<
-        Array<{
-          fundingId: number;
-          studentId: number;
-          studentNumber: number;
-          name: string;
-        }>
-      >(Prisma.sql`
-        SELECT
-          ftp.funding_id AS fundingId,
-          ftp.student_id AS studentId,
-          s.number AS studentNumber,
-          s.name AS name
-        FROM funding_transportation_passenger ftp
-        INNER JOIN student s
-          ON s.id = ftp.student_id
-          AND s.deleted_at IS NULL
-        INNER JOIN student_t st
-          ON st.student_id = s.id
-          AND st.start_term <= NOW()
-          AND (st.end_term >= NOW() OR st.end_term IS NULL)
-          AND st.deleted_at IS NULL
-        WHERE ftp.funding_id = ${id}
-          AND ftp.deleted_at IS NULL
-      `),
+      this.prisma.fundingTransportationPassenger.findMany({
+        distinct: ["studentId"],
+        where: buildFundingTransportationPassengerWhere(id),
+        select: {
+          studentId: true,
+        },
+      }),
     ]);
 
     return MFunding.fromDBResult({
