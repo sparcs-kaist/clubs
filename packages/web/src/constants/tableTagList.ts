@@ -173,6 +173,9 @@ const ClubTypeTagList: {
 } = {
   [ClubTypeEnum.Regular]: { text: "정동아리", color: "BLUE" },
   [ClubTypeEnum.Provisional]: { text: "가동아리", color: "ORANGE" },
+  [ClubTypeEnum.RegistrationCanceled]: { text: "등록취소", color: "GRAY" },
+  [ClubTypeEnum.Special]: { text: "특수등록", color: "PURPLE" },
+  [ClubTypeEnum.Unregistered]: { text: "미등록", color: "GRAY" },
 };
 
 const getDivisionTagColor = (name: string): TagColor => {

@@ -31,10 +31,7 @@ export default function OverviewCommonColumns<
       size: 100,
       filterFn: (row, _, value: string[]) =>
         value.includes(
-          {
-            [ClubTypeEnum.Regular]: "정동아리",
-            [ClubTypeEnum.Provisional]: "가동아리",
-          }[row.original.clubTypeEnum as ClubTypeEnum],
+          getTagDetail(row.original.clubTypeEnum, ClubTypeTagList).text,
         ),
     }),
     columnHelper.accessor(row => row.district, {

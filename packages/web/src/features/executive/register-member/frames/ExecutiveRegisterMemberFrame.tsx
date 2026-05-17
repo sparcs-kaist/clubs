@@ -13,6 +13,7 @@ import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/t
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
+import ExecutivePastSemesterDashboardSection from "@sparcs-clubs/web/features/executive/components/ExecutivePastSemesterDashboardSection";
 import RegistrationMemberTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterMemberTable";
 import { useGetMemberRegistration } from "@sparcs-clubs/web/features/executive/register-member/services/useGetMemberRegistration";
 
@@ -53,7 +54,14 @@ interface ConvertedSelectedCategories {
   selectedContent: (number | string)[];
 }
 
-export const ExecutiveRegisterMember: React.FC = () => {
+interface ExecutiveRegisterMemberProps {
+  semesterId?: number;
+  showPastDashboard?: boolean;
+}
+
+export const ExecutiveRegisterMember: React.FC<
+  ExecutiveRegisterMemberProps
+> = ({ semesterId, showPastDashboard = false }) => {
   const t = useTranslations("club");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 200;
@@ -61,6 +69,7 @@ export const ExecutiveRegisterMember: React.FC = () => {
   const { data, isLoading, isError } = useGetMemberRegistration({
     pageOffset: currentPage,
     itemCount: limit,
+    ...(semesterId ? { semesterId } : {}),
   });
 
   const {
@@ -69,9 +78,11 @@ export const ExecutiveRegisterMember: React.FC = () => {
     isError: divisionError,
   } = useGetDivisionType();
 
+  const divisions = divisionData?.divisions;
+
   const DivisionNameList = useMemo(
-    () => divisionData?.divisions?.map(item => item.name) ?? [],
-    [divisionData],
+    () => divisions?.map(item => item.name) ?? [],
+    [divisions],
   );
 
   const [searchText, setSearchText] = useState<string>("");
@@ -89,14 +100,7 @@ export const ExecutiveRegisterMember: React.FC = () => {
     },
   ]);
 
-  const [convertedCategories, setConvertedCategories] = useState<
-    ConvertedSelectedCategories[]
-  >([
-    { name: "구분", selectedContent: [1, 2, 3] },
-    { name: "분과", selectedContent: DivisionNameList },
-  ]);
-
-  useMemo(() => {
+  const convertedCategories = useMemo<ConvertedSelectedCategories[]>(() => {
     const convertedClubType = categories[0].selectedContent.map(item => {
       if (item === "정동아리") return 1;
       if (item === "가동아리") return 2;
@@ -104,18 +108,16 @@ export const ExecutiveRegisterMember: React.FC = () => {
       return 0;
     });
 
-    const convertedDivisionNames = categories[1].selectedContent;
-
-    setConvertedCategories([
+    return [
       {
         name: "구분",
         selectedContent: convertedClubType,
       },
       {
         name: "분과",
-        selectedContent: convertedDivisionNames,
+        selectedContent: categories[1].selectedContent,
       },
-    ]);
+    ];
   }, [categories]);
 
   const filteredClubs = useMemo(() => {
@@ -148,17 +150,25 @@ export const ExecutiveRegisterMember: React.FC = () => {
   }, [data, searchText, convertedCategories]);
 
   useEffect(() => {
-    if (categories[1].content.length === 0 && divisionData) {
-      setCategories([
-        ...categories.slice(0, 1),
+    if (DivisionNameList.length === 0) {
+      return;
+    }
+
+    setCategories(prevCategories => {
+      if (prevCategories[1].content.length > 0) {
+        return prevCategories;
+      }
+
+      return [
+        ...prevCategories.slice(0, 1),
         {
           name: "분과",
           content: DivisionNameList,
           selectedContent: DivisionNameList,
         },
-      ]);
-    }
-  }, [categories, DivisionNameList, divisionData]);
+      ];
+    });
+  }, [DivisionNameList]);
 
   return (
     <AsyncBoundary
@@ -201,7 +211,10 @@ export const ExecutiveRegisterMember: React.FC = () => {
             </ResetSearchAndFilterWrapper>
           </ClubSearchAndFilterWrapper>
           <TableWithPaginationWrapper>
-            <RegistrationMemberTable registerMemberList={filteredClubs} />
+            <RegistrationMemberTable
+              registerMemberList={filteredClubs}
+              semesterId={semesterId}
+            />
             <FlexWrapper direction="row" gap={16} justify="center">
               <Pagination
                 totalPage={Math.ceil(data.total / limit)}
@@ -211,6 +224,16 @@ export const ExecutiveRegisterMember: React.FC = () => {
               />
             </FlexWrapper>
           </TableWithPaginationWrapper>
+          {showPastDashboard && (
+            <ExecutivePastSemesterDashboardSection
+              title="과거 회원 등록 대시보드"
+              emptyMessage="과거 회원 등록 대시보드가 없습니다"
+              semesters={data?.pastSemesters ?? []}
+              rowLink={semester =>
+                `/executive/register-member/semester/${semester.id}`
+              }
+            />
+          )}
         </>
       )}
     </AsyncBoundary>

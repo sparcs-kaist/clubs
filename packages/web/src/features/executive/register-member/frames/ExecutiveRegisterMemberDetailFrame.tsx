@@ -1,7 +1,7 @@
 "use client";
 
 import { Divider } from "@mui/material";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { useCallback, useState } from "react";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -30,13 +30,25 @@ const ExecutiveRegisterMemberDetail: React.FC = () => {
   const limit = 10;
 
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const clubId = parseInt(id);
+  const semesterIdParam = searchParams.get("semesterId");
+  const parsedSemesterId = semesterIdParam
+    ? Number(semesterIdParam)
+    : undefined;
+  const semesterId =
+    parsedSemesterId &&
+    Number.isInteger(parsedSemesterId) &&
+    parsedSemesterId > 0
+      ? parsedSemesterId
+      : undefined;
 
   const club = useGetClubDetail(id as string);
   const { data, isLoading, isError } = useGetRegisterMemberDetail({
     clubId,
     pageOffset: currentPage,
     itemCount: limit,
+    ...(semesterId ? { semesterId } : {}),
   });
 
   const getStatusInfo = useCallback(

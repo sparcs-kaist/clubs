@@ -18,13 +18,15 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   clubId: zId,
-  activityDurationId: zActivityDuration.shape.id.optional(),
+  semesterId: zId.optional(),
 });
 
 const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    activityDuration: zActivityDuration,
+    pastActivityDurations: z.array(zActivityDuration).optional(),
     chargedExecutive: z
       .object({
         id: zId,

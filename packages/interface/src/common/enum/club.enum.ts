@@ -1,6 +1,9 @@
 export enum ClubTypeEnum {
   Regular = 1, // 정동아리
   Provisional, // 가동아리
+  RegistrationCanceled, // 등록취소
+  Special, // 특수등록
+  Unregistered, // 미등록
 }
 
 export enum ClubDelegateEnum {

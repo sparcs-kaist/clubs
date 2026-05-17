@@ -1,8 +1,6 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
 import React, { useEffect, useState } from "react";
 
-import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
-
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -10,12 +8,14 @@ import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
 import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisions from "@sparcs-clubs/web/common/services/getDivisions";
+import { ClubTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
 import ClubInfoKROverviewTable from "@sparcs-clubs/web/features/overview/components/ClubIntoKROverviewTable";
 import DelegatesOverviewTable from "@sparcs-clubs/web/features/overview/components/DelegatesOverviewTable";
 import useGetClubInfoKROverview from "@sparcs-clubs/web/features/overview/services/useGetClubInfoKROverview";
 import useGetDelegatesOverview from "@sparcs-clubs/web/features/overview/services/useGetDelegatesOverview";
 import { downloadDelegateOverviewExcel } from "@sparcs-clubs/web/features/overview/utils/downloadOverviewExcel";
+import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface OverviewFrameProps {
   year: number;
@@ -44,10 +44,7 @@ function overviewFilter(columnFilters: ColumnFiltersState) {
   return (row: OverviewFilteredRow) =>
     row.clubNameKr.includes(columnFilters[0].value as string) &&
     (columnFilters[1].value as string[]).includes(
-      {
-        [ClubTypeEnum.Regular]: "정동아리",
-        [ClubTypeEnum.Provisional]: "가동아리",
-      }[row.clubTypeEnum as ClubTypeEnum],
+      getTagDetail(row.clubTypeEnum, ClubTypeTagList).text,
     ) &&
     (columnFilters[2].value as string[]).includes(row.divisionName);
 }

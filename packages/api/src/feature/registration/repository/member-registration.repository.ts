@@ -92,4 +92,16 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
 
     return fieldMappings[field as keyof typeof fieldMappings];
   }
+
+  async getSemesterIdsWithMemberRegistrations(): Promise<number[]> {
+    const rows = await this.prisma.registrationApplicationStudent.groupBy({
+      by: ["semesterId"],
+      where: {
+        deletedAt: null,
+        semesterId: { not: null },
+      },
+    });
+
+    return rows.flatMap(row => (row.semesterId ? [row.semesterId] : []));
+  }
 }

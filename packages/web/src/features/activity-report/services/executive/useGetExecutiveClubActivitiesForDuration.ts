@@ -4,7 +4,10 @@ import apiAct024, {
   ApiAct024RequestQuery,
   ApiAct024ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct024";
-import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
+import {
+  ActivityDurationTypeEnum,
+  ActivityStatusEnum,
+} from "@clubs/interface/common/enum/activity.enum";
 
 import {
   axiosClientWithAuth,
@@ -29,13 +32,22 @@ const useGetExecutiveClubActivitiesForDuration = (
   query: ApiAct024RequestQuery,
 ) =>
   useQuery<ApiAct024ResponseOk, Error>({
-    queryKey: [apiAct024.url(), query.clubId, query.activityDurationId],
+    queryKey: [apiAct024.url(), query.clubId, query.semesterId],
     queryFn: () => executiveClubActivitiesForDurationQueryFn(query),
   });
 
 export default useGetExecutiveClubActivitiesForDuration;
 
 export const mockExecutiveClubActivitiesData: ApiAct024ResponseOk = {
+  activityDuration: {
+    id: 1,
+    semester: { id: 1 },
+    activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+    year: 2026,
+    name: "겨울-봄",
+    startTerm: new Date("2025-12-20T00:00:00Z"),
+    endTerm: new Date("2026-06-19T23:59:00Z"),
+  },
   items: [
     {
       activityId: 1,

@@ -89,10 +89,9 @@ const columns = [
   }),
 ];
 
-const ClubRegistrationTable: React.FC<ApiReg014ResponseOk> = ({
-  items,
-  total,
-}) => {
+const ClubRegistrationTable: React.FC<
+  Pick<ApiReg014ResponseOk, "items" | "total">
+> = ({ items, total }) => {
   const table = useReactTable({
     columns,
     data: items,

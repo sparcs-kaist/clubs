@@ -1,58 +1,45 @@
 import { useQueries } from "@tanstack/react-query";
 
-import { ApiAct009ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct009";
 import { ApiAct024ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct024";
 
-import { executiveClubActivitiesForDurationQueryFn } from "../services/executive/useGetExecutiveClubActivitiesForDuration";
-import useGetActivityDeadline from "../services/useGetActivityDeadline";
-import useGetActivityTerms from "../services/useGetActivityTerms";
+import useGetExecutiveClubActivitiesForDuration, {
+  executiveClubActivitiesForDurationQueryFn,
+} from "../services/executive/useGetExecutiveClubActivitiesForDuration";
 
 const useGetExecutiveClubActivities = (
   clubId: number,
 ): {
   data: {
-    term: ApiAct009ResponseOk["terms"][number];
+    activityDuration: ApiAct024ResponseOk["activityDuration"];
     activities: ApiAct024ResponseOk | null;
   }[];
   isLoading: boolean;
   isError: boolean;
 } => {
   const {
-    data: activityTerms,
-    isLoading,
-    isError,
-  } = useGetActivityTerms({
+    data: currentActivities,
+    isLoading: isCurrentActivitiesLoading,
+    isError: isCurrentActivitiesError,
+  } = useGetExecutiveClubActivitiesForDuration({
     clubId,
   });
 
-  const {
-    data: deadline,
-    isLoading: isLoadingDeadline,
-    isError: isErrorDeadline,
-  } = useGetActivityDeadline();
-
-  const pastActivityTerms = activityTerms?.terms.toReversed().filter(term => {
-    if (!deadline) return true;
-
-    // 신규 활동 보고서는 빼고, 과거 활동 보고서만 보여주기
-    return (
-      new Date(term.startTerm).getTime() !==
-        new Date(deadline.targetTerm.startTerm).getTime() &&
-      new Date(term.endTerm).getTime() !==
-        new Date(deadline.targetTerm.endTerm).getTime()
-    );
-  });
+  const pastActivityDurations = currentActivities?.pastActivityDurations ?? [];
 
   const queries = useQueries({
-    queries: (pastActivityTerms ?? []).map(activityTerm => ({
-      queryKey: ["getExecutiveClubActivities", clubId, activityTerm.id],
+    queries: pastActivityDurations.map(activityDuration => ({
+      queryKey: [
+        "getExecutiveClubActivities",
+        clubId,
+        activityDuration.semester.id,
+      ],
       queryFn: () =>
         executiveClubActivitiesForDurationQueryFn({
           clubId: Number(clubId),
-          activityDurationId: activityTerm.id,
+          semesterId: activityDuration.semester.id,
         }),
       retry: false,
-      enabled: !!activityTerms,
+      enabled: !!currentActivities,
     })),
   });
 
@@ -61,15 +48,20 @@ const useGetExecutiveClubActivities = (
   );
 
   return {
-    data:
-      pastActivityTerms?.map((term, index) => ({
-        term,
+    data: pastActivityDurations
+      .map((activityDuration, index) => ({
+        activityDuration:
+          successDataList[index]?.activityDuration ?? activityDuration,
         activities: successDataList[index],
-      })) ?? [],
+      }))
+      .filter(
+        data => data.activities == null || data.activities.items.length > 0,
+      ),
     isLoading:
-      isLoading || isLoadingDeadline || queries.some(query => query.isLoading),
+      isCurrentActivitiesLoading || queries.some(query => query.isLoading),
     isError:
-      isError || isErrorDeadline || queries.every(query => query.isError),
+      isCurrentActivitiesError ||
+      (queries.length > 0 && queries.every(query => query.isError)),
   };
 };
 

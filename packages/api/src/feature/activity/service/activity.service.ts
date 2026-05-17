@@ -1,5 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import {
   ApiAct009RequestQuery,
   ApiAct009ResponseOk,
@@ -22,6 +24,7 @@ import {
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
 import {
   ActivityDeadlineEnum,
+  ActivityDurationTypeEnum,
   ActivityStatusEnum,
 } from "@clubs/interface/common/enum/activity.enum";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
@@ -226,32 +229,28 @@ export default class ActivityOldService {
   async getExecutiveActivitiesClubs(
     query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
-    const date = new Date(); //new Date("2025-01-05");
-    const semesterId = await this.semesterPublicService.loadId({
-      date,
-    });
-    const activityDId = await this.activityDurationPublicService.loadId({
-      semesterId,
-    });
+    const activityDuration = query.semesterId
+      ? await this.activityDurationPublicService.load({
+          semesterId: query.semesterId,
+        })
+      : await this.activityDurationPublicService.load();
+    const date = this.getClubSnapshotDate(activityDuration);
+    const activityDId = activityDuration.id;
     // console.log(`QUERY: ${JSON.stringify(query)}`);
     // console.log(`${Boolean(query.clubName)}`);
-    const [
-      clubs,
-      activityClubChargedExecutiveList,
-      activitiesOnActivityD,
-      executives,
-    ] = await Promise.all([
-      this.clubPublicService.searchClubDetailByDate({
-        date,
-        clubTypeEnum: ClubTypeEnum.Regular,
-        // name: query.clubName,
-      }),
-      this.activityClubChargedExecutiveRepository.find({
-        activityDId,
-      }),
-      this.activityRepository.selectActivityByActivityDId(activityDId),
-      this.userPublicService.getCurrentExecutives(),
-    ]);
+    const [clubs, activityClubChargedExecutiveList, activitiesOnActivityD] =
+      await Promise.all([
+        this.clubPublicService.searchClubDetailByDate({
+          date,
+          semesterId: activityDuration.semester.id,
+          excludedClubTypeEnum: ClubTypeEnum.RegistrationCanceled,
+          // name: query.clubName,
+        }),
+        this.activityClubChargedExecutiveRepository.find({
+          activityDId,
+        }),
+        this.activityRepository.selectActivityByActivityDId(activityDId),
+      ]);
 
     // console.log(
     //   `RESULT1: ${JSON.stringify([
@@ -272,11 +271,32 @@ export default class ActivityOldService {
       )?.executive.id,
     }));
 
+    const chargedExecutiveIds = Array.from(
+      new Set(
+        [
+          ...activityClubChargedExecutiveList.map(e => e.executive.id),
+          ...activitiesOnActivityD.map(e => e.chargedExecutiveId),
+        ].filter((id): id is number => id != null),
+      ),
+    );
+
+    const executives =
+      query.semesterId === undefined
+        ? await this.userPublicService.getCurrentExecutives().then(items =>
+            items.map(item => ({
+              id: item.executive.id,
+              name: item.executive.name,
+            })),
+          )
+        : await this.userPublicService.fetchExecutiveSummaries(
+            chargedExecutiveIds,
+          );
+
     const executiveMap = new Map<number, { id: number; name: string }>();
-    executives.forEach(e => {
-      executiveMap.set(e.executive.id, {
-        id: e.executive.id,
-        name: e.executive.name,
+    executives.forEach(executive => {
+      executiveMap.set(executive.id, {
+        id: executive.id,
+        name: executive.name,
       });
     });
 
@@ -320,7 +340,7 @@ export default class ActivityOldService {
     const executiveProgresses: ApiAct023ResponseOk["executiveProgresses"] =
       executives.map(executive => {
         const chargedActivities = activitiesOnActivityD.filter(
-          e => e.chargedExecutiveId === executive.executive.id,
+          e => e.chargedExecutiveId === executive.id && clubMap.has(e.clubId),
         );
         const chargedClubIds = chargedActivities.reduce(
           (acc: Array<number>, val) => {
@@ -350,6 +370,12 @@ export default class ActivityOldService {
             ).length;
 
             const clubInfo = clubMap.get(clubId);
+            if (!clubInfo) {
+              throw new HttpException(
+                "Club not found in activity dashboard",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+              );
+            }
 
             return {
               clubId,
@@ -364,8 +390,8 @@ export default class ActivityOldService {
           });
 
         return {
-          executiveId: executive.executive.id,
-          executiveName: executive.executive.name,
+          executiveId: executive.id,
+          executiveName: executive.name,
           chargedClubsAndProgresses,
         };
       });
@@ -411,12 +437,56 @@ export default class ActivityOldService {
     // });
     // console.log(`SemesterId: ${semester.id}`);
     // console.log(`Date: ${date}`);
+    const pastActivityDurations =
+      query.semesterId === undefined
+        ? await this.getPastActivityDurationsWithActivities(activityDuration)
+        : undefined;
+
     return {
+      activityDuration,
+      ...(pastActivityDurations ? { pastActivityDurations } : {}),
       items: paginatedItems,
       executiveProgresses: executiveNameFilteredExecutiveProgresses,
       total,
       offset: query.pageOffset,
     };
+  }
+
+  private getClubSnapshotDate(activityDuration: IActivityDuration): Date {
+    const now = new Date();
+
+    if (activityDuration.startTerm <= now && now < activityDuration.endTerm) {
+      return now;
+    }
+
+    return new Date(activityDuration.endTerm.getTime() - 1);
+  }
+
+  private async getPastActivityDurationsWithActivities(
+    targetDuration: IActivityDuration,
+  ): Promise<IActivityDuration[]> {
+    const activityDurations = await this.activityDurationPublicService.search({
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+    });
+
+    const pastActivityDurations = activityDurations.filter(
+      activityDuration =>
+        activityDuration.id !== targetDuration.id &&
+        activityDuration.semester.id !== targetDuration.semester.id &&
+        activityDuration.endTerm <= targetDuration.endTerm,
+    );
+
+    const activityCounts = await Promise.all(
+      pastActivityDurations.map(activityDuration =>
+        this.activityRepository
+          .selectActivityByActivityDId(activityDuration.id)
+          .then(activities => activities.length),
+      ),
+    );
+
+    return pastActivityDurations
+      .filter((_, index) => activityCounts[index] > 0)
+      .sort((a, b) => b.endTerm.getTime() - a.endTerm.getTime());
   }
 
   async getExecutiveActivitiesClubChargeAvailableExecutives(

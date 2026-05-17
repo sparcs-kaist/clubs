@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import React from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -10,27 +11,25 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import { ExecutiveRegistrationClubFrame } from "@sparcs-clubs/web/features/executive/register-club/frames/ExecutiveRegistrationClubFrame";
+import { ExecutiveRegisterMember } from "@sparcs-clubs/web/features/executive/register-member/frames/ExecutiveRegisterMemberFrame";
 
-const ExecutiveRegisterClub = () => {
+const ExecutiveRegisterMemberSemester = () => {
   const { isLoggedIn, login, profile } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { id } = useParams<{ id: string }>();
 
-  useEffect(() => {
-    if (isLoggedIn !== undefined || profile !== undefined) {
-      setLoading(false);
-    }
-  }, [isLoggedIn, profile]);
-
-  if (loading) {
-    return <AsyncBoundary isLoading={loading} isError />;
-  }
+  const parsedSemesterId = Number(id);
+  const isValidSemesterId =
+    Number.isInteger(parsedSemesterId) && parsedSemesterId > 0;
 
   if (!isLoggedIn) {
     return <LoginRequired login={login} />;
   }
 
-  if (profile?.type !== UserTypeEnum.Executive) {
+  if (profile === null) {
+    return <AsyncBoundary isLoading isError={false} />;
+  }
+
+  if (profile?.type !== UserTypeEnum.Executive || !isValidSemesterId) {
     return <NotFound />;
   }
 
@@ -39,16 +38,14 @@ const ExecutiveRegisterClub = () => {
       <PageHead
         items={[
           { name: "집행부원 대시보드", path: "/executive" },
-          { name: "동아리 등록 신청 내역", path: `/executive/register-club` },
+          { name: "회원 등록 신청 내역", path: "/executive/register-member" },
         ]}
-        title="동아리 등록 신청 내역"
+        title="회원 등록 신청 내역"
+        enableLast
       />
-      <ExecutiveRegistrationClubFrame
-        url="/executive/register-club"
-        showPastDashboard
-      />
+      <ExecutiveRegisterMember semesterId={parsedSemesterId} />
     </FlexWrapper>
   );
 };
 
-export default ExecutiveRegisterClub;
+export default ExecutiveRegisterMemberSemester;

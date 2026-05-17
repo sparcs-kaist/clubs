@@ -9,6 +9,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetExecutiveClubActivitiesForDuration from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveClubActivitiesForDuration";
+import { defaultActivityDuration } from "@sparcs-clubs/web/features/activity-report/utils/formatActivityDurationName";
 
 import ActivityReportStatistic from "./ActivityReportStatistic";
 import ChargedChangeActivityModalContent from "./ChargedChangeActivityModalContent";
@@ -106,7 +107,11 @@ const ExecutiveCurrentActivityReportSection: React.FC<
             </>
           )}
           <ExecutiveClubActivitiesTable
-            data={data?.items ? data : { items: [] }}
+            data={
+              data?.items
+                ? data
+                : { activityDuration: defaultActivityDuration, items: [] }
+            }
             searchText={searchText}
             selectedActivityIds={selectedActivityIds}
             setSelectedActivityIds={setSelectedActivityIds}

@@ -5,6 +5,22 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.1 source=81cb7090dc72
+  {
+    version: "v.0.1.1",
+    date: new Date("2026.05.18"),
+    patchNoteContent: `Clubs v0.1.1
+신규 기능은 다음과 같습니다.
+- 집행부 활동보고서 대시보드에서 과거 활동반기 대시보드를 확인할 수 있습니다. (#1810)
+- 집행부 동아리 등록과 회원 등록 대시보드에서 과거 학기 등록 현황을 확인할 수 있습니다. (#1813)
+
+오류 수정은 다음과 같습니다.
+- 집행부 회원 등록 신청 상세 화면에서 페이지를 이동해도 동아리별 신청 통계가 전체 신청 기준으로 표시되도록 수정했습니다. (#1812)
+
+디자인 수정은 다음과 같습니다.
+- 운영위원 비밀키 관리와 활동보고서 링크 복사 안내를 서비스 내 확인창으로 표시하도록 정리했습니다. (#1811)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.0 source=96e0dac72b5e
   {
     version: "v.0.1.0",

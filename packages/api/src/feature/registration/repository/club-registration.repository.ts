@@ -28,6 +28,11 @@ import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
+type ClubRegistrationListResponse = Pick<
+  ApiReg014ResponseOk,
+  "items" | "total" | "offset"
+>;
+
 @Injectable()
 export class ClubRegistrationRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -602,12 +607,17 @@ export class ClubRegistrationRepository {
   async getRegistrationsClubRegistrations(
     pageOffset: number,
     itemCount: number,
-  ): Promise<ApiReg014ResponseOk> {
+    semesterId?: number,
+  ): Promise<ClubRegistrationListResponse> {
     const numberOfClubRegistrations = await this.prisma.registration.count({
-      where: { deletedAt: null },
+      where: { deletedAt: null, ...(semesterId ? { semesterId } : {}) },
     });
 
     const startOffset = (pageOffset - 1) * itemCount;
+    const semesterCondition = semesterId
+      ? Prisma.sql`AND r.semester_d_id = ${semesterId}`
+      : Prisma.empty;
+
     const clubRegistrations = await this.prisma.$queryRaw<
       Array<{
         id: number;
@@ -642,6 +652,7 @@ export class ClubRegistrationRepository {
       INNER JOIN student s ON r.student_id = s.id AND s.deleted_at IS NULL
       LEFT JOIN professor p ON r.professor_id = p.id AND p.deleted_at IS NULL
       WHERE r.deleted_at IS NULL
+        ${semesterCondition}
       ORDER BY r.created_at DESC
       LIMIT ${itemCount}
       OFFSET ${startOffset}
@@ -652,6 +663,18 @@ export class ClubRegistrationRepository {
       total: numberOfClubRegistrations,
       offset: pageOffset,
     };
+  }
+
+  async getSemesterIdsWithClubRegistrations(): Promise<number[]> {
+    const rows = await this.prisma.registration.groupBy({
+      by: ["semesterId"],
+      where: {
+        deletedAt: null,
+        semesterId: { not: null },
+      },
+    });
+
+    return rows.flatMap(row => (row.semesterId ? [row.semesterId] : []));
   }
 
   async getExecutiveRegistrationsClubRegistration(

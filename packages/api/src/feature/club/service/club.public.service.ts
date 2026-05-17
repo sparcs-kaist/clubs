@@ -352,8 +352,14 @@ export default class ClubPublicService {
     return result;
   }
 
-  async fetchSummaries(ids: number[]): Promise<IClubSummary[]> {
-    const results = await this.clubOldRepository.fetchSummaries(ids);
+  async fetchSummaries(
+    ids: number[],
+    semesterIds?: number[],
+  ): Promise<IClubSummary[]> {
+    const results = await this.clubOldRepository.fetchSummaries(
+      ids,
+      semesterIds,
+    );
     return results;
   }
 
@@ -466,13 +472,18 @@ export default class ClubPublicService {
 
   async searchClubDetailByDate(query: {
     date: Date;
+    semesterId?: number;
     clubId?: number | number[];
     name?: string;
     clubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
+    excludedClubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
   }): Promise<RMClub[]> {
-    const semester = await this.semesterPublicService.load({
-      date: query.date,
-    });
+    const semester =
+      query.semesterId === undefined
+        ? await this.semesterPublicService.load({
+            date: query.date,
+          })
+        : await this.semesterPublicService.getById(query.semesterId);
     const [clubs, clubSemesters, divisions, clubDivisions, clubDelegates] =
       await Promise.all([
         this.clubRepository.find({
@@ -486,6 +497,7 @@ export default class ClubPublicService {
         this.clubSemesterRepository.find({
           semesterId: semester.id,
           clubId: query.clubId,
+          clubTypeEnum: query.clubTypeEnum,
         }),
         this.divisionPublicService.search({ date: query.date }),
         this.clubDivisionHistoryRepository.find({
@@ -498,18 +510,34 @@ export default class ClubPublicService {
         }),
       ]);
 
+    const excludedClubTypeEnums = new Set(
+      (Array.isArray(query.excludedClubTypeEnum)
+        ? query.excludedClubTypeEnum
+        : [query.excludedClubTypeEnum]
+      ).filter((typeEnum): typeEnum is ClubTypeEnum => typeEnum != null),
+    );
+    const filteredClubSemesters =
+      excludedClubTypeEnums.size === 0
+        ? clubSemesters
+        : clubSemesters.filter(
+            clubSemester =>
+              !excludedClubTypeEnums.has(clubSemester.clubTypeEnum),
+          );
+
     const [students, professors] = await Promise.all([
       this.userPublicService.getStudentsByIds(
         clubDelegates.map(c => c.student.id),
       ),
       this.userPublicService.getProfessorsByIds(
-        clubSemesters
+        filteredClubSemesters
           .filter(c => c.professor?.id != null)
           .map(c => c.professor.id),
       ),
     ]);
 
-    const clubSemesterMap = new Map(clubSemesters.map(c => [c.club.id, c]));
+    const clubSemesterMap = new Map(
+      filteredClubSemesters.map(c => [c.club.id, c]),
+    );
     const divisionMap = new Map(divisions.map(d => [d.id, d]));
     const clubDivisionMap = new Map(clubDivisions.map(c => [c.club.id, c]));
     const clubRepresentativeMap = new Map(
