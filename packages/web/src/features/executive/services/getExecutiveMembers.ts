@@ -14,7 +14,7 @@ const useGetExecutiveMembers = () =>
     queryFn: async (): Promise<ApiUsr007ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiUsr007.url(), {});
 
-      return data;
+      return apiUsr007.responseBodyMap[200].parse(data);
     },
   });
 
@@ -27,13 +27,14 @@ defineAxiosMock(mock => {
       executives: [
         {
           id: 1,
+          executiveTId: 1,
           userId: 1,
           studentNumber: "201811111",
           name: "홍길동",
           email: "hong@gmail.com",
           phoneNumber: "01012345678",
           startTerm: "2025-03-01",
-          endTerm: "2025-06-30",
+          endTerm: null,
         },
       ],
     },

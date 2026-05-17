@@ -65,6 +65,10 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
 import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
+import {
+  type ActivityDurationRange,
+  ActivityDurationValidatorService,
+} from "./activity-duration.validator";
 
 @Injectable()
 export default class ActivityService {
@@ -81,7 +85,23 @@ export default class ActivityService {
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
     private readonly operationCommitteeService: OperationCommitteeService,
     private readonly userPublicService: UserPublicService,
+    private readonly activityDurationValidatorService: ActivityDurationValidatorService,
   ) {}
+
+  private assertActivityDurationsAreSubmittable(
+    durations: ActivityDurationRange[],
+    activityD: ActivityDurationRange,
+  ): void {
+    const errorMessage =
+      this.activityDurationValidatorService.getValidationError(
+        durations,
+        activityD,
+      );
+
+    if (errorMessage !== null) {
+      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+  }
 
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
@@ -289,18 +309,7 @@ export default class ActivityService {
     const participants = await Promise.all(
       body.participants.map(async e => e.studentId),
     );
-    body.duration.forEach(duration => {
-      if (
-        activityD.startTerm <= duration.startTerm &&
-        duration.endTerm <= activityD.endTerm
-      ) {
-        return;
-      }
-      throw new HttpException(
-        "Some duration is not in the last activity duration",
-        HttpStatus.BAD_REQUEST,
-      );
-    });
+    this.assertActivityDurationsAreSubmittable(body.duration, activityD);
 
     // TODO: 해당 학기에 활동한 인원인지 검사하는 로직
     // TODO: 파일 유효한지 검사하는 로직도 필요해요! 이건 파일 모듈 구성되면 public할듯
@@ -351,18 +360,7 @@ export default class ActivityService {
         HttpStatus.BAD_REQUEST,
       );
     // 제출한 활동 기간들이 지난 활동기간 이내인지 확인합니다.
-    body.durations.forEach(duration => {
-      if (
-        activityD.startTerm <= duration.startTerm &&
-        duration.endTerm <= activityD.endTerm
-      ) {
-        return duration;
-      }
-      throw new HttpException(
-        "Some duration is not in the last activity duration",
-        HttpStatus.BAD_REQUEST,
-      );
-    });
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
     // 파일 uuid의 유효성을 검사하지 않습니다.
     // 참여 학생이 지난 활동기간 동아리의 소속원이였는지 확인합니다.
     const activityDStartSemesterId = await this.semesterPublicService.loadId({
@@ -596,10 +594,13 @@ export default class ActivityService {
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
-    const activityDId = await this.activityDurationPublicService.loadId({
+    const activityD = await this.activityDurationPublicService.load({
       date: new Date(),
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
     });
+    const activityDId = activityD.id;
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
+
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -670,7 +671,11 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
 
-    // 제출한 활동 기간들이 지난 활동기간 이내인지 확인하지 않습니다.
+    // 제출한 활동 기간들이 활동기간 이내이며 작성일 이후를 포함하지 않는지 확인합니다.
+    const activityD = await this.activityDurationPublicService.getById(
+      activity.activityDuration.id,
+    );
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
 
     // 파일 uuid의 유효성을 검사합니다.
     const evidenceFiles = await Promise.all(

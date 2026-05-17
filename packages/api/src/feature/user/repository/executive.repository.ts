@@ -8,6 +8,25 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { VExecutiveSummary } from "../model/executive.summary.model";
 
+const buildExecutiveTermOverlapWhere = (
+  startTerm: Date,
+  endTerm: Date | null,
+  excludeExecutiveTId?: number,
+): Prisma.ExecutiveTWhereInput => ({
+  ...(excludeExecutiveTId === undefined
+    ? {}
+    : {
+        id: { not: excludeExecutiveTId },
+      }),
+  deletedAt: null,
+  ...(endTerm === null
+    ? {}
+    : {
+        startTerm: { lte: endTerm },
+      }),
+  OR: [{ endTerm: { gte: startTerm } }, { endTerm: null }],
+});
+
 @Injectable()
 export default class ExecutiveRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -26,18 +45,18 @@ export default class ExecutiveRepository {
   }
 
   async findExecutiveByUserId(id: number): Promise<boolean> {
-    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
-      Prisma.sql`
-        SELECT e.id
-        FROM executive e
-        INNER JOIN executive_t et ON et.executive_id = e.id
-          AND (DATE(et.end_term) >= DATE(NOW()) OR et.end_term IS NULL)
-          AND DATE(et.start_term) <= DATE(NOW())
-        WHERE e.user_id = ${id}
-          AND e.deleted_at IS NULL
-      `,
-    );
-    return result.length > 0;
+    const today = new Date();
+    const result = await this.prisma.executive.findFirst({
+      where: {
+        userId: id,
+        deletedAt: null,
+        executiveTs: {
+          some: buildExecutiveTermOverlapWhere(today, today),
+        },
+      },
+      select: { id: true },
+    });
+    return result !== null;
   }
 
   async getExecutiveById(id: number) {
@@ -275,46 +294,34 @@ export default class ExecutiveRepository {
 
   async checkExistExecutiveByIdDate(
     studentId: number,
-    startTerm: string,
-    endTerm: string,
+    startTerm: Date,
+    endTerm: Date | null,
+    excludeExecutiveTId?: number,
   ) {
-    const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
-      Prisma.sql`
-        SELECT e.id
-        FROM executive e
-        INNER JOIN executive_t et ON et.executive_id = e.id
-          AND et.deleted_at IS NULL
-          AND (
-            (
-              et.end_term IS NOT NULL
-              AND (
-                (DATE(et.start_term) >= ${startTerm} AND DATE(et.start_term) <= ${endTerm})
-                OR (DATE(et.end_term) >= ${startTerm} AND DATE(et.end_term) <= ${endTerm})
-                OR (DATE(et.start_term) <= ${startTerm} AND DATE(et.end_term) >= ${endTerm})
-              )
-            )
-            OR (
-              et.end_term IS NULL
-              AND (
-                (DATE(et.start_term) >= ${startTerm} AND DATE(et.start_term) <= ${endTerm})
-                OR DATE(et.start_term) <= ${startTerm}
-              )
-            )
-          )
-        WHERE e.student_id = ${studentId}
-          AND e.deleted_at IS NULL
-      `,
-    );
-    return result.length > 0;
+    const result = await this.prisma.executive.findFirst({
+      where: {
+        studentId,
+        deletedAt: null,
+        executiveTs: {
+          some: buildExecutiveTermOverlapWhere(
+            startTerm,
+            endTerm,
+            excludeExecutiveTId,
+          ),
+        },
+      },
+      select: { id: true },
+    });
+    return result !== null;
   }
 
   async createExecutive(
     studentId: number,
-    userId: number,
-    email: string,
+    userId: number | null,
+    email: string | null,
     name: string,
-    startTerm: string,
-    endTerm: string,
+    startTerm: Date,
+    endTerm: Date | null,
   ) {
     try {
       await this.prisma.$transaction(async tx => {
@@ -340,10 +347,15 @@ export default class ExecutiveRepository {
           executiveId = newExecutive.id;
         }
 
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO executive_t (executive_id, executive_status_enum, executive_bureau_enum, start_term, end_term)
-          VALUES (${executiveId}, 1, 1, DATE(${startTerm}), DATE(${endTerm}))
-        `);
+        await tx.executiveT.create({
+          data: {
+            executiveId,
+            executiveStatusEnum: 1,
+            executiveBureauEnum: 1,
+            startTerm,
+            endTerm,
+          },
+        });
 
         return true;
       });
@@ -358,35 +370,95 @@ export default class ExecutiveRepository {
   }
 
   async getExecutives() {
-    const result = await this.prisma.$queryRaw<
-      Array<{
-        id: number;
-        userId: number | null;
-        studentNumber: number;
-        name: string;
-        email: string | null;
-        phoneNumber: string | null;
-        startTerm: Date;
-        endTerm: Date | null;
-      }>
-    >(
-      Prisma.sql`
-        SELECT e.id, e.user_id AS userId, s.number AS studentNumber,
-               u.name, u.email, u.phone_number AS phoneNumber,
-               et.start_term AS startTerm, et.end_term AS endTerm
-        FROM executive e
-        INNER JOIN executive_t et ON et.executive_id = e.id
-          AND (DATE(et.end_term) >= DATE(NOW()) OR et.end_term IS NULL)
-          AND DATE(et.start_term) <= DATE(NOW())
-          AND et.deleted_at IS NULL
-        INNER JOIN user u ON u.id = e.user_id
-          AND u.deleted_at IS NULL
-        INNER JOIN student s ON s.id = e.student_id
-          AND s.deleted_at IS NULL
-        WHERE e.deleted_at IS NULL
-      `,
-    );
-    return result;
+    const today = new Date();
+    const result = await this.prisma.executiveT.findMany({
+      where: {
+        ...buildExecutiveTermOverlapWhere(today, today),
+        executive: {
+          deletedAt: null,
+          user: {
+            is: {
+              deletedAt: null,
+            },
+          },
+          student: {
+            deletedAt: null,
+          },
+        },
+      },
+      select: {
+        id: true,
+        startTerm: true,
+        endTerm: true,
+        executive: {
+          select: {
+            id: true,
+            userId: true,
+            name: true,
+            email: true,
+            user: {
+              select: {
+                name: true,
+                email: true,
+                phoneNumber: true,
+              },
+            },
+            student: {
+              select: {
+                number: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return result.map(executiveTerm => ({
+      id: executiveTerm.executive.id,
+      executiveTId: executiveTerm.id,
+      userId: executiveTerm.executive.userId,
+      studentNumber: String(executiveTerm.executive.student.number),
+      name: executiveTerm.executive.user?.name ?? executiveTerm.executive.name,
+      email:
+        executiveTerm.executive.user?.email ?? executiveTerm.executive.email,
+      phoneNumber: executiveTerm.executive.user?.phoneNumber ?? null,
+      startTerm: executiveTerm.startTerm,
+      endTerm: executiveTerm.endTerm,
+    }));
+  }
+
+  async selectExecutiveTermById(executiveTId: number) {
+    return this.prisma.executiveT.findFirst({
+      where: {
+        id: executiveTId,
+        deletedAt: null,
+        executive: {
+          deletedAt: null,
+        },
+      },
+      select: {
+        id: true,
+        executive: {
+          select: {
+            studentId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateExecutiveTerm(
+    executiveTId: number,
+    startTerm: Date,
+    endTerm: Date | null,
+  ) {
+    const result = await this.prisma.executiveT.updateMany({
+      where: { id: executiveTId, deletedAt: null },
+      data: {
+        startTerm,
+        endTerm,
+      },
+    });
+    return result.count > 0;
   }
 
   async deleteExecutiveById(executiveId: number) {

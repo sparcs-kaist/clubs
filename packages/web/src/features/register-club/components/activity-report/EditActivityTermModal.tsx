@@ -52,6 +52,18 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   );
 
   const isEmpty = useMemo(() => fields.length === 0, [fields]);
+  const maxSelectableEndTerm = useMemo(() => {
+    const today = getLocalDateOnly(new Date());
+    const activityEndTerm = deadline?.targetTerm?.endTerm;
+
+    if (activityEndTerm == null) {
+      return today;
+    }
+
+    const activityEndDate = getLocalDateOnly(activityEndTerm);
+
+    return activityEndDate < today ? activityEndDate : today;
+  }, [deadline?.targetTerm?.endTerm]);
 
   const isSomethingEmpty = useMemo(() => {
     if (fields.length === 0) {
@@ -104,7 +116,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
                     <DateInput
                       selectsRange
                       minDate={deadline?.targetTerm?.startTerm ?? undefined}
-                      maxDate={deadline?.targetTerm?.endTerm ?? undefined}
+                      maxDate={maxSelectableEndTerm}
                       startDate={value?.startTerm}
                       endDate={value?.endTerm}
                       onChange={(dates: [Date, Date] | null) => {

@@ -8,7 +8,9 @@ import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
+import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import CommentToast from "@sparcs-clubs/web/common/components/Toast/CommentToast";
+import getApiErrorMessage from "@sparcs-clubs/web/common/services/getApiErrorMessage";
 import {
   activityReportDetailQueryKey,
   useGetActivityReport,
@@ -68,6 +70,11 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
             });
             queryClient.invalidateQueries({ queryKey: [apiAct011.url()] });
             close();
+          },
+          onError: error => {
+            errorHandler(
+              getApiErrorMessage(error, "활동보고서 수정에 실패하였습니다"),
+            );
           },
         },
       );

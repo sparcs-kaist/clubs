@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UsePipes,
 } from "@nestjs/common";
@@ -27,6 +28,10 @@ import {
   apiUsr008,
   type ApiUsr008RequestParam,
   type ApiUsr008ResponseOk,
+  apiUsr009,
+  type ApiUsr009RequestBody,
+  type ApiUsr009RequestParam,
+  type ApiUsr009ResponseOk,
 } from "@clubs/interface/api/user/endpoint/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -186,6 +191,18 @@ export class UserController {
     @Param() param: ApiUsr008RequestParam,
   ): Promise<ApiUsr008ResponseOk> {
     await this.userService.deleteExecutive(user.id, param.executiveId);
+    return {};
+  }
+
+  @Executive()
+  @Put("/executive/user/executives/:executiveTId")
+  @UsePipes(new ZodPipe(apiUsr009))
+  async updateExecutiveTerm(
+    @GetUser() user: GetUser,
+    @Param() param: ApiUsr009RequestParam,
+    @Body() body: ApiUsr009RequestBody,
+  ): Promise<ApiUsr009ResponseOk> {
+    await this.userService.updateExecutiveTerm(user.id, param, body);
     return {};
   }
 }
