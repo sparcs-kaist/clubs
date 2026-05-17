@@ -72,7 +72,7 @@ jobs:
 
           ## 패치노트 커밋 트리거
 
-          `dev`는 보호 브랜치이므로 생성된 패치노트는 직접 push하지 않고 별도 PR로 생성합니다. prepare workflow가 PR 생성 전에 생성 파일을 검증합니다.
+          `dev`는 보호 브랜치이므로 생성된 패치노트는 직접 push하지 않고 별도 PR로 생성합니다. prepare workflow는 생성 파일 범위만 확인하고, 나머지 검증은 생성된 PR의 CI가 수행합니다.
 
           ## Release Flow
 
@@ -88,6 +88,6 @@ jobs:
 
           ## Patch Note Commit Trigger
 
-          `dev` is a protected branch, so the generated patch note is opened as a separate PR instead of being pushed directly. The prepare workflow validates the generated file before creating the PR.
+          `dev` is a protected branch, so the generated patch note is opened as a separate PR instead of being pushed directly. The prepare workflow only checks the generated file scope; the generated PR CI performs the remaining validation.
           BODY
           )"
