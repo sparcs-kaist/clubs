@@ -67,11 +67,12 @@ jobs:
           1. 머지된 feature PR 본문에 `clubs:patch-note` block이 있는지 확인합니다.
           2. 기본값은 `[PATCH]`입니다. 필요하면 이 PR을 ready 상태로 바꾸기 전에 제목 prefix를 `[MINOR]` 또는 `[MAJOR]`로 변경합니다.
           3. 이 PR을 **Ready for review**로 변경합니다.
-          4. `Prepare Release Patch Note` workflow가 `dev`에 패치노트 커밋을 하나 생성하고, PR 제목을 `[TYPE] Release: X.Y.Z` 형식으로 갱신합니다.
+          4. `Prepare Release Patch Note` workflow가 패치노트 PR을 `dev` 대상으로 생성하고, 이 PR 제목을 `[TYPE] Release: X.Y.Z` 형식으로 갱신합니다.
+          5. 생성된 패치노트 PR을 확인한 뒤 `dev`에 머지합니다. 그러면 이 release PR에 패치노트 커밋이 포함됩니다.
 
           ## 패치노트 커밋 트리거
 
-          생성된 패치노트 커밋은 의도적으로 `GITHUB_TOKEN`을 사용합니다. 따라서 GitHub는 해당 커밋으로 인한 후속 `dev` push workflow를 실행하지 않습니다. prepare workflow가 push 전에 생성 파일을 검증합니다.
+          `dev`는 보호 브랜치이므로 생성된 패치노트는 직접 push하지 않고 별도 PR로 생성합니다. prepare workflow가 PR 생성 전에 생성 파일을 검증합니다.
 
           ## Release Flow
 
@@ -82,10 +83,11 @@ jobs:
           1. Make sure merged feature PRs have a `clubs:patch-note` block in their PR body.
           2. Keep the title prefix as `[PATCH]`, or change it to `[MINOR]` or `[MAJOR]` before marking this PR as ready.
           3. Mark this PR as **Ready for review**.
-          4. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev` and rename this PR to `[TYPE] Release: X.Y.Z`.
+          4. The `Prepare Release Patch Note` workflow will create a patch note PR targeting `dev` and rename this PR to `[TYPE] Release: X.Y.Z`.
+          5. Review and merge the generated patch note PR into `dev`. This release PR will then include the patch note commit.
 
           ## Patch Note Commit Trigger
 
-          The generated patch note commit intentionally uses `GITHUB_TOKEN`, so GitHub will not trigger follow-up `dev` push workflows from that commit. The prepare workflow validates the generated file before pushing.
+          `dev` is a protected branch, so the generated patch note is opened as a separate PR instead of being pushed directly. The prepare workflow validates the generated file before creating the PR.
           BODY
           )"
