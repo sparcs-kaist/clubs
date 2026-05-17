@@ -18,13 +18,13 @@ import {
 import useGetExecutiveActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveActivities";
 import formatActivityDurationName from "@sparcs-clubs/web/features/activity-report/utils/formatActivityDurationName";
 
-interface ExecutiveActivityReportDurationContentProps {
-  activityDurationId: number;
+interface ExecutiveActivityReportSemesterContentProps {
+  semesterId: number;
 }
 
-const ExecutiveActivityReportDurationContent = ({
-  activityDurationId,
-}: ExecutiveActivityReportDurationContentProps) => {
+const ExecutiveActivityReportSemesterContent = ({
+  semesterId,
+}: ExecutiveActivityReportSemesterContentProps) => {
   const {
     data: activitiesData,
     isLoading: isActivitiesLoading,
@@ -32,7 +32,7 @@ const ExecutiveActivityReportDurationContent = ({
   } = useGetExecutiveActivities({
     pageOffset: 1,
     itemCount: 150,
-    activityDurationId,
+    semesterId,
   });
 
   if (isActivitiesError) {
@@ -61,14 +61,14 @@ const ExecutiveActivityReportDurationContent = ({
   );
 };
 
-const ExecutiveActivityReportDuration = () => {
+const ExecutiveActivityReportSemester = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const { id } = useParams<{ id: string }>();
 
-  const parsedActivityDurationId = Number(id);
-  const isValidActivityDurationId =
-    Number.isInteger(parsedActivityDurationId) && parsedActivityDurationId > 0;
+  const parsedSemesterId = Number(id);
+  const isValidSemesterId =
+    Number.isInteger(parsedSemesterId) && parsedSemesterId > 0;
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -84,15 +84,13 @@ const ExecutiveActivityReportDuration = () => {
     return <LoginRequired login={login} />;
   }
 
-  if (profile?.type !== UserTypeEnum.Executive || !isValidActivityDurationId) {
+  if (profile?.type !== UserTypeEnum.Executive || !isValidSemesterId) {
     return <NotFound />;
   }
 
   return (
-    <ExecutiveActivityReportDurationContent
-      activityDurationId={parsedActivityDurationId}
-    />
+    <ExecutiveActivityReportSemesterContent semesterId={parsedSemesterId} />
   );
 };
 
-export default ExecutiveActivityReportDuration;
+export default ExecutiveActivityReportSemester;

@@ -229,12 +229,12 @@ export default class ActivityOldService {
   async getExecutiveActivitiesClubs(
     query: ApiAct023RequestQuery,
   ): Promise<ApiAct023ResponseOk> {
-    const activityDuration = query.activityDurationId
-      ? await this.activityDurationPublicService.getById(
-          query.activityDurationId,
-        )
+    const activityDuration = query.semesterId
+      ? await this.activityDurationPublicService.load({
+          semesterId: query.semesterId,
+        })
       : await this.activityDurationPublicService.load();
-    const date = await this.getClubSnapshotDate(activityDuration);
+    const date = this.getClubSnapshotDate(activityDuration);
     const activityDId = activityDuration.id;
     // console.log(`QUERY: ${JSON.stringify(query)}`);
     // console.log(`${Boolean(query.clubName)}`);
@@ -242,6 +242,7 @@ export default class ActivityOldService {
       await Promise.all([
         this.clubPublicService.searchClubDetailByDate({
           date,
+          semesterId: activityDuration.semester.id,
           excludedClubTypeEnum: ClubTypeEnum.RegistrationCanceled,
           // name: query.clubName,
         }),
@@ -280,7 +281,7 @@ export default class ActivityOldService {
     );
 
     const executives =
-      query.activityDurationId === undefined
+      query.semesterId === undefined
         ? await this.userPublicService.getCurrentExecutives().then(items =>
             items.map(item => ({
               id: item.executive.id,
@@ -437,7 +438,7 @@ export default class ActivityOldService {
     // console.log(`SemesterId: ${semester.id}`);
     // console.log(`Date: ${date}`);
     const pastActivityDurations =
-      query.activityDurationId === undefined
+      query.semesterId === undefined
         ? await this.getPastActivityDurationsWithActivities(activityDuration)
         : undefined;
 
@@ -451,19 +452,14 @@ export default class ActivityOldService {
     };
   }
 
-  private async getClubSnapshotDate(
-    activityDuration: IActivityDuration,
-  ): Promise<Date> {
-    const semester = await this.semesterPublicService.getById(
-      activityDuration.semester.id,
-    );
+  private getClubSnapshotDate(activityDuration: IActivityDuration): Date {
     const now = new Date();
 
-    if (semester.startTerm <= now && now < semester.endTerm) {
+    if (activityDuration.startTerm <= now && now < activityDuration.endTerm) {
       return now;
     }
 
-    return new Date(semester.endTerm.getTime() - 1);
+    return new Date(activityDuration.endTerm.getTime() - 1);
   }
 
   private async getPastActivityDurationsWithActivities(

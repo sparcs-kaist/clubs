@@ -16,7 +16,7 @@ import useGetExecutiveActivities from "@sparcs-clubs/web/features/activity-repor
 import { defaultActivityDuration } from "@sparcs-clubs/web/features/activity-report/utils/formatActivityDurationName";
 
 interface ExecutiveActivityReportFrameProps {
-  activityDurationId?: number;
+  semesterId?: number;
 }
 
 const defaultExecutiveActivityReportData: ApiAct023ResponseOk = {
@@ -144,13 +144,13 @@ export const ExecutiveActivityReportContent = ({
 };
 
 const ExecutiveActivityReportFrame = ({
-  activityDurationId,
+  semesterId,
 }: ExecutiveActivityReportFrameProps) => {
   // TODO. 우선 급한대로 야매로 처리함 (추후에 페이지네이션 백에서 삭제하기)
   const { data, isLoading, isError } = useGetExecutiveActivities({
     pageOffset: 1,
     itemCount: 150,
-    activityDurationId,
+    semesterId,
   });
 
   return (

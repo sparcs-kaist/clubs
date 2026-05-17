@@ -21,7 +21,7 @@ const requestQuery = z.object({
   itemCount: z.coerce.number().int().min(1),
   clubName: z.string().optional(), // 검색 키워드: 동아리 이름
   executiveName: z.string().optional(), // 검색 키워드: 담당자 이름
-  activityDurationId: zActivityDuration.shape.id.optional(),
+  semesterId: zId.optional(),
 });
 
 const requestBody = z.object({});

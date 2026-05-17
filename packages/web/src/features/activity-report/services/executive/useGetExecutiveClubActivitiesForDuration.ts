@@ -32,7 +32,7 @@ const useGetExecutiveClubActivitiesForDuration = (
   query: ApiAct024RequestQuery,
 ) =>
   useQuery<ApiAct024ResponseOk, Error>({
-    queryKey: [apiAct024.url(), query.clubId, query.activityDurationId],
+    queryKey: [apiAct024.url(), query.clubId, query.semesterId],
     queryFn: () => executiveClubActivitiesForDurationQueryFn(query),
   });
 

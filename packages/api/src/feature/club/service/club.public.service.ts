@@ -466,14 +466,18 @@ export default class ClubPublicService {
 
   async searchClubDetailByDate(query: {
     date: Date;
+    semesterId?: number;
     clubId?: number | number[];
     name?: string;
     clubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
     excludedClubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
   }): Promise<RMClub[]> {
-    const semester = await this.semesterPublicService.load({
-      date: query.date,
-    });
+    const semester =
+      query.semesterId === undefined
+        ? await this.semesterPublicService.load({
+            date: query.date,
+          })
+        : await this.semesterPublicService.getById(query.semesterId);
     const [clubs, clubSemesters, divisions, clubDivisions, clubDelegates] =
       await Promise.all([
         this.clubRepository.find({
@@ -500,17 +504,6 @@ export default class ClubPublicService {
         }),
       ]);
 
-    const [students, professors] = await Promise.all([
-      this.userPublicService.getStudentsByIds(
-        clubDelegates.map(c => c.student.id),
-      ),
-      this.userPublicService.getProfessorsByIds(
-        clubSemesters
-          .filter(c => c.professor?.id != null)
-          .map(c => c.professor.id),
-      ),
-    ]);
-
     const excludedClubTypeEnums = new Set(
       (Array.isArray(query.excludedClubTypeEnum)
         ? query.excludedClubTypeEnum
@@ -524,6 +517,17 @@ export default class ClubPublicService {
             clubSemester =>
               !excludedClubTypeEnums.has(clubSemester.clubTypeEnum),
           );
+
+    const [students, professors] = await Promise.all([
+      this.userPublicService.getStudentsByIds(
+        clubDelegates.map(c => c.student.id),
+      ),
+      this.userPublicService.getProfessorsByIds(
+        filteredClubSemesters
+          .filter(c => c.professor?.id != null)
+          .map(c => c.professor.id),
+      ),
+    ]);
 
     const clubSemesterMap = new Map(
       filteredClubSemesters.map(c => [c.club.id, c]),

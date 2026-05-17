@@ -28,11 +28,15 @@ const useGetExecutiveClubActivities = (
 
   const queries = useQueries({
     queries: pastActivityDurations.map(activityDuration => ({
-      queryKey: ["getExecutiveClubActivities", clubId, activityDuration.id],
+      queryKey: [
+        "getExecutiveClubActivities",
+        clubId,
+        activityDuration.semester.id,
+      ],
       queryFn: () =>
         executiveClubActivitiesForDurationQueryFn({
           clubId: Number(clubId),
-          activityDurationId: activityDuration.id,
+          semesterId: activityDuration.semester.id,
         }),
       retry: false,
       enabled: !!currentActivities,

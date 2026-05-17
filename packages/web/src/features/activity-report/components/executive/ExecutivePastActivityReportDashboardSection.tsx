@@ -59,7 +59,7 @@ const ExecutivePastActivityReportDashboardSection = ({
           minWidth={820}
           emptyMessage="과거 활동보고서 대시보드가 없습니다"
           rowLink={row =>
-            `/executive/activity-report/activity-duration/${row.id}`
+            `/executive/activity-report/semester/${row.semester.id}`
           }
         />
       </FlexWrapper>

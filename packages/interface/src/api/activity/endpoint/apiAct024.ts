@@ -18,7 +18,7 @@ const requestParam = z.object({});
 
 const requestQuery = z.object({
   clubId: zId,
-  activityDurationId: zActivityDuration.shape.id.optional(),
+  semesterId: zId.optional(),
 });
 
 const requestBody = z.object({});

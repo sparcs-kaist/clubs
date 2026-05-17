@@ -64,8 +64,14 @@ const ContentRow = styled.tr.withConfig({
   background-color: ${({ selected, theme }) =>
     selected ? theme.colors.MINT[100] : "transparent"};
 `;
-const EmptyCenterPlacer = styled.div`
+const EmptyCenterRow = styled.tr`
+  width: 100%;
   height: 100%;
+  display: flex;
+  flex: 1;
+`;
+const EmptyCenterCell = styled.td`
+  width: 100%;
   display: flex;
   flex: 1;
   padding: 12px 8px 12px 8px;
@@ -196,17 +202,19 @@ const Table = <T,>({
                 </ContentRow>
               ))
             ) : (
-              <EmptyCenterPlacer>
-                <Typography
-                  fs={16}
-                  lh={24}
-                  color="GRAY.300"
-                  ff="PRETENDARD"
-                  fw="REGULAR"
-                >
-                  {emptyMessage}
-                </Typography>
-              </EmptyCenterPlacer>
+              <EmptyCenterRow>
+                <EmptyCenterCell colSpan={table.getAllLeafColumns().length}>
+                  <Typography
+                    fs={16}
+                    lh={24}
+                    color="GRAY.300"
+                    ff="PRETENDARD"
+                    fw="REGULAR"
+                  >
+                    {emptyMessage}
+                  </Typography>
+                </EmptyCenterCell>
+              </EmptyCenterRow>
             )}
             {footer}
           </Content>

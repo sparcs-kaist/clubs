@@ -923,10 +923,10 @@ export default class ActivityService {
       throw new HttpException("No such club", HttpStatus.NOT_FOUND);
     }
 
-    const activityDuration = param.query.activityDurationId
-      ? await this.activityDurationPublicService.getById(
-          param.query.activityDurationId,
-        )
+    const activityDuration = param.query.semesterId
+      ? await this.activityDurationPublicService.load({
+          semesterId: param.query.semesterId,
+        })
       : await this.activityDurationPublicService.load();
     const activityDId = activityDuration.id;
 
@@ -1033,7 +1033,7 @@ export default class ActivityService {
     );
 
     const pastActivityDurations =
-      param.query.activityDurationId === undefined
+      param.query.semesterId === undefined
         ? await this.getPastActivityDurationsWithActivities(
             activityDuration,
             param.query.clubId,
