@@ -16,7 +16,7 @@ import {
   FundingSummaryDBResult,
   VFundingSummary,
 } from "../model/funding.summary.model";
-import { buildFundingTransportationPassengerWhere } from "./funding.repository.util";
+import { buildFundingTransportationPassengerFindManyArgs } from "./funding.repository.util";
 
 @Injectable()
 export default class FundingRepository {
@@ -104,13 +104,9 @@ export default class FundingRepository {
       this.prisma.fundingEtcExpenseFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingTransportationPassenger.findMany({
-        distinct: ["studentId"],
-        where: buildFundingTransportationPassengerWhere(id),
-        select: {
-          studentId: true,
-        },
-      }),
+      this.prisma.fundingTransportationPassenger.findMany(
+        buildFundingTransportationPassengerFindManyArgs(id),
+      ),
     ]);
 
     return MFunding.fromDBResult({
