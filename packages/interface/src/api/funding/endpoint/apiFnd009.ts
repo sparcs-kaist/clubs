@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import { zClubSummary } from "@clubs/interface/api/club/type/club.type";
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
@@ -24,7 +24,7 @@ const requestParam = z.object({
 });
 
 const requestQuery = z.object({
-  activityDurationId: zActivityDuration.shape.id.optional(),
+  semesterId: zSemester.shape.id.optional(),
 });
 
 const requestBody = z.object({});

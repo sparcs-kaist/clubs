@@ -10,6 +10,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
+import ExecutivePastFundingDashboardSection from "@sparcs-clubs/web/features/executive/funding/components/ExecutivePastFundingDashboardSection";
 import ExecutiveFundingFrame from "@sparcs-clubs/web/features/executive/funding/frames/ExecutiveFundingFrame";
 
 const ExecutiveFunding = () => {
@@ -35,7 +36,7 @@ const ExecutiveFunding = () => {
   }
 
   return (
-    <FlexWrapper direction="column" gap={20}>
+    <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
           { name: "집행부원 대시보드", path: "/executive" },
@@ -44,6 +45,7 @@ const ExecutiveFunding = () => {
         title="지원금 신청 내역"
       />
       <ExecutiveFundingFrame />
+      <ExecutivePastFundingDashboardSection />
     </FlexWrapper>
   );
 };
