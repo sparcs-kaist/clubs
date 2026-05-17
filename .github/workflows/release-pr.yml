@@ -47,6 +47,21 @@ jobs:
             --draft \
             --title "PATCH Release: dev -> main" \
             --body "$(cat <<'BODY'
+          ## 릴리즈 흐름
+
+          이 draft PR은 `dev`에 `main`에 아직 반영되지 않은 변경사항이 생겼을 때 자동으로 생성됩니다.
+
+          릴리즈 패치노트를 준비하려면:
+
+          1. 머지된 feature PR 본문에 `clubs:patch-note` block이 있는지 확인합니다.
+          2. 기본값은 `PATCH`입니다. 필요하면 이 PR을 ready 상태로 바꾸기 전에 제목 prefix를 `MINOR` 또는 `MAJOR`로 변경합니다.
+          3. 이 PR을 **Ready for review**로 변경합니다.
+          4. `Prepare Release Patch Note` workflow가 `dev`에 패치노트 커밋을 하나 생성합니다.
+
+          ## 패치노트 커밋 트리거
+
+          생성된 패치노트 커밋은 의도적으로 `GITHUB_TOKEN`을 사용합니다. 따라서 GitHub는 해당 커밋으로 인한 후속 `dev` push workflow를 실행하지 않습니다. prepare workflow가 push 전에 생성 파일을 검증합니다.
+
           ## Release Flow
 
           This draft PR was created automatically after `dev` received changes not yet in `main`.
