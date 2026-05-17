@@ -21,6 +21,7 @@ function parseArgs(argv) {
     base: "origin/main",
     head: "HEAD",
     file: DEFAULT_FILE,
+    bump: "patch",
     dryRun: false,
   };
 
@@ -41,6 +42,12 @@ function parseArgs(argv) {
 
     if (arg === "--file") {
       options.file = argv[index + 1] ?? "";
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--bump") {
+      options.bump = (argv[index + 1] ?? "").toLowerCase();
       index += 1;
       continue;
     }
@@ -309,7 +316,31 @@ function compareVersion(a, b) {
   return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
 }
 
-function nextVersionFromMain(base, file) {
+function bumpVersion(version, bump) {
+  if (bump === "major") {
+    return { major: version.major + 1, minor: 0, patch: 0 };
+  }
+
+  if (bump === "minor") {
+    return { major: version.major, minor: version.minor + 1, patch: 0 };
+  }
+
+  if (bump === "patch") {
+    return {
+      major: version.major,
+      minor: version.minor,
+      patch: version.patch + 1,
+    };
+  }
+
+  throw new Error(`Unsupported version bump: ${bump}`);
+}
+
+function formatVersion(version) {
+  return `v.${version.major}.${version.minor}.${version.patch}`;
+}
+
+function nextVersionFromMain(base, file, bump) {
   const mainSource = runGit(["show", `${base}:${file}`]);
   const versions = parseVersions(mainSource);
   if (versions.length === 0) {
@@ -317,7 +348,7 @@ function nextVersionFromMain(base, file) {
   }
 
   const latest = versions.sort(compareVersion).at(-1);
-  return `v.${latest.major}.${latest.minor}.${latest.patch + 1}`;
+  return formatVersion(bumpVersion(latest, bump));
 }
 
 function kstDateLiteral() {
@@ -413,7 +444,7 @@ async function main() {
     return;
   }
 
-  const version = nextVersionFromMain(options.base, options.file);
+  const version = nextVersionFromMain(options.base, options.file, options.bump);
   const sourceHash = createHash("sha256")
     .update(JSON.stringify({ version, notes }))
     .digest("hex")

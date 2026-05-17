@@ -44,7 +44,7 @@ jobs:
             --base main \
             --head dev \
             --draft \
-            --title "Release: dev -> main" \
+            --title "PATCH Release: dev -> main" \
             --body "$(cat <<'BODY'
           ## Release Flow
 
@@ -53,16 +53,12 @@ jobs:
           To prepare the release patch note:
 
           1. Make sure merged feature PRs have a `clubs:patch-note` block in their PR body.
-          2. Mark this PR as **Ready for review**.
-          3. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev`.
+          2. Keep the title prefix as `PATCH`, or change it to `MINOR` or `MAJOR` before marking this PR as ready.
+          3. Mark this PR as **Ready for review**.
+          4. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev`.
 
           ## Patch Note Commit Trigger
 
-          The generated patch note commit changes the web bundle, so it should normally trigger the existing `dev` push workflows:
-
-          - `AR-002 PR CI`
-          - `AR-002 Dev Push Stage`
-
-          GitHub does not trigger follow-up workflows from commits pushed with `GITHUB_TOKEN`. Configure `RELEASE_BOT_TOKEN` as a GitHub App token or fine-grained PAT when the patch note commit should trigger CI and staging deploys automatically.
+          The generated patch note commit intentionally uses `GITHUB_TOKEN`, so GitHub will not trigger follow-up `dev` push workflows from that commit. The prepare workflow validates the generated file before pushing.
           BODY
           )"

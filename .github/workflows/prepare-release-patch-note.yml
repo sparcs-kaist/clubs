@@ -31,7 +31,7 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_BOT_TOKEN || github.token }}
+          token: ${{ github.token }}
 
       - name: Use Node.js
         uses: actions/setup-node@v6
@@ -46,6 +46,22 @@ jobs:
       - name: Fetch release refs
         run: git fetch origin main dev --prune
 
+      - name: Determine version bump
+        id: bump
+        env:
+          PR_TITLE: "${{ github.event.pull_request.title || 'PATCH Release: dev -> main' }}"
+        run: |
+          title="${PR_TITLE}"
+          bump="patch"
+
+          case "${title}" in
+            MAJOR\ *|major\ *) bump="major" ;;
+            MINOR\ *|minor\ *) bump="minor" ;;
+            PATCH\ *|patch\ *) bump="patch" ;;
+          esac
+
+          echo "bump=${bump}" >> "${GITHUB_OUTPUT}"
+
       - name: Generate release patch note
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -53,11 +69,21 @@ jobs:
           node scripts/release/prepare-patch-note.mjs
           --base origin/main
           --head HEAD
+          --bump ${{ steps.bump.outputs.bump }}
           --file packages/web/src/constants/patchNote.ts
 
       - name: Format generated patch note
         if: ${{ hashFiles('packages/web/src/constants/patchNote.ts') != '' }}
         run: pnpm exec prettier --write packages/web/src/constants/patchNote.ts
+
+      - name: Validate generated files
+        run: |
+          unexpected="$(git diff --name-only | grep -Ev '^packages/web/src/constants/patchNote\.ts$' || true)"
+          if [ -n "${unexpected}" ]; then
+            echo "Unexpected generated files:"
+            echo "${unexpected}"
+            exit 1
+          fi
 
       - name: Validate web package
         run: |
@@ -65,8 +91,6 @@ jobs:
           pnpm --filter web build
 
       - name: Commit patch note
-        env:
-          PUSH_TOKEN_KIND: ${{ secrets.RELEASE_BOT_TOKEN != '' && 'RELEASE_BOT_TOKEN' || 'GITHUB_TOKEN' }}
         run: |
           if git diff --quiet -- packages/web/src/constants/patchNote.ts; then
             echo "No patch note changes to commit."
@@ -79,6 +103,4 @@ jobs:
           git commit -m "chore: update release patch note"
           git push origin HEAD:dev
 
-          if [ "${PUSH_TOKEN_KIND}" = "GITHUB_TOKEN" ]; then
-            echo "::notice::Patch note commit was pushed with GITHUB_TOKEN, so dev push workflows will not be triggered by GitHub. Set RELEASE_BOT_TOKEN when CI and stage deploy should run from this generated commit."
-          fi
+          echo "::notice::Patch note commit was pushed with GITHUB_TOKEN. GitHub will not trigger follow-up dev push workflows from this generated commit by design."
