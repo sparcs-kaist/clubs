@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -18,6 +18,8 @@ function parseArgs(argv) {
     head: "",
     bodyFile: "",
     summary: [],
+    patchNoteCategory: "",
+    patchNoteText: [],
     draft: false,
     dryRun: false,
     help: false,
@@ -107,6 +109,18 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === "--patch-note-category") {
+      options.patchNoteCategory = argv[index + 1] ?? "";
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--patch-note-text") {
+      options.patchNoteText.push(argv[index + 1] ?? "");
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${arg}`);
   }
 
@@ -140,6 +154,11 @@ PR options:
   --body-file <path>          Use an explicit PR body file
   --summary <text>            Repeatable summary bullet for generated PR body
                               Required when --body-file is omitted
+  --patch-note-category <cat> Patch note category: feature, fix, design, docs,
+                              internal, or none
+                              Required when --body-file is omitted
+  --patch-note-text <text>    Repeatable patch note text
+                              Required for non-none categories
   --draft                     Create a draft PR
 `);
 }
@@ -153,12 +172,22 @@ function currentBranch() {
 }
 
 function localBranchExists(branch) {
-  const result = spawnSync("git", ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`]);
+  const result = spawnSync("git", [
+    "show-ref",
+    "--verify",
+    "--quiet",
+    `refs/heads/${branch}`,
+  ]);
   return result.status === 0;
 }
 
 function remoteBranchExists(branch) {
-  const result = spawnSync("git", ["show-ref", "--verify", "--quiet", `refs/remotes/origin/${branch}`]);
+  const result = spawnSync("git", [
+    "show-ref",
+    "--verify",
+    "--quiet",
+    `refs/remotes/origin/${branch}`,
+  ]);
   return result.status === 0;
 }
 
@@ -191,6 +220,102 @@ function formatPrTitle(taskId, title) {
   return `[${normalizedTaskId}] ${title}`;
 }
 
+const patchNoteCategories = new Set([
+  "feature",
+  "fix",
+  "design",
+  "docs",
+  "internal",
+  "none",
+]);
+const patchNoteStartMarker = "<!-- clubs:patch-note:start -->";
+const patchNoteEndMarker = "<!-- clubs:patch-note:end -->";
+
+function normalizePatchNoteCategory(category) {
+  const normalized = category.toLowerCase();
+
+  if (!patchNoteCategories.has(normalized)) {
+    throw new Error(
+      "--patch-note-category must be one of feature, fix, design, docs, internal, or none",
+    );
+  }
+
+  return normalized;
+}
+
+function formatPatchNoteText(textItems) {
+  const filteredItems = textItems.map(item => item.trim()).filter(Boolean);
+
+  if (filteredItems.length === 0) {
+    return ["text:"];
+  }
+
+  if (filteredItems.length === 1) {
+    return [`text: ${filteredItems[0]}`];
+  }
+
+  return ["text:", ...filteredItems.map(item => `- ${item}`)];
+}
+
+function validatePatchNoteInput(category, textItems) {
+  if (!category) {
+    throw new Error(
+      "--patch-note-category is required when generating a PR body",
+    );
+  }
+
+  const normalizedCategory = normalizePatchNoteCategory(category);
+  const hasText = textItems.some(item => item.trim());
+
+  if (normalizedCategory !== "none" && !hasText) {
+    throw new Error(
+      "--patch-note-text is required when --patch-note-category is not none",
+    );
+  }
+
+  return normalizedCategory;
+}
+
+function validatePatchNoteBlock(body) {
+  const startIndex = body.indexOf(patchNoteStartMarker);
+  const endIndex = body.indexOf(patchNoteEndMarker);
+
+  if (!body.includes("## Patch Note") || startIndex === -1 || endIndex === -1) {
+    throw new Error(
+      "PR body must include a ## Patch Note section with a clubs:patch-note block",
+    );
+  }
+
+  if (endIndex < startIndex) {
+    throw new Error(
+      "clubs:patch-note end marker must appear after the start marker",
+    );
+  }
+
+  const block = body.slice(startIndex + patchNoteStartMarker.length, endIndex);
+  const categoryMatch = block.match(/^category:\s*(\S+)\s*$/m);
+  const textMatch = block.match(/^text:\s*(.*)$/m);
+
+  if (!categoryMatch) {
+    throw new Error("clubs:patch-note block must include a category line");
+  }
+
+  const category = normalizePatchNoteCategory(categoryMatch[1]);
+
+  if (!textMatch) {
+    throw new Error("clubs:patch-note block must include a text line");
+  }
+
+  const textStartIndex = block.indexOf(textMatch[0]) + textMatch[0].length;
+  const text = `${textMatch[1]}\n${block.slice(textStartIndex)}`.trim();
+
+  if (category !== "none" && !text) {
+    throw new Error(
+      "clubs:patch-note text must not be empty unless category is none",
+    );
+  }
+}
+
 function switchOrCreateBranch(branch, startPoint, reuseRemoteBranch, dryRun) {
   let cmd;
 
@@ -213,7 +338,14 @@ function switchOrCreateBranch(branch, startPoint, reuseRemoteBranch, dryRun) {
   return currentBranch();
 }
 
-function generatedPrBody({ notionUrl, summary, taskId }) {
+function generatedPrBody({
+  notionUrl,
+  summary,
+  taskId,
+  patchNoteCategory,
+  patchNoteText,
+}) {
+  const category = validatePatchNoteInput(patchNoteCategory, patchNoteText);
   const lines = [
     "## Summary",
     ...summary.map(item => `- ${item}`),
@@ -226,6 +358,16 @@ function generatedPrBody({ notionUrl, summary, taskId }) {
     lines.push(`- Notion: ${notionUrl}`);
   }
 
+  lines.push(
+    "",
+    "## Patch Note",
+    "",
+    patchNoteStartMarker,
+    `category: ${category}`,
+    ...formatPatchNoteText(patchNoteText),
+    patchNoteEndMarker,
+  );
+
   lines.push("");
   return `${lines.join("\n")}\n`;
 }
@@ -237,6 +379,7 @@ function createPullRequest(options) {
 
   let bodyFile = options.bodyFile;
   let tempDir = "";
+  let generatedBody = "";
 
   if (!bodyFile && options.summary.length === 0) {
     throw new Error(
@@ -245,17 +388,18 @@ function createPullRequest(options) {
   }
 
   if (!bodyFile) {
+    generatedBody = generatedPrBody({
+      notionUrl: options.notionUrl,
+      summary: options.summary,
+      taskId,
+      patchNoteCategory: options.patchNoteCategory,
+      patchNoteText: options.patchNoteText,
+    });
     tempDir = mkdtempSync(join(tmpdir(), "create-branch-pr-"));
     bodyFile = join(tempDir, "pr-body.md");
-    writeFileSync(
-      bodyFile,
-      generatedPrBody({
-        notionUrl: options.notionUrl,
-        summary: options.summary,
-        taskId,
-      }),
-      "utf8",
-    );
+    writeFileSync(bodyFile, generatedBody, "utf8");
+  } else {
+    validatePatchNoteBlock(readFileSync(bodyFile, "utf8"));
   }
 
   const cmd = [
@@ -280,14 +424,9 @@ function createPullRequest(options) {
   if (options.dryRun) {
     if (tempDir) {
       console.log("--- generated body ---");
-      console.log(
-        generatedPrBody({
-          notionUrl: options.notionUrl,
-          summary: options.summary,
-          taskId,
-        }).trimEnd(),
-      );
+      console.log(generatedBody.trimEnd());
       console.log("--- end body ---");
+      rmSync(tempDir, { recursive: true, force: true });
     }
     return;
   }

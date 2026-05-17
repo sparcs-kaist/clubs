@@ -85,6 +85,25 @@ Always resolve these into a confirmed TU number before you create the branch or 
 
 - Default base is `dev`
 
+### PR body and patch note
+
+Every PR body must include a `## Patch Note` section with this machine-readable block:
+
+```md
+<!-- clubs:patch-note:start -->
+category: feature | fix | design | docs | internal | none
+text: 사용자에게 보여도 자연스러운 한국어 패치노트 문장
+<!-- clubs:patch-note:end -->
+```
+
+- Use `feature` for user-visible features.
+- Use `fix` for user-visible bug fixes.
+- Use `design` for UI, wording, or visual changes.
+- Use `docs` for documentation-only changes.
+- Use `internal` or `none` for refactors, tests, CI, tooling, or other changes that should not appear in the app patch note.
+- Write `text` from the user's point of view, not as implementation details or filenames.
+- If you use `--body-file`, confirm that the file already contains a valid `clubs:patch-note` block.
+
 ## Preferred execution path
 
 Use the helper command:
@@ -105,11 +124,11 @@ Examples:
 Examples:
 
 - Auto body:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills"`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - With explicit summary bullets:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper"`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - Existing task number without page URL:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --summary "add project-local Codex and Claude Code skills"`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 
 The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
 
@@ -122,11 +141,13 @@ After branch creation:
 
 After PR creation:
 
-1. Run `gh pr view --json number,title,headRefName,baseRefName,url`
+1. Run `gh pr view --json number,title,headRefName,baseRefName,url,body`
 2. Confirm:
    - base is `dev`
    - title includes the TU number
    - Notion URL is present in the body
+   - `## Patch Note` and the `clubs:patch-note` block are present
+   - non-`none` categories have user-facing Korean `text`
 
 ## Response expectations
 
