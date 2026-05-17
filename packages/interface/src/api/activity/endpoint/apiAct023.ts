@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
+
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
 
@@ -19,6 +21,7 @@ const requestQuery = z.object({
   itemCount: z.coerce.number().int().min(1),
   clubName: z.string().optional(), // 검색 키워드: 동아리 이름
   executiveName: z.string().optional(), // 검색 키워드: 담당자 이름
+  activityDurationId: zActivityDuration.shape.id.optional(),
 });
 
 const requestBody = z.object({});
@@ -26,6 +29,8 @@ const requestBody = z.object({});
 // items 와 executiveProgresses는 각각 정렬해서 보내주기!
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    activityDuration: zActivityDuration,
+    pastActivityDurations: z.array(zActivityDuration).optional(),
     items: z.array(
       z.object({
         clubId: zId,
@@ -63,7 +68,7 @@ const responseBodyMap = {
         ),
       }),
     ),
-    total: z.coerce.number().min(1),
+    total: z.coerce.number().min(0),
     offset: z.coerce.number().min(1),
   }),
 };

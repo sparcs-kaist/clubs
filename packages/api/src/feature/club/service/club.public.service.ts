@@ -469,6 +469,7 @@ export default class ClubPublicService {
     clubId?: number | number[];
     name?: string;
     clubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
+    excludedClubTypeEnum?: ClubTypeEnum | ClubTypeEnum[];
   }): Promise<RMClub[]> {
     const semester = await this.semesterPublicService.load({
       date: query.date,
@@ -486,6 +487,7 @@ export default class ClubPublicService {
         this.clubSemesterRepository.find({
           semesterId: semester.id,
           clubId: query.clubId,
+          clubTypeEnum: query.clubTypeEnum,
         }),
         this.divisionPublicService.search({ date: query.date }),
         this.clubDivisionHistoryRepository.find({
@@ -509,7 +511,23 @@ export default class ClubPublicService {
       ),
     ]);
 
-    const clubSemesterMap = new Map(clubSemesters.map(c => [c.club.id, c]));
+    const excludedClubTypeEnums = new Set(
+      (Array.isArray(query.excludedClubTypeEnum)
+        ? query.excludedClubTypeEnum
+        : [query.excludedClubTypeEnum]
+      ).filter((typeEnum): typeEnum is ClubTypeEnum => typeEnum != null),
+    );
+    const filteredClubSemesters =
+      excludedClubTypeEnums.size === 0
+        ? clubSemesters
+        : clubSemesters.filter(
+            clubSemester =>
+              !excludedClubTypeEnums.has(clubSemester.clubTypeEnum),
+          );
+
+    const clubSemesterMap = new Map(
+      filteredClubSemesters.map(c => [c.club.id, c]),
+    );
     const divisionMap = new Map(divisions.map(d => [d.id, d]));
     const clubDivisionMap = new Map(clubDivisions.map(c => [c.club.id, c]));
     const clubRepresentativeMap = new Map(

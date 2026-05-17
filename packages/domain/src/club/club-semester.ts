@@ -13,6 +13,9 @@ extendZodWithOpenApi(z);
 export enum ClubTypeEnum {
   Regular = 1, // 정동아리
   Provisional, // 가동아리
+  RegistrationCanceled, // 등록취소
+  Special, // 특수등록
+  Unregistered, // 미등록
 }
 
 export enum ClubBuildingEnum {
@@ -68,7 +71,8 @@ export const zClubSemester = z.object({
   club: zExtractId(zClub),
   semester: zExtractId(zSemester),
   clubTypeEnum: z.nativeEnum(ClubTypeEnum).openapi({
-    description: "동아리 지위 1: 정동아리 2: 가동아리",
+    description:
+      "동아리 지위 1: 정동아리 2: 가동아리 3: 등록취소 4: 특수등록 5: 미등록",
     examples: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
   }),
   characteristicKr: z

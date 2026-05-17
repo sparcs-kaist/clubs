@@ -10,7 +10,34 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ExecutiveActivityReportFrame from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportFrame";
+import ExecutivePastActivityReportDashboardSection from "@sparcs-clubs/web/features/activity-report/components/executive/ExecutivePastActivityReportDashboardSection";
+import {
+  defaultExecutiveActivityReportData,
+  ExecutiveActivityReportContent,
+} from "@sparcs-clubs/web/features/activity-report/frames/executive/ExecutiveActivityReportFrame";
+import useGetExecutiveActivities from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveActivities";
+
+const ExecutiveActivityReportPageContent = () => {
+  const {
+    data: activitiesData,
+    isLoading: isActivitiesLoading,
+    isError: isActivitiesError,
+  } = useGetExecutiveActivities({
+    pageOffset: 1,
+    itemCount: 150,
+  });
+
+  return (
+    <AsyncBoundary isLoading={isActivitiesLoading} isError={isActivitiesError}>
+      <ExecutiveActivityReportContent
+        data={activitiesData ?? defaultExecutiveActivityReportData}
+      />
+      <ExecutivePastActivityReportDashboardSection
+        activityDurations={activitiesData?.pastActivityDurations ?? []}
+      />
+    </AsyncBoundary>
+  );
+};
 
 const ExecutiveActivityReport = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -35,7 +62,7 @@ const ExecutiveActivityReport = () => {
   }
 
   return (
-    <FlexWrapper direction="column" gap={20}>
+    <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
           { name: "집행부원 대시보드", path: "/executive" },
@@ -43,7 +70,7 @@ const ExecutiveActivityReport = () => {
         ]}
         title="활동 보고서 작성 내역"
       />
-      <ExecutiveActivityReportFrame />
+      <ExecutiveActivityReportPageContent />
     </FlexWrapper>
   );
 };

@@ -1,7 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
-import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+import {
+  ActivityDurationTypeEnum,
+  IActivityDuration,
+} from "@clubs/domain/semester/activity-duration";
 import {
   ActivityDeadlineEnum,
   RegistrationDeadlineEnum,
@@ -920,9 +923,12 @@ export default class ActivityService {
       throw new HttpException("No such club", HttpStatus.NOT_FOUND);
     }
 
-    const activityDId =
-      param.query.activityDurationId ??
-      (await this.activityDurationPublicService.loadId());
+    const activityDuration = param.query.activityDurationId
+      ? await this.activityDurationPublicService.getById(
+          param.query.activityDurationId,
+        )
+      : await this.activityDurationPublicService.load();
+    const activityDId = activityDuration.id;
 
     const activities = await this.getActivities({
       clubId: param.query.clubId,
@@ -1026,10 +1032,49 @@ export default class ActivityService {
       }),
     );
 
+    const pastActivityDurations =
+      param.query.activityDurationId === undefined
+        ? await this.getPastActivityDurationsWithActivities(
+            activityDuration,
+            param.query.clubId,
+          )
+        : undefined;
+
     return {
+      activityDuration,
+      ...(pastActivityDurations ? { pastActivityDurations } : {}),
       chargedExecutive: clubChargedExecutive,
       items,
     };
+  }
+
+  private async getPastActivityDurationsWithActivities(
+    targetDuration: IActivityDuration,
+    clubId: number,
+  ): Promise<IActivityDuration[]> {
+    const activityDurations = await this.activityDurationPublicService.search({
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+    });
+
+    const pastActivityDurations = activityDurations.filter(
+      activityDuration =>
+        activityDuration.id !== targetDuration.id &&
+        activityDuration.semester.id !== targetDuration.semester.id &&
+        activityDuration.endTerm <= targetDuration.endTerm,
+    );
+
+    const activityCounts = await Promise.all(
+      pastActivityDurations.map(activityDuration =>
+        this.getActivities({
+          clubId,
+          activityDId: activityDuration.id,
+        }).then(activities => activities.length),
+      ),
+    );
+
+    return pastActivityDurations
+      .filter((_, index) => activityCounts[index] > 0)
+      .sort((a, b) => b.endTerm.getTime() - a.endTerm.getTime());
   }
 
   /**
