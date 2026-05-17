@@ -23,6 +23,7 @@
     "db-up": "turbo run db-up",
     "db-down": "turbo run db-down",
     "db-generate": "turbo run db-generate",
+    "db:sync-dev": "node scripts/sync-dev-db.mjs",
     "prisma:generate": "turbo run prisma:generate --filter=api",
     "prepare": "husky",
     "test": "turbo run test --filter=api",
@@ -86,6 +87,7 @@
     ]
   },
   "dependencies": {
-    "date-fns": "^3.6.0"
+    "date-fns": "^3.6.0",
+    "mysql2": "^3.9.8"
   }
 }
