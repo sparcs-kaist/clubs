@@ -2,6 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zMemberRegistration } from "@clubs/domain/registration/member-registration";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zUserName } from "@clubs/interface/common/commonString";
@@ -22,6 +23,7 @@ const requestQuery = z.object({
   clubId: zClub.shape.id,
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
+  semesterId: zSemester.shape.id.optional(),
 });
 const requestBody = z.object({});
 

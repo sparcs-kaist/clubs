@@ -20,6 +20,7 @@ import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
 import { RegistrationTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
+import ExecutivePastSemesterDashboardSection from "@sparcs-clubs/web/features/executive/components/ExecutivePastSemesterDashboardSection";
 import { useGetRegisterClub } from "@sparcs-clubs/web/features/executive/register-club/services/useGetRegisterClub";
 
 interface ConvertedSelectedCategories {
@@ -63,9 +64,15 @@ const RegistrationTypeList = Object.keys(RegistrationTypeTagList).map(key =>
   parseInt(key),
 );
 
-export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
-  url,
-}) => {
+interface ExecutiveRegistrationClubFrameProps {
+  url: string;
+  semesterId?: number;
+  showPastDashboard?: boolean;
+}
+
+export const ExecutiveRegistrationClubFrame: React.FC<
+  ExecutiveRegistrationClubFrameProps
+> = ({ url, semesterId, showPastDashboard = false }) => {
   const t = useTranslations();
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 200;
@@ -74,6 +81,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
   const { data, isLoading, isError } = useGetRegisterClub({
     pageOffset: currentPage,
     itemCount: limit,
+    ...(semesterId ? { semesterId } : {}),
   });
 
   const {
@@ -82,14 +90,16 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
     isError: divisionError,
   } = useGetDivisionType();
 
+  const divisions = divisionData?.divisions;
+
   const DivisionNameList = useMemo(
-    () => divisionData?.divisions?.map(item => item.name) ?? [],
-    [divisionData],
+    () => divisions?.map(item => item.name) ?? [],
+    [divisions],
   );
 
   const DivisionIdList = useMemo(
-    () => divisionData?.divisions?.map(item => item.id.toString()) ?? [],
-    [divisionData],
+    () => divisions?.map(item => item.id.toString()) ?? [],
+    [divisions],
   );
 
   const [categories, setCategories] = useState<CategoryProps[]>([
@@ -113,20 +123,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
     },
   ]);
 
-  const [convertedCategories, setConvertedCategories] = useState<
-    ConvertedSelectedCategories[]
-  >([
-    {
-      name: "등록 구분",
-      selectedContent: RegistrationTypeList,
-    },
-    {
-      name: "분과",
-      selectedContent: divisionData?.divisions?.map(item => item.id) ?? [],
-    },
-  ]);
-
-  useEffect(() => {
+  const convertedCategories = useMemo<ConvertedSelectedCategories[]>(() => {
     const convertedRegistrationType = categories[0].selectedContent.flatMap(
       item => getEnumRegistration(item),
     );
@@ -135,7 +132,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
       parseInt(item),
     );
 
-    setConvertedCategories([
+    return [
       {
         name: "등록 구분",
         selectedContent: convertedRegistrationType,
@@ -144,7 +141,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
         name: "분과",
         selectedContent: convertedDivisionId,
       },
-    ]);
+    ];
   }, [categories]);
 
   const filterClubsWithSearch = useMemo(() => {
@@ -192,17 +189,25 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
   );
 
   useEffect(() => {
-    if (categories[1].content.length === 0 && divisionData) {
-      setCategories([
-        ...categories.slice(0, 1),
+    if (DivisionNameList.length === 0 || DivisionIdList.length === 0) {
+      return;
+    }
+
+    setCategories(prevCategories => {
+      if (prevCategories[1].content.length > 0) {
+        return prevCategories;
+      }
+
+      return [
+        ...prevCategories.slice(0, 1),
         {
           name: "분과",
           content: DivisionNameList,
           selectedContent: DivisionIdList,
         },
-      ]);
-    }
-  }, [categories, DivisionIdList, DivisionNameList]);
+      ];
+    });
+  }, [DivisionIdList, DivisionNameList]);
 
   return (
     <AsyncBoundary
@@ -265,6 +270,16 @@ export const ExecutiveRegistrationClubFrame: React.FC<{ url: string }> = ({
           />
         </FlexWrapper>
       </TableWithPaginationWrapper>
+      {showPastDashboard && (
+        <ExecutivePastSemesterDashboardSection
+          title="과거 동아리 등록 대시보드"
+          emptyMessage="과거 동아리 등록 대시보드가 없습니다"
+          semesters={data?.pastSemesters ?? []}
+          rowLink={semester =>
+            `/executive/register-club/semester/${semester.id}`
+          }
+        />
+      )}
     </AsyncBoundary>
   );
 };

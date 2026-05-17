@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zDivision } from "@clubs/interface/api/division/type/division.type";
 import { registry } from "@clubs/interface/open-api";
@@ -18,11 +20,14 @@ const requestParam = z.object({});
 const requestQuery = z.object({
   pageOffset: z.coerce.number().int().min(1),
   itemCount: z.coerce.number().int().min(1),
+  semesterId: zSemester.shape.id.optional(),
 });
 const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    semester: zSemester,
+    pastSemesters: z.array(zSemester).optional(),
     items: z.array(
       z.object({
         clubId: zClub.shape.id,

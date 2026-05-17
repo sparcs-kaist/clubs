@@ -38,6 +38,13 @@ const items = Array.from({ length: 120 }, (_, index) => ({
 }));
 
 const mockupRegistrationMember: ApiReg019ResponseOk = {
+  semester: {
+    id: 1,
+    year: 2025,
+    name: "봄",
+    startTerm: new Date("2025-03-01"),
+    endTerm: new Date("2025-09-01"),
+  },
   items,
   total: items.length,
   offset: 1,
