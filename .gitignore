@@ -4,6 +4,10 @@
 **/node_modules
 *.log
 
+# Database dumps
+/db_dumps/*
+!/db_dumps/.gitkeep
+
 # IDE Configurations
 .idea
 .vscode/*
