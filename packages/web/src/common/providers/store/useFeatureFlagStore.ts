@@ -46,29 +46,40 @@ export const parsedFeatureFlagState: FeatureFlagState = {
 
 logger.debug("Feature Flag State", parsedFeatureFlagState);
 
+const isFeatureFlagStateCurrent = (
+  state: FeatureFlagState | undefined,
+): boolean =>
+  state != null &&
+  state.FLAGS != null &&
+  state.FLAGS.REGISTER_CLUB === parsedFeatureFlagState.FLAGS.REGISTER_CLUB &&
+  state.FLAGS.REGISTER_MEMBER ===
+    parsedFeatureFlagState.FLAGS.REGISTER_MEMBER &&
+  state.FLAGS.NO_RELEASE === parsedFeatureFlagState.FLAGS.NO_RELEASE &&
+  state.DEV_MODE === parsedFeatureFlagState.DEV_MODE &&
+  state.VERSION === parsedFeatureFlagState.VERSION;
+
 const useFeatureFlagStore = create(
   persist(
     immer<FeatureFlagState>(() => parsedFeatureFlagState),
     {
       name: "INTERNAL--feature-flag-state",
       storage: createJSONStorage(() => localStorage),
+      merge: persistedState => {
+        const state = persistedState as FeatureFlagState | undefined;
+
+        if (isFeatureFlagStateCurrent(state)) {
+          return state as FeatureFlagState;
+        }
+        return parsedFeatureFlagState;
+      },
       onRehydrateStorage: () => state => {
-        if (
-          !state ||
-          state.FLAGS.REGISTER_CLUB !==
-            parsedFeatureFlagState.FLAGS.REGISTER_CLUB ||
-          state.FLAGS.REGISTER_MEMBER !==
-            parsedFeatureFlagState.FLAGS.REGISTER_MEMBER ||
-          state.FLAGS.NO_RELEASE !== parsedFeatureFlagState.FLAGS.NO_RELEASE ||
-          state.DEV_MODE !== parsedFeatureFlagState.DEV_MODE
-        ) {
-          logger.debug("Feature Flag values changed, clearing cache", {
-            cached: state?.FLAGS,
+        const cachedState = state as FeatureFlagState | undefined;
+        if (!isFeatureFlagStateCurrent(cachedState)) {
+          logger.debug("Feature Flag values changed, using env flags", {
+            cached: cachedState?.FLAGS,
             current: parsedFeatureFlagState.FLAGS,
           });
-          return parsedFeatureFlagState;
         }
-        return state;
       },
     },
   ),

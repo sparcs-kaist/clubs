@@ -42,6 +42,8 @@ const ActivityReportStatistic: React.FC<ActivityReportStatisticProps> = ({
   const reviewedTotalCount = approvedTotalCount + rejectedTotalCount;
   const totalCount =
     pendingTotalCount + approvedTotalCount + rejectedTotalCount;
+  const reviewRate = totalCount ? (reviewedTotalCount / totalCount) * 100 : 0;
+  const approvedRate = totalCount ? (approvedTotalCount / totalCount) * 100 : 0;
 
   return (
     <Card gap={16} padding="16px" outline>
@@ -67,8 +69,8 @@ const ActivityReportStatistic: React.FC<ActivityReportStatisticProps> = ({
                 검토율
               </Typography>
               <Typography fs={16} lh={20}>
-                {reviewedTotalCount}개 / {totalCount}개 (
-                {((reviewedTotalCount / totalCount) * 100).toFixed(1)}%)
+                {reviewedTotalCount}개 / {totalCount}개 ({reviewRate.toFixed(1)}
+                %)
               </Typography>
             </FlexWrapper>
             {withApprovedRate && (
@@ -78,7 +80,7 @@ const ActivityReportStatistic: React.FC<ActivityReportStatisticProps> = ({
                 </Typography>
                 <Typography fs={16} lh={20}>
                   {approvedTotalCount}개 / {totalCount}개 (
-                  {((approvedTotalCount / totalCount) * 100).toFixed(1)}%)
+                  {approvedRate.toFixed(1)}%)
                 </Typography>
               </FlexWrapper>
             )}
