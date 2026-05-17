@@ -1,10 +1,14 @@
 "use client";
 
 import axios from "axios";
-import React, { useEffect, useMemo, useState } from "react";
+import { overlay } from "overlay-kit";
+import React, { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import Modal from "@sparcs-clubs/web/common/components/Modal";
+import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
+import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import { useOperationCommitteeSecret } from "@sparcs-clubs/web/features/executive/hooks/useOperationCommitteeSecret";
 
@@ -12,6 +16,40 @@ import AccessLinkSection from "./AccessLinkSection";
 import ErrorMessage from "./ErrorMessage";
 import HeaderButtons from "./HeaderButtons";
 import SecretKeySection from "./SecretKeySection";
+
+const openMessageModal = (message: ReactNode) => {
+  overlay.open(({ isOpen, close }) => (
+    <Modal isOpen={isOpen} onClose={close}>
+      <ConfirmModalContent onConfirm={close}>{message}</ConfirmModalContent>
+    </Modal>
+  ));
+};
+
+const openConfirmModal = (message: ReactNode) =>
+  new Promise<boolean>(resolve => {
+    overlay.open(({ isOpen, close }) => {
+      const handleClose = () => {
+        resolve(false);
+        close();
+      };
+
+      const handleConfirm = () => {
+        resolve(true);
+        close();
+      };
+
+      return (
+        <Modal isOpen={isOpen} onClose={handleClose}>
+          <CancellableModalContent
+            onClose={handleClose}
+            onConfirm={handleConfirm}
+          >
+            {message}
+          </CancellableModalContent>
+        </Modal>
+      );
+    });
+  });
 
 const OperationCommitteeSecretManager: React.FC = () => {
   const {
@@ -40,26 +78,28 @@ const OperationCommitteeSecretManager: React.FC = () => {
   }, [currentKey]);
 
   const handleCreateKey = async () => {
-    if (!window.confirm("새 비밀키를 생성하시겠습니까?")) return;
+    if (!(await openConfirmModal("새 비밀키를 생성하시겠습니까?"))) return;
 
     try {
       const response = await createSecretKey();
       if (response?.createdKey?.secretKey) {
         setCurrentKey(response.createdKey.secretKey);
       }
-      window.alert("새 비밀키가 생성되었습니다.");
-    } catch (e) {
-      if (process.env.NODE_ENV === "development")
-        console.error("비밀키 생성 실패:", e);
-      window.alert("비밀키 생성에 실패했습니다.");
+      openMessageModal("새 비밀키가 생성되었습니다.");
+    } catch {
+      openMessageModal("비밀키 생성에 실패했습니다.");
     }
   };
 
   const handleUpdateKey = async () => {
     if (
-      !window.confirm(
-        "기존 비밀키를 새로운 키로 교체하시겠습니까?\n기존 링크는 사용할 수 없게 됩니다.",
-      )
+      !(await openConfirmModal(
+        <>
+          기존 비밀키를 새로운 키로 교체하시겠습니까?
+          <br />
+          기존 링크는 사용할 수 없게 됩니다.
+        </>,
+      ))
     )
       return;
 
@@ -68,37 +108,37 @@ const OperationCommitteeSecretManager: React.FC = () => {
       if (response?.createdKey?.secretKey) {
         setCurrentKey(response.createdKey.secretKey);
       }
-      window.alert("비밀키가 갱신되었습니다.");
-    } catch (e) {
-      if (process.env.NODE_ENV === "development")
-        console.error("비밀키 갱신 실패:", e);
-      window.alert("비밀키 갱신에 실패했습니다.");
+      openMessageModal("비밀키가 갱신되었습니다.");
+    } catch {
+      openMessageModal("비밀키 갱신에 실패했습니다.");
     }
   };
 
   const handleDeleteKey = async () => {
     if (
-      !window.confirm(
-        "정말로 비밀키를 삭제하시겠습니까?\n운영위원들이 활동보고서에 접근할 수 없게 됩니다.",
-      )
+      !(await openConfirmModal(
+        <>
+          정말로 비밀키를 삭제하시겠습니까?
+          <br />
+          운영위원들이 활동보고서에 접근할 수 없게 됩니다.
+        </>,
+      ))
     )
       return;
 
     try {
       await deleteSecretKey();
       setCurrentKey(null);
-      window.alert("비밀키가 삭제되었습니다.");
-    } catch (e) {
-      if (process.env.NODE_ENV === "development")
-        console.error("비밀키 삭제 실패:", e);
-      window.alert("비밀키 삭제에 실패했습니다.");
+      openMessageModal("비밀키가 삭제되었습니다.");
+    } catch {
+      openMessageModal("비밀키 삭제에 실패했습니다.");
     }
   };
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      window.alert("복사되었습니다.");
+      openMessageModal("복사되었습니다.");
     } catch {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -106,7 +146,7 @@ const OperationCommitteeSecretManager: React.FC = () => {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      window.alert("복사되었습니다.");
+      openMessageModal("복사되었습니다.");
     }
   };
 

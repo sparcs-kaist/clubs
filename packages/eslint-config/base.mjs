@@ -62,6 +62,11 @@ export const baseConfig = tseslint.config(
         project: true,
       },
     },
+    settings: {
+      react: {
+        version: "18.2.0",
+      },
+    },
     rules: {
       "curly": "off",
       "import/extensions": "off",

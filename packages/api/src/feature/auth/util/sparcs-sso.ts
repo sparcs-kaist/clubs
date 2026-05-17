@@ -143,7 +143,7 @@ export class Client {
         try {
           result.kaist_v2_info = JSON.parse(result.kaist_v2_info);
         } catch (e) {
-          console.error("Failed to parse kaist_v2_info in SSO client:", e);
+          logger.error("Failed to parse kaist_v2_info in SSO client:", e);
           result.kaist_v2_info = null;
         }
       }
