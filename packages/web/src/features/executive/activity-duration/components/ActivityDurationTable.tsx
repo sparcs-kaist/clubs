@@ -11,9 +11,11 @@ import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-durati
 
 import { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
 
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton, {
+  TableActionButtonGroup,
+} from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 import useDeleteActivityDuration from "@sparcs-clubs/web/features/executive/services/useDeleteActivityDuration";
 
 import ActivityDurationEditModal from "./ActivityDurationEditModal";
@@ -60,14 +62,17 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
   };
 
   const actionsCellRenderer = (duration: ActivityDurationItem) => (
-    <FlexWrapper direction="row" gap={8}>
-      <TextButton text="수정" onClick={() => setEditingDuration(duration)} />
-      <TextButton
-        text="삭제"
+    <TableActionButtonGroup>
+      <TableActionButton
+        variant="edit"
+        onClick={() => setEditingDuration(duration)}
+      />
+      <TableActionButton
+        variant="delete"
         onClick={() => handleDelete(duration.id)}
         disabled={isDeletingActivityDuration}
       />
-    </FlexWrapper>
+    </TableActionButtonGroup>
   );
 
   const columnHelper = createColumnHelper<ActivityDurationItem>();
@@ -119,7 +124,7 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
       id: "actions",
       header: "관리",
       cell: ({ row }) => actionsCellRenderer(row.original),
-      size: 140,
+      size: 160,
     }),
   ];
 

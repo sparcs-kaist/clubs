@@ -10,9 +10,9 @@ import { useMemo } from "react";
 import { ApiSem019ResponseOk } from "@clubs/interface/api/semester/apiSem019";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 
 import useDeleteRegistrationDeadline from "../services/useDeleteRegistrationDeadline";
 
@@ -60,8 +60,8 @@ const RegistrationDeadlineTable = ({
   };
 
   const actionsCellRenderer = (id: number) => (
-    <TextButton
-      text="삭제"
+    <TableActionButton
+      variant="delete"
       onClick={() => handleDelete(id)}
       disabled={isDeletingRegistrationDeadline}
     />
@@ -107,7 +107,7 @@ const RegistrationDeadlineTable = ({
       id: "actions",
       header: "관리",
       cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 120,
+      size: 96,
     }),
   ];
 

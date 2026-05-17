@@ -10,10 +10,12 @@ import { useMemo } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton, {
+  TableActionButtonGroup,
+} from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
 import useDeleteSemester from "@sparcs-clubs/web/features/executive/services/deleteSemester";
 import usePostSemester from "@sparcs-clubs/web/features/executive/services/postSemester";
@@ -59,14 +61,18 @@ const SemesterActionButtons = ({
   const handleDelete = () => onDelete(semesterId);
 
   return (
-    <FlexWrapper direction="row" gap={8}>
-      <TextButton text="수정" onClick={handleEdit} disabled={editDisabled} />
-      <TextButton
-        text="삭제"
+    <TableActionButtonGroup>
+      <TableActionButton
+        variant="edit"
+        onClick={handleEdit}
+        disabled={editDisabled}
+      />
+      <TableActionButton
+        variant="delete"
         onClick={handleDelete}
         disabled={deleteDisabled}
       />
-    </FlexWrapper>
+    </TableActionButtonGroup>
   );
 };
 
@@ -178,7 +184,7 @@ const ManageSemesterFrame = () => {
       id: "actions",
       header: "관리",
       cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 120,
+      size: 160,
     }),
   ];
 

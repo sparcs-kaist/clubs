@@ -9,9 +9,9 @@ import { useMemo } from "react";
 
 import { ApiSem016ResponseOk } from "@clubs/interface/api/semester/apiSem016";
 
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 import { fundingDeadlineEnumToString } from "@sparcs-clubs/web/features/manage-club/funding/constants/fundingDeadlineEnumToString";
 
 import useDeleteFundingDeadline from "../services/useDeleteFundingDeadline";
@@ -45,8 +45,8 @@ const FundingDeadlineTable = ({
   };
 
   const actionsCellRenderer = (id: number) => (
-    <TextButton
-      text="삭제"
+    <TableActionButton
+      variant="delete"
       onClick={() => handleDeleteFundingDeadline(id)}
       disabled={isDeletingFundingDeadline}
     />
@@ -92,7 +92,7 @@ const FundingDeadlineTable = ({
       id: "actions",
       header: "관리",
       cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 120,
+      size: 96,
     }),
   ];
 

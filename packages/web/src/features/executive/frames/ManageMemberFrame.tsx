@@ -13,6 +13,9 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton, {
+  TableActionButtonGroup,
+} from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 
 import ExecutiveMemberFormModal, {
   ExecutiveMemberData,
@@ -89,30 +92,22 @@ const ManageMemberFrame = () => {
   const columnHelper = createColumnHelper<ExecutiveMemberData>();
 
   const actionsCellRenderer = (member: ExecutiveMemberData) => (
-    <FlexWrapper direction="row" gap={8}>
-      <Button
-        type={putExecutiveMember.isPending ? "disabled" : "outlined"}
-        style={{ padding: "6px 10px", fontSize: 14, lineHeight: "18px" }}
-        onClick={event => {
-          event.preventDefault();
-          event.stopPropagation();
+    <TableActionButtonGroup>
+      <TableActionButton
+        variant="edit"
+        disabled={putExecutiveMember.isPending}
+        onClick={() => {
           openExecutiveMemberModal(handleEditExecutiveMember, member);
         }}
-      >
-        수정
-      </Button>
-      <Button
-        type={deleteExecutiveMember.isPending ? "disabled" : "outlined"}
-        style={{ padding: "6px 10px", fontSize: 14, lineHeight: "18px" }}
-        onClick={event => {
-          event.preventDefault();
-          event.stopPropagation();
+      />
+      <TableActionButton
+        variant="delete"
+        disabled={deleteExecutiveMember.isPending}
+        onClick={() => {
           handleDeleteExecutiveMember(member.id);
         }}
-      >
-        삭제
-      </Button>
-    </FlexWrapper>
+      />
+    </TableActionButtonGroup>
   );
 
   const columns = [
@@ -159,7 +154,7 @@ const ManageMemberFrame = () => {
       id: "actions",
       header: "관리",
       cell: ({ row }) => actionsCellRenderer(row.original),
-      size: 140,
+      size: 160,
     }),
   ];
 
