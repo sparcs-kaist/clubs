@@ -594,10 +594,13 @@ export default class ActivityService {
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
-    const activityDId = await this.activityDurationPublicService.loadId({
+    const activityD = await this.activityDurationPublicService.load({
       date: new Date(),
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
     });
+    const activityDId = activityD.id;
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
+
     // 현재학기에 동아리원이 아니였던 참가자가 있는지 검사합니다.
     const participantIds = await Promise.all(
       body.participants.map(
@@ -668,7 +671,11 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
 
-    // 제출한 활동 기간들이 지난 활동기간 이내인지 확인하지 않습니다.
+    // 제출한 활동 기간들이 활동기간 이내이며 작성일 이후를 포함하지 않는지 확인합니다.
+    const activityD = await this.activityDurationPublicService.getById(
+      activity.activityDuration.id,
+    );
+    this.assertActivityDurationsAreSubmittable(body.durations, activityD);
 
     // 파일 uuid의 유효성을 검사합니다.
     const evidenceFiles = await Promise.all(
