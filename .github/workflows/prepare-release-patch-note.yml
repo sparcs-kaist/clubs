@@ -1,0 +1,84 @@
+name: Prepare Release Patch Note
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: prepare-release-patch-note
+  cancel-in-progress: false
+
+jobs:
+  prepare-patch-note:
+    name: Prepare patch note commit
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.base.ref == 'main' &&
+        github.event.pull_request.head.ref == 'dev'
+      )
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_BOT_TOKEN || github.token }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: true
+
+      - name: Fetch release refs
+        run: git fetch origin main dev --prune
+
+      - name: Generate release patch note
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >
+          node scripts/release/prepare-patch-note.mjs
+          --base origin/main
+          --head HEAD
+          --file packages/web/src/constants/patchNote.ts
+
+      - name: Format generated patch note
+        if: ${{ hashFiles('packages/web/src/constants/patchNote.ts') != '' }}
+        run: pnpm exec prettier --write packages/web/src/constants/patchNote.ts
+
+      - name: Validate web package
+        run: |
+          pnpm --filter web lint
+          pnpm --filter web build
+
+      - name: Commit patch note
+        env:
+          PUSH_TOKEN_KIND: ${{ secrets.RELEASE_BOT_TOKEN != '' && 'RELEASE_BOT_TOKEN' || 'GITHUB_TOKEN' }}
+        run: |
+          if git diff --quiet -- packages/web/src/constants/patchNote.ts; then
+            echo "No patch note changes to commit."
+            exit 0
+          fi
+
+          git config user.name "clubs-release-bot"
+          git config user.email "clubs-release-bot@users.noreply.github.com"
+          git add packages/web/src/constants/patchNote.ts
+          git commit -m "chore: update release patch note"
+          git push origin HEAD:dev
+
+          if [ "${PUSH_TOKEN_KIND}" = "GITHUB_TOKEN" ]; then
+            echo "::notice::Patch note commit was pushed with GITHUB_TOKEN, so dev push workflows will not be triggered by GitHub. Set RELEASE_BOT_TOKEN when CI and stage deploy should run from this generated commit."
+          fi
