@@ -39,7 +39,10 @@ const getDeadlineTypeText = (deadlineEnum: ActivityDeadlineEnum): string => {
 const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
   deadlines,
 }) => {
-  const { mutate: deleteActivityDeadline } = useDeleteActivityDeadline();
+  const {
+    mutate: deleteActivityDeadline,
+    isPending: isDeletingActivityDeadline,
+  } = useDeleteActivityDeadline();
 
   const sortedDeadlines = useMemo(() => {
     if (!deadlines) return [];
@@ -59,6 +62,7 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
     <TableActionButton
       variant="delete"
       onClick={() => handleDelete(deadlineId)}
+      disabled={isDeletingActivityDeadline}
     />
   );
 

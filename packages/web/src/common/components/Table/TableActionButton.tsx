@@ -1,6 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 
+import Icon from "../Icon";
+
 export type TableActionButtonVariant = "edit" | "delete";
 
 interface TableActionButtonProps {
@@ -12,11 +14,11 @@ interface TableActionButtonProps {
 
 const actionMeta = {
   edit: {
-    emoji: "✏️",
+    icon: "edit",
     label: "수정",
   },
   delete: {
-    emoji: "🗑️",
+    icon: "delete_outline",
     label: "삭제",
   },
 };
@@ -70,14 +72,6 @@ const TableActionButtonInner = styled.button<{
   }
 `;
 
-const ButtonEmoji = styled.span`
-  display: inline-flex;
-  width: 16px;
-  justify-content: center;
-  font-size: 14px;
-  line-height: 16px;
-`;
-
 export const TableActionButtonGroup = styled.div`
   display: inline-flex;
   flex-direction: row;
@@ -100,7 +94,7 @@ const TableActionButton = ({
       onClick();
     }
   };
-  const { emoji, label } = actionMeta[variant];
+  const { icon, label } = actionMeta[variant];
 
   return (
     <TableActionButtonInner
@@ -110,7 +104,7 @@ const TableActionButton = ({
       aria-label={label}
       onClick={handleClick}
     >
-      <ButtonEmoji aria-hidden="true">{emoji}</ButtonEmoji>
+      <Icon type={icon} size={16} color="inherit" />
       {children ?? label}
     </TableActionButtonInner>
   );
