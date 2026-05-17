@@ -5,16 +5,20 @@ import {
 } from "@tanstack/react-table";
 import { ko } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { ApiSem019ResponseOk } from "@clubs/interface/api/semester/apiSem019";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
-import TableActionButton from "@sparcs-clubs/web/common/components/Table/TableActionButton";
+import TableActionButton, {
+  TableActionButtonGroup,
+} from "@sparcs-clubs/web/common/components/Table/TableActionButton";
+import DeadlineEditModal from "@sparcs-clubs/web/features/executive/components/DeadlineEditModal";
 
 import useDeleteRegistrationDeadline from "../services/useDeleteRegistrationDeadline";
+import useUpdateRegistrationDeadline from "../services/useUpdateRegistrationDeadline";
 
 const registrationDeadlineEnumToString = (
   value: RegistrationDeadlineEnum,
@@ -46,6 +50,13 @@ const RegistrationDeadlineTable = ({
     mutate: deleteRegistrationDeadline,
     isPending: isDeletingRegistrationDeadline,
   } = useDeleteRegistrationDeadline();
+  const {
+    mutate: updateRegistrationDeadline,
+    isPending: isUpdatingRegistrationDeadline,
+  } = useUpdateRegistrationDeadline();
+  const [editingDeadline, setEditingDeadline] = useState<
+    ApiSem019ResponseOk["deadlines"][number] | null
+  >(null);
 
   const sortedDeadlines = useMemo(() => {
     if (!deadlines) return [];
@@ -59,12 +70,33 @@ const RegistrationDeadlineTable = ({
     deleteRegistrationDeadline({ registrationDeadlineId: id });
   };
 
-  const actionsCellRenderer = (id: number) => (
-    <TableActionButton
-      variant="delete"
-      onClick={() => handleDelete(id)}
-      disabled={isDeletingRegistrationDeadline}
-    />
+  const handleUpdate = (startTerm: Date, endTerm: Date) => {
+    if (!editingDeadline) return;
+
+    updateRegistrationDeadline(
+      {
+        registrationDeadlineId: editingDeadline.id,
+        body: { startTerm, endTerm },
+      },
+      { onSuccess: () => setEditingDeadline(null) },
+    );
+  };
+
+  const actionsCellRenderer = (
+    deadline: ApiSem019ResponseOk["deadlines"][number],
+  ) => (
+    <TableActionButtonGroup>
+      <TableActionButton
+        variant="edit"
+        onClick={() => setEditingDeadline(deadline)}
+        disabled={isUpdatingRegistrationDeadline}
+      />
+      <TableActionButton
+        variant="delete"
+        onClick={() => handleDelete(deadline.id)}
+        disabled={isDeletingRegistrationDeadline}
+      />
+    </TableActionButtonGroup>
   );
 
   const columnHelper =
@@ -106,8 +138,8 @@ const RegistrationDeadlineTable = ({
     columnHelper.display({
       id: "actions",
       header: "관리",
-      cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 96,
+      cell: ({ row }) => actionsCellRenderer(row.original),
+      size: 160,
     }),
   ];
 
@@ -121,6 +153,15 @@ const RegistrationDeadlineTable = ({
   return (
     <FlexWrapper direction="column" gap={8}>
       <Table count={sortedDeadlines.length} table={table} />
+      <DeadlineEditModal
+        isOpen={editingDeadline != null}
+        title="등록 기간 수정"
+        startTerm={editingDeadline?.startTerm}
+        endTerm={editingDeadline?.endTerm}
+        isPending={isUpdatingRegistrationDeadline}
+        onClose={() => setEditingDeadline(null)}
+        onSave={handleUpdate}
+      />
     </FlexWrapper>
   );
 };

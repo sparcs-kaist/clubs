@@ -15,6 +15,7 @@ Use this skill when:
 
 - the user asks to start work on a new TU task
 - the user gives a Notion task/spec page and wants implementation to happen in a fresh worktree
+- the user gives only a new task summary and the task page must be created before the worktree
 - the user gives a GitHub PR link and wants that existing branch pulled into a separate worktree
 - the user wants a clean workspace with the repo bootstrapped before coding
 
@@ -48,13 +49,16 @@ Always inspect the task source before creating the worktree.
 ### If the user gives only a TU number or task summary
 
 1. Confirm the TU number from the task source when possible.
-2. Use the TU number to build the branch name.
+2. If the task has no TU number yet, create a new task page in the Notion task DB first:
+   - `https://www.notion.so/sparcs/19cc25603b0b8050bc8ff9d4807e5f3a?v=19cc25603b0b8001a7e4000cfc41151a&source=copy_link`
+3. Store the task title, summary, scope, and acceptance criteria there, then obtain the generated task number.
+4. Use the TU number to build the branch name.
 
 ## Branch naming rules
 
 - Existing PR: reuse the PR head branch exactly.
 - Fresh task with a TU number: use `TU-<number>`.
-- If the task source does not contain a TU number and no PR branch exists, ask the user for the TU number instead of inventing one.
+- If the task source does not contain a TU number and no PR branch exists, create a Notion task page first when tools are available. Ask the user for the TU number only when the task page cannot be created.
 - Fresh branch creation should sync `dev` first by running a `git pull origin dev` from the primary repo worktree.
 
 ## Worktree location rules
