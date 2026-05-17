@@ -9,6 +9,9 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 import useGetExecutiveClubFunding from "../hooks/useGetExecutiveClubFunding";
+import formatActivityDurationName, {
+  defaultActivityDuration,
+} from "../utils/formatActivityDuration";
 import ExecutiveClubFundingsTable from "./ExecutiveClubFundingsTable";
 
 interface ExecutivePastFundingSectionProps {
@@ -25,6 +28,7 @@ const ExecutivePastFundingSection: React.FC<
   } = useGetExecutiveClubFunding(+clubId);
 
   const defaultData = {
+    activityDuration: defaultActivityDuration,
     club: {
       id: Number(clubId),
       name: "",
@@ -58,8 +62,8 @@ const ExecutivePastFundingSection: React.FC<
           )}
           {dataList.map(data => (
             <FoldableSection
-              key={data.semester.id}
-              title={`${data.semester.year}년 ${data.semester.name}학기 (총 ${data.items?.fundings ? data.items.fundings.length : 0}개)`}
+              key={data.activityDuration.id}
+              title={`${formatActivityDurationName(data.items?.activityDuration ?? data.activityDuration)} (총 ${data.items?.fundings ? data.items.fundings.length : 0}개)`}
               childrenMargin="20px"
             >
               {data.items == null ? (

@@ -63,6 +63,7 @@ import {
   IFundingResponse,
 } from "@clubs/interface/api/funding/type/funding.type";
 import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
+import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   FundingDeadlineEnum,
   FundingStatusEnum,
@@ -568,6 +569,48 @@ export default class FundingService {
     };
   }
 
+  private async getPastActivityDurationsWithFunding(
+    targetDuration: IActivityDuration,
+  ): Promise<IActivityDuration[]> {
+    const activityDurations = await this.activityDurationPublicService.search({
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+    });
+
+    const pastActivityDurations = activityDurations.filter(
+      activityDuration =>
+        activityDuration.semester.id !== targetDuration.semester.id &&
+        activityDuration.endTerm <= targetDuration.startTerm,
+    );
+
+    const activityDurationIds = pastActivityDurations.map(
+      activityDuration => activityDuration.id,
+    );
+
+    if (activityDurationIds.length === 0) {
+      return [];
+    }
+
+    const activityDurationIdsWithFunding = await this.prisma.funding.groupBy({
+      by: ["activityDId"],
+      where: {
+        activityDId: {
+          in: activityDurationIds,
+        },
+        deletedAt: null,
+      },
+    });
+
+    const activityDurationIdSet = new Set(
+      activityDurationIdsWithFunding.map(row => row.activityDId),
+    );
+
+    return pastActivityDurations
+      .filter(activityDuration =>
+        activityDurationIdSet.has(activityDuration.id),
+      )
+      .sort((a, b) => b.endTerm.getTime() - a.endTerm.getTime());
+  }
+
   async getExecutiveFundings(
     executiveId: IExecutive["id"],
     query: ApiFnd008RequestQuery = {},
@@ -576,10 +619,12 @@ export default class FundingService {
 
     const semesterId =
       query.semesterId ?? (await this.semesterPublicService.loadId());
-    const activityDId = await this.activityDurationPublicService.loadId({
+    const activityDuration = await this.activityDurationPublicService.load({
       semesterId,
     });
-    const fundings = await this.fundingRepository.fetchSummaries(activityDId);
+    const fundings = await this.fundingRepository.fetchSummaries(
+      activityDuration.id,
+    );
 
     // const activityD = await this.activityDurationPublicService.load();
     // const fundings = await this.fundingRepository.fetchSummaries(
@@ -742,7 +787,14 @@ export default class FundingService {
         })),
     }));
 
+    const pastActivityDurations =
+      query.semesterId === undefined
+        ? await this.getPastActivityDurationsWithFunding(activityDuration)
+        : undefined;
+
     return {
+      activityDuration,
+      ...(pastActivityDurations ? { pastActivityDurations } : {}),
       totalCount: fundings.length,
       appliedCount: fundings.filter(
         funding => funding.fundingStatusEnum === FundingStatusEnum.Applied,
@@ -772,13 +824,13 @@ export default class FundingService {
     await this.userPublicService.checkCurrentExecutive(executiveId);
     const semesterId =
       query.semesterId ?? (await this.semesterPublicService.loadId());
-    const activityDId = await this.activityDurationPublicService.loadId({
+    const activityDuration = await this.activityDurationPublicService.load({
       semesterId,
     });
 
     const fundings = await this.fundingRepository.fetchSummaries(
       param.clubId,
-      activityDId,
+      activityDuration.id,
     );
 
     const club = await this.clubPublicService.fetchSummary(param.clubId);
@@ -838,7 +890,14 @@ export default class FundingService {
       fundings.map(funding => funding.club.id),
     );
 
+    const pastActivityDurations =
+      query.semesterId === undefined
+        ? await this.getPastActivityDurationsWithFunding(activityDuration)
+        : undefined;
+
     return {
+      activityDuration,
+      ...(pastActivityDurations ? { pastActivityDurations } : {}),
       club,
       totalCount: fundings.filter(funding => funding.club.id === param.clubId)
         .length,
