@@ -30,7 +30,10 @@ import {
   ApiFnd006ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd006";
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
-import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
+import {
+  ApiFnd008RequestQuery,
+  ApiFnd008ResponseOk,
+} from "@clubs/interface/api/funding/endpoint/apiFnd008";
 import {
   type ApiFnd009RequestParam,
   type ApiFnd009RequestQuery,
@@ -567,10 +570,12 @@ export default class FundingService {
 
   async getExecutiveFundings(
     executiveId: IExecutive["id"],
+    query: ApiFnd008RequestQuery = {},
   ): Promise<ApiFnd008ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
 
-    const semesterId = await this.semesterPublicService.loadId();
+    const semesterId =
+      query.semesterId ?? (await this.semesterPublicService.loadId());
     const activityDId = await this.activityDurationPublicService.loadId({
       semesterId,
     });
@@ -587,8 +592,20 @@ export default class FundingService {
     const devisions = await this.clubPublicService.fetchDivisionSummaries(
       clubs.map(club => club.division.id),
     );
+    const chargedExecutiveIds = Array.from(
+      new Set(
+        fundings
+          .map(funding => funding.chargedExecutive?.id)
+          .filter((id): id is number => id !== undefined),
+      ),
+    );
+
     const executives =
-      await this.userPublicService.fetchCurrentExecutiveSummaries();
+      query.semesterId === undefined
+        ? await this.userPublicService.fetchCurrentExecutiveSummaries()
+        : await this.userPublicService.fetchExecutiveSummaries(
+            chargedExecutiveIds,
+          );
 
     const clubsWithCounts = clubs.map(club => ({
       ...club,
@@ -646,31 +663,31 @@ export default class FundingService {
     const executivesWithCounts = executives.map(executive => ({
       ...executive,
       totalCount: fundings.filter(
-        funding => funding.chargedExecutive.id === executive.id,
+        funding => funding.chargedExecutive?.id === executive.id,
       ).length,
       appliedCount: fundings.filter(
         funding =>
-          funding.chargedExecutive.id === executive.id &&
+          funding.chargedExecutive?.id === executive.id &&
           funding.fundingStatusEnum === FundingStatusEnum.Applied,
       ).length,
       approvedCount: fundings.filter(
         funding =>
-          funding.chargedExecutive.id === executive.id &&
+          funding.chargedExecutive?.id === executive.id &&
           funding.fundingStatusEnum === FundingStatusEnum.Approved,
       ).length,
       partialCount: fundings.filter(
         funding =>
-          funding.chargedExecutive.id === executive.id &&
+          funding.chargedExecutive?.id === executive.id &&
           funding.fundingStatusEnum === FundingStatusEnum.Partial,
       ).length,
       rejectedCount: fundings.filter(
         funding =>
-          funding.chargedExecutive.id === executive.id &&
+          funding.chargedExecutive?.id === executive.id &&
           funding.fundingStatusEnum === FundingStatusEnum.Rejected,
       ).length,
       committeeCount: fundings.filter(
         funding =>
-          funding.chargedExecutive.id === executive.id &&
+          funding.chargedExecutive?.id === executive.id &&
           funding.fundingStatusEnum === FundingStatusEnum.Committee,
       ).length,
       chargedClubs: clubs
@@ -753,15 +770,12 @@ export default class FundingService {
     query: ApiFnd009RequestQuery,
   ): Promise<ApiFnd009ResponseOk> {
     await this.userPublicService.checkCurrentExecutive(executiveId);
-    const semesterId = await this.semesterPublicService.loadId();
-    const activityDId =
-      query.activityDurationId === undefined
-        ? await this.activityDurationPublicService.loadId({
-            semesterId,
-          })
-        : query.activityDurationId;
+    const semesterId =
+      query.semesterId ?? (await this.semesterPublicService.loadId());
+    const activityDId = await this.activityDurationPublicService.loadId({
+      semesterId,
+    });
 
-    // TODO: 지난 지원금 신청 기간을 조회하도록 임시 ㅅ수정해 두었으니 복구할 것
     const fundings = await this.fundingRepository.fetchSummaries(
       param.clubId,
       activityDId,

@@ -38,6 +38,7 @@ import apiFnd007, {
   type ApiFnd007ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd007";
 import apiFnd008, {
+  type ApiFnd008RequestQuery,
   ApiFnd008RequestUrl,
   type ApiFnd008ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd008";
@@ -218,8 +219,12 @@ export default class FundingController {
   @UsePipes(new ZodPipe(apiFnd008))
   async getExecutiveFundings(
     @GetExecutive() executive: GetExecutive,
+    @Query() query: ApiFnd008RequestQuery,
   ): Promise<ApiFnd008ResponseOk> {
-    return this.fundingService.getExecutiveFundings(executive.executiveId);
+    return this.fundingService.getExecutiveFundings(
+      executive.executiveId,
+      query,
+    );
   }
 
   @Executive()

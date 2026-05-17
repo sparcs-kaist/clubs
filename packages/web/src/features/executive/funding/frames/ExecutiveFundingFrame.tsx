@@ -13,12 +13,18 @@ import ExecutiveFundingClubTable from "../components/ExecutiveFundingClubTable";
 import FundingStatistic from "../components/FundingStatistic";
 import useGetExecutiveFundings from "../services/useGetExecutiveFundings";
 
-const ExecutiveFundingFrame = () => {
+interface ExecutiveFundingFrameProps {
+  semesterId?: number;
+}
+
+const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
   const [isClubView, setIsClubView] = useState<boolean>(
     window.history.state.isClubView ?? true,
   );
   const [searchText, setSearchText] = useState<string>("");
-  const { data, isLoading, isError } = useGetExecutiveFundings();
+  const { data, isLoading, isError } = useGetExecutiveFundings({
+    semesterId,
+  });
 
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<

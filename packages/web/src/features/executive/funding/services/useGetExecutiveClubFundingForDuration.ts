@@ -30,7 +30,7 @@ const useGetExecutiveClubFundingForDuration = (
   query: ApiFnd009RequestQuery,
 ) =>
   useQuery<ApiFnd009ResponseOk, Error>({
-    queryKey: [apiFnd009.url(clubId), query.activityDurationId],
+    queryKey: [apiFnd009.url(clubId), query.semesterId],
     queryFn: () => executiveClubFundingForDurationQueryFn(clubId, query),
   });
 
