@@ -10,8 +10,8 @@ import React, { useCallback, useMemo } from "react";
 import { ApiSem007ResponseOK } from "@clubs/interface/api/semester/apiSem007";
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
-import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import TableActionButton from "@sparcs-clubs/web/common/components/Table/TableActionButton";
 
 import useDeleteActivityDeadline from "../services/useDeleteActivityDeadline";
 
@@ -39,7 +39,10 @@ const getDeadlineTypeText = (deadlineEnum: ActivityDeadlineEnum): string => {
 const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
   deadlines,
 }) => {
-  const { mutate: deleteActivityDeadline } = useDeleteActivityDeadline();
+  const {
+    mutate: deleteActivityDeadline,
+    isPending: isDeletingActivityDeadline,
+  } = useDeleteActivityDeadline();
 
   const sortedDeadlines = useMemo(() => {
     if (!deadlines) return [];
@@ -56,7 +59,11 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
   );
 
   const actionsCellRenderer = (deadlineId: number) => (
-    <TextButton text="삭제" onClick={() => handleDelete(deadlineId)} />
+    <TableActionButton
+      variant="delete"
+      onClick={() => handleDelete(deadlineId)}
+      disabled={isDeletingActivityDeadline}
+    />
   );
 
   const columnHelper = createColumnHelper<ActivityDeadlineData>();
@@ -87,9 +94,9 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
       enableSorting: false,
     }),
     columnHelper.accessor("id", {
-      header: "삭제",
+      header: "관리",
       cell: info => actionsCellRenderer(info.getValue()),
-      size: 80,
+      size: 96,
       enableSorting: false,
     }),
   ];
