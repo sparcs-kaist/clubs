@@ -122,10 +122,13 @@ jobs:
           RELEASE_TYPE: ${{ steps.bump.outputs.label }}
           RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
         run: |
-          title="chore: update release patch note"
+          title="PATCH NOTE"
+          if [ -n "${RELEASE_VERSION}" ]; then
+            title="PATCH NOTE - ${RELEASE_VERSION}"
+          fi
+
           release_ref="manual workflow run"
           if [ -n "${RELEASE_PR_NUMBER}" ]; then
-            title="chore: update release patch note for #${RELEASE_PR_NUMBER}"
             release_ref="release PR #${RELEASE_PR_NUMBER}"
           fi
 
