@@ -4,6 +4,11 @@ import { z } from "zod";
 import { zClub } from "@clubs/domain/club/club";
 
 import { zDivision } from "@clubs/interface/api/division/type/division.type";
+import {
+  zClubCharacteristic,
+  zClubRoom,
+  zUserName,
+} from "@clubs/interface/common/commonString";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { registry } from "@clubs/interface/open-api";
 
@@ -30,9 +35,9 @@ const responseBodyMap = {
     nameEn: zClub.shape.nameEn,
     type: z.nativeEnum(ClubTypeEnum), // 동아리 유형(정동아리 | 가동아리)
     isPermanent: z.coerce.boolean(), // 상임동아리 여부
-    characteristic: z.coerce.string().max(50), // 동아리 소개
-    representative: z.coerce.string().max(20), // 동아리 대표
-    advisor: z.coerce.string().max(20).optional(), // 동아리 지도교수
+    characteristic: zClubCharacteristic.nullable(), // 동아리 소개
+    representative: zUserName, // 동아리 대표
+    advisor: zUserName.nullable().optional(), // 동아리 지도교수
     totalMemberCnt: z.coerce.number().int().min(1),
     description: zClub.shape.description,
     division: z.object({
@@ -40,7 +45,7 @@ const responseBodyMap = {
       name: zDivision.shape.name,
     }), // 분과명
     foundingYear: zClub.shape.foundingYear,
-    room: z.coerce.string().max(50), // 동아리방 위치
+    room: zClubRoom, // 동아리방 위치
   }),
 };
 

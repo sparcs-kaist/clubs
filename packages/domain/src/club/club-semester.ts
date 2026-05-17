@@ -77,7 +77,7 @@ export const zClubSemester = z.object({
   }),
   characteristicKr: z
     .string()
-    .max(30)
+    .max(255)
     .nullable()
     .openapi({
       description: "동아리 성격 국문",
@@ -85,7 +85,7 @@ export const zClubSemester = z.object({
     }),
   characteristicEn: z
     .string()
-    .max(30)
+    .max(255)
     .nullable()
     .openapi({
       description: "동아리 성격 영문",
