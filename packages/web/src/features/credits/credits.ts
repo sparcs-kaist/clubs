@@ -26,9 +26,9 @@ const credits: SemesterCredit[] = [
       {
         nickname: "gb",
         name: "권혁원",
-        role: "BE",
-        roleType: RoleType.member,
-        comment: "AI와 함께하는 클럽스",
+        role: "PM",
+        roleType: RoleType.PM,
+        comment: "Project Maintainer",
       },
     ],
   },
