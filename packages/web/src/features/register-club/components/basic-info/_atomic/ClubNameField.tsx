@@ -28,7 +28,6 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
   editMode = false,
 }) => {
   const { control, setValue, watch } = useFormContext<RegisterClubModel>();
-  const formData = watch();
 
   const clubId = watch("clubId");
   const krName = watch("clubNameKr");
@@ -50,10 +49,6 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
       ),
     [clubList],
   );
-
-  useEffect(() => {
-    console.log("formData changed:", formData);
-  }, [formData]);
 
   useEffect(() => {
     if (type !== RegistrationTypeEnum.NewProvisional && clubId != null) {

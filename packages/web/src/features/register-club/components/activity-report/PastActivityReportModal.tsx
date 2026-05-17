@@ -151,6 +151,29 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
     router.push(`/manage-club/activity-report/${activityId}`);
   };
 
+  const handleCopyActivityReportUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/manage-club/activity-report/${activityId}`,
+      );
+      overlay.open(({ isOpen: isOpenCopyModal, close: closeCopyModal }) => (
+        <Modal isOpen={isOpenCopyModal}>
+          <ConfirmModalContent onConfirm={closeCopyModal}>
+            활동보고서 주소가 클립보드에 복사 되었습니다.
+          </ConfirmModalContent>
+        </Modal>
+      ));
+    } catch {
+      overlay.open(({ isOpen: isOpenCopyModal, close: closeCopyModal }) => (
+        <Modal isOpen={isOpenCopyModal}>
+          <ConfirmModalContent onConfirm={closeCopyModal}>
+            활동보고서 주소 복사에 실패했습니다.
+          </ConfirmModalContent>
+        </Modal>
+      ));
+    }
+  };
+
   if (!data) return null;
 
   return (
@@ -167,12 +190,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
           >
             <Button
               style={{ padding: "8px" }}
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/manage-club/activity-report/${activityId}`,
-                );
-                alert("활동보고서 주소가 클립보드에 복사 되었습니다!");
-              }}
+              onClick={handleCopyActivityReportUrl}
             >
               <Icon type="link_variant" size={16} color="white" />
             </Button>
