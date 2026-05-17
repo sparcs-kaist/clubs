@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: prepare-release-patch-note
@@ -49,20 +49,25 @@ jobs:
       - name: Determine version bump
         id: bump
         env:
-          PR_TITLE: "${{ github.event.pull_request.title || 'PATCH Release: dev -> main' }}"
+          PR_TITLE: "${{ github.event.pull_request.title || '[PATCH] Release' }}"
         run: |
           title="${PR_TITLE}"
+          label="PATCH"
           bump="patch"
 
-          case "${title}" in
-            MAJOR\ *|major\ *) bump="major" ;;
-            MINOR\ *|minor\ *) bump="minor" ;;
-            PATCH\ *|patch\ *) bump="patch" ;;
-          esac
+          if [[ "${title}" =~ ^\[([Mm][Aa][Jj][Oo][Rr]|[Mm][Ii][Nn][Oo][Rr]|[Pp][Aa][Tt][Cc][Hh])\] ]]; then
+            label="$(printf "%s" "${BASH_REMATCH[1]}" | tr "[:lower:]" "[:upper:]")"
+          elif [[ "${title}" =~ ^([Mm][Aa][Jj][Oo][Rr]|[Mm][Ii][Nn][Oo][Rr]|[Pp][Aa][Tt][Cc][Hh])[[:space:]] ]]; then
+            label="$(printf "%s" "${BASH_REMATCH[1]}" | tr "[:lower:]" "[:upper:]")"
+          fi
+
+          bump="$(printf "%s" "${label}" | tr "[:upper:]" "[:lower:]")"
 
           echo "bump=${bump}" >> "${GITHUB_OUTPUT}"
+          echo "label=${label}" >> "${GITHUB_OUTPUT}"
 
       - name: Generate release patch note
+        id: generate
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >
@@ -104,3 +109,14 @@ jobs:
           git push origin HEAD:dev
 
           echo "::notice::Patch note commit was pushed with GITHUB_TOKEN. GitHub will not trigger follow-up dev push workflows from this generated commit by design."
+
+      - name: Update release PR title
+        if: github.event_name == 'pull_request' && steps.generate.outputs.display_version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TYPE: ${{ steps.bump.outputs.label }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "[${RELEASE_TYPE}] Release: ${RELEASE_VERSION}"

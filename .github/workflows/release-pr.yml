@@ -35,17 +35,28 @@ jobs:
           number="$(gh pr list --repo "${GITHUB_REPOSITORY}" --base main --head dev --state open --json number --jq '.[0].number // ""')"
           echo "number=${number}" >> "${GITHUB_OUTPUT}"
 
+      - name: Get current release version
+        id: version
+        if: steps.diff.outputs.ahead != '0' && steps.existing.outputs.number == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source="$(gh api "repos/${GITHUB_REPOSITORY}/contents/packages/web/src/constants/patchNote.ts?ref=main" --jq '.content' | base64 -d)"
+          version="$(printf "%s" "${source}" | node -e 'const fs = require("node:fs"); const source = fs.readFileSync(0, "utf8"); const versions = [...source.matchAll(/version:\s*"v\.(\d+)\.(\d+)\.(\d+)"/g)].map(match => match.slice(1).map(Number)); versions.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]); const latest = versions.at(-1); if (!latest) throw new Error("No patch note versions found"); console.log(latest.join("."));')"
+          echo "current=${version}" >> "${GITHUB_OUTPUT}"
+
       - name: Create draft release PR
         if: steps.diff.outputs.ahead != '0' && steps.existing.outputs.number == ''
         env:
           GH_TOKEN: ${{ github.token }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
         run: |
           gh pr create \
             --repo "${GITHUB_REPOSITORY}" \
             --base main \
             --head dev \
             --draft \
-            --title "PATCH Release: dev -> main" \
+            --title "[PATCH] Release: from ${CURRENT_VERSION}" \
             --body "$(cat <<'BODY'
           ## 릴리즈 흐름
 
@@ -54,9 +65,9 @@ jobs:
           릴리즈 패치노트를 준비하려면:
 
           1. 머지된 feature PR 본문에 `clubs:patch-note` block이 있는지 확인합니다.
-          2. 기본값은 `PATCH`입니다. 필요하면 이 PR을 ready 상태로 바꾸기 전에 제목 prefix를 `MINOR` 또는 `MAJOR`로 변경합니다.
+          2. 기본값은 `[PATCH]`입니다. 필요하면 이 PR을 ready 상태로 바꾸기 전에 제목 prefix를 `[MINOR]` 또는 `[MAJOR]`로 변경합니다.
           3. 이 PR을 **Ready for review**로 변경합니다.
-          4. `Prepare Release Patch Note` workflow가 `dev`에 패치노트 커밋을 하나 생성합니다.
+          4. `Prepare Release Patch Note` workflow가 `dev`에 패치노트 커밋을 하나 생성하고, PR 제목을 `[TYPE] Release: X.Y.Z` 형식으로 갱신합니다.
 
           ## 패치노트 커밋 트리거
 
@@ -69,9 +80,9 @@ jobs:
           To prepare the release patch note:
 
           1. Make sure merged feature PRs have a `clubs:patch-note` block in their PR body.
-          2. Keep the title prefix as `PATCH`, or change it to `MINOR` or `MAJOR` before marking this PR as ready.
+          2. Keep the title prefix as `[PATCH]`, or change it to `[MINOR]` or `[MAJOR]` before marking this PR as ready.
           3. Mark this PR as **Ready for review**.
-          4. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev`.
+          4. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev` and rename this PR to `[TYPE] Release: X.Y.Z`.
 
           ## Patch Note Commit Trigger
 
