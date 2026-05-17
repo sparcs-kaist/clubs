@@ -1,6 +1,8 @@
 import { overlay } from "overlay-kit";
 import { useEffect, useState } from "react";
 
+import { ApiFnd008ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd008";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -12,20 +14,35 @@ import ExecutiveFundingChargedTable from "../components/ExecutiveFundingChargedT
 import ExecutiveFundingClubTable from "../components/ExecutiveFundingClubTable";
 import FundingStatistic from "../components/FundingStatistic";
 import useGetExecutiveFundings from "../services/useGetExecutiveFundings";
+import { defaultActivityDuration } from "../utils/formatActivityDuration";
 
 interface ExecutiveFundingFrameProps {
   semesterId?: number;
 }
 
-const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
+const defaultExecutiveFundingData: ApiFnd008ResponseOk = {
+  activityDuration: defaultActivityDuration,
+  totalCount: 0,
+  appliedCount: 0,
+  approvedCount: 0,
+  rejectedCount: 0,
+  committeeCount: 0,
+  partialCount: 0,
+  clubs: [],
+  executives: [],
+};
+
+interface ExecutiveFundingContentProps {
+  data: ApiFnd008ResponseOk;
+}
+
+export const ExecutiveFundingContent = ({
+  data,
+}: ExecutiveFundingContentProps) => {
   const [isClubView, setIsClubView] = useState<boolean>(
     window.history.state.isClubView ?? true,
   );
   const [searchText, setSearchText] = useState<string>("");
-  const { data, isLoading, isError } = useGetExecutiveFundings({
-    semesterId,
-  });
-
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
     ChargedChangeFundingProps[]
@@ -36,18 +53,16 @@ const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
   }, [isClubView]);
 
   useEffect(() => {
-    if (data) {
-      setSelectedClubInfos(
-        data.clubs
-          .filter(club => selectedClubIds.includes(club.id))
-          .map(club => ({
-            clubId: club.id,
-            clubNameKr: club.name,
-            clubNameEn: club.name,
-            prevExecutiveName: club.chargedExecutive?.name ?? "",
-          })),
-      );
-    }
+    setSelectedClubInfos(
+      data.clubs
+        .filter(club => selectedClubIds.includes(club.id))
+        .map(club => ({
+          clubId: club.id,
+          clubNameKr: club.name,
+          clubNameEn: club.name,
+          prevExecutiveName: club.chargedExecutive?.name ?? "",
+        })),
+    );
   }, [data, selectedClubIds]);
 
   const openChargedChangeModal = () => {
@@ -62,21 +77,8 @@ const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
   };
 
   return (
-    <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <FundingStatistic
-        fundings={
-          data ?? {
-            totalCount: 0,
-            appliedCount: 0,
-            approvedCount: 0,
-            rejectedCount: 0,
-            committeeCount: 0,
-            partialCount: 0,
-            clubs: [],
-            executives: [],
-          }
-        }
-      />
+    <>
+      <FundingStatistic fundings={data} />
       <FlexWrapper direction="row" gap={12}>
         <Button
           style={{ flex: 1 }}
@@ -110,41 +112,30 @@ const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
       </FlexWrapper>
       {isClubView ? (
         <ExecutiveFundingClubTable
-          fundings={
-            data ?? {
-              totalCount: 0,
-              appliedCount: 0,
-              approvedCount: 0,
-              rejectedCount: 0,
-              committeeCount: 0,
-              partialCount: 0,
-              clubs: [],
-              executives: [],
-            }
-          }
+          fundings={data}
           searchText={searchText}
           selectedClubIds={selectedClubIds}
           setSelectedClubIds={setSelectedClubIds}
         />
       ) : (
-        <ExecutiveFundingChargedTable
-          fundings={
-            data ?? {
-              totalCount: 0,
-              appliedCount: 0,
-              approvedCount: 0,
-              rejectedCount: 0,
-              committeeCount: 0,
-              partialCount: 0,
-              clubs: [],
-              executives: [],
-            }
-          }
-          searchText={searchText}
-        />
+        <ExecutiveFundingChargedTable fundings={data} searchText={searchText} />
       )}
+    </>
+  );
+};
+
+const ExecutiveFundingFrame = ({ semesterId }: ExecutiveFundingFrameProps) => {
+  const { data, isLoading, isError } = useGetExecutiveFundings({
+    semesterId,
+  });
+
+  return (
+    <AsyncBoundary isLoading={isLoading} isError={isError}>
+      <ExecutiveFundingContent data={data ?? defaultExecutiveFundingData} />
     </AsyncBoundary>
   );
 };
+
+export { defaultExecutiveFundingData };
 
 export default ExecutiveFundingFrame;

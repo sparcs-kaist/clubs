@@ -1,60 +1,42 @@
 import { useQueries } from "@tanstack/react-query";
 
 import { ApiFnd009ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd009";
-import { ApiSem001ResponseOK } from "@clubs/interface/api/semester/apiSem001";
 
-import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
-import useGetFundingDeadline from "@sparcs-clubs/web/features/manage-club/funding/services/useGetFundingDeadline";
-
-import { executiveClubFundingForDurationQueryFn } from "../services/useGetExecutiveClubFundingForDuration";
+import useGetExecutiveClubFundingForDuration, {
+  executiveClubFundingForDurationQueryFn,
+} from "../services/useGetExecutiveClubFundingForDuration";
 
 const useGetExecutiveClubFunding = (
   clubId: number,
 ): {
   data: {
-    semester: ApiSem001ResponseOK["semesters"][number];
+    activityDuration: ApiFnd009ResponseOk["activityDuration"];
     items: ApiFnd009ResponseOk | null;
   }[];
   isLoading: boolean;
   isError: boolean;
 } => {
   const {
-    data: semestersData,
-    isLoading,
-    isError,
-  } = useGetSemesters({ pageOffset: 1, itemCount: 100 });
+    data: currentFunding,
+    isLoading: isCurrentFundingLoading,
+    isError: isCurrentFundingError,
+  } = useGetExecutiveClubFundingForDuration(clubId, {});
 
-  const {
-    data: deadline,
-    isLoading: isLoadingDeadline,
-    isError: isErrorDeadline,
-  } = useGetFundingDeadline();
-
-  const pastSemesters = semestersData?.semesters.filter(semester => {
-    const targetSemesterId = deadline?.targetDuration.semester.id;
-    const targetSemester = semestersData.semesters.find(
-      semesterItem => semesterItem.id === targetSemesterId,
-    );
-
-    if (!targetSemesterId) return true;
-    if (semester.id === targetSemesterId) return false;
-    if (!targetSemester) return true;
-
-    return (
-      new Date(semester.endTerm).getTime() <=
-      new Date(targetSemester.startTerm).getTime()
-    );
-  });
+  const pastActivityDurations = currentFunding?.pastActivityDurations ?? [];
 
   const queries = useQueries({
-    queries: (pastSemesters ?? []).map(semester => ({
-      queryKey: ["getExecutiveClubFunding", clubId, semester.id],
+    queries: pastActivityDurations.map(activityDuration => ({
+      queryKey: [
+        "getExecutiveClubFunding",
+        clubId,
+        activityDuration.semester.id,
+      ],
       queryFn: () =>
         executiveClubFundingForDurationQueryFn(Number(clubId), {
-          semesterId: semester.id,
+          semesterId: activityDuration.semester.id,
         }),
       retry: false,
-      enabled: !!semestersData,
+      enabled: !!currentFunding,
     })),
   });
 
@@ -63,19 +45,17 @@ const useGetExecutiveClubFunding = (
   );
 
   return {
-    data:
-      pastSemesters
-        ?.map((semester, index) => ({
-          semester,
-          items: successDataList[index],
-        }))
-        .filter(data => data.items == null || data.items.fundings.length > 0) ??
-      [],
+    data: pastActivityDurations
+      .map((activityDuration, index) => ({
+        activityDuration:
+          successDataList[index]?.activityDuration ?? activityDuration,
+        items: successDataList[index],
+      }))
+      .filter(data => data.items == null || data.items.fundings.length > 0),
     isLoading:
-      isLoading || isLoadingDeadline || queries.some(query => query.isLoading),
+      isCurrentFundingLoading || queries.some(query => query.isLoading),
     isError:
-      isError ||
-      isErrorDeadline ||
+      isCurrentFundingError ||
       (queries.length > 0 && queries.every(query => query.isError)),
   };
 };

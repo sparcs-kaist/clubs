@@ -5,11 +5,14 @@ import {
   ApiSem018ResponseCreated,
   ApiSem019ResponseOk,
   ApiSem020ResponseOk,
+  ApiSem022RequestBody,
+  ApiSem022ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import UserPublicService from "../../user/service/user.public.service";
+import { MRegistrationDeadline } from "../model/registration.deadline.model";
 import { MSemester } from "../model/semester.model";
 import { RegistrationDeadlineRepository } from "../repository/registration.deadline.repository";
 import { SemesterRepository } from "../repository/semester.repository";
@@ -123,5 +126,46 @@ export class RegistrationDeadlineService {
     } as Parameters<typeof this.registrationDeadlineRepository.delete>[0]);
 
     return {};
+  }
+
+  async updateRegistrationDeadline(
+    executiveId: number,
+    deadlineId: number,
+    body: ApiSem022RequestBody,
+  ): Promise<ApiSem022ResponseOk> {
+    const { startTerm, endTerm } = body;
+
+    await this.userPublicService.checkCurrentExecutiveById(executiveId);
+
+    const registrationDeadlines =
+      (await this.registrationDeadlineRepository.find({
+        id: deadlineId,
+      } as Parameters<typeof this.registrationDeadlineRepository.find>[0])) ??
+      [];
+    const [registrationDeadline] = registrationDeadlines;
+
+    if (!registrationDeadline) {
+      throw new HttpException(
+        "해당 등록 기간을 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (startTerm > endTerm) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이후일 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.registrationDeadlineRepository.put(
+      new MRegistrationDeadline({
+        ...registrationDeadline,
+        startTerm,
+        endTerm,
+      }),
+    );
+
+    return { id: deadlineId };
   }
 }

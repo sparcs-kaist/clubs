@@ -1,0 +1,178 @@
+name: Prepare Release Patch Note
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prepare-release-patch-note
+  cancel-in-progress: false
+
+jobs:
+  prepare-patch-note:
+    name: Prepare patch note commit
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.base.ref == 'main' &&
+        github.event.pull_request.head.ref == 'dev'
+      )
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.1
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: true
+
+      - name: Fetch release refs
+        run: git fetch origin main dev --prune
+
+      - name: Determine version bump
+        id: bump
+        env:
+          PR_TITLE: "${{ github.event.pull_request.title || '[PATCH] Release' }}"
+        run: |
+          title="${PR_TITLE}"
+          label="PATCH"
+          bump="patch"
+
+          if [[ "${title}" =~ ^\[([Mm][Aa][Jj][Oo][Rr]|[Mm][Ii][Nn][Oo][Rr]|[Pp][Aa][Tt][Cc][Hh])\] ]]; then
+            label="$(printf "%s" "${BASH_REMATCH[1]}" | tr "[:lower:]" "[:upper:]")"
+          elif [[ "${title}" =~ ^([Mm][Aa][Jj][Oo][Rr]|[Mm][Ii][Nn][Oo][Rr]|[Pp][Aa][Tt][Cc][Hh])[[:space:]] ]]; then
+            label="$(printf "%s" "${BASH_REMATCH[1]}" | tr "[:lower:]" "[:upper:]")"
+          fi
+
+          bump="$(printf "%s" "${label}" | tr "[:upper:]" "[:lower:]")"
+
+          echo "bump=${bump}" >> "${GITHUB_OUTPUT}"
+          echo "label=${label}" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate release patch note
+        id: generate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >
+          node scripts/release/prepare-patch-note.mjs
+          --base origin/main
+          --head HEAD
+          --bump ${{ steps.bump.outputs.bump }}
+          --file packages/web/src/constants/patchNote.ts
+
+      - name: Format generated patch note
+        if: ${{ hashFiles('packages/web/src/constants/patchNote.ts') != '' }}
+        run: pnpm exec prettier --write packages/web/src/constants/patchNote.ts
+
+      - name: Validate generated files
+        run: |
+          unexpected="$(git diff --name-only | grep -Ev '^packages/web/src/constants/patchNote\.ts$' || true)"
+          if [ -n "${unexpected}" ]; then
+            echo "Unexpected generated files:"
+            echo "${unexpected}"
+            exit 1
+          fi
+
+      - name: Commit patch note
+        id: commit
+        env:
+          RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || github.run_id }}
+        run: |
+          if git diff --quiet -- packages/web/src/constants/patchNote.ts; then
+            echo "No patch note changes to commit."
+            echo "created=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          branch="release/patch-note-${RELEASE_PR_NUMBER}"
+          git switch -c "${branch}"
+          git config user.name "clubs-release-bot"
+          git config user.email "clubs-release-bot@users.noreply.github.com"
+          git add packages/web/src/constants/patchNote.ts
+          HUSKY=0 git commit -m "chore: update release patch note"
+          git push --force origin "HEAD:${branch}"
+
+          echo "created=true" >> "${GITHUB_OUTPUT}"
+          echo "branch=${branch}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create patch note PR
+        id: patch-pr
+        if: steps.commit.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PATCH_NOTE_BRANCH: ${{ steps.commit.outputs.branch }}
+          RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+          RELEASE_TYPE: ${{ steps.bump.outputs.label }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
+        run: |
+          title="PATCH NOTE"
+          if [ -n "${RELEASE_VERSION}" ]; then
+            title="PATCH NOTE - ${RELEASE_VERSION}"
+          fi
+
+          release_ref="manual workflow run"
+          if [ -n "${RELEASE_PR_NUMBER}" ]; then
+            release_ref="release PR #${RELEASE_PR_NUMBER}"
+          fi
+
+          body="$(cat <<BODY
+          ## 릴리즈 패치노트
+
+          이 PR은 ${release_ref}에서 생성된 패치노트 커밋입니다.
+
+          - Release type: [${RELEASE_TYPE}]
+          - Release version: ${RELEASE_VERSION}
+          - Generated file: \`packages/web/src/constants/patchNote.ts\`
+
+          이 PR을 \`dev\`에 머지하면 열려 있는 \`dev -> main\` release PR에 패치노트가 포함됩니다.
+
+          ## Release Patch Note
+
+          This PR contains the generated patch note commit for ${release_ref}.
+
+          - Release type: [${RELEASE_TYPE}]
+          - Release version: ${RELEASE_VERSION}
+          - Generated file: \`packages/web/src/constants/patchNote.ts\`
+
+          Merge this PR into \`dev\` to include the patch note in the open \`dev -> main\` release PR.
+          BODY
+          )"
+
+          existing="$(gh pr list --repo "${GITHUB_REPOSITORY}" --base dev --head "${PATCH_NOTE_BRANCH}" --state open --json number --jq '.[0].number // ""')"
+          if [ -n "${existing}" ]; then
+            gh pr edit "${existing}" --repo "${GITHUB_REPOSITORY}" --title "${title}" --body "${body}"
+            url="$(gh pr view "${existing}" --repo "${GITHUB_REPOSITORY}" --json url --jq '.url')"
+          else
+            url="$(gh pr create --repo "${GITHUB_REPOSITORY}" --base dev --head "${PATCH_NOTE_BRANCH}" --title "${title}" --body "${body}")"
+          fi
+
+          echo "url=${url}" >> "${GITHUB_OUTPUT}"
+          echo "::notice::Patch note PR: ${url}"
+
+      - name: Update release PR title
+        if: github.event_name == 'pull_request' && steps.generate.outputs.display_version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TYPE: ${{ steps.bump.outputs.label }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "[${RELEASE_TYPE}] Release: ${RELEASE_VERSION}"

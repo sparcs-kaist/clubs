@@ -5,6 +5,8 @@ import type {
   ApiSem006ResponseCreated,
   ApiSem007RequestQuery,
   ApiSem007ResponseOK,
+  ApiSem009RequestBody,
+  ApiSem009ResponseOk,
   ApiSem011RequestBody,
   ApiSem011ResponseCreated,
   ApiSem012RequestQuery,
@@ -16,6 +18,7 @@ import type {
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
+import { MActivityDeadline } from "../model/activity.deadline.model";
 import { MActivityDuration } from "../model/activity.duration.model";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "../repository/activity.duration.repository";
@@ -119,6 +122,45 @@ export class ActivityDurationService {
 
     return { deadlines };
   }
+
+  async updateActivityDeadline(param: {
+    deadlineId: number;
+    body: ApiSem009RequestBody;
+  }): Promise<ApiSem009ResponseOk> {
+    const { deadlineId, body } = param;
+    const { startTerm, endTerm } = body;
+
+    const activityDeadlines =
+      (await this.activityDeadlineRepository.find({
+        id: deadlineId,
+      })) ?? [];
+    const [activityDeadline] = activityDeadlines;
+
+    if (!activityDeadline) {
+      throw new HttpException(
+        `ActivityDeadline with id ${deadlineId} not found.`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (new Date(startTerm) > new Date(endTerm)) {
+      throw new HttpException(
+        "startTerm must be before or equal to endTerm.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.activityDeadlineRepository.put(
+      new MActivityDeadline({
+        ...activityDeadline,
+        startTerm,
+        endTerm,
+      }),
+    );
+
+    return { id: deadlineId };
+  }
+
   async deleteActivityDeadline(param: {
     param: import("@clubs/interface/api/semester/index").ApiSem010RequestParam;
   }): Promise<
