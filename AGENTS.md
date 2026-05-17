@@ -39,6 +39,37 @@
    - Behavior에 들어갈 business logic을 정의합니다.
    - 동작성을 확인하기 위한 test를 정의합니다.
 
+## PR 작성 규칙
+
+Codex가 PR을 생성할 때는 PR description에 `## Patch Note` 섹션과 아래 machine-readable block을 반드시 포함합니다.
+
+```md
+<!-- clubs:patch-note:start -->
+category: feature | fix | design | docs | internal | none
+text: 사용자에게 보여도 자연스러운 한국어 패치노트 문장
+<!-- clubs:patch-note:end -->
+```
+
+릴리즈용 `dev -> main` PR 제목은 `PATCH Release: dev -> main`, `MINOR Release: dev -> main`, `MAJOR Release: dev -> main` 중 하나로 시작해야 합니다. 기본값은 `PATCH`입니다.
+
+- 사용자에게 보일 기능 추가는 `category: feature`를 사용합니다.
+- 사용자에게 보일 버그 수정은 `category: fix`를 사용합니다.
+- UI, 문구, 디자인 변경은 `category: design`을 사용합니다.
+- 문서 변경은 `category: docs`를 사용합니다.
+- 내부 리팩터링, 테스트, CI 등 사용자에게 직접 보이지 않는 변경은 `category: internal` 또는 `category: none`을 사용합니다.
+- `text`에는 구현 세부사항, 파일명, 함수명보다 사용자 관점의 변경사항을 씁니다.
+- 여러 항목이 필요하면 `text:` 아래에 bullet을 여러 개 작성합니다.
+- 릴리즈 패치노트 자동 생성기는 이 block만 신뢰하며, `internal`과 `none`은 앱 패치노트에서 제외합니다.
+
+예시:
+
+```md
+<!-- clubs:patch-note:start -->
+category: fix
+text: 활동보고서 상세 화면에서 반려 사유가 보이지 않던 문제를 수정했습니다.
+<!-- clubs:patch-note:end -->
+```
+
 ## Feature: Activity Report
 
 - 관련 경로: `packages/web/**/activity-report/**`, `packages/api/**/activity/**`

@@ -1,0 +1,64 @@
+name: Release PR
+
+on:
+  push:
+    branches: ["dev"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: release-pr-dev-main
+  cancel-in-progress: false
+
+jobs:
+  create-release-pr:
+    name: Create dev to main draft PR
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - name: Check release diff
+        id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ahead="$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...dev" --jq '.ahead_by')"
+          echo "ahead=${ahead}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check existing release PR
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          number="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // ""')"
+          echo "number=${number}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create draft release PR
+        if: steps.diff.outputs.ahead != '0' && steps.existing.outputs.number == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base main \
+            --head dev \
+            --draft \
+            --title "PATCH Release: dev -> main" \
+            --body "$(cat <<'BODY'
+          ## Release Flow
+
+          This draft PR was created automatically after `dev` received changes not yet in `main`.
+
+          To prepare the release patch note:
+
+          1. Make sure merged feature PRs have a `clubs:patch-note` block in their PR body.
+          2. Keep the title prefix as `PATCH`, or change it to `MINOR` or `MAJOR` before marking this PR as ready.
+          3. Mark this PR as **Ready for review**.
+          4. The `Prepare Release Patch Note` workflow will create one patch note commit on `dev`.
+
+          ## Patch Note Commit Trigger
+
+          The generated patch note commit intentionally uses `GITHUB_TOKEN`, so GitHub will not trigger follow-up `dev` push workflows from that commit. The prepare workflow validates the generated file before pushing.
+          BODY
+          )"
