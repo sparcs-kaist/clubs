@@ -71,6 +71,7 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
+import { getMemberRegistrationStatistics } from "./member-registration-statistics";
 import { RegistrationPublicService } from "./registration.public.service";
 
 interface ApiReg006ResponseType {
@@ -1368,7 +1369,7 @@ export class RegistrationService {
     const semesterId =
       param.query.semesterId ?? (await this.semesterPublicService.loadId());
     // logger.debug(semesterId);
-    const [registrations, total] = await Promise.all([
+    const [registrations, allRegistrations] = await Promise.all([
       this.memberRegistrationRepository.find({
         clubId: param.query.clubId,
         semesterId,
@@ -1380,11 +1381,31 @@ export class RegistrationService {
           createdAt: OrderByTypeEnum.DESC,
         },
       }),
-      this.memberRegistrationRepository.count({
+      this.memberRegistrationRepository.find({
         clubId: param.query.clubId,
         semesterId,
       }),
     ]);
+    const total = allRegistrations.length;
+    const studentEnums =
+      await this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
+        allRegistrations.map(registration => registration.student.id),
+        semesterId,
+      );
+    const studentEnumByStudentId = new Map(
+      studentEnums.map(({ id, studentEnumId }) => [id, studentEnumId]),
+    );
+    const regularStudentEnumId = 1;
+    const registrationStatistics = getMemberRegistrationStatistics({
+      registrations: allRegistrations,
+      studentEnumByStudentId,
+      statusEnumIds: {
+        pending: RegistrationApplicationStudentStatusEnum.Pending,
+        approved: RegistrationApplicationStudentStatusEnum.Approved,
+        rejected: RegistrationApplicationStudentStatusEnum.Rejected,
+        regularStudent: regularStudentEnumId,
+      },
+    });
     const memberRegistrations = await Promise.all(
       registrations.map(async registration => ({
         id: registration.id,
@@ -1395,57 +1416,18 @@ export class RegistrationService {
           ...(await this.userPublicService.getStudentById(
             registration.student,
           )),
-          StudentEnumId:
-            await this.userPublicService.getStudentStatusEnumIdByStudentIdSemesterIdWithRollover(
-              registration.student.id,
-              semesterId,
-            ),
+          StudentEnumId: studentEnumByStudentId.get(registration.student.id),
         },
       })),
     );
     return {
-      totalRegistrations: memberRegistrations.length,
-      totalWaitings: memberRegistrations.filter(
-        e =>
-          e.registrationApplicationStudentEnum ===
-          RegistrationApplicationStudentStatusEnum.Pending,
-      ).length,
-      totalApprovals: memberRegistrations.filter(
-        e =>
-          e.registrationApplicationStudentEnum ===
-          RegistrationApplicationStudentStatusEnum.Approved,
-      ).length,
-      totalRejections: memberRegistrations.filter(
-        e =>
-          e.registrationApplicationStudentEnum ===
-          RegistrationApplicationStudentStatusEnum.Rejected,
-      ).length,
-      regularMemberRegistrations: memberRegistrations.filter(
-        e => e.student.StudentEnumId === 1,
-      ).length,
-      regularMemberApprovals: memberRegistrations.filter(
-        e =>
-          e.student.StudentEnumId === 1 &&
-          e.registrationApplicationStudentEnum ===
-            RegistrationApplicationStudentStatusEnum.Approved,
-      ).length,
-      regularMemberWaitings: memberRegistrations.filter(
-        e =>
-          e.student.StudentEnumId === 1 &&
-          e.registrationApplicationStudentEnum ===
-            RegistrationApplicationStudentStatusEnum.Pending,
-      ).length,
-      regularMemberRejections: memberRegistrations.filter(
-        e =>
-          e.student.StudentEnumId === 1 &&
-          e.registrationApplicationStudentEnum ===
-            RegistrationApplicationStudentStatusEnum.Rejected,
-      ).length,
+      ...registrationStatistics,
       items: memberRegistrations.map(e => ({
         memberRegistrationId: e.id,
         RegistrationApplicationStudentStatusEnumId:
           e.registrationApplicationStudentEnum,
-        isRegularMemberRegistration: e.student.StudentEnumId === 1,
+        isRegularMemberRegistration:
+          e.student.StudentEnumId === regularStudentEnumId,
         student: {
           id: e.student.id,
           studentNumber: e.student.number,
