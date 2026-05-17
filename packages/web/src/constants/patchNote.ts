@@ -5,6 +5,17 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.0 source=96e0dac72b5e
+  {
+    version: "v.0.1.0",
+    date: new Date("2026.05.17"),
+    patchNoteContent: `Clubs v0.1.0
+신규 기능은 다음과 같습니다.
+- 릴리즈 준비 시 PR 내용을 바탕으로 패치노트를 자동 생성하는 기능을 추가했습니다. (#1797)
+- 집행부가 등록, 활동보고서, 지원금 기간을 삭제하지 않고 바로 수정할 수 있게 개선했습니다. (#1796)
+- 집행부 지원금 화면에서 과거 지원금 정보를 학기 대신 활동 반기 기준으로 확인할 수 있도록 개선했습니다. (#1802)
+`,
+  },
   {
     version: "v.0.0.107",
     date: new Date("2026.03.04"),
