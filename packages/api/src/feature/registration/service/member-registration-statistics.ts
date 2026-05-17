@@ -29,6 +29,9 @@ export type MemberRegistrationStatistics = {
   regularMemberRejections: number;
 };
 
+/**
+ * Computes REG-020 statistics from the full, unpaginated club registration list.
+ */
 export function getMemberRegistrationStatistics({
   registrations,
   studentEnumByStudentId,
