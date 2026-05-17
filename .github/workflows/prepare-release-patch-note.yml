@@ -90,10 +90,8 @@ jobs:
             exit 1
           fi
 
-      - name: Validate web package
-        run: |
-          pnpm --filter web lint
-          pnpm --filter web build
+      - name: Validate generated patch note
+        run: pnpm build
 
       - name: Commit patch note
         run: |
