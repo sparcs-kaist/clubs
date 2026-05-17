@@ -37,7 +37,7 @@ const RegisterMember = () => {
         ]}
         title="회원 등록 신청 내역"
       />
-      <ExecutiveRegisterMember />
+      <ExecutiveRegisterMember showPastDashboard />
     </FlexWrapper>
   );
 };

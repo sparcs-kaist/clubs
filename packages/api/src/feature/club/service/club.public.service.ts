@@ -352,8 +352,14 @@ export default class ClubPublicService {
     return result;
   }
 
-  async fetchSummaries(ids: number[]): Promise<IClubSummary[]> {
-    const results = await this.clubOldRepository.fetchSummaries(ids);
+  async fetchSummaries(
+    ids: number[],
+    semesterIds?: number[],
+  ): Promise<IClubSummary[]> {
+    const results = await this.clubOldRepository.fetchSummaries(
+      ids,
+      semesterIds,
+    );
     return results;
   }
 

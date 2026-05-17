@@ -16,7 +16,8 @@ import {
 } from "@sparcs-clubs/web/types/clubdetail.types";
 
 interface RegisterMemberTableProps {
-  registerMemberList: ApiReg019ResponseOk;
+  registerMemberList: Pick<ApiReg019ResponseOk, "items" | "total" | "offset">;
+  semesterId?: number;
 }
 
 const columnHelper = createColumnHelper<ApiReg019ResponseOk["items"][number]>();
@@ -73,6 +74,7 @@ const columns = [
 
 const RegistrationMemberTable: React.FC<RegisterMemberTableProps> = ({
   registerMemberList,
+  semesterId,
 }) => {
   const table = useReactTable({
     columns,
@@ -85,7 +87,9 @@ const RegistrationMemberTable: React.FC<RegisterMemberTableProps> = ({
     <Table
       table={table}
       count={registerMemberList.total}
-      rowLink={row => `/executive/register-member/${row.clubId}`}
+      rowLink={row =>
+        `/executive/register-member/${row.clubId}${semesterId ? `?semesterId=${semesterId}` : ""}`
+      }
     />
   );
 };

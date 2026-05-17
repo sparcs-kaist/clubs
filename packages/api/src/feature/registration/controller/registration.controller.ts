@@ -265,8 +265,7 @@ export class RegistrationController {
   ): Promise<ApiReg014ResponseOk> {
     const result =
       await this.registrationService.getExecutiveRegistrationsClubRegistrations(
-        query.pageOffset,
-        query.itemCount,
+        query,
       );
     return result;
   }

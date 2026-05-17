@@ -1,5 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import type {
   ApiReg001RequestBody,
   ApiReg001ResponseCreated,
@@ -21,7 +23,10 @@ import type { ApiReg010ResponseOk } from "@clubs/interface/api/registration/endp
 import type { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 import type { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg013ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg013";
-import type { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
+import type {
+  ApiReg014RequestQuery,
+  ApiReg014ResponseOk,
+} from "@clubs/interface/api/registration/endpoint/apiReg014";
 import type { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
 import type { ApiReg016ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg016";
 import type { ApiReg017ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg017";
@@ -86,6 +91,45 @@ export class RegistrationService {
     private readonly semesterPublicService: SemesterPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
   ) {}
+
+  private async getRegistrationTargetSemester(
+    semesterId?: number,
+  ): Promise<ISemester> {
+    return semesterId
+      ? this.semesterPublicService.getById(semesterId)
+      : this.semesterPublicService.load();
+  }
+
+  private async getPastSemestersWithRegistrations(
+    targetSemester: ISemester,
+    semesterIds: number[],
+  ): Promise<ISemester[]> {
+    const semesters = await this.semesterPublicService.getByIds([
+      ...new Set(semesterIds),
+    ]);
+
+    return semesters
+      .filter(semester => semester.id < targetSemester.id)
+      .sort((a, b) => b.id - a.id);
+  }
+
+  private async getPastSemestersWithClubRegistrations(
+    targetSemester: ISemester,
+  ): Promise<ISemester[]> {
+    const semesterIds =
+      await this.clubRegistrationRepository.getSemesterIdsWithClubRegistrations();
+
+    return this.getPastSemestersWithRegistrations(targetSemester, semesterIds);
+  }
+
+  private async getPastSemestersWithMemberRegistrations(
+    targetSemester: ISemester,
+  ): Promise<ISemester[]> {
+    const semesterIds =
+      await this.memberRegistrationRepository.getSemesterIdsWithMemberRegistrations();
+
+    return this.getPastSemestersWithRegistrations(targetSemester, semesterIds);
+  }
 
   /**
    * @description 동아리 대표자인지 검증하는 로직은 repository쪽에서 진행됩니다.
@@ -599,15 +643,25 @@ export class RegistrationService {
   }
 
   async getExecutiveRegistrationsClubRegistrations(
-    pageOffset: number,
-    itemCount: number,
+    query: ApiReg014RequestQuery,
   ): Promise<ApiReg014ResponseOk> {
+    const semester = await this.getRegistrationTargetSemester(query.semesterId);
     const result =
       await this.clubRegistrationRepository.getRegistrationsClubRegistrations(
-        pageOffset,
-        itemCount,
+        query.pageOffset,
+        query.itemCount,
+        semester.id,
       );
-    return result;
+    const pastSemesters =
+      query.semesterId === undefined
+        ? await this.getPastSemestersWithClubRegistrations(semester)
+        : undefined;
+
+    return {
+      semester,
+      ...(pastSemesters ? { pastSemesters } : {}),
+      ...result,
+    };
   }
 
   async getStudentRegistrationsClubRegistrations(
@@ -1311,7 +1365,8 @@ export class RegistrationService {
     executiveId: number;
     query: ApiReg020RequestQuery;
   }): Promise<ApiReg020ResponseOk> {
-    const semesterId = await this.semesterPublicService.loadId();
+    const semesterId =
+      param.query.semesterId ?? (await this.semesterPublicService.loadId());
     // logger.debug(semesterId);
     const [registrations, total] = await Promise.all([
       this.memberRegistrationRepository.find({
@@ -1414,19 +1469,14 @@ export class RegistrationService {
     executiveId: number;
     query: ApiReg019RequestQuery;
   }): Promise<ApiReg019ResponseOk> {
-    const semesterId = await this.semesterPublicService.loadId();
+    const semester = await this.getRegistrationTargetSemester(
+      param.query.semesterId,
+    );
+    const semesterId = semester.id;
     // logger.debug(semesterId);
     const registrations = await this.memberRegistrationRepository.find({
       semesterId,
     });
-
-    const [divisions, studentEnums] = await Promise.all([
-      this.divisionPublicService.getCurrentDivisions(),
-      this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
-        registrations.map(e => e.student.id),
-        semesterId,
-      ),
-    ]);
 
     const clubIds = registrations.reduce((acc: number[], registration) => {
       if (!acc.includes(registration.club.id)) {
@@ -1434,12 +1484,33 @@ export class RegistrationService {
       }
       return acc;
     }, []);
+
+    const [studentEnums, clubSummaries] = await Promise.all([
+      this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
+        registrations.map(e => e.student.id),
+        semesterId,
+      ),
+      this.clubPublicService.fetchSummaries(clubIds, [semesterId]),
+    ]);
+
+    const divisions = await this.clubPublicService.fetchDivisionSummaries(
+      Array.from(new Set(clubSummaries.map(club => club.division.id))),
+    );
+
     const clubIdSummaryIsPermanentDivisionTuples = await Promise.all(
       clubIds.map(async clubId => {
-        const club = await this.clubPublicService.fetchSummary(clubId);
+        const club =
+          clubSummaries.find(clubSummary => clubSummary.id === clubId) ??
+          (await this.clubPublicService.fetchSummary(clubId));
         const isPermanent =
           await this.clubPublicService.isPermanentClubsByClubId(club.id);
-        const division = divisions.find(e => e.id === club.division.id);
+        const division =
+          divisions.find(e => e.id === club.division.id) ??
+          (
+            await this.clubPublicService.fetchDivisionSummaries([
+              club.division.id,
+            ])
+          )[0];
 
         return {
           clubId,
@@ -1508,7 +1579,14 @@ export class RegistrationService {
       ).length,
     }));
 
+    const pastSemesters =
+      param.query.semesterId === undefined
+        ? await this.getPastSemestersWithMemberRegistrations(semester)
+        : undefined;
+
     return {
+      semester,
+      ...(pastSemesters ? { pastSemesters } : {}),
       total: totalItems.length,
       items: totalItems.slice(
         // TODO: 나중에 쿼리 자체 변경 필요
