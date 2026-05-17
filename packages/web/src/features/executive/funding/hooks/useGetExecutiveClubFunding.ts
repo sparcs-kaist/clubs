@@ -1,9 +1,9 @@
 import { useQueries } from "@tanstack/react-query";
 
-import { ApiAct009ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct009";
 import { ApiFnd009ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd009";
+import { ApiSem001ResponseOK } from "@clubs/interface/api/semester/apiSem001";
 
-import useGetActivityTerms from "@sparcs-clubs/web/features/activity-report/services/useGetActivityTerms";
+import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
 import useGetFundingDeadline from "@sparcs-clubs/web/features/manage-club/funding/services/useGetFundingDeadline";
 
 import { executiveClubFundingForDurationQueryFn } from "../services/useGetExecutiveClubFundingForDuration";
@@ -12,19 +12,17 @@ const useGetExecutiveClubFunding = (
   clubId: number,
 ): {
   data: {
-    term: ApiAct009ResponseOk["terms"][number];
+    semester: ApiSem001ResponseOK["semesters"][number];
     items: ApiFnd009ResponseOk | null;
   }[];
   isLoading: boolean;
   isError: boolean;
 } => {
   const {
-    data: activityTerms,
+    data: semestersData,
     isLoading,
     isError,
-  } = useGetActivityTerms({
-    clubId,
-  });
+  } = useGetSemesters({ pageOffset: 1, itemCount: 100 });
 
   const {
     data: deadline,
@@ -32,27 +30,31 @@ const useGetExecutiveClubFunding = (
     isError: isErrorDeadline,
   } = useGetFundingDeadline();
 
-  const pastActivityTerms = activityTerms?.terms.toReversed().filter(term => {
-    if (!deadline) return true;
+  const pastSemesters = semestersData?.semesters.filter(semester => {
+    const targetSemesterId = deadline?.targetDuration.semester.id;
+    const targetSemester = semestersData.semesters.find(
+      semesterItem => semesterItem.id === targetSemesterId,
+    );
 
-    // 신규 지원금(현재 신청 중인 활동 기간) 빼고, 과거 지원금(과거 활동 기간)만 보여주기
+    if (!targetSemesterId) return true;
+    if (semester.id === targetSemesterId) return false;
+    if (!targetSemester) return true;
+
     return (
-      new Date(term.startTerm).getTime() !==
-        new Date(deadline.targetDuration.startTerm).getTime() &&
-      new Date(term.endTerm).getTime() !==
-        new Date(deadline.targetDuration.endTerm).getTime()
+      new Date(semester.endTerm).getTime() <=
+      new Date(targetSemester.startTerm).getTime()
     );
   });
 
   const queries = useQueries({
-    queries: (pastActivityTerms ?? []).map(activityTerm => ({
-      queryKey: ["getExecutiveClubFunding", clubId, activityTerm.id],
+    queries: (pastSemesters ?? []).map(semester => ({
+      queryKey: ["getExecutiveClubFunding", clubId, semester.id],
       queryFn: () =>
         executiveClubFundingForDurationQueryFn(Number(clubId), {
-          activityDurationId: activityTerm.id,
+          semesterId: semester.id,
         }),
       retry: false,
-      enabled: !!activityTerms,
+      enabled: !!semestersData,
     })),
   });
 
@@ -62,14 +64,19 @@ const useGetExecutiveClubFunding = (
 
   return {
     data:
-      pastActivityTerms?.map((term, index) => ({
-        term,
-        items: successDataList[index],
-      })) ?? [],
+      pastSemesters
+        ?.map((semester, index) => ({
+          semester,
+          items: successDataList[index],
+        }))
+        .filter(data => data.items == null || data.items.fundings.length > 0) ??
+      [],
     isLoading:
       isLoading || isLoadingDeadline || queries.some(query => query.isLoading),
     isError:
-      isError || isErrorDeadline || queries.every(query => query.isError),
+      isError ||
+      isErrorDeadline ||
+      (queries.length > 0 && queries.every(query => query.isError)),
   };
 };
 

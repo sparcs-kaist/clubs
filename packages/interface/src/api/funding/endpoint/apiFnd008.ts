@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import { zClubSummaryResponse } from "@clubs/interface/api/club/type/club.type";
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
 
@@ -17,7 +19,9 @@ export const ApiFnd008RequestUrl = "/executive/fundings";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  semesterId: zSemester.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 

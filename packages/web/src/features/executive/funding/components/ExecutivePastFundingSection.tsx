@@ -6,6 +6,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSection from "@sparcs-clubs/web/common/components/FoldableSection";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 import useGetExecutiveClubFunding from "../hooks/useGetExecutiveClubFunding";
 import ExecutiveClubFundingsTable from "./ExecutiveClubFundingsTable";
@@ -50,10 +51,15 @@ const ExecutivePastFundingSection: React.FC<
     <FoldableSectionTitle title="과거 지원금" childrenMargin="30px">
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FlexWrapper direction="column" gap={30}>
+          {dataList.length === 0 && (
+            <Typography color="GRAY.300" fs={16} lh={24}>
+              과거 지원금 신청 내역이 없습니다
+            </Typography>
+          )}
           {dataList.map(data => (
             <FoldableSection
-              key={data.term.id}
-              title={`${data.term.year}년 ${data.term.name}학기 (총 ${data.items?.fundings ? data.items.fundings.length : 0}개)`}
+              key={data.semester.id}
+              title={`${data.semester.year}년 ${data.semester.name}학기 (총 ${data.items?.fundings ? data.items.fundings.length : 0}개)`}
               childrenMargin="20px"
             >
               {data.items == null ? (

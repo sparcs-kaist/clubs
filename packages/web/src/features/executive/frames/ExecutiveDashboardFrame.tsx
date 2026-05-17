@@ -177,8 +177,7 @@ const ExecutiveDashboardFrame = () => {
               />
               <DashboardButton
                 text="지원금 신청 내역"
-                link=""
-                // TODO: 지원금 신청 내역 링크 추가
+                link="/executive/funding"
               />
             </FlexWrapper>
           </DashboardSectionInner>
