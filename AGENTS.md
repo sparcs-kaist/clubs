@@ -50,7 +50,7 @@ text: 사용자에게 보여도 자연스러운 한국어 패치노트 문장
 <!-- clubs:patch-note:end -->
 ```
 
-릴리즈용 `dev -> main` PR 제목은 `PATCH Release: dev -> main`, `MINOR Release: dev -> main`, `MAJOR Release: dev -> main` 중 하나로 시작해야 합니다. 기본값은 `PATCH`입니다.
+릴리즈용 `dev -> main` PR 제목은 `[PATCH] Release: from X.Y.Z`, `[MINOR] Release: from X.Y.Z`, `[MAJOR] Release: from X.Y.Z` 중 하나로 시작해야 합니다. 기본값은 `[PATCH]`입니다. 패치노트 생성 workflow가 완료되면 PR 제목은 `[TYPE] Release: X.Y.Z` 형식으로 갱신됩니다.
 
 - 사용자에게 보일 기능 추가는 `category: feature`를 사용합니다.
 - 사용자에게 보일 버그 수정은 `category: fix`를 사용합니다.

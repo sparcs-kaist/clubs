@@ -2,7 +2,7 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 
 const DEFAULT_FILE = "packages/web/src/constants/patchNote.ts";
 const PATCH_NOTE_START = "<!-- clubs:patch-note:start -->";
@@ -340,6 +340,23 @@ function formatVersion(version) {
   return `v.${version.major}.${version.minor}.${version.patch}`;
 }
 
+function displayVersion(version) {
+  return version.replace(/^v\./, "");
+}
+
+function writeGitHubOutput(values) {
+  if (!process.env.GITHUB_OUTPUT) {
+    return;
+  }
+
+  appendFileSync(
+    process.env.GITHUB_OUTPUT,
+    Object.entries(values)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n") + "\n",
+  );
+}
+
 function nextVersionFromMain(base, file, bump) {
   const mainSource = runGit(["show", `${base}:${file}`]);
   const versions = parseVersions(mainSource);
@@ -445,6 +462,11 @@ async function main() {
   }
 
   const version = nextVersionFromMain(options.base, options.file, options.bump);
+  writeGitHubOutput({
+    version,
+    display_version: displayVersion(version),
+  });
+
   const sourceHash = createHash("sha256")
     .update(JSON.stringify({ version, notes }))
     .digest("hex")
