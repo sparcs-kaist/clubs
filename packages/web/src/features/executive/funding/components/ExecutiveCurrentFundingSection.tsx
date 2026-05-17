@@ -10,6 +10,7 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 
 import useGetExecutiveClubFundingForDuration from "../services/useGetExecutiveClubFundingForDuration";
+import { defaultActivityDuration } from "../utils/formatActivityDuration";
 import ChargedChangeFundingModalContent from "./ChargedChangeFundingModalContent";
 import { ChargedChangeFundingProps } from "./ChargedChangeFundingModalTable";
 import ExecutiveClubFundingsTable from "./ExecutiveClubFundingsTable";
@@ -60,6 +61,7 @@ const ExecutiveCurrentFundingSection: React.FC<
   };
 
   const defaultData = {
+    activityDuration: defaultActivityDuration,
     club: {
       id: Number(clubId),
       name: "",

@@ -11,7 +11,30 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ExecutivePastFundingDashboardSection from "@sparcs-clubs/web/features/executive/funding/components/ExecutivePastFundingDashboardSection";
-import ExecutiveFundingFrame from "@sparcs-clubs/web/features/executive/funding/frames/ExecutiveFundingFrame";
+import {
+  defaultExecutiveFundingData,
+  ExecutiveFundingContent,
+} from "@sparcs-clubs/web/features/executive/funding/frames/ExecutiveFundingFrame";
+import useGetExecutiveFundings from "@sparcs-clubs/web/features/executive/funding/services/useGetExecutiveFundings";
+
+const ExecutiveFundingPageContent = () => {
+  const {
+    data: fundingsData,
+    isLoading: isFundingsLoading,
+    isError: isFundingsError,
+  } = useGetExecutiveFundings();
+
+  return (
+    <AsyncBoundary isLoading={isFundingsLoading} isError={isFundingsError}>
+      <ExecutiveFundingContent
+        data={fundingsData ?? defaultExecutiveFundingData}
+      />
+      <ExecutivePastFundingDashboardSection
+        activityDurations={fundingsData?.pastActivityDurations ?? []}
+      />
+    </AsyncBoundary>
+  );
+};
 
 const ExecutiveFunding = () => {
   const { isLoggedIn, login, profile } = useAuth();
@@ -44,8 +67,7 @@ const ExecutiveFunding = () => {
         ]}
         title="지원금 신청 내역"
       />
-      <ExecutiveFundingFrame />
-      <ExecutivePastFundingDashboardSection />
+      <ExecutiveFundingPageContent />
     </FlexWrapper>
   );
 };

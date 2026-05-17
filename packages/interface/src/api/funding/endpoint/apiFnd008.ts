@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
 import { zSemester } from "@clubs/domain/semester/semester";
 
 import { zClubSummaryResponse } from "@clubs/interface/api/club/type/club.type";
@@ -27,6 +28,8 @@ const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    activityDuration: zActivityDuration,
+    pastActivityDurations: z.array(zActivityDuration).optional(),
     totalCount: z.coerce.number().min(0),
     appliedCount: z.coerce.number().min(0),
     approvedCount: z.coerce.number().min(0),
