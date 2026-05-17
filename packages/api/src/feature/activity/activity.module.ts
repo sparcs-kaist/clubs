@@ -15,6 +15,7 @@ import { ActivityCommentRepository } from "./repository/activity-comment.reposit
 import ActivityPublicService from "./service/activity.public.service";
 import ActivityOldService from "./service/activity.service";
 import ActivityService from "./service/activity.service.new";
+import { ActivityDurationValidatorService } from "./service/activity-duration.validator";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import ActivityService from "./service/activity.service.new";
     ActivityNewRepository,
     ActivityClubChargedExecutiveRepository,
     ActivityCommentRepository,
+    ActivityDurationValidatorService,
   ],
   exports: [ActivityPublicService],
 })
