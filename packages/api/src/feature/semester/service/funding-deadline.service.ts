@@ -5,13 +5,17 @@ import {
   ApiSem015ResponseCreated,
   ApiSem016ResponseOk,
   ApiSem017ResponseOk,
+  ApiSem021RequestBody,
+  ApiSem021ResponseOk,
 } from "@clubs/interface/api/semester/index";
 
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import UserPublicService from "../../user/service/user.public.service";
 import { MActivityDuration } from "../model/activity.duration.model";
+import { MFundingDeadline } from "../model/funding.deadline.model";
 import { ActivityDurationRepository } from "../repository/activity.duration.repository";
+import { FundingDeadlineRepository } from "../repository/funding.deadline.repository";
 import { FundingDeadlineSqlRepository } from "../repository/funding.sql.repository";
 import { SemesterRepository } from "../repository/semester.repository";
 
@@ -19,6 +23,7 @@ import { SemesterRepository } from "../repository/semester.repository";
 export class FundingDeadlineService {
   constructor(
     private readonly activityDurationRepository: ActivityDurationRepository,
+    private readonly fundingDeadlineRepository: FundingDeadlineRepository,
     private readonly fundingDeadlineSqlRepository: FundingDeadlineSqlRepository,
     private readonly semesterRepository: SemesterRepository,
     private readonly userpulicservice: UserPublicService,
@@ -139,5 +144,45 @@ export class FundingDeadlineService {
       );
     }
     return {};
+  }
+
+  async updateFundingDeadline(
+    executiveId: number,
+    deadlineId: number,
+    body: ApiSem021RequestBody,
+  ): Promise<ApiSem021ResponseOk> {
+    const { startTerm, endTerm } = body;
+
+    await this.userpulicservice.checkCurrentExecutiveById(executiveId);
+
+    const fundingDeadlines =
+      (await this.fundingDeadlineRepository.find({
+        id: deadlineId,
+      })) ?? [];
+    const [fundingDeadline] = fundingDeadlines;
+
+    if (!fundingDeadline) {
+      throw new HttpException(
+        "해당 지원금 신청 기간을 찾을 수 없습니다.",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (startTerm > endTerm) {
+      throw new HttpException(
+        "시작날짜는 종료날짜보다 이후일 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.fundingDeadlineRepository.put(
+      new MFundingDeadline({
+        ...fundingDeadline,
+        startTerm,
+        endTerm,
+      }),
+    );
+
+    return { id: deadlineId };
   }
 }

@@ -5,16 +5,20 @@ import {
 } from "@tanstack/react-table";
 import { ko } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { ApiSem016ResponseOk } from "@clubs/interface/api/semester/apiSem016";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Table from "@sparcs-clubs/web/common/components/Table";
-import TableActionButton from "@sparcs-clubs/web/common/components/Table/TableActionButton";
+import TableActionButton, {
+  TableActionButtonGroup,
+} from "@sparcs-clubs/web/common/components/Table/TableActionButton";
+import DeadlineEditModal from "@sparcs-clubs/web/features/executive/components/DeadlineEditModal";
 import { fundingDeadlineEnumToString } from "@sparcs-clubs/web/features/manage-club/funding/constants/fundingDeadlineEnumToString";
 
 import useDeleteFundingDeadline from "../services/useDeleteFundingDeadline";
+import useUpdateFundingDeadline from "../services/useUpdateFundingDeadline";
 
 interface ExecutiveFundingClubTableProps {
   fundingDeadlines: ApiSem016ResponseOk;
@@ -27,6 +31,13 @@ const FundingDeadlineTable = ({
     mutate: deleteFundingDeadline,
     isPending: isDeletingFundingDeadline,
   } = useDeleteFundingDeadline();
+  const {
+    mutate: updateFundingDeadline,
+    isPending: isUpdatingFundingDeadline,
+  } = useUpdateFundingDeadline();
+  const [editingDeadline, setEditingDeadline] = useState<
+    ApiSem016ResponseOk["deadlines"][number] | null
+  >(null);
 
   const sortedDeadlines = useMemo(() => {
     if (!fundingDeadlines?.deadlines) return [];
@@ -44,12 +55,33 @@ const FundingDeadlineTable = ({
     });
   };
 
-  const actionsCellRenderer = (id: number) => (
-    <TableActionButton
-      variant="delete"
-      onClick={() => handleDeleteFundingDeadline(id)}
-      disabled={isDeletingFundingDeadline}
-    />
+  const handleUpdateFundingDeadline = (startTerm: Date, endTerm: Date) => {
+    if (!editingDeadline) return;
+
+    updateFundingDeadline(
+      {
+        fundingDeadlineId: editingDeadline.id,
+        body: { startTerm, endTerm },
+      },
+      { onSuccess: () => setEditingDeadline(null) },
+    );
+  };
+
+  const actionsCellRenderer = (
+    deadline: ApiSem016ResponseOk["deadlines"][number],
+  ) => (
+    <TableActionButtonGroup>
+      <TableActionButton
+        variant="edit"
+        onClick={() => setEditingDeadline(deadline)}
+        disabled={isUpdatingFundingDeadline}
+      />
+      <TableActionButton
+        variant="delete"
+        onClick={() => handleDeleteFundingDeadline(deadline.id)}
+        disabled={isDeletingFundingDeadline}
+      />
+    </TableActionButtonGroup>
   );
 
   const columnHelper =
@@ -91,8 +123,8 @@ const FundingDeadlineTable = ({
     columnHelper.display({
       id: "actions",
       header: "관리",
-      cell: ({ row }) => actionsCellRenderer(row.original.id),
-      size: 96,
+      cell: ({ row }) => actionsCellRenderer(row.original),
+      size: 160,
     }),
   ];
 
@@ -106,6 +138,15 @@ const FundingDeadlineTable = ({
   return (
     <FlexWrapper direction="column" gap={8}>
       <Table count={sortedDeadlines.length} table={table} />
+      <DeadlineEditModal
+        isOpen={editingDeadline != null}
+        title="지원금 신청 기간 수정"
+        startTerm={editingDeadline?.startTerm}
+        endTerm={editingDeadline?.endTerm}
+        isPending={isUpdatingFundingDeadline}
+        onClose={() => setEditingDeadline(null)}
+        onSave={handleUpdateFundingDeadline}
+      />
     </FlexWrapper>
   );
 };

@@ -21,7 +21,7 @@ import type {
   ApiSem008ResponseNotImplemented,
   ApiSem009RequestBody,
   ApiSem009RequestParam,
-  ApiSem009ResponseNotImplemented,
+  ApiSem009ResponseOk,
   ApiSem010RequestParam,
   ApiSem010ResponseOK,
   ApiSem011RequestBody,
@@ -45,6 +45,12 @@ import type {
   ApiSem019ResponseOk,
   ApiSem020RequestParam,
   ApiSem020ResponseOk,
+  ApiSem021RequestBody,
+  ApiSem021RequestParam,
+  ApiSem021ResponseOk,
+  ApiSem022RequestBody,
+  ApiSem022RequestParam,
+  ApiSem022ResponseOk,
 } from "@clubs/interface/api/semester/index";
 import {
   apiSem006,
@@ -62,6 +68,8 @@ import {
   apiSem018,
   apiSem019,
   apiSem020,
+  apiSem021,
+  apiSem022,
 } from "@clubs/interface/api/semester/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -114,17 +122,16 @@ export class ActivityDurationController {
   }
 
   @Executive()
-  @Put("/executive/semesters/:semesterId/activity-deadlines/:deadlineId")
+  @Put("/executive/semesters/activity-deadlines/:deadlineId")
   @UsePipes(new ZodPipe(apiSem009))
   async updateDeadline(
-    @GetExecutive() executive: GetExecutive,
-    @Param() _param: ApiSem009RequestParam,
-    @Body() _body: ApiSem009RequestBody,
-  ): Promise<ApiSem009ResponseNotImplemented> {
-    logger.info(
-      `User excutive_id: ${executive.id} trying to call unimplemeneted feature`,
-    );
-    throw new NotImplementedException();
+    @Param() param: ApiSem009RequestParam,
+    @Body() body: ApiSem009RequestBody,
+  ): Promise<ApiSem009ResponseOk> {
+    return this.activityDurationService.updateActivityDeadline({
+      deadlineId: param.deadlineId,
+      body,
+    });
   }
 
   @Executive()
@@ -209,6 +216,21 @@ export class ActivityDurationController {
   }
 
   @Executive()
+  @Put("/executive/semesters/funding-deadlines/:fundingDeadlineId")
+  @UsePipes(new ZodPipe(apiSem021))
+  async updateFundingDeadline(
+    @GetExecutive() executive: GetExecutive,
+    @Param() param: ApiSem021RequestParam,
+    @Body() body: ApiSem021RequestBody,
+  ): Promise<ApiSem021ResponseOk> {
+    return this.fundingDeadlineService.updateFundingDeadline(
+      executive.id,
+      param.fundingDeadlineId,
+      body,
+    );
+  }
+
+  @Executive()
   @Delete("/executive/semesters/funding-deadlines/:fundingDeadlineId")
   @UsePipes(new ZodPipe(apiSem017))
   async deleteFundingDeadline(
@@ -245,6 +267,21 @@ export class ActivityDurationController {
     return this.registrationDeadlineService.getRegistrationDeadlines(
       executive.id,
       query.semesterId,
+    );
+  }
+
+  @Executive()
+  @Put("/executive/semesters/registration-deadlines/:registrationDeadlineId")
+  @UsePipes(new ZodPipe(apiSem022))
+  async updateRegistrationDeadline(
+    @GetExecutive() executive: GetExecutive,
+    @Param() param: ApiSem022RequestParam,
+    @Body() body: ApiSem022RequestBody,
+  ): Promise<ApiSem022ResponseOk> {
+    return this.registrationDeadlineService.updateRegistrationDeadline(
+      executive.id,
+      param.registrationDeadlineId,
+      body,
     );
   }
 
