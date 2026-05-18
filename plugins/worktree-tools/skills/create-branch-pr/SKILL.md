@@ -124,11 +124,11 @@ Examples:
 Examples:
 
 - Auto body:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - With explicit summary bullets:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - Existing task number without page URL:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 
 The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
 

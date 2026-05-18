@@ -49,7 +49,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm delete-worktree -- [options]
+  console.log(`Usage: pnpm clubs-task-cleanup -- [options]
 
 Options:
   --branch <name>             Branch name for the worktree to delete
@@ -183,8 +183,10 @@ async function main() {
 
   const resolvedPath = matched
     ? resolve(matched.worktree)
-    : targetPath || resolve(worktreesRoot, (targetBranch || "").replaceAll("/", "-"));
-  const resolvedBranch = matched?.branch || targetBranch || basename(resolvedPath);
+    : targetPath ||
+      resolve(worktreesRoot, (targetBranch || "").replaceAll("/", "-"));
+  const resolvedBranch =
+    matched?.branch || targetBranch || basename(resolvedPath);
 
   if (resolvedPath === resolve(currentRoot)) {
     throw new Error("Refusing to delete the current worktree");
@@ -195,13 +197,17 @@ async function main() {
   }
 
   if (resolvedBranch && resolvedBranch === currentBranchName) {
-    throw new Error("Refusing to delete the branch checked out in the current worktree");
+    throw new Error(
+      "Refusing to delete the branch checked out in the current worktree",
+    );
   }
 
   if (matched && existsSync(resolvedPath)) {
     const status = runGit(["status", "--short"], resolvedPath);
     if (status && !options.force) {
-      throw new Error("Target worktree has uncommitted changes. Re-run with --force if you really want to delete it.");
+      throw new Error(
+        "Target worktree has uncommitted changes. Re-run with --force if you really want to delete it.",
+      );
     }
   }
 
@@ -220,7 +226,9 @@ async function main() {
       removedWorktree = true;
     } else {
       const remaining = parseWorktreeList(repoRoot).some(
-        entry => resolve(entry.worktree) === resolvedPath || entry.branch === resolvedBranch,
+        entry =>
+          resolve(entry.worktree) === resolvedPath ||
+          entry.branch === resolvedBranch,
       );
       removedWorktree = removeResult.ok || !remaining;
       if (!removedWorktree) {
@@ -239,13 +247,25 @@ async function main() {
 
   let removedBranch = false;
   if (resolvedBranch) {
-    const deleteResult = runGitCommand(["branch", "-D", resolvedBranch], repoRoot, options.dryRun, {
-      allowFailure: true,
-    });
-    removedBranch = options.dryRun || deleteResult.ok || !localBranchExists(repoRoot, resolvedBranch);
+    const deleteResult = runGitCommand(
+      ["branch", "-D", resolvedBranch],
+      repoRoot,
+      options.dryRun,
+      {
+        allowFailure: true,
+      },
+    );
+    removedBranch =
+      options.dryRun ||
+      deleteResult.ok ||
+      !localBranchExists(repoRoot, resolvedBranch);
   }
 
-  if (!matched && !existsSync(resolvedPath) && !localBranchExists(repoRoot, resolvedBranch)) {
+  if (
+    !matched &&
+    !existsSync(resolvedPath) &&
+    !localBranchExists(repoRoot, resolvedBranch)
+  ) {
     console.log(`Worktree already absent: ${resolvedPath}`);
     if (resolvedBranch) {
       console.log(`Local branch already absent: ${resolvedBranch}`);

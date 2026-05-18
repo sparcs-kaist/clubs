@@ -1,11 +1,8 @@
 ---
-name: delete-worktree
-description: Delete a completed ar-002-clubs worktree when the user wants to reclaim disk space. Use it to remove a sibling worktree under ../clubs-worktrees, delete its local branch, and clean up any leftover directory. Never use it for the current worktree or the primary repository checkout.
-metadata:
-  short-description: Delete a completed worktree and local branch
+description: "Clean up a completed Clubs task worktree for this ar-002-clubs repo. Use this when the user says 워크트리 종료, 워크트리 정리, 워크트리 삭제, 태스크 종료, TU 종료, 작업 종료, 작업 정리, or asks to clean up/delete/close a worktree, task, TU, or work item. Remove the sibling worktree under ../clubs-worktrees, delete its local branch, and clean up leftover directories. Never use it for the current worktree or primary checkout."
 ---
 
-# Delete Worktree
+# Clubs Task Cleanup
 
 Delete a completed worktree and its local branch to free local disk space.
 
@@ -14,6 +11,8 @@ Delete a completed worktree and its local branch to free local disk space.
 Use this skill when:
 
 - the user says a task is complete and wants the worktree removed
+- the user says 워크트리 종료, 워크트리 정리, or 워크트리 삭제
+- the user says 태스크 종료, TU 종료, or 작업 종료
 - the user asks to remove a TU worktree under `../clubs-worktrees`
 - the user wants the local branch deleted after the worktree is no longer needed
 
@@ -22,6 +21,15 @@ Do not use this skill to remove:
 - the current worktree you are actively editing in
 - the primary repository checkout
 - a worktree with uncommitted changes unless the user explicitly wants a forced delete
+
+## Trigger aliases
+
+Treat these natural-language aliases as this skill:
+
+- 워크트리 종료 / 워크트리 정리 / 워크트리 삭제
+- 태스크 종료 / 태스크 정리 / 태스크 삭제
+- TU 종료 / TU 정리 / TU 삭제
+- 작업 종료 / 작업 정리 / 작업 삭제 / 작업 마무리
 
 ## Inputs
 
@@ -49,18 +57,18 @@ Before deleting:
 
 Use the helper command:
 
-`pnpm delete-worktree -- --branch TU-408`
+`pnpm clubs-task-cleanup -- --branch TU-408`
 
 Optional modes:
 
 - Path-based:
-  - `pnpm delete-worktree -- --worktree-path /Users/kwonhyukwon/developer/clubs-worktrees/TU-408`
+  - `pnpm clubs-task-cleanup -- --worktree-path /Users/kwonhyukwon/developer/clubs-worktrees/TU-408`
 - Forced delete:
-  - `pnpm delete-worktree -- --branch TU-408 --force`
+  - `pnpm clubs-task-cleanup -- --branch TU-408 --force`
 - Preview only:
-  - `pnpm delete-worktree -- --branch TU-408 --dry-run`
+  - `pnpm clubs-task-cleanup -- --branch TU-408 --dry-run`
 - No explicit target:
-  - `pnpm delete-worktree`
+  - `pnpm clubs-task-cleanup`
   - ask whether the current worktree should be deleted before doing anything
 
 ## Expected behavior
