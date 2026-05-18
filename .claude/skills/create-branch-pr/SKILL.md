@@ -86,9 +86,9 @@ Always resolve these into a confirmed TU number before you create the branch or 
 GitHub uses the single commit title as the default squash title when a PR has only one commit. To make the squash title follow the PR title by default:
 
 - Before creating a PR, compare the head branch against the base branch.
-- If the branch has 0 or 1 commits relative to the base, add exactly one empty commit with the formatted PR title as the commit message.
+- If the branch has 0 or 1 commits relative to the base, add exactly one empty commit so GitHub's squash dialog defaults to the PR title.
 - Only do this on the current branch and only when the worktree is clean.
-- Use `HUSKY=0 git commit --allow-empty -m "[TU-405] one-line task summary"` so local commit hooks do not reject the bracketed PR title format.
+- Use `HUSKY=0 git commit --allow-empty -m "chore: empty for squash merge"` so the empty commit itself follows the repo's conventional commit rules.
 - Do not add an empty commit if the branch already has 2 or more commits relative to the base.
 
 ### PR base branch
@@ -142,7 +142,7 @@ Examples:
 
 The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
 
-During PR creation, the helper formats the title as `[TU-405] one-line task summary`. It also adds the squash-title empty commit automatically when the branch has fewer than 2 commits relative to the base.
+During PR creation, the helper formats the title as `[TU-405] one-line task summary`. It also adds a `chore: empty for squash merge` empty commit automatically when the branch has fewer than 2 commits relative to the base.
 
 ## Validation
 
@@ -160,7 +160,7 @@ After PR creation:
    - Notion URL is present in the body
    - `## Patch Note` and the `clubs:patch-note` block are present
    - non-`none` categories have user-facing Korean `text`
-   - if the branch had fewer than 2 commits before PR creation, one empty commit with the PR title was added
+   - if the branch had fewer than 2 commits before PR creation, one `chore: empty for squash merge` empty commit was added
 
 ## Response expectations
 

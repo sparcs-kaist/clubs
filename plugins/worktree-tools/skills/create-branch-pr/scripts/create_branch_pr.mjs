@@ -253,6 +253,7 @@ const patchNoteCategories = new Set([
 ]);
 const patchNoteStartMarker = "<!-- clubs:patch-note:start -->";
 const patchNoteEndMarker = "<!-- clubs:patch-note:end -->";
+const squashEmptyCommitMessage = "chore: empty for squash merge";
 
 function normalizePatchNoteCategory(category) {
   const normalized = category.toLowerCase();
@@ -404,7 +405,13 @@ function ensureSquashTitleCommit({ base, head, title, dryRun }) {
     );
   }
 
-  const cmd = ["git", "commit", "--allow-empty", "-m", title];
+  const cmd = [
+    "git",
+    "commit",
+    "--allow-empty",
+    "-m",
+    squashEmptyCommitMessage,
+  ];
   console.log(`$ HUSKY=0 ${cmd.join(" ")}`);
   if (dryRun) {
     return;
