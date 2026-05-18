@@ -525,14 +525,10 @@ async function main() {
 
   if (options.dryRun) {
     if (appPackageUpdated !== appPackageSource) {
-      console.log(
-        `Would update ${options.appPackageFile} to ${displayVersion(version)}.`,
-      );
+      console.log(`Would update ${options.appPackageFile} to ${version}.`);
     }
     if (appInfoUpdated !== appInfoSource) {
-      console.log(
-        `Would update ${options.appInfoFile} to ${displayVersion(version)}.`,
-      );
+      console.log(`Would update ${options.appInfoFile} to ${version}.`);
     }
     console.log(entry);
     return;

@@ -3,8 +3,6 @@
 import { existsSync, rmSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 
 function parseArgs(argv) {
   const options = {
@@ -117,24 +115,6 @@ function currentBranch(repoRoot) {
   return runGit(["branch", "--show-current"], repoRoot);
 }
 
-async function confirmDeleteCurrentWorktree(currentRoot) {
-  if (!input.isTTY) {
-    throw new Error(
-      `No target was provided. Re-run with --branch/--worktree-path, or run interactively to confirm deleting the current worktree: ${currentRoot}`,
-    );
-  }
-
-  const rl = readline.createInterface({ input, output });
-  try {
-    const answer = await rl.question(
-      `No worktree target was provided. Delete the current worktree at ${currentRoot}? [y/N] `,
-    );
-    return /^y(es)?$/i.test(answer.trim());
-  } finally {
-    rl.close();
-  }
-}
-
 function runGitCommand(args, cwd, dryRun, { allowFailure = false } = {}) {
   console.log(`$ git ${args.join(" ")}`);
   if (dryRun) return { ok: true, skipped: true };
@@ -166,13 +146,9 @@ async function main() {
   const currentBranchName = currentBranch(repoRoot);
 
   if (!targetBranch && !targetPath) {
-    const confirmed = await confirmDeleteCurrentWorktree(currentRoot);
-    if (!confirmed) {
-      console.log("Cancelled.");
-      return;
-    }
-    targetPath = resolve(currentRoot);
-    targetBranch = currentBranchName;
+    throw new Error(
+      "No worktree target was provided. Re-run with --branch or --worktree-path for a non-current worktree.",
+    );
   }
 
   const matched = worktrees.find(entry => {

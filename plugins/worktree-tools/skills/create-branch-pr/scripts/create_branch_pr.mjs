@@ -490,48 +490,50 @@ function createPullRequest(options) {
     validatePatchNoteBlock(readFileSync(bodyFile, "utf8"));
   }
 
-  ensureSquashTitleCommit({
-    base: options.base,
-    head,
-    title,
-    dryRun: options.dryRun,
-  });
+  try {
+    ensureSquashTitleCommit({
+      base: options.base,
+      head,
+      title,
+      dryRun: options.dryRun,
+    });
 
-  const cmd = [
-    "gh",
-    "pr",
-    "create",
-    "--base",
-    options.base,
-    "--head",
-    head,
-    "--title",
-    title,
-    "--body-file",
-    bodyFile,
-  ];
+    const cmd = [
+      "gh",
+      "pr",
+      "create",
+      "--base",
+      options.base,
+      "--head",
+      head,
+      "--title",
+      title,
+      "--body-file",
+      bodyFile,
+    ];
 
-  if (options.draft) {
-    cmd.push("--draft");
-  }
+    if (options.draft) {
+      cmd.push("--draft");
+    }
 
-  console.log(`$ ${cmd.join(" ")}`);
-  if (options.dryRun) {
+    console.log(`$ ${cmd.join(" ")}`);
+    if (options.dryRun) {
+      if (tempDir) {
+        console.log("--- generated body ---");
+        console.log(generatedBody.trimEnd());
+        console.log("--- end body ---");
+      }
+      return;
+    }
+
+    const result = spawnSync(cmd[0], cmd.slice(1), { stdio: "inherit" });
+    if (result.status !== 0) {
+      throw new Error("gh pr create failed");
+    }
+  } finally {
     if (tempDir) {
-      console.log("--- generated body ---");
-      console.log(generatedBody.trimEnd());
-      console.log("--- end body ---");
       rmSync(tempDir, { recursive: true, force: true });
     }
-    return;
-  }
-
-  const result = spawnSync(cmd[0], cmd.slice(1), { stdio: "inherit" });
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
-  if (result.status !== 0) {
-    throw new Error("gh pr create failed");
   }
 }
 

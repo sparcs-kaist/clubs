@@ -42,7 +42,7 @@ Prefer one of these:
 - worktree path, for example `/Users/kwonhyukwon/developer/clubs-worktrees/TU-408`
 
 If the user gives only a TU number, convert it to `TU-<number>`.
-If the user gives no target, the helper should ask whether the current worktree should be deleted.
+If the user gives no target, `pnpm clubs-task-cleanup` must abort and ask for an explicit non-current worktree target.
 
 ## Safety rules
 
@@ -72,7 +72,7 @@ Optional modes:
   - `pnpm clubs-task-cleanup -- --branch TU-408 --dry-run`
 - No explicit target:
   - `pnpm clubs-task-cleanup`
-  - ask whether the current worktree should be deleted before doing anything
+  - abort and require `--branch` or `--worktree-path` for a non-current worktree
 
 ## Expected behavior
 
