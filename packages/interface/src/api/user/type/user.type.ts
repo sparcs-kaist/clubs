@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { zSemester } from "@clubs/domain/semester/semester";
 
+import { zUserName } from "@clubs/interface/common/commonString";
 import {
   ProfessorEnum,
   StudentStatusEnum,
@@ -83,7 +84,7 @@ export const zStudentSummary = zStudent.pick({
 export const zProfessor = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().nullable(),
-  name: z.string(),
+  name: zUserName,
   email: z.string(),
   phoneNumber: z.string().optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),

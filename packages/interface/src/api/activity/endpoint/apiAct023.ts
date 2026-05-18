@@ -3,6 +3,11 @@ import { z } from "zod";
 
 import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
 
+import {
+  zClubNameEn,
+  zClubNameKr,
+  zUserName,
+} from "@clubs/interface/common/commonString";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
 
@@ -36,16 +41,16 @@ const responseBodyMap = {
         clubId: zId,
         clubTypeEnum: z.nativeEnum(ClubTypeEnum),
         divisionName: z.string().max(10),
-        clubNameKr: z.string().max(30),
-        clubNameEn: z.string().max(30),
-        advisor: z.string().max(255).optional(),
+        clubNameKr: zClubNameKr,
+        clubNameEn: zClubNameEn,
+        advisor: zUserName.optional(),
         pendingActivitiesCount: z.coerce.number().int().min(0),
         approvedActivitiesCount: z.coerce.number().int().min(0),
         rejectedActivitiesCount: z.coerce.number().int().min(0),
         chargedExecutive: z
           .object({
             id: zId,
-            name: z.string().max(30),
+            name: zUserName,
           })
           .optional(),
       }),
@@ -59,8 +64,8 @@ const responseBodyMap = {
             clubId: zId,
             clubTypeEnum: z.nativeEnum(ClubTypeEnum),
             divisionName: z.string().max(10),
-            clubNameKr: z.string().max(30),
-            clubNameEn: z.string().max(30),
+            clubNameKr: zClubNameKr,
+            clubNameEn: zClubNameEn,
             pendingActivitiesCount: z.coerce.number().int().min(0),
             approvedActivitiesCount: z.coerce.number().int().min(0),
             rejectedActivitiesCount: z.coerce.number().int().min(0),

@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@clubs/interface/common/commonString";
+import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
@@ -43,7 +43,7 @@ const requestBody = z
      */
     professor: z
       .object({
-        name: z.string(),
+        name: zUserName,
         email: z
           .string()
           .email()

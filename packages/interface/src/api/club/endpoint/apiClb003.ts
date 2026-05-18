@@ -5,6 +5,10 @@ import { zClub } from "@clubs/domain/club/club";
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 import { zSemester } from "@clubs/domain/semester/semester";
 
+import {
+  zClubCharacteristic,
+  zUserName,
+} from "@clubs/interface/common/commonString";
 import { registry } from "@clubs/interface/open-api";
 
 /**
@@ -34,9 +38,9 @@ const responseBodyMap = {
             nameEn: zClub.shape.nameEn,
             type: z.nativeEnum(ClubTypeEnum), // 동아리 유형(정동아리 | 가동아리)
             isPermanent: z.coerce.boolean(), // 상임동아리 여부
-            characteristic: z.coerce.string().max(50), // 동아리 소개
-            representative: z.coerce.string().max(20), // 동아리 대표
-            advisor: z.coerce.string().max(20).optional(), // 동아리 지도교수
+            characteristic: zClubCharacteristic.nullable(), // 동아리 소개
+            representative: zUserName, // 동아리 대표
+            advisor: zUserName.nullable().optional(), // 동아리 지도교수
             totalMemberCnt: z.coerce.number().int().min(1),
           })
           .array(),

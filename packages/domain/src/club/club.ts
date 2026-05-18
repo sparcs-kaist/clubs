@@ -11,11 +11,11 @@ export const zClub = z.object({
     examples: [1, 2, 3],
   }),
   // plain schema
-  nameKr: z.string().max(255).min(1).openapi({
+  nameKr: z.string().max(30).min(1).openapi({
     description: "동아리의 한국어 이름입니다.",
     example: "술박스",
   }),
-  nameEn: z.string().max(255).min(1).openapi({
+  nameEn: z.string().max(100).min(1).openapi({
     description: "동아리의 영어 이름입니다.",
     example: "sulbox",
   }),
