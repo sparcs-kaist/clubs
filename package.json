@@ -5,10 +5,10 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
+    "clubs-task-start": "node plugins/worktree-tools/skills/clubs-task-start/scripts/create_worktree.mjs",
+    "clubs-task-cleanup": "node plugins/worktree-tools/skills/clubs-task-cleanup/scripts/delete_worktree.mjs",
     "create-branch-pr": "node plugins/worktree-tools/skills/create-branch-pr/scripts/create_branch_pr.mjs",
-    "create-worktree": "node plugins/worktree-tools/skills/create-worktree/scripts/create_worktree.mjs",
     "prepare-patch-note": "node scripts/release/prepare-patch-note.mjs",
-    "delete-worktree": "node plugins/worktree-tools/skills/delete-worktree/scripts/delete_worktree.mjs",
     "dev": "turbo run dev:setup && turbo watch dev",
     "dev:api": "turbo run dev:setup && turbo watch dev --filter=api",
     "dev:setup": "node -e \"\"",

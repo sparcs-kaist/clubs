@@ -1,8 +1,11 @@
 ---
-description: Create a ready-to-run worktree for this ar-002-clubs repo when the user gives a TU task, Notion spec link, or GitHub PR link. Use it whenever new implementation should happen in a fresh sibling worktree instead of the current checkout. Read the task source first, confirm the TU number and scope, choose the correct branch, create the worktree under ../clubs-worktrees, copy required ignored files from the main repo, and run the bootstrap commands in order.
+name: clubs-task-start
+description: "Start a ready-to-run Clubs task worktree for this ar-002-clubs repo. Use this when the user says 워크트리 시작, 워크트리 파, 워크트리 만들어, 태스크 시작, TU 시작, 작업 시작, or asks to start/create/open a worktree, task, TU, or work item. It inspects task context first, chooses the correct branch, creates the worktree under ../clubs-worktrees, copies ignored files, and bootstraps the repo."
+metadata:
+  short-description: Start and bootstrap a Clubs task worktree
 ---
 
-# Create Worktree
+# Clubs Task Start
 
 Create an isolated, runnable worktree for this repo before starting a new task.
 
@@ -11,6 +14,8 @@ Create an isolated, runnable worktree for this repo before starting a new task.
 Use this skill when:
 
 - the user asks to start work on a new TU task
+- the user says 워크트리 시작, 워크트리 파, or 워크트리 만들어
+- the user says 태스크 시작, TU 시작, or 작업 시작
 - the user gives a Notion task/spec page and wants implementation to happen in a fresh worktree
 - the user gives only a new task summary and the task page must be created before the worktree
 - the user gives a GitHub PR link and wants that existing branch pulled into a separate worktree
@@ -18,13 +23,22 @@ Use this skill when:
 
 Do not use this skill if the user explicitly wants work to happen in the current worktree.
 
+## Trigger aliases
+
+Treat these natural-language aliases as this skill:
+
+- 워크트리 시작 / 워크트리 파 / 워크트리 만들어
+- 태스크 시작 / 태스크 파 / 태스크 만들어
+- TU 시작 / TU 파 / TU 작업 시작
+- 작업 시작 / 작업 파 / 작업 만들어
+
 ## Task source first
 
 Always inspect the task source before creating the worktree.
 
 ### If the user gives a Notion page
 
-1. Use the available Notion integration or fetched page content if present.
+1. Use the Notion plugin to fetch the page if available.
 2. Extract:
    - TU number
    - requested work
@@ -56,7 +70,9 @@ Always inspect the task source before creating the worktree.
 
 - Existing PR: reuse the PR head branch exactly.
 - Fresh task with a TU number: use `TU-<number>`.
+- If only the numeric TU id is passed to the helper, it normalizes `405` to `TU-405`.
 - If the task source does not contain a TU number and no PR branch exists, create a Notion task page first when tools are available. Ask the user for the TU number only when the task page cannot be created.
+- Fresh branch creation should sync `dev` first by running a `git pull origin dev` from the primary repo worktree.
 
 ## Worktree location rules
 
@@ -103,7 +119,7 @@ Only do these when the task needs the app or DB to run:
 
 Use the helper command:
 
-`pnpm create-worktree -- --branch <branch> [--start-point <ref>] [--reuse-remote-branch]`
+`pnpm clubs-task-start -- --branch <branch> [--start-point <ref>] [--reuse-remote-branch]`
 
 ### Use these modes
 
@@ -116,7 +132,12 @@ Use `--dry-run` first when:
 
 - the branch name came from a long PR head ref
 - the repo state looks unusual
-- you want to show the exact operations before doing them
+- you want to show the user the exact operations before doing them
+
+When a fresh branch must be created, the helper should:
+
+1. sync the primary repo worktree to the latest `dev`
+2. only then create the new worktree branch from `origin/dev`
 
 ## Validation after setup
 
