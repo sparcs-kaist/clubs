@@ -75,8 +75,21 @@ Always resolve these into a confirmed TU number before you create the branch or 
 
 ### PR title naming
 
-- Default format: `[TU-405] short task title`
+- Required format: `[TU-405] one-line task summary`
+- The TU number must be wrapped in square brackets.
+- The text after the TU number should be a concise first-pass summary of the work.
+- Do not use a generic title like `chore`, `fix`, or `update`.
 - Reuse the existing PR title if the PR already exists
+
+### Squash merge title guard
+
+GitHub uses the single commit title as the default squash title when a PR has only one commit. To make the squash title follow the PR title by default:
+
+- Before creating a PR, compare the head branch against the base branch.
+- If the branch has 0 or 1 commits relative to the base, add exactly one empty commit with the formatted PR title as the commit message.
+- Only do this on the current branch and only when the worktree is clean.
+- Use `HUSKY=0 git commit --allow-empty -m "[TU-405] one-line task summary"` so local commit hooks do not reject the bracketed PR title format.
+- Do not add an empty commit if the branch already has 2 or more commits relative to the base.
 
 ### PR base branch
 
@@ -129,6 +142,8 @@ Examples:
 
 The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
 
+During PR creation, the helper formats the title as `[TU-405] one-line task summary`. It also adds the squash-title empty commit automatically when the branch has fewer than 2 commits relative to the base.
+
 ## Validation
 
 After branch creation:
@@ -141,10 +156,11 @@ After PR creation:
 1. Run `gh pr view --json number,title,headRefName,baseRefName,url,body`
 2. Confirm:
    - base is `dev`
-   - title includes the TU number
+   - title follows `[TU-405] one-line task summary`
    - Notion URL is present in the body
    - `## Patch Note` and the `clubs:patch-note` block are present
    - non-`none` categories have user-facing Korean `text`
+   - if the branch had fewer than 2 commits before PR creation, one empty commit with the PR title was added
 
 ## Response expectations
 
