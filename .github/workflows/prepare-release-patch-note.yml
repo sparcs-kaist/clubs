@@ -76,14 +76,15 @@ jobs:
           --head HEAD
           --bump ${{ steps.bump.outputs.bump }}
           --file packages/web/src/constants/patchNote.ts
+          --app-package-file packages/web/package.json
+          --app-info-file packages/web/src/constants/appVersion.mjs
 
       - name: Format generated patch note
-        if: ${{ hashFiles('packages/web/src/constants/patchNote.ts') != '' }}
-        run: pnpm exec prettier --write packages/web/src/constants/patchNote.ts
+        run: pnpm exec prettier --write packages/web/package.json packages/web/src/constants/appVersion.mjs packages/web/src/constants/patchNote.ts
 
       - name: Validate generated files
         run: |
-          unexpected="$(git diff --name-only | grep -Ev '^packages/web/src/constants/patchNote\.ts$' || true)"
+          unexpected="$(git diff --name-only | grep -Ev '^(packages/web/package\.json|packages/web/src/constants/appVersion\.mjs|packages/web/src/constants/patchNote\.ts)$' || true)"
           if [ -n "${unexpected}" ]; then
             echo "Unexpected generated files:"
             echo "${unexpected}"
@@ -94,8 +95,10 @@ jobs:
         id: commit
         env:
           RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || github.run_id }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.version }}
+          RELEASE_DISPLAY_VERSION: ${{ steps.generate.outputs.display_version }}
         run: |
-          if git diff --quiet -- packages/web/src/constants/patchNote.ts; then
+          if git diff --quiet -- packages/web/package.json packages/web/src/constants/appVersion.mjs packages/web/src/constants/patchNote.ts; then
             echo "No patch note changes to commit."
             echo "created=false" >> "${GITHUB_OUTPUT}"
             exit 0
@@ -105,8 +108,17 @@ jobs:
           git switch -c "${branch}"
           git config user.name "clubs-release-bot"
           git config user.email "clubs-release-bot@users.noreply.github.com"
-          git add packages/web/src/constants/patchNote.ts
-          HUSKY=0 git commit -m "chore: update release patch note"
+
+          if ! git diff --quiet -- packages/web/package.json packages/web/src/constants/appVersion.mjs; then
+            git add packages/web/package.json packages/web/src/constants/appVersion.mjs
+            HUSKY=0 git commit -m "chore(web): bump clubs version to ${RELEASE_VERSION}"
+          fi
+
+          if ! git diff --quiet -- packages/web/src/constants/patchNote.ts; then
+            git add packages/web/src/constants/patchNote.ts
+            HUSKY=0 git commit -m "docs(web): update release patch note for ${RELEASE_DISPLAY_VERSION}"
+          fi
+
           git push --force origin "HEAD:${branch}"
 
           echo "created=true" >> "${GITHUB_OUTPUT}"
@@ -120,11 +132,12 @@ jobs:
           PATCH_NOTE_BRANCH: ${{ steps.commit.outputs.branch }}
           RELEASE_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
           RELEASE_TYPE: ${{ steps.bump.outputs.label }}
-          RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.version }}
+          RELEASE_DISPLAY_VERSION: ${{ steps.generate.outputs.display_version }}
         run: |
-          title="PATCH NOTE"
-          if [ -n "${RELEASE_VERSION}" ]; then
-            title="PATCH NOTE - ${RELEASE_VERSION}"
+          title="docs(web): update release patch note"
+          if [ -n "${RELEASE_DISPLAY_VERSION}" ]; then
+            title="docs(web): update release patch note for ${RELEASE_DISPLAY_VERSION}"
           fi
 
           release_ref="manual workflow run"
@@ -138,8 +151,8 @@ jobs:
           이 PR은 ${release_ref}에서 생성된 패치노트 커밋입니다.
 
           - Release type: [${RELEASE_TYPE}]
-          - Release version: ${RELEASE_VERSION}
-          - Generated file: \`packages/web/src/constants/patchNote.ts\`
+          - Release version: ${RELEASE_DISPLAY_VERSION}
+          - Generated files: \`packages/web/package.json\`, \`packages/web/src/constants/appVersion.mjs\`, \`packages/web/src/constants/patchNote.ts\`
 
           이 PR을 \`dev\`에 머지하면 열려 있는 \`dev -> main\` release PR에 패치노트가 포함됩니다.
 
@@ -148,8 +161,8 @@ jobs:
           This PR contains the generated patch note commit for ${release_ref}.
 
           - Release type: [${RELEASE_TYPE}]
-          - Release version: ${RELEASE_VERSION}
-          - Generated file: \`packages/web/src/constants/patchNote.ts\`
+          - Release version: ${RELEASE_DISPLAY_VERSION}
+          - Generated files: \`packages/web/package.json\`, \`packages/web/src/constants/appVersion.mjs\`, \`packages/web/src/constants/patchNote.ts\`
 
           Merge this PR into \`dev\` to include the patch note in the open \`dev -> main\` release PR.
           BODY
@@ -167,11 +180,11 @@ jobs:
           echo "::notice::Patch note PR: ${url}"
 
       - name: Update release PR title
-        if: github.event_name == 'pull_request' && steps.generate.outputs.display_version != ''
+        if: github.event_name == 'pull_request' && steps.generate.outputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TYPE: ${{ steps.bump.outputs.label }}
-          RELEASE_VERSION: ${{ steps.generate.outputs.display_version }}
+          RELEASE_VERSION: ${{ steps.generate.outputs.version }}
         run: |
           gh pr edit "${{ github.event.pull_request.number }}" \
             --repo "${GITHUB_REPOSITORY}" \

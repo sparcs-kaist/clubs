@@ -1,5 +1,7 @@
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { CLUBS_VERSION } from "./src/constants/appVersion.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compiler: {
@@ -19,6 +21,10 @@ const nextConfig = {
           {
             key: "x-nextjs-version",
             value: "15.5.18",
+          },
+          {
+            key: "x-clubs-version",
+            value: CLUBS_VERSION,
           },
         ],
       },
