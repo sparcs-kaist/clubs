@@ -9,6 +9,8 @@ const DEFAULT_APP_PACKAGE_FILE = "packages/web/package.json";
 const DEFAULT_APP_INFO_FILE = "packages/web/src/constants/appVersion.mjs";
 const PATCH_NOTE_START = "<!-- clubs:patch-note:start -->";
 const PATCH_NOTE_END = "<!-- clubs:patch-note:end -->";
+const INTERNAL_CATEGORY = "internal";
+const INTERNAL_IMPROVEMENT_TEXT = "내부 개선";
 
 const CATEGORY_SECTIONS = [
   ["feature", "신규 기능은 다음과 같습니다."],
@@ -210,7 +212,7 @@ function inferCategoryFromPullRequest(pull) {
   if (/^(fix|hotfix)(\(.+\))?:/.test(title)) return "fix";
   if (/^(style|design)(\(.+\))?:/.test(title)) return "design";
   if (/^docs(\(.+\))?:/.test(title)) return "docs";
-  return "etc";
+  return undefined;
 }
 
 function stripBullet(line) {
@@ -300,12 +302,17 @@ function normalizePullRequestNote(pull) {
   }
 
   const explicit = parsePatchNoteBlock(pull.body ?? "");
+  const inferredCategory = inferCategoryFromPullRequest(pull);
   const note = explicit ?? {
-    category: inferCategoryFromPullRequest(pull),
-    texts: [sanitizeText(pull.title)],
+    category: inferredCategory,
+    texts: inferredCategory ? [sanitizeText(pull.title)] : [],
   };
 
-  if (note.category === "none" || note.category === "internal") {
+  if (
+    !note.category ||
+    note.category === "none" ||
+    note.category === INTERNAL_CATEGORY
+  ) {
     return [];
   }
 
@@ -316,6 +323,27 @@ function normalizePullRequestNote(pull) {
     category,
     text: `${text.replace(/[.。]\s*$/, "")}. (#${pull.number})`,
   }));
+}
+
+function internalImprovementNote() {
+  return {
+    category: INTERNAL_CATEGORY,
+    text: INTERNAL_IMPROVEMENT_TEXT,
+  };
+}
+
+function selectReleaseNotes(pullRequests, commits) {
+  const notes = pullRequests.flatMap(normalizePullRequestNote);
+
+  if (notes.length > 0) {
+    return notes;
+  }
+
+  if (commits.length > 0) {
+    return [internalImprovementNote()];
+  }
+
+  return [];
 }
 
 function parseVersions(source) {
@@ -408,6 +436,13 @@ function escapeTemplateLiteral(value) {
 }
 
 function buildPatchNoteContent(version, notes) {
+  if (
+    notes.length > 0 &&
+    notes.every(note => note.category === INTERNAL_CATEGORY)
+  ) {
+    return `Clubs ${displayVersion(version)}\n${INTERNAL_IMPROVEMENT_TEXT}\n`;
+  }
+
   const grouped = new Map(
     CATEGORY_SECTIONS.map(([category]) => [category, []]),
   );
@@ -493,10 +528,10 @@ async function main() {
   }
 
   const pullRequests = await collectPullRequests(commits, repository);
-  const notes = pullRequests.flatMap(normalizePullRequestNote);
+  const notes = selectReleaseNotes(pullRequests, commits);
 
   if (notes.length === 0) {
-    console.log("No user-facing patch note entries found.");
+    console.log("No release patch note entries found.");
     return;
   }
 
