@@ -5,6 +5,18 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.2 source=2cb98d34cc84
+  {
+    version: "v.0.1.2",
+    date: new Date("2026.05.18"),
+    patchNoteContent: `Clubs v0.1.2
+오류 수정은 다음과 같습니다.
+- 동아리 상세와 활동보고서 화면에서 실제 저장 가능한 길이의 이름이나 성격 값 때문에 조회 오류가 발생하던 문제를 수정했습니다. (#1815)
+
+디자인 수정은 다음과 같습니다.
+- 만든 사람들 페이지에서 gb의 크레딧 표기를 업데이트했습니다. (#1817)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.1 source=81cb7090dc72
   {
     version: "v.0.1.1",
