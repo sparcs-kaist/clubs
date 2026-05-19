@@ -53,7 +53,7 @@
     "jwt-decode": "^4.0.0",
     "loglevel": "^1.9.1",
     "next": "15.5.18",
-    "next-intl": "^4.0.2",
+    "next-intl": "^4.12.0",
     "overlay-kit": "^1.2.1",
     "qs": "^6.14.0",
     "react": "^18",
