@@ -55,7 +55,7 @@
     "next": "15.5.18",
     "next-intl": "^4.12.0",
     "overlay-kit": "^1.2.1",
-    "qs": "^6.14.0",
+    "qs": "^6.15.2",
     "react": "^18",
     "react-cookie": "^7.2.0",
     "react-datepicker": "^7.4.0",
