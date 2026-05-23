@@ -5,10 +5,10 @@
   "repository": "",
   "license": "MIT",
   "scripts": {
+    "clubs-task-start": "node plugins/worktree-tools/skills/clubs-task-start/scripts/create_worktree.mjs",
+    "clubs-task-cleanup": "node plugins/worktree-tools/skills/clubs-task-cleanup/scripts/delete_worktree.mjs",
     "create-branch-pr": "node plugins/worktree-tools/skills/create-branch-pr/scripts/create_branch_pr.mjs",
-    "create-worktree": "node plugins/worktree-tools/skills/create-worktree/scripts/create_worktree.mjs",
     "prepare-patch-note": "node scripts/release/prepare-patch-note.mjs",
-    "delete-worktree": "node plugins/worktree-tools/skills/delete-worktree/scripts/delete_worktree.mjs",
     "dev": "turbo run dev:setup && turbo watch dev",
     "dev:api": "turbo run dev:setup && turbo watch dev --filter=api",
     "dev:setup": "node -e \"\"",
@@ -53,7 +53,7 @@
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^9.39.4",
     "eslint": "^9.24.0",
     "@stylistic/eslint-plugin": "^3.1.0",
     "eslint-config-airbnb": "^19.0.4",
@@ -70,7 +70,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
-    "turbo": "^2.8.7",
+    "turbo": "^2.9.14",
     "typescript-eslint": "^8.55.0"
   },
   "engines": {

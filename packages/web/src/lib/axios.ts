@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import MockAdapter from "axios-mock-adapter";
 import qs from "qs";
 
+import { CLUBS_APP } from "@sparcs-clubs/web/constants/appInfo";
 import { env } from "@sparcs-clubs/web/env";
 
 import tokenInterceptor from "./_axios/axiosAuthTokenInterceptor";
@@ -76,6 +77,7 @@ export const axiosClient = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    "x-clubs-client-version": CLUBS_APP.version,
   },
   transformRequest: [data => JSON.stringify(serializeDates(data))],
   transformResponse: [data => parseDates(data)],
@@ -113,6 +115,7 @@ export const axiosClientWithAuth = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    "x-clubs-client-version": CLUBS_APP.version,
   },
   transformRequest: [data => JSON.stringify(serializeDates(data))],
   transformResponse: [data => parseDates(data)],

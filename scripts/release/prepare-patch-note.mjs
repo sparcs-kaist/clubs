@@ -5,8 +5,12 @@ import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 
 const DEFAULT_FILE = "packages/web/src/constants/patchNote.ts";
+const DEFAULT_APP_PACKAGE_FILE = "packages/web/package.json";
+const DEFAULT_APP_INFO_FILE = "packages/web/src/constants/appVersion.mjs";
 const PATCH_NOTE_START = "<!-- clubs:patch-note:start -->";
 const PATCH_NOTE_END = "<!-- clubs:patch-note:end -->";
+const INTERNAL_CATEGORY = "internal";
+const INTERNAL_IMPROVEMENT_TEXT = "내부 개선";
 
 const CATEGORY_SECTIONS = [
   ["feature", "신규 기능은 다음과 같습니다."],
@@ -21,6 +25,8 @@ function parseArgs(argv) {
     base: "origin/main",
     head: "HEAD",
     file: DEFAULT_FILE,
+    appPackageFile: DEFAULT_APP_PACKAGE_FILE,
+    appInfoFile: DEFAULT_APP_INFO_FILE,
     bump: "patch",
     dryRun: false,
   };
@@ -42,6 +48,18 @@ function parseArgs(argv) {
 
     if (arg === "--file") {
       options.file = argv[index + 1] ?? "";
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--app-package-file") {
+      options.appPackageFile = argv[index + 1] ?? "";
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--app-info-file") {
+      options.appInfoFile = argv[index + 1] ?? "";
       index += 1;
       continue;
     }
@@ -194,7 +212,7 @@ function inferCategoryFromPullRequest(pull) {
   if (/^(fix|hotfix)(\(.+\))?:/.test(title)) return "fix";
   if (/^(style|design)(\(.+\))?:/.test(title)) return "design";
   if (/^docs(\(.+\))?:/.test(title)) return "docs";
-  return "etc";
+  return undefined;
 }
 
 function stripBullet(line) {
@@ -284,12 +302,17 @@ function normalizePullRequestNote(pull) {
   }
 
   const explicit = parsePatchNoteBlock(pull.body ?? "");
+  const inferredCategory = inferCategoryFromPullRequest(pull);
   const note = explicit ?? {
-    category: inferCategoryFromPullRequest(pull),
-    texts: [sanitizeText(pull.title)],
+    category: inferredCategory,
+    texts: inferredCategory ? [sanitizeText(pull.title)] : [],
   };
 
-  if (note.category === "none" || note.category === "internal") {
+  if (
+    !note.category ||
+    note.category === "none" ||
+    note.category === INTERNAL_CATEGORY
+  ) {
     return [];
   }
 
@@ -300,6 +323,27 @@ function normalizePullRequestNote(pull) {
     category,
     text: `${text.replace(/[.。]\s*$/, "")}. (#${pull.number})`,
   }));
+}
+
+function internalImprovementNote() {
+  return {
+    category: INTERNAL_CATEGORY,
+    text: INTERNAL_IMPROVEMENT_TEXT,
+  };
+}
+
+function selectReleaseNotes(pullRequests, commits) {
+  const notes = pullRequests.flatMap(normalizePullRequestNote);
+
+  if (notes.length > 0) {
+    return notes;
+  }
+
+  if (commits.length > 0) {
+    return [internalImprovementNote()];
+  }
+
+  return [];
 }
 
 function parseVersions(source) {
@@ -337,11 +381,15 @@ function bumpVersion(version, bump) {
 }
 
 function formatVersion(version) {
-  return `v.${version.major}.${version.minor}.${version.patch}`;
+  return `${version.major}.${version.minor}.${version.patch}`;
 }
 
 function displayVersion(version) {
-  return version.replace(/^v\./, "");
+  return `v${version}`;
+}
+
+function patchNoteVersion(version) {
+  return `v.${version}`;
 }
 
 function writeGitHubOutput(values) {
@@ -388,7 +436,13 @@ function escapeTemplateLiteral(value) {
 }
 
 function buildPatchNoteContent(version, notes) {
-  const contentVersion = version.replace(/^v\./, "v");
+  if (
+    notes.length > 0 &&
+    notes.every(note => note.category === INTERNAL_CATEGORY)
+  ) {
+    return `Clubs ${displayVersion(version)}\n${INTERNAL_IMPROVEMENT_TEXT}\n`;
+  }
+
   const grouped = new Map(
     CATEGORY_SECTIONS.map(([category]) => [category, []]),
   );
@@ -397,7 +451,7 @@ function buildPatchNoteContent(version, notes) {
     grouped.get(note.category)?.push(note.text);
   }
 
-  const lines = [`Clubs ${contentVersion}`];
+  const lines = [`Clubs ${displayVersion(version)}`];
   for (const [category, title] of CATEGORY_SECTIONS) {
     const items = grouped.get(category) ?? [];
     if (items.length === 0) {
@@ -415,10 +469,11 @@ function buildPatchNoteContent(version, notes) {
 }
 
 function buildEntry(version, notes, sourceHash) {
+  const versionForPatchNote = patchNoteVersion(version);
   const content = escapeTemplateLiteral(buildPatchNoteContent(version, notes));
-  return `  // clubs:auto-patch-note version=${version} source=${sourceHash}
+  return `  // clubs:auto-patch-note version=${versionForPatchNote} source=${sourceHash}
   {
-    version: "${version}",
+    version: "${versionForPatchNote}",
     date: new Date("${kstDateLiteral()}"),
     patchNoteContent: \`${content}\`,
   },
@@ -443,6 +498,25 @@ function replaceOrInsertEntry(source, version, entry) {
   return source.replace(listStart, `${listStart}${entry}`);
 }
 
+function replacePackageVersion(source, version) {
+  const packageJson = JSON.parse(source);
+  packageJson.version = version;
+  return `${JSON.stringify(packageJson, null, 2)}\n`;
+}
+
+function replaceAppInfoVersion(source, version) {
+  const updated = source.replace(
+    /export const CLUBS_VERSION = "[^"]+";/,
+    `export const CLUBS_VERSION = "${version}";`,
+  );
+
+  if (updated === source && !source.includes(`CLUBS_VERSION = "${version}"`)) {
+    throw new Error("Could not find CLUBS_VERSION declaration.");
+  }
+
+  return updated;
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const repository = parseRepository();
@@ -454,10 +528,10 @@ async function main() {
   }
 
   const pullRequests = await collectPullRequests(commits, repository);
-  const notes = pullRequests.flatMap(normalizePullRequestNote);
+  const notes = selectReleaseNotes(pullRequests, commits);
 
   if (notes.length === 0) {
-    console.log("No user-facing patch note entries found.");
+    console.log("No release patch note entries found.");
     return;
   }
 
@@ -465,6 +539,7 @@ async function main() {
   writeGitHubOutput({
     version,
     display_version: displayVersion(version),
+    patch_note_version: patchNoteVersion(version),
   });
 
   const sourceHash = createHash("sha256")
@@ -473,19 +548,48 @@ async function main() {
     .slice(0, 12);
   const source = readFileSync(options.file, "utf8");
   const entry = buildEntry(version, notes, sourceHash);
-  const updated = replaceOrInsertEntry(source, version, entry);
+  const updated = replaceOrInsertEntry(
+    source,
+    patchNoteVersion(version),
+    entry,
+  );
+  const appPackageSource = readFileSync(options.appPackageFile, "utf8");
+  const appPackageUpdated = replacePackageVersion(appPackageSource, version);
+  const appInfoSource = readFileSync(options.appInfoFile, "utf8");
+  const appInfoUpdated = replaceAppInfoVersion(appInfoSource, version);
 
   if (options.dryRun) {
+    if (appPackageUpdated !== appPackageSource) {
+      console.log(`Would update ${options.appPackageFile} to ${version}.`);
+    }
+    if (appInfoUpdated !== appInfoSource) {
+      console.log(`Would update ${options.appInfoFile} to ${version}.`);
+    }
     console.log(entry);
     return;
   }
 
-  if (updated === source) {
+  if (
+    updated === source &&
+    appPackageUpdated === appPackageSource &&
+    appInfoUpdated === appInfoSource
+  ) {
     console.log(`Patch note ${version} is already up to date.`);
     return;
   }
 
-  writeFileSync(options.file, updated, "utf8");
+  if (appInfoUpdated !== appInfoSource) {
+    writeFileSync(options.appInfoFile, appInfoUpdated, "utf8");
+  }
+
+  if (appPackageUpdated !== appPackageSource) {
+    writeFileSync(options.appPackageFile, appPackageUpdated, "utf8");
+  }
+
+  if (updated !== source) {
+    writeFileSync(options.file, updated, "utf8");
+  }
+
   console.log(`Prepared ${version} with ${notes.length} patch note entries.`);
 }
 

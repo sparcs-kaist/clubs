@@ -3,6 +3,8 @@
 import React from "react";
 import styled from "styled-components";
 
+import { CLUBS_APP } from "@sparcs-clubs/web/constants/appInfo";
+
 const Container = styled.div`
   pointer-events: none;
   position: absolute;
@@ -85,7 +87,7 @@ const DebugBadge: React.FC = () => {
       {environment && (
         <>
           <Badge>
-            {`${environment} ${MOCK_STATUS}`}
+            {`${CLUBS_APP.displayVersion} ${environment} ${MOCK_STATUS}`}
             <br />
             {process.env.NEXT_PUBLIC_BUILD_TIME || date}
           </Badge>

@@ -1,4 +1,4 @@
 interface:
   display_name: "Worktree Tools"
-  short_description: "Create and delete worktrees and standardize TU branch and PR setup"
-  default_prompt: "Create or delete a repo worktree, or standardize branch and PR setup from a TU task, Notion spec, or PR link, including the required PR patch-note block."
+  short_description: "Start and clean up Clubs task worktrees and standardize TU branch and PR setup"
+  default_prompt: "Use clubs-task-start or clubs-task-cleanup for worktree, task, TU, or 작업 start/cleanup requests, or standardize branch and PR setup from a TU task, Notion spec, or PR link, including the required PR patch-note block."

@@ -78,8 +78,21 @@ Always resolve these into a confirmed TU number before you create the branch or 
 
 ### PR title naming
 
-- Default format: `[TU-405] short task title`
+- Required format: `[TU-405] one-line task summary`
+- The TU number must be wrapped in square brackets.
+- The text after the TU number should be a concise first-pass summary of the work.
+- Do not use a generic title like `chore`, `fix`, or `update`.
 - Reuse the existing PR title if the PR already exists
+
+### Squash merge title guard
+
+GitHub uses the single commit title as the default squash title when a PR has only one commit. To make the squash title follow the PR title by default:
+
+- Before creating a PR, compare the head branch against the base branch.
+- If the branch has 0 or 1 commits relative to the base, add exactly one empty commit so GitHub's squash dialog defaults to the PR title.
+- Only do this on the current branch and only when the worktree is clean.
+- Use `HUSKY=0 git commit --allow-empty -m "chore: empty for squash merge"` so the empty commit itself follows the repo's conventional commit rules.
+- Do not add an empty commit if the branch already has 2 or more commits relative to the base.
 
 ### PR base branch
 
@@ -124,13 +137,15 @@ Examples:
 Examples:
 
 - Auto body:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - With explicit summary bullets:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --notion-url <url> --summary "add project-local Codex and Claude Code skills" --summary "add a shared Node helper" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 - Existing task number without page URL:
-  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add create-worktree skills" --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
+  - `pnpm create-branch-pr -- pr --task-id TU-405 --title "add clubs-task-start and clubs-task-cleanup skills" --summary "add project-local Codex and Claude Code skills" --patch-note-category internal --patch-note-text "사용자에게 직접 보이는 변경은 없습니다."`
 
 The helper does not create Notion task pages by itself. It assumes the task page already exists or the task summary is already known when you run the command.
+
+During PR creation, the helper formats the title as `[TU-405] one-line task summary`. It also adds a `chore: empty for squash merge` empty commit automatically when the branch has fewer than 2 commits relative to the base.
 
 ## Validation
 
@@ -144,10 +159,11 @@ After PR creation:
 1. Run `gh pr view --json number,title,headRefName,baseRefName,url,body`
 2. Confirm:
    - base is `dev`
-   - title includes the TU number
+   - title follows `[TU-405] one-line task summary`
    - Notion URL is present in the body
    - `## Patch Note` and the `clubs:patch-note` block are present
    - non-`none` categories have user-facing Korean `text`
+   - if the branch had fewer than 2 commits before PR creation, one `chore: empty for squash merge` empty commit was added
 
 ## Response expectations
 

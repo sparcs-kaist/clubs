@@ -147,7 +147,7 @@ Branch options:
   --reuse-remote-branch       Reuse origin/<branch> when it already exists
 
 PR options:
-  --title <text>              PR title body without or with TU prefix
+  --title <text>              One-line PR summary, with or without TU prefix
   --notion-url <url>          Optional Notion task/spec URL for PR body context
   --base <branch>             Base branch (default: dev)
   --head <branch>             Head branch (default: current branch)
@@ -169,6 +169,15 @@ function runGit(args, cwd = process.cwd()) {
 
 function currentBranch() {
   return runGit(["branch", "--show-current"]);
+}
+
+function isWorktreeClean() {
+  return runGit(["status", "--short"]) === "";
+}
+
+function refExists(ref) {
+  const result = spawnSync("git", ["rev-parse", "--verify", "--quiet", ref]);
+  return result.status === 0;
 }
 
 function localBranchExists(branch) {
@@ -207,17 +216,31 @@ function normalizeTaskId(taskId) {
   return taskId;
 }
 
+function normalizePrSummary(title) {
+  const summary = title.replace(/^\[TU-\d+\]\s*/i, "").trim();
+
+  if (!summary) {
+    throw new Error(
+      "--title must include a one-line summary after the TU prefix",
+    );
+  }
+
+  if (summary.includes("\n") || summary.includes("\r")) {
+    throw new Error("--title must be a single-line summary");
+  }
+
+  return summary;
+}
+
 function formatPrTitle(taskId, title) {
   if (!title) {
     throw new Error("--title is required for PR creation");
   }
 
   const normalizedTaskId = normalizeTaskId(taskId);
-  if (title.startsWith(`[${normalizedTaskId}]`)) {
-    return title;
-  }
+  const summary = normalizePrSummary(title);
 
-  return `[${normalizedTaskId}] ${title}`;
+  return `[${normalizedTaskId}] ${summary}`;
 }
 
 const patchNoteCategories = new Set([
@@ -230,6 +253,7 @@ const patchNoteCategories = new Set([
 ]);
 const patchNoteStartMarker = "<!-- clubs:patch-note:start -->";
 const patchNoteEndMarker = "<!-- clubs:patch-note:end -->";
+const squashEmptyCommitMessage = "chore: empty for squash merge";
 
 function normalizePatchNoteCategory(category) {
   const normalized = category.toLowerCase();
@@ -338,6 +362,70 @@ function switchOrCreateBranch(branch, startPoint, reuseRemoteBranch, dryRun) {
   return currentBranch();
 }
 
+function comparisonBaseRef(base) {
+  const remoteBase = `origin/${base}`;
+  if (refExists(remoteBase)) {
+    return remoteBase;
+  }
+
+  if (refExists(base)) {
+    return base;
+  }
+
+  throw new Error(`Cannot find base ref for PR comparison: ${base}`);
+}
+
+function commitCountFromBase(base, head) {
+  const baseRef = comparisonBaseRef(base);
+  return Number(runGit(["rev-list", "--count", `${baseRef}..${head}`]));
+}
+
+function ensureSquashTitleCommit({ base, head, title, dryRun }) {
+  const current = currentBranch();
+
+  if (head !== current) {
+    console.log(
+      `Skipping squash-title empty commit because --head (${head}) is not the current branch (${current}).`,
+    );
+    return;
+  }
+
+  if (head === base) {
+    throw new Error("PR head branch must differ from the base branch");
+  }
+
+  const commitCount = commitCountFromBase(base, head);
+  if (commitCount >= 2) {
+    return;
+  }
+
+  if (!isWorktreeClean()) {
+    throw new Error(
+      "Cannot add a squash-title empty commit while the worktree has uncommitted changes.",
+    );
+  }
+
+  const cmd = [
+    "git",
+    "commit",
+    "--allow-empty",
+    "-m",
+    squashEmptyCommitMessage,
+  ];
+  console.log(`$ HUSKY=0 ${cmd.join(" ")}`);
+  if (dryRun) {
+    return;
+  }
+
+  const result = spawnSync(cmd[0], cmd.slice(1), {
+    env: { ...process.env, HUSKY: "0" },
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    throw new Error("git empty commit failed");
+  }
+}
+
 function generatedPrBody({
   notionUrl,
   summary,
@@ -402,41 +490,50 @@ function createPullRequest(options) {
     validatePatchNoteBlock(readFileSync(bodyFile, "utf8"));
   }
 
-  const cmd = [
-    "gh",
-    "pr",
-    "create",
-    "--base",
-    options.base,
-    "--head",
-    head,
-    "--title",
-    title,
-    "--body-file",
-    bodyFile,
-  ];
+  try {
+    ensureSquashTitleCommit({
+      base: options.base,
+      head,
+      title,
+      dryRun: options.dryRun,
+    });
 
-  if (options.draft) {
-    cmd.push("--draft");
-  }
+    const cmd = [
+      "gh",
+      "pr",
+      "create",
+      "--base",
+      options.base,
+      "--head",
+      head,
+      "--title",
+      title,
+      "--body-file",
+      bodyFile,
+    ];
 
-  console.log(`$ ${cmd.join(" ")}`);
-  if (options.dryRun) {
+    if (options.draft) {
+      cmd.push("--draft");
+    }
+
+    console.log(`$ ${cmd.join(" ")}`);
+    if (options.dryRun) {
+      if (tempDir) {
+        console.log("--- generated body ---");
+        console.log(generatedBody.trimEnd());
+        console.log("--- end body ---");
+      }
+      return;
+    }
+
+    const result = spawnSync(cmd[0], cmd.slice(1), { stdio: "inherit" });
+    if (result.status !== 0) {
+      throw new Error("gh pr create failed");
+    }
+  } finally {
     if (tempDir) {
-      console.log("--- generated body ---");
-      console.log(generatedBody.trimEnd());
-      console.log("--- end body ---");
       rmSync(tempDir, { recursive: true, force: true });
     }
-    return;
-  }
-
-  const result = spawnSync(cmd[0], cmd.slice(1), { stdio: "inherit" });
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
-  if (result.status !== 0) {
-    throw new Error("gh pr create failed");
   }
 }
 
