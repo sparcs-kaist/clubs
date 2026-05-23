@@ -106,6 +106,24 @@ describe("activity-duration.validator", () => {
     expect(result).toBe(ACTIVITY_DURATION_OUT_OF_TARGET_ERROR);
   });
 
+  it("rejects durations starting before ActivityD with the target-duration message", async () => {
+    const { validator } = await createValidator(
+      new Date("2026-05-17T14:59:59.999Z"),
+    );
+
+    const result = validator.getValidationError(
+      [
+        {
+          startTerm: new Date("2026-02-28T00:00:00.000Z"),
+          endTerm: new Date("2026-05-17T14:59:00.000Z"),
+        },
+      ],
+      activityD,
+    );
+
+    expect(result).toBe(ACTIVITY_DURATION_OUT_OF_TARGET_ERROR);
+  });
+
   it("returns validation errors from the pure function without using DI", () => {
     expect(
       getActivityDurationValidationError(
