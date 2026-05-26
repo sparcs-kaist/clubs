@@ -23,6 +23,7 @@ import { MActivityDuration } from "../model/activity.duration.model";
 import { ActivityDeadlineRepository } from "../repository/activity.deadline.repository";
 import { ActivityDurationRepository } from "../repository/activity.duration.repository";
 import { SemesterRepository } from "../repository/semester.repository";
+import { hasOverlappingActivityDeadline } from "./activity-deadline-validator/activity-deadline.validator";
 
 @Injectable()
 export class ActivityDurationService {
@@ -59,13 +60,9 @@ export class ActivityDurationService {
       semesterId: activityDuration.semester.id,
     });
 
-    const hasOverlap = existingDeadlines.some(deadline => {
-      const existingStart = new Date(deadline.startTerm);
-      const existingEnd = new Date(deadline.endTerm);
-      const newStart = new Date(startTerm);
-      const newEnd = new Date(endTerm);
-
-      return newStart < existingEnd && newEnd > existingStart;
+    const hasOverlap = hasOverlappingActivityDeadline(existingDeadlines, {
+      startTerm,
+      endTerm,
     });
 
     if (hasOverlap) {
