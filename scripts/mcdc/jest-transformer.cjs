@@ -174,6 +174,15 @@ exports.factory = function factory({ configSet }) {
         return instrumentPredicateCall(ts, node, visitor, instrumentDecision);
       }
 
+      if (ts.isCallExpression(node) && isTsPatternWhenCall(ts, node)) {
+        return instrumentTsPatternWhenCall(
+          ts,
+          node,
+          visitor,
+          instrumentDecision,
+        );
+      }
+
       return ts.visitEachChild(node, visitor, context);
     };
 
@@ -236,6 +245,81 @@ function instrumentPredicateCall(ts, node, visitor, instrumentDecision) {
             statement.expression,
             `${predicate.method}-predicate`,
           ),
+        );
+      }
+
+      return ts.visitNode(statement, visitor);
+    });
+
+    args[0] = ts.factory.updateFunctionExpression(
+      callback,
+      callback.modifiers,
+      callback.asteriskToken,
+      callback.name,
+      callback.typeParameters,
+      callback.parameters,
+      callback.type,
+      ts.factory.updateBlock(callback.body, statements),
+    );
+  }
+
+  return ts.factory.updateCallExpression(
+    node,
+    ts.visitNode(node.expression, visitor),
+    node.typeArguments,
+    args,
+  );
+}
+
+function instrumentTsPatternWhenCall(ts, node, visitor, instrumentDecision) {
+  const predicate = getTsPatternWhenDecisionExpression(ts, node);
+
+  if (predicate === null) {
+    return node;
+  }
+
+  const args = [...node.arguments];
+  const callback = args[0];
+
+  if (ts.isArrowFunction(callback)) {
+    if (ts.isBlock(callback.body)) {
+      const statements = callback.body.statements.map(statement => {
+        if (ts.isReturnStatement(statement) && statement.expression) {
+          return ts.factory.updateReturnStatement(
+            statement,
+            instrumentDecision(statement.expression, "ts-pattern-when"),
+          );
+        }
+
+        return ts.visitNode(statement, visitor);
+      });
+
+      args[0] = ts.factory.updateArrowFunction(
+        callback,
+        callback.modifiers,
+        callback.typeParameters,
+        callback.parameters,
+        callback.type,
+        callback.equalsGreaterThanToken,
+        ts.factory.updateBlock(callback.body, statements),
+      );
+    } else {
+      args[0] = ts.factory.updateArrowFunction(
+        callback,
+        callback.modifiers,
+        callback.typeParameters,
+        callback.parameters,
+        callback.type,
+        callback.equalsGreaterThanToken,
+        instrumentDecision(callback.body, "ts-pattern-when"),
+      );
+    }
+  } else if (ts.isFunctionExpression(callback)) {
+    const statements = callback.body.statements.map(statement => {
+      if (ts.isReturnStatement(statement) && statement.expression) {
+        return ts.factory.updateReturnStatement(
+          statement,
+          instrumentDecision(statement.expression, "ts-pattern-when"),
         );
       }
 
@@ -620,6 +704,53 @@ function getPredicateDecisionExpression(ts, node) {
   return null;
 }
 
+function isTsPatternWhenCall(ts, node) {
+  if (
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression)
+  ) {
+    return false;
+  }
+
+  const receiver = unwrapExpression(ts, node.expression.expression);
+
+  return (
+    node.expression.name.text === "when" &&
+    ts.isIdentifier(receiver) &&
+    (receiver.text === "P" || receiver.text === "Pattern")
+  );
+}
+
+function getTsPatternWhenDecisionExpression(ts, node) {
+  const [callback] = node.arguments;
+
+  if (!callback) {
+    return null;
+  }
+
+  if (ts.isArrowFunction(callback)) {
+    if (!ts.isBlock(callback.body)) {
+      return { expression: callback.body };
+    }
+
+    const returnStatement = callback.body.statements.find(ts.isReturnStatement);
+
+    if (returnStatement?.expression) {
+      return { expression: returnStatement.expression };
+    }
+  }
+
+  if (ts.isFunctionExpression(callback)) {
+    const returnStatement = callback.body.statements.find(ts.isReturnStatement);
+
+    if (returnStatement?.expression) {
+      return { expression: returnStatement.expression };
+    }
+  }
+
+  return null;
+}
+
 function unwrapExpression(ts, node) {
   let current = node;
 
@@ -655,6 +786,10 @@ function isNegatedLogicalExpression(ts, node) {
 function getProviderId(kind) {
   if (kind === "boolean-const") {
     return "typescript-boolean-const";
+  }
+
+  if (kind === "ts-pattern-when") {
+    return "typescript-ts-pattern";
   }
 
   if (kind.endsWith("-predicate")) {

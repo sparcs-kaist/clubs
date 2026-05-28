@@ -96,6 +96,34 @@ export function hasInvalidRange(ranges, min, max) {
   );
 });
 
+test("analyzeSourceFile extracts ts-pattern P.when decisions", () => {
+  const workspace = makeTempWorkspace();
+  const sourcePath = path.join(workspace, "feature.ts");
+
+  fs.writeFileSync(
+    sourcePath,
+    `
+import { match, P } from "ts-pattern";
+
+export function validate(input) {
+  return match(input)
+    .with(P.when(({ status, amount }) => status === "rejected" && amount !== 0), () => "invalid")
+    .otherwise(() => null);
+}
+`,
+  );
+
+  const decisions = analyzeSourceFile(sourcePath, { rootDir: workspace });
+
+  assert.equal(decisions.length, 1);
+  assert.equal(decisions[0].kind, "ts-pattern-when");
+  assert.equal(decisions[0].providerId, "typescript-ts-pattern");
+  assert.deepEqual(
+    decisions[0].conditions.map(condition => condition.text),
+    ['status === "rejected"', "amount !== 0"],
+  );
+});
+
 test("evaluateDecisionCoverage finds unique-cause MC/DC pairs", () => {
   const decision = {
     conditions: [

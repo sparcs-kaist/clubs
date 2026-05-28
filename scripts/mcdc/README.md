@@ -60,6 +60,7 @@ Supported runtime decisions:
 - local boolean `const` initializers named like `is*`, `has*`, `can*`,
   `should*`, `needs*`, `requires*`, or `allows*`
 - `.some`, `.every`, `.filter`, and `.find` predicate callbacks
+- `ts-pattern` predicates written as `P.when(...)` or `Pattern.when(...)`
 
 For now, runtime instrumentation only wraps decisions whose atomic conditions are
 side-effect-safe property/identifier/literal/comparison expressions. Unsupported

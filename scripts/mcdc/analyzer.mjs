@@ -168,6 +168,12 @@ export function analyzeSourceText(sourceText, filePath, options = {}) {
       if (predicate !== null) {
         recordDecision(predicate.expression, `${predicate.method}-predicate`);
       }
+    } else if (ts.isCallExpression(node) && isTsPatternWhenCall(node)) {
+      const predicate = getTsPatternWhenDecisionExpression(node);
+
+      if (predicate !== null) {
+        recordDecision(predicate.expression, "ts-pattern-when");
+      }
     }
 
     ts.forEachChild(node, visit);
@@ -491,6 +497,53 @@ function getPredicateDecisionExpression(node) {
   return null;
 }
 
+function isTsPatternWhenCall(node) {
+  if (
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression)
+  ) {
+    return false;
+  }
+
+  const receiver = unwrapExpression(node.expression.expression);
+
+  return (
+    node.expression.name.text === "when" &&
+    ts.isIdentifier(receiver) &&
+    (receiver.text === "P" || receiver.text === "Pattern")
+  );
+}
+
+function getTsPatternWhenDecisionExpression(node) {
+  const [callback] = node.arguments;
+
+  if (!callback) {
+    return null;
+  }
+
+  if (ts.isArrowFunction(callback)) {
+    if (!ts.isBlock(callback.body)) {
+      return { expression: callback.body };
+    }
+
+    const returnStatement = callback.body.statements.find(ts.isReturnStatement);
+
+    if (returnStatement?.expression) {
+      return { expression: returnStatement.expression };
+    }
+  }
+
+  if (ts.isFunctionExpression(callback)) {
+    const returnStatement = callback.body.statements.find(ts.isReturnStatement);
+
+    if (returnStatement?.expression) {
+      return { expression: returnStatement.expression };
+    }
+  }
+
+  return null;
+}
+
 function unwrapExpression(node) {
   let current = node;
 
@@ -526,6 +579,10 @@ function isNegatedLogicalExpression(node) {
 function getProviderId(kind) {
   if (kind === "boolean-const") {
     return "typescript-boolean-const";
+  }
+
+  if (kind === "ts-pattern-when") {
+    return "typescript-ts-pattern";
   }
 
   if (kind.endsWith("-predicate")) {
