@@ -78,6 +78,9 @@ importers:
       turbo:
         specifier: ^2.9.14
         version: 2.9.14
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
       typescript-eslint:
         specifier: ^8.55.0
         version: 8.55.0(eslint@9.24.0(jiti@2.6.1))(typescript@5.9.3)
@@ -168,6 +171,9 @@ importers:
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@4.21.2)
+      ts-pattern:
+        specifier: ^5.9.0
+        version: 5.9.0
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
@@ -9115,6 +9121,9 @@ packages:
         optional: true
       '@swc/wasm':
         optional: true
+
+  ts-pattern@5.9.0:
+    resolution: {integrity: sha512-6s5V71mX8qBUmlgbrfL33xDUwO0fq48rxAu2LBE11WBeGdpCPOsXksQbZJHvHwhrd3QjUusd3mAOM5Gg0mFBLg==}
 
   ts-pnp@1.2.0:
     resolution: {integrity: sha512-csd+vJOb/gkzvcCHgTGSChYpy5f1/XKNsmvBGO4JXS+z1v2HobugDz4s1IeFXM3wZB44uczs+eazB5Q/ccdhQw==}
@@ -20490,6 +20499,8 @@ snapshots:
       yn: 3.1.1
     optionalDependencies:
       '@swc/core': 1.15.33
+
+  ts-pattern@5.9.0: {}
 
   ts-pnp@1.2.0(typescript@5.4.2):
     optionalDependencies:

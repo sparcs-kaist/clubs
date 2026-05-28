@@ -57,6 +57,7 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
     "swagger-ui-express": "^5.0.1",
+    "ts-pattern": "^5.9.0",
     "uuid": "^14.0.0",
     "winston": "^3.12.0",
     "winston-transport-sentry-node": "^3.0.0",

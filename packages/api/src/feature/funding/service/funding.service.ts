@@ -84,6 +84,10 @@ import { OperationCommitteeService } from "../../operation-committee/service/ope
 import { MFunding } from "../model/funding.model";
 import { FundingCommentRepository } from "../repository/funding.comment.repository";
 import FundingRepository from "../repository/funding.repository";
+import {
+  getFundingCommentAmountValidationError,
+  getFundingCommentPreFetchValidationError,
+} from "./funding-comment-validator/funding-comment.validator";
 
 @Injectable()
 export default class FundingService {
@@ -1073,52 +1077,23 @@ export default class FundingService {
     approvedAmount: IFundingComment["approvedAmount"],
     content: IFundingComment["content"],
   ): Promise<ApiFnd013ResponseCreated> {
-    if (approvedAmount < 0) {
-      throw new HttpException(
-        "승인 금액은 0 이상이어야 합니다.",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    if (fundingStatusEnum === FundingStatusEnum.Applied) {
-      throw new HttpException(
-        "대기 상태로는 바꿀 수 없습니다.",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    if (
-      fundingStatusEnum === FundingStatusEnum.Rejected &&
-      approvedAmount !== 0
-    ) {
-      throw new HttpException(
-        "반려 상태에서는 승인 금액을 0으로 설정해야 합니다.",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    const { expenditureAmount } = await this.fundingRepository.fetch(id);
-    if (approvedAmount > expenditureAmount) {
-      throw new HttpException(
-        "승인 금액이 지출 금액보다 많을 수 없습니다.",
-        HttpStatus.BAD_REQUEST,
-      );
+    const preFetchValidationError = getFundingCommentPreFetchValidationError({
+      fundingStatusEnum,
+      approvedAmount,
+    });
+    if (preFetchValidationError) {
+      throw new HttpException(preFetchValidationError, HttpStatus.BAD_REQUEST);
     }
 
-    if (
-      fundingStatusEnum === FundingStatusEnum.Approved &&
-      expenditureAmount !== approvedAmount
-    ) {
-      throw new HttpException(
-        "승인을 위해선 전체 금액의 전부가 승인되어야 합니다. 부분 승인을 이용해 주세요.",
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    if (
-      fundingStatusEnum === FundingStatusEnum.Partial &&
-      (approvedAmount === 0 || approvedAmount === expenditureAmount)
-    ) {
-      throw new HttpException(
-        "승인 상태에서는 승인 금액이 0이 될 수 없습니다.",
-        HttpStatus.BAD_REQUEST,
-      );
+    const { expenditureAmount } = await this.fundingRepository.fetch(id);
+
+    const amountValidationError = getFundingCommentAmountValidationError({
+      fundingStatusEnum,
+      approvedAmount,
+      expenditureAmount,
+    });
+    if (amountValidationError) {
+      throw new HttpException(amountValidationError, HttpStatus.BAD_REQUEST);
     }
 
     const fundingComment = await this.prisma.$transaction(async tx => {
