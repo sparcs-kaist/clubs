@@ -24,6 +24,7 @@ import { ActivityDeadlineRepository } from "../repository/activity.deadline.repo
 import { ActivityDurationRepository } from "../repository/activity.duration.repository";
 import { SemesterRepository } from "../repository/semester.repository";
 import { hasOverlappingActivityDeadline } from "./activity-deadline-validator/activity-deadline.validator";
+import { hasActivityTermOutOfRange } from "./activity-duration-validator/activity-duration.validator";
 
 @Injectable()
 export class ActivityDurationService {
@@ -293,12 +294,10 @@ export class ActivityDurationService {
         activityDurationId,
       );
 
-    const hasOutOfRangeActivityTerm = activities.some(activity =>
-      activity.durations.some(
-        duration =>
-          duration.startTerm < startTerm || duration.endTerm > endTerm,
-      ),
-    );
+    const hasOutOfRangeActivityTerm = hasActivityTermOutOfRange(activities, {
+      startTerm,
+      endTerm,
+    });
 
     if (hasOutOfRangeActivityTerm) {
       throw new HttpException(
