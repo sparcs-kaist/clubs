@@ -1,6 +1,6 @@
-import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
-
 import { match, P } from "ts-pattern";
+
+import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
 export const FUNDING_APPROVED_AMOUNT_NEGATIVE_ERROR =
   "승인 금액은 0 이상이어야 합니다.";
@@ -64,9 +64,10 @@ export const getFundingCommentAmountValidationError = (
   match(param)
     .returnType<FundingCommentValidationError | null>()
     .with(
-      P.when(({ approvedAmount, expenditureAmount }) => {
-        return approvedAmount > expenditureAmount;
-      }),
+      P.when(
+        ({ approvedAmount, expenditureAmount }) =>
+          approvedAmount > expenditureAmount,
+      ),
       () => FUNDING_APPROVED_AMOUNT_EXCEEDED_ERROR,
     )
     .with(
