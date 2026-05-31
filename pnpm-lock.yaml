@@ -402,8 +402,8 @@ importers:
         specifier: ^2.7.2
         version: 2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))
       '@tiptap/extension-color':
-        specifier: ^2.7.2
-        version: 2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))(@tiptap/extension-text-style@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2)))
+        specifier: ^3.24.0
+        version: 3.24.0(@tiptap/extension-text-style@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2)))
       '@tiptap/extension-document':
         specifier: ^2.7.2
         version: 2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))
@@ -3871,11 +3871,10 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.7.0
 
-  '@tiptap/extension-color@2.7.2':
-    resolution: {integrity: sha512-PFblz3384reTN0v4niNSkwIit06SQEgdwXQDBnuuyh4Stwb5sf+Pv2znvUR9O0g52RoI0qwbXG+QFiWYoo6Sww==}
+  '@tiptap/extension-color@3.24.0':
+    resolution: {integrity: sha512-gVv9zfQ9diq/sk+SVJzqadShsOtDK1XPojBZR1zXg1QxedzdwLKuRDxvnlfIc3kFIyaDP4mNrek+anednTbWBA==}
     peerDependencies:
-      '@tiptap/core': ^2.7.0
-      '@tiptap/extension-text-style': ^2.7.0
+      '@tiptap/extension-text-style': 3.24.0
 
   '@tiptap/extension-document@2.7.2':
     resolution: {integrity: sha512-WyMGytHhb3MbNhJ8kUXTx/jHZ9XPaaPRJu1TYdVZNQ4pg7K47qLJ2KMOyLEFy7e5HcJUkYfhRHpyQGHkiu3brg==}
@@ -13962,9 +13961,8 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.7.2(@tiptap/pm@2.7.2)
 
-  '@tiptap/extension-color@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))(@tiptap/extension-text-style@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2)))':
+  '@tiptap/extension-color@3.24.0(@tiptap/extension-text-style@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2)))':
     dependencies:
-      '@tiptap/core': 2.7.2(@tiptap/pm@2.7.2)
       '@tiptap/extension-text-style': 2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))
 
   '@tiptap/extension-document@2.7.2(@tiptap/core@2.7.2(@tiptap/pm@2.7.2))':
