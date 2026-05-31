@@ -24,6 +24,9 @@
 # turbo cache
 .turbo
 
+# MC/DC runtime evidence
+.mcdc
+
 # Claude
 .claude/*
 !.claude/skills/

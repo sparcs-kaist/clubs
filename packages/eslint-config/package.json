@@ -11,7 +11,7 @@
   "devDependencies": {
     "@clubs/typescript-config": "workspace:*",
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.24.0",
+    "@eslint/js": "^9.39.4",
     "@next/eslint-plugin-next": "^15.5.18",
     "@stylistic/eslint-plugin": "^3.1.0",
     "dotenv-cli": "^7.4.4",

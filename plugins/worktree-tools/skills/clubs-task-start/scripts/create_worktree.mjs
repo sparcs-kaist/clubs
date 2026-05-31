@@ -74,7 +74,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm create-worktree -- --branch <name> [options]
+  console.log(`Usage: pnpm clubs-task-start -- --branch <name> [options]
 
 Options:
   --branch <name>             Branch name to use in the worktree
@@ -100,9 +100,7 @@ function gitRoot() {
 
 function primaryWorktreeRoot(repoRoot) {
   const output = runGit(["worktree", "list", "--porcelain"], repoRoot);
-  const line = output
-    .split("\n")
-    .find(entry => entry.startsWith("worktree "));
+  const line = output.split("\n").find(entry => entry.startsWith("worktree "));
 
   if (!line) {
     throw new Error("Could not determine the primary worktree root.");
@@ -127,6 +125,17 @@ function localBranchExists(repoRoot, branch) {
     { cwd: repoRoot },
   );
   return result.status === 0;
+}
+
+function normalizeBranch(input) {
+  if (!input) return "";
+  if (/^TU-\d+$/i.test(input)) {
+    return input.toUpperCase();
+  }
+  if (/^\d+$/.test(input)) {
+    return `TU-${input}`;
+  }
+  return input;
 }
 
 function currentBranch(repoRoot) {
@@ -222,11 +231,14 @@ function main() {
     throw new Error("--branch is required");
   }
 
+  options.branch = normalizeBranch(options.branch);
+
   const repoRoot = gitRoot();
   const sourceRoot = primaryWorktreeRoot(repoRoot);
   const nodeVersion = readNodeVersion(sourceRoot);
   const worktreesRoot = resolve(sourceRoot, "..", "clubs-worktrees");
-  const worktreeName = options.worktreeName || options.branch.replaceAll("/", "-");
+  const worktreeName =
+    options.worktreeName || options.branch.replaceAll("/", "-");
   const target = join(worktreesRoot, worktreeName);
 
   console.log(`Current repo root: ${repoRoot}`);
@@ -246,7 +258,8 @@ function main() {
   }
 
   const shouldCreateFreshBranch =
-    !options.reuseRemoteBranch || !remoteBranchExists(sourceRoot, options.branch);
+    !options.reuseRemoteBranch ||
+    !remoteBranchExists(sourceRoot, options.branch);
 
   if (shouldCreateFreshBranch) {
     const sourceBranch = currentBranch(sourceRoot);
@@ -267,7 +280,10 @@ function main() {
   }
 
   let worktreeArgs;
-  if (options.reuseRemoteBranch && remoteBranchExists(sourceRoot, options.branch)) {
+  if (
+    options.reuseRemoteBranch &&
+    remoteBranchExists(sourceRoot, options.branch)
+  ) {
     if (localBranchExists(sourceRoot, options.branch)) {
       worktreeArgs = ["worktree", "add", target, options.branch];
     } else {
