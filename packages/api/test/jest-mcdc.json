@@ -1,0 +1,34 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testMatch": ["**/src/**/*.spec.ts"],
+  "testEnvironment": "node",
+  "moduleNameMapper": {
+    "^@sparcs-clubs/api/(.*)$": "<rootDir>/src/$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.spec.json",
+        "astTransformers": {
+          "before": [
+            {
+              "path": "<rootDir>/../../scripts/mcdc/jest-transformer.cjs"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "setupFilesAfterEnv": [
+    "dotenv/config",
+    "<rootDir>/../../scripts/mcdc/jest.setup.cjs"
+  ],
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/**/*.spec.ts",
+    "!src/**/*.test.ts"
+  ],
+  "coverageDirectory": "coverage/mcdc"
+}
