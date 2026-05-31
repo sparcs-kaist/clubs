@@ -2,6 +2,13 @@ import { match, P } from "ts-pattern";
 
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 
+const {
+  Applied: FundingAppliedStatus,
+  Approved: FundingApprovedStatus,
+  Partial: FundingPartialStatus,
+  Rejected: FundingRejectedStatus,
+} = FundingStatusEnum;
+
 export const FUNDING_APPROVED_AMOUNT_NEGATIVE_ERROR =
   "승인 금액은 0 이상이어야 합니다.";
 export const FUNDING_APPLIED_STATUS_ERROR = "대기 상태로는 바꿀 수 없습니다.";
@@ -43,16 +50,14 @@ export const getFundingCommentPreFetchValidationError = (
     )
     .with(
       P.when(
-        ({ fundingStatusEnum }) =>
-          fundingStatusEnum === FundingStatusEnum.Applied,
+        ({ fundingStatusEnum }) => fundingStatusEnum === FundingAppliedStatus,
       ),
       () => FUNDING_APPLIED_STATUS_ERROR,
     )
     .with(
       P.when(
         ({ fundingStatusEnum, approvedAmount }) =>
-          fundingStatusEnum === FundingStatusEnum.Rejected &&
-          approvedAmount !== 0,
+          fundingStatusEnum === FundingRejectedStatus && approvedAmount !== 0,
       ),
       () => FUNDING_REJECTED_AMOUNT_ERROR,
     )
@@ -73,7 +78,7 @@ export const getFundingCommentAmountValidationError = (
     .with(
       P.when(
         ({ fundingStatusEnum, approvedAmount, expenditureAmount }) =>
-          fundingStatusEnum === FundingStatusEnum.Approved &&
+          fundingStatusEnum === FundingApprovedStatus &&
           expenditureAmount !== approvedAmount,
       ),
       () => FUNDING_APPROVED_STATUS_AMOUNT_ERROR,
@@ -81,7 +86,7 @@ export const getFundingCommentAmountValidationError = (
     .with(
       P.when(
         ({ fundingStatusEnum, approvedAmount, expenditureAmount }) =>
-          fundingStatusEnum === FundingStatusEnum.Partial &&
+          fundingStatusEnum === FundingPartialStatus &&
           (approvedAmount === 0 || approvedAmount === expenditureAmount),
       ),
       () => FUNDING_PARTIAL_STATUS_AMOUNT_ERROR,

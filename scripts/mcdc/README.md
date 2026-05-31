@@ -62,9 +62,11 @@ Supported runtime decisions:
 - `.some`, `.every`, `.filter`, and `.find` predicate callbacks
 - `ts-pattern` predicates written as `P.when(...)` or `Pattern.when(...)`
 
-For now, runtime instrumentation only wraps decisions whose atomic conditions are
-side-effect-safe property/identifier/literal/comparison expressions. Unsupported
-decisions are left untouched instead of changing program behavior.
+For now, runtime instrumentation only wraps decisions whose atomic conditions can
+be eagerly evaluated without changing JavaScript short-circuit behavior:
+identifiers, literals, and comparisons made from those values. Property or
+element access should be lifted into local values before the boolean decision.
+Unsupported decisions are left untouched instead of changing program behavior.
 
 ## Static Evidence
 

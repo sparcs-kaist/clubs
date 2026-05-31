@@ -13,9 +13,12 @@ export const hasActivityTermOutOfRange = (
 ): boolean => {
   const activityTerms = activities.flatMap(activity => activity.durations);
 
-  return activityTerms.some(
-    duration =>
-      duration.startTerm < activityDuration.startTerm ||
-      duration.endTerm > activityDuration.endTerm,
-  );
+  return activityTerms.some(duration => {
+    const isStartBeforeActivityDuration =
+      duration.startTerm < activityDuration.startTerm;
+    const isEndAfterActivityDuration =
+      duration.endTerm > activityDuration.endTerm;
+
+    return isStartBeforeActivityDuration || isEndAfterActivityDuration;
+  });
 };

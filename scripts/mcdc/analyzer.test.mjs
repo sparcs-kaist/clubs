@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+
+import ts from "typescript";
 
 import {
   analyzeSourceFile,
@@ -11,6 +14,8 @@ import {
   evaluateDecisionCoverage,
 } from "./analyzer.mjs";
 import { filterChangedDecisions } from "./changed-decisions.mjs";
+
+const require = createRequire(import.meta.url);
 
 test("analyzeSourceFile extracts atomic conditions from decision expressions", () => {
   const workspace = makeTempWorkspace();
@@ -124,6 +129,83 @@ export function validate(input) {
   );
 });
 
+test("jest transformer skips short-circuit property access decisions", () => {
+  const unsafeOutput = transformWithMcdc(`
+export function canRead(obj) {
+  if (obj && obj.prop) {
+    return true;
+  }
+
+  return false;
+}
+`);
+  const safeOutput = transformWithMcdc(`
+export function canRead(left, right) {
+  if (left && right) {
+    return true;
+  }
+
+  return false;
+}
+`);
+
+  assert.doesNotMatch(unsafeOutput, /__MCDC_EVALUATE__/u);
+  assert.match(safeOutput, /__MCDC_EVALUATE__/u);
+});
+
+test("runtime evidence files are unique across suites in the same process", () => {
+  const workspace = makeTempWorkspace();
+  const previousEvidenceDir = process.env.MCDC_EVIDENCE_DIR;
+  const previousExpect = globalThis.expect;
+  const runtime = require("./runtime.cjs");
+  const metadata = {
+    id: "src/foo.ts:1:1:abcd1234",
+    stableKey: "src/foo.ts:typescript-control-flow:if:aaaa1111:bbbb2222:1",
+  };
+
+  process.env.MCDC_EVIDENCE_DIR = workspace;
+  runtime.install();
+
+  try {
+    setJestState("feature-a.spec.ts", "suite A covers true", workspace);
+    globalThis.__MCDC_EVALUATE__(
+      metadata,
+      [() => true, () => true],
+      (C1, C2) => C1 && C2,
+    );
+    runtime.flush();
+
+    setJestState("feature-b.spec.ts", "suite B covers false", workspace);
+    globalThis.__MCDC_EVALUATE__(
+      metadata,
+      [() => false, () => true],
+      (C1, C2) => C1 && C2,
+    );
+    runtime.flush();
+
+    const files = fs
+      .readdirSync(workspace)
+      .filter(file => file.endsWith(".json"));
+    const evidence = collectEvidence([workspace], { rootDir: workspace });
+    const cases = evidence.get(metadata.stableKey);
+
+    assert.equal(files.length, 2);
+    assert.equal(cases.length, 2);
+    assert.deepEqual(
+      cases.map(testCase => testCase.name),
+      ["suite A covers true", "suite B covers false"],
+    );
+  } finally {
+    if (previousEvidenceDir === undefined) {
+      delete process.env.MCDC_EVIDENCE_DIR;
+    } else {
+      process.env.MCDC_EVIDENCE_DIR = previousEvidenceDir;
+    }
+
+    globalThis.expect = previousExpect;
+  }
+});
+
 test("evaluateDecisionCoverage finds unique-cause MC/DC pairs", () => {
   const decision = {
     conditions: [
@@ -231,4 +313,55 @@ function namedCase(name, conditions, outcome) {
 
 function makeTempWorkspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "clubs-mcdc-"));
+}
+
+function transformWithMcdc(sourceText) {
+  const workspace = makeTempWorkspace();
+  const sourcePath = path.join(workspace, "feature.ts");
+  const previousSourcePaths = process.env.MCDC_SOURCE_PATHS;
+  const previousRepoRoot = process.env.MCDC_REPO_ROOT;
+  const transformerModule = require("./jest-transformer.cjs");
+  const sourceFile = ts.createSourceFile(
+    sourcePath,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+
+  process.env.MCDC_SOURCE_PATHS = JSON.stringify([workspace]);
+  process.env.MCDC_REPO_ROOT = workspace;
+
+  try {
+    const result = ts.transform(sourceFile, [
+      transformerModule.factory({ configSet: { compilerModule: ts } }),
+    ]);
+
+    try {
+      return ts.createPrinter().printFile(result.transformed[0]);
+    } finally {
+      result.dispose();
+    }
+  } finally {
+    if (previousSourcePaths === undefined) {
+      delete process.env.MCDC_SOURCE_PATHS;
+    } else {
+      process.env.MCDC_SOURCE_PATHS = previousSourcePaths;
+    }
+
+    if (previousRepoRoot === undefined) {
+      delete process.env.MCDC_REPO_ROOT;
+    } else {
+      process.env.MCDC_REPO_ROOT = previousRepoRoot;
+    }
+  }
+}
+
+function setJestState(testFileName, currentTestName, workspace) {
+  globalThis.expect = {
+    getState: () => ({
+      currentTestName,
+      testPath: path.join(workspace, testFileName),
+    }),
+  };
 }

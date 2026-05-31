@@ -1,18 +1,14 @@
 "use strict";
 
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-let installed = false;
+let exitHandlerInstalled = false;
+let flushCount = 0;
 const evidence = new Map();
 
 function install() {
-  if (installed) {
-    return;
-  }
-
-  installed = true;
-
   globalThis.__MCDC_EVALUATE__ = evaluateDecision;
 
   const write = () => {
@@ -23,7 +19,10 @@ function install() {
     afterAll(write);
   }
 
-  process.once("exit", write);
+  if (!exitHandlerInstalled) {
+    exitHandlerInstalled = true;
+    process.once("exit", write);
+  }
 }
 
 function evaluateDecision(metadata, conditionThunks, combine) {
@@ -37,6 +36,7 @@ function evaluateDecision(metadata, conditionThunks, combine) {
 
   cases.push({
     name: currentTestName(),
+    testPath: currentTestPath(),
     conditions,
     outcome,
     metadata,
@@ -50,6 +50,12 @@ function currentTestName() {
   const state = globalThis.expect?.getState?.();
 
   return state?.currentTestName || "unknown test";
+}
+
+function currentTestPath() {
+  const state = globalThis.expect?.getState?.();
+
+  return state?.testPath || null;
 }
 
 function writeEvidence() {
@@ -66,6 +72,7 @@ function writeEvidence() {
       decisionId,
       cases.map(testCase => ({
         name: testCase.name,
+        testPath: testCase.testPath,
         conditions: testCase.conditions,
         outcome: testCase.outcome,
       })),
@@ -77,7 +84,7 @@ function writeEvidence() {
       cases[0]?.metadata,
     ]),
   );
-  const filePath = path.join(evidenceDir, `evidence-${process.pid}.json`);
+  const filePath = path.join(evidenceDir, createEvidenceFileName());
 
   fs.writeFileSync(
     filePath,
@@ -90,8 +97,42 @@ function writeEvidence() {
       2,
     ),
   );
+
+  evidence.clear();
+}
+
+function createEvidenceFileName() {
+  const testPath = firstEvidenceTestPath() ?? currentTestPath() ?? "process";
+  const hash = crypto
+    .createHash("sha1")
+    .update(testPath)
+    .digest("hex")
+    .slice(0, 8);
+  const workerId = process.env.JEST_WORKER_ID ?? "main";
+  const suiteName = path
+    .basename(testPath)
+    .replace(/[^A-Za-z0-9_.-]+/gu, "_")
+    .slice(0, 80);
+  const sequence = flushCount;
+
+  flushCount += 1;
+
+  return `evidence-${process.pid}-${workerId}-${suiteName || "unknown"}-${hash}-${sequence}.json`;
+}
+
+function firstEvidenceTestPath() {
+  for (const cases of evidence.values()) {
+    const testPath = cases[0]?.testPath;
+
+    if (testPath) {
+      return testPath;
+    }
+  }
+
+  return null;
 }
 
 module.exports = {
+  flush: writeEvidence,
   install,
 };

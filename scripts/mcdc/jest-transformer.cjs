@@ -586,11 +586,6 @@ function isSafeValueExpression(ts, node) {
     expression.kind === ts.SyntaxKind.TrueKeyword ||
     expression.kind === ts.SyntaxKind.FalseKeyword ||
     expression.kind === ts.SyntaxKind.NullKeyword ||
-    (ts.isPropertyAccessExpression(expression) &&
-      isSafeValueExpression(ts, expression.expression)) ||
-    (ts.isElementAccessExpression(expression) &&
-      isSafeValueExpression(ts, expression.expression) &&
-      isSafeValueExpression(ts, expression.argumentExpression)) ||
     (ts.isParenthesizedExpression(expression) &&
       isSafeValueExpression(ts, expression.expression))
   );

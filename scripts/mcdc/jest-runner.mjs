@@ -35,6 +35,13 @@ function main() {
   fs.rmSync(evidenceDir, { recursive: true, force: true });
   fs.mkdirSync(evidenceDir, { recursive: true });
 
+  const env = createJestEnv(repoRoot, evidenceDir, sourcePaths);
+
+  if (!runPrismaGenerate(jestCwd, env)) {
+    process.exitCode = 1;
+    return;
+  }
+
   const jestArgs = ["exec", "jest", "--config", args.jestConfig, "--runInBand"];
 
   if (args.tests.length > 0) {
@@ -48,12 +55,7 @@ function main() {
 
   const result = spawnSync("pnpm", jestArgs, {
     cwd: jestCwd,
-    env: {
-      ...process.env,
-      MCDC_EVIDENCE_DIR: evidenceDir,
-      MCDC_REPO_ROOT: repoRoot,
-      MCDC_SOURCE_PATHS: JSON.stringify(sourcePaths),
-    },
+    env,
     stdio: "inherit",
   });
 
@@ -74,6 +76,105 @@ function main() {
   if (args.failOnMissing && report.summary.missingConditions > 0) {
     process.exitCode = 1;
   }
+}
+
+function runPrismaGenerate(jestCwd, env) {
+  const packageJsonPath = path.join(jestCwd, "package.json");
+
+  if (!fs.existsSync(packageJsonPath)) {
+    return true;
+  }
+
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+
+  if (!packageJson.scripts?.["prisma:generate"]) {
+    return true;
+  }
+
+  const result = spawnSync("pnpm", ["run", "prisma:generate"], {
+    cwd: jestCwd,
+    env,
+    stdio: "inherit",
+  });
+
+  return result.status === 0;
+}
+
+function createJestEnv(repoRoot, evidenceDir, sourcePaths) {
+  const rootEnvPath = path.join(repoRoot, ".env");
+  const fileEnv = readDotEnvFile(rootEnvPath);
+  const databaseUrl =
+    process.env.TEST_DATABASE_URL ??
+    process.env.DATABASE_URL ??
+    fileEnv.TEST_DATABASE_URL ??
+    fileEnv.DATABASE_URL ??
+    "mysql://root:test_password_123@127.0.0.1:3307/clubs_test";
+
+  return {
+    ...fileEnv,
+    ...process.env,
+    NODE_ENV: "test",
+    DOTENV_CONFIG_PATH: rootEnvPath,
+    SERVER_PORT: process.env.SERVER_PORT ?? fileEnv.SERVER_PORT ?? "3000",
+    SECRET_KEY:
+      process.env.SECRET_KEY ?? fileEnv.SECRET_KEY ?? "test_secret_key",
+    ACCESS_TOKEN_SECRET_KEY:
+      process.env.ACCESS_TOKEN_SECRET_KEY ??
+      fileEnv.ACCESS_TOKEN_SECRET_KEY ??
+      "test_access_token_secret",
+    REFRESH_TOKEN_SECRET_KEY:
+      process.env.REFRESH_TOKEN_SECRET_KEY ??
+      fileEnv.REFRESH_TOKEN_SECRET_KEY ??
+      "test_refresh_token_secret",
+    DATABASE_URL: databaseUrl,
+    TEST_DATABASE_URL:
+      process.env.TEST_DATABASE_URL ?? fileEnv.TEST_DATABASE_URL ?? databaseUrl,
+    MCDC_EVIDENCE_DIR: evidenceDir,
+    MCDC_REPO_ROOT: repoRoot,
+    MCDC_SOURCE_PATHS: JSON.stringify(sourcePaths),
+  };
+}
+
+function readDotEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    fs
+      .readFileSync(filePath, "utf8")
+      .split(/\r?\n/u)
+      .flatMap(line => {
+        const trimmed = line.trim();
+
+        if (!trimmed || trimmed.startsWith("#")) {
+          return [];
+        }
+
+        const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/u.exec(trimmed);
+
+        if (!match) {
+          return [];
+        }
+
+        return [[match[1], normalizeEnvValue(match[2])]];
+      }),
+  );
+}
+
+function normalizeEnvValue(value) {
+  const trimmed = value.trim();
+  const quote = trimmed[0];
+
+  if (
+    (quote === '"' || quote === "'") &&
+    trimmed.length >= 2 &&
+    trimmed[trimmed.length - 1] === quote
+  ) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
 }
 
 function parseArgs(argv) {
