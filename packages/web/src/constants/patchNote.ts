@@ -5,12 +5,13 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
-  // clubs:auto-patch-note version=v.0.1.3 source=a7d693b68492
+  // clubs:auto-patch-note version=v.0.1.3 source=f8ed947ac2a5
   {
     version: "v.0.1.3",
-    date: new Date("2026.05.18"),
+    date: new Date("2026.06.01"),
     patchNoteContent: `Clubs v0.1.3
-내부 개선
+문서 변경은 다음과 같습니다.
+- update release patch note for v0.1.3. (#1822)
 `,
   },
   // clubs:auto-patch-note version=v.0.1.2 source=2cb98d34cc84
