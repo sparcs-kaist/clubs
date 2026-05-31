@@ -397,6 +397,7 @@ function createDecisionMetadata(
   const stableBase = [
     sourcePath,
     providerId,
+    PROVIDER_VERSION,
     kind,
     expressionHash,
     conditionsHash,

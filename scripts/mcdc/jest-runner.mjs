@@ -4,6 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
+import dotenv from "dotenv";
+
 import {
   analyzeSourcePaths,
   buildReport,
@@ -140,41 +142,7 @@ function readDotEnvFile(filePath) {
     return {};
   }
 
-  return Object.fromEntries(
-    fs
-      .readFileSync(filePath, "utf8")
-      .split(/\r?\n/u)
-      .flatMap(line => {
-        const trimmed = line.trim();
-
-        if (!trimmed || trimmed.startsWith("#")) {
-          return [];
-        }
-
-        const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/u.exec(trimmed);
-
-        if (!match) {
-          return [];
-        }
-
-        return [[match[1], normalizeEnvValue(match[2])]];
-      }),
-  );
-}
-
-function normalizeEnvValue(value) {
-  const trimmed = value.trim();
-  const quote = trimmed[0];
-
-  if (
-    (quote === '"' || quote === "'") &&
-    trimmed.length >= 2 &&
-    trimmed[trimmed.length - 1] === quote
-  ) {
-    return trimmed.slice(1, -1);
-  }
-
-  return trimmed;
+  return dotenv.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function parseArgs(argv) {

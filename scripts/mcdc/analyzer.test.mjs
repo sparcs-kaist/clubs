@@ -40,7 +40,7 @@ export function canSubmit(user, featureEnabled) {
   assert.equal(decisions[0].kind, "if");
   assert.equal(decisions[0].providerId, "typescript-control-flow");
   assert.equal(decisions[0].providerVersion, 1);
-  assert.match(decisions[0].stableKey, /typescript-control-flow:if/u);
+  assert.match(decisions[0].stableKey, /typescript-control-flow:1:if/u);
   assert.deepEqual(
     decisions[0].conditions.map(condition => condition.text),
     ["user.active", 'user.role === "admin"', "featureEnabled"],
@@ -156,11 +156,12 @@ export function canRead(left, right) {
 test("runtime evidence files are unique across suites in the same process", () => {
   const workspace = makeTempWorkspace();
   const previousEvidenceDir = process.env.MCDC_EVIDENCE_DIR;
+  const previousEvaluate = globalThis.__MCDC_EVALUATE__;
   const previousExpect = globalThis.expect;
   const runtime = require("./runtime.cjs");
   const metadata = {
     id: "src/foo.ts:1:1:abcd1234",
-    stableKey: "src/foo.ts:typescript-control-flow:if:aaaa1111:bbbb2222:1",
+    stableKey: "src/foo.ts:typescript-control-flow:1:if:aaaa1111:bbbb2222:1",
   };
 
   process.env.MCDC_EVIDENCE_DIR = workspace;
@@ -203,6 +204,12 @@ test("runtime evidence files are unique across suites in the same process", () =
     }
 
     globalThis.expect = previousExpect;
+
+    if (previousEvaluate === undefined) {
+      delete globalThis.__MCDC_EVALUATE__;
+    } else {
+      globalThis.__MCDC_EVALUATE__ = previousEvaluate;
+    }
   }
 });
 
@@ -287,15 +294,15 @@ test("collectEvidence reads @mcdc comments from test files", () => {
 test("filterChangedDecisions compares stable decision keys", () => {
   const base = [
     {
-      stableKey: "src/foo.ts:typescript-control-flow:if:aaaa1111:bbbb2222:1",
+      stableKey: "src/foo.ts:typescript-control-flow:1:if:aaaa1111:bbbb2222:1",
     },
   ];
   const current = [
     {
-      stableKey: "src/foo.ts:typescript-control-flow:if:aaaa1111:bbbb2222:1",
+      stableKey: "src/foo.ts:typescript-control-flow:1:if:aaaa1111:bbbb2222:1",
     },
     {
-      stableKey: "src/foo.ts:typescript-control-flow:if:cccc3333:dddd4444:1",
+      stableKey: "src/foo.ts:typescript-control-flow:1:if:cccc3333:dddd4444:1",
     },
   ];
 

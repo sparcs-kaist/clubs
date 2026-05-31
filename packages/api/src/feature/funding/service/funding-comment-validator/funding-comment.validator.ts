@@ -19,7 +19,7 @@ export const FUNDING_APPROVED_AMOUNT_EXCEEDED_ERROR =
 export const FUNDING_APPROVED_STATUS_AMOUNT_ERROR =
   "승인을 위해선 전체 금액의 전부가 승인되어야 합니다. 부분 승인을 이용해 주세요.";
 export const FUNDING_PARTIAL_STATUS_AMOUNT_ERROR =
-  "승인 상태에서는 승인 금액이 0이 될 수 없습니다.";
+  "부분 승인 상태에서는 승인 금액이 0이거나 전체 금액과 같을 수 없습니다.";
 
 export type FundingCommentValidationError =
   | typeof FUNDING_APPROVED_AMOUNT_NEGATIVE_ERROR

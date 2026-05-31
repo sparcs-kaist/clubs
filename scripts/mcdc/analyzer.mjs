@@ -318,6 +318,7 @@ export function createDecisionStableKey(decision, occurrenceIndex) {
   return [
     decision.sourcePath,
     decision.providerId,
+    decision.providerVersion,
     decision.kind,
     decision.expressionHash,
     decision.conditionsHash,
@@ -329,6 +330,7 @@ export function getDecisionStableBase(decision) {
   return [
     decision.sourcePath,
     decision.providerId,
+    decision.providerVersion,
     decision.kind,
     decision.expressionHash,
     decision.conditionsHash,
