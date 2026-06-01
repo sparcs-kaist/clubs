@@ -16,6 +16,7 @@
     "dev-no-d": "turbo run dev:setup && turbo run dev --no-daemon",
     "build": "turbo run build --force",
     "build:api": "turbo run build --filter=api",
+    "format:check:changed": "node scripts/check-format-changed.mjs",
     "mcdc": "node scripts/mcdc/cli.mjs",
     "mcdc:changed": "node scripts/mcdc/jest-runner.mjs --changed-from origin/dev --source packages/api/src --min-conditions 2",
     "mcdc:jest": "node scripts/mcdc/jest-runner.mjs",

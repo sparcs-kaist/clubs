@@ -17,19 +17,15 @@ import List from "@sparcs-clubs/web/common/components/List";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
-import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
 import { getActivityTypeLabel } from "@sparcs-clubs/web/types/activityType";
-import {
-  getProfessorApprovalLabel,
-  getProfessorApprovalTagColor,
-} from "@sparcs-clubs/web/types/professorApproval";
 import {
   formatDate,
   formatDotDetailDate,
 } from "@sparcs-clubs/web/utils/Date/formatDate";
 
+import ActivityApprovalStatusTag from "../components/ActivityApprovalStatusTag";
 import ActivityReportStatusSection from "../components/ActivityReportStatusSection";
 import ExecutiveActivityReportApprovalSection from "../components/ExecutiveActivityReportApprovalSection";
 import useGetActivityReportDetail from "../hooks/useGetActivityReportDetail";
@@ -213,12 +209,14 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
       <FlexWrapper direction="column" gap={40} style={{ alignSelf: "stretch" }}>
         <Card outline padding="32px" gap={20}>
           {(isProgressVisible || isOperatingCommittee) && (
-            <ActivityReportStatusSection
-              status={data.activityStatusEnumId}
-              editedAt={data.editedAt}
-              commentedAt={data.commentedAt ?? undefined}
-              comments={data.comments?.toReversed()}
-            />
+            <ActivitySection label="집행부 승인 상태">
+              <ActivityReportStatusSection
+                status={data.activityStatusEnumId}
+                editedAt={data.editedAt}
+                commentedAt={data.commentedAt ?? undefined}
+                comments={data.comments?.toReversed()}
+              />
+            </ActivitySection>
           )}
 
           <ActivitySection label="활동 정보">
@@ -284,17 +282,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             />
           </ActivitySection>
           {data.professorApproval !== null && (
-            <FlexWrapper
-              direction="row"
-              gap={16}
-              justify="space-between"
-              style={{
-                alignItems: "center",
-                alignSelf: "stretch",
-                width: "100%",
-              }}
-            >
-              <ActivitySection label="지도교수 승인" />
+            <ActivitySection label="지도교수 승인 상태">
               <FlexWrapper
                 direction="row"
                 gap={8}
@@ -305,13 +293,13 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
                     {formatDotDetailDate(data.professorApprovedAt)}
                   </Typography>
                 )}
-                <Tag
-                  color={getProfessorApprovalTagColor(data.professorApproval)}
-                >
-                  {getProfessorApprovalLabel(data.professorApproval)}
-                </Tag>
+                <ActivityApprovalStatusTag
+                  type="professor"
+                  status={data.professorApproval}
+                  width="64px"
+                />
               </FlexWrapper>
-            </FlexWrapper>
+            </ActivitySection>
           )}
         </Card>
 
