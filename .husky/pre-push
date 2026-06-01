@@ -5,4 +5,6 @@ if [ -d "$NVM_DIR/versions/node/$NODE_VER/bin" ]; then
   export PATH="$NVM_DIR/versions/node/$NODE_VER/bin:$PATH"
 fi
 
+pnpm format:check:changed
+pnpm lint
 pnpm mcdc:changed --fail-on-missing

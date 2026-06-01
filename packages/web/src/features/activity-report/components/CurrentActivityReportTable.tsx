@@ -13,9 +13,9 @@ import { ActTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
-import ActivityApprovalStatusTag from "./ActivityApprovalStatusTag";
 import useGetCurrentActivityReportList from "../hooks/useGetCurrentActivityReportList";
 import { ActivityReportTableData } from "../types/table";
+import ActivityApprovalStatusTag from "./ActivityApprovalStatusTag";
 
 interface CurrentActivityReportTableProps {
   clubId: number;

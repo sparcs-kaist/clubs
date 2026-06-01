@@ -356,7 +356,7 @@ export default class ActivityService {
       ],
     });
     const shouldResetProfessorApproval = availableDeadlines.some(deadline => {
-      const deadlineEnum = deadline.deadlineEnum;
+      const { deadlineEnum } = deadline;
       const writingDeadlineEnum = ActivityDeadlineEnum.Writing;
 
       return deadlineEnum === writingDeadlineEnum;

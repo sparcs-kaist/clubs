@@ -1,5 +1,6 @@
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
+
 import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { MActivity } from "../model/activity.model.new";
