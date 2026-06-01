@@ -347,14 +347,16 @@ export default class ActivityService {
       clubId: activity.club.id,
     });
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
-    const availableDeadlines = await this.activityDeadlinePublicService.search({
-      date: new Date(),
-      deadlineEnum: [
-        ActivityDeadlineEnum.Writing,
-        ActivityDeadlineEnum.Modification,
-        // ActivityDeadlineEnum.Exception,
-      ],
-    });
+    const availableDeadlines = await this.activityDeadlinePublicService
+      .search({
+        date: new Date(),
+        deadlineEnum: [
+          ActivityDeadlineEnum.Writing,
+          ActivityDeadlineEnum.Modification,
+          // ActivityDeadlineEnum.Exception,
+        ],
+      })
+      .then(takeExist());
     const shouldResetProfessorApproval = availableDeadlines.some(
       deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Writing,
     );

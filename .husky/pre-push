@@ -5,6 +5,8 @@ if [ -d "$NVM_DIR/versions/node/$NODE_VER/bin" ]; then
   export PATH="$NVM_DIR/versions/node/$NODE_VER/bin:$PATH"
 fi
 
+set -e
+
 pnpm format:check:changed
 pnpm lint
 pnpm prisma-query:changed

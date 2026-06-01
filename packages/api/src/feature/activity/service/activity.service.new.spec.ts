@@ -141,6 +141,15 @@ describe("ActivityService", () => {
     expect(updatedActivity.professorApprovedAt).toBeUndefined();
   });
 
+  it("rejects regular activity report edits outside writing and modification periods", async () => {
+    const { activityRepository, service } = createService([]);
+
+    await expect(
+      service.putStudentActivity({ activityId: activity.id }, body, 1),
+    ).rejects.toThrow("is empty");
+    expect(activityRepository.put).not.toHaveBeenCalled();
+  });
+
   it("keeps professor approval when a provisional activity report is edited", async () => {
     const { activityRepository, registrationPublicService, service } =
       createService();
