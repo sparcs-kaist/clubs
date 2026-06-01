@@ -18,6 +18,33 @@ import {
 } from "../model/funding.summary.model";
 import { buildFundingTransportationPassengerFindManyArgs } from "./funding.repository.util";
 
+const fundingSummarySelect = {
+  id: true,
+  name: true,
+  expenditureAmount: true,
+  approvedAmount: true,
+  fundingStatusEnum: true,
+  purposeActivityId: true,
+  clubId: true,
+  chargedExecutiveId: true,
+  feedbacks: {
+    where: {
+      deletedAt: null,
+    },
+    orderBy: {
+      id: "desc",
+    },
+    take: 1,
+    select: {
+      executiveId: true,
+    },
+  },
+} satisfies Prisma.FundingSelect;
+
+type FundingSummaryPrismaResult = Prisma.FundingGetPayload<{
+  select: typeof fundingSummarySelect;
+}>;
+
 @Injectable()
 export default class FundingRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -162,210 +189,100 @@ export default class FundingRepository {
     });
   }
 
-  async fetchSummaries(ids: number[]): Promise<IFundingSummary[]>;
-  async fetchSummaries(activityDId: number): Promise<IFundingSummary[]>;
+  private toFundingSummaryDBResult(
+    funding: FundingSummaryPrismaResult,
+  ): FundingSummaryDBResult {
+    return {
+      id: funding.id,
+      name: funding.name,
+      fundingStatusEnum: funding.fundingStatusEnum,
+      expenditureAmount: funding.expenditureAmount,
+      purposeActivityId: funding.purposeActivityId,
+      approvedAmount: funding.approvedAmount,
+      clubId: funding.clubId,
+      chargedExecutiveId: funding.chargedExecutiveId,
+      commentedExecutiveId: funding.feedbacks[0]?.executiveId ?? null,
+    };
+  }
+
+  private async fetchSummariesByWhere(
+    where: Prisma.FundingWhereInput,
+  ): Promise<VFundingSummary[]> {
+    const fundings = await this.prisma.funding.findMany({
+      select: fundingSummarySelect,
+      where: {
+        AND: [{ deletedAt: null }, where],
+      },
+    });
+
+    return fundings.map(funding =>
+      VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(funding)),
+    );
+  }
+
+  async fetchSummaries(ids: number[]): Promise<VFundingSummary[]>;
+  async fetchSummaries(activityDId: number): Promise<VFundingSummary[]>;
   async fetchSummaries(
     clubId: number,
     activityDId: number,
-  ): Promise<IFundingSummary[]>;
+  ): Promise<VFundingSummary[]>;
   async fetchSummaries(
     clubIds: number[],
     activityDId: number,
-  ): Promise<IFundingSummary[]>;
+  ): Promise<VFundingSummary[]>;
   async fetchSummaries(
     arg1: number | number[],
     arg2?: number,
-  ): Promise<IFundingSummary[]> {
+  ): Promise<VFundingSummary[]> {
     if (Array.isArray(arg1)) {
       if (arg1.length === 0) {
         return [];
       }
 
       if (arg2 === undefined) {
-        const fundings = await this.prisma.funding.findMany({
-          select: {
-            id: true,
-            name: true,
-            expenditureAmount: true,
-            approvedAmount: true,
-            fundingStatusEnum: true,
-            purposeActivityId: true,
-            clubId: true,
-            chargedExecutiveId: true,
-          },
-          where: {
-            id: { in: arg1 },
-            deletedAt: null,
-          },
-        });
-
-        return fundings.map(funding => ({
-          ...funding,
-          purposeActivity: {
-            id: funding.purposeActivityId,
-          },
-          club: {
-            id: funding.clubId,
-          },
-          chargedExecutive: {
-            id: funding.chargedExecutiveId,
-          },
-        }));
+        return this.fetchSummariesByWhere({ id: { in: arg1 } });
       }
 
-      const fundings = await this.prisma.funding.findMany({
-        select: {
-          id: true,
-          name: true,
-          expenditureAmount: true,
-          approvedAmount: true,
-          fundingStatusEnum: true,
-          purposeActivityId: true,
-          clubId: true,
-          chargedExecutiveId: true,
-        },
-        where: {
-          clubId: { in: arg1 },
-          activityDId: arg2,
-          deletedAt: null,
-        },
+      return this.fetchSummariesByWhere({
+        clubId: { in: arg1 },
+        activityDId: arg2,
       });
-
-      return fundings.map(funding => ({
-        ...funding,
-        purposeActivity: {
-          id: funding.purposeActivityId,
-        },
-        club: {
-          id: funding.clubId,
-        },
-        chargedExecutive: {
-          id: funding.chargedExecutiveId,
-        },
-      }));
     }
 
     if (arg2 === undefined) {
-      const fundings = await this.prisma.funding.findMany({
-        select: {
-          id: true,
-          name: true,
-          expenditureAmount: true,
-          approvedAmount: true,
-          fundingStatusEnum: true,
-          purposeActivityId: true,
-          clubId: true,
-          chargedExecutiveId: true,
-        },
-        where: {
-          activityDId: arg1,
-          deletedAt: null,
-        },
-      });
-
-      if (fundings.length === 0) {
-        return [];
-      }
-
-      return fundings.map(funding => ({
-        ...funding,
-        purposeActivity: {
-          id: funding.purposeActivityId,
-        },
-        club: {
-          id: funding.clubId,
-        },
-        chargedExecutive: {
-          id: funding.chargedExecutiveId,
-        },
-      }));
+      return this.fetchSummariesByWhere({ activityDId: arg1 });
     }
 
-    const fundings = await this.prisma.funding.findMany({
-      select: {
-        id: true,
-        name: true,
-        expenditureAmount: true,
-        approvedAmount: true,
-        fundingStatusEnum: true,
-        purposeActivityId: true,
-        clubId: true,
-        chargedExecutiveId: true,
-      },
-      where: {
-        clubId: arg1,
-        activityDId: arg2,
-        deletedAt: null,
-      },
+    return this.fetchSummariesByWhere({
+      clubId: arg1,
+      activityDId: arg2,
     });
-
-    if (fundings.length === 0) {
-      return [];
-    }
-
-    return fundings.map(funding => ({
-      ...funding,
-      purposeActivity: {
-        id: funding.purposeActivityId,
-      },
-      club: {
-        id: funding.clubId,
-      },
-      chargedExecutive: {
-        id: funding.chargedExecutiveId,
-      },
-    }));
   }
 
   async fetchCommentedSummaries(
     executiveId: number,
-  ): Promise<IFundingSummary[]> {
-    const fundings = await this.prisma.$queryRaw<
-      Array<{
-        id: number;
-        fundingStatusEnum: number;
-        name: string;
-        expenditureAmount: number;
-        approvedAmount: number | null;
-        purposeActivityId: number | null;
-        clubId: number;
-        chargedExecutiveId: number | null;
-      }>
-    >(Prisma.sql`
-      SELECT
-        f.id,
-        f.funding_status_enum AS fundingStatusEnum,
-        f.name,
-        f.expenditure_amount AS expenditureAmount,
-        f.approved_amount AS approvedAmount,
-        f.purpose_activity_id AS purposeActivityId,
-        f.club_id AS clubId,
-        f.charged_executive_id AS chargedExecutiveId
-      FROM funding f
-      WHERE f.deleted_at IS NULL
-        AND (
-          f.charged_executive_id = ${executiveId}
-          OR EXISTS (
-            SELECT 1 FROM funding_feedback ff
-            WHERE ff.funding_id = f.id
-              AND ff.executive_id = ${executiveId}
-              AND ff.deleted_at IS NULL
-          )
-        )
-    `);
+  ): Promise<VFundingSummary[]> {
+    const fundings = await this.prisma.funding.findMany({
+      select: fundingSummarySelect,
+      where: {
+        deletedAt: null,
+        OR: [
+          { chargedExecutiveId: executiveId },
+          {
+            feedbacks: {
+              some: {
+                executiveId,
+                deletedAt: null,
+              },
+            },
+          },
+        ],
+      },
+    });
 
-    return fundings.map(funding => ({
-      ...funding,
-      purposeActivity: {
-        id: funding.purposeActivityId,
-      },
-      club: {
-        id: funding.clubId,
-      },
-      chargedExecutive: {
-        id: funding.chargedExecutiveId,
-      },
-    }));
+    return fundings.map(funding =>
+      VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(funding)),
+    );
   }
 
   async insert(

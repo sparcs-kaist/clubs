@@ -8,9 +8,10 @@ export type FundingSummaryDBResult = {
   fundingStatusEnum: number;
   expenditureAmount: number;
   purposeActivityId: number | null;
-  approvedAmount: number;
+  approvedAmount: number | null;
   clubId: number;
   chargedExecutiveId: number | null;
+  commentedExecutiveId?: number | null;
 };
 
 export class VFundingSummary implements IFundingSummary {
@@ -29,6 +30,8 @@ export class VFundingSummary implements IFundingSummary {
   club: IFundingSummary["club"];
 
   chargedExecutive: IFundingSummary["chargedExecutive"];
+
+  commentedExecutive: IFundingSummary["commentedExecutive"];
 
   // 첫 번째 생성자: IFundingSummary로부터 초기화
   constructor(fundingSummary: IFundingSummary);
@@ -58,10 +61,13 @@ export class VFundingSummary implements IFundingSummary {
       purposeActivity: result.purposeActivityId
         ? { id: result.purposeActivityId }
         : undefined,
-      approvedAmount: result.approvedAmount,
+      approvedAmount: result.approvedAmount ?? undefined,
       club: result.clubId ? { id: result.clubId } : undefined,
       chargedExecutive: result.chargedExecutiveId
         ? { id: result.chargedExecutiveId }
+        : undefined,
+      commentedExecutive: result.commentedExecutiveId
+        ? { id: result.commentedExecutiveId }
         : undefined,
     });
   }
