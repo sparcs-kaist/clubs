@@ -12,10 +12,7 @@ import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repo
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
-import {
-  FundingSummaryDBResult,
-  VFundingSummary,
-} from "../model/funding.summary.model";
+import { VFundingSummary } from "../model/funding.summary.model";
 import { buildFundingTransportationPassengerFindManyArgs } from "./funding.repository.util";
 
 const fundingSummarySelect = {
@@ -40,10 +37,6 @@ const fundingSummarySelect = {
     },
   },
 } satisfies Prisma.FundingSelect;
-
-type FundingSummaryPrismaResult = Prisma.FundingGetPayload<{
-  select: typeof fundingSummarySelect;
-}>;
 
 @Injectable()
 export default class FundingRepository {
@@ -189,22 +182,6 @@ export default class FundingRepository {
     });
   }
 
-  private toFundingSummaryDBResult(
-    funding: FundingSummaryPrismaResult,
-  ): FundingSummaryDBResult {
-    return {
-      id: funding.id,
-      name: funding.name,
-      fundingStatusEnum: funding.fundingStatusEnum,
-      expenditureAmount: funding.expenditureAmount,
-      purposeActivityId: funding.purposeActivityId,
-      approvedAmount: funding.approvedAmount,
-      clubId: funding.clubId,
-      chargedExecutiveId: funding.chargedExecutiveId,
-      commentedExecutiveId: funding.feedbacks[0]?.executiveId ?? null,
-    };
-  }
-
   private async fetchSummariesByWhere(
     where: Prisma.FundingWhereInput,
   ): Promise<VFundingSummary[]> {
@@ -215,9 +192,7 @@ export default class FundingRepository {
       },
     });
 
-    return fundings.map(funding =>
-      VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(funding)),
-    );
+    return fundings.map(funding => VFundingSummary.fromDBResult(funding));
   }
 
   async fetchSummaries(ids: number[]): Promise<VFundingSummary[]>;
@@ -280,9 +255,7 @@ export default class FundingRepository {
       },
     });
 
-    return fundings.map(funding =>
-      VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(funding)),
-    );
+    return fundings.map(funding => VFundingSummary.fromDBResult(funding));
   }
 
   async insert(
@@ -965,7 +938,7 @@ export default class FundingRepository {
       throw new NotFoundException(`Funding: ${id} not found`);
     }
 
-    return VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(result));
+    return VFundingSummary.fromDBResult(result);
   }
 
   async patchStatus(param: {
