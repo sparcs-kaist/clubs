@@ -956,14 +956,16 @@ export default class FundingRepository {
     tx: PrismaTransactionClient,
     id: number,
   ): Promise<VFundingSummary> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (tx as any).funding.findFirst({ where: { id } });
+    const result = await tx.funding.findFirst({
+      select: fundingSummarySelect,
+      where: { id, deletedAt: null },
+    });
 
     if (!result) {
       throw new NotFoundException(`Funding: ${id} not found`);
     }
 
-    return VFundingSummary.fromDBResult(result as FundingSummaryDBResult);
+    return VFundingSummary.fromDBResult(this.toFundingSummaryDBResult(result));
   }
 
   async patchStatus(param: {
