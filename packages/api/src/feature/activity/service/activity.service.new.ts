@@ -347,7 +347,7 @@ export default class ActivityService {
       clubId: activity.club.id,
     });
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
-    await this.activityDeadlinePublicService.search({
+    const availableDeadlines = await this.activityDeadlinePublicService.search({
       date: new Date(),
       deadlineEnum: [
         ActivityDeadlineEnum.Writing,
@@ -355,6 +355,9 @@ export default class ActivityService {
         // ActivityDeadlineEnum.Exception,
       ],
     });
+    const shouldResetProfessorApproval = availableDeadlines.some(
+      deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Writing,
+    );
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
     const activityD = await this.activityDurationPublicService.load();
     if (activity.activityDuration.id !== activityD.id)
@@ -414,7 +417,7 @@ export default class ActivityService {
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
         editedAt: new Date(),
-        professorApprovedAt: undefined,
+        professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
         commentedAt: undefined,
         commentedExecutive: undefined,
       }),
@@ -729,6 +732,7 @@ export default class ActivityService {
       })),
       activityDuration: { id: activity.activityDuration.id },
       activityStatusEnum: ActivityStatusEnum.Applied,
+      professorApprovedAt: undefined,
     });
     if (!isUpdateSucceed)
       throw new HttpException(
