@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 
 import useHasAdvisor from "@sparcs-clubs/web/features/clubs/hooks/useHasAdvisor";
-import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
 import useGetNewActivityReportList from "../services/useGetNewActivityReportList";
 import { ActivityReportTableData } from "../types/table";
+import getProfessorApprovalStatus from "../utils/getProfessorApprovalStatus";
 
 const useGetCurrentActivityReportList = (
   clubId: number,
@@ -37,14 +37,10 @@ const useGetCurrentActivityReportList = (
     return activityReportList.map(activityReport => ({
       ...activityReport,
       hasProfessor,
-      professorApproval: (() => {
-        if (!hasProfessor) {
-          return null;
-        }
-        return activityReport.professorApprovedAt !== null
-          ? ProfessorApprovalEnum.Approved
-          : ProfessorApprovalEnum.Pending;
-      })(),
+      professorApproval: getProfessorApprovalStatus({
+        hasProfessor,
+        professorApprovedAt: activityReport.professorApprovedAt,
+      }),
     }));
   }, [activityReportList, isLoading, isError, hasProfessor]);
 

@@ -4,10 +4,10 @@ import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useHasAdvisor from "@sparcs-clubs/web/features/clubs/hooks/useHasAdvisor";
-import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
 import { useGetActivityReport } from "../services/useGetActivityReport";
 import { CurrentActivityReport } from "../types/activityReport";
+import getProfessorApprovalStatus from "../utils/getProfessorApprovalStatus";
 
 const useGetActivityReportDetail = (
   activityId: number,
@@ -55,17 +55,10 @@ const useGetActivityReportDetail = (
         name: participant.name,
         studentNumber: participant.studentNumber.toString(),
       })),
-      professorApproval: (() => {
-        if (!hasProfessor) {
-          return null;
-        }
-
-        if (!activityReport.professorApprovedAt) {
-          return ProfessorApprovalEnum.Pending;
-        }
-
-        return ProfessorApprovalEnum.Approved;
-      })(),
+      professorApproval: getProfessorApprovalStatus({
+        hasProfessor,
+        professorApprovedAt: activityReport.professorApprovedAt,
+      }),
       professorApprovedAt:
         activityReport.professorApprovedAt !== null
           ? activityReport.professorApprovedAt

@@ -4,6 +4,7 @@ import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
 import useGetProfessorCurrentActivityReportList from "../services/useGetProfessorCurrentActivityReportList";
 import { ProfessorActivityReportTableData } from "../types/table";
+import getProfessorApprovalStatus from "../utils/getProfessorApprovalStatus";
 
 const useGetProfessorActivityReportList = (
   clubId: number,
@@ -28,9 +29,9 @@ const useGetProfessorActivityReportList = (
     return activityReportList.map(activityReport => ({
       ...activityReport,
       professorApproval:
-        activityReport.professorApprovedAt !== null
-          ? ProfessorApprovalEnum.Approved
-          : ProfessorApprovalEnum.Pending,
+        getProfessorApprovalStatus({
+          professorApprovedAt: activityReport.professorApprovedAt,
+        }) ?? ProfessorApprovalEnum.Pending,
     }));
   }, [activityReportList, isLoading, isError]);
 
