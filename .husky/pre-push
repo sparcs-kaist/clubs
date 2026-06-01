@@ -5,4 +5,5 @@ if [ -d "$NVM_DIR/versions/node/$NODE_VER/bin" ]; then
   export PATH="$NVM_DIR/versions/node/$NODE_VER/bin:$PATH"
 fi
 
+pnpm prisma-query:changed
 pnpm mcdc:changed --fail-on-missing
