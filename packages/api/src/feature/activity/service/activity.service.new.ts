@@ -264,6 +264,7 @@ export default class ActivityService {
       activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
         // TODO?: status 추가하기?
+        id: e.id,
         content: e.content,
         createdAt: e.createdAt,
       })),
@@ -1161,6 +1162,7 @@ export default class ActivityService {
       })),
       activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
+        id: e.id,
         content: e.content,
         createdAt: e.createdAt,
       })),
@@ -1221,6 +1223,7 @@ export default class ActivityService {
       })),
       activityStatusEnumId: activity.activityStatusEnum,
       comments: comments.map(e => ({
+        id: e.id,
         content: e.content,
         createdAt: e.createdAt,
       })),

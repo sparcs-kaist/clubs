@@ -274,6 +274,7 @@ export const mockActivityDetailData: ApiAct002ResponseOkTemp = {
   ],
   comments: [
     {
+      id: 1,
       content: "그냥 맘에 안듬",
       createdAt: new Date(),
     },
