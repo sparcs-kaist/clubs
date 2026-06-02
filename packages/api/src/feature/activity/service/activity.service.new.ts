@@ -880,14 +880,14 @@ export default class ActivityService {
         HttpStatus.BAD_REQUEST,
       );
 
-    const isInsertionSucceed = await this.activityCommentRepository.create({
+    const insertedComments = await this.activityCommentRepository.create({
       activity: { id: param.param.activityId },
       content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
       // TODO?: 활동 승인 시에도 content를 넣을까요?
       executive: { id: param.executiveId },
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
-    if (!isInsertionSucceed)
+    if (insertedComments.length === 0)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
@@ -917,13 +917,13 @@ export default class ActivityService {
         HttpStatus.BAD_REQUEST,
       );
 
-    const isInsertionSucceed = await this.activityCommentRepository.create({
+    const insertedComments = await this.activityCommentRepository.create({
       activity: { id: param.param.activityId },
       content: param.body.comment,
       executive: { id: param.executiveId },
       activityStatusEnum: ActivityStatusEnum.Rejected,
     });
-    if (!isInsertionSucceed)
+    if (insertedComments.length === 0)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};

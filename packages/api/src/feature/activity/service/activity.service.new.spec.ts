@@ -4,6 +4,7 @@ import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
 import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { MActivity } from "../model/activity.model.new";
+import { MActivityComment } from "../model/activity-comment.model";
 import ActivityService from "./activity.service.new";
 
 describe("ActivityService", () => {
@@ -71,8 +72,16 @@ describe("ActivityService", () => {
       put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
     };
+    const activityComment = new MActivityComment({
+      id: 1,
+      activity: { id: currentActivity.id },
+      content: "review comment",
+      activityStatusEnum: currentActivity.activityStatusEnum,
+      createdAt: reviewedAt,
+      executive: { id: 7 },
+    });
     const activityCommentRepository = {
-      create: jest.fn().mockResolvedValue([{}]),
+      create: jest.fn().mockResolvedValue([activityComment]),
     };
     const clubPublicService = {
       checkIsStudentDelegate: jest.fn().mockResolvedValue(undefined),
@@ -242,6 +251,20 @@ describe("ActivityService", () => {
     expect(activityCommentRepository.create).not.toHaveBeenCalled();
   });
 
+  it("throws when approval feedback insertion fails", async () => {
+    const { activityCommentRepository, service } = createService(undefined, {
+      activityStatusEnum: ActivityStatusEnum.Applied,
+    });
+    activityCommentRepository.create.mockResolvedValueOnce([]);
+
+    await expect(
+      service.patchExecutiveActivityApproval({
+        executiveId: 7,
+        param: { activityId: activity.id },
+      }),
+    ).rejects.toThrow("unreachable");
+  });
+
   it("sets commentedAt when an executive sends back an activity report", async () => {
     const commentedAt = new Date("2026-05-02T12:00:00.000Z");
     jest.useFakeTimers().setSystemTime(commentedAt);
@@ -286,5 +309,18 @@ describe("ActivityService", () => {
     ).rejects.toThrow("failed to send back activity");
 
     expect(activityCommentRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("throws when send-back feedback insertion fails", async () => {
+    const { activityCommentRepository, service } = createService();
+    activityCommentRepository.create.mockResolvedValueOnce([]);
+
+    await expect(
+      service.patchExecutiveActivitySendBack({
+        executiveId: 8,
+        param: { activityId: activity.id },
+        body: { comment: "보완 필요" },
+      }),
+    ).rejects.toThrow("unreachable");
   });
 });
