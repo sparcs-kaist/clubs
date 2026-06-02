@@ -867,13 +867,14 @@ export default class ActivityService {
   }): Promise<ApiAct016ResponseOk> {
     // TODO: transaction 추가
     const commentedAt = new Date();
-    const isApprovalSucceed = await this.activityRepository.patch(
+    const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
+        activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
       },
       MActivity.updateReviewStatus(ActivityStatusEnum.Approved, commentedAt),
     );
-    if (!isApprovalSucceed)
+    if (updatedActivities.length === 0)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
@@ -904,12 +905,17 @@ export default class ActivityService {
   }): Promise<ApiAct017ResponseOk> {
     // TODO: transaction 추가
     const commentedAt = new Date();
-    await this.activityRepository.patch(
+    const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
       },
       MActivity.updateReviewStatus(ActivityStatusEnum.Rejected, commentedAt),
     );
+    if (updatedActivities.length === 0)
+      throw new HttpException(
+        "failed to send back activity",
+        HttpStatus.BAD_REQUEST,
+      );
 
     const isInsertionSucceed = await this.activityCommentRepository.create({
       activity: { id: param.param.activityId },

@@ -63,11 +63,13 @@ describe("ActivityService", () => {
 
   const createService = (
     activityDeadlines = [{ deadlineEnum: ActivityDeadlineEnum.Writing }],
+    activityOverrides: Partial<typeof activity> = {},
   ) => {
+    const currentActivity = { ...activity, ...activityOverrides };
     const activityRepository = {
-      fetch: jest.fn().mockResolvedValue(activity),
-      put: jest.fn().mockResolvedValue(new MActivity(activity)),
-      patch: jest.fn().mockResolvedValue([new MActivity(activity)]),
+      fetch: jest.fn().mockResolvedValue(currentActivity),
+      put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
+      patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
     };
     const activityCommentRepository = {
       create: jest.fn().mockResolvedValue([{}]),
@@ -186,17 +188,28 @@ describe("ActivityService", () => {
     const commentedAt = new Date("2026-05-01T12:00:00.000Z");
     jest.useFakeTimers().setSystemTime(commentedAt);
     const { activityCommentRepository, activityRepository, service } =
-      createService();
+      createService(undefined, {
+        activityStatusEnum: ActivityStatusEnum.Applied,
+      });
 
     await service.patchExecutiveActivityApproval({
       executiveId: 7,
       param: { activityId: activity.id },
     });
 
+    expect(activityRepository.patch.mock.calls[0][0]).toEqual({
+      id: activity.id,
+      activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
+    });
     const patchActivity = activityRepository.patch.mock.calls[0][1] as (
       model: MActivity,
     ) => MActivity;
-    const updatedActivity = patchActivity(new MActivity(activity));
+    const updatedActivity = patchActivity(
+      new MActivity({
+        ...activity,
+        activityStatusEnum: ActivityStatusEnum.Applied,
+      }),
+    );
 
     expect(updatedActivity.activityStatusEnum).toBe(
       ActivityStatusEnum.Approved,
@@ -208,6 +221,25 @@ describe("ActivityService", () => {
       executive: { id: 7 },
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
+  });
+
+  it("does not create approval feedback when the activity report is already approved", async () => {
+    const { activityCommentRepository, activityRepository, service } =
+      createService();
+    activityRepository.patch.mockResolvedValueOnce([]);
+
+    await expect(
+      service.patchExecutiveActivityApproval({
+        executiveId: 7,
+        param: { activityId: activity.id },
+      }),
+    ).rejects.toThrow("the activity is already approved");
+
+    expect(activityRepository.patch.mock.calls[0][0]).toEqual({
+      id: activity.id,
+      activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
+    });
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
   });
 
   it("sets commentedAt when an executive sends back an activity report", async () => {
@@ -238,5 +270,21 @@ describe("ActivityService", () => {
       executive: { id: 8 },
       activityStatusEnum: ActivityStatusEnum.Rejected,
     });
+  });
+
+  it("does not create send-back feedback when the status update fails", async () => {
+    const { activityCommentRepository, activityRepository, service } =
+      createService();
+    activityRepository.patch.mockResolvedValueOnce([]);
+
+    await expect(
+      service.patchExecutiveActivitySendBack({
+        executiveId: 8,
+        param: { activityId: activity.id },
+        body: { comment: "보완 필요" },
+      }),
+    ).rejects.toThrow("failed to send back activity");
+
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
   });
 });
