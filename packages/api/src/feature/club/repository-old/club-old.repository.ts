@@ -555,100 +555,58 @@ export class ClubOldRepository {
       return [];
     }
 
-    const whereConditions: Prisma.Sql[] = [];
+    const targetSemesterIds = semesterIds ?? [];
+    const hasTargetSemesters = targetSemesterIds.length > 0;
+    const currentTerm = new Date();
+    const clubTWhere: Prisma.ClubTWhereInput = hasTargetSemesters
+      ? {
+          semesterId: { in: targetSemesterIds },
+          deletedAt: null,
+        }
+      : {
+          startTerm: { lte: currentTerm },
+          OR: [{ endTerm: { gte: currentTerm } }, { endTerm: null }],
+          deletedAt: null,
+        };
 
-    whereConditions.push(Prisma.sql`c.id IN (${Prisma.join(clubIds)})`);
-
-    if (semesterIds && semesterIds.length > 0) {
-      whereConditions.push(
-        Prisma.sql`ct.semester_id IN (${Prisma.join(semesterIds)})`,
-      );
-    } else {
-      whereConditions.push(
-        Prisma.sql`ct.start_term <= NOW() AND (ct.end_term >= NOW() OR ct.end_term IS NULL)`,
-      );
-    }
-    whereConditions.push(Prisma.sql`c.deleted_at IS NULL`);
-    whereConditions.push(Prisma.sql`ct.deleted_at IS NULL`);
-
-    const whereClause = Prisma.sql`${Prisma.join(whereConditions, " AND ")}`;
-
-    const result = await this.prisma.$queryRaw<
-      Array<{
-        clubId: number;
-        nameKr: string;
-        nameEn: string;
-        description: string | null;
-        foundingYear: number;
-        divisionId: number;
-        clubCreatedAt: Date | null;
-        clubDeletedAt: Date | null;
-        ctId: number | null;
-        clubStatusEnumId: number | null;
-        characteristicKr: string | null;
-        characteristicEn: string | null;
-        professorId: number | null;
-        semesterId: number | null;
-        ctStartTerm: Date | null;
-        ctEndTerm: Date | null;
-        ctCreatedAt: Date | null;
-        ctDeletedAt: Date | null;
-      }>
-    >(Prisma.sql`
-      SELECT c.id AS clubId,
-             c.name_kr AS nameKr,
-             c.name_en AS nameEn,
-             c.description AS description,
-             c.founding_year AS foundingYear,
-             c.division_id AS divisionId,
-             c.created_at AS clubCreatedAt,
-             c.deleted_at AS clubDeletedAt,
-             ct.id AS ctId,
-             ct.club_status_enum_id AS clubStatusEnumId,
-             ct.characteristic_kr AS characteristicKr,
-             ct.characteristic_en AS characteristicEn,
-             ct.professor_id AS professorId,
-             ct.semester_id AS semesterId,
-             ct.start_term AS ctStartTerm,
-             ct.end_term AS ctEndTerm,
-             ct.created_at AS ctCreatedAt,
-             ct.deleted_at AS ctDeletedAt
-      FROM club c
-      LEFT JOIN club_t ct ON c.id = ct.club_id
-      WHERE ${whereClause}
-    `);
-
-    return result.map(row =>
-      VClubSummary.fromDBResult({
-        club: {
-          id: row.clubId,
-          nameKr: row.nameKr,
-          nameEn: row.nameEn,
-          divisionId: row.divisionId,
-          description: row.description,
-          foundingYear: row.foundingYear,
-          createdAt: row.clubCreatedAt,
-          deletedAt: row.clubDeletedAt,
+    const clubs = await this.prisma.club.findMany({
+      where: {
+        id: { in: clubIds },
+        deletedAt: null,
+        clubTs: {
+          some: clubTWhere,
         },
-        club_t: row.ctId
-          ? {
-              id: row.ctId,
-              clubId: row.clubId,
-              clubStatusEnumId: row.clubStatusEnumId,
-              characteristicKr: row.characteristicKr,
-              characteristicEn: row.characteristicEn,
-              professorId: row.professorId,
-              semesterId: row.semesterId,
-              startTerm: row.ctStartTerm,
-              endTerm: row.ctEndTerm,
-              createdAt: row.ctCreatedAt,
-              deletedAt: row.ctDeletedAt,
-            }
-          : undefined,
-      }),
+      },
+      select: {
+        id: true,
+        nameKr: true,
+        nameEn: true,
+        divisionId: true,
+        clubTs: {
+          where: clubTWhere,
+          select: {
+            clubStatusEnumId: true,
+          },
+        },
+      },
+    });
+
+    return clubs.flatMap(club =>
+      club.clubTs.map(clubT =>
+        VClubSummary.fromDBResult({
+          club: {
+            id: club.id,
+            nameKr: club.nameKr,
+            nameEn: club.nameEn,
+            divisionId: club.divisionId,
+          },
+          club_t: {
+            clubStatusEnumId: clubT.clubStatusEnumId,
+          },
+        }),
+      ),
     );
   }
-
   async findOne(
     clubId: number,
     semester: ISemester,
