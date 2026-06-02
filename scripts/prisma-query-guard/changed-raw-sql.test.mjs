@@ -80,6 +80,38 @@ export async function list(prisma) {
   );
 });
 
+test("passes when raw SQL only migrates from root prisma to txHost", () => {
+  const workspace = makeGitWorkspace();
+  writeSource(
+    workspace,
+    `
+export async function list() {
+  return this.prisma.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    `
+export async function list() {
+  return this.txHost.tx.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
+});
+
 test("passes when a raw SQL block is removed", () => {
   const workspace = makeGitWorkspace();
   writeSource(

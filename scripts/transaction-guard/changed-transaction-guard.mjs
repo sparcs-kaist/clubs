@@ -5,9 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  findPrismaRawSqlNodes,
-  isLineInsideRawSqlNode,
-} from "./raw-sql-detector.mjs";
+  buildRepositoryCommandIndex,
+  findTransactionGuardNodes,
+} from "./transaction-detector.mjs";
 
 const DEFAULT_CHANGED_FROM = "origin/dev";
 const DEFAULT_SOURCE = "packages/api/src";
@@ -22,7 +22,7 @@ function main() {
     sourcePaths: args.sources,
   });
   const changedFiles = parseChangedFileLineMap(diffText);
-  const violations = findChangedRawSqlViolations({
+  const violations = findChangedTransactionViolations({
     baseRef,
     changedFiles,
     repoRoot,
@@ -30,7 +30,7 @@ function main() {
 
   if (violations.length === 0) {
     console.log(
-      `No Prisma raw SQL changes found relative to ${args.changedFrom}.`,
+      `No transaction migration guard violations found relative to ${args.changedFrom}.`,
     );
     return;
   }
@@ -39,11 +39,13 @@ function main() {
   process.exitCode = 1;
 }
 
-export function findChangedRawSqlViolations({
-  baseRef,
+export function findChangedTransactionViolations({
   changedFiles,
   repoRoot = process.cwd(),
 }) {
+  const repositoryCommandIndex = buildRepositoryCommandIndex(
+    readRepositorySources(repoRoot),
+  );
   const violations = [];
 
   for (const changedFile of changedFiles) {
@@ -52,65 +54,42 @@ export function findChangedRawSqlViolations({
     }
 
     const currentPath = path.resolve(repoRoot, changedFile.path);
-
     if (!fs.existsSync(currentPath)) {
       continue;
     }
 
-    const currentSourceText = fs.readFileSync(currentPath, "utf8");
-    const currentAnalysis = findPrismaRawSqlNodes(
-      currentSourceText,
-      currentPath,
-    );
+    const sourceText = fs.readFileSync(currentPath, "utf8");
+    const result = findTransactionGuardNodes({
+      sourceText,
+      filePath: changedFile.path,
+      repositoryCommandIndex,
+    });
 
-    if (currentAnalysis.parseError) {
+    if (result.parseError) {
       violations.push({
         filePath: changedFile.path,
-        line: currentAnalysis.parseError.line,
-        column: currentAnalysis.parseError.column,
+        line: result.parseError.line,
+        column: result.parseError.column,
+        kind: "parse-error",
         detected: "TypeScript parse error",
-        reason: currentAnalysis.parseError.message,
+        reason: result.parseError.message,
       });
       continue;
     }
 
-    const baseRawNodes = analyzeBaseRawSqlNodes({
-      baseRef,
-      repoRoot,
-      sourcePath: changedFile.path,
-    });
-
-    for (const rawNode of currentAnalysis.nodes) {
-      if (lineRangesOverlapAny(rawNode, changedFile.addedRanges)) {
-        if (hasEquivalentBaseRawSqlNode(rawNode, baseRawNodes)) {
-          continue;
-        }
-
-        violations.push({
-          filePath: changedFile.path,
-          line: rawNode.line,
-          column: rawNode.column,
-          detected: rawNode.detected,
-          reason: "raw SQL API overlaps an added or modified line",
-        });
+    for (const node of result.nodes) {
+      if (!lineRangesOverlapAny(node, changedFile.addedRanges)) {
         continue;
       }
 
-      const touchedByDeletedRawLine = changedFile.deletedLines.some(
-        deletedLine =>
-          isLineInsideRawSqlNode(deletedLine.oldLine, baseRawNodes) &&
-          isDeletionTouchingNode(deletedLine, rawNode),
-      );
-
-      if (touchedByDeletedRawLine) {
-        violations.push({
-          filePath: changedFile.path,
-          line: rawNode.line,
-          column: rawNode.column,
-          detected: rawNode.detected,
-          reason: "deleted line modified a raw SQL block that still remains",
-        });
-      }
+      violations.push({
+        filePath: changedFile.path,
+        line: node.line,
+        column: node.column,
+        kind: node.kind,
+        detected: node.detected,
+        reason: node.reason,
+      });
     }
   }
 
@@ -120,31 +99,6 @@ export function findChangedRawSqlViolations({
       left.line - right.line ||
       left.column - right.column,
   );
-}
-
-function hasEquivalentBaseRawSqlNode(currentRawNode, baseRawNodes) {
-  const normalizedCurrent = normalizeRawSqlMigrationText(currentRawNode.text);
-
-  return baseRawNodes.some(
-    baseRawNode =>
-      normalizeRawSqlMigrationText(baseRawNode.text) === normalizedCurrent,
-  );
-}
-
-function normalizeRawSqlMigrationText(text) {
-  return text
-    .replace(
-      /\bthis\.prisma\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
-      "TX.$1",
-    )
-    .replace(
-      /\bthis\.txHost\.tx\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
-      "TX.$1",
-    )
-    .replace(
-      /\btxHost\.tx\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
-      "TX.$1",
-    );
 }
 
 export function parseChangedFileLineMap(diffText) {
@@ -196,11 +150,7 @@ export function parseChangedFileLineMap(diffText) {
       addLineRange(file.addedRanges, newLine, newLine);
       newLine += 1;
     } else if (line.startsWith("-")) {
-      file.deletedLines.push({
-        oldLine,
-        previousLine: newLine - 1,
-        nextLine: newLine,
-      });
+      file.deletedLines.push({ oldLine });
       oldLine += 1;
     } else if (line.startsWith(" ")) {
       oldLine += 1;
@@ -213,19 +163,35 @@ export function parseChangedFileLineMap(diffText) {
   );
 }
 
-function analyzeBaseRawSqlNodes({ baseRef, repoRoot, sourcePath }) {
-  const sourceText = readFileAtRef(baseRef, sourcePath, repoRoot);
-
-  if (sourceText === null) {
+function readRepositorySources(repoRoot) {
+  const sourceRoot = path.resolve(repoRoot, DEFAULT_SOURCE);
+  if (!fs.existsSync(sourceRoot)) {
     return [];
   }
 
-  const analysis = findPrismaRawSqlNodes(
-    sourceText,
-    path.resolve(repoRoot, sourcePath),
-  );
+  return walkFiles(sourceRoot)
+    .map(filePath => path.relative(repoRoot, filePath))
+    .filter(filePath => isApiProductionTypeScriptFile(filePath))
+    .filter(filePath => toPosixPath(filePath).includes("/repository/"))
+    .map(filePath => ({
+      filePath,
+      sourceText: fs.readFileSync(path.resolve(repoRoot, filePath), "utf8"),
+    }));
+}
 
-  return analysis.parseError ? [] : analysis.nodes;
+function walkFiles(directory) {
+  const files = [];
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(fullPath));
+    } else {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
 }
 
 function resolveBaseRef(changedFrom, repoRoot) {
@@ -261,35 +227,10 @@ function readDiff({ baseRef, repoRoot, sourcePaths }) {
   });
 }
 
-function readFileAtRef(ref, filePath, cwd) {
-  try {
-    return execFileSync("git", ["show", `${ref}:${filePath}`], {
-      cwd,
-      encoding: "utf8",
-      maxBuffer: 20 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-  } catch {
-    return null;
-  }
-}
-
-function lineRangesOverlapAny(rawNode, ranges) {
+function lineRangesOverlapAny(node, ranges) {
   return ranges.some(
-    range =>
-      rawNode.startLine <= range.endLine && range.startLine <= rawNode.endLine,
+    range => node.startLine <= range.endLine && range.startLine <= node.endLine,
   );
-}
-
-function isDeletionTouchingNode(deletedLine, rawNode) {
-  return (
-    isLineInsideRange(deletedLine.previousLine, rawNode) ||
-    isLineInsideRange(deletedLine.nextLine, rawNode)
-  );
-}
-
-function isLineInsideRange(line, range) {
-  return range.startLine <= line && line <= range.endLine;
 }
 
 function addLineRange(ranges, startLine, endLine) {
@@ -323,13 +264,14 @@ function isApiProductionTypeScriptFile(filePath) {
 
 function formatViolations(violations) {
   const lines = [
-    "Prisma raw SQL is not allowed in changed API source lines.",
-    "Use Prisma Client Query API instead of raw SQL.",
+    "Transaction migration guard violations found in changed API source lines.",
+    "Use @Transactional service boundaries and TransactionHost.tx-backed repositories.",
     "",
   ];
 
   for (const violation of violations) {
     lines.push(`${violation.filePath}:${violation.line}:${violation.column}`);
+    lines.push(`  kind: ${violation.kind}`);
     lines.push(`  detected: ${violation.detected}`);
     lines.push(`  reason: ${violation.reason}`);
     lines.push("");
@@ -379,7 +321,7 @@ function readValue(argv, index, arg) {
 }
 
 function printHelp() {
-  console.log(`Usage: pnpm prisma-query:changed [options]
+  console.log(`Usage: pnpm transaction-guard:changed [options]
 
 Options:
   --changed-from <ref>  Base branch/ref to compare against (default: origin/dev)
