@@ -132,6 +132,19 @@ export class RegistrationService {
     return this.getPastSemestersWithRegistrations(targetSemester, semesterIds);
   }
 
+  private async getRegistrationSemesterId(applyId: number): Promise<number> {
+    const semesterId =
+      await this.clubRegistrationRepository.findSemesterIdByRegistrationId(
+        applyId,
+      );
+
+    if (semesterId === null) {
+      throw new HttpException("Registration not found", HttpStatus.BAD_REQUEST);
+    }
+
+    return semesterId;
+  }
+
   /**
    * @description 동아리 대표자인지 검증하는 로직은 repository쪽에서 진행됩니다.
    */
@@ -594,11 +607,13 @@ export class RegistrationService {
     //     // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
     //   ],
     // });
-    const result =
-      await this.clubRegistrationRepository.getStudentRegistrationsClubRegistration(
+    const [result, semesterId] = await Promise.all([
+      this.clubRegistrationRepository.getStudentRegistrationsClubRegistration(
         studentId,
         applyId,
-      );
+      ),
+      this.getRegistrationSemesterId(applyId),
+    ]);
     if (result.externalInstructionFile) {
       result.externalInstructionFile.url =
         await this.filePublicService.getFileUrl(
@@ -615,7 +630,7 @@ export class RegistrationService {
         result.activityPlanFile.id,
       );
     }
-    return result;
+    return { ...result, semesterId };
   }
 
   /**
@@ -680,10 +695,12 @@ export class RegistrationService {
   async getExecutiveRegistrationsClubRegistration(
     applyId: number,
   ): Promise<ApiReg015ResponseOk> {
-    const result =
-      await this.clubRegistrationRepository.getExecutiveRegistrationsClubRegistration(
+    const [result, semesterId] = await Promise.all([
+      this.clubRegistrationRepository.getExecutiveRegistrationsClubRegistration(
         applyId,
-      );
+      ),
+      this.getRegistrationSemesterId(applyId),
+    ]);
     if (result.externalInstructionFile) {
       result.externalInstructionFile.url =
         await this.filePublicService.getFileUrl(
@@ -700,7 +717,7 @@ export class RegistrationService {
         result.activityPlanFile.id,
       );
     }
-    return result;
+    return { ...result, semesterId };
   }
 
   async patchExecutiveRegistrationsClubRegistrationApproval(
@@ -844,6 +861,7 @@ export class RegistrationService {
 
     return {
       id: result.registration.id,
+      semesterId: result.registration.semesterId,
       registrationTypeEnumId:
         result.registration.registrationApplicationTypeEnumId,
       registrationStatusEnumId:

@@ -205,6 +205,7 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
             <MyRegisterClubActFrame
               profile={profile}
               clubId={clubDetail.clubId}
+              semesterId={clubDetail.semesterId}
             />
           )}
         {clubDetail.professor && (

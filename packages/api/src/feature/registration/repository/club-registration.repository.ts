@@ -32,6 +32,8 @@ type ClubRegistrationListResponse = Pick<
   ApiReg014ResponseOk,
   "items" | "total" | "offset"
 >;
+type Reg011DetailNoSemester = Omit<ApiReg011ResponseOk, "semesterId">;
+type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 
 @Injectable()
 export class ClubRegistrationRepository {
@@ -73,6 +75,22 @@ export class ClubRegistrationRepository {
     });
 
     return registration;
+  }
+
+  async findSemesterIdByRegistrationId(
+    applyId: number,
+  ): Promise<number | null> {
+    const registration = await this.prisma.registration.findFirst({
+      where: {
+        id: applyId,
+        deletedAt: null,
+      },
+      select: {
+        semesterId: true,
+      },
+    });
+
+    return registration?.semesterId ?? null;
   }
 
   async createRegistration(
@@ -385,8 +403,8 @@ export class ClubRegistrationRepository {
   async getStudentRegistrationsClubRegistration(
     studentId: number,
     applyId: number,
-  ): Promise<ApiReg011ResponseOk> {
-    const result = await this.prisma.$transaction<ApiReg011ResponseOk>(
+  ): Promise<Reg011DetailNoSemester> {
+    const result = await this.prisma.$transaction<Reg011DetailNoSemester>(
       async tx => {
         const cur = new Date();
         const rows = await (tx as unknown as PrismaClient).$queryRaw<
@@ -679,8 +697,8 @@ export class ClubRegistrationRepository {
 
   async getExecutiveRegistrationsClubRegistration(
     applyId: number,
-  ): Promise<ApiReg015ResponseOk> {
-    const result = await this.prisma.$transaction<ApiReg015ResponseOk>(
+  ): Promise<Reg015DetailNoSemester> {
+    const result = await this.prisma.$transaction<Reg015DetailNoSemester>(
       async tx => {
         const cur = new Date();
         const rows = await (tx as unknown as PrismaClient).$queryRaw<

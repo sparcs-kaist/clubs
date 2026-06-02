@@ -203,7 +203,10 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
             }}
           />
           {type === RegistrationTypeEnum.Promotional && clubId && (
-            <ActivityReportFrame clubId={clubId} />
+            <ActivityReportFrame
+              clubId={clubId}
+              semesterId={initialData?.semesterId}
+            />
           )}
           <ClubRulesFrame
             isNewProvisional={type === RegistrationTypeEnum.NewProvisional}
