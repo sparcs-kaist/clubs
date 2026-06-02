@@ -257,6 +257,29 @@ export class ActivityDurationService {
       );
     }
 
+    const [activityCount, fundingCount] = await Promise.all([
+      this.activityDurationRepository.countActivitiesByDurationId(
+        activityDurationId,
+      ),
+      this.activityDurationRepository.countFundingsByDurationId(
+        activityDurationId,
+      ),
+    ]);
+
+    if (activityCount > 0) {
+      throw new HttpException(
+        "활동반기에 연결된 활동보고서가 있어 삭제할 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (fundingCount > 0) {
+      throw new HttpException(
+        "활동반기에 연결된 지원금 신청이 있어 삭제할 수 없습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     await this.activityDurationRepository.delete({
       id: activityDurationId,
     } as Parameters<typeof this.activityDurationRepository.delete>[0]);

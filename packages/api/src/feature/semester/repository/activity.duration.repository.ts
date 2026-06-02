@@ -165,4 +165,26 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
         }),
     );
   }
+
+  async countActivitiesByDurationId(
+    activityDurationId: MActivityDuration["id"],
+  ): Promise<number> {
+    return this.prisma.activity.count({
+      where: {
+        activityDId: activityDurationId,
+        deletedAt: null,
+      },
+    });
+  }
+
+  async countFundingsByDurationId(
+    activityDurationId: MActivityDuration["id"],
+  ): Promise<number> {
+    return this.prisma.funding.count({
+      where: {
+        activityDId: activityDurationId,
+        deletedAt: null,
+      },
+    });
+  }
 }
