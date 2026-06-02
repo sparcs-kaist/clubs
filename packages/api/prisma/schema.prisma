@@ -272,6 +272,7 @@ model Club {
   id           Int       @id @default(autoincrement())
   nameKr       String?   @unique @map("name_kr") @db.VarChar(30)
   nameEn       String?   @unique @map("name_en") @db.VarChar(100)
+  divisionId   Int       @map("division_id")
   description  String?   @db.Text
   foundingYear Int       @map("founding_year")
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)

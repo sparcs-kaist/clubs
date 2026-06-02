@@ -4,8 +4,9 @@ import FundingService from "./funding.service";
 
 type FundingServiceDependencies = ConstructorParameters<typeof FundingService>;
 
-const activityDuration = { id: 301 };
-const club = { id: 201, name: "동아리" };
+const activityDuration = { id: 301, semester: { id: 1 } };
+const division = { id: 601, name: "분과" };
+const club = { id: 201, name: "동아리", division };
 const chargedExecutive = {
   id: 101,
   name: "담당자",
@@ -47,6 +48,7 @@ const createFundingService = () => {
   const clubPublicService = {
     fetchSummary: jest.fn().mockResolvedValue(club),
     fetchSummaries: jest.fn().mockResolvedValue([club]),
+    fetchDivisionSummaries: jest.fn().mockResolvedValue([division]),
   };
   const activityPublicService = {
     fetchSummaries: jest.fn().mockResolvedValue([activity]),
@@ -76,8 +78,57 @@ const createFundingService = () => {
     service,
     fundingRepository,
     fundingCommentRepository,
+    clubPublicService,
+    activityDurationPublicService,
   };
 };
+
+describe("FundingService historical semester club summaries", () => {
+  it("loads executive dashboard club summaries for the requested semester", async () => {
+    const {
+      service,
+      fundingRepository,
+      clubPublicService,
+      activityDurationPublicService,
+    } = createFundingService();
+    const semesterId = 7;
+    activityDurationPublicService.load.mockResolvedValue({
+      ...activityDuration,
+      semester: { id: semesterId },
+    });
+    fundingRepository.fetchSummaries.mockResolvedValue([funding]);
+
+    await service.getExecutiveFundings(chargedExecutive.id, { semesterId });
+
+    expect(clubPublicService.fetchSummaries).toHaveBeenCalledWith(
+      [club.id],
+      [semesterId],
+    );
+  });
+
+  it("returns the requested semester club summary for club brief", async () => {
+    const { service, fundingRepository, clubPublicService } =
+      createFundingService();
+    const semesterId = 7;
+    const currentClub = { ...club, name: "현재 동아리" };
+    const historicalClub = { ...club, name: "과거 동아리" };
+    fundingRepository.fetchSummaries.mockResolvedValue([funding]);
+    clubPublicService.fetchSummary.mockResolvedValue(currentClub);
+    clubPublicService.fetchSummaries.mockResolvedValue([historicalClub]);
+
+    const result = await service.getExecutiveFundingsClubBrief(
+      chargedExecutive.id,
+      { clubId: club.id },
+      { semesterId },
+    );
+
+    expect(result.club).toEqual(historicalClub);
+    expect(clubPublicService.fetchSummaries).toHaveBeenCalledWith(
+      [club.id],
+      [semesterId],
+    );
+  });
+});
 
 describe("FundingService final commented executive", () => {
   it("uses the latest funding feedback by descending id for club brief", async () => {

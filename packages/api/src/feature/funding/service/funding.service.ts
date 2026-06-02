@@ -636,7 +636,8 @@ export default class FundingService {
     // );
 
     const clubs = await this.clubPublicService.fetchSummaries(
-      fundings.map(funding => funding.club.id),
+      Array.from(new Set(fundings.map(funding => funding.club.id))),
+      [semesterId],
     );
     const devisions = await this.clubPublicService.fetchDivisionSummaries(
       clubs.map(club => club.division.id),
@@ -837,8 +838,6 @@ export default class FundingService {
       activityDuration.id,
     );
 
-    const club = await this.clubPublicService.fetchSummary(param.clubId);
-
     const chargedExecutiveId = fundings
       .filter(funding => funding.club.id === param.clubId)
       .filter(funding => funding.chargedExecutive)
@@ -875,8 +874,18 @@ export default class FundingService {
     );
 
     const clubs = await this.clubPublicService.fetchSummaries(
-      fundings.map(funding => funding.club.id),
+      Array.from(
+        new Set([param.clubId, ...fundings.map(funding => funding.club.id)]),
+      ),
+      [semesterId],
     );
+    const club = clubs.find(c => c.id === param.clubId);
+    if (!club) {
+      throw new HttpException(
+        "Club not found at semester",
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     const pastActivityDurations =
       query.semesterId === undefined
