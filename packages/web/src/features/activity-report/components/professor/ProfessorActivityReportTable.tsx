@@ -15,11 +15,7 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import {
-  ActTypeTagList,
-  ApplyTagList,
-  ProfessorApprovalTagList,
-} from "@sparcs-clubs/web/constants/tableTagList";
+import { ActTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import useGetProfessorActivityReportList from "@sparcs-clubs/web/features/activity-report/hooks/useGetProfessorActivityReportList";
 import usePostProfessorApproveActivityReport from "@sparcs-clubs/web/features/activity-report/services/useProfessorApproveActivityReport";
 import { ProfessorActivityReportTableData } from "@sparcs-clubs/web/features/activity-report/types/table";
@@ -27,31 +23,25 @@ import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
+import ActivityApprovalStatusTag from "../ActivityApprovalStatusTag";
+
 interface ProfessorActivityReportTableProps {
   clubId: number;
 }
 
 const columnHelper = createColumnHelper<ProfessorActivityReportTableData>();
 const columns = [
-  columnHelper.accessor("activityStatusEnumId", {
-    header: "상태",
-    cell: info => {
-      const { color, text } = getTagDetail(info.getValue(), ApplyTagList);
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 0,
-  }),
   columnHelper.accessor("professorApproval", {
     id: "professorApproval",
-    header: "지도교수",
-    cell: info => {
-      const { color, text } = getTagDetail(
-        info.getValue(),
-        ProfessorApprovalTagList,
-      );
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 0,
+    header: "지도교수 승인",
+    cell: info => (
+      <ActivityApprovalStatusTag
+        type="professor"
+        status={info.getValue()}
+        width="64px"
+      />
+    ),
+    size: 110,
   }),
   columnHelper.accessor("name", {
     id: "activity",

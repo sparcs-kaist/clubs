@@ -13,6 +13,7 @@ import { SemesterPublicService } from "./semester.public.service";
 
 type RegistrationDeadlineSearchQuery = {
   semesterId?: number;
+  date?: Date;
   deadlineEnum?: RegistrationDeadlineEnum;
 };
 

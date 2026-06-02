@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zActivity } from "@clubs/domain/activity/activity";
 import { zClub } from "@clubs/domain/club/club";
 
+import { zActivityCommentSummary } from "@clubs/interface/api/activity/type/activity.type";
 import { registry } from "@clubs/interface/open-api";
 
 const url = (activityId: number) =>
@@ -48,12 +49,7 @@ const responseBodyMap = {
     ),
     activityStatusEnumId: zActivity.shape.activityStatusEnum,
     // TODO: domain object로 교체
-    comments: z.array(
-      z.object({
-        content: z.string(),
-        createdAt: z.coerce.date(),
-      }),
-    ),
+    comments: z.array(zActivityCommentSummary),
     // TODO: domain object로 교체
     updatedAt: z.coerce.date(),
     // TODO: domain object로 교체

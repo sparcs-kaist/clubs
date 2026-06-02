@@ -70,6 +70,32 @@ const columns = [
   }),
   columnHelper.accessor(
     row => {
+      if (!row.advisor) return "-";
+
+      const {
+        pendingActivitiesCount,
+        approvedActivitiesCount,
+        rejectedActivitiesCount,
+        professorApprovedActivitiesCount,
+      } = row;
+      const total =
+        pendingActivitiesCount +
+        approvedActivitiesCount +
+        rejectedActivitiesCount;
+      const approvedRate = total
+        ? (professorApprovedActivitiesCount / total) * 100
+        : 0;
+      if (total === 0) return "-";
+      return `${approvedRate.toFixed(2)}% (${professorApprovedActivitiesCount} / ${total})`;
+    },
+    {
+      header: "지도교수 승인율 (승인 / 전체)",
+      cell: info => info.getValue(),
+      size: 220,
+    },
+  ),
+  columnHelper.accessor(
+    row => {
       const {
         pendingActivitiesCount,
         approvedActivitiesCount,

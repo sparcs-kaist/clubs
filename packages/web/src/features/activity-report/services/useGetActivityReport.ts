@@ -82,6 +82,7 @@ defineAxiosMock(mock => {
       activityStatusEnumId: ActivityStatusEnum.Rejected,
       comments: [
         {
+          id: 1,
           content: "그냥 맘에 안듬",
           createdAt: new Date(),
         },

@@ -11,6 +11,7 @@ import Typography from "../Typography";
 export type CommentToastColorType = { background: string; border: string };
 
 interface Reason {
+  id?: React.Key;
   datetime: Date;
   reason: React.ReactNode;
   status?: string;
@@ -99,11 +100,11 @@ const CommentToast: React.FC<CommentToastProps> = ({
           </Typography>
         </div>
         <div className="CommentToast-reasons">
-          {reasons.map(reason => (
+          {reasons.map((reason, index) => (
             <FlexWrapper
               direction="column"
               gap={4}
-              key={formatDotDetailDate(reason.datetime)}
+              key={reason.id ?? `${reason.datetime.getTime()}-${index}`}
             >
               <Typography fs={14} lh={16} fw="REGULAR" color="GRAY.600">
                 {formatDotDetailDate(reason.datetime)}{" "}

@@ -56,6 +56,7 @@ defineAxiosMock(mock => {
           pendingActivitiesCount: 1,
           approvedActivitiesCount: 1,
           rejectedActivitiesCount: 1,
+          professorApprovedActivitiesCount: 1,
           advisor: undefined,
           chargedExecutive: undefined,
         },

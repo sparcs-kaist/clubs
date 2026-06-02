@@ -633,6 +633,7 @@ model Activity {
   chargedExecutiveId   Int?      @map("charged_executive_id")
   professorApprovedAt  DateTime? @map("professor_approved_at") @db.Timestamp(0)
   commentedAt          DateTime? @map("commented_at") @db.Timestamp(0)
+  /// @deprecated Use the latest non-deleted `activity_feedback.executive_id` for the final reviewer.
   commentedExecutiveId Int?      @map("commented_executive_id")
   editedAt             DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(0)

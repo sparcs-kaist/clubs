@@ -10,14 +10,17 @@ import MyRegisterClubActTable from "../components/MyRegisterClubActTable";
 interface MyRegisterClubActFrameProps {
   profile: string;
   clubId: number;
+  semesterId?: number;
 }
 
 const MyRegisterClubActFrame: React.FC<MyRegisterClubActFrameProps> = ({
   profile,
   clubId,
+  semesterId,
 }) => {
   const { data, isLoading, isError } = useProvisionalActivities(profile, {
     clubId,
+    semesterId,
   });
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>

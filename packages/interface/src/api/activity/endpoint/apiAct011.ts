@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zActivity } from "@clubs/domain/activity/activity";
 import { zClub } from "@clubs/domain/club/club";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import { registry } from "@clubs/interface/open-api";
 
@@ -11,7 +12,10 @@ const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({ clubId: zClub.shape.id });
+const requestQuery = z.object({
+  clubId: zClub.shape.id,
+  semesterId: zSemester.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 

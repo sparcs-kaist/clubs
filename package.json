@@ -16,9 +16,11 @@
     "dev-no-d": "turbo run dev:setup && turbo run dev --no-daemon",
     "build": "turbo run build --force",
     "build:api": "turbo run build --filter=api",
+    "format:check:changed": "node scripts/check-format-changed.mjs",
     "mcdc": "node scripts/mcdc/cli.mjs",
     "mcdc:changed": "node scripts/mcdc/jest-runner.mjs --changed-from origin/dev --source packages/api/src --min-conditions 2",
     "mcdc:jest": "node scripts/mcdc/jest-runner.mjs",
+    "prisma-query:changed": "node scripts/prisma-query-guard/changed-raw-sql.mjs --changed-from origin/dev",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
@@ -31,7 +33,12 @@
     "prepare": "husky",
     "test": "turbo run test --filter=api",
     "test:mcdc": "node --test scripts/mcdc/*.test.mjs",
+    "test:prisma-query-guard": "node --test scripts/prisma-query-guard/*.test.mjs",
     "test:api": "turbo run test --filter=api"
+  },
+  "_scriptComments": {
+    "prisma-query:changed": "Pre-push validator. Blocks Prisma raw SQL APIs on changed packages/api/src lines while allowing untouched brownfield raw SQL debt.",
+    "test:prisma-query-guard": "Node test fixtures for the changed-line Prisma raw SQL guard."
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css,scss,md,mdx,yml,yaml}": [

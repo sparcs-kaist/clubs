@@ -365,6 +365,7 @@ export const zFundingSummary = zFunding.pick({
   purposeActivity: true,
   club: true,
   chargedExecutive: true,
+  commentedExecutive: true,
 });
 
 export const zFundingSummaryResponse = zFundingSummary.extend({

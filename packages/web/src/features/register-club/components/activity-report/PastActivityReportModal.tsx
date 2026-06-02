@@ -209,6 +209,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
               <CommentToast
                 title="반려 사유"
                 reasons={data.comments.map(comment => ({
+                  id: comment.id,
                   datetime: comment.createdAt,
                   reason: comment.content,
                 }))}
