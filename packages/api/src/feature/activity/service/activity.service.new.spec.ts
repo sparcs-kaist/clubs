@@ -1,11 +1,88 @@
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
-import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+import {
+  ActivityDeadlineEnum,
+  RegistrationDeadlineEnum,
+} from "@clubs/domain/semester/deadline";
 
 import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { MActivity } from "../model/activity.model.new";
 import { MActivityComment } from "../model/activity-comment.model";
 import ActivityService from "./activity.service.new";
+
+type ActivityStub = {
+  id: number;
+  name: string;
+  activityTypeEnum: number;
+  activityStatusEnum: ActivityStatusEnum;
+  durations: {
+    startTerm: Date;
+    endTerm: Date;
+  }[];
+};
+
+const NOW = new Date("2026-06-01T12:00:00.000Z");
+
+function createRegistrationActivityDuration(id: number, semesterId: number) {
+  return {
+    id,
+    semester: { id: semesterId },
+    activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    year: 2026,
+    name: "봄 신규등록",
+    startTerm: new Date("2025-02-24T00:00:00.000Z"),
+    endTerm: new Date("2026-03-02T23:59:00.000Z"),
+  };
+}
+
+function createProvisionalListService({
+  activeRegistrationDeadline = null,
+  registrationActivityDurations = [],
+  activitiesByActivityDurationId = {},
+}: {
+  activeRegistrationDeadline?: { semester: { id: number } } | null;
+  registrationActivityDurations?: ReturnType<
+    typeof createRegistrationActivityDuration
+  >[];
+  activitiesByActivityDurationId?: Record<number, ActivityStub[]>;
+} = {}) {
+  const activityRepository = {
+    find: jest.fn(({ activityDId }: { activityDId: number }) =>
+      Promise.resolve(activitiesByActivityDurationId[activityDId] ?? []),
+    ),
+  };
+  const activityDurationPublicService = {
+    search: jest.fn().mockResolvedValue(registrationActivityDurations),
+  };
+  const registrationDeadlinePublicService = {
+    searchOne: jest.fn().mockResolvedValue(activeRegistrationDeadline),
+  };
+  const unusedDependency = {} as never;
+
+  const service = new ActivityService(
+    activityRepository as never,
+    unusedDependency,
+    unusedDependency,
+    activityDurationPublicService as never,
+    unusedDependency,
+    unusedDependency,
+    unusedDependency,
+    unusedDependency,
+    unusedDependency,
+    registrationDeadlinePublicService as never,
+    unusedDependency,
+    unusedDependency,
+    unusedDependency,
+  );
+
+  return {
+    activityDurationPublicService,
+    activityRepository,
+    registrationDeadlinePublicService,
+    service,
+  };
+}
 
 describe("ActivityService", () => {
   afterEach(() => {
@@ -322,5 +399,168 @@ describe("ActivityService", () => {
         body: { comment: "보완 필요" },
       }),
     ).rejects.toThrow("unreachable");
+  });
+});
+
+describe("ActivityService provisional activities", () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("loads activities from the requested registration semester", async () => {
+    const activityDuration = createRegistrationActivityDuration(30, 19);
+    const activity = {
+      id: 1,
+      name: "Training",
+      activityTypeEnum: 1,
+      activityStatusEnum: ActivityStatusEnum.Applied,
+      durations: [
+        {
+          startTerm: new Date("2025-03-01T00:00:00.000Z"),
+          endTerm: new Date("2025-03-02T00:00:00.000Z"),
+        },
+      ],
+    };
+    const {
+      activityDurationPublicService,
+      activityRepository,
+      registrationDeadlinePublicService,
+      service,
+    } = createProvisionalListService({
+      registrationActivityDurations: [activityDuration],
+      activitiesByActivityDurationId: {
+        30: [activity],
+      },
+    });
+
+    await expect(
+      service.getExecutiveProvisionalActivities({
+        query: { clubId: 111, semesterId: 19 },
+      }),
+    ).resolves.toEqual({
+      activities: [
+        {
+          id: 1,
+          name: "Training",
+          activityTypeEnumId: 1,
+          activityStatusEnumId: ActivityStatusEnum.Applied,
+          durations: activity.durations,
+        },
+      ],
+    });
+
+    expect(activityDurationPublicService.search).toHaveBeenCalledWith({
+      semesterId: 19,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    expect(activityRepository.find).toHaveBeenCalledWith({
+      clubId: 111,
+      activityDId: 30,
+    });
+    expect(registrationDeadlinePublicService.searchOne).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the active registration deadline semester", async () => {
+    const activityDuration = createRegistrationActivityDuration(30, 19);
+    const {
+      activityDurationPublicService,
+      registrationDeadlinePublicService,
+      service,
+    } = createProvisionalListService({
+      activeRegistrationDeadline: { semester: { id: 19 } },
+      registrationActivityDurations: [activityDuration],
+    });
+
+    await expect(
+      service.getStudentProvisionalActivities({
+        studentId: 1,
+        query: { clubId: 111 },
+      }),
+    ).resolves.toEqual({ activities: [] });
+
+    expect(registrationDeadlinePublicService.searchOne).toHaveBeenCalledWith({
+      date: NOW,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityDurationPublicService.search).toHaveBeenCalledWith({
+      semesterId: 19,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+  });
+
+  it("returns an empty list when there is no registration context", async () => {
+    const { activityDurationPublicService, activityRepository, service } =
+      createProvisionalListService();
+
+    await expect(
+      service.getExecutiveProvisionalActivities({
+        query: { clubId: 111 },
+      }),
+    ).resolves.toEqual({ activities: [] });
+
+    expect(activityDurationPublicService.search).not.toHaveBeenCalled();
+    expect(activityRepository.find).not.toHaveBeenCalled();
+  });
+
+  it("sorts activities by start term and then end term", async () => {
+    const firstActivity = {
+      id: 2,
+      name: "First",
+      activityTypeEnum: 1,
+      activityStatusEnum: ActivityStatusEnum.Applied,
+      durations: [
+        {
+          startTerm: new Date("2025-02-01T00:00:00.000Z"),
+          endTerm: new Date("2025-02-03T00:00:00.000Z"),
+        },
+      ],
+    };
+    const secondActivity = {
+      id: 1,
+      name: "Second",
+      activityTypeEnum: 2,
+      activityStatusEnum: ActivityStatusEnum.Approved,
+      durations: [
+        {
+          startTerm: new Date("2025-02-02T00:00:00.000Z"),
+          endTerm: new Date("2025-02-04T00:00:00.000Z"),
+        },
+      ],
+    };
+    const { service } = createProvisionalListService({
+      registrationActivityDurations: [
+        createRegistrationActivityDuration(30, 19),
+      ],
+      activitiesByActivityDurationId: {
+        30: [secondActivity, firstActivity],
+      },
+    });
+
+    await expect(
+      service.getProfessorProvisionalActivities({
+        query: { clubId: 111, semesterId: 19 },
+      }),
+    ).resolves.toEqual({
+      activities: [
+        {
+          id: 2,
+          name: "First",
+          activityTypeEnumId: 1,
+          activityStatusEnumId: ActivityStatusEnum.Applied,
+          durations: firstActivity.durations,
+        },
+        {
+          id: 1,
+          name: "Second",
+          activityTypeEnumId: 2,
+          activityStatusEnumId: ActivityStatusEnum.Approved,
+          durations: secondActivity.durations,
+        },
+      ],
+    });
   });
 });

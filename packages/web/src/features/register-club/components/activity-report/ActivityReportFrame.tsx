@@ -16,6 +16,7 @@ import CreateActivityReportModal from "./CreateActivityReportModal";
 
 interface ActivityReportFrameProps {
   clubId: number;
+  semesterId?: number;
 }
 
 const OptionOuter = styled.div`
@@ -38,10 +39,12 @@ const StyledCard = styled(Card)`
 
 const ActivityReportFrame: React.FC<ActivityReportFrameProps> = ({
   clubId,
+  semesterId,
 }) => {
   const { profile } = useAuth();
   const { data, isLoading, isError } = useGetActivityReportsForPromotional({
     clubId,
+    semesterId,
   });
 
   const openCreateActivityReportModal = useCallback(() => {

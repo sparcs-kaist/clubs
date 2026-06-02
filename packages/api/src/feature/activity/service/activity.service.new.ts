@@ -749,35 +749,76 @@ export default class ActivityService {
     );
   }
 
+  private async getRegistrationActivityDuration(
+    semesterId: number,
+  ): Promise<IActivityDuration | null> {
+    const activityDurations = await this.activityDurationPublicService.search({
+      semesterId,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+
+    if (activityDurations.length === 0) {
+      return null;
+    }
+
+    if (activityDurations.length > 1) {
+      throw new HttpException(
+        "Multiple registration activity durations found",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return activityDurations[0];
+  }
+
+  private async getProvisionalActivityDuration(param: {
+    semesterId?: number;
+  }): Promise<IActivityDuration | null> {
+    if (param.semesterId !== undefined) {
+      return this.getRegistrationActivityDuration(param.semesterId);
+    }
+
+    const activeRegistrationDeadline =
+      await this.registrationDeadlinePublicService.searchOne({
+        date: new Date(),
+        deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+      });
+
+    if (activeRegistrationDeadline === null) {
+      return null;
+    }
+
+    return this.getRegistrationActivityDuration(
+      activeRegistrationDeadline.semester.id,
+    );
+  }
+
   /**
    * @param clubId 동아리 ID
    * @description REG-011, 012, 013에서 공통적으로 이용하는 동아리 활동 전체조회 입니다.
    * @returns 해당 동아리가 작성한 모든 활동을 REG-011의 리턴 타입에 맞추어 가져옵니다.
    */
-  private async getProvisionalActivities(param: { clubId: number }) {
-    const activityDId = await this.activityDurationPublicService.loadId({
-      date: new Date(),
-      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+  private async getProvisionalActivities(param: {
+    clubId: number;
+    semesterId?: number;
+  }) {
+    const activityDuration = await this.getProvisionalActivityDuration({
+      semesterId: param.semesterId,
     });
-    const resultNow = await this.activityRepository.find({
+
+    if (activityDuration === null) {
+      return [];
+    }
+
+    const result = await this.activityRepository.find({
       clubId: param.clubId,
-      activityDId,
+      activityDId: activityDuration.id,
     });
-    // 25 봄 한정. TODO: 25봄 등록 이후 삭제 필요
-    // Ascend 의 이전 학기 등록 시 활보를 가져오기 위해 이전 학기의 목록을 가져옵니다.
-    const prevActivityDId = await this.activityDurationPublicService.loadId({
-      semesterId:
-        (await this.semesterPublicService.loadId({
-          date: new Date(),
-        })) - 1,
-      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
-    });
-    const prevActivities = await this.activityRepository.find({
-      clubId: param.clubId,
-      activityDId: prevActivityDId,
-    });
-    const result = [...resultNow, ...prevActivities];
-    // Ascend 특별처리 End
+
+    if (result.length === 0) {
+      return [];
+    }
+
     const activities = await Promise.all(
       result.map(async activity => {
         // 가장 빠른 startTerm을 추출
@@ -831,6 +872,7 @@ export default class ActivityService {
     // });
     const activities = await this.getProvisionalActivities({
       clubId: param.query.clubId,
+      semesterId: param.query.semesterId,
     });
     return { activities };
   }
@@ -845,6 +887,7 @@ export default class ActivityService {
     // 집행부원은 아직 검사하는 권한이 없습니다.
     const activities = await this.getProvisionalActivities({
       clubId: param.query.clubId,
+      semesterId: param.query.semesterId,
     });
     return { activities };
   }
@@ -855,6 +898,7 @@ export default class ActivityService {
     // 교수님은 아직 검사하는 권한이 없습니다.
     const activities = await this.getProvisionalActivities({
       clubId: param.query.clubId,
+      semesterId: param.query.semesterId,
     });
     return { activities };
   }
