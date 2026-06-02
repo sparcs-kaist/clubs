@@ -51,6 +51,15 @@ export class MActivity extends MEntity implements IActivity {
       });
   }
 
+  static updateReviewStatus(status: ActivityStatusEnum, commentedAt: Date) {
+    return (model: MActivity) =>
+      new MActivity({
+        ...model,
+        activityStatusEnum: status,
+        commentedAt,
+      });
+  }
+
   static updateChargedExecutive(executiveId: number) {
     return (model: MActivity) =>
       new MActivity({

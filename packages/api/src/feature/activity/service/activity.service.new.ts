@@ -420,7 +420,7 @@ export default class ActivityService {
         club: { id: activity.club.id },
         editedAt: new Date(),
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
-        commentedAt: undefined,
+        commentedAt: null,
         commentedExecutive: undefined,
       }),
     );
@@ -735,6 +735,7 @@ export default class ActivityService {
       activityDuration: { id: activity.activityDuration.id },
       activityStatusEnum: ActivityStatusEnum.Applied,
       professorApprovedAt: undefined,
+      commentedAt: null,
     });
     if (!isUpdateSucceed)
       throw new HttpException(
@@ -865,11 +866,12 @@ export default class ActivityService {
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
     // TODO: transaction 추가
+    const commentedAt = new Date();
     const isApprovalSucceed = await this.activityRepository.patch(
       {
         id: param.param.activityId,
       },
-      MActivity.updateStatus(ActivityStatusEnum.Approved),
+      MActivity.updateReviewStatus(ActivityStatusEnum.Approved, commentedAt),
     );
     if (!isApprovalSucceed)
       throw new HttpException(
@@ -901,11 +903,12 @@ export default class ActivityService {
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
     // TODO: transaction 추가
+    const commentedAt = new Date();
     await this.activityRepository.patch(
       {
         id: param.param.activityId,
       },
-      MActivity.updateStatus(ActivityStatusEnum.Rejected),
+      MActivity.updateReviewStatus(ActivityStatusEnum.Rejected, commentedAt),
     );
 
     const isInsertionSucceed = await this.activityCommentRepository.create({

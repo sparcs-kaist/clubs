@@ -319,6 +319,12 @@ export default class ActivityOldService {
           e.clubId === club.id &&
           e.activityStatusEnumId === ActivityStatusEnum.Rejected,
       ).length;
+      const clubActivities = activitiesOnActivityD.filter(
+        e => e.clubId === club.id,
+      );
+      const professorApprovedActivitiesCount = clubActivities.filter(
+        e => e.professorApprovedAt !== null,
+      ).length;
       const chargedExecutive = clubChargedExecutiveMap.has(club.id)
         ? executiveMap.get(clubChargedExecutiveMap.get(club.id))
         : undefined;
@@ -331,6 +337,7 @@ export default class ActivityOldService {
         pendingActivitiesCount,
         approvedActivitiesCount,
         rejectedActivitiesCount,
+        professorApprovedActivitiesCount,
         advisor: club.professor?.name,
         chargedExecutive,
       };
