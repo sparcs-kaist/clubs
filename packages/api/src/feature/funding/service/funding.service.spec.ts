@@ -128,6 +128,25 @@ describe("FundingService historical semester club summaries", () => {
       [semesterId],
     );
   });
+
+  it("falls back to current club summary when requested semester summary is missing", async () => {
+    const { service, fundingRepository, clubPublicService } =
+      createFundingService();
+    const semesterId = 7;
+    const currentClub = { ...club, name: "현재 동아리" };
+    fundingRepository.fetchSummaries.mockResolvedValue([funding]);
+    clubPublicService.fetchSummaries.mockResolvedValue([]);
+    clubPublicService.fetchSummary.mockResolvedValue(currentClub);
+
+    const result = await service.getExecutiveFundingsClubBrief(
+      chargedExecutive.id,
+      { clubId: club.id },
+      { semesterId },
+    );
+
+    expect(result.club).toEqual(currentClub);
+    expect(clubPublicService.fetchSummary).toHaveBeenCalledWith(club.id);
+  });
 });
 
 describe("FundingService final commented executive", () => {

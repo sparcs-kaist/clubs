@@ -879,13 +879,9 @@ export default class FundingService {
       ),
       [semesterId],
     );
-    const club = clubs.find(c => c.id === param.clubId);
-    if (!club) {
-      throw new HttpException(
-        "Club not found at semester",
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    const club =
+      clubs.find(c => c.id === param.clubId) ??
+      (await this.clubPublicService.fetchSummary(param.clubId));
 
     const pastActivityDurations =
       query.semesterId === undefined
