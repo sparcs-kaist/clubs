@@ -1,20 +1,23 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 
 @Injectable()
 export class OperationCommitteeRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   async createOperationCommitteeSecretKey(secretKey: string) {
     // Soft-delete all existing active keys
-    await this.prisma.operationCommittee.updateMany({
+    await this.txHost.tx.operationCommittee.updateMany({
       where: { deletedAt: null },
       data: { deletedAt: new Date() },
     });
 
     // Create a new key
-    const inserted = await this.prisma.operationCommittee.create({
+    const inserted = await this.txHost.tx.operationCommittee.create({
       data: { secretKey },
     });
 
@@ -28,7 +31,7 @@ export class OperationCommitteeRepository {
   }
 
   async findOperationCommitteeSecretKey() {
-    const activeKeys = await this.prisma.operationCommittee.findMany({
+    const activeKeys = await this.txHost.tx.operationCommittee.findMany({
       where: { deletedAt: null },
     });
 
@@ -43,7 +46,7 @@ export class OperationCommitteeRepository {
   }
 
   async deleteOperationCommitteeSecretKey() {
-    const recent = await this.prisma.operationCommittee.findFirst({
+    const recent = await this.txHost.tx.operationCommittee.findFirst({
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
     });
@@ -55,7 +58,7 @@ export class OperationCommitteeRepository {
       );
     }
 
-    await this.prisma.operationCommittee.update({
+    await this.txHost.tx.operationCommittee.update({
       where: { id: recent.id },
       data: { deletedAt: new Date() },
     });

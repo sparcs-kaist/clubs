@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import type { ApiUsr004ResponseCreated } from "@clubs/interface/api/user/endpoint/apiUsr004";
 import type { ApiUsr005ResponseOk } from "@clubs/interface/api/user/endpoint/apiUsr005";
@@ -40,6 +41,7 @@ export default class PrivacyPolicyService {
    * @description postUserPrivacyPolicyAgree의 서비스 진입점입니다.
    * 해당 유저의 개인정보 동의를 기록합니다.
    */
+  @Transactional()
   async postUserPrivacyPolicyAgree(param: {
     userId: number;
   }): Promise<ApiUsr004ResponseCreated> {

@@ -1,21 +1,24 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import type { ApiAcf003RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf003";
 import type { ApiAcf007RequestQuery } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
 import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
 
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 
 @Injectable()
 export class ActivityCertificateRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   async countActivityCertificatesByClubIdAndCreatedAtIn(
     clubId: number,
     startDate?: Date,
     endTerm?: Date,
   ): Promise<number> {
-    const numberOfOrders = await this.prisma.activityCertificate.count({
+    const numberOfOrders = await this.txHost.tx.activityCertificate.count({
       where: {
         clubId,
         ...(startDate !== undefined && { createdAt: { gte: startDate } }),
@@ -36,7 +39,7 @@ export class ActivityCertificateRepository {
     startDate?: Date,
     endTerm?: Date,
   ): Promise<number> {
-    const numberOfOrders = await this.prisma.activityCertificate.count({
+    const numberOfOrders = await this.txHost.tx.activityCertificate.count({
       where: {
         studentId: StudentId,
         ...(startDate !== undefined && { createdAt: { gte: startDate } }),
@@ -67,7 +70,7 @@ export class ActivityCertificateRepository {
       where.createdAt = { ...(where.createdAt || {}), lte: query.endTerm };
     }
 
-    const orders = await this.prisma.activityCertificate.findMany({
+    const orders = await this.txHost.tx.activityCertificate.findMany({
       where,
       orderBy: { createdAt: "desc" },
       take: query.itemCount,
@@ -92,7 +95,7 @@ export class ActivityCertificateRepository {
       where.createdAt = { ...(where.createdAt || {}), lte: query.endTerm };
     }
 
-    const orders = await this.prisma.activityCertificate.findMany({
+    const orders = await this.txHost.tx.activityCertificate.findMany({
       where,
       orderBy: { createdAt: "desc" },
       take: query.itemCount,
@@ -115,32 +118,29 @@ export class ActivityCertificateRepository {
     issuedNumber: number;
     items: { startMonth: Date; endMonth: Date; detail: string }[];
   }) {
-    // TODO: transaction 실패했을 때 에러핸들링
-    await this.prisma.$transaction(async tx => {
-      const certificate = await tx.activityCertificate.create({
-        data: {
-          clubId,
-          studentId,
-          studentPhoneNumber,
-          issueNumber: issuedNumber,
-          activityCertificateStatusEnum:
-            ActivityCertificateOrderStatusEnum.Applied,
-        },
-      });
-
-      await Promise.all(
-        items.map((item, index) =>
-          tx.activityCertificateItem.create({
-            data: {
-              activityCertificateId: certificate.id,
-              order: index,
-              startMonth: item.startMonth,
-              endMonth: item.endMonth,
-              detail: item.detail,
-            },
-          }),
-        ),
-      );
+    const certificate = await this.txHost.tx.activityCertificate.create({
+      data: {
+        clubId,
+        studentId,
+        studentPhoneNumber,
+        issueNumber: issuedNumber,
+        activityCertificateStatusEnum:
+          ActivityCertificateOrderStatusEnum.Applied,
+      },
     });
+
+    await Promise.all(
+      items.map((item, index) =>
+        this.txHost.tx.activityCertificateItem.create({
+          data: {
+            activityCertificateId: certificate.id,
+            order: index,
+            startMonth: item.startMonth,
+            endMonth: item.endMonth,
+            detail: item.detail,
+          },
+        }),
+      ),
+    );
   }
 }

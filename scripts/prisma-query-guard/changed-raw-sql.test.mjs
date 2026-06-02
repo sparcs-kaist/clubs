@@ -80,6 +80,85 @@ export async function list(prisma) {
   );
 });
 
+test("passes when raw SQL only migrates from root prisma to txHost", () => {
+  const workspace = makeGitWorkspace();
+  writeSource(
+    workspace,
+    `
+export async function list() {
+  return this.prisma.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    `
+export async function list() {
+  return this.txHost.tx.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
+});
+
+test("fails when a duplicate raw SQL block is added", () => {
+  const workspace = makeGitWorkspace();
+  writeSource(
+    workspace,
+    `
+export async function list(prisma) {
+  return prisma.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    `
+export async function list(prisma) {
+  return prisma.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+
+export async function listAgain(prisma) {
+  return prisma.$queryRaw(Prisma.sql\`
+    SELECT *
+    FROM club
+    WHERE deleted_at IS NULL
+  \`);
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].detected, "prisma.$queryRaw");
+  assert.equal(
+    violations[0].reason,
+    "raw SQL API overlaps an added or modified line",
+  );
+});
+
 test("passes when a raw SQL block is removed", () => {
   const workspace = makeGitWorkspace();
   writeSource(
