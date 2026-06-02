@@ -304,21 +304,26 @@ export default class ActivityOldService {
     logger.debug(`current activated executives: ${executives.length}`);
 
     const items: ApiAct023ResponseOk["items"] = clubList.map(club => {
-      const pendingActivitiesCount = activitiesOnActivityD.filter(
-        e =>
-          e.clubId === club.id &&
-          e.activityStatusEnumId === ActivityStatusEnum.Applied,
-      ).length;
-      const approvedActivitiesCount = activitiesOnActivityD.filter(
-        e =>
-          e.clubId === club.id &&
-          e.activityStatusEnumId === ActivityStatusEnum.Approved,
-      ).length;
-      const rejectedActivitiesCount = activitiesOnActivityD.filter(
-        e =>
-          e.clubId === club.id &&
-          e.activityStatusEnumId === ActivityStatusEnum.Rejected,
-      ).length;
+      const clubActivities = activitiesOnActivityD.filter(
+        e => e.clubId === club.id,
+      );
+      const pendingActivities = clubActivities.filter(
+        e => e.activityStatusEnumId === ActivityStatusEnum.Applied,
+      );
+      const approvedActivities = clubActivities.filter(
+        e => e.activityStatusEnumId === ActivityStatusEnum.Approved,
+      );
+      const rejectedActivities = clubActivities.filter(
+        e => e.activityStatusEnumId === ActivityStatusEnum.Rejected,
+      );
+      const professorApprovedActivitiesCount = [
+        ...pendingActivities,
+        ...approvedActivities,
+        ...rejectedActivities,
+      ].filter(e => e.professorApprovedAt !== null).length;
+      const pendingActivitiesCount = pendingActivities.length;
+      const approvedActivitiesCount = approvedActivities.length;
+      const rejectedActivitiesCount = rejectedActivities.length;
       const chargedExecutive = clubChargedExecutiveMap.has(club.id)
         ? executiveMap.get(clubChargedExecutiveMap.get(club.id))
         : undefined;
@@ -331,6 +336,7 @@ export default class ActivityOldService {
         pendingActivitiesCount,
         approvedActivitiesCount,
         rejectedActivitiesCount,
+        professorApprovedActivitiesCount,
         advisor: club.professor?.name,
         chargedExecutive,
       };

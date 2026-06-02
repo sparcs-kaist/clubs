@@ -47,6 +47,7 @@ const responseBodyMap = {
         pendingActivitiesCount: z.coerce.number().int().min(0),
         approvedActivitiesCount: z.coerce.number().int().min(0),
         rejectedActivitiesCount: z.coerce.number().int().min(0),
+        professorApprovedActivitiesCount: z.coerce.number().int().min(0),
         chargedExecutive: z
           .object({
             id: zId,

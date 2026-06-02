@@ -421,7 +421,7 @@ export default class ActivityService {
         club: { id: activity.club.id },
         editedAt: new Date(),
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
-        commentedAt: undefined,
+        commentedAt: null,
         commentedExecutive: undefined,
       }),
     );
@@ -736,6 +736,7 @@ export default class ActivityService {
       activityDuration: { id: activity.activityDuration.id },
       activityStatusEnum: ActivityStatusEnum.Applied,
       professorApprovedAt: undefined,
+      commentedAt: null,
     });
     if (!isUpdateSucceed)
       throw new HttpException(
@@ -866,26 +867,28 @@ export default class ActivityService {
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
     // TODO: transaction 추가
-    const isApprovalSucceed = await this.activityRepository.patch(
+    const commentedAt = new Date();
+    const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
+        activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
       },
-      MActivity.updateStatus(ActivityStatusEnum.Approved),
+      MActivity.updateReviewStatus(ActivityStatusEnum.Approved, commentedAt),
     );
-    if (!isApprovalSucceed)
+    if (updatedActivities.length === 0)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    const isInsertionSucceed = await this.activityCommentRepository.create({
+    const insertedComments = await this.activityCommentRepository.create({
       activity: { id: param.param.activityId },
       content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
       // TODO?: 활동 승인 시에도 content를 넣을까요?
       executive: { id: param.executiveId },
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
-    if (!isInsertionSucceed)
+    if (insertedComments.length === 0)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
@@ -902,20 +905,26 @@ export default class ActivityService {
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
     // TODO: transaction 추가
-    await this.activityRepository.patch(
+    const commentedAt = new Date();
+    const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
       },
-      MActivity.updateStatus(ActivityStatusEnum.Rejected),
+      MActivity.updateReviewStatus(ActivityStatusEnum.Rejected, commentedAt),
     );
+    if (updatedActivities.length === 0)
+      throw new HttpException(
+        "failed to send back activity",
+        HttpStatus.BAD_REQUEST,
+      );
 
-    const isInsertionSucceed = await this.activityCommentRepository.create({
+    const insertedComments = await this.activityCommentRepository.create({
       activity: { id: param.param.activityId },
       content: param.body.comment,
       executive: { id: param.executiveId },
       activityStatusEnum: ActivityStatusEnum.Rejected,
     });
-    if (!isInsertionSucceed)
+    if (insertedComments.length === 0)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
