@@ -78,7 +78,7 @@ export function findChangedTransactionViolations({
     }
 
     for (const node of result.nodes) {
-      if (!lineRangesOverlapAny(node, changedFile.addedRanges)) {
+      if (!isNodeTouchedByChangedLines(node, changedFile)) {
         continue;
       }
 
@@ -150,7 +150,12 @@ export function parseChangedFileLineMap(diffText) {
       addLineRange(file.addedRanges, newLine, newLine);
       newLine += 1;
     } else if (line.startsWith("-")) {
-      file.deletedLines.push({ oldLine });
+      file.deletedLines.push({
+        oldLine,
+        adjacentLines: [newLine - 1, newLine, newLine + 1].filter(
+          lineNumber => lineNumber > 0,
+        ),
+      });
       oldLine += 1;
     } else if (line.startsWith(" ")) {
       oldLine += 1;
@@ -231,6 +236,23 @@ function lineRangesOverlapAny(node, ranges) {
   return ranges.some(
     range => node.startLine <= range.endLine && range.startLine <= node.endLine,
   );
+}
+
+function isNodeTouchedByChangedLines(node, changedFile) {
+  return (
+    lineRangesOverlapAny(node, changedFile.addedRanges) ||
+    changedFile.deletedLines.some(deletedLine =>
+      isDeletionTouchingNode(deletedLine, node),
+    )
+  );
+}
+
+function isDeletionTouchingNode(deletedLine, node) {
+  return deletedLine.adjacentLines.some(line => isLineInsideRange(line, node));
+}
+
+function isLineInsideRange(line, range) {
+  return range.startLine <= line && line <= range.endLine;
 }
 
 function addLineRange(ranges, startLine, endLine) {

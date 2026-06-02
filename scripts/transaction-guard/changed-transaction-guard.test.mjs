@@ -113,6 +113,57 @@ export class OperationCommitteeService {
   assert.deepEqual(runGuard(workspace), []);
 });
 
+test("fails when @Transactional is removed from a service command method", () => {
+  const workspace = makeGitWorkspace();
+  writeFile(
+    workspace,
+    REPOSITORY_PATH,
+    `
+export class OperationCommitteeRepository {
+  async createOperationCommitteeSecretKey(secretKey: string) {
+    return this.txHost.tx.operationCommitteeSecretKey.create({
+      data: { secretKey },
+    });
+  }
+}
+`,
+  );
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  @Transactional()
+  async createOperationCommitteeSecretKey(secretKey: string) {
+    return this.operationCommitteeRepository.createOperationCommitteeSecretKey(secretKey);
+  }
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  async createOperationCommitteeSecretKey(secretKey: string) {
+    return this.operationCommitteeRepository.createOperationCommitteeSecretKey(secretKey);
+  }
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].kind, "service-command-without-transactional");
+});
+
 test("fails when a changed line is inside an existing non-transactional service command method", () => {
   const workspace = makeGitWorkspace();
   writeFile(
