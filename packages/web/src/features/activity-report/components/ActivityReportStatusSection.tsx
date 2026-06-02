@@ -30,6 +30,7 @@ const ActivityReportStatusSection: React.FC<
         <CommentToast
           title="코멘트"
           reasons={comments.map(comment => ({
+            id: comment.id,
             datetime: comment.createdAt,
             reason: comment.content,
           }))}
@@ -42,6 +43,7 @@ const ActivityReportStatusSection: React.FC<
       <CommentToast
         title="코멘트"
         reasons={comments.map(comment => ({
+          id: comment.id,
           datetime: comment.createdAt,
           reason: comment.content,
         }))}

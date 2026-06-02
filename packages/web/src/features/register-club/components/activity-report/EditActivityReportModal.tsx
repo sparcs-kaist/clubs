@@ -97,6 +97,7 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
               <CommentToast
                 title="반려 사유"
                 reasons={filterActivityComments(data.comments).map(comment => ({
+                  id: comment.id,
                   datetime: comment.createdAt,
                   reason: comment.content,
                 }))}
