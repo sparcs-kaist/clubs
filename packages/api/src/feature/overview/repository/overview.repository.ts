@@ -1,17 +1,20 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/domain/registration/member-registration";
 
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 
 @Injectable()
 export class OverviewRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   findClubsFundamentals(year: number, semesterName: string) {
     // Complex multi-table JOIN with dynamic query - use raw SQL
-    return this.prisma.$queryRaw<
+    return this.txHost.tx.$queryRaw<
       Array<{
         clubId: number;
         division: string;
@@ -38,7 +41,7 @@ export class OverviewRepository {
 
   findDelegates(year: number, semesterName: string) {
     // Complex multi-table JOIN query - use raw SQL
-    return this.prisma.$queryRaw<
+    return this.txHost.tx.$queryRaw<
       Array<{
         clubId: number;
         delegateType: number;
@@ -76,7 +79,7 @@ export class OverviewRepository {
   findClubs(year: number, semesterName: string) {
     const approvedStatus = RegistrationApplicationStudentStatusEnum.Approved;
     // Complex multi-table JOIN with GROUP BY and aggregates - use raw SQL
-    return this.prisma.$queryRaw<
+    return this.txHost.tx.$queryRaw<
       Array<{
         clubId: number;
         division: string;
