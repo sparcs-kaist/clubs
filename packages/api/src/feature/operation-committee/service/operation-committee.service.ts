@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { OperationCommitteeRepository } from "@sparcs-clubs/api/feature/operation-committee/repository/operation-committee.repository";
 
@@ -8,6 +9,7 @@ export class OperationCommitteeService {
     private readonly operationCommitteeRepository: OperationCommitteeRepository,
   ) {}
 
+  @Transactional()
   async createOperationCommitteeSecretKey(secretKey: string) {
     const createdKey =
       await this.operationCommitteeRepository.createOperationCommitteeSecretKey(
@@ -22,6 +24,7 @@ export class OperationCommitteeService {
     return activeKeys;
   }
 
+  @Transactional()
   async deleteOperationCommitteeSecretKey() {
     await this.operationCommitteeRepository.deleteOperationCommitteeSecretKey();
     return { message: "OperationCommittee secret key deleted successfully." };

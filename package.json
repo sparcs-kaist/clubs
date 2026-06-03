@@ -33,7 +33,11 @@
     "prepare": "husky",
     "test": "turbo run test --filter=api",
     "test:mcdc": "node --test scripts/mcdc/*.test.mjs",
+    "test:injectable-runtime-dependencies": "node --test packages/eslint-config/custom_rules/eslint-plugin-injectable-runtime-dependencies.test.mjs",
     "test:prisma-query-guard": "node --test scripts/prisma-query-guard/*.test.mjs",
+    "test:transaction-guard": "node --test scripts/transaction-guard/*.test.mjs",
+    "transaction-guard:all": "node scripts/transaction-guard/scan-transaction-guard.mjs",
+    "transaction-guard:changed": "node scripts/transaction-guard/changed-transaction-guard.mjs --changed-from origin/dev",
     "test:api": "turbo run test --filter=api"
   },
   "_scriptComments": {

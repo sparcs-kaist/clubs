@@ -11,6 +11,10 @@ import { MActivity } from "../model/activity.model.new";
 import { MActivityComment } from "../model/activity-comment.model";
 import ActivityService from "./activity.service.new";
 
+jest.mock("@nestjs-cls/transactional", () => ({
+  Transactional: () => () => undefined,
+}));
+
 type ActivityStub = {
   id: number;
   name: string;
@@ -23,6 +27,13 @@ type ActivityStub = {
 };
 
 const NOW = new Date("2026-06-01T12:00:00.000Z");
+
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => new Date(Date.now()),
+    },
+  });
 
 function createRegistrationActivityDuration(id: number, semesterId: number) {
   return {
@@ -60,20 +71,22 @@ function createProvisionalListService({
   };
   const unusedDependency = {} as never;
 
-  const service = new ActivityService(
-    activityRepository as never,
-    unusedDependency,
-    unusedDependency,
-    activityDurationPublicService as never,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    registrationDeadlinePublicService as never,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
+  const service = injectTestClock(
+    new ActivityService(
+      activityRepository as never,
+      unusedDependency,
+      unusedDependency,
+      activityDurationPublicService as never,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      registrationDeadlinePublicService as never,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+    ),
   );
 
   return {
@@ -91,6 +104,7 @@ describe("ActivityService", () => {
 
   const activityDuration = {
     id: 10,
+    semester: { id: 1 },
     startTerm: new Date("2026-03-01T00:00:00.000Z"),
     endTerm: new Date("2026-06-30T14:59:59.999Z"),
   };
@@ -145,9 +159,11 @@ describe("ActivityService", () => {
   ) => {
     const currentActivity = { ...activity, ...activityOverrides };
     const activityRepository = {
+      approveExecutiveActivity: jest.fn().mockResolvedValue(true),
       fetch: jest.fn().mockResolvedValue(currentActivity),
       put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
+      sendBackExecutiveActivity: jest.fn().mockResolvedValue(true),
     };
     const activityComment = new MActivityComment({
       id: 1,
@@ -158,6 +174,9 @@ describe("ActivityService", () => {
       executive: { id: 7 },
     });
     const activityCommentRepository = {
+      createExecutiveReviewComment: jest
+        .fn()
+        .mockResolvedValue(activityComment),
       create: jest.fn().mockResolvedValue([activityComment]),
     };
     const clubPublicService = {
@@ -188,27 +207,31 @@ describe("ActivityService", () => {
       getValidationError: jest.fn().mockReturnValue(null),
     };
 
-    const service = new ActivityService(
-      activityRepository as never,
-      {} as never,
-      activityCommentRepository as never,
-      activityDurationPublicService as never,
-      activityDeadlinePublicService as never,
-      semesterPublicService as never,
-      clubPublicService as never,
-      filePublicService as never,
-      registrationPublicService as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      activityDurationValidatorService as never,
+    const service = injectTestClock(
+      new ActivityService(
+        activityRepository as never,
+        {} as never,
+        activityCommentRepository as never,
+        activityDurationPublicService as never,
+        activityDeadlinePublicService as never,
+        semesterPublicService as never,
+        clubPublicService as never,
+        filePublicService as never,
+        registrationPublicService as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        activityDurationValidatorService as never,
+      ),
     );
 
     return {
       activityRepository,
       activityCommentRepository,
+      activityDurationPublicService,
       filePublicService,
       registrationPublicService,
+      semesterPublicService,
       service,
     };
   };
@@ -283,36 +306,56 @@ describe("ActivityService", () => {
       param: { activityId: activity.id },
     });
 
-    expect(activityRepository.patch.mock.calls[0][0]).toEqual({
-      id: activity.id,
-      activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
+    expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
+      activityId: activity.id,
+      commentedAt,
     });
-    const patchActivity = activityRepository.patch.mock.calls[0][1] as (
-      model: MActivity,
-    ) => MActivity;
-    const updatedActivity = patchActivity(
-      new MActivity({
-        ...activity,
-        activityStatusEnum: ActivityStatusEnum.Applied,
-      }),
-    );
-
-    expect(updatedActivity.activityStatusEnum).toBe(
-      ActivityStatusEnum.Approved,
-    );
-    expect(updatedActivity.commentedAt).toEqual(commentedAt);
-    expect(activityCommentRepository.create).toHaveBeenCalledWith({
-      activity: { id: activity.id },
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).toHaveBeenCalledWith({
+      activityId: activity.id,
       content: "활동이 승인되었습니다",
-      executive: { id: 7 },
+      executiveId: 7,
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
+    expect(activityRepository.patch).not.toHaveBeenCalled();
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects executive approval for activity reports from another semester before feedback mutation", async () => {
+    const {
+      activityCommentRepository,
+      activityDurationPublicService,
+      activityRepository,
+      service,
+    } = createService(undefined, {
+      activityDuration: { id: 99 },
+      activityStatusEnum: ActivityStatusEnum.Applied,
+    });
+    activityDurationPublicService.getById.mockResolvedValueOnce({
+      ...activityDuration,
+      id: 99,
+      semester: { id: 2 },
+    });
+
+    await expect(
+      service.patchExecutiveActivityApproval({
+        executiveId: 7,
+        param: { activityId: activity.id },
+      }),
+    ).rejects.toThrow("current semester");
+
+    expect(activityDurationPublicService.getById).toHaveBeenCalledWith(99);
+    expect(activityRepository.approveExecutiveActivity).not.toHaveBeenCalled();
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).not.toHaveBeenCalled();
   });
 
   it("does not create approval feedback when the activity report is already approved", async () => {
     const { activityCommentRepository, activityRepository, service } =
       createService();
-    activityRepository.patch.mockResolvedValueOnce([]);
+    activityRepository.approveExecutiveActivity.mockResolvedValueOnce(false);
 
     await expect(
       service.patchExecutiveActivityApproval({
@@ -321,18 +364,22 @@ describe("ActivityService", () => {
       }),
     ).rejects.toThrow("the activity is already approved");
 
-    expect(activityRepository.patch.mock.calls[0][0]).toEqual({
-      id: activity.id,
-      activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
+    expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
+      activityId: activity.id,
+      commentedAt: expect.any(Date),
     });
-    expect(activityCommentRepository.create).not.toHaveBeenCalled();
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).not.toHaveBeenCalled();
   });
 
   it("throws when approval feedback insertion fails", async () => {
     const { activityCommentRepository, service } = createService(undefined, {
       activityStatusEnum: ActivityStatusEnum.Applied,
     });
-    activityCommentRepository.create.mockResolvedValueOnce([]);
+    activityCommentRepository.createExecutiveReviewComment.mockResolvedValueOnce(
+      null,
+    );
 
     await expect(
       service.patchExecutiveActivityApproval({
@@ -355,27 +402,57 @@ describe("ActivityService", () => {
       body: sendBackBody,
     });
 
-    const patchActivity = activityRepository.patch.mock.calls[0][1] as (
-      model: MActivity,
-    ) => MActivity;
-    const updatedActivity = patchActivity(new MActivity(activity));
-
-    expect(updatedActivity.activityStatusEnum).toBe(
-      ActivityStatusEnum.Rejected,
-    );
-    expect(updatedActivity.commentedAt).toEqual(commentedAt);
-    expect(activityCommentRepository.create).toHaveBeenCalledWith({
-      activity: { id: activity.id },
+    expect(activityRepository.sendBackExecutiveActivity).toHaveBeenCalledWith({
+      activityId: activity.id,
+      commentedAt,
+    });
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).toHaveBeenCalledWith({
+      activityId: activity.id,
       content: sendBackBody.comment,
-      executive: { id: 8 },
+      executiveId: 8,
       activityStatusEnum: ActivityStatusEnum.Rejected,
     });
+    expect(activityRepository.patch).not.toHaveBeenCalled();
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects executive send-back for activity reports from another semester before feedback mutation", async () => {
+    const {
+      activityCommentRepository,
+      activityDurationPublicService,
+      activityRepository,
+      service,
+    } = createService(undefined, {
+      activityDuration: { id: 99 },
+      activityStatusEnum: ActivityStatusEnum.Applied,
+    });
+    activityDurationPublicService.getById.mockResolvedValueOnce({
+      ...activityDuration,
+      id: 99,
+      semester: { id: 2 },
+    });
+
+    await expect(
+      service.patchExecutiveActivitySendBack({
+        executiveId: 8,
+        param: { activityId: activity.id },
+        body: { comment: "보완 필요" },
+      }),
+    ).rejects.toThrow("current semester");
+
+    expect(activityDurationPublicService.getById).toHaveBeenCalledWith(99);
+    expect(activityRepository.sendBackExecutiveActivity).not.toHaveBeenCalled();
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).not.toHaveBeenCalled();
   });
 
   it("does not create send-back feedback when the status update fails", async () => {
     const { activityCommentRepository, activityRepository, service } =
       createService();
-    activityRepository.patch.mockResolvedValueOnce([]);
+    activityRepository.sendBackExecutiveActivity.mockResolvedValueOnce(false);
 
     await expect(
       service.patchExecutiveActivitySendBack({
@@ -385,12 +462,16 @@ describe("ActivityService", () => {
       }),
     ).rejects.toThrow("failed to send back activity");
 
-    expect(activityCommentRepository.create).not.toHaveBeenCalled();
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).not.toHaveBeenCalled();
   });
 
   it("throws when send-back feedback insertion fails", async () => {
     const { activityCommentRepository, service } = createService();
-    activityCommentRepository.create.mockResolvedValueOnce([]);
+    activityCommentRepository.createExecutiveReviewComment.mockResolvedValueOnce(
+      null,
+    );
 
     await expect(
       service.patchExecutiveActivitySendBack({

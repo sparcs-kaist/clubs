@@ -7,10 +7,13 @@ import {
 } from "@nestjs/common";
 import { ZodError } from "zod";
 
+import { Clock } from "../clock/clock";
 import logger from "./logger";
 
 @Catch() // BaseException을 상속한 exception에 대해서 실행됨.
 export class UnexpectedExceptionFilter implements ExceptionFilter {
+  constructor(private readonly clock: Clock) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
@@ -23,7 +26,7 @@ export class UnexpectedExceptionFilter implements ExceptionFilter {
     response.status(resStatus).json({
       // todo: exception의 response 형식 결정되면 변경해야함.
       statusCode: resStatus,
-      timestamp: new Date().toISOString(),
+      timestamp: this.clock.now().toISOString(),
       path: request.url,
     });
   }
@@ -31,6 +34,8 @@ export class UnexpectedExceptionFilter implements ExceptionFilter {
 
 @Catch(ZodError)
 export class ZodErrorFilter<T extends ZodError> implements ExceptionFilter {
+  constructor(private readonly clock: Clock) {}
+
   catch(exception: T, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
@@ -42,7 +47,7 @@ export class ZodErrorFilter<T extends ZodError> implements ExceptionFilter {
       // todo: exception의 response 형식 결정되면 변경해야함.
       message: exception.errors,
       statusCode: resStatus,
-      timestamp: new Date().toISOString(),
+      timestamp: this.clock.now().toISOString(),
       path: request.url,
     });
   }
@@ -52,6 +57,8 @@ export class ZodErrorFilter<T extends ZodError> implements ExceptionFilter {
 export class HttpExceptionFilter<
   T extends HttpException,
 > implements ExceptionFilter {
+  constructor(private readonly clock: Clock) {}
+
   catch(exception: T, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
@@ -63,7 +70,7 @@ export class HttpExceptionFilter<
       // todo: exception의 response 형식 결정되면 변경해야함.
       message: exception.getResponse(), // test를 위한 코드
       statusCode: resStatus,
-      timestamp: new Date().toISOString(),
+      timestamp: this.clock.now().toISOString(),
       path: request.url,
     });
   }

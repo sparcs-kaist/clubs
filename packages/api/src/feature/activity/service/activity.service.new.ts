@@ -1,4 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import {
@@ -51,6 +52,7 @@ import {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
@@ -75,6 +77,8 @@ import {
 
 @Injectable()
 export default class ActivityService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
@@ -103,6 +107,22 @@ export default class ActivityService {
 
     if (errorMessage !== null) {
       throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  private async assertActivityDurationIsInCurrentSemester(
+    activityDId: number,
+  ): Promise<void> {
+    const [activityDuration, currentSemesterId] = await Promise.all([
+      this.activityDurationPublicService.getById(activityDId),
+      this.semesterPublicService.loadId(),
+    ]);
+
+    if (activityDuration.semester.id !== currentSemesterId) {
+      throw new HttpException(
+        "The activity duration is not in the current semester",
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
@@ -171,7 +191,7 @@ export default class ActivityService {
     });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
@@ -288,7 +308,7 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Exception,
@@ -350,7 +370,7 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
     const availableDeadlines = await this.activityDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Modification,
@@ -419,7 +439,7 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
-        editedAt: new Date(),
+        editedAt: this.clock.now(),
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
         commentedAt: null,
         commentedExecutive: undefined,
@@ -446,7 +466,7 @@ export default class ActivityService {
 
     // 현재가 동아리 등록 기간인지 확인합니다
     await this.registrationDeadlinePublicService.validate({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
@@ -599,12 +619,12 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     await this.registrationDeadlinePublicService.validate({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
     const activityD = await this.activityDurationPublicService.load({
-      date: new Date(),
+      date: this.clock.now(),
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
     });
     const activityDId = activityD.id;
@@ -780,7 +800,7 @@ export default class ActivityService {
 
     const activeRegistrationDeadline =
       await this.registrationDeadlinePublicService.searchOne({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
       });
 
@@ -906,33 +926,38 @@ export default class ActivityService {
   /**
    * @description patchExecutiveActivityApproval의 서비스 진입점입니다.
    */
+  @Transactional()
   async patchExecutiveActivityApproval(param: {
     executiveId: number;
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
-    // TODO: transaction 추가
-    const commentedAt = new Date();
-    const updatedActivities = await this.activityRepository.patch(
-      {
-        id: param.param.activityId,
-        activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
-      },
-      MActivity.updateReviewStatus(ActivityStatusEnum.Approved, commentedAt),
+    const activity = await this.activityRepository.fetch(
+      param.param.activityId,
     );
-    if (updatedActivities.length === 0)
+    await this.assertActivityDurationIsInCurrentSemester(
+      activity.activityDuration.id,
+    );
+
+    const commentedAt = this.clock.now();
+    const isUpdated = await this.activityRepository.approveExecutiveActivity({
+      activityId: param.param.activityId,
+      commentedAt,
+    });
+    if (!isUpdated)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    const insertedComments = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
-      // TODO?: 활동 승인 시에도 content를 넣을까요?
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Approved,
-    });
-    if (insertedComments.length === 0)
+    const insertedComment =
+      await this.activityCommentRepository.createExecutiveReviewComment({
+        activityId: param.param.activityId,
+        content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
+        // TODO?: 활동 승인 시에도 content를 넣을까요?
+        executiveId: param.executiveId,
+        activityStatusEnum: ActivityStatusEnum.Approved,
+      });
+    if (!insertedComment)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
@@ -943,32 +968,38 @@ export default class ActivityService {
    * @description patchExecutiveActivitySendBack의 서비스 진입점입니다.
    * 동시성을 고려하지 않고 구현했습니다.
    */
+  @Transactional()
   async patchExecutiveActivitySendBack(param: {
     executiveId: number;
     param: ApiAct017RequestParam;
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
-    // TODO: transaction 추가
-    const commentedAt = new Date();
-    const updatedActivities = await this.activityRepository.patch(
-      {
-        id: param.param.activityId,
-      },
-      MActivity.updateReviewStatus(ActivityStatusEnum.Rejected, commentedAt),
+    const activity = await this.activityRepository.fetch(
+      param.param.activityId,
     );
-    if (updatedActivities.length === 0)
+    await this.assertActivityDurationIsInCurrentSemester(
+      activity.activityDuration.id,
+    );
+
+    const commentedAt = this.clock.now();
+    const isUpdated = await this.activityRepository.sendBackExecutiveActivity({
+      activityId: param.param.activityId,
+      commentedAt,
+    });
+    if (!isUpdated)
       throw new HttpException(
         "failed to send back activity",
         HttpStatus.BAD_REQUEST,
       );
 
-    const insertedComments = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: param.body.comment,
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Rejected,
-    });
-    if (insertedComments.length === 0)
+    const insertedComment =
+      await this.activityCommentRepository.createExecutiveReviewComment({
+        activityId: param.param.activityId,
+        content: param.body.comment,
+        executiveId: param.executiveId,
+        activityStatusEnum: ActivityStatusEnum.Rejected,
+      });
+    if (!insertedComment)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
@@ -1234,7 +1265,7 @@ export default class ActivityService {
     await this.clubPublicService.checkIsProfessor({
       professorId,
       clubId: activity.club.id,
-      date: new Date(),
+      date: this.clock.now(),
     });
 
     const studentMap = await this.userPublicService.getStudentMapByIds(

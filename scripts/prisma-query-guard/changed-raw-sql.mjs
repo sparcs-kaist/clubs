@@ -79,9 +79,18 @@ export function findChangedRawSqlViolations({
       repoRoot,
       sourcePath: changedFile.path,
     });
+    const rawNodesWithBaseEquivalent = buildBaseEquivalentRawNodeSet({
+      currentRawNodes: currentAnalysis.nodes,
+      baseRawNodes,
+      addedRanges: changedFile.addedRanges,
+    });
 
     for (const rawNode of currentAnalysis.nodes) {
       if (lineRangesOverlapAny(rawNode, changedFile.addedRanges)) {
+        if (rawNodesWithBaseEquivalent.has(rawNode)) {
+          continue;
+        }
+
         violations.push({
           filePath: changedFile.path,
           line: rawNode.line,
@@ -116,6 +125,76 @@ export function findChangedRawSqlViolations({
       left.line - right.line ||
       left.column - right.column,
   );
+}
+
+function buildBaseEquivalentRawNodeSet({
+  currentRawNodes,
+  baseRawNodes,
+  addedRanges,
+}) {
+  const remainingBaseCounts = new Map();
+  const currentRawNodesByText = new Map();
+
+  for (const baseRawNode of baseRawNodes) {
+    const normalizedText = normalizeRawSqlMigrationText(baseRawNode.text);
+    remainingBaseCounts.set(
+      normalizedText,
+      (remainingBaseCounts.get(normalizedText) ?? 0) + 1,
+    );
+  }
+
+  for (const currentRawNode of currentRawNodes) {
+    const normalizedText = normalizeRawSqlMigrationText(currentRawNode.text);
+    const rawNodes = currentRawNodesByText.get(normalizedText) ?? [];
+    rawNodes.push(currentRawNode);
+    currentRawNodesByText.set(normalizedText, rawNodes);
+  }
+
+  const rawNodesWithBaseEquivalent = new WeakSet();
+
+  for (const [
+    normalizedText,
+    currentRawNodesForText,
+  ] of currentRawNodesByText) {
+    let remainingBaseCount = remainingBaseCounts.get(normalizedText) ?? 0;
+    if (remainingBaseCount === 0) {
+      continue;
+    }
+
+    const untouchedRawNodes = currentRawNodesForText.filter(
+      rawNode => !lineRangesOverlapAny(rawNode, addedRanges),
+    );
+    const touchedRawNodes = currentRawNodesForText.filter(rawNode =>
+      lineRangesOverlapAny(rawNode, addedRanges),
+    );
+
+    for (const rawNode of [...untouchedRawNodes, ...touchedRawNodes]) {
+      if (remainingBaseCount === 0) {
+        break;
+      }
+
+      rawNodesWithBaseEquivalent.add(rawNode);
+      remainingBaseCount -= 1;
+    }
+  }
+
+  return rawNodesWithBaseEquivalent;
+}
+
+function normalizeRawSqlMigrationText(text) {
+  return text
+    .replace(
+      /\bthis\.prisma\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
+      "TX.$1",
+    )
+    .replace(
+      /\bthis\.txHost\.tx\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
+      "TX.$1",
+    )
+    .replace(
+      /\btxHost\.tx\.(\$queryRawUnsafe|\$queryRaw|\$executeRawUnsafe|\$executeRaw)/gu,
+      "TX.$1",
+    );
 }
 
 export function parseChangedFileLineMap(diffText) {

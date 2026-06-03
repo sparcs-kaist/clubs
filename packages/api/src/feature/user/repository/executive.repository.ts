@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
@@ -29,6 +30,8 @@ const buildExecutiveTermOverlapWhere = (
 
 @Injectable()
 export default class ExecutiveRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findExecutiveById(id: number): Promise<boolean> {
@@ -45,7 +48,7 @@ export default class ExecutiveRepository {
   }
 
   async findExecutiveByUserId(id: number): Promise<boolean> {
-    const today = new Date();
+    const today = this.clock.now();
     const result = await this.prisma.executive.findFirst({
       where: {
         userId: id,
@@ -60,7 +63,7 @@ export default class ExecutiveRepository {
   }
 
   async getExecutiveById(id: number) {
-    const crt = new Date();
+    const crt = this.clock.now();
     const result = await this.prisma.executiveT.findMany({
       where: {
         executiveId: id,
@@ -370,7 +373,7 @@ export default class ExecutiveRepository {
   }
 
   async getExecutives() {
-    const today = new Date();
+    const today = this.clock.now();
     const result = await this.prisma.executiveT.findMany({
       where: {
         ...buildExecutiveTermOverlapWhere(today, today),
@@ -462,7 +465,7 @@ export default class ExecutiveRepository {
   }
 
   async deleteExecutiveById(executiveId: number) {
-    const cur = new Date();
+    const cur = this.clock.now();
     try {
       await this.prisma.$transaction(async tx => {
         const executiveUpdate = await tx.executive.updateMany({

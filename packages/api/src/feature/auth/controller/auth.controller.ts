@@ -32,6 +32,7 @@ import {
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { GetStudent } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import { Request, UserRefreshTokenPayload } from "../dto/auth.dto";
 import { JwtRefreshGuard } from "../guard/jwt-refresh.guard";
@@ -39,7 +40,10 @@ import { AuthService } from "../service/auth.service";
 
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly appConfigService: AppConfigService,
+  ) {}
 
   @Public()
   @Get("/auth/sign-in")
@@ -64,10 +68,9 @@ export class AuthController {
       await this.authService.getAuthSignInCallback(query, session);
 
     if (!isKaistIamLogin) {
-      const iamErrorRedirectionUrl =
-        process.env.NODE_ENV === "local"
-          ? "http://localhost:3000/errors/not-iam-login"
-          : "https://clubs.sparcs.org/errors/not-iam-login";
+      const iamErrorRedirectionUrl = this.appConfigService.isLocal
+        ? "http://localhost:3000/errors/not-iam-login"
+        : "https://clubs.sparcs.org/errors/not-iam-login";
       logger.info(
         `Can't find kaist iam info. Redirecting to ${iamErrorRedirectionUrl}`,
       );

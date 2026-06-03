@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import type { ApiAcf001RequestBody } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf001";
 import type {
@@ -25,6 +26,7 @@ export class ActivityCertificateService {
     private readonly userPublicService: UserPublicService,
   ) {}
 
+  @Transactional()
   async postActivityCertificate(body: ApiAcf001RequestBody) {
     await this.activityCertificateRepository.postActivityCertificate({
       clubId: body.clubId,

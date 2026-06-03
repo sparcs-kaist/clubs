@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import {
   IExecutiveSummary,
@@ -6,6 +6,7 @@ import {
   IStudentSummary,
 } from "@clubs/interface/api/user/type/user.type";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { RMProfessor } from "../model/professor.model";
@@ -18,6 +19,8 @@ import { StudentRepository } from "../repository/student.repository";
 
 @Injectable()
 export default class UserPublicService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private oldStudentRepository: OldStudentRepository,
     private executiveRepository: ExecutiveRepository,
@@ -75,7 +78,7 @@ export default class UserPublicService {
    * 느려요~
    * */
   async getCurrentExecutives() {
-    const today = new Date();
+    const today = this.clock.now();
     const executives = await this.executiveRepository.selectExecutiveByDate({
       date: today,
     });
@@ -189,7 +192,7 @@ export default class UserPublicService {
    * Entity 적용 버전
    * */
   async getCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
-    const today = new Date();
+    const today = this.clock.now();
     const executives =
       await this.executiveRepository.fetchExecutiveSummaries(today);
 
@@ -205,7 +208,7 @@ export default class UserPublicService {
   }
 
   async fetchCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
-    const today = new Date();
+    const today = this.clock.now();
     const executives =
       await this.executiveRepository.fetchExecutiveSummaries(today);
     return executives;
@@ -235,7 +238,7 @@ export default class UserPublicService {
    * 유효하면 아무런 일도 일어나지 않습니다.
    * */
   async checkCurrentExecutive(executiveId: number): Promise<void> {
-    const today = new Date();
+    const today = this.clock.now();
     const executives = await this.executiveRepository.selectExecutiveByDate({
       date: today,
     });

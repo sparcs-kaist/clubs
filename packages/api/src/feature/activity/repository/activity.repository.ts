@@ -1,6 +1,7 @@
 import {
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -12,6 +13,7 @@ import {
   ActivityTypeEnum,
 } from "@clubs/interface/common/enum/activity.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -22,6 +24,8 @@ type PrismaTransactionClient = Prisma.TransactionClient;
 
 @Injectable()
 export default class ActivityRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async withTransaction<Result>(
@@ -40,7 +44,7 @@ export default class ActivityRepository {
     activityIds: number[];
     professorId: number;
   }) {
-    const today = new Date();
+    const today = this.clock.now();
 
     return this.prisma.activity.updateMany({
       where: { id: { in: param.activityIds } },
@@ -53,7 +57,7 @@ export default class ActivityRepository {
   async deleteActivity(contents: { activityId: number }): Promise<boolean> {
     try {
       await this.prisma.$transaction(async tx => {
-        const deletedAt = new Date();
+        const deletedAt = this.clock.now();
 
         const activityResult = await tx.activity.updateMany({
           where: {
@@ -306,7 +310,7 @@ export default class ActivityRepository {
   }) {
     try {
       await this.prisma.$transaction(async tx => {
-        const deletedAt = new Date();
+        const deletedAt = this.clock.now();
 
         const activityResult = await tx.activity.updateMany({
           where: { id: param.activityId },
@@ -461,7 +465,7 @@ export default class ActivityRepository {
         where: { id: param.activityId, deletedAt: null },
         data: {
           activityStatusEnumId: param.activityStatusEnumId,
-          commentedAt: new Date(),
+          commentedAt: this.clock.now(),
         },
       });
       if (updateResult.count !== 1)

@@ -138,6 +138,7 @@ export async function seedTestClub(divisionId?: number) {
     data: {
       nameKr: TEST_CLUB.nameKr,
       nameEn: TEST_CLUB.nameEn,
+      divisionId: finalDivisionId,
       description: TEST_CLUB.description,
       foundingYear: TEST_CLUB.foundingYear,
     },

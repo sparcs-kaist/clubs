@@ -1,5 +1,11 @@
-import { Controller, Delete, Get, Post, UsePipes } from "@nestjs/common";
-import { randomBytes } from "crypto";
+import {
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Post,
+  UsePipes,
+} from "@nestjs/common";
 
 import {
   apiOpC001,
@@ -11,6 +17,10 @@ import {
 } from "@clubs/interface/api/operation-committee/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
+import {
+  RANDOM_GENERATOR,
+  RandomGenerator,
+} from "@sparcs-clubs/api/common/random/random-generator";
 import { Executive } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { OperationCommitteeService } from "@sparcs-clubs/api/feature/operation-committee/service/operation-committee.service";
 
@@ -18,13 +28,14 @@ import { OperationCommitteeService } from "@sparcs-clubs/api/feature/operation-c
 export class OperationCommitteeController {
   constructor(
     private readonly operationCommitteeService: OperationCommitteeService,
+    @Inject(RANDOM_GENERATOR) private readonly randomGenerator: RandomGenerator,
   ) {}
 
   @Executive()
   @Post("/executive/operation-committees/secret-key")
   @UsePipes(new ZodPipe(apiOpC001))
   async createOperationCommitteeSecretKey(): Promise<ApiOpC001ResponseOK> {
-    const secretKey = randomBytes(5).toString("hex");
+    const secretKey = this.randomGenerator.hex(5);
 
     const createdKey =
       await this.operationCommitteeService.createOperationCommitteeSecretKey(

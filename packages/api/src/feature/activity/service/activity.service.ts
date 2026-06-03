@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -30,6 +30,7 @@ import {
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -45,6 +46,8 @@ import { ActivityClubChargedExecutiveRepository } from "../repository/activity-c
 
 @Injectable()
 export default class ActivityOldService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private activityRepository: ActivityRepository,
     private clubPublicService: ClubPublicService,
@@ -124,7 +127,7 @@ export default class ActivityOldService {
     await this.checkIsStudentDelegate({ studentId, clubId: activity.club.id });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
@@ -152,7 +155,7 @@ export default class ActivityOldService {
 
     // 현재가 동아리 등록 기간인지 확인합니다
     await this.registrationDeadlinePublicService.validate({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
@@ -459,7 +462,7 @@ export default class ActivityOldService {
   }
 
   private getClubSnapshotDate(activityDuration: IActivityDuration): Date {
-    const now = new Date();
+    const now = this.clock.now();
 
     if (activityDuration.startTerm <= now && now < activityDuration.endTerm) {
       return now;

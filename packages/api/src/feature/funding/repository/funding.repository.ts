@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
 import {
@@ -9,6 +10,8 @@ import {
 } from "@clubs/interface/api/funding/type/funding.type";
 
 import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
@@ -40,7 +43,12 @@ const fundingSummarySelect = {
 
 @Injectable()
 export default class FundingRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  @Inject(CLOCK) private readonly clock: Clock;
+
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async withTransaction<Result>(
     callback: (tx: PrismaTransactionClient) => Promise<Result>,
@@ -57,7 +65,9 @@ export default class FundingRepository {
   }
 
   async find(id: number): Promise<MFunding | null> {
-    const result = await this.prisma.funding.findMany({
+    const { tx } = this.txHost;
+
+    const result = await tx.funding.findMany({
       where: { id, deletedAt: null },
     });
 
@@ -82,49 +92,49 @@ export default class FundingRepository {
       etcExpenseFiles,
       transportationPassengers,
     ] = await Promise.all([
-      this.prisma.fundingTradeEvidenceFile.findMany({
+      tx.fundingTradeEvidenceFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingTradeDetailFile.findMany({
+      tx.fundingTradeDetailFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingClubSuppliesImageFile.findMany({
+      tx.fundingClubSuppliesImageFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingClubSuppliesSoftwareEvidenceFile.findMany({
+      tx.fundingClubSuppliesSoftwareEvidenceFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingFixtureImageFile.findMany({
+      tx.fundingFixtureImageFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingFixtureSoftwareEvidenceFile.findMany({
+      tx.fundingFixtureSoftwareEvidenceFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingNonCorporateTransactionFile.findMany({
+      tx.fundingNonCorporateTransactionFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingFoodExpenseFile.findMany({
+      tx.fundingFoodExpenseFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingLaborContractFile.findMany({
+      tx.fundingLaborContractFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingExternalEventParticipationFeeFile.findMany({
+      tx.fundingExternalEventParticipationFeeFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingPublicationFile.findMany({
+      tx.fundingPublicationFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingProfitMakingActivityFile.findMany({
+      tx.fundingProfitMakingActivityFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingJointExpenseFile.findMany({
+      tx.fundingJointExpenseFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingEtcExpenseFile.findMany({
+      tx.fundingEtcExpenseFile.findMany({
         where: { fundingId: id, deletedAt: null },
       }),
-      this.prisma.fundingTransportationPassenger.findMany(
+      tx.fundingTransportationPassenger.findMany(
         buildFundingTransportationPassengerFindManyArgs(id),
       ),
     ]);
@@ -262,328 +272,325 @@ export default class FundingRepository {
     funding: IFundingRequest,
     extra: IFundingExtra,
   ): Promise<MFunding> {
-    const result = await this.prisma.$transaction<number>(async tx => {
-      // 1. Insert funding order
-      const fundingOrder = await tx.funding.create({
-        data: {
-          clubId: funding.club.id,
-          purposeActivityId: funding.purposeActivity.id,
-          activityDId: extra.activityD.id,
-          fundingStatusEnum: extra.fundingStatusEnum,
-          name: funding.name,
-          expenditureDate: funding.expenditureDate,
-          expenditureAmount: funding.expenditureAmount,
-          approvedAmount: extra.approvedAmount,
-          isFixture: funding.isFixture,
-          isTransportation: funding.isTransportation,
-          isFoodExpense: funding.isFoodExpense,
-          isLaborContract: funding.isLaborContract,
-          isExternalEventParticipationFee:
-            funding.isExternalEventParticipationFee,
-          isPublication: funding.isPublication,
-          isProfitMakingActivity: funding.isProfitMakingActivity,
-          isJointExpense: funding.isJointExpense,
-          isEtcExpense: funding.isEtcExpense,
-          isNonCorporateTransaction: funding.isNonCorporateTransaction,
-          tradeDetailExplanation: funding.tradeDetailExplanation,
-          // ClubOld supplies fields
-          clubSuppliesName: funding.clubSupplies?.name,
-          clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
-          clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
-          clubSuppliesPurpose: funding.clubSupplies?.purpose,
-          clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
-          numberOfClubSupplies: funding.clubSupplies?.number,
-          priceOfClubSupplies: funding.clubSupplies?.price,
-          // Fixture fields
-          fixtureName: funding.fixture?.name,
-          fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
-          fixtureClassEnum: funding.fixture?.classEnum,
-          fixturePurpose: funding.fixture?.purpose,
-          fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
-          numberOfFixture: funding.fixture?.number,
-          priceOfFixture: funding.fixture?.price,
-          // Transportation fields
-          transportationEnum: funding.transportation?.enum,
-          origin: funding.transportation?.origin,
-          destination: funding.transportation?.destination,
-          purposeOfTransportation: funding.transportation?.purpose,
-          // Trader fields
-          traderName: funding.nonCorporateTransaction?.traderName,
-          traderAccountNumber:
-            funding.nonCorporateTransaction?.traderAccountNumber,
-          wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
-          // Expense explanations
-          foodExpenseExplanation: funding.foodExpense?.explanation,
-          laborContractExplanation: funding.laborContract?.explanation,
-          externalEventParticipationFeeExplanation:
-            funding.externalEventParticipationFee?.explanation,
-          publicationExplanation: funding.publication?.explanation,
-          profitMakingActivityExplanation:
-            funding.profitMakingActivity?.explanation,
-          jointExpenseExplanation: funding.jointExpense?.explanation,
-          etcExpenseExplanation: funding.etcExpense?.explanation,
-        },
-      });
+    const { tx } = this.txHost;
 
-      const fundingId = fundingOrder.id;
-
-      // 3. Insert files and related data
-      await Promise.all([
-        // Trade files
-        ...funding.tradeEvidenceFiles.map(file =>
-          tx.fundingTradeEvidenceFile.create({
-            data: {
-              fundingId,
-              fileId: file.id,
-            },
-          }),
-        ),
-        ...funding.tradeDetailFiles.map(file =>
-          tx.fundingTradeDetailFile.create({
-            data: {
-              fundingId,
-              fileId: file.id,
-            },
-          }),
-        ),
-
-        // ClubOld supplies files
-        ...(funding.clubSupplies && funding.clubSupplies.imageFiles
-          ? funding.clubSupplies.imageFiles.map(file =>
-              tx.fundingClubSuppliesImageFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-        ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
-          ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
-              tx.fundingClubSuppliesSoftwareEvidenceFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Fixture files
-        ...(funding.isFixture && funding.fixture.imageFiles
-          ? funding.fixture.imageFiles.map(file =>
-              tx.fundingFixtureImageFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-        ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
-          ? funding.fixture.softwareEvidenceFiles.map(file =>
-              tx.fundingFixtureSoftwareEvidenceFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // NonCorporateTransaction files
-        ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
-          ? funding.nonCorporateTransaction.files.map(file =>
-              tx.fundingNonCorporateTransactionFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Food expense files
-        ...(funding.isFoodExpense && funding.foodExpense
-          ? funding.foodExpense.files.map(file =>
-              tx.fundingFoodExpenseFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Labor contract files
-        ...(funding.isLaborContract && funding.laborContract
-          ? funding.laborContract.files.map(file =>
-              tx.fundingLaborContractFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // External event participation fee files
-        ...(funding.isExternalEventParticipationFee &&
-        funding.externalEventParticipationFee
-          ? funding.externalEventParticipationFee.files.map(file =>
-              tx.fundingExternalEventParticipationFeeFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Publication files
-        ...(funding.isPublication && funding.publication
-          ? funding.publication.files.map(file =>
-              tx.fundingPublicationFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Profit making activity files
-        ...(funding.isProfitMakingActivity && funding.profitMakingActivity
-          ? funding.profitMakingActivity.files.map(file =>
-              tx.fundingProfitMakingActivityFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Joint expense files
-        ...(funding.isJointExpense && funding.jointExpense
-          ? funding.jointExpense.files.map(file =>
-              tx.fundingJointExpenseFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Etc expense files
-        ...(funding.isEtcExpense && funding.etcExpense
-          ? funding.etcExpense.files.map(file =>
-              tx.fundingEtcExpenseFile.create({
-                data: {
-                  fundingId,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Transportation passengers
-        ...(funding.isTransportation && funding.transportation
-          ? funding.transportation.passengers.map(passenger =>
-              tx.fundingTransportationPassenger.create({
-                data: {
-                  fundingId,
-                  studentId: passenger.id,
-                },
-              }),
-            )
-          : []),
-      ]);
-
-      return fundingId;
+    // 1. Insert funding order
+    const fundingOrder = await tx.funding.create({
+      data: {
+        clubId: funding.club.id,
+        purposeActivityId: funding.purposeActivity.id,
+        activityDId: extra.activityD.id,
+        fundingStatusEnum: extra.fundingStatusEnum,
+        name: funding.name,
+        expenditureDate: funding.expenditureDate,
+        expenditureAmount: funding.expenditureAmount,
+        approvedAmount: extra.approvedAmount,
+        isFixture: funding.isFixture,
+        isTransportation: funding.isTransportation,
+        isFoodExpense: funding.isFoodExpense,
+        isLaborContract: funding.isLaborContract,
+        isExternalEventParticipationFee:
+          funding.isExternalEventParticipationFee,
+        isPublication: funding.isPublication,
+        isProfitMakingActivity: funding.isProfitMakingActivity,
+        isJointExpense: funding.isJointExpense,
+        isEtcExpense: funding.isEtcExpense,
+        isNonCorporateTransaction: funding.isNonCorporateTransaction,
+        tradeDetailExplanation: funding.tradeDetailExplanation,
+        // ClubOld supplies fields
+        clubSuppliesName: funding.clubSupplies?.name,
+        clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
+        clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
+        clubSuppliesPurpose: funding.clubSupplies?.purpose,
+        clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
+        numberOfClubSupplies: funding.clubSupplies?.number,
+        priceOfClubSupplies: funding.clubSupplies?.price,
+        // Fixture fields
+        fixtureName: funding.fixture?.name,
+        fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
+        fixtureClassEnum: funding.fixture?.classEnum,
+        fixturePurpose: funding.fixture?.purpose,
+        fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
+        numberOfFixture: funding.fixture?.number,
+        priceOfFixture: funding.fixture?.price,
+        // Transportation fields
+        transportationEnum: funding.transportation?.enum,
+        origin: funding.transportation?.origin,
+        destination: funding.transportation?.destination,
+        purposeOfTransportation: funding.transportation?.purpose,
+        // Trader fields
+        traderName: funding.nonCorporateTransaction?.traderName,
+        traderAccountNumber:
+          funding.nonCorporateTransaction?.traderAccountNumber,
+        wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
+        // Expense explanations
+        foodExpenseExplanation: funding.foodExpense?.explanation,
+        laborContractExplanation: funding.laborContract?.explanation,
+        externalEventParticipationFeeExplanation:
+          funding.externalEventParticipationFee?.explanation,
+        publicationExplanation: funding.publication?.explanation,
+        profitMakingActivityExplanation:
+          funding.profitMakingActivity?.explanation,
+        jointExpenseExplanation: funding.jointExpense?.explanation,
+        etcExpenseExplanation: funding.etcExpense?.explanation,
+      },
     });
 
+    const fundingId = fundingOrder.id;
+
+    // 3. Insert files and related data
+    await Promise.all([
+      // Trade files
+      ...funding.tradeEvidenceFiles.map(file =>
+        tx.fundingTradeEvidenceFile.create({
+          data: {
+            fundingId,
+            fileId: file.id,
+          },
+        }),
+      ),
+      ...funding.tradeDetailFiles.map(file =>
+        tx.fundingTradeDetailFile.create({
+          data: {
+            fundingId,
+            fileId: file.id,
+          },
+        }),
+      ),
+
+      // ClubOld supplies files
+      ...(funding.clubSupplies && funding.clubSupplies.imageFiles
+        ? funding.clubSupplies.imageFiles.map(file =>
+            tx.fundingClubSuppliesImageFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+      ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
+        ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
+            tx.fundingClubSuppliesSoftwareEvidenceFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Fixture files
+      ...(funding.isFixture && funding.fixture.imageFiles
+        ? funding.fixture.imageFiles.map(file =>
+            tx.fundingFixtureImageFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+      ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
+        ? funding.fixture.softwareEvidenceFiles.map(file =>
+            tx.fundingFixtureSoftwareEvidenceFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // NonCorporateTransaction files
+      ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
+        ? funding.nonCorporateTransaction.files.map(file =>
+            tx.fundingNonCorporateTransactionFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Food expense files
+      ...(funding.isFoodExpense && funding.foodExpense
+        ? funding.foodExpense.files.map(file =>
+            tx.fundingFoodExpenseFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Labor contract files
+      ...(funding.isLaborContract && funding.laborContract
+        ? funding.laborContract.files.map(file =>
+            tx.fundingLaborContractFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // External event participation fee files
+      ...(funding.isExternalEventParticipationFee &&
+      funding.externalEventParticipationFee
+        ? funding.externalEventParticipationFee.files.map(file =>
+            tx.fundingExternalEventParticipationFeeFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Publication files
+      ...(funding.isPublication && funding.publication
+        ? funding.publication.files.map(file =>
+            tx.fundingPublicationFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Profit making activity files
+      ...(funding.isProfitMakingActivity && funding.profitMakingActivity
+        ? funding.profitMakingActivity.files.map(file =>
+            tx.fundingProfitMakingActivityFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Joint expense files
+      ...(funding.isJointExpense && funding.jointExpense
+        ? funding.jointExpense.files.map(file =>
+            tx.fundingJointExpenseFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Etc expense files
+      ...(funding.isEtcExpense && funding.etcExpense
+        ? funding.etcExpense.files.map(file =>
+            tx.fundingEtcExpenseFile.create({
+              data: {
+                fundingId,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Transportation passengers
+      ...(funding.isTransportation && funding.transportation
+        ? funding.transportation.passengers.map(passenger =>
+            tx.fundingTransportationPassenger.create({
+              data: {
+                fundingId,
+                studentId: passenger.id,
+              },
+            }),
+          )
+        : []),
+    ]);
+
     // 4. Return the newly created funding
-    return this.fetch(result);
+    return this.fetch(fundingId);
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.$transaction(async tx => {
-      const now = new Date();
+    const { tx } = this.txHost;
+    const now = this.clock.now();
 
-      // Soft delete funding order and all related records
-      await Promise.all([
-        tx.funding.updateMany({
-          where: { id },
-          data: { deletedAt: now, editedAt: now },
-        }),
-        tx.fundingFeedback.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingTradeEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingTradeDetailFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingClubSuppliesImageFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFixtureImageFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFixtureSoftwareEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingNonCorporateTransactionFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFoodExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingLaborContractFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingExternalEventParticipationFeeFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingPublicationFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingProfitMakingActivityFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingJointExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingEtcExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingTransportationPassenger.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-      ]);
-    });
+    // Soft delete funding order and all related records
+    await Promise.all([
+      tx.funding.updateMany({
+        where: { id },
+        data: { deletedAt: now, editedAt: now },
+      }),
+      tx.fundingFeedback.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingTradeEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingTradeDetailFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingClubSuppliesImageFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFixtureImageFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFixtureSoftwareEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingNonCorporateTransactionFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFoodExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingLaborContractFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingExternalEventParticipationFeeFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingPublicationFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingProfitMakingActivityFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingJointExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingEtcExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingTransportationPassenger.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+    ]);
   }
 
   async put(
@@ -591,311 +598,310 @@ export default class FundingRepository {
     funding: IFundingRequest,
     extra: IFundingExtra,
   ): Promise<MFunding> {
-    return this.prisma.$transaction(async tx => {
-      const now = new Date();
+    const { tx } = this.txHost;
+    const now = this.clock.now();
 
-      // Update funding table
-      await tx.funding.update({
-        where: { id },
-        data: {
-          purposeActivityId: funding.purposeActivity.id,
-          fundingStatusEnum: extra.fundingStatusEnum,
-          name: funding.name,
-          expenditureDate: funding.expenditureDate,
-          expenditureAmount: funding.expenditureAmount,
-          approvedAmount: extra.approvedAmount,
-          isFixture: funding.isFixture,
-          isTransportation: funding.isTransportation,
-          isFoodExpense: funding.isFoodExpense,
-          isLaborContract: funding.isLaborContract,
-          isExternalEventParticipationFee:
-            funding.isExternalEventParticipationFee,
-          isPublication: funding.isPublication,
-          isProfitMakingActivity: funding.isProfitMakingActivity,
-          isJointExpense: funding.isJointExpense,
-          isEtcExpense: funding.isEtcExpense,
-          isNonCorporateTransaction: funding.isNonCorporateTransaction,
-          tradeDetailExplanation: funding.tradeDetailExplanation,
-          // ClubOld supplies fields
-          clubSuppliesName: funding.clubSupplies?.name,
-          clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
-          clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
-          clubSuppliesPurpose: funding.clubSupplies?.purpose,
-          clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
-          numberOfClubSupplies: funding.clubSupplies?.number,
-          priceOfClubSupplies: funding.clubSupplies?.price,
-          // Fixture fields
-          fixtureName: funding.fixture?.name,
-          fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
-          fixtureClassEnum: funding.fixture?.classEnum,
-          fixturePurpose: funding.fixture?.purpose,
-          fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
-          numberOfFixture: funding.fixture?.number,
-          priceOfFixture: funding.fixture?.price,
-          // Transportation fields
-          transportationEnum: funding.transportation?.enum,
-          origin: funding.transportation?.origin,
-          destination: funding.transportation?.destination,
-          purposeOfTransportation: funding.transportation?.purpose,
-          // Trader fields
-          traderName: funding.nonCorporateTransaction?.traderName,
-          traderAccountNumber:
-            funding.nonCorporateTransaction?.traderAccountNumber,
-          wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
-          // Expense explanations
-          foodExpenseExplanation: funding.foodExpense?.explanation,
-          laborContractExplanation: funding.laborContract?.explanation,
-          externalEventParticipationFeeExplanation:
-            funding.externalEventParticipationFee?.explanation,
-          publicationExplanation: funding.publication?.explanation,
-          profitMakingActivityExplanation:
-            funding.profitMakingActivity?.explanation,
-          jointExpenseExplanation: funding.jointExpense?.explanation,
-          etcExpenseExplanation: funding.etcExpense?.explanation,
-          editedAt: now,
-        },
-      });
-
-      // Soft delete all related records
-      await Promise.all([
-        tx.fundingTradeEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingTradeDetailFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingClubSuppliesImageFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFixtureImageFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFixtureSoftwareEvidenceFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingNonCorporateTransactionFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingFoodExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingLaborContractFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingExternalEventParticipationFeeFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingPublicationFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingProfitMakingActivityFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingJointExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingEtcExpenseFile.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-        tx.fundingTransportationPassenger.updateMany({
-          where: { fundingId: id },
-          data: { deletedAt: now },
-        }),
-      ]);
-
-      // Insert new related records
-      await Promise.all([
-        // Trade files
-        ...funding.tradeEvidenceFiles.map(file =>
-          tx.fundingTradeEvidenceFile.create({
-            data: {
-              fundingId: id,
-              fileId: file.id,
-            },
-          }),
-        ),
-        ...funding.tradeDetailFiles.map(file =>
-          tx.fundingTradeDetailFile.create({
-            data: {
-              fundingId: id,
-              fileId: file.id,
-            },
-          }),
-        ),
-
-        // ClubOld supplies files
-        ...(funding.clubSupplies && funding.clubSupplies.imageFiles
-          ? funding.clubSupplies.imageFiles.map(file =>
-              tx.fundingClubSuppliesImageFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-        ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
-          ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
-              tx.fundingClubSuppliesSoftwareEvidenceFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Fixture files
-        ...(funding.isFixture && funding.fixture.imageFiles
-          ? funding.fixture.imageFiles.map(file =>
-              tx.fundingFixtureImageFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-        ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
-          ? funding.fixture.softwareEvidenceFiles.map(file =>
-              tx.fundingFixtureSoftwareEvidenceFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // NonCorporateTransaction files
-        ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
-          ? funding.nonCorporateTransaction.files.map(file =>
-              tx.fundingNonCorporateTransactionFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Food expense files
-        ...(funding.isFoodExpense && funding.foodExpense
-          ? funding.foodExpense.files.map(file =>
-              tx.fundingFoodExpenseFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Labor contract files
-        ...(funding.isLaborContract && funding.laborContract
-          ? funding.laborContract.files.map(file =>
-              tx.fundingLaborContractFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // External event participation fee files
-        ...(funding.isExternalEventParticipationFee &&
-        funding.externalEventParticipationFee
-          ? funding.externalEventParticipationFee.files.map(file =>
-              tx.fundingExternalEventParticipationFeeFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Publication files
-        ...(funding.isPublication && funding.publication
-          ? funding.publication.files.map(file =>
-              tx.fundingPublicationFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Profit making activity files
-        ...(funding.isProfitMakingActivity && funding.profitMakingActivity
-          ? funding.profitMakingActivity.files.map(file =>
-              tx.fundingProfitMakingActivityFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Joint expense files
-        ...(funding.isJointExpense && funding.jointExpense
-          ? funding.jointExpense.files.map(file =>
-              tx.fundingJointExpenseFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Etc expense files
-        ...(funding.isEtcExpense && funding.etcExpense
-          ? funding.etcExpense.files.map(file =>
-              tx.fundingEtcExpenseFile.create({
-                data: {
-                  fundingId: id,
-                  fileId: file.id,
-                },
-              }),
-            )
-          : []),
-
-        // Transportation passengers
-        ...(funding.isTransportation && funding.transportation
-          ? funding.transportation.passengers.map(passenger =>
-              tx.fundingTransportationPassenger.create({
-                data: {
-                  fundingId: id,
-                  studentId: passenger.id,
-                },
-              }),
-            )
-          : []),
-      ]);
-
-      return this.fetch(id);
+    // Update funding table
+    await tx.funding.update({
+      where: { id },
+      data: {
+        purposeActivityId: funding.purposeActivity.id,
+        fundingStatusEnum: extra.fundingStatusEnum,
+        name: funding.name,
+        expenditureDate: funding.expenditureDate,
+        expenditureAmount: funding.expenditureAmount,
+        approvedAmount: extra.approvedAmount,
+        isFixture: funding.isFixture,
+        isTransportation: funding.isTransportation,
+        isFoodExpense: funding.isFoodExpense,
+        isLaborContract: funding.isLaborContract,
+        isExternalEventParticipationFee:
+          funding.isExternalEventParticipationFee,
+        isPublication: funding.isPublication,
+        isProfitMakingActivity: funding.isProfitMakingActivity,
+        isJointExpense: funding.isJointExpense,
+        isEtcExpense: funding.isEtcExpense,
+        isNonCorporateTransaction: funding.isNonCorporateTransaction,
+        tradeDetailExplanation: funding.tradeDetailExplanation,
+        // ClubOld supplies fields
+        clubSuppliesName: funding.clubSupplies?.name,
+        clubSuppliesEvidenceEnum: funding.clubSupplies?.evidenceEnum,
+        clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
+        clubSuppliesPurpose: funding.clubSupplies?.purpose,
+        clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
+        numberOfClubSupplies: funding.clubSupplies?.number,
+        priceOfClubSupplies: funding.clubSupplies?.price,
+        // Fixture fields
+        fixtureName: funding.fixture?.name,
+        fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
+        fixtureClassEnum: funding.fixture?.classEnum,
+        fixturePurpose: funding.fixture?.purpose,
+        fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
+        numberOfFixture: funding.fixture?.number,
+        priceOfFixture: funding.fixture?.price,
+        // Transportation fields
+        transportationEnum: funding.transportation?.enum,
+        origin: funding.transportation?.origin,
+        destination: funding.transportation?.destination,
+        purposeOfTransportation: funding.transportation?.purpose,
+        // Trader fields
+        traderName: funding.nonCorporateTransaction?.traderName,
+        traderAccountNumber:
+          funding.nonCorporateTransaction?.traderAccountNumber,
+        wasteExplanation: funding.nonCorporateTransaction?.wasteExplanation,
+        // Expense explanations
+        foodExpenseExplanation: funding.foodExpense?.explanation,
+        laborContractExplanation: funding.laborContract?.explanation,
+        externalEventParticipationFeeExplanation:
+          funding.externalEventParticipationFee?.explanation,
+        publicationExplanation: funding.publication?.explanation,
+        profitMakingActivityExplanation:
+          funding.profitMakingActivity?.explanation,
+        jointExpenseExplanation: funding.jointExpense?.explanation,
+        etcExpenseExplanation: funding.etcExpense?.explanation,
+        editedAt: now,
+      },
     });
+
+    // Soft delete all related records
+    await Promise.all([
+      tx.fundingTradeEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingTradeDetailFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingClubSuppliesImageFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingClubSuppliesSoftwareEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFixtureImageFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFixtureSoftwareEvidenceFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingNonCorporateTransactionFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingFoodExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingLaborContractFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingExternalEventParticipationFeeFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingPublicationFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingProfitMakingActivityFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingJointExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingEtcExpenseFile.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+      tx.fundingTransportationPassenger.updateMany({
+        where: { fundingId: id },
+        data: { deletedAt: now },
+      }),
+    ]);
+
+    // Insert new related records
+    await Promise.all([
+      // Trade files
+      ...funding.tradeEvidenceFiles.map(file =>
+        tx.fundingTradeEvidenceFile.create({
+          data: {
+            fundingId: id,
+            fileId: file.id,
+          },
+        }),
+      ),
+      ...funding.tradeDetailFiles.map(file =>
+        tx.fundingTradeDetailFile.create({
+          data: {
+            fundingId: id,
+            fileId: file.id,
+          },
+        }),
+      ),
+
+      // ClubOld supplies files
+      ...(funding.clubSupplies && funding.clubSupplies.imageFiles
+        ? funding.clubSupplies.imageFiles.map(file =>
+            tx.fundingClubSuppliesImageFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+      ...(funding.clubSupplies && funding.clubSupplies.softwareEvidenceFiles
+        ? funding.clubSupplies.softwareEvidenceFiles.map(file =>
+            tx.fundingClubSuppliesSoftwareEvidenceFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Fixture files
+      ...(funding.isFixture && funding.fixture.imageFiles
+        ? funding.fixture.imageFiles.map(file =>
+            tx.fundingFixtureImageFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+      ...(funding.isFixture && funding.fixture.softwareEvidenceFiles
+        ? funding.fixture.softwareEvidenceFiles.map(file =>
+            tx.fundingFixtureSoftwareEvidenceFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // NonCorporateTransaction files
+      ...(funding.isNonCorporateTransaction && funding.nonCorporateTransaction
+        ? funding.nonCorporateTransaction.files.map(file =>
+            tx.fundingNonCorporateTransactionFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Food expense files
+      ...(funding.isFoodExpense && funding.foodExpense
+        ? funding.foodExpense.files.map(file =>
+            tx.fundingFoodExpenseFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Labor contract files
+      ...(funding.isLaborContract && funding.laborContract
+        ? funding.laborContract.files.map(file =>
+            tx.fundingLaborContractFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // External event participation fee files
+      ...(funding.isExternalEventParticipationFee &&
+      funding.externalEventParticipationFee
+        ? funding.externalEventParticipationFee.files.map(file =>
+            tx.fundingExternalEventParticipationFeeFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Publication files
+      ...(funding.isPublication && funding.publication
+        ? funding.publication.files.map(file =>
+            tx.fundingPublicationFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Profit making activity files
+      ...(funding.isProfitMakingActivity && funding.profitMakingActivity
+        ? funding.profitMakingActivity.files.map(file =>
+            tx.fundingProfitMakingActivityFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Joint expense files
+      ...(funding.isJointExpense && funding.jointExpense
+        ? funding.jointExpense.files.map(file =>
+            tx.fundingJointExpenseFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Etc expense files
+      ...(funding.isEtcExpense && funding.etcExpense
+        ? funding.etcExpense.files.map(file =>
+            tx.fundingEtcExpenseFile.create({
+              data: {
+                fundingId: id,
+                fileId: file.id,
+              },
+            }),
+          )
+        : []),
+
+      // Transportation passengers
+      ...(funding.isTransportation && funding.transportation
+        ? funding.transportation.passengers.map(passenger =>
+            tx.fundingTransportationPassenger.create({
+              data: {
+                fundingId: id,
+                studentId: passenger.id,
+              },
+            }),
+          )
+        : []),
+    ]);
+
+    return this.fetch(id);
   }
 
   async patchSummaryTx(
@@ -959,7 +965,7 @@ export default class FundingRepository {
       commentedAt: IFunding["commentedAt"];
     },
   ): Promise<VFundingSummary> {
-    const now = new Date();
+    const now = this.clock.now();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (tx as any).funding.update({

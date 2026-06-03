@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -58,6 +58,7 @@ import {
   RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
@@ -81,6 +82,8 @@ interface ApiReg006ResponseType {
 
 @Injectable()
 export class RegistrationService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly clubRegistrationRepository: ClubRegistrationRepository,
     private clubPublicService: ClubPublicService,
@@ -968,7 +971,7 @@ export class RegistrationService {
     await this.clubRegistrationRepository.updateRegistrationProfessorApprovedAt(
       {
         registrationId: param.param.applyId,
-        approvedAt: new Date(),
+        approvedAt: this.clock.now(),
       },
     );
 
@@ -1075,7 +1078,7 @@ export class RegistrationService {
   }
 
   async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
-    const today = new Date();
+    const today = this.clock.now();
     const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 구현할 경우 수정
     const deadline = await this.registrationDeadlinePublicService.searchOne({
@@ -1614,7 +1617,7 @@ export class RegistrationService {
   }
 
   async getMemberRegistrationDeadline(): Promise<ApiReg028ResponseOk> {
-    const today = new Date();
+    const today = this.clock.now();
     const semester = await this.semesterPublicService.load();
     // TODO: 현재는 정규 기간만 제시함. 나중에 late도 받도록 구현할 경우 수정
     const deadline = await this.registrationDeadlinePublicService.searchOne({

@@ -10,4 +10,5 @@ set -e
 pnpm format:check:changed
 pnpm lint
 pnpm prisma-query:changed
+pnpm transaction-guard:changed
 pnpm mcdc:changed --fail-on-missing

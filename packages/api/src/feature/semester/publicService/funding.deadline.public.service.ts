@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import { MFundingDeadline } from "../model/funding.deadline.model";
 import {
@@ -34,6 +35,8 @@ export class FundingDeadlinePublicService extends BasePublicService<
   FundingDeadlineIsQuery,
   FundingDeadlineLoadQuery
 > {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly fundingDeadlineRepository: FundingDeadlineRepository,
     private readonly semesterPublicService: SemesterPublicService,
@@ -61,7 +64,7 @@ export class FundingDeadlinePublicService extends BasePublicService<
    * @returns 조회 날짜가 활동 마감 기한인지 여부
    */
   async is(query: FundingDeadlineIsQuery): Promise<boolean> {
-    const date = query.date ?? new Date();
+    const date = query.date ?? this.clock.now();
     const semesterId =
       query.semesterId ?? (await this.semesterPublicService.loadId({ date }));
     const deadlineEnums = query?.deadlineEnum
@@ -100,7 +103,7 @@ export class FundingDeadlinePublicService extends BasePublicService<
     const semesterId =
       query.semesterId ??
       (await this.semesterPublicService.loadId({
-        date: query.date ?? new Date(),
+        date: query.date ?? this.clock.now(),
       }));
 
     const res = await super.load({

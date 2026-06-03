@@ -5,6 +5,20 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.5 source=7f1e7801c649
+  {
+    version: "v.0.1.5",
+    date: new Date("2026.06.04"),
+    patchNoteContent: `Clubs v0.1.5
+신규 기능은 다음과 같습니다.
+- 첨부 파일의 PDF를 다운로드하지 않고 새 탭에서 바로 확인할 수 있게 했습니다. (#1849)
+
+오류 수정은 다음과 같습니다.
+- 지원금 과거 대시보드에서 동아리 유형이 선택한 학기 기준으로 표시되도록 수정했습니다. (#1843)
+- 지원금 이의제기 기간에는 지원금 신청, 수정, 삭제가 진행되지 않도록 수정했습니다. (#1847)
+- 과거 활동보고서와 지원금 상세에서 집행부 승인/반려 feedback이 새로 생성되지 않도록 수정했습니다. (#1850)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.4 source=296841aec3ae
   {
     version: "v.0.1.4",

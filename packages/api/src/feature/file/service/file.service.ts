@@ -6,7 +6,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import type {
   ApiFil001RequestBody,
@@ -21,7 +21,9 @@ import type {
   ApiFil003ResponseOk,
 } from "@clubs/interface/api/file/apiFil003";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import type { UserAccessTokenPayload } from "@sparcs-clubs/api/feature/auth/dto/auth.dto";
 
 import { FileRepository } from "../repository/file.repository";
@@ -33,6 +35,8 @@ export class FileService {
     private s3Client: S3Client,
     private fileRepository: FileRepository,
     private filePublicService: FilePublicService,
+    private appConfigService: AppConfigService,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   async getUploadUrl(param: {
@@ -41,12 +45,12 @@ export class FileService {
   }): Promise<ApiFil001ResponseCreated["urls"][number]> {
     const { name, type, size } = param.metadata;
     const extension = name.split(".").pop().toLowerCase();
-    const signedAt = new Date();
+    const signedAt = this.clock.now();
     signedAt.setMilliseconds(0);
 
     // 내가 S3에 하려는 작업을 명시한다.
     const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: this.appConfigService.s3BucketName,
       Key: `file/${param.userId}.${signedAt.valueOf()}.${name}`,
       ContentType: type,
     });
@@ -72,7 +76,7 @@ export class FileService {
   }): Promise<ApiFil003ResponseOk> {
     const getFileUrls = (fileKey: string) => {
       const command = new GetObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
+        Bucket: this.appConfigService.s3BucketName,
         Key: fileKey,
       });
       return getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
@@ -119,7 +123,7 @@ export class FileService {
 
       const input = {
         // GetObjectAttributesRequest
-        Bucket: process.env.S3_BUCKET_NAME, // required
+        Bucket: this.appConfigService.s3BucketName, // required
         Key: `file/${param.userId}.${info.signedAt.valueOf()}.${info.name}`, // required
         // VersionId: "STRING_VALUE",
         // MaxParts: Number("int"),

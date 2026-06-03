@@ -1,13 +1,19 @@
-import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
+import { Inject, Injectable } from "@nestjs/common";
 
+import {
+  RANDOM_GENERATOR,
+  RandomGenerator,
+} from "@sparcs-clubs/api/common/random/random-generator";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { MFile } from "../model/file.model";
 
 @Injectable()
 export class FileRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(RANDOM_GENERATOR) private readonly randomGenerator: RandomGenerator,
+  ) {}
 
   async create(
     name: string,
@@ -18,7 +24,7 @@ export class FileRepository {
   ) {
     const file = await this.prisma.file.create({
       data: {
-        id: randomUUID(),
+        id: this.randomGenerator.uuid(),
         name,
         extension,
         size,

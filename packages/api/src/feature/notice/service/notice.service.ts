@@ -1,9 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import axios from "axios";
 import jsdom from "jsdom";
 
 import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
@@ -37,6 +38,8 @@ function findArticleId(link: string): number {
 }
 @Injectable()
 export class NoticeService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly noticeRepository: NoticeRepository) {}
 
   private async tryFetch(pageNum: number): Promise<string> {
@@ -87,7 +90,7 @@ export class NoticeService {
 
         // 시간만 제공되는 경우 오늘 날짜로 설정
         if (date.includes(":")) {
-          const kstDate = new Date();
+          const kstDate = this.clock.now();
           const mm = kstDate.getMonth() + 1;
           const dd = kstDate.getDate();
           date = `${kstDate.getFullYear()}.${(mm > 9 ? "" : "0") + mm}.${(dd > 9 ? "" : "0") + dd}.`;
@@ -240,7 +243,7 @@ export class NoticeService {
         date: new Date(post.date),
         author: post.author,
         articleId: post.articleId,
-        createdAt: new Date(),
+        createdAt: this.clock.now(),
       });
     });
 
@@ -264,20 +267,20 @@ export class NoticeService {
     // articleId를 음수로 해서 로그를 남깁니다.
     await this.noticeRepository.create({
       articleId: negativePeriod,
-      date: new Date(),
+      date: this.clock.now(),
       link: "",
-      createdAt: new Date(),
+      createdAt: this.clock.now(),
       author: "Notice Cron",
-      title: `Notices Last Update TIme(~3)=${new Date()}`,
+      title: `Notices Last Update TIme(~3)=${this.clock.now()}`,
     });
     if (isAfter3Pages) {
       await this.noticeRepository.create({
         articleId: UpdatePeriodEnum.Among3Pages,
-        date: new Date(),
+        date: this.clock.now(),
         link: "",
-        createdAt: new Date(),
+        createdAt: this.clock.now(),
         author: "Notice Cron",
-        title: `Notices Last Update TIme(4~)=${new Date()}`,
+        title: `Notices Last Update TIme(4~)=${this.clock.now()}`,
       });
     }
   }
@@ -298,7 +301,7 @@ export class NoticeService {
       },
     });
     if (lastUpdateRow.length === 0) {
-      const time = new Date();
+      const time = this.clock.now();
       time.setTime(time.getTime() + 600000 * negativePeriod);
       return time;
     }

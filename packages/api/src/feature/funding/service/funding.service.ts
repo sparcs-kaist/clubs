@@ -1,4 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -69,6 +70,7 @@ import {
   FundingStatusEnum,
 } from "@clubs/interface/common/enum/funding.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
@@ -91,6 +93,8 @@ import {
 
 @Injectable()
 export default class FundingService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly fundingRepository: FundingRepository,
     private readonly fundingCommentRepository: FundingCommentRepository,
@@ -105,15 +109,29 @@ export default class FundingService {
     private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
+  private async assertActivityDurationIsInCurrentSemester(
+    activityDId: number,
+  ): Promise<void> {
+    const [activityDuration, currentSemesterId] = await Promise.all([
+      this.activityDurationPublicService.getById(activityDId),
+      this.semesterPublicService.loadId(),
+    ]);
+
+    if (activityDuration.semester.id !== currentSemesterId) {
+      throw new HttpException(
+        "The activity duration is not in the current semester",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Transactional()
   async postStudentFunding(
     body: ApiFnd001RequestBody,
     studentId: number,
   ): Promise<ApiFnd001ResponseCreated> {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
-    await this.checkDeadline([
-      FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Exception,
-    ]);
+    await this.checkDeadline([FundingDeadlineEnum.Writing]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
@@ -422,6 +440,7 @@ export default class FundingService {
     return undefined;
   }
 
+  @Transactional()
   async putStudentFunding(
     body: ApiFnd003RequestBody,
     param: ApiFnd003RequestParam,
@@ -431,7 +450,6 @@ export default class FundingService {
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
-      FundingDeadlineEnum.Exception,
     ]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
@@ -446,6 +464,7 @@ export default class FundingService {
     });
   }
 
+  @Transactional()
   async deleteStudentFunding(
     studentId: number,
     param: ApiFnd004RequestParam,
@@ -458,7 +477,6 @@ export default class FundingService {
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
-      FundingDeadlineEnum.Exception,
     ]);
     await this.fundingRepository.delete(param.id);
     return {};
@@ -556,7 +574,7 @@ export default class FundingService {
    * @returns 현재 시점의 지원금 신청 마감 기한과 대상 활동 기간을 리턴합니다.
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
-    const now = new Date();
+    const now = this.clock.now();
     const [targetDuration, allDeadlines] = await Promise.all([
       this.activityDurationPublicService.load(),
       this.fundingDeadlinePublicService.search({}),
@@ -636,7 +654,8 @@ export default class FundingService {
     // );
 
     const clubs = await this.clubPublicService.fetchSummaries(
-      fundings.map(funding => funding.club.id),
+      Array.from(new Set(fundings.map(funding => funding.club.id))),
+      [semesterId],
     );
     const devisions = await this.clubPublicService.fetchDivisionSummaries(
       clubs.map(club => club.division.id),
@@ -837,8 +856,6 @@ export default class FundingService {
       activityDuration.id,
     );
 
-    const club = await this.clubPublicService.fetchSummary(param.clubId);
-
     const chargedExecutiveId = fundings
       .filter(funding => funding.club.id === param.clubId)
       .filter(funding => funding.chargedExecutive)
@@ -875,8 +892,14 @@ export default class FundingService {
     );
 
     const clubs = await this.clubPublicService.fetchSummaries(
-      fundings.map(funding => funding.club.id),
+      Array.from(
+        new Set([param.clubId, ...fundings.map(funding => funding.club.id)]),
+      ),
+      [semesterId],
     );
+    const club =
+      clubs.find(c => c.id === param.clubId) ??
+      (await this.clubPublicService.fetchSummary(param.clubId));
 
     const pastActivityDurations =
       query.semesterId === undefined
@@ -1038,6 +1061,7 @@ export default class FundingService {
    * @description 집행부원으로서 지원금 신청에 comment를 남깁니다.
    * @returns
    */
+  @Transactional()
   async postExecutiveFundingComment(
     executiveId: IExecutive["id"],
     id: IFunding["id"],
@@ -1053,12 +1077,15 @@ export default class FundingService {
       throw new HttpException(preFetchValidationError, HttpStatus.BAD_REQUEST);
     }
 
-    const { expenditureAmount } = await this.fundingRepository.fetch(id);
+    const targetFunding = await this.fundingRepository.fetch(id);
+    await this.assertActivityDurationIsInCurrentSemester(
+      targetFunding.activityD.id,
+    );
 
     const amountValidationError = getFundingCommentAmountValidationError({
       fundingStatusEnum,
       approvedAmount,
-      expenditureAmount,
+      expenditureAmount: targetFunding.expenditureAmount,
     });
     if (amountValidationError) {
       throw new HttpException(amountValidationError, HttpStatus.BAD_REQUEST);
@@ -1081,7 +1108,7 @@ export default class FundingService {
         id,
         fundingStatusEnum,
         approvedAmount,
-        commentedAt: new Date(),
+        commentedAt: this.clock.now(),
       });
 
       // funding 이랑 comment 의 값들이 다르면 에러
@@ -1177,7 +1204,7 @@ export default class FundingService {
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
     await this.fundingDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: enums,
       })
       .then(takeExist());

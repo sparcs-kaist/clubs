@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import type {
   ApiClb006RequestParam,
@@ -27,6 +27,7 @@ import {
   ClubDelegateEnum,
 } from "@clubs/interface/common/enum/club.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
@@ -40,6 +41,8 @@ interface ApiClb015ResponseType {
 }
 @Injectable()
 export default class ClubDelegateService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private clubDelegateDRepository: ClubDelegateDRepository,
     private userPublicService: UserPublicService,
@@ -60,7 +63,7 @@ export default class ClubDelegateService {
         clubId: param.clubId,
       });
 
-    const threeDaysAgo = new Date();
+    const threeDaysAgo = this.clock.now();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     await Promise.all(

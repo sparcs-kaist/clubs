@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { MOldStudent } from "@sparcs-clubs/api/feature/user/model/old.student.model";
@@ -8,6 +9,8 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class ClubStudentTRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findByClubIdAndSemesterId(clubId: number, semesterId: number) {
@@ -26,7 +29,7 @@ export default class ClubStudentTRepository {
     clubId: number,
     semesterId: number,
   ): Promise<number> {
-    const today = new Date();
+    const today = this.clock.now();
 
     if (semesterId) {
       const result = await this.prisma.$queryRaw<Array<{ count: bigint }>>(
