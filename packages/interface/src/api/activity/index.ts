@@ -36,6 +36,8 @@ export * from "./endpoint/apiAct018";
 export * from "./endpoint/apiAct019";
 export * from "./endpoint/apiAct020";
 export * from "./endpoint/apiAct023";
+export * from "./endpoint/apiAct030";
+export { default as apiAct030 } from "./endpoint/apiAct030";
 
 registry.registerPath({
   tags: ["activity"],

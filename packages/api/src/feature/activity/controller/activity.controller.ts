@@ -125,6 +125,8 @@ import {
   apiAct015,
   ApiAct015RequestParam,
   ApiAct015ResponseOk,
+  apiAct030,
+  ApiAct030ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -296,6 +298,13 @@ export default class ActivityController {
     });
 
     return result;
+  }
+
+  @Student()
+  @Get("/student/provisional/activity-duration")
+  @UsePipes(new ZodPipe(apiAct030))
+  async getStudentProvisionalActivityDuration(): Promise<ApiAct030ResponseOk> {
+    return this.activityService.getStudentProvisionalActivityDuration();
   }
 
   // Act 012, 014등록 심의를 위해서 잠시 public으로 변경

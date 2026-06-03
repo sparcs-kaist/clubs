@@ -10,9 +10,13 @@ import { Duration } from "@sparcs-clubs/web/features/register-club/types/registe
 import { formatDotDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 import EditActivityTermModal from "../EditActivityTermModal";
+import EditProvisionalActivityTermModal from "../EditProvisionalActivityTermModal";
+
+type ActivityTermSource = "regular" | "provisional";
 
 interface SelectActivityTermProps {
   onChange?: (data: Duration[]) => void;
+  source?: ActivityTermSource;
 }
 
 const ActivityTermArea = styled.div`
@@ -47,6 +51,7 @@ const ActivityTermContent = styled.div`
 
 const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
   onChange = () => {},
+  source = "regular",
 }) => {
   const { control, watch } = useFormContext<ActivityReportFormData>();
   const durations = watch("durations");
@@ -63,8 +68,13 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
         close();
       };
 
+      const ModalComponent =
+        source === "provisional"
+          ? EditProvisionalActivityTermModal
+          : EditActivityTermModal;
+
       return (
-        <EditActivityTermModal
+        <ModalComponent
           isOpen={isOpen}
           control={control}
           onClose={close}

@@ -193,6 +193,9 @@ describe("ActivityService", () => {
     const registrationPublicService = {
       resetClubRegistrationStatusEnum: jest.fn().mockResolvedValue(undefined),
     };
+    const registrationDeadlinePublicService = {
+      validate: jest.fn().mockResolvedValue(undefined),
+    };
     const activityDurationPublicService = {
       load: jest.fn().mockResolvedValue(activityDuration),
       getById: jest.fn().mockResolvedValue(activityDuration),
@@ -218,7 +221,7 @@ describe("ActivityService", () => {
         clubPublicService as never,
         filePublicService as never,
         registrationPublicService as never,
-        {} as never,
+        registrationDeadlinePublicService as never,
         {} as never,
         {} as never,
         activityDurationValidatorService as never,
@@ -230,6 +233,7 @@ describe("ActivityService", () => {
       activityCommentRepository,
       activityDurationPublicService,
       filePublicService,
+      registrationDeadlinePublicService,
       registrationPublicService,
       semesterPublicService,
       service,
@@ -274,8 +278,12 @@ describe("ActivityService", () => {
   });
 
   it("keeps professor approval when a provisional activity report is edited", async () => {
-    const { activityRepository, registrationPublicService, service } =
-      createService();
+    const {
+      activityRepository,
+      registrationDeadlinePublicService,
+      registrationPublicService,
+      service,
+    } = createService();
 
     await service.putStudentActivityProvisional(
       { activityId: activity.id },
@@ -288,6 +296,10 @@ describe("ActivityService", () => {
     expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
     expect(updatedActivity.professorApprovedAt).toBeUndefined();
     expect(updatedActivity.commentedAt).toBeNull();
+    expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
+      date: expect.any(Date),
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
     expect(
       registrationPublicService.resetClubRegistrationStatusEnum,
     ).toHaveBeenCalledWith(activity.club.id);
@@ -562,6 +574,33 @@ describe("ActivityService provisional activities", () => {
         query: { clubId: 111 },
       }),
     ).resolves.toEqual({ activities: [] });
+
+    expect(registrationDeadlinePublicService.searchOne).toHaveBeenCalledWith({
+      date: NOW,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityDurationPublicService.search).toHaveBeenCalledWith({
+      semesterId: 19,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+  });
+
+  it("returns the active registration activity duration", async () => {
+    const activityDuration = createRegistrationActivityDuration(30, 19);
+    const {
+      activityDurationPublicService,
+      registrationDeadlinePublicService,
+      service,
+    } = createProvisionalListService({
+      activeRegistrationDeadline: { semester: { id: 19 } },
+      registrationActivityDurations: [activityDuration],
+    });
+
+    await expect(
+      service.getStudentProvisionalActivityDuration(),
+    ).resolves.toEqual({
+      activityDuration,
+    });
 
     expect(registrationDeadlinePublicService.searchOne).toHaveBeenCalledWith({
       date: NOW,

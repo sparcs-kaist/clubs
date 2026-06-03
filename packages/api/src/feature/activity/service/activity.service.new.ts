@@ -50,6 +50,7 @@ import {
   ApiAct017RequestBody,
   ApiAct017RequestParam,
   ApiAct017ResponseOk,
+  ApiAct030ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -697,6 +698,13 @@ export default class ActivityService {
       studentId,
       clubId: activity.club.id,
     });
+
+    // 현재가 동아리 등록 기간인지 확인합니다.
+    await this.registrationDeadlinePublicService.validate({
+      date: this.clock.now(),
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
 
@@ -811,6 +819,19 @@ export default class ActivityService {
     return this.getRegistrationActivityDuration(
       activeRegistrationDeadline.semester.id,
     );
+  }
+
+  async getStudentProvisionalActivityDuration(): Promise<ApiAct030ResponseOk> {
+    const activityDuration = await this.getProvisionalActivityDuration({});
+
+    if (activityDuration === null) {
+      throw new HttpException(
+        "No active registration activity duration found",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return { activityDuration };
   }
 
   /**
