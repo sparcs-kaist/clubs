@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { ApiSem007ResponseOK } from "@clubs/interface/api/semester/apiSem007";
 import { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
 
+import { filterRegularActivityDurations } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
+
 import useGetActivityDeadlines from "../services/getActivityDeadlines";
 import useGetActivityDurations from "../services/useGetActivityDurations";
 
@@ -33,7 +35,9 @@ const useGroupActivityDeadlines = () => {
     }
 
     const { deadlines } = deadlineResponse;
-    const { activityDurations } = activityDurationsResponse;
+    const activityDurations = filterRegularActivityDurations(
+      activityDurationsResponse.activityDurations,
+    );
 
     // 활동 기간별로 deadline 그룹핑
     const groupedMap = new Map<number, ApiSem007ResponseOK["deadlines"]>();

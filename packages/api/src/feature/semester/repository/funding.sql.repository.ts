@@ -1,21 +1,23 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
-import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 
 @Injectable()
 export class FundingDeadlineSqlRepository {
   @Inject(CLOCK) private readonly clock: Clock;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   async checkExistingFundingDeadline(
     semesterId: number,
     startTerm: Date,
     endTerm: Date,
   ): Promise<boolean> {
-    const existingDeadlines = await this.prisma.fundingDeadlineD.findMany({
+    const existingDeadlines = await this.txHost.tx.fundingDeadlineD.findMany({
       where: {
         semesterId,
         deletedAt: null,
@@ -53,33 +55,21 @@ export class FundingDeadlineSqlRepository {
     deadlineEnum: number,
     semesterId: number,
   ): Promise<boolean> {
-    try {
-      await this.prisma.$transaction(async tx => {
-        const result = await tx.fundingDeadlineD.create({
-          data: {
-            startTerm,
-            endTerm,
-            deadlineEnum,
-            semesterId,
-          },
-        });
-        if (!result) {
-          throw new IntentionalRollback();
-        }
-        return true;
-      });
-      return true;
-    } catch (error) {
-      if (error instanceof IntentionalRollback) {
-        return false;
-      }
-      throw error;
-    }
+    const result = await this.txHost.tx.fundingDeadlineD.create({
+      data: {
+        startTerm,
+        endTerm,
+        deadlineEnum,
+        semesterId,
+      },
+    });
+
+    return result != null;
   }
 
   async getFundingDeadlines(semesterId: number) {
     // Prisma middleware handles timezone conversion automatically
-    const fundingDeadlines = await this.prisma.fundingDeadlineD.findMany({
+    const fundingDeadlines = await this.txHost.tx.fundingDeadlineD.findMany({
       where: {
         semesterId,
         deletedAt: null,
@@ -90,26 +80,14 @@ export class FundingDeadlineSqlRepository {
 
   async deleteFundingDeadline(deadlineId: number): Promise<boolean> {
     const cur = this.clock.now();
-    try {
-      await this.prisma.$transaction(async tx => {
-        const result = await tx.fundingDeadlineD.updateMany({
-          where: {
-            id: deadlineId,
-            deletedAt: null,
-          },
-          data: { deletedAt: cur },
-        });
-        if (result.count === 0) {
-          throw new IntentionalRollback();
-        }
-        return true;
-      });
-      return true;
-    } catch (error) {
-      if (error instanceof IntentionalRollback) {
-        return false;
-      }
-      throw error;
-    }
+    const result = await this.txHost.tx.fundingDeadlineD.updateMany({
+      where: {
+        id: deadlineId,
+        deletedAt: null,
+      },
+      data: { deletedAt: cur },
+    });
+
+    return result.count > 0;
   }
 }

@@ -11,6 +11,7 @@ import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useCreateFundingDeadline from "@sparcs-clubs/web/features/executive/funding/services/useCreateFundingDeadline";
 import useGetActivityDurations from "@sparcs-clubs/web/features/executive/services/useGetActivityDurations";
+import { filterRegularActivityDurations } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
 import { fundingDeadlineEnumToString } from "@sparcs-clubs/web/features/manage-club/funding/constants/fundingDeadlineEnumToString";
 import {
   getLocalDateLastTime,
@@ -73,7 +74,7 @@ const FundingDeadlineFormModal = ({
                 placeholder="활동기간을 선택해주세요"
                 value={activityDId}
                 onChange={e => setActivityDId(e)}
-                items={[...data.activityDurations]
+                items={filterRegularActivityDurations(data.activityDurations)
                   .sort((a, b) => b.semester.id - a.semester.id)
                   .map(activityDuration => ({
                     label: `${activityDuration.year}년 ${activityDuration.name} 활동기간`,

@@ -1,5 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+
 import type {
   ApiSem006RequestBody,
   ApiSem006ResponseCreated,
@@ -40,7 +42,10 @@ export class ActivityDurationService {
     const { activityDId, deadlineEnum, startTerm, endTerm } = param.body;
 
     const activityDuration = await this.activityDurationRepository
-      .find({ id: activityDId })
+      .find({
+        id: activityDId,
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+      })
       .then(takeOnlyOne(MActivityDuration));
 
     if (!activityDuration) {
@@ -92,10 +97,13 @@ export class ActivityDurationService {
     if (activityDId) {
       const found = await this.activityDurationRepository.find({
         id: activityDId,
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
       });
       activityDurations = found ?? [];
     } else {
-      activityDurations = await this.activityDurationRepository.find({});
+      activityDurations = await this.activityDurationRepository.find({
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+      });
     }
 
     // 병렬 + flatMap 스타일로 deadlines 생성
@@ -247,14 +255,18 @@ export class ActivityDurationService {
     }
 
     // Check if there are connected activity deadlines
-    const deadlines = await this.activityDeadlineRepository.find({
-      semesterId: existing[0].semester.id,
-    });
-    if (deadlines.length > 0) {
-      throw new HttpException(
-        "활동반기에 연결된 활동보고서 기한이 있어 삭제할 수 없습니다.",
-        HttpStatus.BAD_REQUEST,
-      );
+    if (
+      existing[0].activityDurationTypeEnum === ActivityDurationTypeEnum.Regular
+    ) {
+      const deadlines = await this.activityDeadlineRepository.find({
+        semesterId: existing[0].semester.id,
+      });
+      if (deadlines.length > 0) {
+        throw new HttpException(
+          "활동반기에 연결된 활동보고서 기한이 있어 삭제할 수 없습니다.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
     }
 
     const [activityCount, fundingCount] = await Promise.all([
