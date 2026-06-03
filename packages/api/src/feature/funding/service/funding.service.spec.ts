@@ -27,6 +27,7 @@ const latestCommentedExecutive = {
 const funding = {
   id: 401,
   name: "지원금 항목",
+  activityD: { id: activityDuration.id },
   expenditureAmount: 10000,
   approvedAmount: 8000,
   fundingStatusEnum: FundingStatusEnum.Approved,
@@ -51,8 +52,17 @@ const createFundingService = () => {
     fetch: jest.fn().mockResolvedValue(funding),
     fetchSummaries: jest.fn(),
     fetchCommentedSummaries: jest.fn(),
+    patchStatusTx: jest.fn().mockResolvedValue(funding),
   };
   const fundingCommentRepository = {
+    create: jest.fn().mockResolvedValue([
+      {
+        funding: { id: funding.id },
+        approvedAmount: funding.approvedAmount,
+        fundingStatusEnum: funding.fundingStatusEnum,
+        isFinalComment: jest.fn().mockReturnValue(true),
+      },
+    ]),
     find: jest.fn(),
   };
   const userPublicService = {
@@ -72,10 +82,14 @@ const createFundingService = () => {
     fetchSummaries: jest.fn().mockResolvedValue([activity]),
   };
   const semesterPublicService = {
-    loadId: jest.fn(),
+    loadId: jest.fn().mockResolvedValue(activityDuration.semester.id),
   };
   const activityDurationPublicService = {
     load: jest.fn().mockResolvedValue(activityDuration),
+    getById: jest.fn().mockResolvedValue(activityDuration),
+  };
+  const prisma = {
+    $transaction: jest.fn(async callback => callback({})),
   };
   const fundingDeadlinePublicService = {
     search: jest.fn(({ deadlineEnum }) => {
@@ -106,7 +120,7 @@ const createFundingService = () => {
     semesterPublicService as FundingServiceDependencies[6],
     activityDurationPublicService as FundingServiceDependencies[7],
     fundingDeadlinePublicService as FundingServiceDependencies[8],
-    {} as FundingServiceDependencies[9],
+    prisma as FundingServiceDependencies[9],
     {} as FundingServiceDependencies[10],
   );
 
@@ -121,6 +135,7 @@ const createFundingService = () => {
     clubPublicService,
     activityDurationPublicService,
     fundingDeadlinePublicService,
+    prisma,
   };
 };
 
@@ -279,5 +294,42 @@ describe("FundingService final commented executive", () => {
     expect(result.fundings[0].commentedExecutive).toEqual(
       latestCommentedExecutive,
     );
+  });
+});
+
+describe("FundingService executive review semester guard", () => {
+  it("rejects funding comments for fundings from another semester before feedback mutation", async () => {
+    const {
+      activityDurationPublicService,
+      fundingCommentRepository,
+      fundingRepository,
+      prisma,
+      service,
+    } = createFundingService();
+    fundingRepository.fetch.mockResolvedValueOnce({
+      ...funding,
+      activityD: { id: 999 },
+      fundingStatusEnum: FundingStatusEnum.Applied,
+    });
+    activityDurationPublicService.getById.mockResolvedValueOnce({
+      ...activityDuration,
+      id: 999,
+      semester: { id: 2 },
+    });
+
+    await expect(
+      service.postExecutiveFundingComment(
+        chargedExecutive.id,
+        funding.id,
+        FundingStatusEnum.Approved,
+        funding.expenditureAmount,
+        "승인합니다",
+      ),
+    ).rejects.toThrow("current semester");
+
+    expect(activityDurationPublicService.getById).toHaveBeenCalledWith(999);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(fundingCommentRepository.create).not.toHaveBeenCalled();
+    expect(fundingRepository.patchStatusTx).not.toHaveBeenCalled();
   });
 });

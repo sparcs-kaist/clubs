@@ -109,6 +109,22 @@ export default class ActivityService {
     }
   }
 
+  private async assertActivityDurationIsInCurrentSemester(
+    activityDId: number,
+  ): Promise<void> {
+    const [activityDuration, currentSemesterId] = await Promise.all([
+      this.activityDurationPublicService.getById(activityDId),
+      this.semesterPublicService.loadId(),
+    ]);
+
+    if (activityDuration.semester.id !== currentSemesterId) {
+      throw new HttpException(
+        "The activity duration is not in the current semester",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   /**
    * @param activityDId 조회하고 싶은 활동기간 id, 없을 경우 직전 활동기간의 id를 사용합니다.
    * @param clubId 동아리 id
@@ -914,6 +930,13 @@ export default class ActivityService {
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
     // TODO: transaction 추가
+    const activity = await this.activityRepository.fetch(
+      param.param.activityId,
+    );
+    await this.assertActivityDurationIsInCurrentSemester(
+      activity.activityDuration.id,
+    );
+
     const commentedAt = this.clock.now();
     const updatedActivities = await this.activityRepository.patch(
       {
@@ -952,6 +975,13 @@ export default class ActivityService {
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
     // TODO: transaction 추가
+    const activity = await this.activityRepository.fetch(
+      param.param.activityId,
+    );
+    await this.assertActivityDurationIsInCurrentSemester(
+      activity.activityDuration.id,
+    );
+
     const commentedAt = this.clock.now();
     const updatedActivities = await this.activityRepository.patch(
       {

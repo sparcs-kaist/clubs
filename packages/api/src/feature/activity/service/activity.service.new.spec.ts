@@ -100,6 +100,7 @@ describe("ActivityService", () => {
 
   const activityDuration = {
     id: 10,
+    semester: { id: 1 },
     startTerm: new Date("2026-03-01T00:00:00.000Z"),
     endTerm: new Date("2026-06-30T14:59:59.999Z"),
   };
@@ -218,8 +219,10 @@ describe("ActivityService", () => {
     return {
       activityRepository,
       activityCommentRepository,
+      activityDurationPublicService,
       filePublicService,
       registrationPublicService,
+      semesterPublicService,
       service,
     };
   };
@@ -320,6 +323,34 @@ describe("ActivityService", () => {
     });
   });
 
+  it("rejects executive approval for activity reports from another semester before feedback mutation", async () => {
+    const {
+      activityCommentRepository,
+      activityDurationPublicService,
+      activityRepository,
+      service,
+    } = createService(undefined, {
+      activityDuration: { id: 99 },
+      activityStatusEnum: ActivityStatusEnum.Applied,
+    });
+    activityDurationPublicService.getById.mockResolvedValueOnce({
+      ...activityDuration,
+      id: 99,
+      semester: { id: 2 },
+    });
+
+    await expect(
+      service.patchExecutiveActivityApproval({
+        executiveId: 7,
+        param: { activityId: activity.id },
+      }),
+    ).rejects.toThrow("current semester");
+
+    expect(activityDurationPublicService.getById).toHaveBeenCalledWith(99);
+    expect(activityRepository.patch).not.toHaveBeenCalled();
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
+  });
+
   it("does not create approval feedback when the activity report is already approved", async () => {
     const { activityCommentRepository, activityRepository, service } =
       createService();
@@ -381,6 +412,35 @@ describe("ActivityService", () => {
       executive: { id: 8 },
       activityStatusEnum: ActivityStatusEnum.Rejected,
     });
+  });
+
+  it("rejects executive send-back for activity reports from another semester before feedback mutation", async () => {
+    const {
+      activityCommentRepository,
+      activityDurationPublicService,
+      activityRepository,
+      service,
+    } = createService(undefined, {
+      activityDuration: { id: 99 },
+      activityStatusEnum: ActivityStatusEnum.Applied,
+    });
+    activityDurationPublicService.getById.mockResolvedValueOnce({
+      ...activityDuration,
+      id: 99,
+      semester: { id: 2 },
+    });
+
+    await expect(
+      service.patchExecutiveActivitySendBack({
+        executiveId: 8,
+        param: { activityId: activity.id },
+        body: { comment: "보완 필요" },
+      }),
+    ).rejects.toThrow("current semester");
+
+    expect(activityDurationPublicService.getById).toHaveBeenCalledWith(99);
+    expect(activityRepository.patch).not.toHaveBeenCalled();
+    expect(activityCommentRepository.create).not.toHaveBeenCalled();
   });
 
   it("does not create send-back feedback when the status update fails", async () => {
