@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IActivityCommentCreate,
   MActivityComment,
@@ -31,8 +33,28 @@ export class ActivityCommentRepository extends BaseSingleTableRepository<
   ActivityCommentOrderByKeys,
   ActivityCommentQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("activityFeedback", MActivityComment);
+  }
+
+  async createExecutiveReviewComment(param: {
+    activityId: number;
+    executiveId: number;
+    content: string;
+    activityStatusEnum: ActivityStatusEnum;
+  }): Promise<MActivityComment> {
+    const result = await this.txHost.tx.activityFeedback.create({
+      data: {
+        activityId: param.activityId,
+        executiveId: param.executiveId,
+        comment: param.content,
+        activityStatusEnum: param.activityStatusEnum,
+      },
+    });
+
+    return this.dbToModelMapping(result);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

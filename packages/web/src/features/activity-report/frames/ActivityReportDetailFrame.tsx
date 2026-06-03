@@ -305,7 +305,8 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
 
         {profile.type === UserTypeEnum.Executive &&
           !isOperatingCommittee &&
-          activityDeadline?.canApprove && (
+          activityDeadline?.canApprove &&
+          !isPastActivityReport && (
             <ExecutiveActivityReportApprovalSection
               comments={filterActivityComments(data.comments)}
               clubId={data.clubId}

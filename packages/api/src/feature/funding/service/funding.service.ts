@@ -109,6 +109,22 @@ export default class FundingService {
     private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
+  private async assertActivityDurationIsInCurrentSemester(
+    activityDId: number,
+  ): Promise<void> {
+    const [activityDuration, currentSemesterId] = await Promise.all([
+      this.activityDurationPublicService.getById(activityDId),
+      this.semesterPublicService.loadId(),
+    ]);
+
+    if (activityDuration.semester.id !== currentSemesterId) {
+      throw new HttpException(
+        "The activity duration is not in the current semester",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   @Transactional()
   async postStudentFunding(
     body: ApiFnd001RequestBody,
@@ -1045,6 +1061,7 @@ export default class FundingService {
    * @description 집행부원으로서 지원금 신청에 comment를 남깁니다.
    * @returns
    */
+  @Transactional()
   async postExecutiveFundingComment(
     executiveId: IExecutive["id"],
     id: IFunding["id"],
@@ -1060,12 +1077,15 @@ export default class FundingService {
       throw new HttpException(preFetchValidationError, HttpStatus.BAD_REQUEST);
     }
 
-    const { expenditureAmount } = await this.fundingRepository.fetch(id);
+    const targetFunding = await this.fundingRepository.fetch(id);
+    await this.assertActivityDurationIsInCurrentSemester(
+      targetFunding.activityD.id,
+    );
 
     const amountValidationError = getFundingCommentAmountValidationError({
       fundingStatusEnum,
       approvedAmount,
-      expenditureAmount,
+      expenditureAmount: targetFunding.expenditureAmount,
     });
     if (amountValidationError) {
       throw new HttpException(amountValidationError, HttpStatus.BAD_REQUEST);
