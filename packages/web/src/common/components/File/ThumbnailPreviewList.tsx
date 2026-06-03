@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import Viewer from "viewerjs";
 
 import FlexWrapper from "../FlexWrapper";
-import { FileDetail } from "./attachment";
+import { FileDetail, getFilePreviewType, openFileInNewTab } from "./attachment";
 import ThumbnailPreview from "./ThumbnailPreview";
 
 interface ThumbnailPreviewListProps {
@@ -20,7 +20,18 @@ const ThumbnailPreviewList: React.FC<ThumbnailPreviewListProps> = ({
   const viewerRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (index: number) => {
-    const images = viewerRef.current!;
+    if (getFilePreviewType(fileList[index]) === "pdf") {
+      openFileInNewTab(fileList[index], (url, target, features) =>
+        window.open(url, target, features),
+      );
+      return;
+    }
+
+    if (!viewerRef.current) {
+      return;
+    }
+
+    const images = viewerRef.current;
 
     const viewer = new Viewer(images, {
       hidden: () => {
