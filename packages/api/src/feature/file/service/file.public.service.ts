@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Injectable, NotFoundException } from "@nestjs/common";
 
 import { getArrayDiff } from "@sparcs-clubs/api/common/util/util";
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import { MFile } from "../model/file.model";
 import { FileRepository } from "../repository/file.repository";
@@ -12,6 +13,7 @@ export default class FilePublicService {
   constructor(
     private s3Client: S3Client,
     private fileRepository: FileRepository,
+    private appConfigService: AppConfigService,
   ) {}
 
   async getFileUrl(fileId: string): Promise<string> {
@@ -23,7 +25,7 @@ export default class FilePublicService {
 
     // 내가 S3에 하려는 작업을 명시한다.
     const command = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: this.appConfigService.s3BucketName,
       Key: `file/${file.userId}.${file.signedAt.valueOf()}.${file.name}`,
     });
 

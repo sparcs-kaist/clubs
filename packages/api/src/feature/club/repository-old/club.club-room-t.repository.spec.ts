@@ -1,5 +1,12 @@
 import { ClubRoomTRepository } from "./club.club-room-t.repository";
 
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => new Date(Date.now()),
+    },
+  });
+
 describe("ClubRoomTRepository", () => {
   afterEach(() => {
     jest.useRealTimers();
@@ -18,10 +25,12 @@ describe("ClubRoomTRepository", () => {
           }),
         },
       };
-      const repository = new ClubRoomTRepository(
-        prisma as unknown as ConstructorParameters<
-          typeof ClubRoomTRepository
-        >[0],
+      const repository = injectTestClock(
+        new ClubRoomTRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubRoomTRepository
+          >[0],
+        ),
       );
 
       const result = await repository.findClubLocationById(10);
@@ -51,10 +60,12 @@ describe("ClubRoomTRepository", () => {
           findFirst: jest.fn().mockResolvedValue(null),
         },
       };
-      const repository = new ClubRoomTRepository(
-        prisma as unknown as ConstructorParameters<
-          typeof ClubRoomTRepository
-        >[0],
+      const repository = injectTestClock(
+        new ClubRoomTRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubRoomTRepository
+          >[0],
+        ),
       );
 
       const result = await repository.findClubLocationById(10);

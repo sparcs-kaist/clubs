@@ -159,7 +159,7 @@ export abstract class BaseSingleTableRepository<
     const where = this.makeWhereClause(query);
     await delegate.updateMany({
       where,
-      data: { deletedAt: new Date() },
+      data: { deletedAt: this.clock.now() },
     });
     return true;
   }

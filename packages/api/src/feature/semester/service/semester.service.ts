@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -17,6 +17,7 @@ import type {
 } from "@clubs/interface/api/semester/index";
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
@@ -29,6 +30,8 @@ import { SemesterSQLRepository } from "../repository/semester.sql.repository";
 
 @Injectable()
 export class SemesterService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly semesterRepository: SemesterRepository,
     private readonly semesterSQLRepository: SemesterSQLRepository,
@@ -72,7 +75,7 @@ export class SemesterService {
   async getPublicSemesterNow(): Promise<ApiSem005ResponseOK> {
     const semester = await this.semesterRepository
       .find({
-        date: new Date(),
+        date: this.clock.now(),
         pagination: {
           offset: 1,
           itemCount: 1,
@@ -93,7 +96,7 @@ export class SemesterService {
    * @returns 오늘의 활동보고서 작성기간을 리턴합니다.
    */
   async getPublicActivitiesDeadline(): Promise<ApiAct018ResponseOk> {
-    const now = new Date();
+    const now = this.clock.now();
     const semester = await this.semesterRepository
       .find({
         date: now,

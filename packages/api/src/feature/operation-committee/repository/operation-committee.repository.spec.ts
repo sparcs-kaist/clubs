@@ -1,5 +1,14 @@
 import { OperationCommitteeRepository } from "./operation-committee.repository";
 
+const NOW = new Date("2026-06-03T12:00:00.000Z");
+
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => NOW,
+    },
+  });
+
 jest.mock("@sparcs-clubs/api/env", () => ({
   env: {
     NODE_ENV: "test",
@@ -16,14 +25,16 @@ describe("OperationCommitteeRepository", () => {
         },
       },
     };
-    const repository = new OperationCommitteeRepository(txHost as never);
+    const repository = injectTestClock(
+      new OperationCommitteeRepository(txHost as never),
+    );
 
     const result =
       await repository.createOperationCommitteeSecretKey("new-key");
 
     expect(txHost.tx.operationCommittee.updateMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
-      data: { deletedAt: expect.any(Date) },
+      data: { deletedAt: NOW },
     });
     expect(txHost.tx.operationCommittee.create).toHaveBeenCalledWith({
       data: { secretKey: "new-key" },

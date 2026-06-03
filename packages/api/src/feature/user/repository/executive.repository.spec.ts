@@ -1,5 +1,12 @@
 import ExecutiveRepository from "./executive.repository";
 
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => new Date(Date.now()),
+    },
+  });
+
 describe("ExecutiveRepository", () => {
   afterEach(() => {
     jest.useRealTimers();
@@ -14,10 +21,12 @@ describe("ExecutiveRepository", () => {
           findFirst: jest.fn().mockResolvedValue({ id: 1 }),
         },
       };
-      const repository = new ExecutiveRepository(
-        prisma as unknown as ConstructorParameters<
-          typeof ExecutiveRepository
-        >[0],
+      const repository = injectTestClock(
+        new ExecutiveRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ExecutiveRepository
+          >[0],
+        ),
       );
 
       const result = await repository.findExecutiveByUserId(10);

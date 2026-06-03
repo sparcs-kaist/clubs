@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import {
@@ -51,6 +51,7 @@ import {
   ApiAct017ResponseOk,
 } from "@clubs/interface/api/activity/index";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
@@ -75,6 +76,8 @@ import {
 
 @Injectable()
 export default class ActivityService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly activityRepository: ActivityNewRepository,
     private readonly activityClubChargedExecutiveRepository: ActivityClubChargedExecutiveRepository,
@@ -171,7 +174,7 @@ export default class ActivityService {
     });
     // 오늘이 활동보고서 작성기간 | 수정기간 | 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService.search({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: [
         ActivityDeadlineEnum.Writing,
         ActivityDeadlineEnum.Modification,
@@ -288,7 +291,7 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인합니다.
     await this.activityDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Exception,
@@ -350,7 +353,7 @@ export default class ActivityService {
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
     const availableDeadlines = await this.activityDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Modification,
@@ -419,7 +422,7 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
-        editedAt: new Date(),
+        editedAt: this.clock.now(),
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
         commentedAt: null,
         commentedExecutive: undefined,
@@ -446,7 +449,7 @@ export default class ActivityService {
 
     // 현재가 동아리 등록 기간인지 확인합니다
     await this.registrationDeadlinePublicService.validate({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
@@ -599,12 +602,12 @@ export default class ActivityService {
 
     // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
     await this.registrationDeadlinePublicService.validate({
-      date: new Date(),
+      date: this.clock.now(),
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
 
     const activityD = await this.activityDurationPublicService.load({
-      date: new Date(),
+      date: this.clock.now(),
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
     });
     const activityDId = activityD.id;
@@ -780,7 +783,7 @@ export default class ActivityService {
 
     const activeRegistrationDeadline =
       await this.registrationDeadlinePublicService.searchOne({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
       });
 
@@ -911,7 +914,7 @@ export default class ActivityService {
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
     // TODO: transaction 추가
-    const commentedAt = new Date();
+    const commentedAt = this.clock.now();
     const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
@@ -949,7 +952,7 @@ export default class ActivityService {
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
     // TODO: transaction 추가
-    const commentedAt = new Date();
+    const commentedAt = this.clock.now();
     const updatedActivities = await this.activityRepository.patch(
       {
         id: param.param.activityId,
@@ -1234,7 +1237,7 @@ export default class ActivityService {
     await this.clubPublicService.checkIsProfessor({
       professorId,
       clubId: activity.club.id,
-      date: new Date(),
+      date: this.clock.now(),
     });
 
     const studentMap = await this.userPublicService.getStudentMapByIds(

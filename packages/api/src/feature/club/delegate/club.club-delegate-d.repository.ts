@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import {
@@ -6,6 +6,7 @@ import {
   ClubDelegateEnum,
 } from "@clubs/interface/common/enum/club.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
@@ -13,6 +14,8 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class ClubDelegateDRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -23,7 +26,7 @@ export class ClubDelegateDRepository {
   }): Promise<boolean> {
     const result = await this.prisma.clubDelegateChangeRequest.updateMany({
       where: { id: param.id },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: this.clock.now() },
     });
     return result.count > 0;
   }
@@ -84,7 +87,7 @@ export class ClubDelegateDRepository {
    * 3일 이내에 신청된 요청만을 조회합니다.
    */
   async findDelegateChangeRequestByStudentId(param: { studentId: number }) {
-    const threeDaysAgo = new Date();
+    const threeDaysAgo = this.clock.now();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     const result = await this.prisma.clubDelegateChangeRequest.findMany({
@@ -150,7 +153,7 @@ export class ClubDelegateDRepository {
    * @returns 해당 동아리의 대표자 정보 목록을 가져옵니다.
    */
   async findDelegateByClubId(clubId: number) {
-    const currentDate = new Date();
+    const currentDate = this.clock.now();
 
     const delegate = await this.prisma.clubDelegateD.findMany({
       where: {
@@ -171,7 +174,7 @@ export class ClubDelegateDRepository {
    * 로직에 문제가 없을경우 크기가 0 또는 1인 리스트가 리턴됩니다.
    */
   async findDelegateByStudentId(studentId: number) {
-    const currentDate = new Date();
+    const currentDate = this.clock.now();
 
     const delegate = await this.prisma.clubDelegateD.findMany({
       where: {
@@ -190,7 +193,7 @@ export class ClubDelegateDRepository {
     studentId: number,
     clubId: number,
   ): Promise<boolean> {
-    const crt = new Date();
+    const crt = this.clock.now();
     const result = await this.prisma.clubDelegateD.findFirst({
       where: {
         clubId,
@@ -291,7 +294,7 @@ export class ClubDelegateDRepository {
     clubId: number;
     clubDelegateEnumId: number;
   }): Promise<boolean> {
-    const now = new Date();
+    const now = this.clock.now();
 
     const result = await this.prisma.$transaction<boolean>(async tx => {
       const requestInsertionResult = await tx.clubDelegateChangeRequest.create({
@@ -331,7 +334,7 @@ export class ClubDelegateDRepository {
     clubDelegateEnumId: number;
     studentId: number;
   }): Promise<boolean> {
-    const now = new Date();
+    const now = this.clock.now();
 
     const result = await this.prisma.$transaction<boolean>(async tx => {
       // 기존 대표자의 임기를 종료
@@ -446,7 +449,7 @@ export class ClubDelegateDRepository {
   }
 
   async isPresidentByStudentIdAndClubId(studentId: number, clubId: number) {
-    const cur = new Date();
+    const cur = this.clock.now();
     const presidentEnumId = ClubDelegateEnum.Representative;
     const president = await this.prisma.clubDelegateD.count({
       where: {

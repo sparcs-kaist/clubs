@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import { MActivityDuration } from "../model/activity.duration.model";
 import {
@@ -37,6 +38,8 @@ export class ActivityDurationPublicService extends BasePublicService<
   ActivityDurationIsQuery,
   ActivityDurationLoadQuery
 > {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly activityDurationRepository: ActivityDurationRepository,
     private readonly semesterPublicService: SemesterPublicService,
@@ -93,7 +96,7 @@ export class ActivityDurationPublicService extends BasePublicService<
     const semesterId =
       query?.semesterId ??
       (await this.semesterPublicService.loadId({
-        date: query?.date ?? new Date(),
+        date: query?.date ?? this.clock.now(),
       }));
 
     const res = await super.load({

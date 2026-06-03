@@ -301,7 +301,7 @@ export abstract class BaseMultiTableRepository<
             [config.foreignKey]: model.id,
             deletedAt: null,
           },
-          data: { deletedAt: new Date() },
+          data: { deletedAt: this.clock.now() },
         });
         // Insert new
         await Promise.all(
@@ -343,7 +343,7 @@ export abstract class BaseMultiTableRepository<
     // Soft-delete main
     await mainDelegate.updateMany({
       where: { id: { in: mainIds } },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: this.clock.now() },
     });
 
     // Soft-delete oneToOne
@@ -352,7 +352,7 @@ export abstract class BaseMultiTableRepository<
         const subDelegate = this.getSubDelegate(config.prismaModelName, tx);
         return subDelegate.updateMany({
           where: { [config.foreignKey]: { in: mainIds } },
-          data: { deletedAt: new Date() },
+          data: { deletedAt: this.clock.now() },
         });
       }),
     );
@@ -363,7 +363,7 @@ export abstract class BaseMultiTableRepository<
         const subDelegate = this.getSubDelegate(config.prismaModelName, tx);
         return subDelegate.updateMany({
           where: { [config.foreignKey]: { in: mainIds } },
-          data: { deletedAt: new Date() },
+          data: { deletedAt: this.clock.now() },
         });
       }),
     );

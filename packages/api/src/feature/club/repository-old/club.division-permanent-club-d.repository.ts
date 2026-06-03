@@ -1,13 +1,16 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class DivisionPermanentClubDRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findPermenantClub(clubId: number, startTerm?: Date): Promise<boolean> {
-    const now = new Date();
+    const now = this.clock.now();
     const baseStartTerm = startTerm || now;
 
     const result = await this.prisma.divisionPermanentClubD.findMany({

@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from "@nestjs/common";
+import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { ApiAut001RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut001";
@@ -6,30 +6,28 @@ import { ApiAut002ResponseCreated } from "@clubs/interface/api/auth/endpoint/api
 import { ApiAut003ResponseOk } from "@clubs/interface/api/auth/endpoint/apiAut003";
 import { ApiAut004RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut004";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { getSsoConfig } from "@sparcs-clubs/api/env";
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import { Request } from "../dto/auth.dto";
 import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
-import { Client } from "../util/sparcs-sso";
 import {
   type ExtractedUserInfo,
   safeExtractUserInfoFromV2,
 } from "../util/user-info-extractor";
+import { SsoClientService } from "./sso-client.service";
 
 @Injectable()
 export class AuthService {
-  private readonly ssoClient;
-
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
-  ) {
-    const ssoConfig = getSsoConfig();
-    const ssoClient = new Client(ssoConfig.ssoClientId, ssoConfig.ssoSecretKey);
-    this.ssoClient = ssoClient;
-  }
+    private readonly ssoClient: SsoClientService,
+    private readonly appConfigService: AppConfigService,
+    @Inject(CLOCK) private readonly clock: Clock,
+  ) {}
 
   /**
    * @param query
@@ -39,7 +37,7 @@ export class AuthService {
    */
   public async getAuthSignIn(query: ApiAut001RequestQuery, req: Request) {
     req.session.next = query.next ?? "/";
-    const { url, state } = this.ssoClient.get_login_params();
+    const { url, state } = this.ssoClient.getLoginParams();
 
     req.session.ssoState = state;
     return url;
@@ -64,7 +62,7 @@ export class AuthService {
       };
     }
 
-    const ssoProfile: SSOUser = await this.ssoClient.get_user_info(query.code);
+    const ssoProfile: SSOUser = await this.ssoClient.getUserInfo(query.code);
 
     // SSO 프로필 정보 로깅 (보안상 민감한 정보는 제외)
     logger.info("SSO profile retrieved", {
@@ -76,7 +74,7 @@ export class AuthService {
     logger.info(JSON.stringify(ssoProfile));
 
     const isKaistIamLogin: boolean = true;
-    if (process.env.NODE_ENV !== "local") {
+    if (!this.appConfigService.isLocal) {
       if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
         logger.warn("Missing required SSO data", {
           hasSid: !!ssoProfile.sid,
@@ -129,7 +127,7 @@ export class AuthService {
           sid: ssoProfile.sid,
         });
 
-        if (process.env.NODE_ENV !== "local") {
+        if (!this.appConfigService.isLocal) {
           return {
             nextUrl: "/error/invalid-login",
             refreshToken: null,
@@ -143,19 +141,19 @@ export class AuthService {
 
     // SSO V2 정보가 없거나 추출 실패한 경우, local 환경에서만 ENV fallback 사용
     if (!userInfo) {
-      if (process.env.NODE_ENV === "local") {
+      if (this.appConfigService.isLocal) {
         logger.info(
           "SSO V2 info not available, falling back to ENV mock data for local development",
         );
 
         const mockV2Info: KaistV2Info = {
-          std_no: process.env.USER_V2_STD_NO!,
-          email: process.env.USER_V2_EMAIL!,
-          user_nm: process.env.USER_V2_USER_NM!,
-          socps_cd: process.env.USER_V2_SOCPS_CD!,
-          std_dept_id: process.env.USER_V2_STD_DEPT_ID!,
-          kaist_uid: process.env.USER_V2_KAIST_UID!,
-          user_id: process.env.USER_V2_USER_ID!,
+          std_no: this.appConfigService.userV2StdNo,
+          email: this.appConfigService.userV2Email,
+          user_nm: this.appConfigService.userV2UserNm,
+          socps_cd: this.appConfigService.userV2SocpsCd,
+          std_dept_id: this.appConfigService.userV2StdDeptId,
+          kaist_uid: this.appConfigService.userV2KaistUid,
+          user_id: this.appConfigService.userV2UserId,
 
           user_eng_nm: "Test User",
           login_type: "L004",
@@ -166,8 +164,8 @@ export class AuthService {
           ebs_user_status_kor: null,
           camps_div_cd: "D",
           std_prog_code: "0",
-          kaist_org_id: process.env.USER_V2_STD_DEPT_ID!,
-          emp_dept_id: process.env.USER_V2_EMP_DEPT_ID || "20686",
+          kaist_org_id: this.appConfigService.userV2StdDeptId,
+          emp_dept_id: this.appConfigService.userV2EmpDeptId,
           emp_dept_kor_nm: "테스트 교수부서",
           emp_dept_eng_nm: "Test Professor Department",
           emp_no: "1267",
@@ -196,7 +194,7 @@ export class AuthService {
           };
         }
 
-        localSid = process.env.USER_SID || localSid;
+        localSid = this.appConfigService.userSid || localSid;
       } else {
         return {
           nextUrl: "/error/invalid-login",
@@ -226,12 +224,12 @@ export class AuthService {
     // }
     const accessToken = this.getAccessToken(user);
     const refreshToken = this.getRefreshToken(user);
-    const current = new Date(); // todo 시간 변경 필요.
+    const current = this.clock.now();
     const accessTokenTokenExpiresAt = new Date(
-      current.getTime() + parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN),
+      current.getTime() + this.appConfigService.accessTokenExpiresInMs,
     );
     const refreshTokenExpiresAt = new Date(
-      current.getTime() + parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN),
+      current.getTime() + this.appConfigService.refreshTokenExpiresInMs,
     );
     const nextUrl = session.next ?? "/";
 
@@ -340,8 +338,8 @@ export class AuthService {
           studentNumber: user.undergraduate.number,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -358,8 +356,8 @@ export class AuthService {
           studentNumber: user.master.number,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -376,8 +374,8 @@ export class AuthService {
           studentNumber: user.doctor.number,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -394,8 +392,8 @@ export class AuthService {
           studentId: user.executive.studentId,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -411,8 +409,8 @@ export class AuthService {
           professorId: user.professor.id,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -428,8 +426,8 @@ export class AuthService {
           employeeId: user.employee.id,
         },
         {
-          secret: process.env.ACCESS_TOKEN_SECRET_KEY,
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
     }
@@ -451,8 +449,8 @@ export class AuthService {
         name: user.name,
       },
       {
-        secret: process.env.REFRESH_TOKEN_SECRET_KEY,
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+        secret: this.appConfigService.refreshTokenSecretKey,
+        expiresIn: this.appConfigService.refreshTokenExpiresIn,
       },
     );
     return refreshToken;

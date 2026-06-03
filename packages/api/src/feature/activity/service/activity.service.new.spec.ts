@@ -24,6 +24,13 @@ type ActivityStub = {
 
 const NOW = new Date("2026-06-01T12:00:00.000Z");
 
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => new Date(Date.now()),
+    },
+  });
+
 function createRegistrationActivityDuration(id: number, semesterId: number) {
   return {
     id,
@@ -60,20 +67,22 @@ function createProvisionalListService({
   };
   const unusedDependency = {} as never;
 
-  const service = new ActivityService(
-    activityRepository as never,
-    unusedDependency,
-    unusedDependency,
-    activityDurationPublicService as never,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
-    registrationDeadlinePublicService as never,
-    unusedDependency,
-    unusedDependency,
-    unusedDependency,
+  const service = injectTestClock(
+    new ActivityService(
+      activityRepository as never,
+      unusedDependency,
+      unusedDependency,
+      activityDurationPublicService as never,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+      registrationDeadlinePublicService as never,
+      unusedDependency,
+      unusedDependency,
+      unusedDependency,
+    ),
   );
 
   return {
@@ -188,20 +197,22 @@ describe("ActivityService", () => {
       getValidationError: jest.fn().mockReturnValue(null),
     };
 
-    const service = new ActivityService(
-      activityRepository as never,
-      {} as never,
-      activityCommentRepository as never,
-      activityDurationPublicService as never,
-      activityDeadlinePublicService as never,
-      semesterPublicService as never,
-      clubPublicService as never,
-      filePublicService as never,
-      registrationPublicService as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      activityDurationValidatorService as never,
+    const service = injectTestClock(
+      new ActivityService(
+        activityRepository as never,
+        {} as never,
+        activityCommentRepository as never,
+        activityDurationPublicService as never,
+        activityDeadlinePublicService as never,
+        semesterPublicService as never,
+        clubPublicService as never,
+        filePublicService as never,
+        registrationPublicService as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        activityDurationValidatorService as never,
+      ),
     );
 
     return {

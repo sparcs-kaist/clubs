@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -15,6 +16,7 @@ import {
 } from "@clubs/interface/common/enum/club.enum";
 
 import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -40,6 +42,8 @@ interface IClubs {
 
 @Injectable()
 export class ClubOldRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   // clubId가 일치하는 club을 리스트로 가져옵니다.
@@ -557,17 +561,21 @@ export class ClubOldRepository {
 
     const targetSemesterIds = semesterIds ?? [];
     const hasTargetSemesters = targetSemesterIds.length > 0;
-    const currentTerm = new Date();
-    const clubTWhere: Prisma.ClubTWhereInput = hasTargetSemesters
-      ? {
-          semesterId: { in: targetSemesterIds },
-          deletedAt: null,
-        }
-      : {
-          startTerm: { lte: currentTerm },
-          OR: [{ endTerm: { gte: currentTerm } }, { endTerm: null }],
-          deletedAt: null,
-        };
+    let clubTWhere: Prisma.ClubTWhereInput;
+
+    if (hasTargetSemesters) {
+      clubTWhere = {
+        semesterId: { in: targetSemesterIds },
+        deletedAt: null,
+      };
+    } else {
+      const currentTerm = this.clock.now();
+      clubTWhere = {
+        startTerm: { lte: currentTerm },
+        OR: [{ endTerm: { gte: currentTerm } }, { endTerm: null }],
+        deletedAt: null,
+      };
+    }
 
     const clubs = await this.prisma.club.findMany({
       where: {

@@ -1,10 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 
 @Injectable()
 export class OperationCommitteeRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {}
@@ -13,7 +16,7 @@ export class OperationCommitteeRepository {
     // Soft-delete all existing active keys
     await this.txHost.tx.operationCommittee.updateMany({
       where: { deletedAt: null },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: this.clock.now() },
     });
 
     // Create a new key
@@ -60,7 +63,7 @@ export class OperationCommitteeRepository {
 
     await this.txHost.tx.operationCommittee.update({
       where: { id: recent.id },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: this.clock.now() },
     });
   }
 }

@@ -121,7 +121,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         chargedExecutiveId: model.chargedExecutive?.id,
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
-        updatedAt: new Date(),
+        updatedAt: this.clock.now(),
         professorApprovedAt: model.professorApprovedAt,
       },
       oneToOne: {},

@@ -9,18 +9,20 @@ import { ZodError } from "zod";
 
 import { generateOpenAPI } from "@clubs/interface/open-api";
 
-import { env } from "@sparcs-clubs/api/env";
-
 import { AppModule } from "./app.module";
+import { CLOCK, Clock } from "./common/clock/clock";
 import {
   HttpExceptionFilter,
   UnexpectedExceptionFilter,
   ZodErrorFilter,
 } from "./common/util/exception.filter";
 import logger from "./common/util/logger";
+import { AppConfigService } from "./config/app-config.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const appConfigService = app.get(AppConfigService);
+  const clock = app.get<Clock>(CLOCK);
 
   /* swagger 세팅 시작 */
   // OpenAPI 스펙 생성
@@ -53,7 +55,7 @@ async function bootstrap() {
 
   app.use(
     session({
-      secret: env.SECRET_KEY,
+      secret: appConfigService.secretKey,
       resave: false,
       saveUninitialized: false,
       cookie: { maxAge: 600000 },
@@ -61,23 +63,25 @@ async function bootstrap() {
   );
 
   // localhost에서의 cors 해결
-  if (process.env.NODE_ENV === "local") {
+  if (appConfigService.isLocal) {
     app.enableCors({
-      origin: `http://localhost:${process.env.CLIENT_PORT}`,
+      origin: `http://localhost:${appConfigService.clientPort}`,
       credentials: true,
     });
     app.useGlobalFilters(
-      new ZodErrorFilter<ZodError>(),
-      new HttpExceptionFilter<HttpException>(),
+      new ZodErrorFilter<ZodError>(clock),
+      new HttpExceptionFilter<HttpException>(clock),
     );
   } else {
     app.useGlobalFilters(
-      new UnexpectedExceptionFilter(),
-      new ZodErrorFilter<ZodError>(),
-      new HttpExceptionFilter<HttpException>(),
+      new UnexpectedExceptionFilter(clock),
+      new ZodErrorFilter<ZodError>(clock),
+      new HttpExceptionFilter<HttpException>(clock),
     ); // 만약 global추가하는 경우 AllExceptionFilter 뒤에 추가하면 됨.
   }
-  await app.listen(env.SERVER_PORT);
-  logger.debug(`Server is running on http://localhost:${env.SERVER_PORT}`);
+  await app.listen(appConfigService.serverPort);
+  logger.debug(
+    `Server is running on http://localhost:${appConfigService.serverPort}`,
+  );
 }
 bootstrap();

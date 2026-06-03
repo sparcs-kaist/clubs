@@ -1,6 +1,8 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { forwardRef, Module } from "@nestjs/common";
 
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
+
 import ClubModule from "../club/club.module";
 import { FileController } from "./controller/file.controller";
 import { FileRepository } from "./repository/file.repository";
@@ -16,14 +18,15 @@ import { FileService } from "./service/file.service";
     FilePublicService,
     {
       provide: S3Client,
-      useFactory: () =>
+      useFactory: (appConfigService: AppConfigService) =>
         new S3Client({
-          region: process.env.S3_REGION,
+          region: appConfigService.s3Region,
           credentials: {
-            accessKeyId: process.env.S3_ACCESS_KEY,
-            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+            accessKeyId: appConfigService.s3AccessKey,
+            secretAccessKey: appConfigService.s3SecretAccessKey,
           },
         }),
+      inject: [AppConfigService],
     },
   ],
   exports: [FilePublicService],
