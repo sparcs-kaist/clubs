@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -108,15 +109,13 @@ export default class FundingService {
     private readonly operationCommitteeService: OperationCommitteeService,
   ) {}
 
+  @Transactional()
   async postStudentFunding(
     body: ApiFnd001RequestBody,
     studentId: number,
   ): Promise<ApiFnd001ResponseCreated> {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
-    await this.checkDeadline([
-      FundingDeadlineEnum.Writing,
-      FundingDeadlineEnum.Exception,
-    ]);
+    await this.checkDeadline([FundingDeadlineEnum.Writing]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
@@ -425,6 +424,7 @@ export default class FundingService {
     return undefined;
   }
 
+  @Transactional()
   async putStudentFunding(
     body: ApiFnd003RequestBody,
     param: ApiFnd003RequestParam,
@@ -434,7 +434,6 @@ export default class FundingService {
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
-      FundingDeadlineEnum.Exception,
     ]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
@@ -449,6 +448,7 @@ export default class FundingService {
     });
   }
 
+  @Transactional()
   async deleteStudentFunding(
     studentId: number,
     param: ApiFnd004RequestParam,
@@ -461,7 +461,6 @@ export default class FundingService {
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
-      FundingDeadlineEnum.Exception,
     ]);
     await this.fundingRepository.delete(param.id);
     return {};

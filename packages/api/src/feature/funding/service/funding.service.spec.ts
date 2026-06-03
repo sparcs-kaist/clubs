@@ -1,6 +1,13 @@
-import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
+import {
+  FundingDeadlineEnum,
+  FundingStatusEnum,
+} from "@clubs/interface/common/enum/funding.enum";
 
 import FundingService from "./funding.service";
+
+jest.mock("@nestjs-cls/transactional", () => ({
+  Transactional: () => () => undefined,
+}));
 
 type FundingServiceDependencies = ConstructorParameters<typeof FundingService>;
 
@@ -29,9 +36,19 @@ const funding = {
   commentedExecutive: { id: latestCommentedExecutive.id },
 };
 const activity = { id: 501, name: "활동" };
+const studentId = 701;
+const now = new Date("2026-02-01");
+const fundingBody = {
+  club: { id: club.id },
+  expenditureDate: new Date("2026-01-15"),
+};
 
 const createFundingService = () => {
   const fundingRepository = {
+    insert: jest.fn().mockResolvedValue({ id: funding.id }),
+    put: jest.fn().mockResolvedValue({}),
+    delete: jest.fn().mockResolvedValue({}),
+    fetch: jest.fn().mockResolvedValue(funding),
     fetchSummaries: jest.fn(),
     fetchCommentedSummaries: jest.fn(),
   };
@@ -46,6 +63,7 @@ const createFundingService = () => {
     findExecutiveSummary: jest.fn().mockResolvedValue(chargedExecutive),
   };
   const clubPublicService = {
+    checkStudentDelegate: jest.fn().mockResolvedValue(undefined),
     fetchSummary: jest.fn().mockResolvedValue(club),
     fetchSummaries: jest.fn().mockResolvedValue([club]),
     fetchDivisionSummaries: jest.fn().mockResolvedValue([division]),
@@ -59,6 +77,24 @@ const createFundingService = () => {
   const activityDurationPublicService = {
     load: jest.fn().mockResolvedValue(activityDuration),
   };
+  const fundingDeadlinePublicService = {
+    search: jest.fn(({ deadlineEnum }) => {
+      const deadlineEnums = Array.isArray(deadlineEnum)
+        ? deadlineEnum
+        : [deadlineEnum];
+
+      if (deadlineEnums.includes(FundingDeadlineEnum.Exception)) {
+        return Promise.resolve([
+          {
+            id: 1,
+            deadlineEnum: FundingDeadlineEnum.Exception,
+          },
+        ]);
+      }
+
+      return Promise.resolve([]);
+    }),
+  };
 
   const service = new FundingService(
     fundingRepository as FundingServiceDependencies[0],
@@ -69,10 +105,14 @@ const createFundingService = () => {
     activityPublicService as FundingServiceDependencies[5],
     semesterPublicService as FundingServiceDependencies[6],
     activityDurationPublicService as FundingServiceDependencies[7],
-    {} as FundingServiceDependencies[8],
+    fundingDeadlinePublicService as FundingServiceDependencies[8],
     {} as FundingServiceDependencies[9],
     {} as FundingServiceDependencies[10],
   );
+
+  (service as unknown as { clock: { now: () => Date } }).clock = {
+    now: jest.fn(() => now),
+  };
 
   return {
     service,
@@ -80,8 +120,66 @@ const createFundingService = () => {
     fundingCommentRepository,
     clubPublicService,
     activityDurationPublicService,
+    fundingDeadlinePublicService,
   };
 };
+
+describe("FundingService funding deadline validation", () => {
+  it("rejects creating a funding during the exception period", async () => {
+    const { service, fundingRepository, fundingDeadlinePublicService } =
+      createFundingService();
+
+    await expect(
+      service.postStudentFunding(fundingBody as never, studentId),
+    ).rejects.toThrow();
+
+    expect(fundingDeadlinePublicService.search).toHaveBeenCalledWith({
+      date: now,
+      deadlineEnum: [FundingDeadlineEnum.Writing],
+    });
+    expect(fundingRepository.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects editing a funding during the exception period", async () => {
+    const { service, fundingRepository, fundingDeadlinePublicService } =
+      createFundingService();
+
+    await expect(
+      service.putStudentFunding(
+        fundingBody as never,
+        { id: funding.id },
+        studentId,
+      ),
+    ).rejects.toThrow();
+
+    expect(fundingDeadlinePublicService.search).toHaveBeenCalledWith({
+      date: now,
+      deadlineEnum: [
+        FundingDeadlineEnum.Writing,
+        FundingDeadlineEnum.Modification,
+      ],
+    });
+    expect(fundingRepository.put).not.toHaveBeenCalled();
+  });
+
+  it("rejects deleting a funding during the exception period", async () => {
+    const { service, fundingRepository, fundingDeadlinePublicService } =
+      createFundingService();
+
+    await expect(
+      service.deleteStudentFunding(studentId, { id: funding.id }),
+    ).rejects.toThrow();
+
+    expect(fundingDeadlinePublicService.search).toHaveBeenCalledWith({
+      date: now,
+      deadlineEnum: [
+        FundingDeadlineEnum.Writing,
+        FundingDeadlineEnum.Modification,
+      ],
+    });
+    expect(fundingRepository.delete).not.toHaveBeenCalled();
+  });
+});
 
 describe("FundingService historical semester club summaries", () => {
   it("loads executive dashboard club summaries for the requested semester", async () => {
