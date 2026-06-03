@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -69,6 +69,7 @@ import {
   FundingStatusEnum,
 } from "@clubs/interface/common/enum/funding.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
@@ -91,6 +92,8 @@ import {
 
 @Injectable()
 export default class FundingService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly fundingRepository: FundingRepository,
     private readonly fundingCommentRepository: FundingCommentRepository,
@@ -556,7 +559,7 @@ export default class FundingService {
    * @returns 현재 시점의 지원금 신청 마감 기한과 대상 활동 기간을 리턴합니다.
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
-    const now = new Date();
+    const now = this.clock.now();
     const [targetDuration, allDeadlines] = await Promise.all([
       this.activityDurationPublicService.load(),
       this.fundingDeadlinePublicService.search({}),
@@ -1086,7 +1089,7 @@ export default class FundingService {
         id,
         fundingStatusEnum,
         approvedAmount,
-        commentedAt: new Date(),
+        commentedAt: this.clock.now(),
       });
 
       // funding 이랑 comment 의 값들이 다르면 에러
@@ -1182,7 +1185,7 @@ export default class FundingService {
   private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
     await this.fundingDeadlinePublicService
       .search({
-        date: new Date(),
+        date: this.clock.now(),
         deadlineEnum: enums,
       })
       .then(takeExist());

@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { IdType, MEntity, ModelPatchFunction } from "../base/entity.model";
+import { CLOCK, Clock } from "../clock/clock";
 import { OrderByTypeEnum } from "../enums";
 import { takeAll, takeOnlyOne } from "../util/util";
 
@@ -164,6 +165,8 @@ export abstract class BaseRepository<
   Id extends IdType = number,
 > {
   @Inject(PrismaService) protected prisma: PrismaService;
+
+  @Inject(CLOCK) protected clock: Clock;
 
   constructor(
     protected readonly mainModelConstructor: ModelConstructor<Model, Id>,

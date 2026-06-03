@@ -1,9 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class SemesterSQLRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findSemesterByNameAndYear(key: {
@@ -79,7 +82,7 @@ export class SemesterSQLRepository {
     name: string;
     year: number;
   }): Promise<{ id: number }> {
-    const now = new Date();
+    const now = this.clock.now();
 
     // Find before soft deleting to return the id
     const existing = await this.prisma.semesterD.findFirst({

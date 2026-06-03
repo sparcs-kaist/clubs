@@ -96,7 +96,7 @@ export class ProfessorRepository extends BaseMultiTableRepository<
       },
       oneToOne: {
         professorT: {
-          startTerm: new Date(),
+          startTerm: this.clock.now(),
           //   professorEnum: model.professorEnum,
           //   department: model.department,
         },

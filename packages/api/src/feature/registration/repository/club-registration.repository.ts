@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma, PrismaClient } from "@prisma/client";
 
 import {
@@ -23,6 +23,7 @@ import {
   RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
@@ -37,6 +38,8 @@ type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 
 @Injectable()
 export class ClubRegistrationRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async selectDeadlineByDate(
@@ -98,7 +101,7 @@ export class ClubRegistrationRepository {
     semesterId: number,
     body: ApiReg001RequestBody,
   ): Promise<ApiReg001ResponseCreated> {
-    const cur = new Date();
+    const cur = this.clock.now();
     let registrationId: number;
     let clubId: number;
     await this.prisma.$transaction(async tx => {
@@ -255,7 +258,7 @@ export class ClubRegistrationRepository {
     applyId: number,
     body: ApiReg009RequestBody,
   ): Promise<ApiReg009ResponseOk> {
-    const cur = new Date();
+    const cur = this.clock.now();
     await this.prisma.$transaction(async tx => {
       const registrationRows = await (tx as unknown as PrismaClient).$queryRaw<
         Array<{ RegistrationStatusEnum: number }>
@@ -347,7 +350,7 @@ export class ClubRegistrationRepository {
     studentId: number,
     applyId: number,
   ): Promise<ApiReg010ResponseOk> {
-    const cur = new Date();
+    const cur = this.clock.now();
     await this.prisma.$transaction(async tx => {
       const registration = await tx.registration
         .findMany({
@@ -406,7 +409,7 @@ export class ClubRegistrationRepository {
   ): Promise<Reg011DetailNoSemester> {
     const result = await this.prisma.$transaction<Reg011DetailNoSemester>(
       async tx => {
-        const cur = new Date();
+        const cur = this.clock.now();
         const rows = await (tx as unknown as PrismaClient).$queryRaw<
           Array<{
             id: number;
@@ -700,7 +703,7 @@ export class ClubRegistrationRepository {
   ): Promise<Reg015DetailNoSemester> {
     const result = await this.prisma.$transaction<Reg015DetailNoSemester>(
       async tx => {
-        const cur = new Date();
+        const cur = this.clock.now();
         const rows = await (tx as unknown as PrismaClient).$queryRaw<
           Array<{
             id: number;
@@ -884,7 +887,7 @@ export class ClubRegistrationRepository {
         },
         data: {
           registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
-          reviewedAt: new Date(),
+          reviewedAt: this.clock.now(),
         },
       });
       if (result.count > 1) {
@@ -1009,7 +1012,7 @@ export class ClubRegistrationRepository {
         },
         data: {
           registrationApplicationStatusEnumId: RegistrationStatusEnum.Rejected,
-          reviewedAt: new Date(),
+          reviewedAt: this.clock.now(),
         },
       });
       if (result1.count > 1) {

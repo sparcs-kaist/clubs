@@ -3,18 +3,23 @@ import { PassportStrategy } from "@nestjs/passport";
 import { Request } from "express";
 import { Strategy } from "passport-jwt";
 
+import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
+
 import { AuthRepository } from "../repository/auth.repository";
 
 // PassportStrategy(인증 방식, 이름)
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, "refresh") {
-  constructor(private readonly authRepository: AuthRepository) {
+  constructor(
+    private readonly authRepository: AuthRepository,
+    appConfigService: AppConfigService,
+  ) {
     super({
       jwtFromRequest: req => {
         const cookie = req?.cookies?.refreshToken;
         return cookie;
       },
-      secretOrKey: process.env.REFRESH_TOKEN_SECRET_KEY,
+      secretOrKey: appConfigService.refreshTokenSecretKey,
       ignoreExpiration: false, // 만료된 토큰은 거부
       passReqToCallback: true, // Request 객체를 콜백에 전달
     });

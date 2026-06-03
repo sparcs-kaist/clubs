@@ -1,6 +1,7 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -35,6 +36,8 @@ interface FindOrCreateUserReturn {
 
 @Injectable()
 export class AuthRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findOrCreateUser(
@@ -69,7 +72,7 @@ export class AuthRepository {
     };
 
     // 오늘 날짜를 기준으로 semester_d 테이블에서 해당 학기를 찾아서 semester_id, startTerm, endTerm을 가져옴
-    const currentDate = new Date();
+    const currentDate = this.clock.now();
     const semester = await this.prisma.semesterD
       .findMany({
         where: {
@@ -426,7 +429,7 @@ export class AuthRepository {
     userId: number,
     refreshToken: string,
   ): Promise<boolean> {
-    const cur = new Date();
+    const cur = this.clock.now();
     const result = await this.prisma.$queryRaw<Array<{ id: number }>>(
       Prisma.sql`
         SELECT u.id
@@ -462,7 +465,7 @@ export class AuthRepository {
     userId: number,
     refreshToken: string,
   ): Promise<boolean> {
-    const cur = new Date();
+    const cur = this.clock.now();
     return this.prisma.$transaction(async tx => {
       const result = await tx.authActivatedRefreshTokens.deleteMany({
         where: {

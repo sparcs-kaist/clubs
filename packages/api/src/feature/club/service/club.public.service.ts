@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
 import { ISemester } from "@clubs/domain/semester/semester";
@@ -11,6 +11,7 @@ import {
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import OldDivisionRepository from "@sparcs-clubs/api/feature/division/repository/old.division.repository";
 import DivisionPublicService from "@sparcs-clubs/api/feature/division/service/division.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
@@ -30,6 +31,8 @@ import { ClubOldRepository } from "../repository-old/club-old.repository";
 
 @Injectable()
 export default class ClubPublicService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private clubDelegateDRepository: ClubDelegateDRepository,
     private clubOldRepository: ClubOldRepository,
@@ -669,7 +672,7 @@ export default class ClubPublicService {
     const isDelegate = await this.clubDelegateRepository.count({
       studentId: query.studentId,
       clubId: query.clubId,
-      date: new Date(),
+      date: this.clock.now(),
     });
     if (isDelegate === 0) {
       throw new Error(

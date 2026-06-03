@@ -2,6 +2,13 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import { ClubOldRepository } from "./club-old.repository";
 
+const injectTestClock = <T extends object>(target: T): T =>
+  Object.assign(target, {
+    clock: {
+      now: () => new Date(Date.now()),
+    },
+  });
+
 describe("ClubOldRepository", () => {
   afterEach(() => {
     jest.useRealTimers();
@@ -23,8 +30,12 @@ describe("ClubOldRepository", () => {
           ]),
         },
       };
-      const repository = new ClubOldRepository(
-        prisma as unknown as ConstructorParameters<typeof ClubOldRepository>[0],
+      const repository = injectTestClock(
+        new ClubOldRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubOldRepository
+          >[0],
+        ),
       );
 
       const result = await repository.fetchSummaries([201], [7]);
@@ -85,8 +96,12 @@ describe("ClubOldRepository", () => {
           ]),
         },
       };
-      const repository = new ClubOldRepository(
-        prisma as unknown as ConstructorParameters<typeof ClubOldRepository>[0],
+      const repository = injectTestClock(
+        new ClubOldRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubOldRepository
+          >[0],
+        ),
       );
 
       const result = await repository.fetchSummaries([201]);
@@ -138,8 +153,12 @@ describe("ClubOldRepository", () => {
           findMany: jest.fn().mockResolvedValue([]),
         },
       };
-      const repository = new ClubOldRepository(
-        prisma as unknown as ConstructorParameters<typeof ClubOldRepository>[0],
+      const repository = injectTestClock(
+        new ClubOldRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubOldRepository
+          >[0],
+        ),
       );
 
       await repository.fetchSummaries([201], []);

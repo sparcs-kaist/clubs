@@ -1,14 +1,17 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export default class ClubTRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findClubTById(clubId: number) {
-    const crt = new Date();
+    const crt = this.clock.now();
     const result = await this.prisma.clubT.findFirst({
       where: {
         clubId,
@@ -47,7 +50,7 @@ export default class ClubTRepository {
   }
 
   async findClubById(clubId: number): Promise<boolean> {
-    const crt = new Date();
+    const crt = this.clock.now();
     const result = await this.prisma.clubT.findFirst({
       where: {
         clubId,

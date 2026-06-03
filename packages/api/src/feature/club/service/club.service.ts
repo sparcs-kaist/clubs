@@ -1,6 +1,7 @@
 import {
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -31,6 +32,7 @@ import {
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
@@ -47,6 +49,8 @@ import ClubPublicService from "./club.public.service";
 
 @Injectable()
 export class ClubService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private clubOldRepository: ClubOldRepository,
     private clubDelegateDRepository: ClubDelegateDRepository,
@@ -133,7 +137,7 @@ export class ClubService {
       studentSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const now = new Date();
+            const now = this.clock.now();
             const isCurrentSemester = now <= semester.endTerm;
             const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(
@@ -298,7 +302,7 @@ export class ClubService {
       professorSemesters.map(async semester => {
         const clubs = await Promise.all(
           semester.clubs.map(async (club: { id: number }) => {
-            const now = new Date();
+            const now = this.clock.now();
             const isCurrentSemester = now <= semester.endTerm;
             const clubName = await this.clubOldRepository.findClubName(club.id);
             const clubInfo = await this.clubTRepository.findClubDetail(

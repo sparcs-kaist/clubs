@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import { MRegistrationDeadline } from "../model/registration.deadline.model";
 import {
@@ -38,6 +39,8 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
   RegistrationDeadlineIsQuery,
   RegistrationDeadlineLoadQuery
 > {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly registrationDeadlineRepository: RegistrationDeadlineRepository,
     private readonly semesterPublicService: SemesterPublicService,
@@ -55,7 +58,7 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
   async is(query: RegistrationDeadlineIsQuery): Promise<boolean> {
     const queryParam = {
       ...query,
-      date: query.date ?? new Date(),
+      date: query.date ?? this.clock.now(),
     };
 
     const res = await super.is(queryParam);
@@ -88,7 +91,7 @@ export class RegistrationDeadlinePublicService extends BasePublicService<
     const semesterId =
       query.semesterId ??
       (await this.semesterPublicService.loadId({
-        date: query.date ?? new Date(),
+        date: query.date ?? this.clock.now(),
       }));
 
     const res = await super.load({

@@ -1,10 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class FundingDeadlineSqlRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async checkExistingFundingDeadline(
@@ -86,7 +89,7 @@ export class FundingDeadlineSqlRepository {
   }
 
   async deleteFundingDeadline(deadlineId: number): Promise<boolean> {
-    const cur = new Date();
+    const cur = this.clock.now();
     try {
       await this.prisma.$transaction(async tx => {
         const result = await tx.fundingDeadlineD.updateMany({

@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from "axios";
 import * as crypto from "crypto";
 import * as querystring from "querystring";
 
+import { Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { RandomGenerator } from "@sparcs-clubs/api/common/random/random-generator";
 import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { SSOUser } from "../dto/sparcs-sso.dto";
@@ -47,6 +49,8 @@ export class Client {
   constructor(
     client_id: string,
     secret_key: string,
+    private readonly clock: Clock,
+    private readonly randomGenerator: RandomGenerator,
     private is_beta: boolean = false,
     private server_addr: string = "",
   ) {
@@ -73,7 +77,7 @@ export class Client {
     payload: Array<any>,
     append_timestamp: boolean = true,
   ): [string, number] {
-    const timestamp: number = Math.floor(Date.now() / 1000);
+    const timestamp: number = Math.floor(this.clock.now().getTime() / 1000);
     if (append_timestamp) {
       payload.push(timestamp.toString());
     }
@@ -165,7 +169,7 @@ export class Client {
      * @SSO
      * randomBytes에 10? 5? 둘중 어떤걸 넘겨줄지. gpt는 5라고 하고 파이썬은 token_hex(10) 10 같긴 한데....혹시나 해서
      */
-    const state: string = crypto.randomBytes(10).toString("hex");
+    const state: string = this.randomGenerator.hex(10);
     const params: Params = { client_id: this.client_id, state };
     // console.log(this.client_id);
     // console.log(state);

@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 
 import { MSemester } from "../model/semester.model";
@@ -31,6 +32,8 @@ export class SemesterPublicService extends BasePublicService<
   SemesterIsQuery,
   SemesterLoadQuery
 > {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly semesterRepository: SemesterRepository,
     private readonly registrationDeadlineRepository: RegistrationDeadlineRepository,
@@ -47,7 +50,7 @@ export class SemesterPublicService extends BasePublicService<
   async is(query: SemesterIsQuery): Promise<boolean> {
     const queryParam = {
       ...query,
-      date: query.date ?? new Date(),
+      date: query.date ?? this.clock.now(),
     };
 
     const res = await super.is(queryParam);
@@ -71,7 +74,7 @@ export class SemesterPublicService extends BasePublicService<
    * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
    */
   async load(query?: SemesterLoadQuery): Promise<MSemester> {
-    const date = query?.date ?? new Date();
+    const date = query?.date ?? this.clock.now();
 
     const res = await super.load({
       date,
@@ -98,7 +101,7 @@ export class SemesterPublicService extends BasePublicService<
    * @throws NotFoundException 해당 학기가 존재하지 않을 경우 (DB에 안 넣은 것임)
    */
   async loadCheckRegistrationDeadline(): Promise<MSemester> {
-    const today = new Date();
+    const today = this.clock.now();
     const semester = await this.load();
     const checkFlag = await this.registrationDeadlineRepository.count({
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,

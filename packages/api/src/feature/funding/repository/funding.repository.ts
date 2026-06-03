@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import {
@@ -9,6 +9,7 @@ import {
 } from "@clubs/interface/api/funding/type/funding.type";
 
 import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
@@ -40,6 +41,8 @@ const fundingSummarySelect = {
 
 @Injectable()
 export default class FundingRepository {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async withTransaction<Result>(
@@ -510,7 +513,7 @@ export default class FundingRepository {
 
   async delete(id: number): Promise<void> {
     await this.prisma.$transaction(async tx => {
-      const now = new Date();
+      const now = this.clock.now();
 
       // Soft delete funding order and all related records
       await Promise.all([
@@ -592,7 +595,7 @@ export default class FundingRepository {
     extra: IFundingExtra,
   ): Promise<MFunding> {
     return this.prisma.$transaction(async tx => {
-      const now = new Date();
+      const now = this.clock.now();
 
       // Update funding table
       await tx.funding.update({
@@ -959,7 +962,7 @@ export default class FundingRepository {
       commentedAt: IFunding["commentedAt"];
     },
   ): Promise<VFundingSummary> {
-    const now = new Date();
+    const now = this.clock.now();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (tx as any).funding.update({

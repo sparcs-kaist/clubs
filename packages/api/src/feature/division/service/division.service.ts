@@ -1,12 +1,16 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import type { ApiDiv001ResponseOk } from "@clubs/interface/api/division/endpoint/apiDiv001";
 import type { ApiDiv002ResponseOk } from "@clubs/interface/api/division/endpoint/apiDiv002";
+
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import OldDivisionRepository from "../repository/old.division.repository";
 
 @Injectable()
 export default class DivisionService {
+  @Inject(CLOCK) private readonly clock: Clock;
+
   constructor(
     private readonly oldOldDivisionRepository: OldDivisionRepository,
   ) {}
@@ -27,7 +31,9 @@ export default class DivisionService {
   }
 
   async getDivisionsCurrent(): Promise<ApiDiv002ResponseOk> {
-    const divisions = await this.oldOldDivisionRepository.fetchAll(new Date());
+    const divisions = await this.oldOldDivisionRepository.fetchAll(
+      this.clock.now(),
+    );
     return {
       divisions,
     };

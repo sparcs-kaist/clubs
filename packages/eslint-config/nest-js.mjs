@@ -3,6 +3,7 @@
 import eslintPluginJest from "eslint-plugin-jest";
 
 import { baseConfig } from "./base.mjs";
+import eslintPluginInjectableRuntimeDependencies from "./custom_rules/eslint-plugin-injectable-runtime-dependencies.mjs";
 
 export const nestJsConfig = [
   ...baseConfig,
@@ -44,6 +45,18 @@ export const nestJsConfig = [
           ],
         },
       ],
+    },
+  },
+  {
+    name: "api runtime dependency injection rules",
+    files: ["src/**/*.ts"],
+    ignores: ["src/**/*.spec.ts", "src/**/*.test.ts"],
+    plugins: {
+      "injectable-runtime-dependencies":
+        eslintPluginInjectableRuntimeDependencies,
+    },
+    rules: {
+      "injectable-runtime-dependencies/no-direct-runtime-source": "error",
     },
   },
 ];
