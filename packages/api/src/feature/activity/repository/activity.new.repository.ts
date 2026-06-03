@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import {
   ActivityStatusEnum,
@@ -13,6 +14,7 @@ import {
   PrismaMultiTableConfig,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IActivityCreate,
   MActivity,
@@ -69,8 +71,49 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
   ActivityOrderByKeys,
   ActivityQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super(activityTableConfig, MActivity, "activityId");
+  }
+
+  async approveExecutiveActivity(param: {
+    activityId: number;
+    commentedAt: Date;
+  }): Promise<boolean> {
+    const result = await this.txHost.tx.activity.updateMany({
+      where: {
+        id: param.activityId,
+        deletedAt: null,
+        activityStatusEnumId: { not: ActivityStatusEnum.Approved },
+      },
+      data: {
+        activityStatusEnumId: ActivityStatusEnum.Approved,
+        commentedAt: param.commentedAt,
+        updatedAt: this.clock.now(),
+      },
+    });
+
+    return result.count > 0;
+  }
+
+  async sendBackExecutiveActivity(param: {
+    activityId: number;
+    commentedAt: Date;
+  }): Promise<boolean> {
+    const result = await this.txHost.tx.activity.updateMany({
+      where: {
+        id: param.activityId,
+        deletedAt: null,
+      },
+      data: {
+        activityStatusEnumId: ActivityStatusEnum.Rejected,
+        commentedAt: param.commentedAt,
+        updatedAt: this.clock.now(),
+      },
+    });
+
+    return result.count > 0;
   }
 
   protected dbToModelMapping(result: ActivityDbSelect): MActivity {

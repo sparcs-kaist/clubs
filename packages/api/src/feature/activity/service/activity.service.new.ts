@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
 import {
@@ -925,11 +926,11 @@ export default class ActivityService {
   /**
    * @description patchExecutiveActivityApproval의 서비스 진입점입니다.
    */
+  @Transactional()
   async patchExecutiveActivityApproval(param: {
     executiveId: number;
     param: ApiAct016RequestParam;
   }): Promise<ApiAct016ResponseOk> {
-    // TODO: transaction 추가
     const activity = await this.activityRepository.fetch(
       param.param.activityId,
     );
@@ -938,27 +939,25 @@ export default class ActivityService {
     );
 
     const commentedAt = this.clock.now();
-    const updatedActivities = await this.activityRepository.patch(
-      {
-        id: param.param.activityId,
-        activityStatusEnumId: { ne: ActivityStatusEnum.Approved },
-      },
-      MActivity.updateReviewStatus(ActivityStatusEnum.Approved, commentedAt),
-    );
-    if (updatedActivities.length === 0)
+    const isUpdated = await this.activityRepository.approveExecutiveActivity({
+      activityId: param.param.activityId,
+      commentedAt,
+    });
+    if (!isUpdated)
       throw new HttpException(
         "the activity is already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    const insertedComments = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
-      // TODO?: 활동 승인 시에도 content를 넣을까요?
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Approved,
-    });
-    if (insertedComments.length === 0)
+    const insertedComment =
+      await this.activityCommentRepository.createExecutiveReviewComment({
+        activityId: param.param.activityId,
+        content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
+        // TODO?: 활동 승인 시에도 content를 넣을까요?
+        executiveId: param.executiveId,
+        activityStatusEnum: ActivityStatusEnum.Approved,
+      });
+    if (!insertedComment)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
@@ -969,12 +968,12 @@ export default class ActivityService {
    * @description patchExecutiveActivitySendBack의 서비스 진입점입니다.
    * 동시성을 고려하지 않고 구현했습니다.
    */
+  @Transactional()
   async patchExecutiveActivitySendBack(param: {
     executiveId: number;
     param: ApiAct017RequestParam;
     body: ApiAct017RequestBody;
   }): Promise<ApiAct017ResponseOk> {
-    // TODO: transaction 추가
     const activity = await this.activityRepository.fetch(
       param.param.activityId,
     );
@@ -983,25 +982,24 @@ export default class ActivityService {
     );
 
     const commentedAt = this.clock.now();
-    const updatedActivities = await this.activityRepository.patch(
-      {
-        id: param.param.activityId,
-      },
-      MActivity.updateReviewStatus(ActivityStatusEnum.Rejected, commentedAt),
-    );
-    if (updatedActivities.length === 0)
+    const isUpdated = await this.activityRepository.sendBackExecutiveActivity({
+      activityId: param.param.activityId,
+      commentedAt,
+    });
+    if (!isUpdated)
       throw new HttpException(
         "failed to send back activity",
         HttpStatus.BAD_REQUEST,
       );
 
-    const insertedComments = await this.activityCommentRepository.create({
-      activity: { id: param.param.activityId },
-      content: param.body.comment,
-      executive: { id: param.executiveId },
-      activityStatusEnum: ActivityStatusEnum.Rejected,
-    });
-    if (insertedComments.length === 0)
+    const insertedComment =
+      await this.activityCommentRepository.createExecutiveReviewComment({
+        activityId: param.param.activityId,
+        content: param.body.comment,
+        executiveId: param.executiveId,
+        activityStatusEnum: ActivityStatusEnum.Rejected,
+      });
+    if (!insertedComment)
       throw new HttpException("unreachable", HttpStatus.INTERNAL_SERVER_ERROR);
 
     return {};
