@@ -44,7 +44,7 @@ defineAxiosMock(mock => {
           semesterId: 15,
           activityDId: 1,
           activityDurationName: "겨울-봄",
-          deadlineEnum: 2, // Late
+          deadlineEnum: 2, // Executive
           startTerm: new Date("2024-09-01"),
           endTerm: new Date("2024-09-15"),
         },
