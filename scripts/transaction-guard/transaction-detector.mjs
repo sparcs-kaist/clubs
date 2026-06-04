@@ -8,6 +8,19 @@ const MANUAL_TRANSACTION_METHODS = new Set([
   "withTransaction",
 ]);
 
+const BASE_REPOSITORY_CLASS_NAMES = new Set([
+  "BaseRepository",
+  "BaseSingleTableRepository",
+  "BaseMultiTableRepository",
+]);
+
+const BASE_REPOSITORY_WRITE_METHODS = new Set([
+  "create",
+  "put",
+  "patch",
+  "delete",
+]);
+
 const PRISMA_WRITE_METHODS = new Set([
   "create",
   "createMany",
@@ -151,6 +164,7 @@ export function findTransactionGuardNodes({
 }
 
 export function buildRepositoryCommandIndex(repositorySources) {
+  const classInfos = new Map();
   const index = new Map();
 
   for (const { filePath, sourceText } of repositorySources) {
@@ -160,23 +174,79 @@ export function buildRepositoryCommandIndex(repositorySources) {
     sourceFile.forEachChild(node => {
       if (!ts.isClassDeclaration(node) || !node.name) return;
 
-      const commandMethods = new Set();
+      const className = node.name.text;
+      const declaredCommands = new Map();
 
       for (const member of node.members) {
         if (!ts.isMethodDeclaration(member)) continue;
         const methodName = getPropertyNameText(member.name);
         if (!methodName) continue;
 
-        if (methodName.endsWith("Tx") || methodContainsCommandCall(member)) {
-          commandMethods.add(methodName);
+        const unsafeKinds = getMethodUnsafeKinds(member);
+        const requiresTransactional =
+          methodName.endsWith("Tx") || methodContainsCommandCall(member);
+
+        if (requiresTransactional || unsafeKinds.length > 0) {
+          declaredCommands.set(
+            methodName,
+            makeCommandInfo({
+              methodName,
+              ownerClassName: className,
+              requiresTransactional,
+              unsafeKinds,
+            }),
+          );
         }
       }
 
-      index.set(node.name.text, commandMethods);
+      classInfos.set(className, {
+        className,
+        extendsName: getExtendsClassName(node),
+        declaredCommands,
+      });
     });
   }
 
+  for (const classInfo of classInfos.values()) {
+    const commands = new Map(classInfo.declaredCommands);
+
+    if (inheritsFromBaseRepository(classInfo.className, classInfos)) {
+      for (const methodName of BASE_REPOSITORY_WRITE_METHODS) {
+        if (commands.has(methodName)) continue;
+
+        commands.set(
+          methodName,
+          makeCommandInfo({
+            methodName,
+            origin: "inherited",
+            ownerClassName: "BaseRepository",
+            requiresTransactional: true,
+            unsafeKinds: ["inherited-base-write"],
+          }),
+        );
+      }
+    }
+
+    index.set(classInfo.className, commands);
+  }
+
   return index;
+}
+
+function makeCommandInfo({
+  methodName,
+  origin = "declared",
+  ownerClassName,
+  requiresTransactional = false,
+  unsafeKinds = [],
+}) {
+  return {
+    methodName,
+    origin,
+    ownerClassName,
+    requiresTransactional,
+    unsafeKinds: [...new Set(unsafeKinds)],
+  };
 }
 
 function collectServiceTransactionViolations({
@@ -187,10 +257,11 @@ function collectServiceTransactionViolations({
   record,
 }) {
   for (const member of classNode.members) {
-    if (!ts.isMethodDeclaration(member) || hasTransactionalDecorator(member)) {
+    if (!ts.isMethodDeclaration(member)) {
       continue;
     }
 
+    const isTransactional = hasTransactionalDecorator(member);
     const commandCalls = [];
 
     const visit = node => {
@@ -212,12 +283,38 @@ function collectServiceTransactionViolations({
     visit(member);
 
     for (const commandCall of commandCalls) {
-      record(
-        member,
-        "service-command-without-transactional",
-        `${commandCall.repositoryProperty}.${commandCall.methodName}`,
-        "service methods that call repository command methods must be decorated with @Transactional",
+      const detected = `${commandCall.repositoryProperty}.${commandCall.methodName}`;
+
+      if (!isTransactional && commandCall.commandInfo.requiresTransactional) {
+        record(
+          member,
+          "service-command-without-transactional",
+          detected,
+          "service methods that call repository command methods must be decorated with @Transactional",
+        );
+      }
+
+      if (commandCall.commandInfo.origin === "inherited") {
+        record(
+          commandCall.node,
+          "inherited-repository-command-call",
+          detected,
+          "changed service code should call a concrete repository method instead of inherited BaseRepository write APIs",
+        );
+      }
+
+      const unsafeKinds = commandCall.commandInfo.unsafeKinds.filter(
+        kind => kind !== "inherited-base-write",
       );
+
+      if (unsafeKinds.length > 0) {
+        record(
+          commandCall.node,
+          "repository-command-uses-manual-transaction",
+          detected,
+          `repository command uses ${unsafeKinds.join(", ")} instead of TransactionHost.tx`,
+        );
+      }
     }
   }
 }
@@ -244,9 +341,11 @@ function getRepositoryCommandCall(
   if (!repositoryClassName) return null;
 
   const commandMethods = repositoryCommandIndex.get(repositoryClassName);
-  if (!commandMethods?.has(methodName)) return null;
+  const commandInfo = commandMethods?.get(methodName);
+  if (!commandInfo) return null;
 
   return {
+    commandInfo,
     methodName,
     repositoryProperty,
   };
@@ -291,6 +390,59 @@ function methodContainsCommandCall(method) {
   visit(method);
 
   return hasCommandCall;
+}
+
+function getMethodUnsafeKinds(method) {
+  const unsafeKinds = new Set();
+
+  const visit = node => {
+    if (ts.isCallExpression(node)) {
+      const propertyAccess = getPropertyAccess(node.expression);
+
+      if (
+        propertyAccess &&
+        MANUAL_TRANSACTION_METHODS.has(propertyAccess.name.text)
+      ) {
+        unsafeKinds.add("manual-transaction");
+      }
+
+      if (isRootPrismaCommandCall(node.expression)) {
+        unsafeKinds.add("root-prisma-write");
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(method);
+
+  return [...unsafeKinds];
+}
+
+function getExtendsClassName(classNode) {
+  const heritageClause = classNode.heritageClauses?.find(
+    clause => clause.token === ts.SyntaxKind.ExtendsKeyword,
+  );
+  const [heritageType] = heritageClause?.types ?? [];
+  const expression = heritageType?.expression;
+
+  return expression && ts.isIdentifier(expression) ? expression.text : null;
+}
+
+function inheritsFromBaseRepository(className, classInfos) {
+  let current = classInfos.get(className);
+  const seen = new Set();
+
+  while (current?.extendsName && !seen.has(current.extendsName)) {
+    if (BASE_REPOSITORY_CLASS_NAMES.has(current.extendsName)) {
+      return true;
+    }
+
+    seen.add(current.extendsName);
+    current = classInfos.get(current.extendsName);
+  }
+
+  return false;
 }
 
 function isRootPrismaCommandCall(expression) {
