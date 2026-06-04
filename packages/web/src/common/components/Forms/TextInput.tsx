@@ -18,6 +18,7 @@ export interface TextInputProps extends InputHTMLAttributes<
   label?: string;
   placeholder: string;
   errorMessage?: string;
+  helperText?: string;
   area?: boolean;
   disabled?: boolean;
   value?: string;
@@ -89,11 +90,22 @@ const InputWrapper = styled.div`
   gap: 4px;
 `;
 
+const HelperText = styled.span`
+  display: block;
+  padding: 0px 0px 0px 2px;
+  color: ${({ theme }) => theme.colors.GRAY[600]};
+  font-family: ${({ theme }) => theme.fonts.FAMILY.PRETENDARD};
+  font-weight: ${({ theme }) => theme.fonts.WEIGHT.REGULAR};
+  font-size: 12px;
+  line-height: 16px;
+`;
+
 // Component
 const TextInput: React.FC<TextInputProps> = ({
   label = "",
   placeholder,
   errorMessage = "",
+  helperText = "",
   area = false,
   disabled = false,
   value = "",
@@ -131,6 +143,7 @@ const TextInput: React.FC<TextInputProps> = ({
           isTextAlignCenter={isTextAlignCenter}
           {...props}
         />
+        {!errorMessage && helperText && <HelperText>{helperText}</HelperText>}
         {errorMessage && <FormError>{errorMessage}</FormError>}
       </InputWrapper>
     </InputWrapper>
