@@ -10,7 +10,10 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { activityDeadlineEnumToString } from "@sparcs-clubs/web/features/activity-report/constants";
-import { filterRegularActivityDurations } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
+import {
+  filterRegularActivityDurations,
+  formatActivityDurationSemesterName,
+} from "@sparcs-clubs/web/features/executive/utils/activityDuration";
 import {
   getLocalDateLastTime,
   getLocalDateOnly,
@@ -71,14 +74,14 @@ const ActivityDeadlineFormModal = ({
                 새 활동보고서 제출 기간 추가
               </Typography>
               <Select
-                label="활동 반기"
-                placeholder="활동 반기를 선택해주세요"
+                label="활동반기"
+                placeholder="활동반기를 선택해주세요"
                 value={activityDId}
                 onChange={e => setActivityDId(e)}
                 items={filterRegularActivityDurations(data.activityDurations)
                   .sort((a, b) => b.semester.id - a.semester.id)
                   .map(activityDuration => ({
-                    label: `${activityDuration.year}년 ${activityDuration.name} 활동 반기`,
+                    label: formatActivityDurationSemesterName(activityDuration),
                     value: activityDuration.id,
                   }))}
               />

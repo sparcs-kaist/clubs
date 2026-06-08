@@ -39,7 +39,7 @@ const useGroupActivityDeadlines = () => {
       activityDurationsResponse.activityDurations,
     );
 
-    // 활동 반기별로 deadline 그룹핑
+    // 활동반기별로 deadline 그룹핑
     const groupedMap = new Map<number, ApiSem007ResponseOK["deadlines"]>();
 
     deadlines.forEach(deadline => {
@@ -47,12 +47,12 @@ const useGroupActivityDeadlines = () => {
       groupedMap.set(deadline.activityDId, [...existingDeadlines, deadline]);
     });
 
-    // 활동 반기 정보와 해당 deadline들을 조합
+    // 활동반기 정보와 해당 deadline들을 조합
     const result = activityDurations
       .map(activityDuration => {
         const deadlinesForDuration = groupedMap.get(activityDuration.id) || [];
 
-        // deadline이 있는 활동 반기만 포함
+        // deadline이 있는 활동반기만 포함
         if (deadlinesForDuration.length === 0) {
           return null;
         }
@@ -69,7 +69,7 @@ const useGroupActivityDeadlines = () => {
         };
       })
       .filter((item): item is GroupedActivityDeadline => item !== null)
-      // 활동 반기를 최신 순으로 정렬
+      // 활동반기를 최신 순으로 정렬
       .sort(
         (a, b) =>
           b.activityDuration.semester.id - a.activityDuration.semester.id,

@@ -47,7 +47,7 @@ const ExecutiveDashboardFrame = () => {
             <FlexWrapper direction="column" gap={12}>
               <DashboardButton text="학기" link="/executive/semester" />
               <DashboardButton
-                text="활동 반기"
+                text="활동반기"
                 link="/executive/activity-duration"
               />
             </FlexWrapper>

@@ -1,6 +1,7 @@
 import React from "react";
 
 import FoldableSection from "@sparcs-clubs/web/common/components/FoldableSection";
+import { formatActivityDurationSemesterName } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
 
 import { GroupedActivityDeadline } from "../hooks/useGroupActivityDeadlines";
 import ActivityDeadlineTable from "./ActivityDeadlineTable";
@@ -21,7 +22,7 @@ const ActivityDeadlineSection: React.FC<ActivityDeadlineSectionProps> = ({
   return (
     <FoldableSection
       key={activityDuration.id}
-      title={`${activityDuration.year}년 ${activityDuration.name} 활동 반기`}
+      title={formatActivityDurationSemesterName(activityDuration)}
       childrenMargin="20px"
     >
       <ActivityDeadlineTable deadlines={deadlines} />

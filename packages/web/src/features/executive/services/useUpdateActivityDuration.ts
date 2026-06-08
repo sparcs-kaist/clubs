@@ -42,7 +42,7 @@ const useUpdateActivityDuration = () => {
     },
     onError: error => {
       errorHandler(
-        getApiErrorMessage(error, "활동 반기 수정에 실패하였습니다."),
+        getApiErrorMessage(error, "활동반기 수정에 실패하였습니다."),
       );
     },
   });
