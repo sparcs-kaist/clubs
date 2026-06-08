@@ -20,7 +20,9 @@
     "mcdc": "node scripts/mcdc/cli.mjs",
     "mcdc:changed": "node scripts/mcdc/jest-runner.mjs --changed-from origin/dev --source packages/api/src --min-conditions 2",
     "mcdc:jest": "node scripts/mcdc/jest-runner.mjs",
+    "base-repository-guard:changed": "node scripts/base-repository-guard/changed-base-repository-guard.mjs --changed-from origin/dev",
     "prisma-query:changed": "node scripts/prisma-query-guard/changed-raw-sql.mjs --changed-from origin/dev",
+    "soft-delete-guard:changed": "node scripts/soft-delete-guard/changed-soft-delete-guard.mjs --changed-from origin/dev",
     "start": "turbo run start",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
@@ -33,15 +35,20 @@
     "prepare": "husky",
     "test": "turbo run test --filter=api",
     "test:mcdc": "node --test scripts/mcdc/*.test.mjs",
+    "test:base-repository-guard": "node --test scripts/base-repository-guard/*.test.mjs",
+    "test:eslint-config": "node --test packages/eslint-config/*.test.mjs packages/eslint-config/custom_rules/*.test.mjs",
     "test:injectable-runtime-dependencies": "node --test packages/eslint-config/custom_rules/eslint-plugin-injectable-runtime-dependencies.test.mjs",
     "test:prisma-query-guard": "node --test scripts/prisma-query-guard/*.test.mjs",
+    "test:soft-delete-guard": "node --test scripts/soft-delete-guard/*.test.mjs",
     "test:transaction-guard": "node --test scripts/transaction-guard/*.test.mjs",
     "transaction-guard:all": "node scripts/transaction-guard/scan-transaction-guard.mjs",
     "transaction-guard:changed": "node scripts/transaction-guard/changed-transaction-guard.mjs --changed-from origin/dev",
     "test:api": "turbo run test --filter=api"
   },
   "_scriptComments": {
+    "base-repository-guard:changed": "Pre-push validator. Blocks changed service/repository methods from relying on inherited BaseRepository write APIs.",
     "prisma-query:changed": "Pre-push validator. Blocks Prisma raw SQL APIs on changed packages/api/src lines while allowing untouched brownfield raw SQL debt.",
+    "soft-delete-guard:changed": "Pre-push validator. Requires explicit active/deleted/include-deleted intent on changed Prisma calls for models with deletedAt.",
     "test:prisma-query-guard": "Node test fixtures for the changed-line Prisma raw SQL guard."
   },
   "lint-staged": {
