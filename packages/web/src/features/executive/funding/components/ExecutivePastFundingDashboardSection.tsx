@@ -35,7 +35,7 @@ const columns = [
       `${formatDate(new Date(row.startTerm))} ~ ${formatDate(new Date(row.endTerm))}`,
     {
       id: "duration",
-      header: "활동 기간",
+      header: "활동 반기 기간",
       cell: info => info.getValue(),
       size: 420,
     },

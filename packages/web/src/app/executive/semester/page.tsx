@@ -1,21 +1,18 @@
 "use client";
 
-import { overlay } from "overlay-kit";
 import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
-import ActivityDeadlineFormModal from "@sparcs-clubs/web/features/executive/components/ActivityDeadlineFormModal";
-import ManageActivityDeadlineFrame from "@sparcs-clubs/web/features/executive/frames/ManageActivityDeadlineFrame";
+import ManageSemesterFrame from "@sparcs-clubs/web/features/executive/frames/ManageSemesterFrame";
 
-const ExecutiveActivityDeadline = () => {
+const ExecutiveSemester = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -37,36 +34,18 @@ const ExecutiveActivityDeadline = () => {
     return <NotFound />;
   }
 
-  const openActivityDeadlineModal = () => {
-    overlay.open(({ isOpen, close }) => (
-      <ActivityDeadlineFormModal isOpen={isOpen} onClose={close} />
-    ));
-  };
-
   return (
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
           { name: "집행부원 대시보드", path: "/executive" },
-          {
-            name: "활동보고서 제출 기간 관리",
-            path: "/executive/activity-report/deadline",
-          },
+          { name: "학기 관리", path: "/executive/semester" },
         ]}
-        title="활동보고서 제출 기간 관리"
-        action={
-          <IconButton
-            type="default"
-            icon="add"
-            onClick={openActivityDeadlineModal}
-          >
-            제출 기간 추가
-          </IconButton>
-        }
+        title="학기 관리"
       />
-      <ManageActivityDeadlineFrame />
+      <ManageSemesterFrame showTitle={false} />
     </FlexWrapper>
   );
 };
 
-export default ExecutiveActivityDeadline;
+export default ExecutiveSemester;

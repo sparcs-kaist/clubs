@@ -140,7 +140,7 @@ const FundingDeadlineTable = ({
       <Table count={sortedDeadlines.length} table={table} />
       <DeadlineEditModal
         isOpen={editingDeadline != null}
-        title="지원금 신청 기간 수정"
+        title="지원금 제출 기간 수정"
         startTerm={editingDeadline?.startTerm}
         endTerm={editingDeadline?.endTerm}
         isPending={isUpdatingFundingDeadline}

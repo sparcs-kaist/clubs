@@ -31,7 +31,7 @@ const useDeleteActivityDuration = () => {
     },
     onError: error => {
       errorHandler(
-        getApiErrorMessage(error, "활동기간 삭제에 실패하였습니다."),
+        getApiErrorMessage(error, "활동 반기 삭제에 실패하였습니다."),
       );
     },
   });

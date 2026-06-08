@@ -75,7 +75,7 @@ const ActivityDurationFormModal = ({
           ) : (
             <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
               <Typography fs={18} lh={24} fw="MEDIUM">
-                새 활동기간 추가
+                새 활동 반기 추가
               </Typography>
               <Select
                 label="학기"
@@ -91,7 +91,7 @@ const ActivityDurationFormModal = ({
               />
 
               <Select
-                label="활동반기 분류"
+                label="활동 반기 분류"
                 placeholder="분류를 선택해주세요"
                 value={typeEnum}
                 onChange={e => setTypeEnum(e as ActivityDurationTypeEnum)}
@@ -113,7 +113,7 @@ const ActivityDurationFormModal = ({
               />
 
               <TextInput
-                label="활동반기명"
+                label="활동 반기명"
                 placeholder="예: 겨울-봄"
                 value={name}
                 handleChange={setName}

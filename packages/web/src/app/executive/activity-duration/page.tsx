@@ -47,14 +47,14 @@ const ExecutiveActivityDuration = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[{ name: "집행부원 대시보드", path: "/executive" }]}
-        title="활동기간 관리"
+        title="활동 반기 관리"
         action={
           <IconButton
             type="default"
             icon="add"
             onClick={openActivityDurationModal}
           >
-            활동기간 추가
+            활동 반기 추가
           </IconButton>
         }
         enableLast

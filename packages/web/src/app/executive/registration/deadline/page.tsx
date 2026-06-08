@@ -47,14 +47,14 @@ const ExecutiveRegistrationDeadline = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[{ name: "집행부원 대시보드", path: "/executive" }]}
-        title="등록 기간 관리"
+        title="동아리 / 회원 등록 제출 기간 관리"
         action={
           <IconButton
             type="default"
             icon="add"
             onClick={openRegistrationDeadlineModal}
           >
-            등록 기간 추가
+            제출 기간 추가
           </IconButton>
         }
         enableLast

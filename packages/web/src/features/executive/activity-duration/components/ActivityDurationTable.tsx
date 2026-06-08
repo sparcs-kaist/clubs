@@ -78,7 +78,7 @@ const ActivityDurationTable = ({ durations }: ActivityDurationTableProps) => {
   const columnHelper = createColumnHelper<ActivityDurationItem>();
   const columns = [
     columnHelper.accessor("name", {
-      header: "활동반기명",
+      header: "활동 반기명",
       cell: info => info.getValue(),
       size: 140,
     }),

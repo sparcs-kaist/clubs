@@ -21,7 +21,7 @@ const ActivityDeadlineSection: React.FC<ActivityDeadlineSectionProps> = ({
   return (
     <FoldableSection
       key={activityDuration.id}
-      title={`${activityDuration.year}년 ${activityDuration.name} 활동기간`}
+      title={`${activityDuration.year}년 ${activityDuration.name} 활동 반기`}
       childrenMargin="20px"
     >
       <ActivityDeadlineTable deadlines={deadlines} />

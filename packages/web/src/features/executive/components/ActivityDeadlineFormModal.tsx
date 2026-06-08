@@ -68,24 +68,24 @@ const ActivityDeadlineFormModal = ({
           ) : (
             <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
               <Typography fs={18} lh={24} fw="MEDIUM">
-                새 활동보고서 제출 기한 추가
+                새 활동보고서 제출 기간 추가
               </Typography>
               <Select
-                label="활동기간"
-                placeholder="활동기간을 선택해주세요"
+                label="활동 반기"
+                placeholder="활동 반기를 선택해주세요"
                 value={activityDId}
                 onChange={e => setActivityDId(e)}
                 items={filterRegularActivityDurations(data.activityDurations)
                   .sort((a, b) => b.semester.id - a.semester.id)
                   .map(activityDuration => ({
-                    label: `${activityDuration.year}년 ${activityDuration.name} 활동기간`,
+                    label: `${activityDuration.year}년 ${activityDuration.name} 활동 반기`,
                     value: activityDuration.id,
                   }))}
               />
 
               <Select
-                label="기간유형"
-                placeholder="기간유형을 선택해주세요"
+                label="제출 기간 유형"
+                placeholder="제출 기간 유형을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as ActivityDeadlineEnum)}
                 items={(
