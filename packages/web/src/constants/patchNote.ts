@@ -5,6 +5,19 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.6 source=ad3fc43f3fa4
+  {
+    version: "v.0.1.6",
+    date: new Date("2026.06.09"),
+    patchNoteContent: `Clubs v0.1.6
+오류 수정은 다음과 같습니다.
+- 신규등록용 활동보고서와 deadline 관리 화면에서 기간 기준과 표시가 혼동되던 문제를 수정했습니다. (#1852)
+- 집행부 대시보드의 기간 관리 구조와 활동반기/제출 기간 표현을 더 명확하게 정리했습니다. (#1852)
+
+디자인 수정은 다음과 같습니다.
+- 동아리 등록 신청 화면에서 동아리명 입력 시 표시 대상과 수정 기준을 안내하는 문구를 추가했습니다. (#1854)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.5 source=7f1e7801c649
   {
     version: "v.0.1.5",
