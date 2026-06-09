@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -36,6 +37,7 @@ export class ActivityDurationService {
     private readonly semesterRepository: SemesterRepository,
   ) {}
 
+  @Transactional()
   async createActivityDeadline(param: {
     body: ApiSem006RequestBody;
   }): Promise<ApiSem006ResponseCreated> {
@@ -78,7 +80,7 @@ export class ActivityDurationService {
       );
     }
 
-    const _ = await this.activityDeadlineRepository.create({
+    const _ = await this.activityDeadlineRepository.createActivityDeadline({
       semester: { id: activityDuration.semester.id },
       deadlineEnum,
       startTerm,
@@ -240,6 +242,7 @@ export class ActivityDurationService {
     return {};
   }
 
+  @Transactional()
   async deleteActivityDuration(
     activityDurationId: number,
   ): Promise<ApiSem014ResponseOk> {
@@ -292,9 +295,9 @@ export class ActivityDurationService {
       );
     }
 
-    await this.activityDurationRepository.delete({
-      id: activityDurationId,
-    } as Parameters<typeof this.activityDurationRepository.delete>[0]);
+    await this.activityDurationRepository.deleteActivityDuration(
+      activityDurationId,
+    );
 
     return {};
   }

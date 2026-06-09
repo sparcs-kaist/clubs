@@ -164,6 +164,9 @@ describe("ActivityService", () => {
       put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
       sendBackExecutiveActivity: jest.fn().mockResolvedValue(true),
+      updateActivityReport: jest
+        .fn()
+        .mockResolvedValue(new MActivity(currentActivity)),
     };
     const activityComment = new MActivityComment({
       id: 1,
@@ -291,7 +294,7 @@ describe("ActivityService", () => {
       1,
     );
 
-    const updatedActivity = activityRepository.put.mock
+    const updatedActivity = activityRepository.updateActivityReport.mock
       .calls[0][0] as MActivity;
     expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
     expect(updatedActivity.professorApprovedAt).toBeUndefined();

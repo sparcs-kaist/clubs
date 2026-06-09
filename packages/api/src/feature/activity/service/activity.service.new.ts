@@ -687,6 +687,7 @@ export default class ActivityService {
     );
   }
 
+  @Transactional()
   async putStudentActivityProvisional(
     param: ApiAct008RequestParam,
     body: ApiAct008RequestBody,
@@ -745,27 +746,29 @@ export default class ActivityService {
       );
 
     // PUT 처리를 시작합니다.
-    const isUpdateSucceed = await this.activityRepository.put({
-      ...activity,
-      id: param.activityId,
-      name: body.name,
-      activityTypeEnum: body.activityTypeEnumId,
-      durations: body.durations,
-      location: body.location,
-      purpose: body.purpose,
-      detail: body.detail,
-      evidence: body.evidence,
-      evidenceFiles: evidenceFiles.map(e => ({
-        id: e.id,
-      })),
-      participants: body.participants.map(e => ({
-        id: e.studentId,
-      })),
-      activityDuration: { id: activity.activityDuration.id },
-      activityStatusEnum: ActivityStatusEnum.Applied,
-      professorApprovedAt: undefined,
-      commentedAt: null,
-    });
+    const isUpdateSucceed = await this.activityRepository.updateActivityReport(
+      new MActivity({
+        ...activity,
+        id: param.activityId,
+        name: body.name,
+        activityTypeEnum: body.activityTypeEnumId,
+        durations: body.durations,
+        location: body.location,
+        purpose: body.purpose,
+        detail: body.detail,
+        evidence: body.evidence,
+        evidenceFiles: evidenceFiles.map(e => ({
+          id: e.id,
+        })),
+        participants: body.participants.map(e => ({
+          id: e.studentId,
+        })),
+        activityDuration: { id: activity.activityDuration.id },
+        activityStatusEnum: ActivityStatusEnum.Applied,
+        professorApprovedAt: undefined,
+        commentedAt: null,
+      }),
+    );
     if (!isUpdateSucceed)
       throw new HttpException(
         "Failed to update",

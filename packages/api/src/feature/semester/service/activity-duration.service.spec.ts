@@ -3,6 +3,10 @@ import { ActivityDeadlineEnum } from "@clubs/domain/semester/deadline";
 
 import { ActivityDurationService } from "./activity-duration.service";
 
+jest.mock("@nestjs-cls/transactional", () => ({
+  Transactional: () => () => undefined,
+}));
+
 const ACTIVITY_DURATION_ID = 30;
 type ActivityDurationStub = {
   id: number;
@@ -29,13 +33,13 @@ function createService({
 } = {}) {
   const activityDurationRepository = {
     find: jest.fn().mockResolvedValue([activityDuration]),
-    delete: jest.fn().mockResolvedValue(undefined),
     countActivitiesByDurationId: jest.fn().mockResolvedValue(activityCount),
     countFundingsByDurationId: jest.fn().mockResolvedValue(fundingCount),
+    deleteActivityDuration: jest.fn().mockResolvedValue(true),
   };
   const activityDeadlineRepository = {
     find: jest.fn().mockResolvedValue(deadlines),
-    create: jest.fn().mockResolvedValue([]),
+    createActivityDeadline: jest.fn().mockResolvedValue({}),
   };
   const semesterRepository = {};
 
@@ -74,7 +78,9 @@ describe("ActivityDurationService deadline and deletion handling", () => {
       id: ACTIVITY_DURATION_ID,
       activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
     });
-    expect(activityDeadlineRepository.create).toHaveBeenCalledWith({
+    expect(
+      activityDeadlineRepository.createActivityDeadline,
+    ).toHaveBeenCalledWith({
       semester: { id: ACTIVITY_DURATION.semester.id },
       deadlineEnum: ActivityDeadlineEnum.Writing,
       startTerm,
@@ -122,9 +128,9 @@ describe("ActivityDurationService deadline and deletion handling", () => {
     expect(
       activityDurationRepository.countFundingsByDurationId,
     ).toHaveBeenCalledWith(ACTIVITY_DURATION_ID);
-    expect(activityDurationRepository.delete).toHaveBeenCalledWith({
-      id: ACTIVITY_DURATION_ID,
-    });
+    expect(
+      activityDurationRepository.deleteActivityDuration,
+    ).toHaveBeenCalledWith(ACTIVITY_DURATION_ID);
   });
 
   it("does not delete an activity duration with active activities", async () => {
@@ -138,7 +144,9 @@ describe("ActivityDurationService deadline and deletion handling", () => {
       "활동반기에 연결된 활동보고서가 있어 삭제할 수 없습니다.",
     );
 
-    expect(activityDurationRepository.delete).not.toHaveBeenCalled();
+    expect(
+      activityDurationRepository.deleteActivityDuration,
+    ).not.toHaveBeenCalled();
   });
 
   it("does not delete an activity duration with active fundings", async () => {
@@ -152,7 +160,9 @@ describe("ActivityDurationService deadline and deletion handling", () => {
       "활동반기에 연결된 지원금 신청이 있어 삭제할 수 없습니다.",
     );
 
-    expect(activityDurationRepository.delete).not.toHaveBeenCalled();
+    expect(
+      activityDurationRepository.deleteActivityDuration,
+    ).not.toHaveBeenCalled();
   });
 
   it("does not check activities or fundings when deadlines exist", async () => {
@@ -172,7 +182,9 @@ describe("ActivityDurationService deadline and deletion handling", () => {
     expect(
       activityDurationRepository.countFundingsByDurationId,
     ).not.toHaveBeenCalled();
-    expect(activityDurationRepository.delete).not.toHaveBeenCalled();
+    expect(
+      activityDurationRepository.deleteActivityDuration,
+    ).not.toHaveBeenCalled();
   });
 
   it("does not block registration activity duration deletion with regular activity deadlines", async () => {
@@ -190,8 +202,8 @@ describe("ActivityDurationService deadline and deletion handling", () => {
     ).resolves.toEqual({});
 
     expect(activityDeadlineRepository.find).not.toHaveBeenCalled();
-    expect(activityDurationRepository.delete).toHaveBeenCalledWith({
-      id: ACTIVITY_DURATION_ID,
-    });
+    expect(
+      activityDurationRepository.deleteActivityDuration,
+    ).toHaveBeenCalledWith(ACTIVITY_DURATION_ID);
   });
 });
