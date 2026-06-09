@@ -32,7 +32,9 @@ describe("FundingDeadlineSqlRepository", () => {
     const startTerm = new Date("2026-03-01T00:00:00.000Z");
     const endTerm = new Date("2026-03-02T00:00:00.000Z");
 
-    await repository.checkExistingFundingDeadline(19, startTerm, endTerm);
+    await expect(
+      repository.checkExistingFundingDeadline(19, startTerm, endTerm),
+    ).resolves.toBe(false);
 
     expect(tx.fundingDeadlineD.findFirst).toHaveBeenCalledWith({
       where: expect.objectContaining({
@@ -41,6 +43,11 @@ describe("FundingDeadlineSqlRepository", () => {
       }),
       select: { id: true },
     });
+
+    tx.fundingDeadlineD.findFirst.mockResolvedValueOnce({ id: 99 });
+    await expect(
+      repository.checkExistingFundingDeadline(19, startTerm, endTerm),
+    ).resolves.toBe(true);
   });
 
   it("creates funding deadlines through TransactionHost tx", async () => {
