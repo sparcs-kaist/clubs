@@ -41,7 +41,7 @@ const useUpdateRegistrationDeadline = () => {
       queryClient.invalidateQueries({ queryKey: [apiSem019.url] });
     },
     onError: () => {
-      errorHandler("등록 기간 수정에 실패하였습니다");
+      errorHandler("등록 제출 기간 수정에 실패하였습니다");
     },
   });
 };

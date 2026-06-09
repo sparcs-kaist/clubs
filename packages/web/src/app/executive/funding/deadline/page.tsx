@@ -47,14 +47,14 @@ const ExecutiveFundingDeadline = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[{ name: "집행부원 대시보드", path: "/executive" }]}
-        title="지원금 기간 관리"
+        title="지원금 제출 기간 관리"
         action={
           <IconButton
             type="default"
             icon="add"
             onClick={openFundingDeadlineModal}
           >
-            지원금 기간 추가
+            제출 기간 추가
           </IconButton>
         }
         enableLast

@@ -37,7 +37,7 @@ const useUpdateFundingDeadline = () => {
       queryClient.invalidateQueries({ queryKey: [apiSem016.url] });
     },
     onError: () => {
-      errorHandler("지원금 신청 기간 수정에 실패하였습니다");
+      errorHandler("지원금 제출 기간 수정에 실패하였습니다");
     },
   });
 };

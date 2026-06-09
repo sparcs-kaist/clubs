@@ -1,4 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
+
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
 import {
   ApiSem015RequestBody,
@@ -29,6 +32,7 @@ export class FundingDeadlineService {
     private readonly userpulicservice: UserPublicService,
   ) {}
 
+  @Transactional()
   async createFundingDeadline(
     executiveId: number,
     body: ApiSem015RequestBody,
@@ -38,7 +42,10 @@ export class FundingDeadlineService {
     await this.userpulicservice.checkCurrentExecutiveById(executiveId);
 
     const activityDuration = await this.activityDurationRepository
-      .find({ id: activityDId })
+      .find({
+        id: activityDId,
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+      })
       .then(takeOnlyOne(MActivityDuration));
 
     if (!activityDuration) {
@@ -95,6 +102,7 @@ export class FundingDeadlineService {
     if (activityDId) {
       const found = await this.activityDurationRepository.find({
         id: activityDId,
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
       });
       if (found.length === 0) {
         throw new HttpException(
@@ -104,7 +112,9 @@ export class FundingDeadlineService {
       }
       activityDurations = found;
     } else {
-      activityDurations = await this.activityDurationRepository.find({});
+      activityDurations = await this.activityDurationRepository.find({
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+      });
     }
     const deadlines = (
       await Promise.all(

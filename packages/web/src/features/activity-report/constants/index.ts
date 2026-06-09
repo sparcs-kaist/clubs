@@ -14,7 +14,7 @@ export const activityDeadlineEnumToString = (
     case ActivityDeadlineEnum.Executive:
       return "집행부 검토";
     case ActivityDeadlineEnum.Modification:
-      return "수정";
+      return "수정 제출";
     case ActivityDeadlineEnum.Exception:
       return "이의제기";
     default:

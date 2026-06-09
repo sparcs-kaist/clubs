@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
@@ -7,6 +8,7 @@ import {
   PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IActivityDeadlineCreate,
   MActivityDeadline,
@@ -38,8 +40,20 @@ export class ActivityDeadlineRepository extends BaseSingleTableRepository<
   ActivityDeadlineOrderByKeys,
   ActivityDeadlineQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("activityDeadlineD", MActivityDeadline);
+  }
+
+  async createActivityDeadline(
+    activityDeadline: IActivityDeadlineCreate,
+  ): Promise<MActivityDeadline> {
+    const result = await this.txHost.tx.activityDeadlineD.create({
+      data: this.createToDB(activityDeadline),
+    });
+
+    return this.dbToModel(result);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

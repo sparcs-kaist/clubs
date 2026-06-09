@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 
@@ -7,6 +8,7 @@ import {
   PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
 import {
   IActivityDurationCreate,
@@ -44,8 +46,26 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
   ActivityDurationOrderByKeys,
   ActivityDurationQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("activityD", MActivityDuration);
+  }
+
+  async deleteActivityDuration(
+    activityDurationId: MActivityDuration["id"],
+  ): Promise<boolean> {
+    const result = await this.txHost.tx.activityD.updateMany({
+      where: {
+        id: activityDurationId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: this.clock.now(),
+      },
+    });
+
+    return result.count > 0;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

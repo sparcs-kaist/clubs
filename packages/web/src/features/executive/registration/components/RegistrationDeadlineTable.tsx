@@ -155,7 +155,7 @@ const RegistrationDeadlineTable = ({
       <Table count={sortedDeadlines.length} table={table} />
       <DeadlineEditModal
         isOpen={editingDeadline != null}
-        title="등록 기간 수정"
+        title="등록 제출 기간 수정"
         startTerm={editingDeadline?.startTerm}
         endTerm={editingDeadline?.endTerm}
         isPending={isUpdatingRegistrationDeadline}

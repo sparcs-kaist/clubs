@@ -4,6 +4,7 @@ import { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
 import { ApiSem016ResponseOk } from "@clubs/interface/api/semester/apiSem016";
 
 import FoldableSection from "@sparcs-clubs/web/common/components/FoldableSection";
+import { formatActivityDurationSemesterName } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
 
 import FundingDeadlineTable from "./FundingDeadlineTable";
 
@@ -23,7 +24,7 @@ const FundingDeadlineSection: React.FC<FundingDeadlineSectionProps> = ({
   return (
     <FoldableSection
       key={activityDuration.id}
-      title={`${activityDuration.year}년 ${activityDuration.name} 활동기간`}
+      title={formatActivityDurationSemesterName(activityDuration)}
       childrenMargin="20px"
     >
       <FundingDeadlineTable fundingDeadlines={fundingDeadlines} />

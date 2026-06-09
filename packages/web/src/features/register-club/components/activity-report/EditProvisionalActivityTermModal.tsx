@@ -9,28 +9,29 @@ import DateInput from "@sparcs-clubs/web/common/components/Forms/DateInput";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import useGetActivityDeadline from "@sparcs-clubs/web/features/activity-report/services/useGetActivityDeadline";
 import { ActivityReportFormData } from "@sparcs-clubs/web/features/activity-report/types/form";
+import useGetProvisionalActivityDuration from "@sparcs-clubs/web/features/register-club/services/useGetProvisionalActivityDuration";
 import { Duration } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import {
   getLocalDateLastTime,
   getLocalDateOnly,
 } from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
-interface EditActivityTermModalProps {
+interface EditProvisionalActivityTermModalProps {
   isOpen: boolean;
   control: Control<ActivityReportFormData>;
   onClose: () => void;
   onConfirm: (terms: Duration[]) => void;
 }
 
-const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
-  isOpen,
-  control,
-  onClose,
-  onConfirm,
-}) => {
-  const { data: deadline, isLoading, isError } = useGetActivityDeadline();
+const EditProvisionalActivityTermModal: React.FC<
+  EditProvisionalActivityTermModalProps
+> = ({ isOpen, control, onClose, onConfirm }) => {
+  const {
+    data: activityDuration,
+    isLoading,
+    isError,
+  } = useGetProvisionalActivityDuration();
 
   const { fields, append, remove, update } = useFieldArray<
     ActivityReportFormData,
@@ -54,7 +55,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   const isEmpty = useMemo(() => fields.length === 0, [fields]);
   const maxSelectableEndTerm = useMemo(() => {
     const today = getLocalDateOnly(new Date());
-    const activityEndTerm = deadline?.targetTerm?.endTerm;
+    const activityEndTerm = activityDuration?.activityDuration.endTerm;
 
     if (activityEndTerm == null) {
       return today;
@@ -63,7 +64,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
     const activityEndDate = getLocalDateOnly(activityEndTerm);
 
     return activityEndDate < today ? activityEndDate : today;
-  }, [deadline?.targetTerm?.endTerm]);
+  }, [activityDuration?.activityDuration.endTerm]);
 
   const isSomethingEmpty = useMemo(() => {
     if (fields.length === 0) {
@@ -115,7 +116,10 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
                   renderItem={({ value, onChange, errorMessage }) => (
                     <DateInput
                       selectsRange
-                      minDate={deadline?.targetTerm?.startTerm ?? undefined}
+                      minDate={
+                        activityDuration?.activityDuration.startTerm ??
+                        undefined
+                      }
                       maxDate={maxSelectableEndTerm}
                       startDate={value?.startTerm}
                       endDate={value?.endTerm}
@@ -184,4 +188,4 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   );
 };
 
-export default EditActivityTermModal;
+export default EditProvisionalActivityTermModal;

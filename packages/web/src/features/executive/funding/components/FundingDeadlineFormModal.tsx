@@ -11,6 +11,10 @@ import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useCreateFundingDeadline from "@sparcs-clubs/web/features/executive/funding/services/useCreateFundingDeadline";
 import useGetActivityDurations from "@sparcs-clubs/web/features/executive/services/useGetActivityDurations";
+import {
+  filterRegularActivityDurations,
+  formatActivityDurationSemesterName,
+} from "@sparcs-clubs/web/features/executive/utils/activityDuration";
 import { fundingDeadlineEnumToString } from "@sparcs-clubs/web/features/manage-club/funding/constants/fundingDeadlineEnumToString";
 import {
   getLocalDateLastTime,
@@ -66,24 +70,24 @@ const FundingDeadlineFormModal = ({
           ) : (
             <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
               <Typography fs={18} lh={24} fw="MEDIUM">
-                새 지원금 기간 추가
+                새 지원금 제출 기간 추가
               </Typography>
               <Select
-                label="활동기간"
-                placeholder="활동기간을 선택해주세요"
+                label="활동반기"
+                placeholder="활동반기를 선택해주세요"
                 value={activityDId}
                 onChange={e => setActivityDId(e)}
-                items={[...data.activityDurations]
+                items={filterRegularActivityDurations(data.activityDurations)
                   .sort((a, b) => b.semester.id - a.semester.id)
                   .map(activityDuration => ({
-                    label: `${activityDuration.year}년 ${activityDuration.name} 활동기간`,
+                    label: formatActivityDurationSemesterName(activityDuration),
                     value: activityDuration.id,
                   }))}
               />
 
               <Select
-                label="지원금 기간"
-                placeholder="지원금 기간을 선택해주세요"
+                label="지원금 제출 기간"
+                placeholder="지원금 제출 기간을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as FundingDeadlineEnum)}
                 items={(

@@ -77,7 +77,7 @@ export const zFundingDeadline = z.object({
 });
 
 export enum RegistrationDeadlineEnum {
-  ClubRegistrationApplication = 1, // 동아리 등록 신청 기간, 동연 요청으로 이 기간에 동아리 등롯 신청 생성/검토/수정/승인을 전부 진행합니다.
+  ClubRegistrationApplication = 1, // 동아리 등록 신청 기간, 동연 요청으로 이 기간에 동아리 등록 신청 생성/검토/수정/승인을 전부 진행합니다.
   ClubRegistrationLate, // 동아리 등록 신청 지연 제출 기간, 동아리 등록 신청 기간 종료 후 2주 정도
   StudentRegistrationApplication, // 회원 등록 신청 기간
   StudentRegistrationLate, // 회원 등록 신청 지연 제출 기간, 회원 등록 신청 기간 종료 후 2주 정도
@@ -93,10 +93,10 @@ export const zRegistrationDeadline = z.object({
   }),
   deadlineEnum: z.nativeEnum(RegistrationDeadlineEnum).openapi({
     description: `등록 업무 관련 기간 분류
-    1: 작성(ClubRegistrationApplication)
-    2: 지연 제출(ClubRegistrationLate)
-    3: 수정(StudentRegistrationApplication)
-    4: 이의제기(StudentRegistrationLate)`,
+    1: 동아리 등록 신청(ClubRegistrationApplication)
+    2: 동아리 등록 지연 제출(ClubRegistrationLate)
+    3: 회원 등록 신청(StudentRegistrationApplication)
+    4: 회원 등록 지연 제출(StudentRegistrationLate)`,
     examples: [1, 2, 3, 4],
   }),
   startTerm: z.coerce.date().openapi({

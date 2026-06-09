@@ -22,7 +22,7 @@ const useCreateActivityDeadline = () => {
       queryClient.invalidateQueries({ queryKey: ["activityDeadlines"] });
     },
     onError: () => {
-      errorHandler("활동보고서 제출 기한 생성에 실패하였습니다");
+      errorHandler("활동보고서 제출 기간 생성에 실패하였습니다");
     },
   });
 };

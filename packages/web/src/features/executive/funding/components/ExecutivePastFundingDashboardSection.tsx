@@ -26,7 +26,7 @@ const columnHelper = createColumnHelper<ActivityDuration>();
 const columns = [
   columnHelper.accessor(row => formatActivityDurationName(row), {
     id: "activityDuration",
-    header: "활동 반기",
+    header: "활동반기",
     cell: info => info.getValue(),
     size: 220,
   }),
@@ -35,7 +35,7 @@ const columns = [
       `${formatDate(new Date(row.startTerm))} ~ ${formatDate(new Date(row.endTerm))}`,
     {
       id: "duration",
-      header: "활동 기간",
+      header: "활동반기 기간",
       cell: info => info.getValue(),
       size: 420,
     },
