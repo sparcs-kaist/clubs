@@ -19,10 +19,12 @@ const groupFundingDeadlinesByActivityDuration = (
 
   deadlines.forEach(deadline => {
     const existingDeadlines = deadlinesByActivityDId.get(deadline.activityDId);
-    deadlinesByActivityDId.set(deadline.activityDId, [
-      ...(existingDeadlines ?? []),
-      deadline,
-    ]);
+    if (existingDeadlines) {
+      existingDeadlines.push(deadline);
+      return;
+    }
+
+    deadlinesByActivityDId.set(deadline.activityDId, [deadline]);
   });
 
   return [...activityDurations]

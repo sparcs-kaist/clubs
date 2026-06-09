@@ -17,7 +17,7 @@ export class FundingDeadlineSqlRepository {
     startTerm: Date,
     endTerm: Date,
   ): Promise<boolean> {
-    const existingDeadlines = await this.txHost.tx.fundingDeadlineD.findMany({
+    const existingDeadline = await this.txHost.tx.fundingDeadlineD.findFirst({
       where: {
         semesterId,
         deletedAt: null,
@@ -44,9 +44,10 @@ export class FundingDeadlineSqlRepository {
           },
         ],
       },
+      select: { id: true },
     });
 
-    return existingDeadlines.length > 0;
+    return existingDeadline != null;
   }
 
   async createFundingDeadline(

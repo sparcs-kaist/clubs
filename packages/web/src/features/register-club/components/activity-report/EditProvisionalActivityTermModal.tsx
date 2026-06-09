@@ -76,7 +76,7 @@ const EditProvisionalActivityTermModal: React.FC<
   }, [fields]);
 
   const handleConfirm = useCallback(() => {
-    if (isEmpty) return;
+    if (isEmpty || isSomethingEmpty) return;
 
     onConfirm(
       fields.map(field => ({
@@ -84,7 +84,7 @@ const EditProvisionalActivityTermModal: React.FC<
         endTerm: getLocalDateLastTime(field.endTerm!),
       })),
     );
-  }, [fields, isEmpty, onConfirm]);
+  }, [fields, isEmpty, isSomethingEmpty, onConfirm]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>

@@ -17,13 +17,13 @@ const ExecutiveSemester = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoggedIn !== undefined || profile !== undefined) {
+    if (isLoggedIn !== undefined && profile !== undefined) {
       setLoading(false);
     }
   }, [isLoggedIn, profile]);
 
   if (loading) {
-    return <AsyncBoundary isLoading={loading} isError />;
+    return <AsyncBoundary isLoading={loading} isError={false} />;
   }
 
   if (!isLoggedIn) {

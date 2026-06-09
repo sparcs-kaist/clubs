@@ -13,6 +13,7 @@ const createRepository = () => {
   const tx = {
     fundingDeadlineD: {
       create: jest.fn().mockResolvedValue({ id: 1 }),
+      findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
@@ -33,11 +34,12 @@ describe("FundingDeadlineSqlRepository", () => {
 
     await repository.checkExistingFundingDeadline(19, startTerm, endTerm);
 
-    expect(tx.fundingDeadlineD.findMany).toHaveBeenCalledWith({
+    expect(tx.fundingDeadlineD.findFirst).toHaveBeenCalledWith({
       where: expect.objectContaining({
         semesterId: 19,
         deletedAt: null,
       }),
+      select: { id: true },
     });
   });
 
