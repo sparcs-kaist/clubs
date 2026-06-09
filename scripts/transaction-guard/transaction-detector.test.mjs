@@ -139,3 +139,113 @@ class ExampleService {
     "operationCommitteeRepository.createSecretKey",
   );
 });
+
+test("flags inherited base repository writes as transaction commands and migration targets", () => {
+  const repositoryCommandIndex = buildRepositoryCommandIndex([
+    {
+      filePath: "packages/api/src/common/base/base.repository.ts",
+      sourceText: `
+class BaseRepository {
+  async create() {
+    return this.runInTransaction(async tx => tx.activity.create({ data: {} }));
+  }
+
+  async patch() {
+    return this.runInTransaction(async tx => tx.activity.update({ data: {} }));
+  }
+}
+`,
+    },
+    {
+      filePath: "packages/api/src/common/base/base.multi.repository.ts",
+      sourceText: `
+class BaseMultiTableRepository extends BaseRepository {}
+`,
+    },
+    {
+      filePath:
+        "packages/api/src/feature/activity/repository/activity.new.repository.ts",
+      sourceText: `
+class ActivityNewRepository extends BaseMultiTableRepository {
+  async approveExecutiveActivity() {
+    return this.txHost.tx.activity.updateMany({ data: {} });
+  }
+}
+`,
+    },
+  ]);
+  const serviceSourceText = `
+class ActivityServiceNew {
+  constructor(private readonly activityRepository: ActivityNewRepository) {}
+
+  async approve() {
+    return this.activityRepository.patch({ id: 1 }, activity => activity);
+  }
+}
+`;
+
+  const result = findTransactionGuardNodes({
+    sourceText: serviceSourceText,
+    filePath: "packages/api/src/feature/activity/service/activity.service.ts",
+    repositoryCommandIndex,
+  });
+
+  assert.deepEqual(
+    result.nodes.map(node => node.kind),
+    [
+      "service-command-without-transactional",
+      "inherited-repository-command-call",
+    ],
+  );
+});
+
+test("still asks changed code to migrate inherited writes even with @Transactional", () => {
+  const repositoryCommandIndex = buildRepositoryCommandIndex([
+    {
+      filePath: "packages/api/src/common/base/base.repository.ts",
+      sourceText: `
+class BaseRepository {
+  async create() {
+    return this.runInTransaction(async tx => tx.activity.create({ data: {} }));
+  }
+}
+`,
+    },
+    {
+      filePath: "packages/api/src/common/base/base.single.repository.ts",
+      sourceText: `
+class BaseSingleTableRepository extends BaseRepository {}
+`,
+    },
+    {
+      filePath:
+        "packages/api/src/feature/activity/repository/activity-comment.repository.ts",
+      sourceText: `
+class ActivityCommentRepository extends BaseSingleTableRepository {}
+`,
+    },
+  ]);
+  const serviceSourceText = `
+class ActivityServiceNew {
+  constructor(
+    private readonly activityCommentRepository: ActivityCommentRepository,
+  ) {}
+
+  @Transactional()
+  async comment() {
+    return this.activityCommentRepository.create({ activity: { id: 1 } });
+  }
+}
+`;
+
+  const result = findTransactionGuardNodes({
+    sourceText: serviceSourceText,
+    filePath: "packages/api/src/feature/activity/service/activity.service.ts",
+    repositoryCommandIndex,
+  });
+
+  assert.deepEqual(
+    result.nodes.map(node => node.kind),
+    ["inherited-repository-command-call"],
+  );
+});

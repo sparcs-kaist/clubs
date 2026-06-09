@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -27,6 +28,7 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
   clubList = [],
   editMode = false,
 }) => {
+  const t = useTranslations("club");
   const { control, setValue, watch } = useFormContext<RegisterClubModel>();
 
   const clubId = watch("clubId");
@@ -83,6 +85,7 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
               value={krName}
               label="동아리명 (국문)"
               placeholder="국문 동아리명을 입력해주세요"
+              helperText={t("registerClub.koreanNameHelperText")}
             />
           )}
         />
@@ -100,6 +103,7 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
               value={enName}
               label="동아리명 (영문)"
               placeholder="영문 동아리명을 입력해주세요"
+              helperText={t("registerClub.foreignNameHelperText")}
             />
           )}
         />
@@ -141,6 +145,7 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
               {...props}
               label="동아리명 (국문)"
               placeholder="국문 동아리명을 입력해주세요"
+              helperText={t("registerClub.koreanNameChangeHelperText")}
             />
           )}
         />
@@ -158,6 +163,7 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
               {...props}
               label="동아리명 (영문)"
               placeholder="영문 동아리명을 입력해주세요"
+              helperText={t("registerClub.foreignNameChangeHelperText")}
             />
           )}
         />

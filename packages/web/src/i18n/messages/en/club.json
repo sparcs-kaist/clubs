@@ -23,5 +23,11 @@
   "총원": "Total Number",
   "대표자": "Club Representative",
   "동아리 설명": "About the club",
-  "동아리 설명 없음": "There is no description about the club"
+  "동아리 설명 없음": "There is no description about the club",
+  "registerClub": {
+    "koreanNameHelperText": "This name is shown mainly to Korean-speaking students. If your club does not have a separate Korean name, enter the name you normally use.",
+    "foreignNameHelperText": "This name is shown to international students. Enter a name that does not include Korean characters.",
+    "koreanNameChangeHelperText": "Edit this only if you want the club name to be displayed differently. This name is shown mainly to Korean-speaking students.",
+    "foreignNameChangeHelperText": "Edit this only if you want the club name to be displayed differently. This name is shown to international students, and should not include Korean characters."
+  }
 }
