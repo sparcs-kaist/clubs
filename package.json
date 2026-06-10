@@ -42,6 +42,7 @@
     "test:prisma-query-guard": "node --test scripts/prisma-query-guard/*.test.mjs",
     "test:soft-delete-guard": "node --test scripts/soft-delete-guard/*.test.mjs",
     "test:transaction-guard": "node --test scripts/transaction-guard/*.test.mjs",
+    "test:web-page-content": "node --test packages/web/src/common/components/PageContent.utils.spec.ts",
     "test:web-page-allowlist-guard": "node --test scripts/web-page-allowlist-guard/*.test.mjs",
     "transaction-guard:all": "node scripts/transaction-guard/scan-transaction-guard.mjs",
     "transaction-guard:changed": "node scripts/transaction-guard/changed-transaction-guard.mjs --changed-from origin/dev",
