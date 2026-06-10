@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.7 source=448ac2e46b45
+  {
+    version: "v.0.1.7",
+    date: new Date("2026.06.10"),
+    patchNoteContent: `Clubs v0.1.7
+오류 수정은 다음과 같습니다.
+- 집행부 학기 관리 페이지가 존재하지 않는 페이지로 표시되던 문제를 수정했습니다. (#1859)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.6 source=ad3fc43f3fa4
   {
     version: "v.0.1.6",
