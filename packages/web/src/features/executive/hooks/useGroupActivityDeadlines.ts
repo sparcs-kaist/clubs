@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { ApiSem007ResponseOK } from "@clubs/interface/api/semester/apiSem007";
 import { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
 
+import { filterRegularActivityDurations } from "@sparcs-clubs/web/features/executive/utils/activityDuration";
+
 import useGetActivityDeadlines from "../services/getActivityDeadlines";
 import useGetActivityDurations from "../services/useGetActivityDurations";
 
@@ -33,9 +35,11 @@ const useGroupActivityDeadlines = () => {
     }
 
     const { deadlines } = deadlineResponse;
-    const { activityDurations } = activityDurationsResponse;
+    const activityDurations = filterRegularActivityDurations(
+      activityDurationsResponse.activityDurations,
+    );
 
-    // 활동 기간별로 deadline 그룹핑
+    // 활동반기별로 deadline 그룹핑
     const groupedMap = new Map<number, ApiSem007ResponseOK["deadlines"]>();
 
     deadlines.forEach(deadline => {
@@ -43,12 +47,12 @@ const useGroupActivityDeadlines = () => {
       groupedMap.set(deadline.activityDId, [...existingDeadlines, deadline]);
     });
 
-    // 활동 기간 정보와 해당 deadline들을 조합
+    // 활동반기 정보와 해당 deadline들을 조합
     const result = activityDurations
       .map(activityDuration => {
         const deadlinesForDuration = groupedMap.get(activityDuration.id) || [];
 
-        // deadline이 있는 활동 기간만 포함
+        // deadline이 있는 활동반기만 포함
         if (deadlinesForDuration.length === 0) {
           return null;
         }
@@ -65,7 +69,7 @@ const useGroupActivityDeadlines = () => {
         };
       })
       .filter((item): item is GroupedActivityDeadline => item !== null)
-      // 활동 기간을 최신 순으로 정렬
+      // 활동반기를 최신 순으로 정렬
       .sort(
         (a, b) =>
           b.activityDuration.semester.id - a.activityDuration.semester.id,

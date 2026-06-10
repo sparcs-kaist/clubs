@@ -289,6 +289,195 @@ export class OperationCommitteeRepository {
   assert.deepEqual(runGuard(workspace), []);
 });
 
+test("fails when changed service code calls an inherited base repository write", () => {
+  const workspace = makeGitWorkspace();
+  writeFile(
+    workspace,
+    "packages/api/src/common/base/base.repository.ts",
+    `
+export abstract class BaseRepository {
+  async patch(query, patchFunction) {
+    return this.runInTransaction(tx =>
+      this.patchImplementation(query, patchFunction, tx),
+    );
+  }
+}
+`,
+  );
+  writeFile(
+    workspace,
+    "packages/api/src/common/base/base.multi.repository.ts",
+    `
+export abstract class BaseMultiTableRepository extends BaseRepository {}
+`,
+  );
+  writeFile(
+    workspace,
+    REPOSITORY_PATH,
+    `
+export class OperationCommitteeRepository extends BaseMultiTableRepository {}
+`,
+  );
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  @Transactional()
+  async updateSecretKey(secretKey: string) {
+    return secretKey;
+  }
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  @Transactional()
+  async updateSecretKey(secretKey: string) {
+    return this.operationCommitteeRepository.patch({ id: 1 }, old => old);
+  }
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].kind, "inherited-repository-command-call");
+});
+
+test("passes when legacy inherited repository writes are untouched", () => {
+  const workspace = makeGitWorkspace();
+  writeFile(
+    workspace,
+    "packages/api/src/common/base/base.repository.ts",
+    `
+export abstract class BaseRepository {
+  async delete(query) {
+    return this.runInTransaction(tx => this.deleteImplementation(query, tx));
+  }
+}
+`,
+  );
+  writeFile(
+    workspace,
+    "packages/api/src/common/base/base.single.repository.ts",
+    `
+export abstract class BaseSingleTableRepository extends BaseRepository {}
+`,
+  );
+  writeFile(
+    workspace,
+    REPOSITORY_PATH,
+    `
+export class OperationCommitteeRepository extends BaseSingleTableRepository {}
+`,
+  );
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  async deleteSecretKey() {
+    return this.operationCommitteeRepository.delete({ id: 1 });
+  }
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  async deleteSecretKey() {
+    return this.operationCommitteeRepository.delete({ id: 1 });
+  }
+
+  listSecretKeys() {
+    return [];
+  }
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
+});
+
+test("fails when changed service code calls a repository command with a manual transaction", () => {
+  const workspace = makeGitWorkspace();
+  writeFile(
+    workspace,
+    REPOSITORY_PATH,
+    `
+export class OperationCommitteeRepository {
+  async patchStatus(param) {
+    return this.prisma.$transaction(tx => this.patchStatusTx(tx, param));
+  }
+
+  async patchStatusTx(tx, param) {
+    return tx.operationCommitteeSecretKey.update({
+      where: { id: param.id },
+      data: { status: "active" },
+    });
+  }
+}
+`,
+  );
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  @Transactional()
+  async updateSecretKey(id: number) {
+    return id;
+  }
+}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeFile(
+    workspace,
+    SERVICE_PATH,
+    `
+export class OperationCommitteeService {
+  constructor(private readonly operationCommitteeRepository: OperationCommitteeRepository) {}
+
+  @Transactional()
+  async updateSecretKey(id: number) {
+    return this.operationCommitteeRepository.patchStatus({ id });
+  }
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(
+    violations[0].kind,
+    "repository-command-uses-manual-transaction",
+  );
+});
+
 function runGuard(workspace) {
   const diff = execFileSync(
     "git",

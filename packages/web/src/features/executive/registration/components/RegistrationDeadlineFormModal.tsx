@@ -71,7 +71,7 @@ const RegistrationDeadlineFormModal = ({
           ) : (
             <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
               <Typography fs={18} lh={24} fw="MEDIUM">
-                새 등록 기간 추가
+                새 등록 제출 기간 추가
               </Typography>
               <Select
                 label="학기"
@@ -87,8 +87,8 @@ const RegistrationDeadlineFormModal = ({
               />
 
               <Select
-                label="등록 기간 유형"
-                placeholder="기간 유형을 선택해주세요"
+                label="등록 제출 기간 유형"
+                placeholder="제출 기간 유형을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as RegistrationDeadlineEnum)}
                 items={(

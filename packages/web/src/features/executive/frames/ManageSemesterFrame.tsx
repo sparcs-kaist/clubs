@@ -76,7 +76,13 @@ const SemesterActionButtons = ({
   );
 };
 
-const ManageSemesterFrame = () => {
+interface ManageSemesterFrameProps {
+  showTitle?: boolean;
+}
+
+const ManageSemesterFrame = ({
+  showTitle = true,
+}: ManageSemesterFrameProps) => {
   const {
     data: semesterResponse,
     isLoading,
@@ -197,8 +203,11 @@ const ManageSemesterFrame = () => {
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={20}>
-        <FlexWrapper direction="row" justify="space-between">
-          <SectionTitle>학기 관리</SectionTitle>
+        <FlexWrapper
+          direction="row"
+          justify={showTitle ? "space-between" : "flex-end"}
+        >
+          {showTitle && <SectionTitle>학기 관리</SectionTitle>}
           <Button
             type={postSemester.isPending ? "disabled" : "default"}
             onClick={() => openSemesterModal(handleAddSemester)}

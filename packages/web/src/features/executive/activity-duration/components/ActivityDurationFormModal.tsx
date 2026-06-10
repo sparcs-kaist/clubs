@@ -75,7 +75,7 @@ const ActivityDurationFormModal = ({
           ) : (
             <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
               <Typography fs={18} lh={24} fw="MEDIUM">
-                새 활동기간 추가
+                새 활동반기 추가
               </Typography>
               <Select
                 label="학기"

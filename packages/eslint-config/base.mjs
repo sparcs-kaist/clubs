@@ -69,6 +69,7 @@ export const baseConfig = tseslint.config(
     },
     rules: {
       "curly": "off",
+      "dot-notation": "error",
       "import/extensions": "off",
       "import/no-extraneous-dependencies": "off",
       "import/no-unresolved": "off",

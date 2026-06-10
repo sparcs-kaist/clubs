@@ -74,7 +74,7 @@ const ActivityDurationEditModal = ({
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
           <Typography fs={18} lh={24} fw="MEDIUM">
-            활동기간 수정
+            활동반기 수정
           </Typography>
           <DateInput
             label="시작일"

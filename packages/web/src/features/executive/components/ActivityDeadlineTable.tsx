@@ -99,7 +99,7 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
 
   const columns = [
     columnHelper.accessor("deadlineEnum", {
-      header: "기간유형",
+      header: "제출 기간 유형",
       cell: info => getDeadlineTypeText(info.getValue()),
       size: 100,
       enableSorting: false,
@@ -143,11 +143,11 @@ const ActivityDeadlineTable: React.FC<ActivityDeadlineTableProps> = ({
         table={table}
         count={sortedDeadlines.length}
         unit="개"
-        emptyMessage="등록된 활동보고서 제출 기한이 없습니다"
+        emptyMessage="등록된 활동보고서 제출 기간이 없습니다"
       />
       <DeadlineEditModal
         isOpen={editingDeadline != null}
-        title="활동보고서 제출 기한 수정"
+        title="활동보고서 제출 기간 수정"
         startTerm={editingDeadline?.startTerm}
         endTerm={editingDeadline?.endTerm}
         isPending={isUpdatingActivityDeadline}

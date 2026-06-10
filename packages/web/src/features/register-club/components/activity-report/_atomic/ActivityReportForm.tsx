@@ -143,6 +143,7 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
           />
 
           <SelectActivityTerm
+            source="provisional"
             onChange={terms => {
               setValue("durations", terms, {
                 shouldValidate: true,

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { TransactionHost } from "@nestjs-cls/transactional";
+import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
 import {
   ActivityStatusEnum,
@@ -114,6 +115,83 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     });
 
     return result.count > 0;
+  }
+
+  @Transactional()
+  async updateActivityReport(activity: MActivity): Promise<boolean> {
+    const data = this.modelToDB(activity);
+    const { id: _, ...mainData } = data.main;
+    const deletedAt = this.clock.now();
+    const activityTerms: Prisma.ActivityTUncheckedCreateInput[] =
+      data.oneToMany.activityT.map(row => ({
+        activityId: activity.id,
+        startTerm: row.startTerm,
+        endTerm: row.endTerm,
+      }));
+    const evidenceFiles: Prisma.ActivityEvidenceFileUncheckedCreateInput[] =
+      data.oneToMany.activityEvidenceFile.map(row => ({
+        activityId: activity.id,
+        fileId: row.fileId,
+      }));
+    const participants: Prisma.ActivityParticipantUncheckedCreateInput[] =
+      data.oneToMany.activityParticipant.map(row => ({
+        activityId: activity.id,
+        studentId: row.studentId,
+      }));
+
+    const activityResult = await this.txHost.tx.activity.updateMany({
+      where: {
+        id: activity.id,
+        deletedAt: null,
+      },
+      data: mainData,
+    });
+
+    if (activityResult.count !== 1) return false;
+
+    await Promise.all([
+      this.txHost.tx.activityT.updateMany({
+        where: {
+          activityId: activity.id,
+          deletedAt: null,
+        },
+        data: { deletedAt },
+      }),
+      this.txHost.tx.activityEvidenceFile.updateMany({
+        where: {
+          activityId: activity.id,
+          deletedAt: null,
+        },
+        data: { deletedAt },
+      }),
+      this.txHost.tx.activityParticipant.updateMany({
+        where: {
+          activityId: activity.id,
+          deletedAt: null,
+        },
+        data: { deletedAt },
+      }),
+    ]);
+
+    await Promise.all([
+      ...activityTerms.map(row =>
+        this.txHost.tx.activityT.create({
+          data: row,
+        }),
+      ),
+      ...evidenceFiles.map(row =>
+        this.txHost.tx.activityEvidenceFile.create({
+          data: row,
+        }),
+      ),
+      ...participants.map(row =>
+        this.txHost.tx.activityParticipant.create({
+          data: row,
+        }),
+      ),
+    ]);
+
+    return true;
   }
 
   protected dbToModelMapping(result: ActivityDbSelect): MActivity {

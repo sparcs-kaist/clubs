@@ -177,11 +177,20 @@ function readRepositorySources(repoRoot) {
   return walkFiles(sourceRoot)
     .map(filePath => path.relative(repoRoot, filePath))
     .filter(filePath => isApiProductionTypeScriptFile(filePath))
-    .filter(filePath => toPosixPath(filePath).includes("/repository/"))
+    .filter(filePath => isRepositoryIndexSourceFile(filePath))
     .map(filePath => ({
       filePath,
       sourceText: fs.readFileSync(path.resolve(repoRoot, filePath), "utf8"),
     }));
+}
+
+function isRepositoryIndexSourceFile(filePath) {
+  const posixPath = toPosixPath(filePath);
+
+  return (
+    posixPath.includes("/repository/") ||
+    /^packages\/api\/src\/common\/base\/[^/]*repository\.ts$/u.test(posixPath)
+  );
 }
 
 function walkFiles(directory) {

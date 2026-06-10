@@ -49,18 +49,18 @@ const ExecutiveActivityDeadline = () => {
         items={[
           { name: "집행부원 대시보드", path: "/executive" },
           {
-            name: "활동보고서 제출 기한 관리",
+            name: "활동보고서 제출 기간 관리",
             path: "/executive/activity-report/deadline",
           },
         ]}
-        title="활동보고서 제출 기한 관리"
+        title="활동보고서 제출 기간 관리"
         action={
           <IconButton
             type="default"
             icon="add"
             onClick={openActivityDeadlineModal}
           >
-            새 기한 추가
+            제출 기간 추가
           </IconButton>
         }
       />

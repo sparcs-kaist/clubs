@@ -11,7 +11,6 @@ import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 import DashboardButton from "../components/DashboardButton";
 import OperationCommitteeSecretManager from "../components/SecretKey/OperationCommitteeSecretManager";
 import ManageMemberFrame from "./ManageMemberFrame";
-import ManageSemesterFrame from "./ManageSemesterFrame";
 
 const DashboardSectionInner = styled.div`
   display: flex;
@@ -35,39 +34,44 @@ const ExecutiveDashboardFrame = () => {
       <Banner icon="warning">
         현재 집행부원 대시보드는 개발 중에 있습니다.
       </Banner>
-      <ManageSemesterFrame />
       <ManageMemberFrame />
       <OperationCommitteeSecretManager />
-      <FlexWrapper direction="column" gap={20}>
-        <SectionTitle>기간 관리</SectionTitle>
-        <DashboardSectionInner>
-          <FlexWrapper
-            direction="row"
-            gap={60}
-            style={{ justifyContent: "space-between" }}
-          >
-            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+      <FlexWrapper
+        direction="row"
+        gap={60}
+        style={{ justifyContent: "space-between" }}
+      >
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>기간 관리</SectionTitle>
+          <DashboardSectionInner>
+            <FlexWrapper direction="column" gap={12}>
+              <DashboardButton text="학기" link="/executive/semester" />
               <DashboardButton
-                text="동아리 / 회원 등록 기간"
-                link="/executive/registration/deadline"
-              />
-              <DashboardButton
-                text="활동기간"
+                text="활동반기"
                 link="/executive/activity-duration"
               />
             </FlexWrapper>
-            <FlexWrapper direction="column" gap={12} style={{ flex: 1 }}>
+          </DashboardSectionInner>
+        </FlexWrapper>
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>제출 기간 관리</SectionTitle>
+          <DashboardSectionInner>
+            <FlexWrapper direction="column" gap={12}>
               <DashboardButton
-                text="활동 보고서 기간"
+                text="동아리 / 회원 등록 제출 기간"
+                link="/executive/registration/deadline"
+              />
+              <DashboardButton
+                text="활동보고서 제출 기간"
                 link="/executive/activity-report/deadline"
               />
               <DashboardButton
-                text="지원금 기간"
+                text="지원금 제출 기간"
                 link="/executive/funding/deadline"
               />
             </FlexWrapper>
-          </FlexWrapper>
-        </DashboardSectionInner>
+          </DashboardSectionInner>
+        </FlexWrapper>
       </FlexWrapper>
 
       <FlexWrapper
@@ -79,10 +83,10 @@ const ExecutiveDashboardFrame = () => {
           <SectionTitle>동아리 / 회원 등록</SectionTitle>
           <DashboardSectionInner>
             <FlexWrapper direction="column" gap={12}>
-              {/* TODO: 동아리 등록 기간 추가 */}
+              {/* TODO: 동아리 등록 제출 기간 추가 */}
               {/* <Card outline>
                 <DateRangeInput
-                  label={["동아리 등록 기간", ""]}
+                  label={["동아리 등록 제출 기간", ""]}
                   startValue={""}
                   endValue={""}
                   limitStartValue={""}
@@ -92,7 +96,7 @@ const ExecutiveDashboardFrame = () => {
                   isTextAlignCenter
                 />
                 <DateRangeInput
-                  label={["회원 등록 기간", ""]}
+                  label={["회원 등록 제출 기간", ""]}
                   startValue={""}
                   endValue={""}
                   limitStartValue={""}
@@ -121,10 +125,10 @@ const ExecutiveDashboardFrame = () => {
         <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
           <SectionTitle>활동 보고서 / 지원금</SectionTitle>
           <DashboardSectionInner>
-            {/* TODO: 활동 보고서 작성 기간 추가 */}
+            {/* TODO: 활동 보고서 제출 기간 추가 */}
             {/* <Card outline>
               <DateRangeInput
-                label={["활동 보고서 작성 기간", ""]}
+                label={["활동 보고서 작성 제출 기간", ""]}
                 startValue={""}
                 endValue={""}
                 limitStartValue={""}
@@ -134,7 +138,7 @@ const ExecutiveDashboardFrame = () => {
                 isTextAlignCenter
               />
               <DateRangeInput
-                label={["활동 보고서 수정 기간", ""]}
+                label={["활동 보고서 수정 제출 기간", ""]}
                 startValue={""}
                 endValue={""}
                 limitStartValue={""}
@@ -144,7 +148,7 @@ const ExecutiveDashboardFrame = () => {
                 isTextAlignCenter
               />
               <DateRangeInput
-                label={["활동 보고서 검토 기간", ""]}
+                label={["활동 보고서 검토 제출 기간", ""]}
                 startValue={""}
                 endValue={""}
                 limitStartValue={""}
@@ -155,7 +159,7 @@ const ExecutiveDashboardFrame = () => {
               />
               <Divider />
               <DateRangeInput
-                label={["지원금 신청 기간", ""]}
+                label={["지원금 신청 제출 기간", ""]}
                 startValue={""}
                 endValue={""}
                 limitStartValue={""}
