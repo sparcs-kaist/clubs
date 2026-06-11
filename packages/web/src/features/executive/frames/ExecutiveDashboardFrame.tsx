@@ -119,6 +119,7 @@ const ExecutiveDashboardFrame = () => {
                 text="회원 등록 신청 내역"
                 link="/executive/register-member"
               />
+              <DashboardButton text="동아리 총람" link="/executive/overview" />
             </FlexWrapper>
           </DashboardSectionInner>
         </FlexWrapper>

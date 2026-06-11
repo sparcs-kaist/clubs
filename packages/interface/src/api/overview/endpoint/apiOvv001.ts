@@ -15,7 +15,7 @@ import {
  * @description "동아리 대표자대의원" 총람
  */
 
-const url = () => `/overview/delegates`;
+const url = () => `/executive/overview/delegates`;
 
 const method = "GET";
 

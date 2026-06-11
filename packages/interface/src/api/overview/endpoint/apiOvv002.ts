@@ -13,7 +13,7 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
  * @description "동아리 정보(KR)" 총람
  */
 
-const url = () => `/overview/clubinfo/kr`;
+const url = () => `/executive/overview/clubinfo/kr`;
 
 const method = "GET";
 

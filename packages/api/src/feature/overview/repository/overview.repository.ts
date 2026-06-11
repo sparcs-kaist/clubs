@@ -1,13 +1,34 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/domain/registration/member-registration";
 
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
 export class OverviewRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CLOCK) private readonly clock: Clock,
+  ) {}
+
+  private getDelegateCriteriaDate(
+    semesterStartTerm: Date,
+    semesterEndTerm: Date,
+  ) {
+    const now = this.clock.now();
+
+    if (now < semesterStartTerm) {
+      return semesterStartTerm;
+    }
+
+    if (semesterEndTerm < now) {
+      return semesterEndTerm;
+    }
+
+    return now;
+  }
 
   findClubsFundamentals(year: number, semesterName: string) {
     // Complex multi-table JOIN with dynamic query - use raw SQL
@@ -39,16 +60,22 @@ export class OverviewRepository {
   async findDelegates(year: number, semesterName: string) {
     const semester = await this.prisma.semesterD.findFirst({
       where: { year, name: semesterName, deletedAt: null },
-      select: { id: true },
+      select: { endTerm: true, id: true, startTerm: true },
     });
 
     if (!semester) {
       return [];
     }
 
+    const criteriaDate = this.getDelegateCriteriaDate(
+      semester.startTerm,
+      semester.endTerm,
+    );
+
     const delegates = await this.prisma.clubDelegateD.findMany({
       where: {
-        endTerm: null,
+        OR: [{ endTerm: null }, { endTerm: { gt: criteriaDate } }],
+        startTerm: { lte: criteriaDate },
         deletedAt: null,
         club: {
           deletedAt: null,

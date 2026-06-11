@@ -60,6 +60,7 @@ export const productionReadyPaths: {
     "/executive/register-club",
     "/executive/register-member",
     // 학기 / 활동반기 / 등록 마감일 관리
+    "/executive/overview",
     "/executive/semester",
     "/executive/activity-duration",
     "/executive/registration/deadline",
@@ -250,6 +251,12 @@ const paths = {
     path: "/executive",
     featureFlag: "DEFAULT",
     sub: [
+      {
+        name: "path.동아리 총람",
+        path: "/executive/overview",
+        authority: ["executive"],
+        featureFlag: "DEFAULT",
+      },
       {
         name: "path.동아리 등록 신청",
         path: "/executive/register-club",
