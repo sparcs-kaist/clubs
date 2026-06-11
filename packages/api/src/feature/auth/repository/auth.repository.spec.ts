@@ -132,69 +132,117 @@ describe("AuthRepository", () => {
     expect(result.master).toBeUndefined();
   });
 
-  it("classifies 5000-range students as doctors when falling back to student number", async () => {
-    const { repository } = createRepository({ studentTerms: [] });
+  it.each([
+    ["6000-6899 undergraduate", 20996167, 1, "undergraduate"],
+    ["6000-6899 master", 20996614, 2, "master"],
+    ["7000+ doctor", 20998109, 3, "doctor"],
+  ] as const)(
+    "uses the current student_t enum for %s when login has no SSO V2 degree",
+    async (_, studentNumber, studentEnum, expectedProfileKey) => {
+      const { repository } = createRepository({
+        studentNumber,
+        studentTerms: [{ studentId: 29943, studentEnum }],
+      });
 
-    const result = await repository.findOrCreateUser(
-      "hyunjun@example.com",
-      "20245642",
-      "sid",
-      "조현준",
-      "Student",
-      "1234",
-      "S",
-      "재학",
-      null,
-    );
-
-    expect(result.doctor).toEqual({ id: 29943, number: 20245642 });
-    expect(result.master).toBeUndefined();
-    expect(result.undergraduate).toBeUndefined();
-  });
-
-  it("classifies 2000-range students as masters when falling back to student number", async () => {
-    const { repository } = createRepository({
-      studentNumber: 20242001,
-      studentTerms: [],
-    });
-
-    const result = await repository.findOrCreateUser(
-      "master@example.com",
-      "20242001",
-      "sid",
-      "석사생",
-      "Student",
-      "1234",
-      "S",
-      "재학",
-      null,
-    );
-
-    expect(result.master).toEqual({ id: 29943, number: 20242001 });
-    expect(result.doctor).toBeUndefined();
-    expect(result.undergraduate).toBeUndefined();
-  });
-
-  it("rejects 6000-range students when falling back to student number", async () => {
-    const { repository } = createRepository({
-      studentNumber: 20246001,
-      studentTerms: [],
-    });
-
-    await expect(
-      repository.findOrCreateUser(
-        "exchange@example.com",
-        "20246001",
+      const result = await repository.findOrCreateUser(
+        "student@example.com",
+        studentNumber.toString(),
         "sid",
-        "교환학생",
+        "학생",
         "Student",
         "1234",
         "S",
         "재학",
         null,
+      );
+
+      expect(result[expectedProfileKey]).toEqual({
+        id: 29943,
+        number: studentNumber,
+      });
+    },
+  );
+
+  it.each([
+    ["0000-1999", "undergraduate", 20991001],
+    ["2000-2999", "master", 20992001],
+    ["3000-3999", "master", 20993001],
+    ["4000-4999", "master", 20994001],
+    ["5000-5999", "doctor", 20995001],
+  ] as const)(
+    "classifies %s as %s when falling back to student number",
+    async (_, expectedProfileKey, studentNumber) => {
+      const { repository } = createRepository({
+        studentNumber,
+        studentTerms: [],
+      });
+
+      const result = await repository.findOrCreateUser(
+        "student@example.com",
+        studentNumber.toString(),
+        "sid",
+        "학생",
+        "Student",
+        "1234",
+        "S",
+        "재학",
+        null,
+      );
+
+      expect(result[expectedProfileKey]).toEqual({
+        id: 29943,
+        number: studentNumber,
+      });
+    },
+  );
+
+  it("rejects HP students before SSO, DB, or fallback classification", async () => {
+    const { repository } = createRepository({
+      studentNumber: 20996901,
+      studentTerms: [{ studentId: 29943, studentEnum: 2 }],
+    });
+
+    await expect(
+      repository.findOrCreateUser(
+        "hp@example.com",
+        "20996901",
+        "sid",
+        "HP 학생",
+        "Student",
+        "1234",
+        "S",
+        "재학",
+        "1",
       ),
-    ).rejects.toThrow(
-      "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
-    );
+    ).rejects.toThrow("HP 학번은 로그인할 수 없습니다.");
   });
+
+  it.each([
+    ["6000-6899", 20996001],
+    ["7000+", 20997001],
+  ] as const)(
+    "rejects %s students when falling back to student number",
+    async (_, studentNumber) => {
+      const { repository } = createRepository({
+        studentNumber,
+        studentTerms: [],
+      });
+
+      await expect(
+        repository.findOrCreateUser(
+          "exchange@example.com",
+          studentNumber.toString(),
+          "sid",
+          "교환학생",
+          "Student",
+          "1234",
+          "S",
+          "재학",
+          null,
+        ),
+      ).rejects.toThrow(
+        "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
+      );
+    },
+  );
 });
