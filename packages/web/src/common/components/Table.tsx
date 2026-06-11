@@ -26,8 +26,8 @@ export interface TableProps<T> {
   unit?: string;
 }
 const TableInnerWrapper = styled.div`
-  width: calc(100% + (100vw - 100%));
-  padding: 0 calc((100vw - 100%) / 2);
+  width: 100vw;
+  margin-left: calc((100% - 100vw) / 2);
   overflow-x: auto;
 `;
 
@@ -37,7 +37,7 @@ const TableInner = styled.table.withConfig({
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-width: ${({ minWidth }) => `max(100%, ${minWidth}px)`};
+  width: ${({ minWidth }) => `max(100%, ${minWidth}px)`};
   border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
   border-radius: 8px;
   overflow: hidden;
