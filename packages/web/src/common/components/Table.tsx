@@ -27,7 +27,6 @@ export interface TableProps<T> {
 }
 const TableInnerWrapper = styled.div`
   width: 100vw;
-  margin-left: calc((100% - 100vw) / 2);
   overflow-x: auto;
 `;
 
