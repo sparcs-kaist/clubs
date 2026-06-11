@@ -531,13 +531,6 @@ export class AuthRepository {
       return 1;
     }
 
-    if (suffix < 3000) {
-      throw new HttpException(
-        FALLBACK_STUDENT_ENUM_ERROR_MESSAGE,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     if (suffix < 5000) {
       return 2;
     }

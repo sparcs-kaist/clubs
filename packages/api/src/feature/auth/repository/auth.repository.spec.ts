@@ -95,6 +95,34 @@ describe("AuthRepository", () => {
     expect(result.master).toBeUndefined();
   });
 
+  it("uses SSO V2 as source of truth during login when it conflicts with current student_t", async () => {
+    const { repository, prisma } = createRepository();
+    prisma.studentT.findMany
+      .mockResolvedValueOnce([{ studentId: 29943, studentEnum: 3 }])
+      .mockResolvedValueOnce([{ studentId: 29943, studentEnum: 2 }]);
+
+    const result = await repository.findOrCreateUser(
+      "hyunjun@example.com",
+      "20245642",
+      "sid",
+      "조현준",
+      "Student",
+      "1234",
+      "S",
+      "재학",
+      "1",
+    );
+
+    const studentTermUpsert = prisma.$executeRaw.mock.calls
+      .map(([query]) => query as { strings: string[]; values: unknown[] })
+      .find(query => query.strings.join("").includes("INSERT INTO student_t"));
+
+    expect(studentTermUpsert?.values[1]).toBe(2);
+    expect(studentTermUpsert?.values[7]).toBe(2);
+    expect(result.master).toEqual({ id: 29943, number: 20245642 });
+    expect(result.doctor).toBeUndefined();
+  });
+
   it("uses the current student_t enum when returning student profiles for token refresh", async () => {
     const { repository } = createRepository();
 
@@ -121,6 +149,29 @@ describe("AuthRepository", () => {
 
     expect(result.doctor).toEqual({ id: 29943, number: 20245642 });
     expect(result.master).toBeUndefined();
+    expect(result.undergraduate).toBeUndefined();
+  });
+
+  it("classifies 2000-range students as masters when falling back to student number", async () => {
+    const { repository } = createRepository({
+      studentNumber: 20242001,
+      studentTerms: [],
+    });
+
+    const result = await repository.findOrCreateUser(
+      "master@example.com",
+      "20242001",
+      "sid",
+      "석사생",
+      "Student",
+      "1234",
+      "S",
+      "재학",
+      null,
+    );
+
+    expect(result.master).toEqual({ id: 29943, number: 20242001 });
+    expect(result.doctor).toBeUndefined();
     expect(result.undergraduate).toBeUndefined();
   });
 
