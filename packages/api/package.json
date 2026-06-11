@@ -23,7 +23,7 @@
     "test:db-migrate": "pnpm test:db-up --wait && ts-node --project tsconfig.spec.json ./test/run-with-test-database-url.ts pnpm prisma db push",
     "db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.dev.yml -p ar-002-clubs up -d",
     "db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs down",
-    "db-generate": "dotenv -e ../../.env -- pnpm db-up --wait && dotenv -e ../../.env -- node ../../scripts/run-with-test-database-url.mjs pnpm prisma db push",
+    "db-generate": "dotenv -e ../../.env -- node ../../scripts/run-with-test-database-url.mjs pnpm db-up --wait && dotenv -e ../../.env -- node ../../scripts/run-with-test-database-url.mjs pnpm prisma db push",
     "prisma:generate": "prisma generate",
     "prisma:push": "dotenv -e ../../.env -- node ../../scripts/run-with-test-database-url.mjs prisma db push",
     "prisma:studio": "dotenv -e ../../.env -- prisma studio"
