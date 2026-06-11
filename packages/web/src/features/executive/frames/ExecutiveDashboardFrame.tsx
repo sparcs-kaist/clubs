@@ -1,10 +1,7 @@
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
-// import Button from "@sparcs-clubs/web/common/components/Button";
-// import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-// import DateRangeInput from "@sparcs-clubs/web/common/components/Forms/DateRangeInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
@@ -20,11 +17,6 @@ const DashboardSectionInner = styled.div`
   justify-content: flex-start;
 `;
 
-// const ButtonWrapper = styled.div`
-//   display: flex;
-//   justify-content: flex-end;
-// `;
-
 const ExecutiveDashboardFrame = () => {
   const isLoading = false;
   const isError = false;
@@ -34,7 +26,15 @@ const ExecutiveDashboardFrame = () => {
       <Banner icon="warning">
         현재 집행부원 대시보드는 개발 중에 있습니다.
       </Banner>
-      <DashboardButton text="동아리 총람 바로가기" link="/executive/overview" />
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>동아리 정보</SectionTitle>
+        <DashboardSectionInner>
+          <DashboardButton
+            text="동아리 총람 바로가기"
+            link="/executive/overview"
+          />
+        </DashboardSectionInner>
+      </FlexWrapper>
       <ManageMemberFrame />
       <OperationCommitteeSecretManager />
       <FlexWrapper
@@ -84,34 +84,6 @@ const ExecutiveDashboardFrame = () => {
           <SectionTitle>동아리 / 회원 등록</SectionTitle>
           <DashboardSectionInner>
             <FlexWrapper direction="column" gap={12}>
-              {/* TODO: 동아리 등록 제출 기간 추가 */}
-              {/* <Card outline>
-                <DateRangeInput
-                  label={["동아리 등록 제출 기간", ""]}
-                  startValue={""}
-                  endValue={""}
-                  limitStartValue={""}
-                  limitEndValue={""}
-                  onChange={() => {}}
-                  placeholder={"20XX.XX.XX"}
-                  isTextAlignCenter
-                />
-                <DateRangeInput
-                  label={["회원 등록 제출 기간", ""]}
-                  startValue={""}
-                  endValue={""}
-                  limitStartValue={""}
-                  limitEndValue={""}
-                  onChange={() => {}}
-                  placeholder={"20XX.XX.XX"}
-                  isTextAlignCenter
-                />
-                <ButtonWrapper>
-                  <Button type="disabled" onClick={() => {}}>
-                    저장
-                  </Button>
-                </ButtonWrapper>
-              </Card> */}
               <DashboardButton
                 text="동아리 등록 신청 내역"
                 link="/executive/register-club"
@@ -126,55 +98,6 @@ const ExecutiveDashboardFrame = () => {
         <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
           <SectionTitle>활동 보고서 / 지원금</SectionTitle>
           <DashboardSectionInner>
-            {/* TODO: 활동 보고서 제출 기간 추가 */}
-            {/* <Card outline>
-              <DateRangeInput
-                label={["활동 보고서 작성 제출 기간", ""]}
-                startValue={""}
-                endValue={""}
-                limitStartValue={""}
-                limitEndValue={""}
-                onChange={() => {}}
-                placeholder={"20XX.XX.XX"}
-                isTextAlignCenter
-              />
-              <DateRangeInput
-                label={["활동 보고서 수정 제출 기간", ""]}
-                startValue={""}
-                endValue={""}
-                limitStartValue={""}
-                limitEndValue={""}
-                onChange={() => {}}
-                placeholder={"20XX.XX.XX"}
-                isTextAlignCenter
-              />
-              <DateRangeInput
-                label={["활동 보고서 검토 제출 기간", ""]}
-                startValue={""}
-                endValue={""}
-                limitStartValue={""}
-                limitEndValue={""}
-                onChange={() => {}}
-                placeholder={"20XX.XX.XX"}
-                isTextAlignCenter
-              />
-              <Divider />
-              <DateRangeInput
-                label={["지원금 신청 제출 기간", ""]}
-                startValue={""}
-                endValue={""}
-                limitStartValue={""}
-                limitEndValue={""}
-                onChange={() => {}}
-                placeholder={"20XX.XX.XX"}
-                isTextAlignCenter
-              />
-              <ButtonWrapper>
-                <Button type="disabled" onClick={() => {}}>
-                  저장
-                </Button>
-              </ButtonWrapper>
-            </Card> */}
             <FlexWrapper direction="column" gap={12}>
               <DashboardButton
                 text="활동 보고서 작성 내역"
