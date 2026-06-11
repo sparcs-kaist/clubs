@@ -15,7 +15,7 @@
     "test:unit": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-unit.json",
     "test:integration": "ts-node --project tsconfig.spec.json ./test/run-with-test-database-url.ts jest --config ./test/jest-integration.json",
     "test:integration:ci": "ts-node --project tsconfig.spec.json ./test/run-with-test-database-url.ts jest --config ./test/jest-integration.json",
-    "test:integration:full": "pnpm test:db-up && pnpm test:db-migrate && pnpm test:integration; pnpm test:db-down",
+    "test:integration:full": "pnpm test:db-up && pnpm test:db-migrate && pnpm test:integration; status=$?; pnpm test:db-down; exit $status",
     "test:cov": "NODE_ENV=test dotenv -e ../../.env -- jest --config ./test/jest-unit.json --coverage",
     "test:db-up": "dotenv -e ../../.env -- docker compose -f ../../.docker/docker-compose.test.yml -p ar-002-clubs-test up -d",
     "test:db-down": "dotenv -e ../../.env -- docker compose -p ar-002-clubs-test down",
