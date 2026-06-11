@@ -16,6 +16,7 @@ import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
 import OverviewFrame from "@sparcs-clubs/web/features/overview/frames/OverviewFrame";
+import { isOverviewSelectableSemester } from "@sparcs-clubs/web/features/overview/utils/overviewSemester";
 import {
   formatDotDate,
   formatDotDetailDate,
@@ -68,7 +69,7 @@ const ExecutiveOverview = () => {
   >(undefined);
 
   const semesters = useMemo(
-    () => semestersData?.semesters ?? [],
+    () => (semestersData?.semesters ?? []).filter(isOverviewSelectableSemester),
     [semestersData?.semesters],
   );
 

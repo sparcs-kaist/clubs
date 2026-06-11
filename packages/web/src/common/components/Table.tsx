@@ -1,10 +1,11 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { flexRender, type Table as TableType } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import styled from "styled-components";
 
 import { normalizeTableCellCopyText } from "./Table/cellCopy";
+import { getCenteredHorizontalScrollLeft } from "./Table/horizontalScroll";
 import TableCell from "./Table/TableCell";
 import Typography from "./Typography";
 
@@ -21,6 +22,7 @@ export interface TableProps<T> {
   onCellClick?: (text: string) => void;
   contentWrap?: boolean;
   useColumnSizeAsMinWidth?: boolean;
+  initialHorizontalScroll?: "start" | "center";
   unit?: string;
 }
 const TableInnerWrapper = styled.div`
@@ -55,6 +57,7 @@ const HeaderRow = styled.tr`
 const Content = styled.tbody`
   display: block;
   flex: 1;
+  overflow-x: clip;
   overflow-y: auto;
   width: 100%;
 `;
@@ -107,6 +110,7 @@ const Table = <T,>({
   onCellClick = undefined,
   contentWrap = false,
   useColumnSizeAsMinWidth = false,
+  initialHorizontalScroll = "start",
   unit = "개",
 }: TableProps<T>) => {
   // 야매로 min-width 바꿔치기 (고치지 마세요)
@@ -116,10 +120,29 @@ const Table = <T,>({
     column.minSize = 0;
   });
   const router = useRouter();
+  const tableInnerWrapperRef = useRef<HTMLDivElement>(null);
+  const rowCount = table.getRowModel().rows.length;
   const getColumnMinWidth = useCallback(
     (size: number) => (useColumnSizeAsMinWidth ? size : undefined),
     [useColumnSizeAsMinWidth],
   );
+
+  useEffect(() => {
+    if (initialHorizontalScroll !== "center") {
+      return;
+    }
+
+    const wrapper = tableInnerWrapperRef.current;
+    if (!wrapper) {
+      return;
+    }
+
+    wrapper.scrollLeft = getCenteredHorizontalScrollLeft(
+      wrapper.scrollWidth,
+      wrapper.clientWidth,
+    );
+  }, [initialHorizontalScroll, minWidth, rowCount]);
+
   const handleRowClick = useCallback(
     (row: T) => {
       if (rowLink) {
@@ -163,7 +186,7 @@ const Table = <T,>({
           </Typography>
         )}
       </Count>
-      <TableInnerWrapper>
+      <TableInnerWrapper ref={tableInnerWrapperRef}>
         <TableInner height={height} minWidth={minWidth}>
           <Header>
             {table.getHeaderGroups().map(headerGroup => (

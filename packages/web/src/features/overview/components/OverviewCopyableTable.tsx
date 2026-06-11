@@ -69,6 +69,7 @@ const OverviewCopyableTable = <T,>(props: OverviewCopyableTableProps<T>) => {
       <Table
         {...props}
         contentWrap
+        initialHorizontalScroll="center"
         onCellClick={copyCellText}
         useColumnSizeAsMinWidth
       />
