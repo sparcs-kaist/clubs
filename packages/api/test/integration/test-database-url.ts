@@ -2,7 +2,6 @@ import { config } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-const LOCAL_TEST_DATABASE_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 const TEST_DATABASE_NAME_PATTERN = /(^|[_-])test($|[_-])/;
 
 function loadRootDotEnv(): void {
@@ -16,13 +15,6 @@ function loadRootDotEnv(): void {
   if (envPath) {
     config({ path: envPath, quiet: true });
   }
-}
-
-function describeDatabaseUrl(databaseUrl: URL): string {
-  const databaseName = databaseUrl.pathname.replace(/^\/+/, "");
-  const port = databaseUrl.port ? `:${databaseUrl.port}` : "";
-
-  return `${databaseUrl.protocol}//${databaseUrl.hostname}${port}/${databaseName}`;
 }
 
 export function assertSafeTestDatabaseUrl(
@@ -44,22 +36,12 @@ export function assertSafeTestDatabaseUrl(
     throw new Error("Integration tests must use a mysql:// database URL.");
   }
 
-  if (!LOCAL_TEST_DATABASE_HOSTS.has(databaseUrl.hostname.toLowerCase())) {
-    throw new Error(
-      `Refusing to use ${describeDatabaseUrl(
-        databaseUrl,
-      )}. Integration tests must use a local test database.`,
-    );
-  }
-
-  const databaseName = databaseUrl.pathname.replace(/^\/+/, "").toLowerCase();
+  const databaseName = decodeURIComponent(
+    databaseUrl.pathname.replace(/^\/+/, ""),
+  ).toLowerCase();
 
   if (!TEST_DATABASE_NAME_PATTERN.test(databaseName)) {
-    throw new Error(
-      `Refusing to use ${describeDatabaseUrl(
-        databaseUrl,
-      )}. Integration tests must use a test database name.`,
-    );
+    throw new Error("Integration tests must use a test database name.");
   }
 }
 

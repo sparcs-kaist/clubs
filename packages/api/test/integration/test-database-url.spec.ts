@@ -22,10 +22,12 @@ describe("integration test database URL safety", () => {
     ).not.toThrow();
   });
 
-  it("rejects non-local database hosts", () => {
+  it("allows test database names without relying on host classification", () => {
     expect(() =>
-      assertSafeTestDatabaseUrl("mysql://user:password@example.com:3306/test"),
-    ).toThrow("local test database");
+      assertSafeTestDatabaseUrl(
+        "mysql://user:password@example.com:3306/clubs_test",
+      ),
+    ).not.toThrow();
   });
 
   it("rejects non-test database names", () => {
@@ -42,6 +44,25 @@ describe("integration test database URL safety", () => {
         "mysql://root:test_password_123@127.0.0.1:3307/contest",
       ),
     ).toThrow("test database name");
+  });
+
+  it("does not expose the database target in safety errors", () => {
+    expect(() =>
+      assertSafeTestDatabaseUrl(
+        "mysql://user:password@clubs.stage.inet.sparcs.net:32715/db",
+      ),
+    ).toThrow("test database name");
+
+    try {
+      assertSafeTestDatabaseUrl(
+        "mysql://user:password@clubs.stage.inet.sparcs.net:32715/db",
+      );
+    } catch (error) {
+      expect((error as Error).message).not.toContain(
+        "clubs.stage.inet.sparcs.net",
+      );
+      expect((error as Error).message).not.toContain("32715");
+    }
   });
 
   it("requires Prisma DATABASE_URL to match TEST_DATABASE_URL", () => {

@@ -36,6 +36,7 @@
     "prepare": "husky",
     "test": "turbo run test --filter=api",
     "test:mcdc": "node --test scripts/mcdc/*.test.mjs",
+    "test:database-url-safety": "node --test scripts/*database-url*.test.mjs scripts/sync-dev-db-safety.test.mjs",
     "test:base-repository-guard": "node --test scripts/base-repository-guard/*.test.mjs",
     "test:eslint-config": "node --test packages/eslint-config/*.test.mjs packages/eslint-config/custom_rules/*.test.mjs",
     "test:injectable-runtime-dependencies": "node --test packages/eslint-config/custom_rules/eslint-plugin-injectable-runtime-dependencies.test.mjs",
