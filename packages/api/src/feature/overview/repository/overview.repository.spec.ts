@@ -9,16 +9,172 @@ jest.mock("@sparcs-clubs/api/prisma/prisma.service", () => ({
 }));
 
 describe("OverviewRepository", () => {
-  describe("findDelegates", () => {
-    const createClock = (now: Date): Clock => ({
-      endOfToday: jest.fn(),
-      now: jest.fn(() => now),
+  const createClock = (now: Date): Clock => ({
+    endOfToday: jest.fn(),
+    now: jest.fn(() => now),
+  });
+
+  describe("club division history", () => {
+    it("uses the selected semester club division history when finding delegate overview clubs", async () => {
+      const semesterEndTerm = new Date("2024-09-01T14:59:00Z");
+      const prisma = {
+        semesterD: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 15,
+            endTerm: semesterEndTerm,
+          }),
+        },
+        clubT: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              clubStatusEnumId: 1,
+              club: {
+                id: 1,
+                nameKr: "궁극의 맛",
+                nameEn: "Ultimate Taste",
+                divisionId: 11,
+                clubDivisionHistories: [
+                  {
+                    division: {
+                      name: "생활문화",
+                      district: { name: "생활문화" },
+                    },
+                  },
+                ],
+              },
+            },
+          ]),
+        },
+        division: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 11,
+              name: "식생활",
+              district: { name: "생활문화" },
+            },
+          ]),
+        },
+      };
+      const repository = new OverviewRepository(
+        prisma as never,
+        createClock(new Date("2026-06-11T00:00:00Z")),
+      );
+
+      await expect(
+        repository.findClubsFundamentals(2024, "봄"),
+      ).resolves.toEqual([
+        {
+          clubId: 1,
+          division: "생활문화",
+          district: "생활문화",
+          clubNameKr: "궁극의 맛",
+          clubNameEn: "Ultimate Taste",
+          clubStatus: 1,
+        },
+      ]);
+      expect(prisma.clubT.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ semesterId: 15 }),
+        }),
+      );
     });
 
+    it("uses the selected semester club division history when finding club info overview clubs", async () => {
+      const semesterEndTerm = new Date("2024-09-01T14:59:00Z");
+      const prisma = {
+        semesterD: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 15,
+            endTerm: semesterEndTerm,
+          }),
+        },
+        clubT: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              clubStatusEnumId: 1,
+              characteristicKr: "커피",
+              characteristicEn: "Coffee",
+              professor: {
+                deletedAt: null,
+                user: { name: "지도교수" },
+              },
+              club: {
+                id: 5,
+                nameKr: "칼디",
+                nameEn: "Kaldea",
+                description: "커피 동아리",
+                foundingYear: 2011,
+                divisionId: 11,
+                clubRoomTs: [
+                  {
+                    clubBuildingEnum: 1,
+                    roomLocation: "N11",
+                    roomPassword: "1234",
+                  },
+                ],
+                clubDivisionHistories: [
+                  {
+                    division: {
+                      name: "생활문화",
+                      district: { name: "생활문화" },
+                    },
+                  },
+                ],
+              },
+            },
+          ]),
+        },
+        division: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 11,
+              name: "식생활",
+              district: { name: "생활문화" },
+            },
+          ]),
+        },
+        clubStudentT: {
+          findMany: jest.fn().mockResolvedValue([
+            { clubId: 5, studentId: 1 },
+            { clubId: 5, studentId: 2 },
+          ]),
+        },
+        registrationApplicationStudent: {
+          findMany: jest.fn().mockResolvedValue([{ clubId: 5, studentId: 1 }]),
+        },
+      };
+      const repository = new OverviewRepository(
+        prisma as never,
+        createClock(new Date("2026-06-11T00:00:00Z")),
+      );
+
+      await expect(repository.findClubs(2024, "봄")).resolves.toEqual([
+        {
+          clubId: 5,
+          division: "생활문화",
+          district: "생활문화",
+          clubNameKr: "칼디",
+          clubNameEn: "Kaldea",
+          clubStatus: 1,
+          description: "커피 동아리",
+          characteristicKr: "커피",
+          characteristicEn: "Coffee",
+          advisor: "지도교수",
+          foundingYear: 2011,
+          clubBuildingEnum: 1,
+          roomLocation: "N11",
+          roomPassword: "1234",
+          totalMemberCnt: 2n,
+          regularMemberCnt: 1n,
+        },
+      ]);
+    });
+  });
+
+  describe("findDelegates", () => {
     it("uses the selected semester student row when mapping delegates", async () => {
       const now = new Date("2026-06-11T00:00:00Z");
       const prisma = {
-        $queryRaw: jest.fn().mockResolvedValue([]),
         semesterD: {
           findFirst: jest.fn().mockResolvedValue({
             id: 19,
@@ -82,7 +238,6 @@ describe("OverviewRepository", () => {
           }),
         }),
       );
-      expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
 
     it("uses the selected semester start term as delegate criteria for future semesters", async () => {
