@@ -68,8 +68,6 @@ export const productionReadyPaths: {
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
     "/club-registration",
-    // 동아리 총람
-    "/overview",
     // 운영위원회 제공용 활동보고서 조회
     "/operating-committee",
   ],
@@ -252,12 +250,6 @@ const paths = {
     featureFlag: "DEFAULT",
     sub: [
       {
-        name: "path.동아리 총람",
-        path: "/executive/overview",
-        authority: ["executive"],
-        featureFlag: "DEFAULT",
-      },
-      {
         name: "path.동아리 등록 신청",
         path: "/executive/register-club",
         authority: ["executive"],
@@ -278,6 +270,12 @@ const paths = {
       {
         name: "path.지원금",
         path: "/executive/funding",
+        authority: ["executive"],
+        featureFlag: "DEFAULT",
+      },
+      {
+        name: "path.동아리 총람",
+        path: "/executive/overview",
         authority: ["executive"],
         featureFlag: "DEFAULT",
       },

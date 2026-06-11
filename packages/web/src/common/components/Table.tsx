@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import React, { useCallback } from "react";
 import styled from "styled-components";
 
+import { normalizeTableCellCopyText } from "./Table/cellCopy";
 import TableCell from "./Table/TableCell";
 import Typography from "./Typography";
 
-interface TableProps<T> {
+export interface TableProps<T> {
   table: TableType<T>;
   minWidth?: number;
   height?: number;
@@ -17,6 +18,9 @@ interface TableProps<T> {
   /* TODO: (@dora) refactor to use onClick only */
   rowLink?: (row: T) => string | { pathname: string };
   onClick?: (row: T) => void;
+  onCellClick?: (text: string) => void;
+  contentWrap?: boolean;
+  useColumnSizeAsMinWidth?: boolean;
   unit?: string;
 }
 const TableInnerWrapper = styled.div`
@@ -100,6 +104,9 @@ const Table = <T,>({
   count = undefined,
   rowLink = undefined,
   onClick = undefined,
+  onCellClick = undefined,
+  contentWrap = false,
+  useColumnSizeAsMinWidth = false,
   unit = "개",
 }: TableProps<T>) => {
   // 야매로 min-width 바꿔치기 (고치지 마세요)
@@ -109,6 +116,10 @@ const Table = <T,>({
     column.minSize = 0;
   });
   const router = useRouter();
+  const getColumnMinWidth = useCallback(
+    (size: number) => (useColumnSizeAsMinWidth ? size : undefined),
+    [useColumnSizeAsMinWidth],
+  );
   const handleRowClick = useCallback(
     (row: T) => {
       if (rowLink) {
@@ -126,6 +137,20 @@ const Table = <T,>({
       }
     },
     [rowLink, onClick, router],
+  );
+  const handleCellClick = useCallback(
+    (event: React.MouseEvent<HTMLTableCellElement>) => {
+      if (!onCellClick) {
+        return;
+      }
+
+      event.stopPropagation();
+      const text = normalizeTableCellCopyText(event.currentTarget.innerText);
+      if (text) {
+        onCellClick(text);
+      }
+    },
+    [onCellClick],
   );
 
   return (
@@ -152,8 +177,10 @@ const Table = <T,>({
                       <TableCell
                         key={header.id}
                         width={header.column.getSize()}
+                        minWidth={getColumnMinWidth(header.column.getSize())}
                         type="HeaderSort"
                         onClick={header.column.getToggleSortingHandler()}
+                        contentWrap={contentWrap}
                       >
                         {flexRender(
                           header.column.columnDef.header,
@@ -166,7 +193,9 @@ const Table = <T,>({
                     <TableCell
                       key={header.id}
                       width={header.column.getSize()}
+                      minWidth={getColumnMinWidth(header.column.getSize())}
                       type="Header"
+                      contentWrap={contentWrap}
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -191,7 +220,11 @@ const Table = <T,>({
                     <TableCell
                       key={cell.id}
                       width={cell.column.getSize()}
+                      minWidth={getColumnMinWidth(cell.column.getSize())}
                       type="Default"
+                      onClick={handleCellClick}
+                      contentWrap={contentWrap}
+                      isClickable={!!onCellClick}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

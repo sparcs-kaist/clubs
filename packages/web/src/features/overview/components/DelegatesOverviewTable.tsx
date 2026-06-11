@@ -10,9 +10,9 @@ import React, { useMemo } from "react";
 import { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv001";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import Table from "@sparcs-clubs/web/common/components/Table";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import OverviewCommonColumns from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
+import OverviewCopyableTable from "@sparcs-clubs/web/features/overview/components/OverviewCopyableTable";
 
 interface DelegatesOverviewTableProps {
   delegates: ApiOvv001ResponseOK;
@@ -25,57 +25,57 @@ const columns = [
   columnHelper.accessor(row => row.representative?.name ?? "-", {
     id: "representative.name",
     header: "대표자/성명",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.representative?.studentNumber ?? "-", {
     id: "representative.studentNumber",
     header: "대표자/학번",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.representative?.department ?? "-", {
     id: "representative.department",
     header: "대표자/학과",
-    size: 100,
+    size: 180,
   }),
   columnHelper.accessor(row => row.representative?.phoneNumber ?? "-", {
     id: "representative.phoneNumber",
     header: "대표자/전화번호",
-    size: 100,
+    size: 150,
   }),
   columnHelper.accessor(row => row.representative?.kaistEmail ?? "-", {
     id: "representative.kaistEmail",
     header: "대표자/KAIST E-Mail",
-    size: 100,
+    size: 220,
   }),
   columnHelper.accessor(row => row.delegate1?.name ?? "-", {
     id: "delegate1.name",
     header: "대의원1/성명",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.delegate1?.studentNumber ?? "-", {
     id: "delegate1.studentNumber",
     header: "대의원1/학번",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.delegate1?.department ?? "-", {
     id: "delegate1.department",
     header: "대의원1/학과",
-    size: 100,
+    size: 180,
   }),
   columnHelper.accessor(row => row.delegate2?.name ?? "-", {
     id: "delegate2.name",
     header: "대의원2/성명",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.delegate2?.studentNumber ?? "-", {
     id: "delegate2.studentNumber",
     header: "대의원2/학번",
-    size: 100,
+    size: 120,
   }),
   columnHelper.accessor(row => row.delegate2?.department ?? "-", {
     id: "delegate2.department",
     header: "대의원2/학과",
-    size: 100,
+    size: 180,
   }),
 ];
 
@@ -113,7 +113,7 @@ const DelegatesOverviewTable: React.FC<DelegatesOverviewTableProps> = ({
           {countString}
         </Typography>
       </FlexWrapper>
-      <Table
+      <OverviewCopyableTable
         table={table}
         minWidth={columns.reduce((a, b) => a + (b.size ?? 0), 0)}
       />

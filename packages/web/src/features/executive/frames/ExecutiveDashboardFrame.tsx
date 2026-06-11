@@ -34,6 +34,7 @@ const ExecutiveDashboardFrame = () => {
       <Banner icon="warning">
         현재 집행부원 대시보드는 개발 중에 있습니다.
       </Banner>
+      <DashboardButton text="동아리 총람 바로가기" link="/executive/overview" />
       <ManageMemberFrame />
       <OperationCommitteeSecretManager />
       <FlexWrapper
@@ -119,7 +120,6 @@ const ExecutiveDashboardFrame = () => {
                 text="회원 등록 신청 내역"
                 link="/executive/register-member"
               />
-              <DashboardButton text="동아리 총람" link="/executive/overview" />
             </FlexWrapper>
           </DashboardSectionInner>
         </FlexWrapper>
