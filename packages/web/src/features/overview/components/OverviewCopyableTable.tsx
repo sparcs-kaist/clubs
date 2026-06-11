@@ -26,7 +26,7 @@ const CopyToast = styled.div`
 
 type OverviewCopyableTableProps<T> = Omit<
   TableProps<T>,
-  "contentWrap" | "onCellClick" | "useColumnSizeAsMinWidth"
+  "contentWrap" | "onCellClick" | "useColumnSizeAsMinWidth" | "widthMode"
 >;
 
 const OverviewCopyableTable = <T,>(props: OverviewCopyableTableProps<T>) => {
@@ -72,6 +72,7 @@ const OverviewCopyableTable = <T,>(props: OverviewCopyableTableProps<T>) => {
         initialHorizontalScroll="center"
         onCellClick={copyCellText}
         useColumnSizeAsMinWidth
+        widthMode="content"
       />
       {toastMessage && (
         <CopyToast role="status" aria-live="polite">

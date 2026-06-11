@@ -23,20 +23,26 @@ export interface TableProps<T> {
   contentWrap?: boolean;
   useColumnSizeAsMinWidth?: boolean;
   initialHorizontalScroll?: "start" | "center";
+  widthMode?: "fill" | "content";
   unit?: string;
 }
-const TableInnerWrapper = styled.div`
-  width: 100vw;
+const TableInnerWrapper = styled.div.withConfig({
+  shouldForwardProp: prop => isPropValid(prop),
+})<{ widthMode: "fill" | "content" }>`
+  width: ${({ widthMode }) =>
+    widthMode === "content" ? "fit-content" : "100vw"};
+  max-width: ${({ widthMode }) => (widthMode === "content" ? "100%" : "none")};
   overflow-x: auto;
 `;
 
 const TableInner = styled.table.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
-})<{ height?: number; minWidth: number }>`
+})<{ height?: number; minWidth: number; widthMode: "fill" | "content" }>`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: ${({ minWidth }) => `max(100%, ${minWidth}px)`};
+  width: ${({ minWidth, widthMode }) =>
+    widthMode === "content" ? `${minWidth}px` : `max(100%, ${minWidth}px)`};
   border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
   border-radius: 8px;
   overflow: hidden;
@@ -110,6 +116,7 @@ const Table = <T,>({
   contentWrap = false,
   useColumnSizeAsMinWidth = false,
   initialHorizontalScroll = "start",
+  widthMode = "fill",
   unit = "개",
 }: TableProps<T>) => {
   // 야매로 min-width 바꿔치기 (고치지 마세요)
@@ -185,8 +192,8 @@ const Table = <T,>({
           </Typography>
         )}
       </Count>
-      <TableInnerWrapper ref={tableInnerWrapperRef}>
-        <TableInner height={height} minWidth={minWidth}>
+      <TableInnerWrapper ref={tableInnerWrapperRef} widthMode={widthMode}>
+        <TableInner height={height} minWidth={minWidth} widthMode={widthMode}>
           <Header>
             {table.getHeaderGroups().map(headerGroup => (
               <HeaderRow key={headerGroup.id}>
