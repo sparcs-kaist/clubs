@@ -2,12 +2,17 @@ import { AuthRepository } from "./auth.repository";
 
 describe("AuthRepository", () => {
   const currentDate = new Date("2026-06-10T00:00:00.000Z");
+  const mockUserId = 900001;
+  const mockStudentId = 900002;
+  const mockSid = "test-sid";
+  const mockStudentName = "테스트 학생";
+  const defaultStudentNumber = 20995042;
 
   const createRepository = ({
-    studentNumber = 20245642,
+    studentNumber = defaultStudentNumber,
     studentTerms = [
       {
-        studentId: 29943,
+        studentId: mockStudentId,
         studentEnum: 3,
       },
     ],
@@ -21,10 +26,10 @@ describe("AuthRepository", () => {
       user: {
         findMany: jest.fn().mockResolvedValue([
           {
-            id: 2494,
-            sid: "sid",
-            name: "조현준",
-            email: "hyunjun@example.com",
+            id: mockUserId,
+            sid: mockSid,
+            name: mockStudentName,
+            email: "test-student@example.com",
           },
         ]),
       },
@@ -42,13 +47,13 @@ describe("AuthRepository", () => {
           .fn()
           .mockResolvedValueOnce([
             {
-              id: 29943,
+              id: mockStudentId,
               number: studentNumber,
             },
           ])
           .mockResolvedValue([
             {
-              id: 29943,
+              id: mockStudentId,
               number: studentNumber,
             },
           ]),
@@ -80,10 +85,10 @@ describe("AuthRepository", () => {
     const { repository } = createRepository();
 
     const result = await repository.findOrCreateUser(
-      "hyunjun@example.com",
-      "20245642",
-      "sid",
-      "조현준",
+      "test-student@example.com",
+      defaultStudentNumber.toString(),
+      mockSid,
+      mockStudentName,
       "Student",
       "1234",
       "S",
@@ -91,21 +96,24 @@ describe("AuthRepository", () => {
       "2",
     );
 
-    expect(result.doctor).toEqual({ id: 29943, number: 20245642 });
+    expect(result.doctor).toEqual({
+      id: mockStudentId,
+      number: defaultStudentNumber,
+    });
     expect(result.master).toBeUndefined();
   });
 
   it("uses SSO V2 as source of truth during login when it conflicts with current student_t", async () => {
     const { repository, prisma } = createRepository();
     prisma.studentT.findMany
-      .mockResolvedValueOnce([{ studentId: 29943, studentEnum: 3 }])
-      .mockResolvedValueOnce([{ studentId: 29943, studentEnum: 2 }]);
+      .mockResolvedValueOnce([{ studentId: mockStudentId, studentEnum: 3 }])
+      .mockResolvedValueOnce([{ studentId: mockStudentId, studentEnum: 2 }]);
 
     const result = await repository.findOrCreateUser(
-      "hyunjun@example.com",
-      "20245642",
-      "sid",
-      "조현준",
+      "test-student@example.com",
+      defaultStudentNumber.toString(),
+      mockSid,
+      mockStudentName,
       "Student",
       "1234",
       "S",
@@ -119,16 +127,22 @@ describe("AuthRepository", () => {
 
     expect(studentTermUpsert?.values[1]).toBe(2);
     expect(studentTermUpsert?.values[7]).toBe(2);
-    expect(result.master).toEqual({ id: 29943, number: 20245642 });
+    expect(result.master).toEqual({
+      id: mockStudentId,
+      number: defaultStudentNumber,
+    });
     expect(result.doctor).toBeUndefined();
   });
 
   it("uses the current student_t enum when returning student profiles for token refresh", async () => {
     const { repository } = createRepository();
 
-    const result = await repository.findUserById(2494);
+    const result = await repository.findUserById(mockUserId);
 
-    expect(result.doctor).toEqual({ id: 29943, number: 20245642 });
+    expect(result.doctor).toEqual({
+      id: mockStudentId,
+      number: defaultStudentNumber,
+    });
     expect(result.master).toBeUndefined();
   });
 
@@ -141,14 +155,14 @@ describe("AuthRepository", () => {
     async (_, studentNumber, studentEnum, expectedProfileKey) => {
       const { repository } = createRepository({
         studentNumber,
-        studentTerms: [{ studentId: 29943, studentEnum }],
+        studentTerms: [{ studentId: mockStudentId, studentEnum }],
       });
 
       const result = await repository.findOrCreateUser(
         "student@example.com",
         studentNumber.toString(),
-        "sid",
-        "학생",
+        mockSid,
+        mockStudentName,
         "Student",
         "1234",
         "S",
@@ -157,7 +171,7 @@ describe("AuthRepository", () => {
       );
 
       expect(result[expectedProfileKey]).toEqual({
-        id: 29943,
+        id: mockStudentId,
         number: studentNumber,
       });
     },
@@ -180,8 +194,8 @@ describe("AuthRepository", () => {
       const result = await repository.findOrCreateUser(
         "student@example.com",
         studentNumber.toString(),
-        "sid",
-        "학생",
+        mockSid,
+        mockStudentName,
         "Student",
         "1234",
         "S",
@@ -190,7 +204,7 @@ describe("AuthRepository", () => {
       );
 
       expect(result[expectedProfileKey]).toEqual({
-        id: 29943,
+        id: mockStudentId,
         number: studentNumber,
       });
     },
@@ -199,15 +213,15 @@ describe("AuthRepository", () => {
   it("rejects HP students before SSO, DB, or fallback classification", async () => {
     const { repository } = createRepository({
       studentNumber: 20996901,
-      studentTerms: [{ studentId: 29943, studentEnum: 2 }],
+      studentTerms: [{ studentId: mockStudentId, studentEnum: 2 }],
     });
 
     await expect(
       repository.findOrCreateUser(
         "hp@example.com",
         "20996901",
-        "sid",
-        "HP 학생",
+        mockSid,
+        mockStudentName,
         "Student",
         "1234",
         "S",
@@ -232,8 +246,8 @@ describe("AuthRepository", () => {
         repository.findOrCreateUser(
           "exchange@example.com",
           studentNumber.toString(),
-          "sid",
-          "교환학생",
+          mockSid,
+          mockStudentName,
           "Student",
           "1234",
           "S",
