@@ -86,7 +86,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     ).join(","),
     provisional: true,
     regular: true,
-    semesterName: "봄",
+    semesterName,
     year,
   });
 

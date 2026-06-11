@@ -36,41 +36,84 @@ export class OverviewRepository {
     `);
   }
 
-  findDelegates(year: number, semesterName: string) {
-    // Complex multi-table JOIN query - use raw SQL
-    return this.prisma.$queryRaw<
-      Array<{
-        clubId: number;
-        delegateType: number;
-        name: string;
-        studentNumber: number;
-        phoneNumber: string | null;
-        kaistEmail: string | null;
-        department: string;
-      }>
-    >(Prisma.sql`
-      SELECT c.id AS clubId, cde.id AS delegateType,
-             u.name, s.number AS studentNumber,
-             u.phone_number AS phoneNumber,
-             s.email AS kaistEmail, dep.name AS department
-      FROM club_delegate_d cd
-      INNER JOIN club_delegate_enum cde ON cde.id = cd.club_delegate_enum_id
-      INNER JOIN club_t ct ON ct.club_id = cd.club_id
-      INNER JOIN semester_d sd ON sd.id = ct.semester_id
-      INNER JOIN club c ON c.id = ct.club_id
-      INNER JOIN division d ON d.id = c.division_id
-      INNER JOIN district dist ON dist.id = d.district_id
-      INNER JOIN student s ON s.id = cd.student_id
-      INNER JOIN student_t st ON st.id = cd.student_id AND st.semester_id = sd.id
-      INNER JOIN user u ON u.id = s.user_id
-      INNER JOIN department dep ON dep.department_id = st.department
-      WHERE cd.end_term IS NULL
-        AND cd.deleted_at IS NULL
-        AND ct.deleted_at IS NULL
-        AND c.deleted_at IS NULL
-        AND sd.year = ${year}
-        AND sd.name = ${semesterName}
-    `);
+  async findDelegates(year: number, semesterName: string) {
+    const semester = await this.prisma.semesterD.findFirst({
+      where: { year, name: semesterName, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!semester) {
+      return [];
+    }
+
+    const delegates = await this.prisma.clubDelegateD.findMany({
+      where: {
+        endTerm: null,
+        deletedAt: null,
+        club: {
+          deletedAt: null,
+          clubTs: {
+            some: { semesterId: semester.id, deletedAt: null },
+          },
+        },
+      },
+      select: {
+        clubId: true,
+        clubDelegateEnum: true,
+        student: {
+          select: {
+            number: true,
+            name: true,
+            email: true,
+            user: {
+              select: {
+                name: true,
+                phoneNumber: true,
+              },
+            },
+            studentTs: {
+              where: { semesterId: semester.id, deletedAt: null },
+              select: { department: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const departmentIds = Array.from(
+      new Set(
+        delegates
+          .map(delegate => delegate.student.studentTs[0]?.department)
+          .filter(
+            (department): department is number =>
+              typeof department === "number",
+          ),
+      ),
+    );
+    const departments = await this.prisma.department.findMany({
+      where: { departmentId: { in: departmentIds }, deletedAt: null },
+      select: { departmentId: true, name: true },
+    });
+    const departmentNameById = new Map(
+      departments
+        .filter(department => typeof department.departmentId === "number")
+        .map(department => [department.departmentId, department.name]),
+    );
+
+    return delegates.map(delegate => {
+      const departmentId = delegate.student.studentTs[0]?.department;
+
+      return {
+        clubId: delegate.clubId,
+        delegateType: delegate.clubDelegateEnum,
+        name: delegate.student.user?.name ?? delegate.student.name,
+        studentNumber: delegate.student.number,
+        phoneNumber: delegate.student.user?.phoneNumber ?? null,
+        kaistEmail: delegate.student.email,
+        department: departmentNameById.get(departmentId) ?? "",
+      };
+    });
   }
 
   findClubs(year: number, semesterName: string) {
