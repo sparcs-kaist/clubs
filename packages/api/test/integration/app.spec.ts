@@ -32,7 +32,7 @@ describe("AppController (integration)", () => {
     beforeEach(async () => {
       // 각 seeding 테스트 전에 DB 초기화
       await clearDatabase();
-    });
+    }, 60000);
 
     it("should seed test environment successfully", async () => {
       const testData = await seedTestEnvironment();

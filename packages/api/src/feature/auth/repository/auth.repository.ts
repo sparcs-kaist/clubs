@@ -34,6 +34,25 @@ interface FindOrCreateUserReturn {
   };
 }
 
+type StudentProfile = Pick<
+  FindOrCreateUserReturn,
+  "undergraduate" | "master" | "doctor"
+>;
+
+type StudentProfileKey = keyof StudentProfile;
+
+const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
+  [1, "undergraduate"],
+  [2, "master"],
+  [3, "doctor"],
+]);
+
+const getStudentNumberSuffix = (studentNumber: string | number) =>
+  Number(studentNumber.toString().slice(-4));
+
+const FALLBACK_STUDENT_ENUM_ERROR_MESSAGE =
+  "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.";
+
 @Injectable()
 export class AuthRepository {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -91,13 +110,21 @@ export class AuthRepository {
       ((type === "Student" || type === "Ex-employee") &&
         !typeV2.startsWith("P")) // V1 fallback
     ) {
+      const studentNumberSuffix = getStudentNumberSuffix(studentNumber);
+
       //HP 학번(6900~6999)인 경우 로그인 불가
-      if (
-        parseInt(studentNumber.slice(-4)) >= 6900 &&
-        parseInt(studentNumber.slice(-4)) < 7000
-      ) {
+      if (studentNumberSuffix >= 6900) {
+        if (studentNumberSuffix < 7000) {
+          throw new HttpException(
+            "HP 학번은 로그인할 수 없습니다.",
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      if (Number.isNaN(studentNumberSuffix)) {
         throw new HttpException(
-          "HP 학번은 로그인할 수 없습니다.",
+          "학번 형식이 올바르지 않습니다.",
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -120,8 +147,6 @@ export class AuthRepository {
         .then(takeOne);
 
       //v2info 기반 학적 상태 및 학위 구분
-      // v2Info 없는 경우, studentNumber의 뒤 네자리가 2000 미만일 경우 studentEnum을 1, 5000미만일 경우 2, 6000미만일 경우 1, 나머지는 3으로 설정
-      let studentEnum = 3;
       let studentStatusEnum = 2;
 
       // 학적 상태 판별 (v2info)
@@ -129,53 +154,20 @@ export class AuthRepository {
         studentStatusEnum = 1;
       }
 
-      // 학위 구분 (v2info 기반)
-      if (progCodeV2) {
-        if (progCodeV2 === "0") studentEnum = 1;
-        else if (progCodeV2 === "1") studentEnum = 2;
-        else if (progCodeV2 === "2") studentEnum = 3;
-        // v2Info 없는 경우 기존 학번 기반 로직으로 fallback
-      } else if (parseInt(studentNumber.slice(-4)) < 2000) {
-        studentEnum = 1;
-        studentStatusEnum = 1;
-      } else if (parseInt(studentNumber.slice(-4)) < 5000) {
-        studentEnum = 2;
-      } else if (parseInt(studentNumber.slice(-4)) < 6000) {
-        studentEnum = 1;
-      }
-
-      // student 테이블에서 해당 user id를 모두 검색
-      // undergraduate, master, doctor 중 해당하는 경우 result에 추가
-      const students = await this.prisma.student.findMany({
-        where: { userId: user.id, deletedAt: null },
+      const existingStudentEnum = await this.getCurrentStudentEnumByStudentId([
+        student.id,
+      ]);
+      const studentEnum = this.resolveStudentEnum({
+        existingStudentEnum: existingStudentEnum.get(student.id),
+        progCodeV2,
+        studentNumber,
       });
 
-      /* eslint-disable no-shadow */
-      // eslint-disable-next-line no-restricted-syntax
-      for (const student of students) {
-        let studentEnum = 3;
-        if (student.number % 10000 < 2000) studentEnum = 1;
-        else if (student.number % 10000 < 6000) studentEnum = 2;
-        else if (student.number % 10000 < 7000) studentEnum = 2;
-
+      if (!progCodeV2) {
         if (studentEnum === 1) {
-          result = {
-            ...result,
-            undergraduate: { id: student.id, number: student.number },
-          };
-        } else if (studentEnum === 2) {
-          result = {
-            ...result,
-            master: { id: student.id, number: student.number },
-          };
-        } else if (studentEnum === 3) {
-          result = {
-            ...result,
-            doctor: { id: student.id, number: student.number },
-          };
+          studentStatusEnum = 1;
         }
       }
-      /* eslint-enable no-shadow */
 
       // 부서 ID를 안전하게 정수로 변환 (NaN 방지)
       const departmentId =
@@ -188,6 +180,32 @@ export class AuthRepository {
         VALUES (${student.id}, ${studentEnum}, ${studentStatusEnum}, ${departmentId}, ${semester.id}, ${semester.startTerm}, ${semester.endTerm})
         ON DUPLICATE KEY UPDATE student_enum = ${studentEnum}, student_status_enum = ${studentStatusEnum}, department = ${departmentId}
       `);
+
+      // student 테이블에서 해당 user id를 모두 검색
+      // undergraduate, master, doctor 중 해당하는 경우 result에 추가
+      const students = await this.prisma.student.findMany({
+        where: { userId: user.id, deletedAt: null },
+      });
+
+      const studentEnumByStudentId =
+        await this.getCurrentStudentEnumByStudentId(
+          students.map(studentRow => studentRow.id),
+        );
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const studentRow of students) {
+        const resolvedStudentEnum = this.resolveStudentEnum({
+          existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+          progCodeV2: null,
+          studentNumber: studentRow.number,
+        });
+
+        result = this.withStudentProfile(result, {
+          id: studentRow.id,
+          number: studentRow.number,
+          studentEnum: resolvedStudentEnum,
+        });
+      }
 
       // type이 "Student"인 경우 executive table에서 해당 studentNumber이 있는지 확인
       // 있으면 해당 칼럼의 user_id를 업데이트
@@ -367,20 +385,23 @@ export class AuthRepository {
       where: { userId: id, deletedAt: null },
     });
 
+    const studentEnumByStudentId = await this.getCurrentStudentEnumByStudentId(
+      students.map(student => student.id),
+    );
+
     // eslint-disable-next-line no-restricted-syntax
     for (const student of students) {
-      let studentEnum = 3;
-      if (student.number % 10000 < 2000) studentEnum = 1;
-      else if (student.number % 10000 < 6000) studentEnum = 2;
-      else if (student.number % 10000 < 7000) studentEnum = 1;
+      const resolvedStudentEnum = this.resolveStudentEnum({
+        existingStudentEnum: studentEnumByStudentId.get(student.id),
+        progCodeV2: null,
+        studentNumber: student.number,
+      });
 
-      if (studentEnum === 1) {
-        result.undergraduate = { id: student.id, number: student.number };
-      } else if (studentEnum === 2) {
-        result.master = { id: student.id, number: student.number };
-      } else if (studentEnum === 3) {
-        result.doctor = { id: student.id, number: student.number };
-      }
+      this.withStudentProfile(result, {
+        id: student.id,
+        number: student.number,
+        studentEnum: resolvedStudentEnum,
+      });
     }
 
     const executive = await this.prisma.executive
@@ -423,6 +444,126 @@ export class AuthRepository {
     }
 
     return result;
+  }
+
+  private async getCurrentStudentEnumByStudentId(studentIds: number[]) {
+    if (studentIds.length === 0) {
+      return new Map<number, number>();
+    }
+
+    const currentDate = this.clock.now();
+    const studentTerms = await this.prisma.studentT.findMany({
+      where: {
+        studentId: { in: studentIds },
+        startTerm: { lte: currentDate },
+        OR: [{ endTerm: null }, { endTerm: { gte: currentDate } }],
+        deletedAt: null,
+      },
+      orderBy: [{ startTerm: "desc" }, { id: "desc" }],
+      select: { studentId: true, studentEnum: true },
+    });
+
+    const studentEnumByStudentId = new Map<number, number>();
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const studentTerm of studentTerms) {
+      if (!studentEnumByStudentId.has(studentTerm.studentId)) {
+        studentEnumByStudentId.set(
+          studentTerm.studentId,
+          studentTerm.studentEnum,
+        );
+      }
+    }
+
+    return studentEnumByStudentId;
+  }
+
+  private resolveStudentEnum({
+    existingStudentEnum,
+    progCodeV2,
+    studentNumber,
+  }: {
+    existingStudentEnum?: number;
+    progCodeV2: string | null;
+    studentNumber: string | number;
+  }) {
+    const ssoStudentEnum = this.getStudentEnumFromProgCodeV2(progCodeV2);
+    if (ssoStudentEnum !== undefined) {
+      return ssoStudentEnum;
+    }
+
+    if (existingStudentEnum !== undefined) {
+      return existingStudentEnum;
+    }
+
+    return this.getFallbackStudentEnumFromStudentNumber(studentNumber);
+  }
+
+  private getStudentEnumFromProgCodeV2(progCodeV2: string | null) {
+    if (progCodeV2 === "0") {
+      return 1;
+    }
+
+    if (progCodeV2 === "1") {
+      return 2;
+    }
+
+    if (progCodeV2 === "2") {
+      return 3;
+    }
+
+    return undefined;
+  }
+
+  private getFallbackStudentEnumFromStudentNumber(
+    studentNumber: string | number,
+  ) {
+    const suffix = getStudentNumberSuffix(studentNumber);
+
+    if (Number.isNaN(suffix)) {
+      throw new HttpException(
+        "학번 형식이 올바르지 않습니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (suffix < 2000) {
+      return 1;
+    }
+
+    if (suffix < 3000) {
+      throw new HttpException(
+        FALLBACK_STUDENT_ENUM_ERROR_MESSAGE,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (suffix < 5000) {
+      return 2;
+    }
+
+    if (suffix < 6000) {
+      return 3;
+    }
+
+    throw new HttpException(
+      FALLBACK_STUDENT_ENUM_ERROR_MESSAGE,
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+
+  private withStudentProfile<T extends StudentProfile>(
+    result: T,
+    student: { id: number; number: number; studentEnum: number },
+  ) {
+    const profileKey = studentProfileKeyByEnum.get(student.studentEnum);
+    if (profileKey === undefined) {
+      return result;
+    }
+
+    return Object.assign(result, {
+      [profileKey]: { id: student.id, number: student.number },
+    });
   }
 
   async findUserAndRefreshToken(
