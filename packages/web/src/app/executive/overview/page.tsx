@@ -150,6 +150,8 @@ const ExecutiveOverview = () => {
         </Typography>
       </CriteriaInfo>
       <OverviewFrame
+        key={selectedSemester.id}
+        divisionCriteriaDate={semesterEndTerm}
         semesterName={selectedSemester.name}
         year={selectedSemester.year}
       />

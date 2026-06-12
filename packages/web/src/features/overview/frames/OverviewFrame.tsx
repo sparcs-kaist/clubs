@@ -18,35 +18,15 @@ import { downloadDelegateOverviewExcel } from "@sparcs-clubs/web/features/overvi
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface OverviewFrameProps {
+  divisionCriteriaDate: Date;
   year: number;
   semesterName: string;
 }
 
-// 이거 없으면 (division 요청한 뒤에 총람 요청 응답까지) 너무 느려서 넣었습니다.
-const temporaryDivisions = [
-  "생활문화",
-  "종교",
-  "사회",
-  "연행예술",
-  "전시창작",
-  "밴드음악",
-  "보컬음악",
-  "구기체육",
-  "생활체육",
-  "이공학술",
-  "인문학술",
-  "연주음악",
-  "식생활",
-  "대중문화",
-];
-
 const getOverviewDivisionNames = (divisions: { name: string }[] | undefined) =>
   Array.from(
     new Set(
-      [
-        ...(divisions?.map(division => division.name) ?? []),
-        ...temporaryDivisions,
-      ]
+      (divisions?.map(division => division.name) ?? [])
         .map(name => name.trim())
         .filter(Boolean),
     ),
@@ -62,10 +42,17 @@ function overviewFilter(columnFilters: ColumnFiltersState) {
 }
 
 const OverviewFrame: React.FC<OverviewFrameProps> = ({
+  divisionCriteriaDate,
   year,
   semesterName,
 }) => {
-  const { data: divisionData, isLoading, isError } = useGetDivisions();
+  const {
+    data: divisionData,
+    isLoading,
+    isError,
+  } = useGetDivisions({
+    date: divisionCriteriaDate,
+  });
   const overviewDivisionNames = useMemo(
     () => getOverviewDivisionNames(divisionData?.divisions),
     [divisionData?.divisions],
@@ -83,6 +70,19 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
       value: overviewDivisionNames,
     },
   ]);
+
+  useEffect(() => {
+    if (overviewDivisionNames.length === 0) {
+      return;
+    }
+
+    setColumnFilters(prev => [
+      prev[0],
+      prev[1],
+      { id: "divisionName", value: overviewDivisionNames },
+      ...prev.slice(3),
+    ]);
+  }, [overviewDivisionNames]);
 
   const delegates = useGetDelegatesOverview({
     division: overviewDivisionNames.join(","),
