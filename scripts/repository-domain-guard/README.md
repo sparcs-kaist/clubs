@@ -1,8 +1,9 @@
 # Repository Domain Guard
 
-`repository-domain-guard:changed` prevents newly touched API repository code
-from querying Prisma models outside the repository boundary declared next to
-the repository.
+`repository-domain-guard:changed` prevents newly touched API code from crossing
+feature repository boundaries. Repository files cannot query Prisma models
+outside their declared boundary, and feature files cannot import repositories
+from another feature.
 
 ## Boundary Manifest
 
@@ -32,6 +33,25 @@ The guard fails when a changed production repository file:
 - queries Prisma without a nearest `repository-boundary.ts`;
 - traverses a Prisma relation through `include` or relation `select` when the
   relation target is outside `ownedPrismaModels`.
+
+The guard also fails when a changed production feature file imports another
+feature's repository implementation. Cross-feature access should go through a
+provider exported by the target Nest module, usually that feature's public
+service.
+
+These imports fail from `feature/activity/**`:
+
+```ts
+import { ClubRepository } from "@sparcs-clubs/api/feature/club/repository/club.repository";
+import { ClubDelegateDRepository } from "../../club/delegate/club.club-delegate-d.repository";
+```
+
+This remains allowed when `ActivityModule` imports `SemesterModule` and
+`SemesterModule` exports `SemesterPublicService`:
+
+```ts
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+```
 
 Delegate access is checked through direct property access, bracket access,
 simple Prisma client aliases, and destructured delegates:
@@ -125,8 +145,10 @@ validators.
 ## Scope
 
 The guard checks production TypeScript files under `packages/api/src` only.
+Cross-domain repository import checks apply to changed files under
+`packages/api/src/feature/**`.
 
-Included repository files:
+Prisma delegate checks apply to changed repository files:
 
 - files inside `/repository/`;
 - files inside `/repository-old/`;

@@ -82,6 +82,44 @@ export function findChangedRepositoryDomainViolations({
       continue;
     }
 
+    const currentPath = path.resolve(repoRoot, changedFile.path);
+    if (!fs.existsSync(currentPath)) {
+      continue;
+    }
+
+    const sourceText = fs.readFileSync(currentPath, "utf8");
+    const importResult = findCrossDomainRepositoryImportNodes({
+      sourceText,
+      filePath: changedFile.path,
+    });
+
+    if (importResult.parseError) {
+      violations.push({
+        filePath: changedFile.path,
+        line: importResult.parseError.line,
+        column: importResult.parseError.column,
+        kind: "parse-error",
+        detected: "TypeScript parse error",
+        reason: importResult.parseError.message,
+      });
+      continue;
+    }
+
+    for (const node of importResult.nodes) {
+      if (!isNodeTouchedByChangedLines(node, changedFile)) {
+        continue;
+      }
+
+      violations.push({
+        filePath: changedFile.path,
+        line: node.line,
+        column: node.column,
+        kind: node.kind,
+        detected: node.detected,
+        reason: node.reason,
+      });
+    }
+
     if (!isRepositorySourceFile(changedFile.path)) {
       continue;
     }
@@ -90,12 +128,6 @@ export function findChangedRepositoryDomainViolations({
       continue;
     }
 
-    const currentPath = path.resolve(repoRoot, changedFile.path);
-    if (!fs.existsSync(currentPath)) {
-      continue;
-    }
-
-    const sourceText = fs.readFileSync(currentPath, "utf8");
     const result = findRepositoryDomainGuardNodes({
       sourceText,
       filePath: changedFile.path,
@@ -132,6 +164,89 @@ export function findChangedRepositoryDomainViolations({
   }
 
   return violations.sort(compareViolations);
+}
+
+function findCrossDomainRepositoryImportNodes({ sourceText, filePath }) {
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+
+  if (sourceFile.parseDiagnostics.length > 0) {
+    return {
+      nodes: [],
+      parseError: formatParseDiagnostic(sourceFile),
+    };
+  }
+
+  const sourceDomain = getFeatureDomain(filePath);
+  if (!sourceDomain) {
+    return {
+      nodes: [],
+      parseError: null,
+    };
+  }
+
+  const nodes = [];
+  const recordIfCrossDomainRepository = moduleSpecifier => {
+    if (!isStaticStringLiteral(moduleSpecifier)) {
+      return;
+    }
+
+    const importPath = moduleSpecifier.text;
+    const targetPath = resolveApiImportPath({
+      importPath,
+      importerFilePath: filePath,
+    });
+    const targetDomain = getFeatureDomain(targetPath);
+
+    if (
+      !targetDomain ||
+      targetDomain === sourceDomain ||
+      !isRepositoryImportTarget(targetPath)
+    ) {
+      return;
+    }
+
+    nodes.push(
+      makeNode(
+        sourceFile,
+        moduleSpecifier,
+        "cross-boundary-repository-import",
+        importPath,
+        `${sourceDomain} must depend on ${targetDomain} through the target module's exported public service, not its repository`,
+      ),
+    );
+  };
+
+  const visit = node => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier
+    ) {
+      recordIfCrossDomainRepository(node.moduleSpecifier);
+    }
+
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments.length === 1
+    ) {
+      recordIfCrossDomainRepository(node.arguments[0]);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return {
+    nodes: sortNodes(dedupeNodes(nodes)),
+    parseError: null,
+  };
 }
 
 export function parseChangedFileLineMap(diffText) {
@@ -1029,12 +1144,7 @@ function findPropertyAssignment(objectLiteral, propertyName) {
 }
 
 function getPropertyNameText(name) {
-  if (
-    ts.isIdentifier(name) ||
-    ts.isStringLiteral(name) ||
-    ts.isNoSubstitutionTemplateLiteral(name) ||
-    ts.isNumericLiteral(name)
-  ) {
+  if (isStaticPropertyName(name)) {
     return name.text;
   }
 
@@ -1255,6 +1365,57 @@ function isRepositorySourceFile(filePath) {
     normalized.includes("/repository/") ||
     normalized.includes("/repository-old/") ||
     normalized.endsWith(".repository.ts")
+  );
+}
+
+function getFeatureDomain(filePath) {
+  const normalized = toPosixPath(filePath);
+  const match = normalized.match(/^packages\/api\/src\/feature\/([^/]+)\//u);
+
+  return match?.[1] ?? "";
+}
+
+function resolveApiImportPath({ importPath, importerFilePath }) {
+  if (importPath.startsWith("@sparcs-clubs/api/")) {
+    return `packages/api/src/${importPath.slice("@sparcs-clubs/api/".length)}`;
+  }
+
+  if (importPath.startsWith("src/")) {
+    return `packages/api/${importPath}`;
+  }
+
+  if (importPath.startsWith(".")) {
+    const importerDirectory = path.posix.dirname(toPosixPath(importerFilePath));
+    return path.posix.normalize(path.posix.join(importerDirectory, importPath));
+  }
+
+  return "";
+}
+
+function isRepositoryImportTarget(filePath) {
+  const normalized = toPosixPath(filePath);
+  const segments = normalized.split("/");
+
+  if (segments.includes("repository") || segments.includes("repository-old")) {
+    return true;
+  }
+
+  const basename = path.posix
+    .basename(normalized)
+    .replace(/\.(?:cjs|cts|js|jsx|mjs|mts|ts|tsx)$/u, "");
+
+  return basename.endsWith(".repository");
+}
+
+function isStaticStringLiteral(node) {
+  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
+}
+
+function isStaticPropertyName(node) {
+  return (
+    ts.isIdentifier(node) ||
+    isStaticStringLiteral(node) ||
+    ts.isNumericLiteral(node)
   );
 }
 

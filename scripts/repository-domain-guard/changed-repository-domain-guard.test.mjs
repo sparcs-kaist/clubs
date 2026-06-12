@@ -13,6 +13,8 @@ import {
 const SCHEMA_PATH = "packages/api/prisma/schema.prisma";
 const ACTIVITY_SOURCE_PATH =
   "packages/api/src/feature/activity/repository/activity.repository.ts";
+const ACTIVITY_SERVICE_PATH =
+  "packages/api/src/feature/activity/service/activity.service.ts";
 const ACTIVITY_BOUNDARY_PATH =
   "packages/api/src/feature/activity/repository/repository-boundary.ts";
 const CLUB_BOUNDARY_PATH =
@@ -232,6 +234,162 @@ export class ActivityRepository {
 
   assert.equal(violations.length, 1);
   assert.equal(violations[0].kind, "missing-repository-boundary");
+});
+
+test("fails when a changed feature imports another domain repository through path alias", () => {
+  const workspace = makeGitWorkspace();
+  writeSchema(workspace);
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+import { ClubRepository } from "@sparcs-clubs/api/feature/club/repository/club.repository";
+
+export class ActivityService {
+  constructor(private readonly clubRepository: ClubRepository) {}
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].kind, "cross-boundary-repository-import");
+  assert.equal(
+    violations[0].detected,
+    "@sparcs-clubs/api/feature/club/repository/club.repository",
+  );
+});
+
+test("fails when a changed feature imports another domain repository-like file through relative path", () => {
+  const workspace = makeGitWorkspace();
+  writeSchema(workspace);
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+import { ClubDelegateDRepository } from "../../club/delegate/club.club-delegate-d.repository";
+
+export class ActivityService {
+  constructor(private readonly clubDelegateDRepository: ClubDelegateDRepository) {}
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].kind, "cross-boundary-repository-import");
+  assert.equal(
+    violations[0].detected,
+    "../../club/delegate/club.club-delegate-d.repository",
+  );
+});
+
+test("fails when a changed feature dynamically imports another domain repository", () => {
+  const workspace = makeGitWorkspace();
+  writeSchema(workspace);
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {
+  async load() {
+    return import(\`@sparcs-clubs/api/feature/club/repository/club.repository\`);
+  }
+}
+`,
+  );
+
+  const violations = runGuard(workspace);
+
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].kind, "cross-boundary-repository-import");
+  assert.equal(
+    violations[0].detected,
+    "@sparcs-clubs/api/feature/club/repository/club.repository",
+  );
+});
+
+test("passes when a changed feature imports another domain public service", () => {
+  const workspace = makeGitWorkspace();
+  writeSchema(workspace);
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+
+export class ActivityService {
+  constructor(private readonly semesterPublicService: SemesterPublicService) {}
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
+});
+
+test("passes when a changed feature imports its own repository", () => {
+  const workspace = makeGitWorkspace();
+  writeSchema(workspace);
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+export class ActivityService {}
+`,
+  );
+  commitAll(workspace, "base");
+
+  writeSource(
+    workspace,
+    ACTIVITY_SERVICE_PATH,
+    `
+import ActivityRepository from "../repository/activity.repository";
+
+export class ActivityService {
+  constructor(private readonly activityRepository: ActivityRepository) {}
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
 });
 
 test("fails when a boundary declares a Prisma model that does not exist", () => {
