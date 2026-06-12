@@ -691,18 +691,6 @@ model ActivityEvidenceFile {
   @@map("activity_evidence_file")
 }
 
-model ProfessorSignStatus {
-  id          Int       @id @default(autoincrement())
-  clubId      Int       @map("club_id")
-  activityDId Int       @map("semester_id")
-  signed      Boolean   @default(false)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("professor_sign_status")
-}
-
 model ActivityClubChargedExecutive {
   id          Int       @id @default(autoincrement())
   activityDId Int       @map("activity_d_id")

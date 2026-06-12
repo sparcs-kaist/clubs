@@ -10,7 +10,7 @@ jest.mock("@sparcs-clubs/api/env", () => ({
 
 describe("ActivityRepository", () => {
   describe("insertActivity", () => {
-    it("does not create professor sign status while creating an activity report", async () => {
+    it("creates an activity report without a professor sign status dependency", async () => {
       const tx = {
         activity: {
           create: jest.fn().mockResolvedValue({ id: 42 }),
@@ -22,9 +22,6 @@ describe("ActivityRepository", () => {
           create: jest.fn().mockResolvedValue({}),
         },
         activityEvidenceFile: {
-          create: jest.fn().mockResolvedValue({}),
-        },
-        professorSignStatus: {
           create: jest.fn().mockResolvedValue({}),
         },
       };
@@ -58,7 +55,6 @@ describe("ActivityRepository", () => {
       expect(tx.activityParticipant.create).toHaveBeenCalledTimes(1);
       expect(tx.activityT.create).toHaveBeenCalledTimes(1);
       expect(tx.activityEvidenceFile.create).toHaveBeenCalledTimes(1);
-      expect(tx.professorSignStatus.create).not.toHaveBeenCalled();
     });
   });
 });
