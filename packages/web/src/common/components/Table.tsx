@@ -26,12 +26,8 @@ export interface TableProps<T> {
   widthMode?: "fill" | "content";
   unit?: string;
 }
-const TableInnerWrapper = styled.div.withConfig({
-  shouldForwardProp: prop => isPropValid(prop),
-})<{ widthMode: "fill" | "content" }>`
-  width: ${({ widthMode }) =>
-    widthMode === "content" ? "fit-content" : "100vw"};
-  max-width: ${({ widthMode }) => (widthMode === "content" ? "100%" : "none")};
+const TableInnerWrapper = styled.div`
+  width: 100%;
   overflow-x: auto;
 `;
 
@@ -90,12 +86,20 @@ const EmptyCenterCell = styled.td`
   justify-content: center;
   align-items: center;
 `;
-const TableWithCount = styled.div`
+const TableWithCount = styled.div.withConfig({
+  shouldForwardProp: prop => isPropValid(prop),
+})<{ minWidth: number; widthMode: "fill" | "content" }>`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  position: ${({ widthMode }) =>
+    widthMode === "content" ? "relative" : "static"};
+  left: ${({ widthMode }) => (widthMode === "content" ? "50%" : "auto")};
+  transform: ${({ widthMode }) =>
+    widthMode === "content" ? "translateX(-50%)" : "none"};
+  width: ${({ minWidth, widthMode }) =>
+    widthMode === "content" ? `min(100dvw, ${minWidth}px)` : "100%"};
 `;
 const Count = styled.div`
   display: flex;
@@ -183,7 +187,7 @@ const Table = <T,>({
   );
 
   return (
-    <TableWithCount>
+    <TableWithCount minWidth={minWidth} widthMode={widthMode}>
       <Count>
         {(count || count === 0) && (
           <Typography fs={16} lh={20}>
@@ -192,7 +196,7 @@ const Table = <T,>({
           </Typography>
         )}
       </Count>
-      <TableInnerWrapper ref={tableInnerWrapperRef} widthMode={widthMode}>
+      <TableInnerWrapper ref={tableInnerWrapperRef}>
         <TableInner height={height} minWidth={minWidth} widthMode={widthMode}>
           <Header>
             {table.getHeaderGroups().map(headerGroup => (
