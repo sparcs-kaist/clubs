@@ -35,7 +35,7 @@ type ClubInfo = {
   clubNameEn: string;
   clubStatus: number;
   description: string;
-  advisor: string;
+  advisor: string | null;
   foundingYear: number;
   totalMemberCnt: number;
 };

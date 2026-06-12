@@ -58,7 +58,7 @@ const columns = [
       size: 240,
     },
   ),
-  columnHelper.accessor("roomPassword", {
+  columnHelper.accessor(row => row.roomPassword ?? "-", {
     id: "roomPassword",
     header: "동아리방 비번",
     size: 140,

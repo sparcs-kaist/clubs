@@ -226,6 +226,7 @@ export class OverviewRepository {
         professor: {
           select: {
             deletedAt: true,
+            name: true,
             user: { select: { name: true } },
           },
         },
@@ -319,19 +320,13 @@ export class OverviewRepository {
       new Map<number, Set<number>>(),
     );
 
-    return clubs.flatMap(club => {
+    return clubs.map(club => {
       const room = club.club.clubRoomTs[0];
-
-      if (!club.professor) {
-        return [];
-      }
-
-      if (club.professor.deletedAt) {
-        return [];
-      }
-
-      if (!room) {
-        return [];
+      let advisor: string | null = null;
+      if (club.professor) {
+        if (!club.professor.deletedAt) {
+          advisor = club.professor.user?.name ?? club.professor.name;
+        }
       }
 
       const historyDivision = club.club.clubDivisionHistories[0]?.division;
@@ -348,11 +343,11 @@ export class OverviewRepository {
         description: club.club.description,
         characteristicKr: club.characteristicKr,
         characteristicEn: club.characteristicEn,
-        advisor: club.professor.user?.name ?? "",
+        advisor,
         foundingYear: club.club.foundingYear,
-        clubBuildingEnum: room.clubBuildingEnum,
-        roomLocation: room.roomLocation,
-        roomPassword: room.roomPassword,
+        clubBuildingEnum: room?.clubBuildingEnum ?? null,
+        roomLocation: room?.roomLocation ?? null,
+        roomPassword: room?.roomPassword ?? null,
         totalMemberCnt: BigInt(
           memberStudentIdsByClubId.get(club.club.id)?.size ?? 0,
         ),

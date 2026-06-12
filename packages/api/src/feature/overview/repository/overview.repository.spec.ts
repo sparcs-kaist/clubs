@@ -169,6 +169,81 @@ describe("OverviewRepository", () => {
         },
       ]);
     });
+
+    it("keeps club info overview clubs when professor or room data is missing", async () => {
+      const semesterEndTerm = new Date("2026-08-28T14:59:00Z");
+      const prisma = {
+        semesterD: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: 19,
+            endTerm: semesterEndTerm,
+          }),
+        },
+        clubT: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              clubStatusEnumId: 1,
+              characteristicKr: "커피",
+              characteristicEn: "Coffee",
+              professor: null,
+              club: {
+                id: 5,
+                nameKr: "칼디",
+                nameEn: "Kaldea",
+                description: "커피 동아리",
+                foundingYear: 2011,
+                divisionId: 11,
+                clubRoomTs: [],
+                clubDivisionHistories: [],
+              },
+            },
+          ]),
+        },
+        division: {
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 11,
+              name: "식생활",
+              district: { name: "생활문화" },
+            },
+          ]),
+        },
+        clubStudentT: {
+          findMany: jest.fn().mockResolvedValue([
+            { clubId: 5, studentId: 1 },
+            { clubId: 5, studentId: 2 },
+          ]),
+        },
+        registrationApplicationStudent: {
+          findMany: jest.fn().mockResolvedValue([{ clubId: 5, studentId: 1 }]),
+        },
+      };
+      const repository = new OverviewRepository(
+        prisma as never,
+        createClock(new Date("2026-06-11T00:00:00Z")),
+      );
+
+      await expect(repository.findClubs(2026, "봄")).resolves.toEqual([
+        {
+          clubId: 5,
+          division: "식생활",
+          district: "생활문화",
+          clubNameKr: "칼디",
+          clubNameEn: "Kaldea",
+          clubStatus: 1,
+          description: "커피 동아리",
+          characteristicKr: "커피",
+          characteristicEn: "Coffee",
+          advisor: null,
+          foundingYear: 2011,
+          clubBuildingEnum: null,
+          roomLocation: null,
+          roomPassword: null,
+          totalMemberCnt: 2n,
+          regularMemberCnt: 1n,
+        },
+      ]);
+    });
   });
 
   describe("findDelegates", () => {
