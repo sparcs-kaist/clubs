@@ -1,5 +1,5 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -40,6 +40,18 @@ const temporaryDivisions = [
   "대중문화",
 ];
 
+const getOverviewDivisionNames = (divisions: { name: string }[] | undefined) =>
+  Array.from(
+    new Set(
+      [
+        ...(divisions?.map(division => division.name) ?? []),
+        ...temporaryDivisions,
+      ]
+        .map(name => name.trim())
+        .filter(Boolean),
+    ),
+  );
+
 function overviewFilter(columnFilters: ColumnFiltersState) {
   return (row: OverviewFilteredRow) =>
     row.clubNameKr.includes(columnFilters[0].value as string) &&
@@ -54,6 +66,10 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   semesterName,
 }) => {
   const { data: divisionData, isLoading, isError } = useGetDivisions();
+  const overviewDivisionNames = useMemo(
+    () => getOverviewDivisionNames(divisionData?.divisions),
+    [divisionData?.divisions],
+  );
 
   const [isDelegateView, setIsDelegateView] = useState<boolean>(
     window.history.state?.isDelegateView ?? true,
@@ -64,14 +80,12 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     { id: "clubTypeEnum", value: ["정동아리", "가동아리"] },
     {
       id: "divisionName",
-      value: divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions,
+      value: overviewDivisionNames,
     },
   ]);
 
   const delegates = useGetDelegatesOverview({
-    division: (
-      divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions
-    ).join(","),
+    division: overviewDivisionNames.join(","),
     hasDelegate1: false,
     hasDelegate2: false,
     provisional: true,
@@ -81,9 +95,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
   });
 
   const clubInfo = useGetClubInfoKROverview({
-    division: (
-      divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions
-    ).join(","),
+    division: overviewDivisionNames.join(","),
     provisional: true,
     regular: true,
     semesterName,
@@ -102,7 +114,7 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     },
     {
       name: "분과",
-      content: divisionData?.divisions?.map(d => d.name) ?? temporaryDivisions,
+      content: overviewDivisionNames,
       selectedContent: columnFilters[2].value as string[],
     },
   ];
