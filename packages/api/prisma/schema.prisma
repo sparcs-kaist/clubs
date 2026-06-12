@@ -49,7 +49,6 @@ model Student {
 
   user                            User?                            @relation(fields: [userId], references: [id])
   studentTs                       StudentT[]
-  activityParticipants            ActivityParticipant[]
   activityCertificates            ActivityCertificate[]
   clubStudentTs                   ClubStudentT[]
   clubDelegateDs                  ClubDelegateD[]
@@ -97,10 +96,6 @@ model Executive {
   user                          User?                          @relation(fields: [userId], references: [id])
   student                       Student                        @relation(fields: [studentId], references: [id])
   executiveTs                   ExecutiveT[]
-  activityChargedActivities     Activity[]                     @relation("ChargedExecutive")
-  activityCommentedActivities   Activity[]                     @relation("CommentedExecutive")
-  activityFeedbacks             ActivityFeedback[]
-  activityClubChargedExecutives ActivityClubChargedExecutive[]
   fundingChargedFundings        Funding[]
   fundingFeedbacks              FundingFeedback[]
   registrationExecutiveComments RegistrationExecutiveComment[]
@@ -284,10 +279,7 @@ model Club {
   clubRoomTs                      ClubRoomT[]
   clubDelegateDs                  ClubDelegateD[]
   clubDelegateChangeRequests      ClubDelegateChangeRequest[]
-  activities                      Activity[]
   activityCertificates            ActivityCertificate[]
-  activityClubChargedExecutives   ActivityClubChargedExecutive[]
-  professorSignStatuses           ProfessorSignStatus[]
   commonSpaceUsageOrders          CommonSpaceUsageOrderD[]
   divisionPermanentClubDs         DivisionPermanentClubD[]
   fundings                        Funding[]
@@ -530,7 +522,6 @@ model SemesterD {
   clubTs                          ClubT[]
   clubStudentTs                   ClubStudentT[]
   clubRoomTs                      ClubRoomT[]
-  professorSignStatuses           ProfessorSignStatus[]
   registrations                   Registration[]
   registrationApplicationStudents RegistrationApplicationStudent[]
   registrationDeadlineDs          RegistrationDeadlineD[]
@@ -549,8 +540,6 @@ model ActivityD {
   createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  activities                    Activity[]
-  activityClubChargedExecutives ActivityClubChargedExecutive[]
   fundings                      Funding[]
 
   @@map("activity_d")
@@ -641,16 +630,11 @@ model Activity {
   updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club                  Club                   @relation(fields: [clubId], references: [id])
-  activityD             ActivityD              @relation(fields: [activityDId], references: [id])
   activityStatusEnum    ActivityStatusEnum     @relation(fields: [activityStatusEnumId], references: [id])
-  chargedExecutive      Executive?             @relation("ChargedExecutive", fields: [chargedExecutiveId], references: [id], map: "activity_charged_executive_id_fk")
-  commentedExecutive    Executive?             @relation("CommentedExecutive", fields: [commentedExecutiveId], references: [id])
   activityParticipants  ActivityParticipant[]
   activityTs            ActivityT[]
   activityFeedbacks     ActivityFeedback[]
   activityEvidenceFiles ActivityEvidenceFile[]
-  fundings              Funding[]
 
   @@map("activity")
 }
@@ -663,7 +647,6 @@ model ActivityParticipant {
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
   activity Activity @relation(fields: [activityId], references: [id], map: "activity_participant_activity_id_fk")
-  student  Student  @relation(fields: [studentId], references: [id], map: "activity_participant_student_id_fk")
 
   @@map("activity_participant")
 }
@@ -691,7 +674,6 @@ model ActivityFeedback {
   deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
 
   activity          Activity           @relation(fields: [activityId], references: [id])
-  executive         Executive          @relation(fields: [executiveId], references: [id])
   activityStatusRel ActivityStatusEnum @relation(fields: [activityStatusEnum], references: [id])
 
   @@map("activity_feedback")
@@ -710,16 +692,13 @@ model ActivityEvidenceFile {
 }
 
 model ProfessorSignStatus {
-  id         Int       @id @default(autoincrement())
-  clubId     Int       @map("club_id")
-  semesterId Int       @map("semester_id")
-  signed     Boolean   @default(false)
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  club     Club      @relation(fields: [clubId], references: [id], map: "professor_sign_status_club_id_fk")
-  semester SemesterD @relation(fields: [semesterId], references: [id], map: "professor_sign_status_semester_id_fk")
+  id          Int       @id @default(autoincrement())
+  clubId      Int       @map("club_id")
+  activityDId Int       @map("semester_id")
+  signed      Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
 
   @@map("professor_sign_status")
 }
@@ -731,10 +710,6 @@ model ActivityClubChargedExecutive {
   executiveId Int?      @map("executive_id")
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt   DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  activityD ActivityD  @relation(fields: [activityDId], references: [id], map: "activity_club_charged_executive_activity_d_id_fk")
-  club      Club       @relation(fields: [clubId], references: [id], map: "activity_club_charged_executive_club_id_fk")
-  executive Executive? @relation(fields: [executiveId], references: [id], map: "activity_club_charged_executive_executive_id_fk")
 
   @@map("activity_club_charged_executive")
 }
@@ -922,7 +897,6 @@ model Funding {
 
   club             Club       @relation(fields: [clubId], references: [id], map: "funding_club_id_fk")
   activityD        ActivityD  @relation(fields: [activityDId], references: [id])
-  purposeActivity  Activity?  @relation(fields: [purposeActivityId], references: [id], map: "funding_purpose_id_fk")
   chargedExecutive Executive? @relation(fields: [chargedExecutiveId], references: [id], map: "funding_charged_executive_id_fk")
 
   tradeEvidenceFiles                 FundingTradeEvidenceFile[]

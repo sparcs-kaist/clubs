@@ -208,8 +208,7 @@ export default class ActivityRepository {
         );
 
         await tx.professorSignStatus.create({
-          // TODO: 교수님 사인도 activityD로 맞추기
-          data: { clubId: contents.clubId, semesterId: contents.activityDId },
+          data: { clubId: contents.clubId, activityDId: contents.activityDId },
         });
       });
       return true;
@@ -277,17 +276,11 @@ export default class ActivityRepository {
   async selectParticipantByActivityId(activityId: number) {
     const result = await this.prisma.activityParticipant.findMany({
       where: { activityId, deletedAt: null },
-      include: {
-        student: {
-          select: { id: true, number: true, name: true },
-        },
-      },
+      select: { studentId: true },
     });
 
     return result.map(r => ({
       studentId: r.studentId,
-      studentNumber: r.student.number,
-      name: r.student.name,
     }));
   }
 
