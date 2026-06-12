@@ -206,10 +206,6 @@ export default class ActivityRepository {
             });
           }),
         );
-
-        await tx.professorSignStatus.create({
-          data: { clubId: contents.clubId, activityDId: contents.activityDId },
-        });
       });
       return true;
     } catch {

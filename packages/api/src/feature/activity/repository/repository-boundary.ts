@@ -8,6 +8,5 @@ export const repositoryBoundary = {
     "activityEvidenceFile",
     "activityFeedback",
     "activityClubChargedExecutive",
-    "professorSignStatus",
   ],
 } as const;
