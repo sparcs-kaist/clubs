@@ -54,7 +54,7 @@
   "_scriptComments": {
     "base-repository-guard:changed": "Pre-push validator. Blocks changed service/repository methods from relying on inherited BaseRepository write APIs.",
     "prisma-query:changed": "Pre-push validator. Blocks Prisma raw SQL APIs on changed packages/api/src lines while allowing untouched brownfield raw SQL debt.",
-    "repository-domain-guard:changed": "Pre-push validator. Blocks changed repository Prisma queries from crossing feature boundaries and keeps Nest module exports public-service-only.",
+    "repository-domain-guard:changed": "Pre-push validator. Blocks changed repository Prisma queries from crossing feature boundaries.",
     "soft-delete-guard:changed": "Pre-push validator. Requires explicit active/deleted/include-deleted intent on changed Prisma calls for models with deletedAt.",
     "test:prisma-query-guard": "Node test fixtures for the changed-line Prisma raw SQL guard.",
     "web-page-allowlist:check": "Pre-push validator. Requires every Next app page route to be production-ready or explicitly dev-only."

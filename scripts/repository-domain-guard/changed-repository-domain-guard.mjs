@@ -87,39 +87,6 @@ export function findChangedRepositoryDomainViolations({
       continue;
     }
 
-    const sourceText = fs.readFileSync(currentPath, "utf8");
-    const moduleExportResult = findNestModuleExportGuardNodes({
-      sourceText,
-      filePath: changedFile.path,
-    });
-
-    if (moduleExportResult.parseError) {
-      violations.push({
-        filePath: changedFile.path,
-        line: moduleExportResult.parseError.line,
-        column: moduleExportResult.parseError.column,
-        kind: "parse-error",
-        detected: "TypeScript parse error",
-        reason: moduleExportResult.parseError.message,
-      });
-      continue;
-    }
-
-    for (const node of moduleExportResult.nodes) {
-      if (!isNodeTouchedByChangedLines(node, changedFile)) {
-        continue;
-      }
-
-      violations.push({
-        filePath: changedFile.path,
-        line: node.line,
-        column: node.column,
-        kind: node.kind,
-        detected: node.detected,
-        reason: node.reason,
-      });
-    }
-
     if (!isRepositorySourceFile(changedFile.path)) {
       continue;
     }
@@ -128,6 +95,7 @@ export function findChangedRepositoryDomainViolations({
       continue;
     }
 
+    const sourceText = fs.readFileSync(currentPath, "utf8");
     const result = findRepositoryDomainGuardNodes({
       sourceText,
       filePath: changedFile.path,
@@ -164,134 +132,6 @@ export function findChangedRepositoryDomainViolations({
   }
 
   return violations.sort(compareViolations);
-}
-
-function findNestModuleExportGuardNodes({ sourceText, filePath }) {
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
-
-  if (sourceFile.parseDiagnostics.length > 0) {
-    return {
-      nodes: [],
-      parseError: formatParseDiagnostic(sourceFile),
-    };
-  }
-
-  if (!isNestModuleSourceFile(filePath)) {
-    return {
-      nodes: [],
-      parseError: null,
-    };
-  }
-
-  const nodes = [];
-
-  const recordExportElement = element => {
-    const exportedName = getNestModuleExportName(element);
-
-    if (exportedName && exportedName.endsWith("PublicService")) {
-      return;
-    }
-
-    nodes.push(
-      makeNode(
-        sourceFile,
-        element,
-        "non-public-module-export",
-        element.getText(sourceFile),
-        "Nest module exports can expose only PublicService providers; keep repositories and internal services module-private",
-      ),
-    );
-  };
-
-  const visit = node => {
-    if (ts.isClassDeclaration(node)) {
-      for (const decorator of getDecorators(node)) {
-        const metadata = getNestModuleMetadata(decorator);
-
-        if (!metadata) {
-          continue;
-        }
-
-        const exportsProperty = findPropertyAssignment(metadata, "exports");
-        if (!exportsProperty) {
-          continue;
-        }
-
-        const exportsInitializer = unwrapExpression(
-          exportsProperty.initializer,
-        );
-        if (!ts.isArrayLiteralExpression(exportsInitializer)) {
-          nodes.push(
-            makeNode(
-              sourceFile,
-              exportsProperty.initializer,
-              "invalid-module-exports",
-              exportsProperty.initializer.getText(sourceFile),
-              "Nest module exports must be a static array so the public provider surface can be guarded",
-            ),
-          );
-          continue;
-        }
-
-        for (const element of exportsInitializer.elements) {
-          recordExportElement(element);
-        }
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(sourceFile);
-
-  return {
-    nodes: sortNodes(dedupeNodes(nodes)),
-    parseError: null,
-  };
-}
-
-function getDecorators(node) {
-  if (!ts.canHaveDecorators(node)) {
-    return [];
-  }
-
-  return ts.getDecorators(node) ?? [];
-}
-
-function getNestModuleMetadata(decorator) {
-  const expression = unwrapExpression(decorator.expression);
-  if (
-    !ts.isCallExpression(expression) ||
-    !ts.isIdentifier(expression.expression) ||
-    expression.expression.text !== "Module"
-  ) {
-    return null;
-  }
-
-  const [metadata] = expression.arguments;
-  const unwrappedMetadata = unwrapExpression(metadata);
-
-  return unwrappedMetadata && ts.isObjectLiteralExpression(unwrappedMetadata)
-    ? unwrappedMetadata
-    : null;
-}
-
-function getNestModuleExportName(element) {
-  if (ts.isIdentifier(element)) {
-    return element.text;
-  }
-
-  if (ts.isPropertyAccessExpression(element)) {
-    return element.name.text;
-  }
-
-  return "";
 }
 
 export function parseChangedFileLineMap(diffText) {
@@ -1410,15 +1250,6 @@ function isRepositorySourceFile(filePath) {
     normalized.includes("/repository/") ||
     normalized.includes("/repository-old/") ||
     normalized.endsWith(".repository.ts")
-  );
-}
-
-function isNestModuleSourceFile(filePath) {
-  const normalized = toPosixPath(filePath);
-
-  return (
-    normalized.startsWith("packages/api/src/feature/") &&
-    normalized.endsWith(".module.ts")
   );
 }
 

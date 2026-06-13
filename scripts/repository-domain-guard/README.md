@@ -2,8 +2,7 @@
 
 `repository-domain-guard:changed` prevents newly touched API code from crossing
 feature repository boundaries. Repository files cannot query Prisma models
-outside their declared boundary, and Nest modules cannot export internal
-providers.
+outside their declared boundary.
 
 ## Boundary Manifest
 
@@ -33,29 +32,6 @@ The guard fails when a changed production repository file:
 - queries Prisma without a nearest `repository-boundary.ts`;
 - traverses a Prisma relation through `include` or relation `select` when the
   relation target is outside `ownedPrismaModels`.
-
-The guard also fails when a changed production Nest module exports anything
-other than a public service provider. Cross-feature access should go through a
-provider exported by the target Nest module, and that exported provider should
-be a `*PublicService`.
-
-These exports fail:
-
-```ts
-@Module({
-  exports: [ClubRepository, ClubService],
-})
-export class ClubModule {}
-```
-
-These exports pass:
-
-```ts
-@Module({
-  exports: [ClubPublicService, ClubDelegatePublicService],
-})
-export class ClubModule {}
-```
 
 Delegate access is checked through direct property access, bracket access,
 simple Prisma client aliases, and destructured delegates:
@@ -149,9 +125,6 @@ validators.
 ## Scope
 
 The guard checks production TypeScript files under `packages/api/src` only.
-Nest module export checks apply to changed `*.module.ts` files under
-`packages/api/src/feature/**`.
-
 Prisma delegate checks apply to changed repository files:
 
 - files inside `/repository/`;
@@ -166,5 +139,3 @@ Excluded files:
 
 Untouched brownfield repository calls can remain. Once a line inside a Prisma
 query is changed, the query must respect the nearest repository boundary.
-Untouched brownfield module exports can remain. Once an `exports` item is
-changed, it must be a `*PublicService`.
