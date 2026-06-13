@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import apiDiv002, {
+  ApiDiv002RequestQuery,
   ApiDiv002ResponseOk,
 } from "@clubs/interface/api/division/endpoint/apiDiv002";
 
@@ -9,11 +10,13 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useGetDivisions = () =>
+const useGetDivisions = (requestQuery: ApiDiv002RequestQuery = {}) =>
   useQuery<ApiDiv002ResponseOk, Error>({
-    queryKey: [apiDiv002.url()],
+    queryKey: [apiDiv002.url(), requestQuery],
     queryFn: async (): Promise<ApiDiv002ResponseOk> => {
-      const { data } = await axiosClientWithAuth.get(apiDiv002.url(), {});
+      const { data } = await axiosClientWithAuth.get(apiDiv002.url(), {
+        params: requestQuery,
+      });
 
       return data;
     },

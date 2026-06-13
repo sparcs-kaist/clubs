@@ -13,7 +13,7 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
  * @description "동아리 정보(KR)" 총람
  */
 
-const url = () => `/overview/clubinfo/kr`;
+const url = () => `/executive/overview/clubinfo/kr`;
 
 const method = "GET";
 
@@ -46,12 +46,12 @@ const responseBodyMap = {
       clubNameEn: zClub.shape.nameEn,
       fieldsOfActivity: z.string(),
       foundingYear: zClub.shape.foundingYear,
-      professor: zProfessor.shape.name,
+      professor: zProfessor.shape.name.nullable(),
       totalMemberCnt: z.coerce.number().int().min(1),
       regularMemberCnt: z.coerce.number().int().nonnegative(),
-      clubBuildingEnum: z.nativeEnum(ClubBuildingEnum),
-      roomLocation: z.string().optional(),
-      roomPassword: z.string().optional(),
+      clubBuildingEnum: z.nativeEnum(ClubBuildingEnum).nullable(),
+      roomLocation: z.string().nullable().optional(),
+      roomPassword: z.string().nullable().optional(),
       warning: z.string().optional(),
       caution: z.string().optional(),
     }),
