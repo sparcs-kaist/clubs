@@ -199,8 +199,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0(@sentry/node@10.5.0)
       zod:
-        specifier: ^3.21.4
-        version: 3.22.4
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@clubs/eslint-config':
         specifier: workspace:*
@@ -279,10 +279,10 @@ importers:
     dependencies:
       '@asteasolutions/zod-to-openapi':
         specifier: ^7.3.4
-        version: 7.3.4(zod@3.22.4)
+        version: 7.3.4(zod@4.4.3)
       zod:
-        specifier: ^3.21.4
-        version: 3.22.4
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@clubs/eslint-config':
         specifier: workspace:*
@@ -355,7 +355,7 @@ importers:
     dependencies:
       '@asteasolutions/zod-to-openapi':
         specifier: ^7.3.4
-        version: 7.3.4(zod@3.22.4)
+        version: 7.3.4(zod@4.4.3)
       '@clubs/domain':
         specifier: workspace:*
         version: link:../domain
@@ -379,8 +379,8 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
       zod:
-        specifier: ^3.21.4
-        version: 3.22.4
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/typescript-config: {}
 
@@ -549,8 +549,8 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       zod:
-        specifier: ^3.21.4
-        version: 3.22.4
+        specifier: ^4.4.3
+        version: 4.4.3
       zustand:
         specifier: ^4.5.2
         version: 4.5.2(@types/react@18.2.64)(immer@10.0.4)(react@18.2.0)
@@ -9784,14 +9784,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zustand@4.5.2:
     resolution: {integrity: sha512-2cN1tPkDVkwCy5ickKrI7vijSjPksFRfqS6237NzT0vqSsztTNnQdHw9mmN7uBdk3gceVXU0a+21jFzFzAc9+g==}
@@ -9857,10 +9851,10 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.3
       lru-cache: 10.4.3
 
-  '@asteasolutions/zod-to-openapi@7.3.4(zod@3.22.4)':
+  '@asteasolutions/zod-to-openapi@7.3.4(zod@4.4.3)':
     dependencies:
       openapi3-ts: 4.4.0
-      zod: 3.22.4
+      zod: 4.4.3
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -16897,8 +16891,8 @@ snapshots:
       '@babel/parser': 7.29.0
       eslint: 9.24.0(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 4.3.6
-      zod-validation-error: 4.0.2(zod@4.3.6)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -16908,8 +16902,8 @@ snapshots:
       '@babel/parser': 7.29.7
       eslint: 9.24.0(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -21363,19 +21357,11 @@ snapshots:
 
   yocto-queue@1.1.1: {}
 
-  zod-validation-error@4.0.2(zod@3.25.76):
+  zod-validation-error@4.0.2(zod@4.4.3):
     dependencies:
-      zod: 3.25.76
+      zod: 4.4.3
 
-  zod-validation-error@4.0.2(zod@4.3.6):
-    dependencies:
-      zod: 4.3.6
-
-  zod@3.22.4: {}
-
-  zod@3.25.76: {}
-
-  zod@4.3.6: {}
+  zod@4.4.3: {}
 
   zustand@4.5.2(@types/react@18.2.64)(immer@10.0.4)(react@18.2.0):
     dependencies:
