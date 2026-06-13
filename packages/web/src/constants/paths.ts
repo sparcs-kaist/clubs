@@ -60,6 +60,7 @@ export const productionReadyPaths: {
     "/executive/register-club",
     "/executive/register-member",
     // 학기 / 활동반기 / 등록 마감일 관리
+    "/executive/overview",
     "/executive/semester",
     "/executive/activity-duration",
     "/executive/registration/deadline",
@@ -67,12 +68,43 @@ export const productionReadyPaths: {
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
     "/club-registration",
-    // 동아리 총람
-    "/overview",
     // 운영위원회 제공용 활동보고서 조회
     "/operating-committee",
   ],
-  exclude: [],
+  exclude: [
+    // 현재 production 미공개 페이지
+    "/activity-certificate",
+    "/common-space",
+    "/errors",
+    "/example",
+    "/executive/activity-certificate",
+    "/executive/printing-business",
+    "/executive/rental-business",
+    "/manage-club/activity-certificate",
+    "/manage-club/activity-certificate/[id]",
+    "/manage-club/common-space",
+    "/manage-club/common-space/[id]",
+    "/manage-club/printing-business",
+    "/manage-club/printing-business/[id]",
+    "/manage-club/rental-business",
+    "/manage-club/rental-business/[id]",
+    "/manage-division",
+    "/meeting",
+    "/meeting/[id]",
+    "/meeting/[id]/edit",
+    "/meeting/agenda/create",
+    "/meeting/announcement/create",
+    "/my/activity-certificate",
+    "/my/activity-certificate/[id]",
+    "/my/common-space",
+    "/my/common-space/[id]",
+    "/my/printing-business",
+    "/my/printing-business/[id]",
+    "/my/rental-business",
+    "/my/rental-business/[id]",
+    "/printing-business",
+    "/rental-business",
+  ],
 };
 
 // authority가 "all"을 포함하면 권한 상관 없이 보이는 메뉴
@@ -238,6 +270,12 @@ const paths = {
       {
         name: "path.지원금",
         path: "/executive/funding",
+        authority: ["executive"],
+        featureFlag: "DEFAULT",
+      },
+      {
+        name: "path.동아리 총람",
+        path: "/executive/overview",
         authority: ["executive"],
         featureFlag: "DEFAULT",
       },

@@ -1,23 +1,22 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
 import { IDivisionSummary } from "@clubs/interface/api/club/type/club.type";
 import { IDivision } from "@clubs/interface/api/division/type/division.type";
 
-import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
+import { activeOnly } from "@sparcs-clubs/api/common/util/soft-delete";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { OldMDivision } from "../model/old.division.model";
 
 @Injectable()
 export default class OldDivisionRepository {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async withTransaction<Result>(
-    callback: (tx: PrismaTransactionClient) => Promise<Result>,
-  ): Promise<Result> {
-    return this.prisma.$transaction(callback);
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
 
   async selectDivisionsAndDivisionPresidents() {
     const rows = await this.prisma.$queryRaw<
@@ -82,12 +81,10 @@ export default class OldDivisionRepository {
     return result[0];
   }
 
-  async fetchAllTx(
-    tx: PrismaTransactionClient,
-    arg1: Date | number[],
-  ): Promise<IDivision[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereCondition: any = { deletedAt: null };
+  async fetchAll(date: Date): Promise<IDivision[]>;
+  async fetchAll(ids: IDivision["id"][]): Promise<IDivision[]>;
+  async fetchAll(arg1: Date | number[]): Promise<IDivision[]> {
+    const whereCondition: Prisma.DivisionWhereInput = {};
 
     if (arg1 instanceof Date) {
       whereCondition.startTerm = { lte: arg1 };
@@ -98,8 +95,8 @@ export default class OldDivisionRepository {
       whereCondition.id = { in: arg1 };
     }
 
-    const result = await (tx as PrismaService).division.findMany({
-      where: whereCondition,
+    const result = await this.txHost.tx.division.findMany({
+      where: activeOnly(whereCondition),
     });
 
     // fetch validation part
@@ -115,11 +112,5 @@ export default class OldDivisionRepository {
       }
     }
     return result.map(e => OldMDivision.from(e));
-  }
-
-  async fetchAll(date: Date): Promise<IDivision[]>;
-  async fetchAll(ids: IDivision["id"][]): Promise<IDivision[]>;
-  async fetchAll(arg1: Date | number[]): Promise<IDivision[]> {
-    return this.withTransaction(tx => this.fetchAllTx(tx, arg1));
   }
 }

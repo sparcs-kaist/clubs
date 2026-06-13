@@ -7,10 +7,4 @@ fi
 
 set -e
 
-pnpm format:check:changed
-pnpm lint
-pnpm base-repository-guard:changed
-pnpm prisma-query:changed
-pnpm soft-delete-guard:changed
-pnpm transaction-guard:changed
-pnpm mcdc:changed --fail-on-missing
+pnpm pre-push:parallel
