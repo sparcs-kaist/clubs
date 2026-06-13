@@ -1,5 +1,9 @@
 import { AuthRepository } from "./auth.repository";
 
+jest.mock("@sparcs-clubs/api/prisma/prisma.service", () => ({
+  PrismaService: class PrismaService {},
+}));
+
 describe("AuthRepository", () => {
   const currentDate = new Date("2026-06-10T00:00:00.000Z");
   const mockUserId = 900001;
