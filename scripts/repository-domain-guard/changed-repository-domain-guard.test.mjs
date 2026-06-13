@@ -13,8 +13,8 @@ import {
 const SCHEMA_PATH = "packages/api/prisma/schema.prisma";
 const ACTIVITY_SOURCE_PATH =
   "packages/api/src/feature/activity/repository/activity.repository.ts";
-const ACTIVITY_SERVICE_PATH =
-  "packages/api/src/feature/activity/service/activity.service.ts";
+const ACTIVITY_MODULE_PATH =
+  "packages/api/src/feature/activity/activity.module.ts";
 const ACTIVITY_BOUNDARY_PATH =
   "packages/api/src/feature/activity/repository/repository-boundary.ts";
 const CLUB_BOUNDARY_PATH =
@@ -236,156 +236,140 @@ export class ActivityRepository {
   assert.equal(violations[0].kind, "missing-repository-boundary");
 });
 
-test("fails when a changed feature imports another domain repository through path alias", () => {
+test("fails when a changed module exports a repository", () => {
   const workspace = makeGitWorkspace();
   writeSchema(workspace);
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-export class ActivityService {}
+import { Module } from "@nestjs/common";
+
+@Module({
+  exports: [],
+})
+export class ActivityModule {}
 `,
   );
   commitAll(workspace, "base");
 
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-import { ClubRepository } from "@sparcs-clubs/api/feature/club/repository/club.repository";
+import { Module } from "@nestjs/common";
 
-export class ActivityService {
-  constructor(private readonly clubRepository: ClubRepository) {}
-}
+@Module({
+  exports: [ActivityRepository],
+})
+export class ActivityModule {}
 `,
   );
 
   const violations = runGuard(workspace);
 
   assert.equal(violations.length, 1);
-  assert.equal(violations[0].kind, "cross-boundary-repository-import");
-  assert.equal(
-    violations[0].detected,
-    "@sparcs-clubs/api/feature/club/repository/club.repository",
-  );
+  assert.equal(violations[0].kind, "non-public-module-export");
+  assert.equal(violations[0].detected, "ActivityRepository");
 });
 
-test("fails when a changed feature imports another domain repository-like file through relative path", () => {
+test("fails when a changed module exports a non-public service", () => {
   const workspace = makeGitWorkspace();
   writeSchema(workspace);
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-export class ActivityService {}
+import { Module } from "@nestjs/common";
+
+@Module({
+  exports: [],
+})
+export class ActivityModule {}
 `,
   );
   commitAll(workspace, "base");
 
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-import { ClubDelegateDRepository } from "../../club/delegate/club.club-delegate-d.repository";
+import { Module } from "@nestjs/common";
 
-export class ActivityService {
-  constructor(private readonly clubDelegateDRepository: ClubDelegateDRepository) {}
-}
+@Module({
+  exports: [ActivityService],
+})
+export class ActivityModule {}
 `,
   );
 
   const violations = runGuard(workspace);
 
   assert.equal(violations.length, 1);
-  assert.equal(violations[0].kind, "cross-boundary-repository-import");
-  assert.equal(
-    violations[0].detected,
-    "../../club/delegate/club.club-delegate-d.repository",
-  );
+  assert.equal(violations[0].kind, "non-public-module-export");
+  assert.equal(violations[0].detected, "ActivityService");
 });
 
-test("fails when a changed feature dynamically imports another domain repository", () => {
+test("passes when a changed module exports only public services", () => {
   const workspace = makeGitWorkspace();
   writeSchema(workspace);
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-export class ActivityService {}
+import { Module } from "@nestjs/common";
+
+@Module({
+  exports: [],
+})
+export class ActivityModule {}
 `,
   );
   commitAll(workspace, "base");
 
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-export class ActivityService {
-  async load() {
-    return import(\`@sparcs-clubs/api/feature/club/repository/club.repository\`);
-  }
-}
-`,
-  );
+import { Module } from "@nestjs/common";
 
-  const violations = runGuard(workspace);
-
-  assert.equal(violations.length, 1);
-  assert.equal(violations[0].kind, "cross-boundary-repository-import");
-  assert.equal(
-    violations[0].detected,
-    "@sparcs-clubs/api/feature/club/repository/club.repository",
-  );
-});
-
-test("passes when a changed feature imports another domain public service", () => {
-  const workspace = makeGitWorkspace();
-  writeSchema(workspace);
-  writeSource(
-    workspace,
-    ACTIVITY_SERVICE_PATH,
-    `
-export class ActivityService {}
-`,
-  );
-  commitAll(workspace, "base");
-
-  writeSource(
-    workspace,
-    ACTIVITY_SERVICE_PATH,
-    `
-import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
-
-export class ActivityService {
-  constructor(private readonly semesterPublicService: SemesterPublicService) {}
-}
+@Module({
+  exports: [ActivityPublicService, ActivityDurationPublicService],
+})
+export class ActivityModule {}
 `,
   );
 
   assert.deepEqual(runGuard(workspace), []);
 });
 
-test("passes when a changed feature imports its own repository", () => {
+test("passes when a changed module has empty exports", () => {
   const workspace = makeGitWorkspace();
   writeSchema(workspace);
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-export class ActivityService {}
+import { Module } from "@nestjs/common";
+
+@Module({
+  exports: [ActivityPublicService],
+})
+export class ActivityModule {}
 `,
   );
   commitAll(workspace, "base");
 
   writeSource(
     workspace,
-    ACTIVITY_SERVICE_PATH,
+    ACTIVITY_MODULE_PATH,
     `
-import ActivityRepository from "../repository/activity.repository";
+import { Module } from "@nestjs/common";
 
-export class ActivityService {
-  constructor(private readonly activityRepository: ActivityRepository) {}
-}
+@Module({
+  exports: [],
+})
+export class ActivityModule {}
 `,
   );
 

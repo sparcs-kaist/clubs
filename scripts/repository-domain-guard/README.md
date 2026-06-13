@@ -2,8 +2,8 @@
 
 `repository-domain-guard:changed` prevents newly touched API code from crossing
 feature repository boundaries. Repository files cannot query Prisma models
-outside their declared boundary, and feature files cannot import repositories
-from another feature.
+outside their declared boundary, and Nest modules cannot export internal
+providers.
 
 ## Boundary Manifest
 
@@ -34,23 +34,27 @@ The guard fails when a changed production repository file:
 - traverses a Prisma relation through `include` or relation `select` when the
   relation target is outside `ownedPrismaModels`.
 
-The guard also fails when a changed production feature file imports another
-feature's repository implementation. Cross-feature access should go through a
-provider exported by the target Nest module, usually that feature's public
-service.
+The guard also fails when a changed production Nest module exports anything
+other than a public service provider. Cross-feature access should go through a
+provider exported by the target Nest module, and that exported provider should
+be a `*PublicService`.
 
-These imports fail from `feature/activity/**`:
+These exports fail:
 
 ```ts
-import { ClubRepository } from "@sparcs-clubs/api/feature/club/repository/club.repository";
-import { ClubDelegateDRepository } from "../../club/delegate/club.club-delegate-d.repository";
+@Module({
+  exports: [ClubRepository, ClubService],
+})
+export class ClubModule {}
 ```
 
-This remains allowed when `ActivityModule` imports `SemesterModule` and
-`SemesterModule` exports `SemesterPublicService`:
+These exports pass:
 
 ```ts
-import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+@Module({
+  exports: [ClubPublicService, ClubDelegatePublicService],
+})
+export class ClubModule {}
 ```
 
 Delegate access is checked through direct property access, bracket access,
@@ -145,7 +149,7 @@ validators.
 ## Scope
 
 The guard checks production TypeScript files under `packages/api/src` only.
-Cross-domain repository import checks apply to changed files under
+Nest module export checks apply to changed `*.module.ts` files under
 `packages/api/src/feature/**`.
 
 Prisma delegate checks apply to changed repository files:
@@ -162,3 +166,5 @@ Excluded files:
 
 Untouched brownfield repository calls can remain. Once a line inside a Prisma
 query is changed, the query must respect the nearest repository boundary.
+Untouched brownfield module exports can remain. Once an `exports` item is
+changed, it must be a `*PublicService`.

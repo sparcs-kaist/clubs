@@ -88,24 +88,24 @@ export function findChangedRepositoryDomainViolations({
     }
 
     const sourceText = fs.readFileSync(currentPath, "utf8");
-    const importResult = findCrossDomainRepositoryImportNodes({
+    const moduleExportResult = findNestModuleExportGuardNodes({
       sourceText,
       filePath: changedFile.path,
     });
 
-    if (importResult.parseError) {
+    if (moduleExportResult.parseError) {
       violations.push({
         filePath: changedFile.path,
-        line: importResult.parseError.line,
-        column: importResult.parseError.column,
+        line: moduleExportResult.parseError.line,
+        column: moduleExportResult.parseError.column,
         kind: "parse-error",
         detected: "TypeScript parse error",
-        reason: importResult.parseError.message,
+        reason: moduleExportResult.parseError.message,
       });
       continue;
     }
 
-    for (const node of importResult.nodes) {
+    for (const node of moduleExportResult.nodes) {
       if (!isNodeTouchedByChangedLines(node, changedFile)) {
         continue;
       }
@@ -166,7 +166,7 @@ export function findChangedRepositoryDomainViolations({
   return violations.sort(compareViolations);
 }
 
-function findCrossDomainRepositoryImportNodes({ sourceText, filePath }) {
+function findNestModuleExportGuardNodes({ sourceText, filePath }) {
   const sourceFile = ts.createSourceFile(
     filePath,
     sourceText,
@@ -182,8 +182,7 @@ function findCrossDomainRepositoryImportNodes({ sourceText, filePath }) {
     };
   }
 
-  const sourceDomain = getFeatureDomain(filePath);
-  if (!sourceDomain) {
+  if (!isNestModuleSourceFile(filePath)) {
     return {
       nodes: [],
       parseError: null,
@@ -191,51 +190,59 @@ function findCrossDomainRepositoryImportNodes({ sourceText, filePath }) {
   }
 
   const nodes = [];
-  const recordIfCrossDomainRepository = moduleSpecifier => {
-    if (!isStaticStringLiteral(moduleSpecifier)) {
-      return;
-    }
 
-    const importPath = moduleSpecifier.text;
-    const targetPath = resolveApiImportPath({
-      importPath,
-      importerFilePath: filePath,
-    });
-    const targetDomain = getFeatureDomain(targetPath);
+  const recordExportElement = element => {
+    const exportedName = getNestModuleExportName(element);
 
-    if (
-      !targetDomain ||
-      targetDomain === sourceDomain ||
-      !isRepositoryImportTarget(targetPath)
-    ) {
+    if (exportedName && exportedName.endsWith("PublicService")) {
       return;
     }
 
     nodes.push(
       makeNode(
         sourceFile,
-        moduleSpecifier,
-        "cross-boundary-repository-import",
-        importPath,
-        `${sourceDomain} must depend on ${targetDomain} through the target module's exported public service, not its repository`,
+        element,
+        "non-public-module-export",
+        element.getText(sourceFile),
+        "Nest module exports can expose only PublicService providers; keep repositories and internal services module-private",
       ),
     );
   };
 
   const visit = node => {
-    if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      node.moduleSpecifier
-    ) {
-      recordIfCrossDomainRepository(node.moduleSpecifier);
-    }
+    if (ts.isClassDeclaration(node)) {
+      for (const decorator of getDecorators(node)) {
+        const metadata = getNestModuleMetadata(decorator);
 
-    if (
-      ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments.length === 1
-    ) {
-      recordIfCrossDomainRepository(node.arguments[0]);
+        if (!metadata) {
+          continue;
+        }
+
+        const exportsProperty = findPropertyAssignment(metadata, "exports");
+        if (!exportsProperty) {
+          continue;
+        }
+
+        const exportsInitializer = unwrapExpression(
+          exportsProperty.initializer,
+        );
+        if (!ts.isArrayLiteralExpression(exportsInitializer)) {
+          nodes.push(
+            makeNode(
+              sourceFile,
+              exportsProperty.initializer,
+              "invalid-module-exports",
+              exportsProperty.initializer.getText(sourceFile),
+              "Nest module exports must be a static array so the public provider surface can be guarded",
+            ),
+          );
+          continue;
+        }
+
+        for (const element of exportsInitializer.elements) {
+          recordExportElement(element);
+        }
+      }
     }
 
     ts.forEachChild(node, visit);
@@ -247,6 +254,44 @@ function findCrossDomainRepositoryImportNodes({ sourceText, filePath }) {
     nodes: sortNodes(dedupeNodes(nodes)),
     parseError: null,
   };
+}
+
+function getDecorators(node) {
+  if (!ts.canHaveDecorators(node)) {
+    return [];
+  }
+
+  return ts.getDecorators(node) ?? [];
+}
+
+function getNestModuleMetadata(decorator) {
+  const expression = unwrapExpression(decorator.expression);
+  if (
+    !ts.isCallExpression(expression) ||
+    !ts.isIdentifier(expression.expression) ||
+    expression.expression.text !== "Module"
+  ) {
+    return null;
+  }
+
+  const [metadata] = expression.arguments;
+  const unwrappedMetadata = unwrapExpression(metadata);
+
+  return unwrappedMetadata && ts.isObjectLiteralExpression(unwrappedMetadata)
+    ? unwrappedMetadata
+    : null;
+}
+
+function getNestModuleExportName(element) {
+  if (ts.isIdentifier(element)) {
+    return element.text;
+  }
+
+  if (ts.isPropertyAccessExpression(element)) {
+    return element.name.text;
+  }
+
+  return "";
 }
 
 export function parseChangedFileLineMap(diffText) {
@@ -1368,43 +1413,13 @@ function isRepositorySourceFile(filePath) {
   );
 }
 
-function getFeatureDomain(filePath) {
+function isNestModuleSourceFile(filePath) {
   const normalized = toPosixPath(filePath);
-  const match = normalized.match(/^packages\/api\/src\/feature\/([^/]+)\//u);
 
-  return match?.[1] ?? "";
-}
-
-function resolveApiImportPath({ importPath, importerFilePath }) {
-  if (importPath.startsWith("@sparcs-clubs/api/")) {
-    return `packages/api/src/${importPath.slice("@sparcs-clubs/api/".length)}`;
-  }
-
-  if (importPath.startsWith("src/")) {
-    return `packages/api/${importPath}`;
-  }
-
-  if (importPath.startsWith(".")) {
-    const importerDirectory = path.posix.dirname(toPosixPath(importerFilePath));
-    return path.posix.normalize(path.posix.join(importerDirectory, importPath));
-  }
-
-  return "";
-}
-
-function isRepositoryImportTarget(filePath) {
-  const normalized = toPosixPath(filePath);
-  const segments = normalized.split("/");
-
-  if (segments.includes("repository") || segments.includes("repository-old")) {
-    return true;
-  }
-
-  const basename = path.posix
-    .basename(normalized)
-    .replace(/\.(?:cjs|cts|js|jsx|mjs|mts|ts|tsx)$/u, "");
-
-  return basename.endsWith(".repository");
+  return (
+    normalized.startsWith("packages/api/src/feature/") &&
+    normalized.endsWith(".module.ts")
+  );
 }
 
 function isStaticStringLiteral(node) {
