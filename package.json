@@ -16,7 +16,8 @@
     "dev-no-d": "turbo run dev:setup && turbo run dev --no-daemon",
     "build": "turbo run build --force",
     "build:api": "turbo run build --filter=api",
-    "pre-push:parallel": "node scripts/pre-push-parallel.mjs",
+    "pre-push:parallel": "node scripts/pre-push-parallel.mjs --profile pre-push",
+    "check:diff-line-convention-guards": "node scripts/pre-push-parallel.mjs --profile diff-line-convention-guards",
     "format:check:changed": "node scripts/check-format-changed.mjs",
     "web-page-allowlist:check": "node scripts/web-page-allowlist-guard/web-page-allowlist-guard.mjs",
     "mcdc": "node scripts/mcdc/cli.mjs",
@@ -54,7 +55,8 @@
     "test:api": "turbo run test --filter=api"
   },
   "_scriptComments": {
-    "pre-push:parallel": "Runs pre-push checks with read-only migration guards in parallel and side-effecting MC/DC checks afterward.",
+    "pre-push:parallel": "Runs the full pre-push check pipeline with parallel groups where safe.",
+    "check:diff-line-convention-guards": "Runs changed-line migration convention guards in parallel.",
     "base-repository-guard:changed": "Pre-push validator. Blocks changed service/repository methods from relying on inherited BaseRepository write APIs.",
     "prisma-query:changed": "Pre-push validator. Blocks Prisma raw SQL APIs on changed packages/api/src lines while allowing untouched brownfield raw SQL debt.",
     "repository-domain-guard:changed": "Pre-push validator. Blocks changed repository Prisma queries from crossing feature boundaries.",

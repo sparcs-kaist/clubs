@@ -2,9 +2,43 @@
 
 import { spawn } from "node:child_process";
 
+const profileNames = new Set(["pre-push", "diff-line-convention-guards"]);
+
+export const DIFF_LINE_CONVENTION_GUARD_GROUP = {
+  name: "diff-line convention guards",
+  mode: "parallel",
+  tasks: [
+    {
+      name: "base-repository-guard:changed",
+      command: "pnpm",
+      args: ["base-repository-guard:changed"],
+    },
+    {
+      name: "prisma-query:changed",
+      command: "pnpm",
+      args: ["prisma-query:changed"],
+    },
+    {
+      name: "repository-domain-guard:changed",
+      command: "pnpm",
+      args: ["repository-domain-guard:changed"],
+    },
+    {
+      name: "soft-delete-guard:changed",
+      command: "pnpm",
+      args: ["soft-delete-guard:changed"],
+    },
+    {
+      name: "transaction-guard:changed",
+      command: "pnpm",
+      args: ["transaction-guard:changed"],
+    },
+  ],
+};
+
 export const DEFAULT_GROUPS = [
   {
-    name: "quick checks",
+    name: "static checks",
     mode: "parallel",
     tasks: [
       {
@@ -17,33 +51,9 @@ export const DEFAULT_GROUPS = [
         command: "pnpm",
         args: ["web-page-allowlist:check"],
       },
-      {
-        name: "base-repository-guard:changed",
-        command: "pnpm",
-        args: ["base-repository-guard:changed"],
-      },
-      {
-        name: "prisma-query:changed",
-        command: "pnpm",
-        args: ["prisma-query:changed"],
-      },
-      {
-        name: "repository-domain-guard:changed",
-        command: "pnpm",
-        args: ["repository-domain-guard:changed"],
-      },
-      {
-        name: "soft-delete-guard:changed",
-        command: "pnpm",
-        args: ["soft-delete-guard:changed"],
-      },
-      {
-        name: "transaction-guard:changed",
-        command: "pnpm",
-        args: ["transaction-guard:changed"],
-      },
     ],
   },
+  DIFF_LINE_CONVENTION_GUARD_GROUP,
   {
     name: "lint",
     mode: "serial",
@@ -61,6 +71,46 @@ export const DEFAULT_GROUPS = [
     ],
   },
 ];
+
+export function selectPrePushGroups(argv = []) {
+  const args = parseArgs(argv);
+
+  if (args.profile === "diff-line-convention-guards") {
+    return [DIFF_LINE_CONVENTION_GUARD_GROUP];
+  }
+
+  return DEFAULT_GROUPS;
+}
+
+function parseArgs(argv) {
+  const args = {
+    profile: "pre-push",
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--profile") {
+      args.profile = readValue(argv, index, arg);
+      index += 1;
+    } else if (arg === "--help" || arg === "-h") {
+      printHelp();
+      process.exit(0);
+    } else {
+      throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+
+  if (!profileNames.has(args.profile)) {
+    throw new Error(
+      `Unknown profile: ${args.profile}. Expected one of ${[
+        ...profileNames,
+      ].join(", ")}.`,
+    );
+  }
+
+  return args;
+}
 
 export async function runPrePushGroups(
   groups = DEFAULT_GROUPS,
@@ -228,7 +278,33 @@ function formatSignal(signal) {
   return signal ? ` (${signal})` : "";
 }
 
+function readValue(argv, index, arg) {
+  const value = argv[index + 1];
+
+  if (!value || value.startsWith("-")) {
+    throw new Error(`${arg} requires a value.`);
+  }
+
+  return value;
+}
+
+function printHelp() {
+  console.log(`Usage: pnpm pre-push:parallel [options]
+
+Options:
+  --profile <name>  pre-push | diff-line-convention-guards (default: pre-push)
+  -h, --help        Show this help message
+`);
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const result = await runPrePushGroups();
-  process.exitCode = result.exitCode;
+  try {
+    const result = await runPrePushGroups(
+      selectPrePushGroups(process.argv.slice(2)),
+    );
+    process.exitCode = result.exitCode;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 2;
+  }
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { runPrePushGroups } from "./pre-push-parallel.mjs";
+import { runPrePushGroups, selectPrePushGroups } from "./pre-push-parallel.mjs";
 
 test("parallel groups run every task before skipping later groups on failure", async () => {
   const events = [];
@@ -110,4 +110,44 @@ test("serial groups run tasks in order after earlier parallel groups pass", asyn
   assert.deepEqual(events.slice(0, 2).sort(), ["format", "lint"]);
   assert.deepEqual(events.slice(2), ["mcdc", "final"]);
   assert.deepEqual(result.skippedGroups, []);
+});
+
+test("diff-line convention guard profile runs only changed-line migration guards", () => {
+  const groups = selectPrePushGroups([
+    "--profile",
+    "diff-line-convention-guards",
+  ]);
+
+  assert.deepEqual(
+    groups.map(group => group.name),
+    ["diff-line convention guards"],
+  );
+  assert.deepEqual(
+    groups.flatMap(group => group.tasks.map(task => task.name)),
+    [
+      "base-repository-guard:changed",
+      "prisma-query:changed",
+      "repository-domain-guard:changed",
+      "soft-delete-guard:changed",
+      "transaction-guard:changed",
+    ],
+  );
+});
+
+test("pre-push profile keeps MC/DC in a separate runtime evidence group", () => {
+  const groups = selectPrePushGroups(["--profile", "pre-push"]);
+
+  assert.deepEqual(
+    groups.map(group => group.name),
+    [
+      "static checks",
+      "diff-line convention guards",
+      "lint",
+      "runtime evidence checks",
+    ],
+  );
+  assert.deepEqual(
+    groups.at(-1).tasks.map(task => task.name),
+    ["mcdc:changed --fail-on-missing"],
+  );
 });
