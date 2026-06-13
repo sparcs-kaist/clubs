@@ -5,7 +5,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { ClubBuildingEnum } from "@clubs/domain/club/club-semester";
 
@@ -79,13 +79,8 @@ const ClubInfoKROverviewTable: React.FC<ClubInfoKROverviewTableProps> = ({
   clubInfos,
   columnFilters,
 }) => {
-  const sortedActivities = useMemo(
-    () => [...clubInfos].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
-    [clubInfos],
-  );
-
   const table = useReactTable({
-    data: sortedActivities,
+    data: clubInfos,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -93,7 +88,7 @@ const ClubInfoKROverviewTable: React.FC<ClubInfoKROverviewTableProps> = ({
     enableSorting: false,
   });
 
-  const totalCount = sortedActivities.length;
+  const totalCount = clubInfos.length;
 
   let countString = `총 ${totalCount}개`;
   if (table.getRowModel().rows.length !== totalCount) {

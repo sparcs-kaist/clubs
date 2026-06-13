@@ -5,7 +5,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useMemo } from "react";
+import React from "react";
 
 import { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv001";
 
@@ -83,13 +83,8 @@ const DelegatesOverviewTable: React.FC<DelegatesOverviewTableProps> = ({
   delegates,
   columnFilters,
 }) => {
-  const sortedActivities = useMemo(
-    () => [...delegates].sort((a, b) => (a.clubId < b.clubId ? -1 : 1)),
-    [delegates],
-  );
-
   const table = useReactTable({
-    data: sortedActivities,
+    data: delegates,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -99,7 +94,7 @@ const DelegatesOverviewTable: React.FC<DelegatesOverviewTableProps> = ({
     enableSorting: false,
   });
 
-  const totalCount = sortedActivities.length;
+  const totalCount = delegates.length;
 
   let countString = `총 ${totalCount}개`;
   if (table.getRowModel().rows.length !== totalCount) {
