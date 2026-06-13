@@ -12,6 +12,7 @@ pnpm web-page-allowlist:check
 pnpm lint
 pnpm base-repository-guard:changed
 pnpm prisma-query:changed
+pnpm repository-domain-guard:changed
 pnpm soft-delete-guard:changed
 pnpm transaction-guard:changed
 pnpm mcdc:changed --fail-on-missing
