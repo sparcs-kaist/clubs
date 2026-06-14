@@ -18,7 +18,7 @@ export class OverviewController {
   constructor(private readonly overviewService: OverviewService) {}
 
   @Executive()
-  @Get("/overview/delegates")
+  @Get("/executive/overview/delegates")
   @UsePipes(new ZodPipe(apiOvv001))
   async getDelegateOverveiw(
     @Query() query: ApiOvv001RequestQuery,
@@ -27,7 +27,7 @@ export class OverviewController {
   }
 
   @Executive()
-  @Get("/overview/clubinfo/kr")
+  @Get("/executive/overview/clubinfo/kr")
   @UsePipes(new ZodPipe(apiOvv002))
   async getClubInfoOverview(
     @Query() query: ApiOvv002RequestQuery,

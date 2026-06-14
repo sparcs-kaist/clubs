@@ -12,6 +12,8 @@ import { join, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import mysql from "mysql2/promise";
 
+import { assertDatabaseUrlUsesTestDatabase } from "./database-url-safety.mjs";
+
 const DUMPS_DIR = "db_dumps";
 const CONTINUE_PHRASE = "sync dev db";
 
@@ -456,6 +458,9 @@ async function main() {
   }
 
   const databaseUrl = readDatabaseUrl();
+  assertDatabaseUrlUsesTestDatabase(databaseUrl, {
+    commandName: "db:sync-dev",
+  });
   const connectionOptions = createConnectionOptions(databaseUrl);
   const dumpTableNames = await collectDumpTableNames(dumpFile);
 

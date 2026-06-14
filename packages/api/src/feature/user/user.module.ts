@@ -27,11 +27,6 @@ import { UserService } from "./service/user.service";
     StudentRepository,
     ProfessorRepository,
   ],
-  exports: [
-    UserPublicService,
-    UserService,
-    UserRepository,
-    ExecutiveRepository,
-  ],
+  exports: [UserPublicService],
 })
 export default class UserModule {}

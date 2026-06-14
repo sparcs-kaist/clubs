@@ -68,7 +68,7 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
-import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
+import { OperationCommitteePublicService } from "../../operation-committee/service/operation-committee.public.service";
 import { MActivityClubChargedExecutive } from "../model/activity-club-charged-executive.model";
 import { ActivityCommentRepository } from "../repository/activity-comment.repository";
 import {
@@ -91,7 +91,7 @@ export default class ActivityService {
     private readonly filePublicService: FilePublicService,
     private readonly registrationPublicService: RegistrationPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
-    private readonly operationCommitteeService: OperationCommitteeService,
+    private readonly operationCommitteePublicService: OperationCommitteePublicService,
     private readonly userPublicService: UserPublicService,
     private readonly activityDurationValidatorService: ActivityDurationValidatorService,
   ) {}
@@ -226,7 +226,7 @@ export default class ActivityService {
       });
     } else {
       const activeKey =
-        await this.operationCommitteeService.findOperationCommitteeSecretKey();
+        await this.operationCommitteePublicService.findOperationCommitteeSecretKey();
       if (activeKey.length === 0) {
         throw new HttpException(
           "No active OperationCommittee secret key found.",

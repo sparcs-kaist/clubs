@@ -3,6 +3,7 @@
   "rootDir": ".",
   "testMatch": ["**/test/integration/**/*.spec.ts"],
   "testEnvironment": "node",
+  "setupFiles": ["<rootDir>/integration/jest.setup.ts"],
   "moduleNameMapper": {
     "^@sparcs-clubs/api/(.*)$": "<rootDir>/../src/$1"
   },

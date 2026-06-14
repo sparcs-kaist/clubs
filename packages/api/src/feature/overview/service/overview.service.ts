@@ -35,7 +35,7 @@ type ClubInfo = {
   clubNameEn: string;
   clubStatus: number;
   description: string;
-  advisor: string;
+  advisor: string | null;
   foundingYear: number;
   totalMemberCnt: number;
 };
@@ -56,9 +56,43 @@ type ClubFilterType = ClubInfo | ClubFundamental;
 // 무엇으로 필터링할지에 대한 정보
 type FilterQuery = ApiOvv001RequestQuery | ApiOvv002RequestQuery;
 
+type OverviewSortableClub = {
+  clubTypeEnum: ClubTypeEnum;
+  district: string;
+  divisionName: string;
+  clubNameKr: string;
+};
+
 @Injectable()
 export class OverviewService {
   constructor(private clubDelegateRepository: OverviewRepository) {}
+
+  private sortOverviewClubs<T extends OverviewSortableClub>(clubs: T[]): T[] {
+    return [...clubs].sort((a, b) => {
+      const clubTypeOrder = a.clubTypeEnum - b.clubTypeEnum;
+
+      if (clubTypeOrder !== 0) {
+        return clubTypeOrder;
+      }
+
+      const districtOrder = a.district.localeCompare(b.district, "ko-KR");
+
+      if (districtOrder !== 0) {
+        return districtOrder;
+      }
+
+      const divisionOrder = a.divisionName.localeCompare(
+        b.divisionName,
+        "ko-KR",
+      );
+
+      if (divisionOrder !== 0) {
+        return divisionOrder;
+      }
+
+      return a.clubNameKr.localeCompare(b.clubNameKr, "ko-KR");
+    });
+  }
 
   // 정동아리/가동아리 필터를 만들어줍니다
   // .filter(this.clubTypeOf(query)) 하여 사용
@@ -173,7 +207,7 @@ export class OverviewService {
           },
         };
       });
-    return result;
+    return this.sortOverviewClubs(result);
   }
 
   public async getClubsOverview(
@@ -211,6 +245,6 @@ export class OverviewService {
       clubNameEn: club.clubNameEn || "",
     }));
 
-    return result;
+    return this.sortOverviewClubs(result);
   }
 }

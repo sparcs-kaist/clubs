@@ -1,5 +1,9 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 
+import { assertIntegrationDatabaseEnvIsSafe } from "./test-database-url";
+
+assertIntegrationDatabaseEnvIsSafe();
+
 const prisma = new PrismaClient();
 
 /**
@@ -7,6 +11,8 @@ const prisma = new PrismaClient();
  * 모든 테이블의 데이터를 삭제하여 깨끗한 상태로 만듭니다.
  */
 export async function clearDatabase(): Promise<void> {
+  assertIntegrationDatabaseEnvIsSafe();
+
   try {
     // 외래키 제약 조건 임시 비활성화
     await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0`;

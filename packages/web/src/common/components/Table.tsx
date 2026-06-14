@@ -1,13 +1,15 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { flexRender, type Table as TableType } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import styled from "styled-components";
 
+import { normalizeTableCellCopyText } from "./Table/cellCopy";
+import { getCenteredHorizontalScrollLeft } from "./Table/horizontalScroll";
 import TableCell from "./Table/TableCell";
 import Typography from "./Typography";
 
-interface TableProps<T> {
+export interface TableProps<T> {
   table: TableType<T>;
   minWidth?: number;
   height?: number;
@@ -17,21 +19,26 @@ interface TableProps<T> {
   /* TODO: (@dora) refactor to use onClick only */
   rowLink?: (row: T) => string | { pathname: string };
   onClick?: (row: T) => void;
+  onCellClick?: (text: string) => void;
+  contentWrap?: boolean;
+  useColumnSizeAsMinWidth?: boolean;
+  initialHorizontalScroll?: "start" | "center";
+  widthMode?: "fill" | "content";
   unit?: string;
 }
 const TableInnerWrapper = styled.div`
-  width: calc(100% + (100vw - 100%));
-  padding: 0 calc((100vw - 100%) / 2);
+  width: 100%;
   overflow-x: auto;
 `;
 
 const TableInner = styled.table.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
-})<{ height?: number; minWidth: number }>`
+})<{ height?: number; minWidth: number; widthMode: "fill" | "content" }>`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-width: ${({ minWidth }) => `max(100%, ${minWidth}px)`};
+  width: ${({ minWidth, widthMode }) =>
+    widthMode === "content" ? `${minWidth}px` : `max(100%, ${minWidth}px)`};
   border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
   border-radius: 8px;
   overflow: hidden;
@@ -51,6 +58,7 @@ const HeaderRow = styled.tr`
 const Content = styled.tbody`
   display: block;
   flex: 1;
+  overflow-x: clip;
   overflow-y: auto;
   width: 100%;
 `;
@@ -78,12 +86,20 @@ const EmptyCenterCell = styled.td`
   justify-content: center;
   align-items: center;
 `;
-const TableWithCount = styled.div`
+const TableWithCount = styled.div.withConfig({
+  shouldForwardProp: prop => isPropValid(prop),
+})<{ minWidth: number; widthMode: "fill" | "content" }>`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  position: ${({ widthMode }) =>
+    widthMode === "content" ? "relative" : "static"};
+  left: ${({ widthMode }) => (widthMode === "content" ? "50%" : "auto")};
+  transform: ${({ widthMode }) =>
+    widthMode === "content" ? "translateX(-50%)" : "none"};
+  width: ${({ minWidth, widthMode }) =>
+    widthMode === "content" ? `min(100dvw, ${minWidth}px)` : "100%"};
 `;
 const Count = styled.div`
   display: flex;
@@ -100,6 +116,11 @@ const Table = <T,>({
   count = undefined,
   rowLink = undefined,
   onClick = undefined,
+  onCellClick = undefined,
+  contentWrap = false,
+  useColumnSizeAsMinWidth = false,
+  initialHorizontalScroll = "start",
+  widthMode = "fill",
   unit = "개",
 }: TableProps<T>) => {
   // 야매로 min-width 바꿔치기 (고치지 마세요)
@@ -109,6 +130,29 @@ const Table = <T,>({
     column.minSize = 0;
   });
   const router = useRouter();
+  const tableInnerWrapperRef = useRef<HTMLDivElement>(null);
+  const rowCount = table.getRowModel().rows.length;
+  const getColumnMinWidth = useCallback(
+    (size: number) => (useColumnSizeAsMinWidth ? size : undefined),
+    [useColumnSizeAsMinWidth],
+  );
+
+  useEffect(() => {
+    if (initialHorizontalScroll !== "center") {
+      return;
+    }
+
+    const wrapper = tableInnerWrapperRef.current;
+    if (!wrapper) {
+      return;
+    }
+
+    wrapper.scrollLeft = getCenteredHorizontalScrollLeft(
+      wrapper.scrollWidth,
+      wrapper.clientWidth,
+    );
+  }, [initialHorizontalScroll, minWidth, rowCount]);
+
   const handleRowClick = useCallback(
     (row: T) => {
       if (rowLink) {
@@ -127,9 +171,23 @@ const Table = <T,>({
     },
     [rowLink, onClick, router],
   );
+  const handleCellClick = useCallback(
+    (event: React.MouseEvent<HTMLTableCellElement>) => {
+      if (!onCellClick) {
+        return;
+      }
+
+      event.stopPropagation();
+      const text = normalizeTableCellCopyText(event.currentTarget.innerText);
+      if (text) {
+        onCellClick(text);
+      }
+    },
+    [onCellClick],
+  );
 
   return (
-    <TableWithCount>
+    <TableWithCount minWidth={minWidth} widthMode={widthMode}>
       <Count>
         {(count || count === 0) && (
           <Typography fs={16} lh={20}>
@@ -138,8 +196,8 @@ const Table = <T,>({
           </Typography>
         )}
       </Count>
-      <TableInnerWrapper>
-        <TableInner height={height} minWidth={minWidth}>
+      <TableInnerWrapper ref={tableInnerWrapperRef}>
+        <TableInner height={height} minWidth={minWidth} widthMode={widthMode}>
           <Header>
             {table.getHeaderGroups().map(headerGroup => (
               <HeaderRow key={headerGroup.id}>
@@ -152,8 +210,10 @@ const Table = <T,>({
                       <TableCell
                         key={header.id}
                         width={header.column.getSize()}
+                        minWidth={getColumnMinWidth(header.column.getSize())}
                         type="HeaderSort"
                         onClick={header.column.getToggleSortingHandler()}
+                        contentWrap={contentWrap}
                       >
                         {flexRender(
                           header.column.columnDef.header,
@@ -166,7 +226,9 @@ const Table = <T,>({
                     <TableCell
                       key={header.id}
                       width={header.column.getSize()}
+                      minWidth={getColumnMinWidth(header.column.getSize())}
                       type="Header"
+                      contentWrap={contentWrap}
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -191,7 +253,11 @@ const Table = <T,>({
                     <TableCell
                       key={cell.id}
                       width={cell.column.getSize()}
+                      minWidth={getColumnMinWidth(cell.column.getSize())}
                       type="Default"
+                      onClick={handleCellClick}
+                      contentWrap={contentWrap}
+                      isClickable={!!onCellClick}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

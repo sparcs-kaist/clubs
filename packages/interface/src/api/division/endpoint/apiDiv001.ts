@@ -8,7 +8,7 @@ import { z } from "zod";
  * - 분과 관리 페이지에 접근 권한이 있는지 클라이언트에서 편리하게 관리하기 위한 조회입니다.
  */
 
-const url = () => `/divisions`;
+const url = () => `/divisions/presidents`;
 const method = "GET";
 
 const requestParam = z.object({});

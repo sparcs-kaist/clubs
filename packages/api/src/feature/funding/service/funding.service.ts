@@ -82,7 +82,7 @@ import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/public
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
-import { OperationCommitteeService } from "../../operation-committee/service/operation-committee.service";
+import { OperationCommitteePublicService } from "../../operation-committee/service/operation-committee.public.service";
 import { MFunding } from "../model/funding.model";
 import { FundingCommentRepository } from "../repository/funding.comment.repository";
 import FundingRepository from "../repository/funding.repository";
@@ -106,7 +106,7 @@ export default class FundingService {
     private readonly activityDurationPublicService: ActivityDurationPublicService,
     private readonly fundingDeadlinePublicService: FundingDeadlinePublicService,
     private readonly prisma: PrismaService,
-    private readonly operationCommitteeService: OperationCommitteeService,
+    private readonly operationCommitteePublicService: OperationCommitteePublicService,
   ) {}
 
   private async assertActivityDurationIsInCurrentSemester(
@@ -302,7 +302,7 @@ export default class FundingService {
       });
     } else {
       const activeKey =
-        await this.operationCommitteeService.findOperationCommitteeSecretKey();
+        await this.operationCommitteePublicService.findOperationCommitteeSecretKey();
       if (activeKey.length === 0) {
         throw new HttpException(
           "No active OperationCommittee secret key found.",

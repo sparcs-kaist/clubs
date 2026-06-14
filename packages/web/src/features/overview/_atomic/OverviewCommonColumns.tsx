@@ -28,7 +28,7 @@ export default function OverviewCommonColumns<
         const { color, text } = getTagDetail(info.getValue(), ClubTypeTagList);
         return <Tag color={color}>{text}</Tag>;
       },
-      size: 100,
+      size: 120,
       filterFn: (row, _, value: string[]) =>
         value.includes(
           getTagDetail(row.original.clubTypeEnum, ClubTypeTagList).text,
@@ -37,7 +37,7 @@ export default function OverviewCommonColumns<
     columnHelper.accessor(row => row.district, {
       id: "district",
       header: "분과구",
-      size: 100,
+      size: 120,
     }),
     columnHelper.accessor(row => row.divisionName, {
       id: "divisionName",
@@ -47,14 +47,14 @@ export default function OverviewCommonColumns<
           {info.getValue()}
         </Tag>
       ),
-      size: 100,
+      size: 120,
       filterFn: (row, _, value: string[]) =>
         value.includes(row.original.divisionName),
     }),
     columnHelper.accessor(row => row.clubNameKr, {
       id: "clubNameKr",
       header: "동아리 대표명칭",
-      size: 120,
+      size: 220,
       filterFn: (row, _, value: string) =>
         row.original.clubNameKr.includes(value),
     }),

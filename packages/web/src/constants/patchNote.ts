@@ -5,6 +5,16 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.8 source=6da9ed54839a
+  {
+    version: "v.0.1.8",
+    date: new Date("2026.06.13"),
+    patchNoteContent: `Clubs v0.1.8
+오류 수정은 다음과 같습니다.
+- 로그인 후 우측 상단에 학적 과정이 잘못 표시될 수 있던 문제를 수정했습니다. (#1865)
+- 동아리 총람이 집행부 전용 메뉴에서 열리도록 정리하고, 선택 학기 기준 데이터와 읽기 좋은 정렬 순서로 표시되도록 수정했습니다. (#1864)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.7 source=448ac2e46b45
   {
     version: "v.0.1.7",

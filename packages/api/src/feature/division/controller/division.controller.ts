@@ -1,9 +1,10 @@
-import { Controller, Get, UsePipes } from "@nestjs/common";
+import { Controller, Get, Query, UsePipes } from "@nestjs/common";
 
 import apiDiv001, {
   ApiDiv001ResponseOk,
 } from "@clubs/interface/api/division/endpoint/apiDiv001";
 import apiDiv002, {
+  ApiDiv002RequestQuery,
   ApiDiv002RequestUrl,
   ApiDiv002ResponseOk,
 } from "@clubs/interface/api/division/endpoint/apiDiv002";
@@ -18,7 +19,7 @@ export default class DivisionController {
   constructor(private readonly divisionService: DivisionService) {}
 
   @Public()
-  @Get("/divisions")
+  @Get(apiDiv001.url())
   @UsePipes(new ZodPipe(apiDiv001))
   async getDivisions(): Promise<ApiDiv001ResponseOk> {
     const divisions = await this.divisionService.getDivisions();
@@ -29,8 +30,12 @@ export default class DivisionController {
   @Public()
   @Get(ApiDiv002RequestUrl)
   @UsePipes(new ZodPipe(apiDiv002))
-  async getCurrentDivisions(): Promise<ApiDiv002ResponseOk> {
-    const divisions = await this.divisionService.getDivisionsCurrent();
+  async getCurrentDivisions(
+    @Query() query: ApiDiv002RequestQuery,
+  ): Promise<ApiDiv002ResponseOk> {
+    const divisions = await this.divisionService.getDivisionsCurrent(
+      query.date,
+    );
     return divisions;
   }
 }

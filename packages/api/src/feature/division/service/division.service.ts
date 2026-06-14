@@ -30,9 +30,9 @@ export default class DivisionService {
     };
   }
 
-  async getDivisionsCurrent(): Promise<ApiDiv002ResponseOk> {
+  async getDivisionsCurrent(date?: Date): Promise<ApiDiv002ResponseOk> {
     const divisions = await this.oldOldDivisionRepository.fetchAll(
-      this.clock.now(),
+      date ?? this.clock.now(),
     );
     return {
       divisions,

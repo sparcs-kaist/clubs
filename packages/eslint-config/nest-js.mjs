@@ -4,6 +4,7 @@ import eslintPluginJest from "eslint-plugin-jest";
 
 import { baseConfig } from "./base.mjs";
 import eslintPluginInjectableRuntimeDependencies from "./custom_rules/eslint-plugin-injectable-runtime-dependencies.mjs";
+import eslintPluginNestModuleBoundaries from "./custom_rules/eslint-plugin-nest-module-boundaries.mjs";
 
 export const nestJsConfig = [
   ...baseConfig,
@@ -57,6 +58,16 @@ export const nestJsConfig = [
     },
     rules: {
       "injectable-runtime-dependencies/no-direct-runtime-source": "error",
+    },
+  },
+  {
+    name: "api nest module boundary rules",
+    files: ["src/feature/**/*.module.ts"],
+    plugins: {
+      "nest-module-boundaries": eslintPluginNestModuleBoundaries,
+    },
+    rules: {
+      "nest-module-boundaries/public-service-exports-only": "error",
     },
   },
 ];

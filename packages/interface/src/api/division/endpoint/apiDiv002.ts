@@ -5,17 +5,20 @@ import { zDivisionSummaryResponse } from "../type/division.type";
 
 /**
  * @version v0.1
- * @description 현재 유효한 분과 목록을 조회합니다.
+ * @description 특정 날짜에 유효한 분과 목록을 조회합니다.
  * - public한 API입니다.
+ * - date가 없으면 현재 시각 기준으로 조회합니다.
  */
 
-const url = () => `/divisions/current`;
-export const ApiDiv002RequestUrl = `/divisions/current`;
+const url = () => `/divisions`;
+export const ApiDiv002RequestUrl = `/divisions`;
 const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  date: z.coerce.date().optional(),
+});
 
 const requestBody = z.object({});
 
