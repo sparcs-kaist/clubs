@@ -41,13 +41,13 @@ const columns = [
         width="64px"
       />
     ),
-    size: 110,
+    size: 16,
   }),
   columnHelper.accessor("name", {
     id: "activity",
     header: "활동명",
     cell: info => info.getValue(),
-    size: 20,
+    size: 36,
   }),
   columnHelper.accessor("activityTypeEnumId", {
     header: "활동 분류",
@@ -55,7 +55,7 @@ const columns = [
       const { color, text } = getTagDetail(info.getValue(), ActTypeTagList);
       return <Tag color={color}>{text}</Tag>;
     },
-    size: 32,
+    size: 20,
   }),
   columnHelper.accessor(
     row =>
@@ -64,7 +64,7 @@ const columns = [
       id: "date-range",
       header: "활동 기간",
       cell: info => info.getValue(),
-      size: 48,
+      size: 28,
     },
   ),
 ];
