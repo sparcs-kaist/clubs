@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.9 source=242db68b521b
+  {
+    version: "v.0.1.9",
+    date: new Date("2026.06.27"),
+    patchNoteContent: `Clubs v0.1.9
+오류 수정은 다음과 같습니다.
+- 활동보고서 목록에서 승인 상태 칸이 과하게 넓어 활동 정보가 잘리던 문제를 수정했습니다. (#1869)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.8 source=6da9ed54839a
   {
     version: "v.0.1.8",
