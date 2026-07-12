@@ -76,7 +76,7 @@ import {
   ActivityDurationValidatorService,
 } from "./activity-duration.validator";
 
-const EXECUTIVE_ACTIVITY_APPROVAL_COMMENT = "승인 처리되었습니다";
+const EXECUTIVE_ACTIVITY_APPROVAL_COMMENT = "활동이 승인되었습니다";
 
 @Injectable()
 export default class ActivityService {

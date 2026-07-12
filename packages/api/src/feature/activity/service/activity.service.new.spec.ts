@@ -329,7 +329,7 @@ describe("ActivityService", () => {
       activityCommentRepository.createExecutiveReviewComment,
     ).toHaveBeenCalledWith({
       activityId: activity.id,
-      content: "승인 처리되었습니다",
+      content: "활동이 승인되었습니다",
       executiveId: 7,
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
@@ -389,7 +389,7 @@ describe("ActivityService", () => {
       activityCommentRepository.createExecutiveReviewComment,
     ).toHaveBeenCalledWith({
       activityId: activity.id,
-      content: "승인 처리되었습니다",
+      content: "활동이 승인되었습니다",
       executiveId: 8,
       activityStatusEnum: ActivityStatusEnum.Approved,
     });
