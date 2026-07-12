@@ -86,7 +86,6 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       where: {
         id: param.activityId,
         deletedAt: null,
-        activityStatusEnumId: { not: ActivityStatusEnum.Approved },
       },
       data: {
         activityStatusEnumId: ActivityStatusEnum.Approved,
