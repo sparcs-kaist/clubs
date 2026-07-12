@@ -76,6 +76,8 @@ import {
   ActivityDurationValidatorService,
 } from "./activity-duration.validator";
 
+const EXECUTIVE_ACTIVITY_APPROVAL_COMMENT = "승인 처리되었습니다";
+
 @Injectable()
 export default class ActivityService {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -969,15 +971,14 @@ export default class ActivityService {
     });
     if (!isUpdated)
       throw new HttpException(
-        "the activity is already approved",
+        "failed to approve activity",
         HttpStatus.BAD_REQUEST,
       );
 
     const insertedComment =
       await this.activityCommentRepository.createExecutiveReviewComment({
         activityId: param.param.activityId,
-        content: "활동이 승인되었습니다", // feedback에 승인을 기록하기 위한 임의의 문자열
-        // TODO?: 활동 승인 시에도 content를 넣을까요?
+        content: EXECUTIVE_ACTIVITY_APPROVAL_COMMENT,
         executiveId: param.executiveId,
         activityStatusEnum: ActivityStatusEnum.Approved,
       });
