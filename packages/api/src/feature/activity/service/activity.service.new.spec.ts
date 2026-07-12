@@ -367,7 +367,35 @@ describe("ActivityService", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("does not create approval feedback when the activity report is already approved", async () => {
+  it("creates approval feedback when the activity report is already approved", async () => {
+    const commentedAt = new Date("2026-05-03T12:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(commentedAt);
+
+    const { activityCommentRepository, activityRepository, service } =
+      createService(undefined, {
+        activityStatusEnum: ActivityStatusEnum.Approved,
+      });
+
+    await service.patchExecutiveActivityApproval({
+      executiveId: 8,
+      param: { activityId: activity.id },
+    });
+
+    expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
+      activityId: activity.id,
+      commentedAt,
+    });
+    expect(
+      activityCommentRepository.createExecutiveReviewComment,
+    ).toHaveBeenCalledWith({
+      activityId: activity.id,
+      content: "활동이 승인되었습니다",
+      executiveId: 8,
+      activityStatusEnum: ActivityStatusEnum.Approved,
+    });
+  });
+
+  it("does not create approval feedback when the approval update fails", async () => {
     const { activityCommentRepository, activityRepository, service } =
       createService();
     activityRepository.approveExecutiveActivity.mockResolvedValueOnce(false);
@@ -377,7 +405,7 @@ describe("ActivityService", () => {
         executiveId: 7,
         param: { activityId: activity.id },
       }),
-    ).rejects.toThrow("the activity is already approved");
+    ).rejects.toThrow("failed to approve activity");
 
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
