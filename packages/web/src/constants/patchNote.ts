@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.10 source=e19c625fac8a
+  {
+    version: "v.0.1.10",
+    date: new Date("2026.07.12"),
+    patchNoteContent: `Clubs v0.1.10
+오류 수정은 다음과 같습니다.
+- 활동보고서가 이미 승인된 경우에도 집행부원이 다시 승인 처리해 최종 검토자와 검토 로그를 갱신할 수 있게 수정했습니다. (#1872)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.9 source=242db68b521b
   {
     version: "v.0.1.9",
