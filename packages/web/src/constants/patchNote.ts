@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.11 source=582027e9b59e
+  {
+    version: "v.0.1.11",
+    date: new Date("2026.08.04"),
+    patchNoteContent: `Clubs v0.1.11
+오류 수정은 다음과 같습니다.
+- 지원금 신청서에 집행부원을 정상적으로 배정할 수 있도록 수정했습니다. (#1878)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.10 source=e19c625fac8a
   {
     version: "v.0.1.10",
