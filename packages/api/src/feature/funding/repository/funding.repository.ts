@@ -244,6 +244,21 @@ export default class FundingRepository {
     });
   }
 
+  async updateChargedExecutive(
+    fundings: IFundingSummary[],
+    chargedExecutiveId: number,
+  ): Promise<void> {
+    const transactionClient = this.txHost.tx;
+    await Promise.all(
+      fundings.map(funding =>
+        this.patchSummaryTx(transactionClient, funding, current => ({
+          id: current.id,
+          chargedExecutiveId,
+        })),
+      ),
+    );
+  }
+
   async fetchCommentedSummaries(
     executiveId: number,
   ): Promise<VFundingSummary[]> {

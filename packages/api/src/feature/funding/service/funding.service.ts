@@ -71,7 +71,6 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
-import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -1125,6 +1124,7 @@ export default class FundingService {
     return fundingComment;
   }
 
+  @Transactional()
   async patchExecutiveFundingsChargedExecutive(
     executiveId: IExecutive["id"],
     body: ApiFnd014RequestBody,
@@ -1135,19 +1135,15 @@ export default class FundingService {
     const fundings = await this.fundingRepository.fetchSummaries(
       body.fundingIds,
     );
-    this.fundingRepository.withTransaction(async tx => {
-      // eslint-disable-next-line no-restricted-syntax
-      for (const funding of fundings) {
-        this.fundingRepository.patchSummaryTx(tx, funding, f => ({
-          id: f.id,
-          chargedExecutiveId: body.executiveId,
-        }));
-      }
-    });
+    await this.fundingRepository.updateChargedExecutive(
+      fundings,
+      body.executiveId,
+    );
 
     return {};
   }
 
+  @Transactional()
   async patchExecutiveFundingsClubsChargedExecutive(
     executiveId: IExecutive["id"],
     body: ApiFnd015RequestBody,
@@ -1161,16 +1157,10 @@ export default class FundingService {
       body.clubIds,
       activityDId,
     );
-    logger.info(fundings);
-    this.fundingRepository.withTransaction(async tx => {
-      // eslint-disable-next-line no-restricted-syntax
-      for (const funding of fundings) {
-        this.fundingRepository.patchSummaryTx(tx, funding, f => ({
-          id: f.id,
-          chargedExecutiveId: body.executiveId,
-        }));
-      }
-    });
+    await this.fundingRepository.updateChargedExecutive(
+      fundings,
+      body.executiveId,
+    );
 
     return {};
   }

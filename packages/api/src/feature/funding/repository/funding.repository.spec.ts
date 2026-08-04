@@ -164,4 +164,25 @@ describe("FundingRepository transactions", () => {
     });
     expect(fetchSpy).toHaveBeenCalledWith(402);
   });
+
+  it("updates charged executives through TransactionHost tx", async () => {
+    const { prisma, repository, tx } = createRepository();
+    const fundings = [{ id: 401 }, { id: 402 }];
+    const fetchSpy = jest
+      .spyOn(repository, "fetch")
+      .mockResolvedValue({} as never);
+
+    await repository.updateChargedExecutive(fundings as never, 101);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.funding.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 401 },
+      data: { id: 401, chargedExecutiveId: 101 },
+    });
+    expect(tx.funding.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 402 },
+      data: { id: 402, chargedExecutiveId: 101 },
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
