@@ -52,6 +52,7 @@ const createFundingService = () => {
     fetch: jest.fn().mockResolvedValue(funding),
     fetchSummaries: jest.fn(),
     fetchCommentedSummaries: jest.fn(),
+    updateChargedExecutive: jest.fn().mockResolvedValue(1),
     patchStatusTx: jest.fn().mockResolvedValue(funding),
   };
   const fundingCommentRepository = {
@@ -86,6 +87,7 @@ const createFundingService = () => {
   };
   const activityDurationPublicService = {
     load: jest.fn().mockResolvedValue(activityDuration),
+    loadId: jest.fn().mockResolvedValue(activityDuration.id),
     getById: jest.fn().mockResolvedValue(activityDuration),
   };
   const prisma = {
@@ -132,12 +134,81 @@ const createFundingService = () => {
     service,
     fundingRepository,
     fundingCommentRepository,
+    userPublicService,
     clubPublicService,
     activityDurationPublicService,
     fundingDeadlinePublicService,
     prisma,
   };
 };
+
+describe("FundingService charged executive updates", () => {
+  it("updates selected fundings before returning success", async () => {
+    const { service, fundingRepository, userPublicService } =
+      createFundingService();
+    const selectedFundings = [funding, { ...funding, id: 402 }];
+    fundingRepository.fetchSummaries.mockResolvedValue(selectedFundings);
+
+    await service.patchExecutiveFundingsChargedExecutive(chargedExecutive.id, {
+      fundingIds: selectedFundings.map(item => item.id),
+      executiveId: latestCommentedExecutive.id,
+    });
+
+    expect(userPublicService.checkCurrentExecutive).toHaveBeenNthCalledWith(
+      1,
+      chargedExecutive.id,
+    );
+    expect(userPublicService.checkCurrentExecutive).toHaveBeenNthCalledWith(
+      2,
+      latestCommentedExecutive.id,
+    );
+    expect(fundingRepository.updateChargedExecutive).toHaveBeenCalledWith(
+      selectedFundings,
+      latestCommentedExecutive.id,
+    );
+  });
+
+  it("updates all current activity-duration fundings for selected clubs", async () => {
+    const { service, fundingRepository, activityDurationPublicService } =
+      createFundingService();
+    const selectedClubIds = [club.id, 202];
+    const selectedFundings = [funding, { ...funding, id: 402 }];
+    fundingRepository.fetchSummaries.mockResolvedValue(selectedFundings);
+
+    await service.patchExecutiveFundingsClubsChargedExecutive(
+      chargedExecutive.id,
+      {
+        clubIds: selectedClubIds,
+        executiveId: latestCommentedExecutive.id,
+      },
+    );
+
+    expect(activityDurationPublicService.loadId).toHaveBeenCalledTimes(1);
+    expect(fundingRepository.fetchSummaries).toHaveBeenCalledWith(
+      selectedClubIds,
+      activityDuration.id,
+    );
+    expect(fundingRepository.updateChargedExecutive).toHaveBeenCalledWith(
+      selectedFundings,
+      latestCommentedExecutive.id,
+    );
+  });
+
+  it("propagates charged executive update failures", async () => {
+    const { service, fundingRepository } = createFundingService();
+    fundingRepository.fetchSummaries.mockResolvedValue([funding]);
+    fundingRepository.updateChargedExecutive.mockRejectedValue(
+      new Error("charged executive update failed"),
+    );
+
+    await expect(
+      service.patchExecutiveFundingsChargedExecutive(chargedExecutive.id, {
+        fundingIds: [funding.id],
+        executiveId: latestCommentedExecutive.id,
+      }),
+    ).rejects.toThrow("charged executive update failed");
+  });
+});
 
 describe("FundingService funding deadline validation", () => {
   it("rejects creating a funding during the exception period", async () => {
