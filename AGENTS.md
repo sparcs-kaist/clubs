@@ -44,6 +44,8 @@
 
 ## PR 작성 규칙
 
+Codex가 PR을 생성할 때는 기본적으로 Ready for review 상태로 생성합니다. 사용자가 명시적으로 요청한 경우에만 Draft PR을 생성합니다.
+
 Codex가 PR을 생성할 때는 PR description에 `## Patch Note` 섹션과 아래 machine-readable block을 반드시 포함합니다.
 
 ```md
