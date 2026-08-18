@@ -54,6 +54,7 @@ import {
 } from "@clubs/interface/api/activity/index";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
@@ -271,6 +272,7 @@ export default class ActivityService {
 
     const comments = await this.activityCommentRepository.find({
       activityId: activity.id,
+      orderBy: { createdAt: OrderByTypeEnum.ASC },
     });
 
     return {
@@ -1253,6 +1255,7 @@ export default class ActivityService {
 
     const comments = await this.activityCommentRepository.find({
       activityId: activity.id,
+      orderBy: { createdAt: OrderByTypeEnum.ASC },
     });
 
     return {
@@ -1314,6 +1317,7 @@ export default class ActivityService {
 
     const comments = await this.activityCommentRepository.find({
       activityId: activity.id,
+      orderBy: { createdAt: OrderByTypeEnum.ASC },
     });
 
     return {
