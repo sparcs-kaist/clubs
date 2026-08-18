@@ -7,6 +7,8 @@ import {
 
 import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+
 import { MActivity } from "../model/activity.model.new";
 import { MActivityComment } from "../model/activity-comment.model";
 import ActivityService from "./activity.service.new";
@@ -181,9 +183,11 @@ describe("ActivityService", () => {
         .fn()
         .mockResolvedValue(activityComment),
       create: jest.fn().mockResolvedValue([activityComment]),
+      find: jest.fn().mockResolvedValue([activityComment]),
     };
     const clubPublicService = {
       checkIsStudentDelegate: jest.fn().mockResolvedValue(undefined),
+      checkIsProfessor: jest.fn().mockResolvedValue(undefined),
       getMemberFromSemester: jest
         .fn()
         .mockResolvedValue([{ studentId: 1 }, { studentId: 2 }]),
@@ -192,6 +196,7 @@ describe("ActivityService", () => {
       getFileInfoById: jest
         .fn()
         .mockImplementation((id: string) => Promise.resolve({ id })),
+      getFileUrl: jest.fn().mockResolvedValue("file-url"),
     };
     const registrationPublicService = {
       resetClubRegistrationStatusEnum: jest.fn().mockResolvedValue(undefined),
@@ -212,6 +217,23 @@ describe("ActivityService", () => {
     const activityDurationValidatorService = {
       getValidationError: jest.fn().mockReturnValue(null),
     };
+    const userPublicService = {
+      getStudentById: jest.fn().mockResolvedValue({
+        number: 20260001,
+        name: "학생",
+      }),
+      getStudentMapByIds: jest.fn().mockResolvedValue(
+        new Map([
+          [
+            1,
+            {
+              studentNumber: "20260001",
+              name: "학생",
+            },
+          ],
+        ]),
+      ),
+    };
 
     const service = injectTestClock(
       new ActivityService(
@@ -226,7 +248,7 @@ describe("ActivityService", () => {
         registrationPublicService as never,
         registrationDeadlinePublicService as never,
         {} as never,
-        {} as never,
+        userPublicService as never,
         activityDurationValidatorService as never,
       ),
     );
@@ -240,8 +262,35 @@ describe("ActivityService", () => {
       registrationPublicService,
       semesterPublicService,
       service,
+      userPublicService,
     };
   };
+
+  it("queries comments by createdAt ascending for every activity detail profile", async () => {
+    const { activityCommentRepository, service } = createService();
+    const expectedQuery = {
+      activityId: activity.id,
+      orderBy: { createdAt: OrderByTypeEnum.ASC },
+    };
+
+    await service.getStudentActivity(activity.id, undefined, 1);
+    await service.getExecutiveActivity(activity.id);
+    await service.getProfessorActivity(activity.id, 1);
+
+    expect(activityCommentRepository.find).toHaveBeenCalledTimes(3);
+    expect(activityCommentRepository.find).toHaveBeenNthCalledWith(
+      1,
+      expectedQuery,
+    );
+    expect(activityCommentRepository.find).toHaveBeenNthCalledWith(
+      2,
+      expectedQuery,
+    );
+    expect(activityCommentRepository.find).toHaveBeenNthCalledWith(
+      3,
+      expectedQuery,
+    );
+  });
 
   it("clears professor approval when a regular activity report is edited during the writing period", async () => {
     const { activityRepository, service } = createService([

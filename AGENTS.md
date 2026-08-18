@@ -31,6 +31,8 @@
 
 1. **정보 검토**: Task를 수행하기 위한 정보들이 충분한지 검토합니다. (기획 문서, 에러 스택 트레이스 등)
    - TU 번호가 아직 없는 신규 task라면, 먼저 Notion Task DB에 task 문서를 작성하여 TU 번호를 발급받고, 발급된 TU 번호를 기준으로 branch/worktree를 생성합니다.
+   - Task branch는 반드시 `TU-<번호>` 형식으로만 생성합니다. `codex/` 등의 접두사나 설명을 위한 suffix를 붙이지 않습니다.
+   - Task worktree 경로는 `clubs-worktrees/TU-<번호>` 형식으로 생성합니다.
 2. **Task 리뷰**: Task를 검토합니다. 엣지케이스에 대해 어떻게 핸들링하면 좋을지, 일반적인 동작이 아닌 경우 다른 옵션을 제시합니다.
 3. **기획 확정**: 의견을 충분히 교환하여 프로그래머가 요청하면, 기획을 다시 한 번 정리해서 알려줍니다.
 4. **구현**:
@@ -41,6 +43,8 @@
    - 동작성을 확인하기 위한 test를 정의합니다.
 
 ## PR 작성 규칙
+
+Codex가 PR을 생성할 때는 기본적으로 Ready for review 상태로 생성합니다. 사용자가 명시적으로 요청한 경우에만 Draft PR을 생성합니다.
 
 Codex가 PR을 생성할 때는 PR description에 `## Patch Note` 섹션과 아래 machine-readable block을 반드시 포함합니다.
 
