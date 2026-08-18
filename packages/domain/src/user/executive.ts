@@ -7,9 +7,9 @@ export const zExecutive = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().optional(),
   studentNumber: z.string(),
-  name: z.string(),
-  email: z.string().optional(),
-  phoneNumber: z.string().optional(),
+  name: z.string().max(255),
+  email: z.string().max(255).optional(),
+  phoneNumber: z.string().max(30).optional(),
   // TODO: 다음 칼럼들 논의 및 추가
   // executiveBureauEnum
   // executiveStatusEnum

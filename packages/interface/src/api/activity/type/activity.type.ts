@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
 import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
 
 import { zClubSummary } from "@clubs/interface/api/club/type/club.type";
@@ -29,9 +30,9 @@ export const zActivity = z.object({
     }),
   ),
   location: z.string().max(255),
-  purpose: z.string(),
-  detail: z.string(),
-  evidence: z.string(),
+  purpose: zDbText,
+  detail: zDbText,
+  evidence: zDbText,
   evidenceFiles: z.array(zFileSummary.pick({ id: true })),
   participants: z.array(zStudentSummary.pick({ id: true })),
   chargedExecutive: zExecutiveSummary.pick({ id: true }).optional(),
@@ -43,7 +44,7 @@ export const zActivity = z.object({
 
 export const zActivityComment = z.object({
   id: zId,
-  content: z.string(),
+  content: zDbText,
   createdAt: z.coerce.date(),
   executive: zExecutiveSummary.pick({ id: true }),
 });

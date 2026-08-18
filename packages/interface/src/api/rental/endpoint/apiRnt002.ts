@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 /**
@@ -25,7 +27,7 @@ const requestBody = z.object({
       number: z.coerce.number().int().min(0),
     })
     .array(),
-  purpose: z.coerce.string().max(512),
+  purpose: zCoercedDbText,
   desiredStart: z.coerce.date(),
   desiredEnd: z.coerce.date(),
 });

@@ -27,12 +27,13 @@ export const zStudent = z.object({
   }),
   name: z
     .string()
+    .max(255)
     .openapi({ description: "학생의 이름입니다", example: "홍길동" }),
-  email: z.string().optional().openapi({
+  email: z.string().max(255).optional().openapi({
     description: "학생의 카이스트 메일입니다",
     example: "example@kait.ac.kr",
   }),
-  phoneNumber: z.string().optional().openapi({
+  phoneNumber: z.string().max(30).optional().openapi({
     description: "학생의 한국 전화번호입니다",
     example: "010-1234-5678",
   }),

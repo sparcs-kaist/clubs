@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zActivity } from "@clubs/domain/activity/activity";
 import { zClub } from "@clubs/domain/club/club";
+import { zFileId } from "@clubs/domain/common/id";
 
 import { registry } from "@clubs/interface/open-api";
 
@@ -25,7 +26,7 @@ const requestBody = z.object({
   // TODO: zActivity.shape.evidenceFiles는 id를 써서 uid랑 둘중 무엇을 이용할지 결정해야함
   evidenceFiles: z.array(
     z.object({
-      fileId: z.coerce.string().max(255),
+      fileId: z.coerce.string().pipe(zFileId),
     }),
   ),
   // TODO: zActivity.shape.participants는 id를 써서 studentId와 둘중 무엇을 이용할지 결정해야함

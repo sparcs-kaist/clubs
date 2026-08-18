@@ -7,7 +7,7 @@ import { zExtractId } from "../common/utils";
 
 export const zDivision = z.object({
   id: zId,
-  name: z.string().max(255).min(1),
+  name: z.string().max(10).min(1),
   district: zExtractId(zDistrict),
   startTerm: z.coerce.date(),
   endTerm: z.coerce.date().nullable(),

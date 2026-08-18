@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
+
 import { zExecutiveSummary } from "@clubs/interface/api/user/type/user.type";
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
@@ -10,7 +12,7 @@ export const zFundingComment = z.object({
   id: zId,
   funding: zFunding.pick({ id: true }),
   executive: zExecutiveSummary.pick({ id: true }),
-  content: z.string(),
+  content: zDbText,
   fundingStatusEnum: z.nativeEnum(FundingStatusEnum),
   approvedAmount: z.coerce.number().int().min(0),
   createdAt: z.coerce.date(),

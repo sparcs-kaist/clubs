@@ -1,9 +1,10 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText, zDbText } from "@clubs/domain/common/string";
 import { zSemester } from "@clubs/domain/semester/semester";
 
-import { zClubName } from "@clubs/interface/common/commonString";
+import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
@@ -45,7 +46,7 @@ const responseBodyMap = {
       newClubNameEn: zClubName,
       representative: z.object({
         studentNumber: z.coerce.number().int().min(1),
-        name: z.string().max(30),
+        name: zUserName,
         phoneNumber: zKrPhoneNumber,
       }),
       foundedAt: z.coerce.date(),
@@ -64,9 +65,9 @@ const responseBodyMap = {
           professorEnumId: z.nativeEnum(ProfessorEnum),
         })
         .optional(),
-      divisionConsistency: z.coerce.string(),
-      foundationPurpose: z.coerce.string(),
-      activityPlan: z.coerce.string(),
+      divisionConsistency: zCoercedDbText,
+      foundationPurpose: zCoercedDbText,
+      activityPlan: zCoercedDbText,
       activityPlanFile: z
         .object({
           id: z.string().max(128),
@@ -92,7 +93,7 @@ const responseBodyMap = {
       updatedAt: z.coerce.date(),
       comments: z.array(
         z.object({
-          content: z.string(),
+          content: zDbText,
           createdAt: z.coerce.date(),
         }),
       ),

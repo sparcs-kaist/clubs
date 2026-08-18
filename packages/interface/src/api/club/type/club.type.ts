@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
 import { zSemester } from "@clubs/domain/semester/semester";
 
 import {
@@ -24,8 +25,8 @@ import { zId } from "@clubs/interface/common/type/id.type";
 const zClubRoom = z.object({
   id: zId,
   clubBuildingEnum: z.nativeEnum(ClubBuildingEnum),
-  location: z.string().nullable(),
-  password: z.string().nullable(),
+  location: z.string().max(20).nullable(),
+  password: z.string().max(20).nullable(),
   semester: zSemester.pick({ id: true }),
   startTerm: z.date(),
   endTerm: z.date().nullable(),
@@ -53,7 +54,7 @@ export const zClub = z.object({
     description: "동아리의 영어 이름입니다.",
     example: "sulbox",
   }),
-  description: z.string().nullable(),
+  description: zDbText.nullable(),
   foundingYear: z.coerce.number(),
   // clubT schema
   typeEnum: z.nativeEnum(ClubTypeEnum),
