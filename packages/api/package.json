@@ -65,7 +65,7 @@
     "uuid": "^14.0.0",
     "winston": "^3.12.0",
     "winston-transport-sentry-node": "^3.0.0",
-    "zod": "^3.21.4"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@clubs/eslint-config": "workspace:*",
