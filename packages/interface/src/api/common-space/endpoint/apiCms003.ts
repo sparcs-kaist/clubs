@@ -22,7 +22,7 @@ const requestQuery = z.object({});
 const requestBody = z
   .object({
     clubId: z.coerce.number().int().min(1),
-    email: z.coerce.string().max(50), // email은 최대 50자의 문자열이어야 합니다.
+    email: z.coerce.string().max(255),
     startTerm: z.preprocess(getKSTDate, z.date()), // startTerm은 날짜 및 시간이어야 합니다.
     endTerm: z.preprocess(getKSTDate, z.date()), // endTerm은 날짜 및 시간이어야 합니다.
   })

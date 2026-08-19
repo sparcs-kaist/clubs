@@ -1,7 +1,13 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName, zUserName } from "@clubs/interface/common/commonString";
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
+import {
+  zClubNameEn,
+  zClubNameKr,
+  zUserName,
+} from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
@@ -26,8 +32,8 @@ const requestBody = z
   .object({
     clubId: z.coerce.number().int().min(1).nullable().optional(),
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
-    clubNameKr: zClubName,
-    clubNameEn: zClubName,
+    clubNameKr: zClubNameKr,
+    clubNameEn: zClubNameEn,
     phoneNumber: zKrPhoneNumber, // 대표자 전화번호
     /**
      * 가동아리 신청의 경우 설립연월이 신청에 포함됩니다.
@@ -46,6 +52,7 @@ const requestBody = z
         name: zUserName,
         email: z
           .string()
+          .max(255)
           .email()
           .refine(email => email.endsWith("@kaist.ac.kr"), {
             message: "Must be a valid KAIST email address",
@@ -54,9 +61,9 @@ const requestBody = z
       })
       .nullable()
       .optional(),
-    divisionConsistency: z.coerce.string(),
-    foundationPurpose: z.coerce.string(),
-    activityPlan: z.coerce.string(),
+    divisionConsistency: zCoercedDbText,
+    foundationPurpose: zCoercedDbText,
+    activityPlan: zCoercedDbText,
     activityPlanFileId: z.coerce.string().max(128).optional(),
     /**
      * 동아리 회칙 파일은 가등록 | 재등록인 경우 undefined,

@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
+
 /**
  * @version v0.1
  * @description 집행부원으로서 동아리 등록 신청을 수락(ActivityStatusEnum.Rejected)합니다.
@@ -17,7 +19,7 @@ const requestParam = z.object({
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  comment: z.string(),
+  comment: zDbText,
 });
 
 const responseBodyMap = {

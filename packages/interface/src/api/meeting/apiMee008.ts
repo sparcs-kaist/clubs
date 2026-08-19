@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 /**
  * @version v0.1
  * @description 단일 agenda에 대한 내용 수정을 진행합니다.
@@ -20,7 +22,7 @@ const requestQuery = z.object({});
 const requestBody = z.object({
   agendaEnumId: z.coerce.number().int().min(1),
   title: z.coerce.string().max(255),
-  description: z.coerce.string(),
+  description: zCoercedDbText,
 });
 
 const responseBodyMap = {

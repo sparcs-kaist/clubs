@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
@@ -22,7 +24,7 @@ const requestQuery = z.object({});
 
 const requestBody = z.object({
   title: z.coerce.string().max(255),
-  description: z.coerce.string(),
+  description: zCoercedDbText,
 });
 
 const responseBodyMap = {

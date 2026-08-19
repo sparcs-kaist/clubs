@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 /**
@@ -21,7 +23,7 @@ const requestQuery = z.object({});
 const requestBody = z.object({
   meetingEnumId: z.nativeEnum(MeetingEnum),
   title: z.coerce.string().max(255),
-  description: z.coerce.string(),
+  description: zCoercedDbText,
 });
 
 const responseBodyMap = {

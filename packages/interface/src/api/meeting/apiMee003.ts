@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { MeetingEnum } from "@clubs/interface/common/enum/meeting.enum";
 
 /**
@@ -20,14 +22,14 @@ const requestQuery = z.object({});
 
 const requestBody = z.object({
   meetingEnumId: z.nativeEnum(MeetingEnum).optional(),
-  announcementTitle: z.coerce.string().optional(),
-  announcementContent: z.coerce.string().optional(),
+  announcementTitle: z.coerce.string().max(255).optional(),
+  announcementContent: zCoercedDbText.optional(),
   startDate: z.coerce.date().optional(),
   endTerm: z.coerce.date().optional(),
   isRegular: z.coerce.boolean().optional(),
-  location: z.coerce.string().optional(),
-  locationEn: z.coerce.string().optional(),
-  tag: z.coerce.string().optional(),
+  location: z.coerce.string().max(255).optional(),
+  locationEn: z.coerce.string().max(255).optional(),
+  tag: z.coerce.string().max(255).optional(),
 });
 
 const responseBodyMap = {

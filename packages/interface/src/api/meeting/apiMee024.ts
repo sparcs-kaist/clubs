@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { zId } from "@clubs/interface/common/type/id.type";
 
 /**
@@ -25,7 +27,7 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     title: z.coerce.string().max(255),
-    description: z.coerce.string(),
+    description: zCoercedDbText,
     choices: z.array(
       z.object({
         id: zId, // CHACHA: choiceId.

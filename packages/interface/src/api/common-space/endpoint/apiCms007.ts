@@ -41,7 +41,7 @@ const responseBodyMap = {
       z.object({
         orderId: z.coerce.number().int().min(1),
         statusEnum: z.nativeEnum(CommonSpaceUsageOrderStatusEnum),
-        spaceName: z.string(),
+        spaceName: z.string().max(30),
         chargeStudentName: z.string().max(255),
         startTerm: z.coerce.date(), // Assuming startTerm is a datetime
         endTerm: z.coerce.date(), // Assuming endTerm is a datetime

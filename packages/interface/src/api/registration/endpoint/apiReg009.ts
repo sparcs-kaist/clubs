@@ -1,7 +1,9 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zClubName } from "@clubs/interface/common/commonString";
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
+import { zClubNameEn, zClubNameKr } from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
@@ -27,8 +29,8 @@ const requestBody = z
   .object({
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
     clubId: z.coerce.number().int().nullable().optional(),
-    clubNameKr: zClubName,
-    clubNameEn: zClubName,
+    clubNameKr: zClubNameKr,
+    clubNameEn: zClubNameEn,
     phoneNumber: zKrPhoneNumber,
     foundedAt: z.coerce.date(),
     divisionId: z.coerce.number().int().min(1),
@@ -39,6 +41,7 @@ const requestBody = z
         name: z.coerce.string().max(255),
         email: z
           .string()
+          .max(255)
           .email()
           .refine(email => email.endsWith("@kaist.ac.kr"), {
             message: "Must be a valid KAIST email address",
@@ -47,9 +50,9 @@ const requestBody = z
       })
       .nullable()
       .optional(),
-    divisionConsistency: z.coerce.string(),
-    foundationPurpose: z.coerce.string(),
-    activityPlan: z.coerce.string(),
+    divisionConsistency: zCoercedDbText,
+    foundationPurpose: zCoercedDbText,
+    activityPlan: zCoercedDbText,
     activityPlanFileId: z.coerce.string().max(128).optional(),
     clubRuleFileId: z.coerce.string().max(128).optional(),
     externalInstructionFileId: z.coerce.string().max(128).optional(),

@@ -12,8 +12,8 @@ export const zProfessor = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().optional(),
   name: z.string().max(255),
-  email: z.string(),
-  phoneNumber: z.string().optional(),
+  email: z.string().max(255),
+  phoneNumber: z.string().max(30).optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),
   department: z.coerce.number(),
 });

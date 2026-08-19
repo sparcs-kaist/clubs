@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 /**
  * @version v0.1
  * @description 해당 meeting의 모든 meetingAgenda의 정보를 가져옵니다.
@@ -24,8 +26,8 @@ const responseBodyMap = {
       .object({
         agendaId: z.coerce.number().int().min(1),
         agendaEnumId: z.coerce.number().int().min(1),
-        title: z.coerce.string(),
-        description: z.coerce.string(),
+        title: z.coerce.string().max(255),
+        description: zCoercedDbText,
       })
       .array(),
   }),

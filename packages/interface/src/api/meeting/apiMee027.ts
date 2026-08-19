@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { MeetingAgendaEntityTypeEnum } from "@clubs/interface/common/enum/meeting.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
 
@@ -27,9 +29,9 @@ const responseBodyMap = {
     items: z.array(
       z.object({
         meetingAgendaEntityTypeEnum: z.nativeEnum(MeetingAgendaEntityTypeEnum),
-        content: z.coerce.string().optional(),
+        content: zCoercedDbText.optional(),
         title: z.coerce.string().max(255).optional(),
-        description: z.coerce.string().optional(),
+        description: zCoercedDbText.optional(),
       }),
     ),
   }),

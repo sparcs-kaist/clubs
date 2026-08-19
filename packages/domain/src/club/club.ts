@@ -2,6 +2,7 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import { zId } from "@clubs/domain/common/id";
+import { zDbText } from "@clubs/domain/common/string";
 
 extendZodWithOpenApi(z);
 
@@ -19,7 +20,7 @@ export const zClub = z.object({
     description: "동아리의 영어 이름입니다.",
     example: "sulbox",
   }),
-  description: z.string().openapi({
+  description: zDbText.openapi({
     description: "동아리 설명",
     examples: [
       "다같이 연주하는 동아리입니다",

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zClub } from "@clubs/domain/club/club";
 import { zId } from "@clubs/domain/common/id";
+import { zDbText } from "@clubs/domain/common/string";
 import { zExtractId } from "@clubs/domain/common/utils";
 import { zFile } from "@clubs/domain/file/file";
 import { zActivityDuration } from "@clubs/domain/semester/activity-duration";
@@ -47,9 +48,9 @@ export const zActivity = z.object({
     )
     .min(1),
   location: z.string().max(255),
-  purpose: z.string(),
-  detail: z.string(),
-  evidence: z.string(),
+  purpose: zDbText,
+  detail: zDbText,
+  evidence: zDbText,
   evidenceFiles: z.array(zExtractId(zFile)),
   participants: z.array(zExtractId(zStudent)),
 

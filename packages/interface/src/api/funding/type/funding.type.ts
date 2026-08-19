@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
+
 import {
   zActivityD,
   zActivitySummary,
@@ -22,9 +24,9 @@ export const zClubSupplies = z.object({
   name: z.string().max(255).optional(),
   evidenceEnum: z.nativeEnum(FixtureEvidenceEnum).optional(),
   classEnum: z.nativeEnum(FixtureClassEnum).optional(),
-  purpose: z.string().optional(),
+  purpose: zDbText.optional(),
   imageFiles: z.array(zFileSummary.pick({ id: true })),
-  softwareEvidence: z.string().optional(),
+  softwareEvidence: zDbText.optional(),
   softwareEvidenceFiles: z.array(zFileSummary.pick({ id: true })),
   number: z.coerce.number().int().min(1).optional(),
   price: z.coerce.number().int().min(1).optional(),
@@ -34,9 +36,9 @@ export const zFixture = z.object({
   name: z.string().max(255).optional(),
   evidenceEnum: z.nativeEnum(FixtureEvidenceEnum).optional(),
   classEnum: z.nativeEnum(FixtureClassEnum).optional(),
-  purpose: z.string().optional(),
+  purpose: zDbText.optional(),
   imageFiles: z.array(zFileSummary.pick({ id: true })),
-  softwareEvidence: z.string().optional(),
+  softwareEvidence: zDbText.optional(),
   softwareEvidenceFiles: z.array(zFileSummary.pick({ id: true })),
   number: z.coerce.number().int().min(1).optional(),
   price: z.coerce.number().int().min(1).optional(),
@@ -46,19 +48,19 @@ export const zTransportation = z.object({
   enum: z.nativeEnum(TransportationEnum).optional(),
   origin: z.string().max(255).optional(),
   destination: z.string().max(255).optional(),
-  purpose: z.string().optional(),
+  purpose: zDbText.optional(),
   passengers: z.array(zStudentSummary.pick({ id: true })),
 });
 
 export const zNonCorporateTransaction = z.object({
   traderName: z.string().max(255).optional(),
   traderAccountNumber: z.string().max(255).optional(),
-  wasteExplanation: z.string().optional(),
+  wasteExplanation: zDbText.optional(),
   files: z.array(zFileSummary.pick({ id: true })),
 });
 
 export const zMinorExpense = z.object({
-  explanation: z.string().max(255).optional(),
+  explanation: zDbText.optional(),
   files: z.array(zFileSummary.pick({ id: true })),
 });
 
@@ -76,7 +78,7 @@ export const zFunding = z.object({
   approvedAmount: z.coerce.number().int().min(0).optional(),
   tradeEvidenceFiles: z.array(zFileSummary.pick({ id: true })),
   tradeDetailFiles: z.array(zFileSummary.pick({ id: true })),
-  tradeDetailExplanation: z.string(),
+  tradeDetailExplanation: zDbText,
 
   clubSupplies: zClubSupplies.optional(),
 

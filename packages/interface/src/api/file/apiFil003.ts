@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zFileId } from "@clubs/domain/common/id";
+
 import { zFileName } from "@clubs/interface/common/commonString";
 
 /**
@@ -31,7 +33,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     files: z.array(
       z.object({
-        id: z.string().max(256),
+        id: zFileId,
         url: z.string(),
         name: zFileName,
       }),

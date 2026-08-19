@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zActivity } from "@clubs/domain/activity/activity";
 import { zClub } from "@clubs/domain/club/club";
+import { zFileId } from "@clubs/domain/common/id";
 
 import { zActivityCommentSummary } from "@clubs/interface/api/activity/type/activity.type";
 import { registry } from "@clubs/interface/open-api";
@@ -34,7 +35,7 @@ const responseBodyMap = {
     // TODO: zActivity.shape.evidenceFiles는 id를 써서 uid랑 둘중 무엇을 이용할지 결정해야함
     evidenceFiles: z.array(
       z.object({
-        fileId: z.string().max(255),
+        fileId: zFileId,
         name: z.string().max(255),
         url: z.string().max(255),
       }),

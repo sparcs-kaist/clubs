@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zCoercedDbText } from "@clubs/domain/common/string";
+
 import { PromotionalPrintingSizeEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
@@ -20,7 +22,7 @@ const requestParam = z.object({
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  documentFileLink: z.coerce.string(),
+  documentFileLink: zCoercedDbText,
   krPhoneNumber: zKrPhoneNumber, // 예시에 따라서 유효성 검사를 위한 정확한 패턴을 추가해야 합니다.
   orders: z
     .object({
