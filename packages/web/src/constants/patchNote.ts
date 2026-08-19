@@ -5,6 +5,16 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.12 source=99e2d2f23df5
+  {
+    version: "v.0.1.12",
+    date: new Date("2026.08.19"),
+    patchNoteContent: `Clubs v0.1.12
+오류 수정은 다음과 같습니다.
+- 활동보고서 상세 화면의 코멘트가 위아래에서 같은 시간순으로 표시되도록 수정했습니다. (#1881)
+- 지원금 신청 수정 시 긴 소명 내용 때문에 저장되지 않던 문제를 수정하고, 주요 입력 항목의 길이 검증을 안정화했습니다. (#1883)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.11 source=582027e9b59e
   {
     version: "v.0.1.11",
