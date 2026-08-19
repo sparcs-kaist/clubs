@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { zActivity } from "@clubs/domain/activity/activity";
 import { zClub } from "@clubs/domain/club/club";
+import { zFileId } from "@clubs/domain/common/id";
 
 import { registry } from "@clubs/interface/open-api";
 
@@ -26,7 +27,7 @@ const requestBody = z.object({
   evidenceFiles: z
     .array(
       z.object({
-        uid: z.string().max(255),
+        uid: zFileId,
       }),
     )
     .min(1),

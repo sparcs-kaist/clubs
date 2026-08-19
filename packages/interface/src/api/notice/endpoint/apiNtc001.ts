@@ -25,10 +25,10 @@ const responseBodyMap = {
     notices: z
       .object({
         id: zNotice.shape.id,
-        title: z.string().max(512),
-        author: z.string().max(20),
+        title: zNotice.shape.title,
+        author: zNotice.shape.author,
         date: z.coerce.date(),
-        link: z.string().max(200),
+        link: zNotice.shape.link,
       })
       .array(),
     total: z.coerce.number().int().min(0),

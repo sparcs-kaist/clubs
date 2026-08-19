@@ -1,6 +1,8 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
+import { zDbText } from "@clubs/domain/common/string";
+
 extendZodWithOpenApi(z);
 
 export const zOperationCommitteeKey = z.object({
@@ -8,7 +10,7 @@ export const zOperationCommitteeKey = z.object({
     description: "운영위원 비밀키 ID",
     examples: [1, 2, 3],
   }),
-  secretKey: z.string().openapi({
+  secretKey: zDbText.openapi({
     description: "10자리로 구성된 운영위원 비밀키",
     examples: ["8d502cdea9", "760c1ae02b"],
   }),

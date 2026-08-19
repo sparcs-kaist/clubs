@@ -43,7 +43,7 @@ const responseBodyMap = {
         orderId: z.coerce.number().int().min(1),
         // 상태에 관한 prop이 없어서 임의로 추가했습니다. 리뷰하실 때 시트와 함께 검토해 주세요!
         statusEnum: z.nativeEnum(CommonSpaceUsageOrderStatusEnum),
-        spaceName: z.string(),
+        spaceName: z.string().max(30),
         chargeStudentName: z.string().max(255),
         startTerm: z.coerce.date(), // Assuming startTerm is a datetime
         endTerm: z.coerce.date(), // Assuming endTerm is a datetime

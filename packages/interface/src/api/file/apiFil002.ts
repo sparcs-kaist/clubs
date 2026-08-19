@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zFileName } from "@clubs/interface/common/commonString";
+
 /**
  * @version v0.1
  * @description 파일 업로드를 위한 url과 flieId를 받아옵니다.
@@ -27,7 +29,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     metadata: z.array(
       z.object({
-        name: z.coerce.string().max(256),
+        name: zFileName,
         size: z.coerce.number().int().min(1),
       }),
     ),

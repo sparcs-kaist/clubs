@@ -2,6 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zActivity } from "@clubs/domain/activity/activity";
+import { zFileId } from "@clubs/domain/common/id";
 import { zStudent } from "@clubs/domain/user/student";
 
 import { registry } from "@clubs/interface/open-api";
@@ -28,7 +29,7 @@ const requestBody = z.object({
   evidenceFiles: z
     .array(
       z.object({
-        fileId: z.string().max(255),
+        fileId: zFileId,
       }),
     )
     .min(1), // 최소 하나의 evidenceFile 객체가 있어야 함을 보장

@@ -24,9 +24,9 @@ const zUser = z
       .openapi({ description: "sparcs sso ID", example: "sparcs21" }),
     name: z
       .string()
-      .max(30)
+      .max(255)
       .openapi({ description: "user name", example: "홍길동" }),
-    email: z.string().email().openapi({
+    email: z.string().max(255).email().openapi({
       description: "kaist email",
       example: "sparcs@kaist.ac.kr",
     }),
@@ -51,12 +51,13 @@ export const zStudent = z.object({
   }),
   name: z
     .string()
+    .max(255)
     .openapi({ description: "학생의 이름입니다", example: "홍길동" }),
-  email: z.string().optional().openapi({
+  email: z.string().max(255).optional().openapi({
     description: "학생의 카이스트 메일입니다",
     example: "example@kait.ac.kr",
   }),
-  phoneNumber: z.string().optional().openapi({
+  phoneNumber: z.string().max(30).optional().openapi({
     description: "학생의 한국 전화번호입니다",
     example: "010-1234-5678",
   }),
@@ -85,8 +86,8 @@ export const zProfessor = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().nullable(),
   name: zUserName,
-  email: z.string(),
-  phoneNumber: z.string().optional(),
+  email: z.string().max(255),
+  phoneNumber: z.string().max(30).optional(),
   professorEnum: z.nativeEnum(ProfessorEnum),
   department: z.coerce.number(),
 });
@@ -95,9 +96,9 @@ export const zExecutive = z.object({
   id: z.coerce.number(),
   userId: z.coerce.number().optional(),
   studentNumber: z.string(),
-  name: z.string(),
-  email: z.string().optional(),
-  phoneNumber: z.string().optional(),
+  name: z.string().max(255),
+  email: z.string().max(255).optional(),
+  phoneNumber: z.string().max(30).optional(),
   // TODO: 다음 칼럼들 논의 및 추가
   // executiveBureauEnum
   // executiveStatusEnum

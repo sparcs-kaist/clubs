@@ -4,12 +4,12 @@ import { zId } from "@clubs/interface/common/type/id.type";
 
 export const zDistrict = z.object({
   id: zId,
-  name: z.string().max(255).min(1),
+  name: z.string().max(10).min(1),
 });
 
 export const zDivision = z.object({
   id: zId,
-  name: z.string().max(255).min(1),
+  name: z.string().max(10).min(1),
   district: zDistrict.pick({ id: true }),
   startTerm: z.coerce.date(),
   endTerm: z.coerce.date().nullable(),

@@ -14,9 +14,9 @@ export const zUser = z
       .openapi({ description: "sparcs sso ID", example: "sparcs21" }),
     name: z
       .string()
-      .max(30)
+      .max(255)
       .openapi({ description: "user name", example: "홍길동" }),
-    email: z.string().email().openapi({
+    email: z.string().max(255).email().openapi({
       description: "kaist email",
       example: "sparcs@kaist.ac.kr",
     }),
