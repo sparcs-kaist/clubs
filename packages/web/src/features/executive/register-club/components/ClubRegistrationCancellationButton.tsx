@@ -1,14 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
-import React from "react";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
-import useCancelClubRegistration from "@sparcs-clubs/web/features/clubs/services/useCancelClubRegistration";
+
+import useCancelClubRegistration from "../services/useCancelClubRegistration";
 
 interface ClubRegistrationCancellationButtonProps {
   clubId: number;
@@ -19,25 +18,17 @@ const ClubRegistrationCancellationButton = ({
   clubId,
   clubName,
 }: ClubRegistrationCancellationButtonProps) => {
-  const router = useRouter();
   const { mutate: cancelRegistration, isPending } =
     useCancelClubRegistration(clubId);
 
   const openSuccessModal = () => {
-    overlay.open(({ isOpen, close }) => {
-      const handleClose = () => {
-        close();
-        router.replace("/clubs");
-      };
-
-      return (
-        <Modal isOpen={isOpen} onClose={handleClose}>
-          <ConfirmModalContent onConfirm={handleClose}>
-            {clubName}의 등록을 무효 처리했습니다.
-          </ConfirmModalContent>
-        </Modal>
-      );
-    });
+    overlay.open(({ isOpen, close }) => (
+      <Modal isOpen={isOpen} onClose={close}>
+        <ConfirmModalContent onConfirm={close}>
+          {clubName} 동아리의 등록을 무효 처리했습니다.
+        </ConfirmModalContent>
+      </Modal>
+    ));
   };
 
   const openConfirmationModal = () => {
@@ -49,11 +40,14 @@ const ClubRegistrationCancellationButton = ({
             close();
             cancelRegistration(undefined, { onSuccess: openSuccessModal });
           }}
-          confirmButtonText="등록 무효"
+          confirmButtonText="등록 무효 처리"
+          confirmButtonType="danger"
         >
-          {clubName}의 등록을 무효 처리하시겠습니까?
+          {clubName} 동아리의 등록이 무효 처리됩니다.
           <br />
-          동아리와 대표자·대의원 임기가 즉시 종료됩니다.
+          대표자·대의원 임기가 종료되고 대기 중인 회원 등록 신청이 반려됩니다.
+          <br />
+          계속하시겠습니까?
         </CancellableModalContent>
       </Modal>
     ));
@@ -61,7 +55,7 @@ const ClubRegistrationCancellationButton = ({
 
   return (
     <Button
-      type={isPending ? "disabled" : "default"}
+      type={isPending ? "disabled" : "danger"}
       onClick={openConfirmationModal}
     >
       등록 무효
