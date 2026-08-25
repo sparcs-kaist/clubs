@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IClubDelegateCreate,
   MClubDelegate,
@@ -35,8 +37,23 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
   ClubDelegateOrderByKeys,
   ClubDelegateQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("clubDelegateD", MClubDelegate);
+  }
+
+  async endCurrentTerms(clubId: number, now: Date): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    await delegate.updateMany({
+      where: {
+        clubId,
+        startTerm: { lte: now },
+        OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      data: { endTerm: now },
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

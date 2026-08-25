@@ -9,6 +9,7 @@ import { ClubController } from "./controller/club.controller";
 import { ClubDelegateDRepository } from "./delegate/club.club-delegate-d.repository";
 import { DelegateModule } from "./delegate/delegate.module";
 import { ClubRepository } from "./repository/club.repository";
+import { ClubDelegateChangeRequestRepository } from "./repository/club-delegate-change-request.repository";
 import { ClubDelegateRepository } from "./repository/club-delegate-repository";
 import { ClubDivisionHistoryRepository } from "./repository/club-division-history.repository";
 import { ClubSemesterRepository } from "./repository/club-semester.repository";
@@ -47,6 +48,7 @@ import { ClubService } from "./service/club.service";
     ClubOldRepository,
     ClubSemesterRepository,
     ClubDelegateRepository,
+    ClubDelegateChangeRequestRepository,
     ClubDivisionHistoryRepository,
   ],
   exports: [ClubPublicService],

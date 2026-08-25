@@ -128,6 +128,7 @@ test("diff-line convention guard profile runs only changed-line migration guards
       "base-repository-guard:changed",
       "prisma-query:changed",
       "repository-domain-guard:changed",
+      "service-db-access-guard:changed",
       "soft-delete-guard:changed",
       "transaction-guard:changed",
     ],

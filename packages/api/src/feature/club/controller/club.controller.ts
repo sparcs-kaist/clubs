@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Put, UsePipes } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Put,
+  UsePipes,
+} from "@nestjs/common";
 
 import {
   apiClb001,
@@ -23,10 +31,14 @@ import {
   type ApiClb010ResponseOk,
   apiClb016,
   type ApiClb016ResponseOk,
+  apiClb017,
+  type ApiClb017RequestParam,
+  type ApiClb017ResponseOk,
 } from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
+  Executive,
   Professor,
   Public,
   Student,
@@ -138,5 +150,14 @@ export class ClubController {
   ): Promise<ApiClb016ResponseOk> {
     const result = await this.clubService.getProfessorClubsMy(user.professorId);
     return result;
+  }
+
+  @Executive()
+  @Patch("executive/clubs/club/:clubId/registration-cancellation")
+  @UsePipes(new ZodPipe(apiClb017))
+  async cancelExecutiveClubRegistration(
+    @Param() param: ApiClb017RequestParam,
+  ): Promise<ApiClb017ResponseOk> {
+    return this.clubService.cancelRegistration(param.clubId);
   }
 }

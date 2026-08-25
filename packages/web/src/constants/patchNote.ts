@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.13 source=7481074d971c
+  {
+    version: "v.0.1.13",
+    date: new Date("2026.08.25"),
+    patchNoteContent: `Clubs v0.1.13
+신규 기능은 다음과 같습니다.
+- 집행부원이 동아리 상세 화면에서 동아리 등록을 무효 처리할 수 있습니다. (#1885)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.12 source=99e2d2f23df5
   {
     version: "v.0.1.12",

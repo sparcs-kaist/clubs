@@ -32,6 +32,8 @@ export * from "./endpoint/apiClb015";
 export { default as apiClb015 } from "./endpoint/apiClb015";
 export * from "./endpoint/apiClb016";
 export { default as apiClb016 } from "./endpoint/apiClb016";
+export * from "./endpoint/apiClb017";
+export { default as apiClb017 } from "./endpoint/apiClb017";
 
 registry.registerPath({
   tags: ["club"],
@@ -49,6 +51,7 @@ registry.registerPath({
 - **CLB-002**: 동아리 상세 정보 조회
 - **CLB-003**: 내가 활동했던 동아리 목록 조회 (학생용)
 - **CLB-016**: 지도교수가 지도했던 동아리 목록 조회 (교수용)
+- **CLB-017**: 동아리 등록 무효 처리 (집행부용)
 
 ### 2. 동아리 기본 정보 관리
 - **CLB-004**: 동아리 기본 정보 조회 (설명, 동아리방 비밀번호)
@@ -76,6 +79,7 @@ registry.registerPath({
 - **학생 API**: CLB-003, CLB-013, CLB-014, CLB-015 (로그인한 학생)
 - **동아리 대표자/대의원**: CLB-004~012 (해당 동아리 권한 필요)
 - **지도교수**: CLB-016 (지도교수 권한 필요)
+- **집행부원**: CLB-017 (집행부원 권한 필요)
 
 ## 도메인 객체
 
