@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -60,6 +61,7 @@ import {
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -94,6 +96,7 @@ export class RegistrationService {
     private readonly memberRegistrationRepository: MemberRegistrationRepository,
     private readonly semesterPublicService: SemesterPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {}
 
   private async getRegistrationTargetSemester(
@@ -1104,6 +1107,7 @@ export class RegistrationService {
     };
   }
 
+  @Transactional()
   async postMemberRegistration(
     studentId: number,
     clubId: number,
@@ -1135,10 +1139,15 @@ export class RegistrationService {
     }
 
     // 해당 동아리가 이번 학기에 활동중이어서 신청이 가능한 지 확인
-    const clubExistedSemesters =
-      await this.clubPublicService.getClubsExistedSemesters({ clubId });
-    const isClubOperatingThisSemester = clubExistedSemesters.some(
-      semester => semester.id === semesterId,
+    const clubSemesters =
+      await this.clubPublicService.getClubSummariesByClubIdAndSemesterIds(
+        clubId,
+        [semesterId],
+      );
+    const isClubOperatingThisSemester = clubSemesters.some(clubSemester =>
+      [ClubTypeEnum.Regular, ClubTypeEnum.Provisional].includes(
+        clubSemester.typeEnum,
+      ),
     );
     if (!isClubOperatingThisSemester) {
       throw new HttpException(
@@ -1165,15 +1174,15 @@ export class RegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.memberRegistrationRepository.create([
-      {
-        student: { id: studentId },
-        club: { id: clubId },
-        semester: { id: semesterId },
+    await this.txHost.tx.registrationApplicationStudent.create({
+      data: {
+        studentId,
+        clubId,
+        semesterId,
         registrationApplicationStudentEnum:
           RegistrationApplicationStudentStatusEnum.Pending,
       },
-    ]);
+    });
     return {};
   }
 
