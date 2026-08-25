@@ -89,7 +89,13 @@ const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {
             신청 승인
           </Button>
           <Button
-            type={rejectionDetail ? "default" : "disabled"}
+            type={
+              rejectionDetail &&
+              data &&
+              data.registrationStatusEnumId !== RegistrationStatusEnum.Approved
+                ? "default"
+                : "disabled"
+            }
             onClick={async () => {
               await postClubRegistrationSendBack(
                 { applyId },

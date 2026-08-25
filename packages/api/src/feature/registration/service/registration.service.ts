@@ -56,6 +56,7 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationApplicationStudentStatusEnum,
   RegistrationDeadlineEnum,
+  RegistrationStatusEnum,
   RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
 
@@ -742,6 +743,7 @@ export class RegistrationService {
     return result;
   }
 
+  @Transactional()
   async postExecutiveRegistrationsClubRegistrationSendBack(
     applyId: number,
     executiveId: number,
@@ -755,6 +757,20 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
+    const registration = takeOne(
+      await this.clubRegistrationRepository.selectRegistrationsById({
+        registrationId: applyId,
+      }),
+    );
+    if (
+      registration?.registrationApplicationStatusEnumId ===
+      RegistrationStatusEnum.Approved
+    ) {
+      throw new HttpException(
+        "Approved registration cannot be sent back",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const result =
       await this.clubRegistrationRepository.postExecutiveRegistrationsClubRegistrationSendBack(
         applyId,
