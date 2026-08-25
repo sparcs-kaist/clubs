@@ -1,7 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 
-import Button from "@sparcs-clubs/web/common/components/Button";
+import Button, {
+  ButtonProps,
+} from "@sparcs-clubs/web/common/components/Button";
 
 import FlexWrapper from "../FlexWrapper";
 import Typography from "../Typography";
@@ -12,6 +14,7 @@ interface CancellableModalContentProps {
   onConfirm: () => void;
   closeButtonText?: string;
   confirmButtonText?: string;
+  confirmButtonType?: ButtonProps["type"];
   children: React.ReactNode;
 }
 
@@ -27,6 +30,7 @@ const CancellableModalContent: React.FC<CancellableModalContentProps> = ({
   children,
   closeButtonText = "취소",
   confirmButtonText = "확인",
+  confirmButtonType = "default",
 }) => (
   <FlexWrapper direction="column" gap={12}>
     <Typography fs={16} lh={28} fw="MEDIUM" style={{ textAlign: "center" }}>
@@ -37,7 +41,7 @@ const CancellableModalContent: React.FC<CancellableModalContentProps> = ({
         {closeButtonText}
       </Button>
       <Button
-        type={confirmDisabled ? "disabled" : "default"}
+        type={confirmDisabled ? "disabled" : confirmButtonType}
         onClick={onConfirm}
       >
         {confirmButtonText}

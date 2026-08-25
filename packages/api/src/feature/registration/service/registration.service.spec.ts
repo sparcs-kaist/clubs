@@ -1,4 +1,5 @@
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { RegistrationService } from "./registration.service";
 
@@ -15,6 +16,10 @@ const studentId = 301;
 const semesterId = 7;
 
 const createService = (clubTypeEnum: ClubTypeEnum) => {
+  const clubRegistrationRepository = {
+    selectRegistrationsById: jest.fn(),
+    postExecutiveRegistrationsClubRegistrationSendBack: jest.fn(),
+  };
   const clubPublicService = {
     getClubByClubId: jest.fn().mockResolvedValue([{ id: clubId }]),
     getClubSummariesByClubIdAndSemesterIds: jest.fn().mockResolvedValue([
@@ -38,19 +43,22 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
   const registrationDeadlinePublicService = {
     validate: jest.fn().mockResolvedValue(undefined),
   };
+  const registrationPublicService = {
+    checkDeadline: jest.fn().mockResolvedValue(undefined),
+  };
   const service = new RegistrationService(
-    {} as RegistrationServiceDependencies[0],
+    clubRegistrationRepository as RegistrationServiceDependencies[0],
     clubPublicService as RegistrationServiceDependencies[1],
     {} as RegistrationServiceDependencies[2],
     {} as RegistrationServiceDependencies[3],
-    {} as RegistrationServiceDependencies[4],
+    registrationPublicService as RegistrationServiceDependencies[4],
     userPublicService as RegistrationServiceDependencies[5],
     memberRegistrationRepository as RegistrationServiceDependencies[6],
     semesterPublicService as RegistrationServiceDependencies[7],
     registrationDeadlinePublicService as RegistrationServiceDependencies[8],
   );
 
-  return { service, memberRegistrationRepository };
+  return { service, clubRegistrationRepository, memberRegistrationRepository };
 };
 
 describe("RegistrationService member registration availability", () => {
@@ -79,5 +87,29 @@ describe("RegistrationService member registration availability", () => {
       service.postMemberRegistration(studentId, clubId),
     ).rejects.toThrow("The club is not operating in the current semester.");
     expect(memberRegistrationRepository.createPending).not.toHaveBeenCalled();
+  });
+});
+
+describe("RegistrationService club registration review", () => {
+  it("does not send an approved registration back", async () => {
+    const { service, clubRegistrationRepository } = createService(
+      ClubTypeEnum.Regular,
+    );
+    clubRegistrationRepository.selectRegistrationsById.mockResolvedValue([
+      {
+        registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
+      },
+    ]);
+
+    await expect(
+      service.postExecutiveRegistrationsClubRegistrationSendBack(
+        1,
+        1,
+        "반려 사유",
+      ),
+    ).rejects.toThrow("Approved registration cannot be sent back");
+    expect(
+      clubRegistrationRepository.postExecutiveRegistrationsClubRegistrationSendBack,
+    ).not.toHaveBeenCalled();
   });
 });
