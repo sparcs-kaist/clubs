@@ -1,5 +1,4 @@
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
-import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { RegistrationService } from "./registration.service";
 
@@ -31,6 +30,7 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
   };
   const memberRegistrationRepository = {
     find: jest.fn().mockResolvedValue([]),
+    createPending: jest.fn().mockResolvedValue(undefined),
   };
   const semesterPublicService = {
     loadId: jest.fn().mockResolvedValue(semesterId),
@@ -38,10 +38,6 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
   const registrationDeadlinePublicService = {
     validate: jest.fn().mockResolvedValue(undefined),
   };
-  const registrationApplicationStudent = {
-    create: jest.fn().mockResolvedValue({ id: 1 }),
-  };
-
   const service = new RegistrationService(
     {} as RegistrationServiceDependencies[0],
     clubPublicService as RegistrationServiceDependencies[1],
@@ -52,43 +48,36 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     memberRegistrationRepository as RegistrationServiceDependencies[6],
     semesterPublicService as RegistrationServiceDependencies[7],
     registrationDeadlinePublicService as RegistrationServiceDependencies[8],
-    {
-      tx: { registrationApplicationStudent },
-    } as unknown as RegistrationServiceDependencies[9],
   );
 
-  return { service, registrationApplicationStudent };
+  return { service, memberRegistrationRepository };
 };
 
 describe("RegistrationService member registration availability", () => {
   it.each([ClubTypeEnum.Regular, ClubTypeEnum.Provisional])(
     "allows member registration for active club type %i",
     async clubTypeEnum => {
-      const { service, registrationApplicationStudent } =
+      const { service, memberRegistrationRepository } =
         createService(clubTypeEnum);
 
       await service.postMemberRegistration(studentId, clubId);
 
-      expect(registrationApplicationStudent.create).toHaveBeenCalledWith({
-        data: {
-          studentId,
-          clubId,
-          semesterId,
-          registrationApplicationStudentEnum:
-            RegistrationApplicationStudentStatusEnum.Pending,
-        },
-      });
+      expect(memberRegistrationRepository.createPending).toHaveBeenCalledWith(
+        studentId,
+        clubId,
+        semesterId,
+      );
     },
   );
 
   it("rejects member registration for a registration-canceled club", async () => {
-    const { service, registrationApplicationStudent } = createService(
+    const { service, memberRegistrationRepository } = createService(
       ClubTypeEnum.RegistrationCanceled,
     );
 
     await expect(
       service.postMemberRegistration(studentId, clubId),
     ).rejects.toThrow("The club is not operating in the current semester.");
-    expect(registrationApplicationStudent.create).not.toHaveBeenCalled();
+    expect(memberRegistrationRepository.createPending).not.toHaveBeenCalled();
   });
 });

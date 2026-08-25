@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -61,7 +61,6 @@ import {
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
-import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -96,7 +95,6 @@ export class RegistrationService {
     private readonly memberRegistrationRepository: MemberRegistrationRepository,
     private readonly semesterPublicService: SemesterPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
-    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {}
 
   private async getRegistrationTargetSemester(
@@ -1174,15 +1172,11 @@ export class RegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.txHost.tx.registrationApplicationStudent.create({
-      data: {
-        studentId,
-        clubId,
-        semesterId,
-        registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Pending,
-      },
-    });
+    await this.memberRegistrationRepository.createPending(
+      studentId,
+      clubId,
+      semesterId,
+    );
     return {};
   }
 

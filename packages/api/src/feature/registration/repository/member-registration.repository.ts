@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IMemberRegistrationCreate,
   MMemberRegistration,
@@ -29,8 +31,44 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
   MemberRegistrationQuery,
   MemberRegistrationOrderByKeys
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("registrationApplicationStudent", MMemberRegistration);
+  }
+
+  async createPending(
+    studentId: number,
+    clubId: number,
+    semesterId: number,
+  ): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    await delegate.create({
+      data: {
+        studentId,
+        clubId,
+        semesterId,
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Pending,
+      },
+    });
+  }
+
+  async rejectPending(clubId: number, semesterId: number): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    await delegate.updateMany({
+      where: {
+        clubId,
+        semesterId,
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Pending,
+        deletedAt: null,
+      },
+      data: {
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Rejected,
+      },
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

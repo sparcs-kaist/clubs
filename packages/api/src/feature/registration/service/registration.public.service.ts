@@ -1,10 +1,12 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
+import { MemberRegistrationRepository } from "../repository/member-registration.repository";
 
 @Injectable()
 export class RegistrationPublicService {
@@ -12,6 +14,7 @@ export class RegistrationPublicService {
 
   constructor(
     private readonly clubRegistrationRepository: ClubRegistrationRepository,
+    private readonly memberRegistrationRepository: MemberRegistrationRepository,
   ) {}
 
   /**
@@ -42,5 +45,13 @@ export class RegistrationPublicService {
     await this.clubRegistrationRepository.resetClubRegistrationStatusEnum(
       clubId,
     );
+  }
+
+  @Transactional()
+  async rejectPendingMemberRegistrations(
+    clubId: number,
+    semesterId: number,
+  ): Promise<void> {
+    await this.memberRegistrationRepository.rejectPending(clubId, semesterId);
   }
 }

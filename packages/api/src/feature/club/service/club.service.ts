@@ -1,12 +1,11 @@
 import {
-  ConflictException,
   HttpException,
   HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
@@ -33,24 +32,18 @@ import {
 } from "@clubs/interface/api/club/endpoint/apiClb010";
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
 import type { ApiClb017ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb017";
-import {
-  ClubDelegateChangeRequestStatusEnum,
-  ClubTypeEnum,
-} from "@clubs/interface/common/enum/club.enum";
-import {
-  RegistrationApplicationStudentStatusEnum,
-  RegistrationDeadlineEnum,
-} from "@clubs/interface/common/enum/registration.enum";
+import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
-import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
-import { activeOnly } from "@sparcs-clubs/api/common/util/soft-delete";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
+import { ClubDelegateChangeRequestRepository } from "../repository/club-delegate-change-request.repository";
+import { ClubDelegateRepository } from "../repository/club-delegate-repository";
+import { ClubSemesterRepository } from "../repository/club-semester.repository";
 import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
 import ClubTRepository from "../repository-old/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
@@ -75,7 +68,9 @@ export class ClubService {
     private clubPublicService: ClubPublicService,
     private registrationPublicService: RegistrationPublicService,
     private readonly semesterPublicService: SemesterPublicService,
-    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+    private readonly clubSemesterRepository: ClubSemesterRepository,
+    private readonly clubDelegateRepository: ClubDelegateRepository,
+    private readonly clubDelegateChangeRequestRepository: ClubDelegateChangeRequestRepository,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -378,62 +373,19 @@ export class ClubService {
   @Transactional()
   async cancelRegistration(clubId: number): Promise<ApiClb017ResponseOk> {
     const now = this.clock.now();
-    const activeClubTWhere = {
+    const semesterId = await this.clubSemesterRepository.cancelRegistration(
       clubId,
-      clubStatusEnumId: {
-        in: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
-      },
-      startTerm: { lte: now },
-      OR: [{ endTerm: { gte: now } }, { endTerm: null }],
-    };
-
-    const clubT = await this.txHost.tx.clubT.findFirst({
-      where: activeOnly(activeClubTWhere),
-      select: { semesterId: true },
-    });
-    if (!clubT) {
-      throw new ConflictException("Club registration cannot be canceled");
-    }
-
-    const updatedClubT = await this.txHost.tx.clubT.updateMany({
-      where: activeOnly(activeClubTWhere),
-      data: {
-        clubStatusEnumId: ClubTypeEnum.RegistrationCanceled,
-        endTerm: now,
-      },
-    });
-    if (updatedClubT.count !== 1) {
-      throw new ConflictException("Club registration cannot be canceled");
-    }
-
-    await this.txHost.tx.clubDelegateD.updateMany({
-      where: activeOnly({
-        clubId,
-        startTerm: { lte: now },
-        OR: [{ endTerm: { gte: now } }, { endTerm: null }],
-      }),
-      data: { endTerm: now },
-    });
-    await this.txHost.tx.clubDelegateChangeRequest.updateMany({
-      where: activeOnly({
-        clubId,
-        clubDelegateChangeRequestStatusEnumId:
-          ClubDelegateChangeRequestStatusEnum.Applied,
-      }),
-      data: { deletedAt: now },
-    });
-    await this.txHost.tx.registrationApplicationStudent.updateMany({
-      where: activeOnly({
-        clubId,
-        semesterId: clubT.semesterId,
-        registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Pending,
-      }),
-      data: {
-        registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Rejected,
-      },
-    });
+      now,
+    );
+    await this.clubDelegateRepository.endCurrentTerms(clubId, now);
+    await this.clubDelegateChangeRequestRepository.cancelAppliedRequests(
+      clubId,
+      now,
+    );
+    await this.registrationPublicService.rejectPendingMemberRegistrations(
+      clubId,
+      semesterId,
+    );
 
     return {};
   }
