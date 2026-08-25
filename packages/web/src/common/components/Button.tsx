@@ -40,6 +40,15 @@ const ButtonOutlinedInner = styled(ButtonInner)`
   }
 `;
 
+const ButtonDangerInner = styled(ButtonInner)`
+  color: ${({ theme }) => theme.colors.WHITE};
+  background: ${({ theme }) => theme.colors.RED[600]};
+  cursor: pointer;
+  &:hover {
+    filter: brightness(0.9);
+  }
+`;
+
 const ButtonDisabledInner = styled(ButtonInner)`
   color: ${({ theme }) => theme.colors.GRAY[300]};
   border: 1px solid ${({ theme }) => theme.colors.GRAY[300]};
@@ -50,6 +59,7 @@ const ButtonDisabledInner = styled(ButtonInner)`
 const ButtonTypeInner = {
   default: ButtonDefaultInner,
   outlined: ButtonOutlinedInner,
+  danger: ButtonDangerInner,
   disabled: ButtonDisabledInner,
 };
 

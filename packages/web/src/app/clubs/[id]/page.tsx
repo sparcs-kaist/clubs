@@ -10,7 +10,6 @@ import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import ClubDetailPublicFrame from "@sparcs-clubs/web/features/clubs/frames/detail/ClubDetailPublicFrame";
 import ClubDetailStudentFrame from "@sparcs-clubs/web/features/clubs/frames/detail/ClubDetailStudentFrame";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
-import canCancelClubRegistration from "@sparcs-clubs/web/features/clubs/utils/canCancelClubRegistration";
 import isStudent from "@sparcs-clubs/web/utils/isStudent";
 
 const ClubDetail = () => {
@@ -40,15 +39,7 @@ const ClubDetail = () => {
     >
       {isLoggedIn && isStudent(profile)
         ? data && <ClubDetailStudentFrame club={data} />
-        : data && (
-            <ClubDetailPublicFrame
-              club={data}
-              canCancelRegistration={canCancelClubRegistration(
-                profile?.type,
-                data.type,
-              )}
-            />
-          )}
+        : data && <ClubDetailPublicFrame club={data} />}
     </AsyncBoundary>
   );
 };
