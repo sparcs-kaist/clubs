@@ -5,6 +5,18 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.14 source=be1656e501c4
+  {
+    version: "v.0.1.14",
+    date: new Date("2026.08.25"),
+    patchNoteContent: `Clubs v0.1.14
+오류 수정은 다음과 같습니다.
+- 승인된 동아리 등록 신청이 다시 반려되어 동아리와 회원 정보가 신청 상태와 달라질 수 있던 문제를 수정했습니다. (#1888)
+
+디자인 수정은 다음과 같습니다.
+- 집행부원이 전용 관리 화면에서 동아리 등록을 안전하게 무효 처리할 수 있도록 개선했습니다. (#1890)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.13 source=7481074d971c
   {
     version: "v.0.1.13",
