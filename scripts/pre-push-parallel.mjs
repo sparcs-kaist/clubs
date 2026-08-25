@@ -24,6 +24,11 @@ export const DIFF_LINE_CONVENTION_GUARD_GROUP = {
       args: ["repository-domain-guard:changed"],
     },
     {
+      name: "service-db-access-guard:changed",
+      command: "pnpm",
+      args: ["service-db-access-guard:changed"],
+    },
+    {
       name: "soft-delete-guard:changed",
       command: "pnpm",
       args: ["soft-delete-guard:changed"],

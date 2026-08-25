@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -1104,6 +1105,7 @@ export class RegistrationService {
     };
   }
 
+  @Transactional()
   async postMemberRegistration(
     studentId: number,
     clubId: number,
@@ -1135,10 +1137,15 @@ export class RegistrationService {
     }
 
     // 해당 동아리가 이번 학기에 활동중이어서 신청이 가능한 지 확인
-    const clubExistedSemesters =
-      await this.clubPublicService.getClubsExistedSemesters({ clubId });
-    const isClubOperatingThisSemester = clubExistedSemesters.some(
-      semester => semester.id === semesterId,
+    const clubSemesters =
+      await this.clubPublicService.getClubSummariesByClubIdAndSemesterIds(
+        clubId,
+        [semesterId],
+      );
+    const isClubOperatingThisSemester = clubSemesters.some(clubSemester =>
+      [ClubTypeEnum.Regular, ClubTypeEnum.Provisional].includes(
+        clubSemester.typeEnum,
+      ),
     );
     if (!isClubOperatingThisSemester) {
       throw new HttpException(
@@ -1165,15 +1172,11 @@ export class RegistrationService {
       throw new HttpException("Already applied", HttpStatus.BAD_REQUEST);
 
     // 동아리 가입 신청
-    await this.memberRegistrationRepository.create([
-      {
-        student: { id: studentId },
-        club: { id: clubId },
-        semester: { id: semesterId },
-        registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Pending,
-      },
-    ]);
+    await this.memberRegistrationRepository.createPending(
+      studentId,
+      clubId,
+      semesterId,
+    );
     return {};
   }
 

@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
@@ -30,6 +31,7 @@ import {
   ApiClb010ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb010";
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
+import type { ApiClb017ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb017";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -39,6 +41,9 @@ import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registratio
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
+import { ClubDelegateChangeRequestRepository } from "../repository/club-delegate-change-request.repository";
+import { ClubDelegateRepository } from "../repository/club-delegate-repository";
+import { ClubSemesterRepository } from "../repository/club-semester.repository";
 import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
 import ClubTRepository from "../repository-old/club.club-t.repository";
 import { DivisionPermanentClubDRepository } from "../repository-old/club.division-permanent-club-d.repository";
@@ -63,6 +68,9 @@ export class ClubService {
     private clubPublicService: ClubPublicService,
     private registrationPublicService: RegistrationPublicService,
     private readonly semesterPublicService: SemesterPublicService,
+    private readonly clubSemesterRepository: ClubSemesterRepository,
+    private readonly clubDelegateRepository: ClubDelegateRepository,
+    private readonly clubDelegateChangeRequestRepository: ClubDelegateChangeRequestRepository,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -360,5 +368,25 @@ export class ClubService {
     }, []);
 
     return { semesters: uniqueSemesters };
+  }
+
+  @Transactional()
+  async cancelRegistration(clubId: number): Promise<ApiClb017ResponseOk> {
+    const now = this.clock.now();
+    const semesterId = await this.clubSemesterRepository.cancelRegistration(
+      clubId,
+      now,
+    );
+    await this.clubDelegateRepository.endCurrentTerms(clubId, now);
+    await this.clubDelegateChangeRequestRepository.cancelAppliedRequests(
+      clubId,
+      now,
+    );
+    await this.registrationPublicService.rejectPendingMemberRegistrations(
+      clubId,
+      semesterId,
+    );
+
+    return {};
   }
 }

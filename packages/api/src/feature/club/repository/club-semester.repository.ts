@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 
@@ -8,6 +9,7 @@ import {
   BaseTableFieldMapKeys,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IClubSemesterCreate,
   MClubSemester,
@@ -45,8 +47,43 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
   ClubSemesterOrderByKeys,
   ClubSemesterQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("clubT", MClubSemester);
+  }
+
+  async cancelRegistration(clubId: number, now: Date): Promise<number> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const where = {
+      clubId,
+      clubStatusEnumId: {
+        in: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      },
+      startTerm: { lte: now },
+      OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+      deletedAt: null,
+    };
+    const clubT = await delegate.findFirst({
+      where,
+      select: { semesterId: true },
+    });
+    if (!clubT) {
+      throw new ConflictException("Club registration cannot be canceled");
+    }
+
+    const result = await delegate.updateMany({
+      where,
+      data: {
+        clubStatusEnumId: ClubTypeEnum.RegistrationCanceled,
+        endTerm: now,
+      },
+    });
+    if (result.count !== 1) {
+      throw new ConflictException("Club registration cannot be canceled");
+    }
+
+    return clubT.semesterId;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
