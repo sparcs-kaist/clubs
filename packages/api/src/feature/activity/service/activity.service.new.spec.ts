@@ -163,6 +163,7 @@ describe("ActivityService", () => {
     const activityRepository = {
       approveExecutiveActivity: jest.fn().mockResolvedValue(true),
       fetch: jest.fn().mockResolvedValue(currentActivity),
+      find: jest.fn().mockResolvedValue([currentActivity]),
       put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
       sendBackExecutiveActivity: jest.fn().mockResolvedValue(true),
@@ -188,6 +189,9 @@ describe("ActivityService", () => {
     const clubPublicService = {
       checkIsStudentDelegate: jest.fn().mockResolvedValue(undefined),
       checkIsProfessor: jest.fn().mockResolvedValue(undefined),
+      getAtivatedClubs: jest
+        .fn()
+        .mockResolvedValue([{ club: { id: currentActivity.club.id } }]),
       getMemberFromSemester: jest
         .fn()
         .mockResolvedValue([{ studentId: 1 }, { studentId: 2 }]),
@@ -218,6 +222,11 @@ describe("ActivityService", () => {
       getValidationError: jest.fn().mockReturnValue(null),
     };
     const userPublicService = {
+      getExecutiveAndExecutiveTByExecutiveId: jest.fn(({ executiveId }) =>
+        Promise.resolve({
+          executive: { id: executiveId, name: `집행부원 ${executiveId}` },
+        }),
+      ),
       getStudentById: jest.fn().mockResolvedValue({
         number: 20260001,
         name: "학생",
@@ -235,10 +244,13 @@ describe("ActivityService", () => {
       ),
     };
 
+    const activityClubChargedExecutiveRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    };
     const service = injectTestClock(
       new ActivityService(
         activityRepository as never,
-        {} as never,
+        activityClubChargedExecutiveRepository as never,
         activityCommentRepository as never,
         activityDurationPublicService as never,
         activityDeadlinePublicService as never,
@@ -255,6 +267,7 @@ describe("ActivityService", () => {
 
     return {
       activityRepository,
+      activityClubChargedExecutiveRepository,
       activityCommentRepository,
       activityDurationPublicService,
       filePublicService,
@@ -290,6 +303,35 @@ describe("ActivityService", () => {
       3,
       expectedQuery,
     );
+  });
+
+  it("uses the latest feedback id as the club brief reviewer", async () => {
+    const { activityCommentRepository, service } = createService();
+    const finalReviewerId = 8;
+    activityCommentRepository.find.mockResolvedValueOnce([
+      new MActivityComment({
+        id: 2,
+        activity: { id: activity.id },
+        content: "final review",
+        activityStatusEnum: ActivityStatusEnum.Approved,
+        createdAt: reviewedAt,
+        executive: { id: finalReviewerId },
+      }),
+    ]);
+
+    const result = await service.getExecutiveActivitiesClubBrief({
+      query: { clubId: activity.club.id, semesterId: 1 },
+    });
+
+    expect(activityCommentRepository.find).toHaveBeenCalledWith({
+      activityId: activity.id,
+      orderBy: { id: OrderByTypeEnum.DESC },
+      pagination: { offset: 1, itemCount: 1 },
+    });
+    expect(result.items[0].commentedExecutive).toEqual({
+      id: finalReviewerId,
+      name: `집행부원 ${finalReviewerId}`,
+    });
   });
 
   it("clears professor approval when a regular activity report is edited during the writing period", async () => {

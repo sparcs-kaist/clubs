@@ -1087,18 +1087,11 @@ export default class ActivityService {
 
     const items: ApiAct024ResponseOk["items"] = await Promise.all(
       activities.map(async activity => {
-        const lastFeedback = await this.activityCommentRepository
-          .find({
-            activityId: activity.id,
-          })
-          .then(arr =>
-            arr.reduce((acc, cur) => {
-              if (acc === undefined || acc.createdAt < cur.createdAt) {
-                return cur;
-              }
-              return acc;
-            }, undefined),
-          );
+        const [lastFeedback] = await this.activityCommentRepository.find({
+          activityId: activity.id,
+          orderBy: { id: OrderByTypeEnum.DESC },
+          pagination: { offset: 1, itemCount: 1 },
+        });
 
         const commentedExecutive =
           lastFeedback === undefined ||
