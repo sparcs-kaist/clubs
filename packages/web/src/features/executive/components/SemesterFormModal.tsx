@@ -1,5 +1,11 @@
 import { useState } from "react";
 
+import {
+  areSemesterTermWeekdaysValid,
+  getKSTDay,
+  Weekday,
+} from "@clubs/domain/semester/term-weekday";
+
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import DateInput from "@sparcs-clubs/web/common/components/Forms/DateInput";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
@@ -40,9 +46,13 @@ const SemesterFormModal = ({
   const [endTerm, setEndTerm] = useState<Date | null>(
     initialData?.endTerm || null,
   );
+  const hasValidTermWeekdays =
+    startTerm !== null &&
+    endTerm !== null &&
+    areSemesterTermWeekdaysValid(startTerm, endTerm);
 
   const handleSave = () => {
-    if (year && name && startTerm && endTerm) {
+    if (year && name && startTerm && endTerm && hasValidTermWeekdays) {
       onSave({
         year: parseInt(year),
         name,
@@ -60,6 +70,9 @@ const SemesterFormModal = ({
         onClose={onClose}
         confirmButtonText="저장"
         closeButtonText="취소"
+        confirmDisabled={
+          !year || !name || !startTerm || !endTerm || !hasValidTermWeekdays
+        }
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
           <Typography fs={18} lh={24} fw="MEDIUM">
@@ -81,15 +94,27 @@ const SemesterFormModal = ({
           />
 
           <DateInput
-            label="시작일"
+            label="시작일 (월요일)"
             selected={startTerm}
             onChange={(date: Date | null) => setStartTerm(date)}
+            filterDate={(date: Date) => getKSTDay(date) === Weekday.Monday}
+            errorMessage={
+              startTerm !== null && getKSTDay(startTerm) !== Weekday.Monday
+                ? "시작일은 월요일이어야 합니다."
+                : ""
+            }
           />
 
           <DateInput
-            label="종료일"
+            label="종료일 (일요일)"
             selected={endTerm}
             onChange={(date: Date | null) => setEndTerm(date)}
+            filterDate={(date: Date) => getKSTDay(date) === Weekday.Sunday}
+            errorMessage={
+              endTerm !== null && getKSTDay(endTerm) !== Weekday.Sunday
+                ? "종료일은 일요일이어야 합니다."
+                : ""
+            }
           />
         </FlexWrapper>
       </CancellableModalContent>

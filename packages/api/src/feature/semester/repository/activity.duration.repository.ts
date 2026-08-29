@@ -52,6 +52,23 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
     super("activityD", MActivityDuration);
   }
 
+  async createActivityDuration(
+    activityDuration: IActivityDurationCreate,
+  ): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    await delegate.create({ data: this.createToDB(activityDuration) });
+  }
+
+  async updateActivityDuration(
+    activityDuration: MActivityDuration,
+  ): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    await delegate.update({
+      where: { id: activityDuration.id },
+      data: this.modelToDB(activityDuration),
+    });
+  }
+
   async deleteActivityDuration(
     activityDurationId: MActivityDuration["id"],
   ): Promise<boolean> {

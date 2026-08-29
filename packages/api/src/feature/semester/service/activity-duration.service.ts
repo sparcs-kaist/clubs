@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+import { areRegularActivityDurationTermWeekdaysValid } from "@clubs/domain/semester/term-weekday";
 
 import type {
   ApiSem006RequestBody,
@@ -192,6 +193,7 @@ export class ActivityDurationService {
     return { id: deadlineId };
   }
 
+  @Transactional()
   async createActivityDuration(
     body: ApiSem011RequestBody,
   ): Promise<ApiSem011ResponseCreated> {
@@ -220,6 +222,15 @@ export class ActivityDurationService {
       );
     }
 
+    if (activityDurationTypeEnum === ActivityDurationTypeEnum.Regular) {
+      if (!areRegularActivityDurationTermWeekdaysValid(startTerm, endTerm)) {
+        throw new HttpException(
+          "정규 활동반기 시작일은 토요일, 종료일은 금요일이어야 합니다.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
     // Check for duplicate (name, year) pair
     const existing = await this.activityDurationRepository.find({});
     const hasDuplicate = existing.some(d => d.name === name && d.year === year);
@@ -230,7 +241,7 @@ export class ActivityDurationService {
       );
     }
 
-    await this.activityDurationRepository.create({
+    await this.activityDurationRepository.createActivityDuration({
       semester: { id: semesterId },
       activityDurationTypeEnum,
       year,
@@ -302,6 +313,7 @@ export class ActivityDurationService {
     return {};
   }
 
+  @Transactional()
   async updateActivityDuration(
     activityDurationId: number,
     body: ApiSem013RequestBody,
@@ -327,6 +339,18 @@ export class ActivityDurationService {
       );
     }
 
+    if (
+      activityDuration.activityDurationTypeEnum ===
+      ActivityDurationTypeEnum.Regular
+    ) {
+      if (!areRegularActivityDurationTermWeekdaysValid(startTerm, endTerm)) {
+        throw new HttpException(
+          "정규 활동반기 시작일은 토요일, 종료일은 금요일이어야 합니다.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
     const activities =
       await this.activityDurationRepository.findActivitiesByDurationId(
         activityDurationId,
@@ -344,7 +368,7 @@ export class ActivityDurationService {
       );
     }
 
-    await this.activityDurationRepository.put(
+    await this.activityDurationRepository.updateActivityDuration(
       new MActivityDuration({
         ...activityDuration,
         startTerm,
