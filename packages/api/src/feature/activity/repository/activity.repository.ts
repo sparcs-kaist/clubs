@@ -32,12 +32,7 @@ const activitySummarySelect = {
   editedAt: true,
   updatedAt: true,
   chargedExecutiveId: true,
-  activityFeedbacks: {
-    where: { deletedAt: null },
-    orderBy: { id: "desc" },
-    take: 1,
-    select: { executiveId: true },
-  },
+  commentedExecutiveId: true,
 } satisfies Prisma.ActivitySelect;
 
 @Injectable()
@@ -633,10 +628,6 @@ export default class ActivityRepository {
       where: { activityId, deletedAt: null },
     });
 
-    const activityFeedback = await tx.activityFeedback.findMany({
-      where: { activityId, deletedAt: null },
-    });
-
     const activityClubChargedExecutive =
       await tx.activityClubChargedExecutive.findMany({
         where: { activityDId: activityId, deletedAt: null },
@@ -647,7 +638,6 @@ export default class ActivityRepository {
       activityT,
       activityParticipant,
       activityEvidenceFile,
-      activityFeedback,
       activityClubChargedExecutive,
     };
 

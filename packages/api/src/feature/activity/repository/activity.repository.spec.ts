@@ -13,7 +13,7 @@ jest.mock("@sparcs-clubs/api/env", () => ({
 
 describe("ActivityRepository", () => {
   describe("fetchCommentedSummaries", () => {
-    it("returns the latest reviewer even when filtering by the first reviewer", async () => {
+    it("returns the denormalized final reviewer when filtering by the first reviewer", async () => {
       const firstReviewerId = 7;
       const finalReviewerId = 8;
       const now = new Date("2026-08-28T00:00:00.000Z");
@@ -28,7 +28,7 @@ describe("ActivityRepository", () => {
           editedAt: now,
           updatedAt: now,
           chargedExecutiveId: firstReviewerId,
-          activityFeedbacks: [{ executiveId: finalReviewerId }],
+          commentedExecutiveId: finalReviewerId,
         },
       ]);
       const repository = new ActivityRepository({
@@ -40,12 +40,7 @@ describe("ActivityRepository", () => {
 
       expect(findMany).toHaveBeenCalledWith({
         select: expect.objectContaining({
-          activityFeedbacks: {
-            where: { deletedAt: null },
-            orderBy: { id: "desc" },
-            take: 1,
-            select: { executiveId: true },
-          },
+          commentedExecutiveId: true,
         }),
         where: {
           deletedAt: null,

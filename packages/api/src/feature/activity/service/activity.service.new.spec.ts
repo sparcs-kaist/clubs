@@ -305,29 +305,17 @@ describe("ActivityService", () => {
     );
   });
 
-  it("uses the latest feedback id as the club brief reviewer", async () => {
-    const { activityCommentRepository, service } = createService();
+  it("uses the denormalized final reviewer in the club brief", async () => {
     const finalReviewerId = 8;
-    activityCommentRepository.find.mockResolvedValueOnce([
-      new MActivityComment({
-        id: 2,
-        activity: { id: activity.id },
-        content: "final review",
-        activityStatusEnum: ActivityStatusEnum.Approved,
-        createdAt: reviewedAt,
-        executive: { id: finalReviewerId },
-      }),
-    ]);
+    const { activityCommentRepository, service } = createService(undefined, {
+      commentedExecutive: { id: finalReviewerId },
+    });
 
     const result = await service.getExecutiveActivitiesClubBrief({
       query: { clubId: activity.club.id, semesterId: 1 },
     });
 
-    expect(activityCommentRepository.find).toHaveBeenCalledWith({
-      activityId: activity.id,
-      orderBy: { id: OrderByTypeEnum.DESC },
-      pagination: { offset: 1, itemCount: 1 },
-    });
+    expect(activityCommentRepository.find).not.toHaveBeenCalled();
     expect(result.items[0].commentedExecutive).toEqual({
       id: finalReviewerId,
       name: `집행부원 ${finalReviewerId}`,
@@ -415,6 +403,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 7,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -475,6 +464,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 8,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -501,6 +491,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt: expect.any(Date),
+      commentedExecutiveId: 7,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -539,6 +530,7 @@ describe("ActivityService", () => {
     expect(activityRepository.sendBackExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 8,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,

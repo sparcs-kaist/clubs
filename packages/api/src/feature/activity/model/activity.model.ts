@@ -44,15 +44,6 @@ type ActivityDbResult = {
     createdAt: Date;
     deletedAt: Date | null;
   }>;
-  activityFeedback: Array<{
-    id: number;
-    activityId: number;
-    executiveId: number;
-    comment: string;
-    activityStatusEnum: number;
-    createdAt: Date;
-    deletedAt: Date | null;
-  }>;
   activityClubChargedExecutive: Array<{
     id: number;
     activityDId: number;
@@ -123,17 +114,11 @@ export class MActivity implements IActivity {
               }).executiveId,
             }
           : undefined,
-      commentedExecutive:
-        dbResult.activityFeedback.length > 0
-          ? {
-              id: dbResult.activityFeedback.reduce((acc, curr) => {
-                if (acc.createdAt < curr.createdAt) {
-                  return curr;
-                }
-                return acc;
-              }).executiveId,
-            }
-          : undefined,
+      commentedExecutive: dbResult.activity.commentedExecutiveId
+        ? {
+            id: dbResult.activity.commentedExecutiveId,
+          }
+        : undefined,
       commentedAt: dbResult.activity.commentedAt,
       editedAt: dbResult.activity.editedAt,
       updatedAt: dbResult.activity.updatedAt,

@@ -46,12 +46,7 @@ export class VActivitySummary implements IActivitySummary {
     updatedAt: Date;
     chargedExecutiveId?: number | null;
     commentedExecutiveId?: number | null;
-    activityFeedbacks?: { executiveId: number }[];
   }): VActivitySummary {
-    const commentedExecutiveId =
-      activity.commentedExecutiveId ??
-      activity.activityFeedbacks?.[0]?.executiveId;
-
     return new VActivitySummary({
       id: activity.id,
       activityStatusEnum: activity.activityStatusEnumId,
@@ -68,9 +63,9 @@ export class VActivitySummary implements IActivitySummary {
             id: activity.chargedExecutiveId,
           }
         : undefined,
-      commentedExecutive: commentedExecutiveId
+      commentedExecutive: activity.commentedExecutiveId
         ? {
-            id: commentedExecutiveId,
+            id: activity.commentedExecutiveId,
           }
         : undefined,
     });
