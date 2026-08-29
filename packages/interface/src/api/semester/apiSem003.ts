@@ -61,6 +61,7 @@ registry.registerPath({
   2. 모든 학기는 시작일이 종료일보다 이전이어야 합니다.
   3. 시작일은 포함하고 종료일은 포함하지 않습니다.
   4. 모든 기간은 겹치면 안 됩니다.
+  5. 시작일은 월요일, 종료일은 일요일이어야 합니다.
   `,
   request: {
     query: apiSem003.requestQuery,

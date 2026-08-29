@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+import { areSemesterTermWeekdaysValid } from "@clubs/domain/semester/term-weekday";
 
 import type { ApiAct018ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct018";
 import type {
@@ -147,6 +149,7 @@ export class SemesterService {
    * @description createSemester의 서비스 진입점입니다.
    * @returns 생성한 학기의 id를 리턴합니다. 만약 잘못된 요청이라면 400 예외를 발생시킵니다.
    */
+  @Transactional()
   async createSemester(param: {
     body: ApiSem002RequestBody;
   }): Promise<ApiSem002ResponseCreated> {
@@ -172,6 +175,15 @@ export class SemesterService {
       );
     }
 
+    if (
+      !areSemesterTermWeekdaysValid(param.body.startTerm, param.body.endTerm)
+    ) {
+      throw new HttpException(
+        "학기 시작일은 월요일, 종료일은 일요일이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     // 3. 해당 기간과 겹치는 학기가 있는지 확인합니다.
     const overlappingSemestersStart = await this.semesterRepository.find({
       date: param.body.startTerm,
@@ -190,7 +202,7 @@ export class SemesterService {
     }
 
     // 4. 학기를 생성합니다.
-    const semester = await this.semesterSQLRepository.insertSemester({
+    const semester = await this.semesterRepository.createSemester({
       year: param.body.year,
       name: param.body.name,
       startTerm: param.body.startTerm,
@@ -206,6 +218,7 @@ export class SemesterService {
    * @description updateSemester의 서비스 진입점입니다.
    * @returns 수정한 학기의 id를 리턴합니다. 만약 잘못된 요청이라면 400 예외를 발생시킵니다.
    */
+  @Transactional()
   async updateSemester(param: {
     query: ApiSem003RequestQuery;
     body: ApiSem003RequestBody;
@@ -232,6 +245,15 @@ export class SemesterService {
       );
     }
 
+    if (
+      !areSemesterTermWeekdaysValid(param.body.startTerm, param.body.endTerm)
+    ) {
+      throw new HttpException(
+        "학기 시작일은 월요일, 종료일은 일요일이어야 합니다.",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     // 3. 해당 기간과 겹치는 다른 학기가 있는지 확인합니다. (현재 수정하는 학기는 제외)
     const overlappingSemestersStart = await this.semesterRepository.find({
       date: param.body.startTerm,
@@ -252,7 +274,7 @@ export class SemesterService {
     }
 
     // 4. 학기를 수정합니다.
-    const semester = await this.semesterSQLRepository.updateSemester(
+    const semester = await this.semesterRepository.updateSemester(
       {
         name: param.query.name,
         year: param.query.year,

@@ -33,6 +33,9 @@ function createService({
 } = {}) {
   const activityDurationRepository = {
     find: jest.fn().mockResolvedValue([activityDuration]),
+    createActivityDuration: jest.fn().mockResolvedValue(undefined),
+    findActivitiesByDurationId: jest.fn().mockResolvedValue([]),
+    updateActivityDuration: jest.fn().mockResolvedValue(undefined),
     countActivitiesByDurationId: jest.fn().mockResolvedValue(activityCount),
     countFundingsByDurationId: jest.fn().mockResolvedValue(fundingCount),
     deleteActivityDuration: jest.fn().mockResolvedValue(true),
@@ -41,7 +44,9 @@ function createService({
     find: jest.fn().mockResolvedValue(deadlines),
     createActivityDeadline: jest.fn().mockResolvedValue({}),
   };
-  const semesterRepository = {};
+  const semesterRepository = {
+    find: jest.fn().mockResolvedValue([{ id: ACTIVITY_DURATION.semester.id }]),
+  };
 
   const service = new ActivityDurationService(
     activityDurationRepository as never,
@@ -205,5 +210,84 @@ describe("ActivityDurationService deadline and deletion handling", () => {
     expect(
       activityDurationRepository.deleteActivityDuration,
     ).toHaveBeenCalledWith(ACTIVITY_DURATION_ID);
+  });
+});
+
+describe("ActivityDurationService regular term weekday validation", () => {
+  const validStartTerm = new Date("2026-06-19T15:00:00.000Z");
+  const validEndTerm = new Date("2026-12-18T14:59:59.000Z");
+
+  const regularBody = {
+    semesterId: ACTIVITY_DURATION.semester.id,
+    activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
+    year: 2026,
+    name: "여름-가을",
+    startTerm: validStartTerm,
+    endTerm: validEndTerm,
+  };
+
+  it("creates a regular activity duration from Saturday through Friday", async () => {
+    const { activityDurationRepository, service } = createService();
+
+    await expect(service.createActivityDuration(regularBody)).resolves.toEqual(
+      {},
+    );
+    expect(
+      activityDurationRepository.createActivityDuration,
+    ).toHaveBeenCalled();
+  });
+
+  it.each([
+    ["start", new Date("2026-06-20T15:00:00.000Z"), validEndTerm],
+    ["end", validStartTerm, new Date("2026-12-19T14:59:59.000Z")],
+  ])(
+    "rejects a regular activity duration with an invalid %s weekday",
+    async (_, startTerm, endTerm) => {
+      const { activityDurationRepository, service } = createService();
+
+      await expect(
+        service.createActivityDuration({
+          ...regularBody,
+          startTerm,
+          endTerm,
+        }),
+      ).rejects.toThrow(
+        "정규 활동반기 시작일은 토요일, 종료일은 금요일이어야 합니다.",
+      );
+      expect(
+        activityDurationRepository.createActivityDuration,
+      ).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not apply the weekday rule to registration activity durations", async () => {
+    const { activityDurationRepository, service } = createService();
+
+    await expect(
+      service.createActivityDuration({
+        ...regularBody,
+        activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+        startTerm: new Date("2026-06-21T15:00:00.000Z"),
+      }),
+    ).resolves.toEqual({});
+    expect(
+      activityDurationRepository.createActivityDuration,
+    ).toHaveBeenCalled();
+  });
+
+  it("validates weekdays when updating a regular activity duration", async () => {
+    const { activityDurationRepository, service } = createService();
+
+    await expect(
+      service.updateActivityDuration(ACTIVITY_DURATION_ID, {
+        startTerm: new Date("2026-06-20T15:00:00.000Z"),
+        endTerm: validEndTerm,
+      }),
+    ).rejects.toThrow(
+      "정규 활동반기 시작일은 토요일, 종료일은 금요일이어야 합니다.",
+    );
+    expect(
+      activityDurationRepository.updateActivityDuration,
+    ).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   ISemesterCreate,
   MSemester,
@@ -32,8 +34,33 @@ export class SemesterRepository extends BaseSingleTableRepository<
   SemesterOrderByKeys,
   SemesterQuerySupport
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("semesterD", MSemester);
+  }
+
+  async createSemester(value: ISemesterCreate): Promise<{ id: number }> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const created = await delegate.create({ data: this.createToDB(value) });
+
+    return { id: created.id };
+  }
+
+  async updateSemester(
+    key: { name: string; year: number },
+    value: { startTerm: Date; endTerm: Date },
+  ): Promise<{ id: number }> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const existing = await delegate.findFirst({
+      where: { ...key, deletedAt: null },
+    });
+    await delegate.updateMany({
+      where: { ...key, deletedAt: null },
+      data: value,
+    });
+
+    return { id: existing.id };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
