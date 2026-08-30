@@ -14,9 +14,6 @@ export async function clearDatabase(): Promise<void> {
   assertIntegrationDatabaseEnvIsSafe();
 
   try {
-    // 외래키 제약 조건 임시 비활성화
-    await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0`;
-
     // 현재 데이터베이스의 모든 테이블 목록 조회
     const tables: Array<{ TABLE_NAME: string }> = await prisma.$queryRaw`
       SELECT table_name AS TABLE_NAME
@@ -25,18 +22,26 @@ export async function clearDatabase(): Promise<void> {
         AND table_type = 'BASE TABLE'
     `;
 
-    // 각 테이블의 데이터 삭제 (순차 처리)
-    await tables.reduce(async (promise, row) => {
-      await promise;
-      if (row && row.TABLE_NAME) {
-        await prisma.$executeRaw(
-          Prisma.sql`TRUNCATE TABLE ${Prisma.raw(`\`${row.TABLE_NAME}\``)}`,
-        );
-      }
-    }, Promise.resolve());
-
-    // 외래키 제약 조건 재활성화
-    await prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+    await prisma.$transaction(
+      async tx => {
+        // FOREIGN_KEY_CHECKS는 connection-scoped라 같은 transaction connection에서 처리한다.
+        await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 0`;
+        try {
+          // TRUNCATE는 FK 참조 테이블에서 실패할 수 있어 DELETE로 초기화한다.
+          await tables.reduce(async (promise, row) => {
+            await promise;
+            if (row && row.TABLE_NAME) {
+              await tx.$executeRaw(
+                Prisma.sql`DELETE FROM ${Prisma.raw(`\`${row.TABLE_NAME}\``)}`,
+              );
+            }
+          }, Promise.resolve());
+        } finally {
+          await tx.$executeRaw`SET FOREIGN_KEY_CHECKS = 1`;
+        }
+      },
+      { timeout: 60000 },
+    );
   } catch (error) {
     // 에러 발생 시 외래키 제약 조건 복구
     try {

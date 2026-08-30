@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 
+import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
+import {
+  areRegularActivityDurationTermWeekdaysValid,
+  getKSTDay,
+  Weekday,
+} from "@clubs/domain/semester/term-weekday";
+
 import { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -32,6 +39,13 @@ const ActivityDurationEditModal = ({
     mutate: updateActivityDuration,
     isPending: isUpdatingActivityDuration,
   } = useUpdateActivityDuration();
+  const isRegular =
+    duration?.activityDurationTypeEnum === ActivityDurationTypeEnum.Regular;
+  const hasValidTermWeekdays =
+    !isRegular ||
+    (startTerm !== null &&
+      endTerm !== null &&
+      areRegularActivityDurationTermWeekdaysValid(startTerm, endTerm));
 
   useEffect(() => {
     if (!isOpen || !duration) return;
@@ -45,7 +59,7 @@ const ActivityDurationEditModal = ({
   };
 
   const handleSave = () => {
-    if (!duration || !startTerm || !endTerm) return;
+    if (!duration || !startTerm || !endTerm || !hasValidTermWeekdays) return;
 
     updateActivityDuration(
       {
@@ -69,7 +83,11 @@ const ActivityDurationEditModal = ({
         confirmButtonText="저장"
         closeButtonText="취소"
         confirmDisabled={
-          !duration || !startTerm || !endTerm || isUpdatingActivityDuration
+          !duration ||
+          !startTerm ||
+          !endTerm ||
+          !hasValidTermWeekdays ||
+          isUpdatingActivityDuration
         }
       >
         <FlexWrapper direction="column" gap={20} style={{ width: "400px" }}>
@@ -77,14 +95,34 @@ const ActivityDurationEditModal = ({
             활동반기 수정
           </Typography>
           <DateInput
-            label="시작일"
+            label={isRegular ? "시작일 (토요일)" : "시작일"}
             selected={startTerm}
             onChange={(date: Date | null) => setStartTerm(date)}
+            filterDate={(date: Date) =>
+              !isRegular || getKSTDay(date) === Weekday.Saturday
+            }
+            errorMessage={
+              isRegular &&
+              startTerm !== null &&
+              getKSTDay(startTerm) !== Weekday.Saturday
+                ? "정규 활동반기 시작일은 토요일이어야 합니다."
+                : ""
+            }
           />
           <DateInput
-            label="종료일"
+            label={isRegular ? "종료일 (금요일)" : "종료일"}
             selected={endTerm}
             onChange={(date: Date | null) => setEndTerm(date)}
+            filterDate={(date: Date) =>
+              !isRegular || getKSTDay(date) === Weekday.Friday
+            }
+            errorMessage={
+              isRegular &&
+              endTerm !== null &&
+              getKSTDay(endTerm) !== Weekday.Friday
+                ? "정규 활동반기 종료일은 금요일이어야 합니다."
+                : ""
+            }
           />
         </FlexWrapper>
       </CancellableModalContent>

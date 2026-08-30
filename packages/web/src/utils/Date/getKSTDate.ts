@@ -33,13 +33,12 @@ export const getLocalDateOnly = (date: Date | string): Date => {
 };
 
 /**
- * @description KST 기준 23시 59분 00초를 return
- * @description 활동보고서 활동 기간을 위해서 사용
- * @example 2024-01-01T00:00:00Z -> 2024-01-01T23:59:00 (KST)
+ * @description KST 기준 날짜 단위 종료 시각인 23시 59분 59초를 return
+ * @example 2024-01-01T00:00:00Z -> 2024-01-01T23:59:59 (KST)
  */
 export const getLocalDateLastTime = (date: Date | string): Date => {
   const dateInput = typeof date === "string" ? new Date(date) : date;
   const kst = toZonedTime(dateInput, KST);
 
-  return new Date(kst.getFullYear(), kst.getMonth(), kst.getDate(), 23, 59, 0);
+  return new Date(kst.getFullYear(), kst.getMonth(), kst.getDate(), 23, 59, 59);
 };

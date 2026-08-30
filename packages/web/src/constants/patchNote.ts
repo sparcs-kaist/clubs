@@ -5,6 +5,16 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.15 source=50755a0ea0fc
+  {
+    version: "v.0.1.15",
+    date: new Date("2026.08.29"),
+    patchNoteContent: `Clubs v0.1.15
+오류 수정은 다음과 같습니다.
+- 집행부 기간 설정에서 선택한 종료일의 23시 59분 59초까지 포함되도록 수정했습니다. (#1895)
+- 학기는 월요일부터 일요일까지, 정규 활동반기는 토요일부터 금요일까지 설정하도록 선택과 검증을 개선했습니다. (#1895)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.14 source=be1656e501c4
   {
     version: "v.0.1.14",
