@@ -13,14 +13,18 @@ import { useGetClubsList } from "@sparcs-clubs/web/features/clubs/services/useGe
 
 interface ClubsListProps {
   isRegistrationPeriod: boolean;
+  semesterId?: number;
 }
 
-const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
+const ClubsListFrame: React.FC<ClubsListProps> = ({
+  isRegistrationPeriod,
+  semesterId = undefined,
+}) => {
   // 이스터에그_리크루팅
   useEasterEgg();
   const t = useTranslations();
 
-  const { data, isLoading, isError } = useGetClubsList();
+  const { data, isLoading, isError } = useGetClubsList({ semesterId });
 
   const [searchText, setSearchText] = useState<string>("");
 
@@ -61,6 +65,7 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({ isRegistrationPeriod }) => {
             clubList={division.clubs}
             key={division.name}
             isRegistrationPeriod={isRegistrationPeriod}
+            semesterId={semesterId}
           />
         ))}
       </FlexWrapper>

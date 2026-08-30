@@ -8,6 +8,7 @@ import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";
 
 interface UseGetClubDetailOptions {
   enabled?: boolean;
+  semesterId?: number;
 }
 
 export const useGetClubDetail = (
@@ -15,10 +16,12 @@ export const useGetClubDetail = (
   options: UseGetClubDetailOptions = {},
 ) =>
   useQuery<ApiClb002ResponseOK, Error>({
-    queryKey: [apiClb002.url(clubId)],
+    queryKey: [apiClb002.url(clubId), options.semesterId],
     enabled: options.enabled ?? true,
     queryFn: async (): Promise<ApiClb002ResponseOK> => {
-      const { data } = await axiosClient.get(apiClb002.url(clubId), {});
+      const { data } = await axiosClient.get(apiClb002.url(clubId), {
+        params: { semesterId: options.semesterId },
+      });
 
       return apiClb002.responseBodyMap[200].parse(data);
     },

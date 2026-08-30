@@ -11,7 +11,7 @@ import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSe
 import Table from "@sparcs-clubs/web/common/components/Table";
 import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 
-interface ExecutivePastSemesterDashboardSectionProps {
+interface PastSemesterDashboardSectionProps {
   title: string;
   emptyMessage: string;
   semesters: ISemester[];
@@ -39,12 +39,12 @@ const columns = [
   ),
 ];
 
-const ExecutivePastSemesterDashboardSection = ({
+const PastSemesterDashboardSection = ({
   title,
   emptyMessage,
   semesters,
   rowLink,
-}: ExecutivePastSemesterDashboardSectionProps) => {
+}: PastSemesterDashboardSectionProps) => {
   const table = useReactTable({
     data: semesters,
     columns,
@@ -66,4 +66,4 @@ const ExecutivePastSemesterDashboardSection = ({
   );
 };
 
-export default ExecutivePastSemesterDashboardSection;
+export default PastSemesterDashboardSection;

@@ -9,6 +9,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
+import PastClubListSection from "@sparcs-clubs/web/features/clubs/components/PastClubListSection";
 import ClubsListFrame from "@sparcs-clubs/web/features/clubs/frames/ClubsListFrame";
 import ClubsStudentFrame from "@sparcs-clubs/web/features/clubs/frames/ClubsStudentFrame";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
@@ -61,6 +62,7 @@ const Clubs: React.FC = () => {
       ) : (
         <ClubsListFrame isRegistrationPeriod={false} />
       )}
+      <PastClubListSection />
     </ResponsiveWrapper>
   );
 };
