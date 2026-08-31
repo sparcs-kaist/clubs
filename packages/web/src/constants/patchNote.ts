@@ -5,6 +5,16 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.18 source=5586d350af80
+  {
+    version: "v.0.1.18",
+    date: new Date("2026.08.31"),
+    patchNoteContent: `Clubs v0.1.18
+오류 수정은 다음과 같습니다.
+- 과거 동아리 목록에서 동아리가 없는 학기가 표시되지 않도록 수정했습니다. (#1904)
+- 과거 학기의 이전 분과명이 번역 키로 노출되던 문제를 수정했습니다. (#1904)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.17 source=a10eb55e59d5
   {
     version: "v.0.1.17",
