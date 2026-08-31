@@ -66,5 +66,8 @@
     "title": "Release Notes",
     "version": "Version",
     "date": "Date"
+  },
+  "funding": {
+    "publicationPhotoRequired": "You must attach a photo of the publication."
   }
 }
