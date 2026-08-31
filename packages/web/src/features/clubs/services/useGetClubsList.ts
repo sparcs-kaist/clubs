@@ -1,17 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 
 import apiClb001, {
+  ApiClb001RequestQuery,
   ApiClb001ResponseOK,
 } from "@clubs/interface/api/club/endpoint/apiClb001";
 
 import mockupData from "@sparcs-clubs/web/features/clubs/services/_mock/mockupClubData";
 import { axiosClient, defineAxiosMock } from "@sparcs-clubs/web/lib/axios";
 
-export const useGetClubsList = () =>
+export const useGetClubsList = (query: ApiClb001RequestQuery = {}) =>
   useQuery<ApiClb001ResponseOK, Error>({
-    queryKey: [apiClb001.url()],
+    queryKey: [apiClb001.url(), query],
     queryFn: async (): Promise<ApiClb001ResponseOK> => {
-      const { data } = await axiosClient.get(apiClb001.url(), {});
+      const { data } = await axiosClient.get(apiClb001.url(), {
+        params: query,
+      });
 
       // return apiClb001.responseBodyMap[200].parse(data);
       return data;

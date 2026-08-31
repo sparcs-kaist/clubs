@@ -2,6 +2,7 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zClub } from "@clubs/domain/club/club";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import { zDivision } from "@clubs/interface/api/division/type/division.type";
 import {
@@ -24,7 +25,9 @@ const requestParam = z.object({
   clubId: zClub.shape.id,
 });
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  semesterId: zSemester.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
@@ -89,6 +92,7 @@ registry.registerPath({
   `,
   request: {
     params: requestParam,
+    query: requestQuery,
   },
   responses: {
     200: {

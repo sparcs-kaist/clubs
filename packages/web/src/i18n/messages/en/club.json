@@ -1,5 +1,8 @@
 {
   "동아리 목록": "Club List",
+  "과거 동아리 목록": "Past Club Lists",
+  "과거 동아리 목록 없음": "There are no past club lists",
+  "학기 동아리 목록": "{name} {year} Club List",
   "placeholder": "Search in club name",
   "회장": "President",
   "정동아리": "Regular Club",

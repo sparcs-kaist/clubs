@@ -11,9 +11,9 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
 import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
+import PastSemesterDashboardSection from "@sparcs-clubs/web/common/components/PastSemesterDashboardSection";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
-import ExecutivePastSemesterDashboardSection from "@sparcs-clubs/web/features/executive/components/ExecutivePastSemesterDashboardSection";
 import RegistrationMemberTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterMemberTable";
 import { useGetMemberRegistration } from "@sparcs-clubs/web/features/executive/register-member/services/useGetMemberRegistration";
 
@@ -225,7 +225,7 @@ export const ExecutiveRegisterMember: React.FC<
             </FlexWrapper>
           </TableWithPaginationWrapper>
           {showPastDashboard && (
-            <ExecutivePastSemesterDashboardSection
+            <PastSemesterDashboardSection
               title="과거 회원 등록 대시보드"
               emptyMessage="과거 회원 등록 대시보드가 없습니다"
               semesters={data?.pastSemesters ?? []}

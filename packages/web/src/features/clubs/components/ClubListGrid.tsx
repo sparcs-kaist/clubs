@@ -12,6 +12,7 @@ import { ClubDetail } from "../types";
 interface ClubListGridItemProps {
   clubList: Array<ClubDetail>;
   isRegistrationPeriod?: boolean;
+  semesterId?: number;
 }
 
 const ClubListGridInner = styled.div`
@@ -36,6 +37,7 @@ const ClubListGridInner = styled.div`
 const ClubListGrid: React.FC<ClubListGridItemProps> = ({
   clubList,
   isRegistrationPeriod = false,
+  semesterId = undefined,
 }) => {
   const theme = useTheme();
   const [isMobileView, setIsMobileView] = useState(false);
@@ -57,7 +59,10 @@ const ClubListGrid: React.FC<ClubListGridItemProps> = ({
       {clubList.map((club: ClubDetail) => (
         <Link
           key={club.id}
-          href={`${paths.CLUBS.sub[0].path}/${club.id.toString()}`}
+          href={{
+            pathname: `${paths.CLUBS.sub[0].path}/${club.id.toString()}`,
+            query: semesterId ? { semesterId } : undefined,
+          }}
           style={{ display: "flex", flexDirection: "column" }}
         >
           <ClubCard

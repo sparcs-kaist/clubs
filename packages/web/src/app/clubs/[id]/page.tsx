@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -17,18 +17,42 @@ const ClubDetail = () => {
   useEasterEgg();
 
   const { id: idParam } = useParams<{ id: string }>();
+  const semesterIdParam = useSearchParams().get("semesterId");
   const parsedId = Number(idParam);
   const isValidId = Number.isInteger(parsedId) && parsedId > 0;
+  const parsedSemesterId = Number(semesterIdParam);
+  const isValidSemesterId =
+    semesterIdParam === null ||
+    (Number.isInteger(parsedSemesterId) && parsedSemesterId > 0);
+  const semesterId = semesterIdParam === null ? undefined : parsedSemesterId;
   const clubId = isValidId ? parsedId.toString() : "";
   const { data, isLoading, isError, error } = useGetClubDetail(clubId, {
-    enabled: isValidId,
+    enabled: isValidId && isValidSemesterId,
+    semesterId,
   });
   const { isLoggedIn, profile } = useAuth();
   const isNotFoundError =
     axios.isAxiosError(error) && error.response?.status === 404;
 
-  if (!isValidId || isNotFoundError || (!isLoading && !data)) {
+  if (
+    !isValidId ||
+    !isValidSemesterId ||
+    isNotFoundError ||
+    (!isLoading && !data)
+  ) {
     return <NotFound />;
+  }
+
+  let detailFrame = data && <ClubDetailPublicFrame club={data} />;
+  if (data && semesterId !== undefined) {
+    detailFrame = (
+      <ClubDetailPublicFrame
+        club={data}
+        listPath={`/clubs/semester/${semesterId}`}
+      />
+    );
+  } else if (data && isLoggedIn && isStudent(profile)) {
+    detailFrame = <ClubDetailStudentFrame club={data} />;
   }
 
   return (
@@ -37,9 +61,7 @@ const ClubDetail = () => {
       isError={isError && !isNotFoundError}
       renderIfError={<NotFound />}
     >
-      {isLoggedIn && isStudent(profile)
-        ? data && <ClubDetailStudentFrame club={data} />
-        : data && <ClubDetailPublicFrame club={data} />}
+      {detailFrame}
     </AsyncBoundary>
   );
 };

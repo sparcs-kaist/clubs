@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zClub } from "@clubs/domain/club/club";
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 import { zDivision } from "@clubs/domain/division/division";
+import { zSemester } from "@clubs/domain/semester/semester";
 
 import {
   zClubCharacteristic,
@@ -16,7 +17,9 @@ const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  semesterId: zSemester.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
@@ -81,7 +84,9 @@ registry.registerPath({
 
 분과별로 그룹화된 동아리 목록을 반환합니다.
   `,
-  request: {},
+  request: {
+    query: requestQuery,
+  },
   responses: {
     200: {
       description: "성공적으로 전체 동아리 목록을 가져왔습니다.",
