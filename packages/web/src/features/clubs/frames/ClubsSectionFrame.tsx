@@ -13,6 +13,7 @@ type ClubsSectionFrameProps = {
   title: string; // 분과
   clubList: ClubDetail[];
   isRegistrationPeriod?: boolean;
+  semesterId?: number;
 };
 
 const ClubsSectionFrame: React.FC<ClubsSectionFrameProps> = ({
@@ -20,6 +21,7 @@ const ClubsSectionFrame: React.FC<ClubsSectionFrameProps> = ({
   title,
   clubList,
   isRegistrationPeriod = false,
+  semesterId = undefined,
 }) => (
   <FlexWrapper direction="column" gap={20}>
     <FoldableSectionTitle
@@ -28,6 +30,7 @@ const ClubsSectionFrame: React.FC<ClubsSectionFrameProps> = ({
       <ClubListGrid
         clubList={clubList}
         isRegistrationPeriod={isRegistrationPeriod}
+        semesterId={semesterId}
       />
     </FoldableSectionTitle>
   </FlexWrapper>

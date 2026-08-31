@@ -10,7 +10,9 @@ import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 
 import ClubDetailInfoFrame from "./ClubDetailInfoFrame";
 
-const ClubDetailPublicFrame: React.FC<ClubDetailProps> = ({ club }) => {
+const ClubDetailPublicFrame: React.FC<
+  ClubDetailProps & { listPath?: string }
+> = ({ club, listPath = "/clubs" }) => {
   const { isEnglish } = useLanguage();
   const t = useTranslations("club");
 
@@ -18,7 +20,7 @@ const ClubDetailPublicFrame: React.FC<ClubDetailProps> = ({ club }) => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
-          { name: t("동아리 목록"), path: "/clubs" },
+          { name: t("동아리 목록"), path: listPath },
           {
             name: isEnglish ? club.nameEn : club.nameKr,
             path: `/clubs/${club.id}`,

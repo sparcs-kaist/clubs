@@ -7,9 +7,13 @@ import {
 } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
-import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
+import type {
+  ApiClb001RequestQuery,
+  ApiClb001ResponseOK,
+} from "@clubs/interface/api/club/endpoint/apiClb001";
 import type {
   ApiClb002RequestParam,
+  ApiClb002RequestQuery,
   ApiClb002ResponseOK,
 } from "@clubs/interface/api/club/endpoint/apiClb002";
 import type { ApiClb003ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb003";
@@ -32,6 +36,7 @@ import {
 } from "@clubs/interface/api/club/endpoint/apiClb010";
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
 import type { ApiClb017ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb017";
+import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -76,7 +81,81 @@ export class ClubService {
   private readonly EXCLUDED_CLUB_IDS: number[] =
     env.NODE_ENV === "local" ? [] : [112, 113, 121];
 
-  async getClubs(): Promise<ApiClb001ResponseOK> {
+  async getClubs(query: ApiClb001RequestQuery): Promise<ApiClb001ResponseOK> {
+    if (query.semesterId !== undefined) {
+      const semester = await this.semesterPublicService.getById(
+        query.semesterId,
+      );
+      const clubs = await this.clubPublicService.searchClubDetailByDate({
+        date: semester.startTerm,
+        semesterId: semester.id,
+        clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      });
+      const visibleClubs = clubs.filter(
+        club => !this.EXCLUDED_CLUB_IDS.includes(club.id),
+      );
+
+      // ponytail: 과거 목록은 저빈도 경로라 기존 조회를 재사용한다. 느려지면 학기별 단일 집계로 교체한다.
+      const clubRows = await Promise.all(
+        visibleClubs.map(async club => {
+          const [totalMemberCnt, isPermanent] = await Promise.all([
+            this.clubStudentTRepository.findTotalMemberCnt(
+              club.id,
+              semester.id,
+            ),
+            this.divisionPermanentClubDRepository.findPermenantClub(
+              club.id,
+              semester.startTerm,
+            ),
+          ]);
+
+          return {
+            club,
+            summary: {
+              id: club.id,
+              nameKr: club.nameKr,
+              nameEn: club.nameEn,
+              type: club.clubTypeEnum,
+              isPermanent,
+              characteristic: club.characteristicKr,
+              representative: club.clubRepresentative.name,
+              advisor: club.professor?.name,
+              totalMemberCnt,
+            },
+          };
+        }),
+      );
+      const divisions = new Map<
+        number,
+        ApiClb001ResponseOK["divisions"][number] & { districtId: number }
+      >();
+
+      clubRows.forEach(({ club, summary }) => {
+        const division = divisions.get(club.division.id);
+        if (division) {
+          division.clubs.push(summary);
+          return;
+        }
+        divisions.set(club.division.id, {
+          id: club.division.id,
+          name: club.division.name,
+          districtId: club.division.district.id,
+          clubs: [summary],
+        });
+      });
+
+      return {
+        divisions: [...divisions.values()]
+          .sort((a, b) => {
+            if (a.districtId !== b.districtId) {
+              return a.districtId - b.districtId;
+            }
+            return a.name.localeCompare(b.name);
+          })
+          .map(({ districtId: _districtId, ...division }) => division),
+      };
+    }
+
     const result = await this.clubOldRepository.getAllClubsGroupedByDivision();
 
     result.divisions = result.divisions.map(division => ({
@@ -89,8 +168,53 @@ export class ClubService {
     return result;
   }
 
-  async getClub(param: ApiClb002RequestParam): Promise<ApiClb002ResponseOK> {
+  async getClub(
+    param: ApiClb002RequestParam,
+    query: ApiClb002RequestQuery,
+  ): Promise<ApiClb002ResponseOK> {
     const { clubId } = param;
+    if (query.semesterId !== undefined) {
+      const semester = await this.semesterPublicService.getById(
+        query.semesterId,
+      );
+      const clubs = await this.clubPublicService.searchClubDetailByDate({
+        date: semester.startTerm,
+        semesterId: semester.id,
+        clubId,
+        clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      });
+      const club = clubs[0];
+      if (!club) {
+        throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
+      }
+      if (this.EXCLUDED_CLUB_IDS.includes(club.id)) {
+        throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
+      }
+      const [totalMemberCnt, isPermanent] = await Promise.all([
+        this.clubStudentTRepository.findTotalMemberCnt(club.id, semester.id),
+        this.divisionPermanentClubDRepository.findPermenantClub(
+          club.id,
+          semester.startTerm,
+        ),
+      ]);
+
+      return {
+        id: club.id,
+        nameKr: club.nameKr,
+        nameEn: club.nameEn,
+        type: club.clubTypeEnum,
+        characteristic: club.characteristicKr,
+        advisor: club.professor?.name,
+        division: { id: club.division.id, name: club.division.name },
+        description: club.description ?? "",
+        isPermanent,
+        foundingYear: club.foundingYear,
+        totalMemberCnt,
+        representative: club.clubRepresentative.name,
+        room: "",
+      };
+    }
+
     const currentSemester = await this.semesterPublicService.load();
     let targetSemesterId = currentSemester.id;
     try {

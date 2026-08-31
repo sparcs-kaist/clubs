@@ -5,14 +5,17 @@ import {
   Param,
   Patch,
   Put,
+  Query,
   UsePipes,
 } from "@nestjs/common";
 
 import {
   apiClb001,
+  type ApiClb001RequestQuery,
   type ApiClb001ResponseOK,
   apiClb002,
   type ApiClb002RequestParam,
+  type ApiClb002RequestQuery,
   type ApiClb002ResponseOK,
   apiClb003,
   type ApiClb003ResponseOK,
@@ -57,8 +60,10 @@ export class ClubController {
   @Public()
   @Get("clubs")
   @UsePipes(new ZodPipe(apiClb001))
-  async getClubs(): Promise<ApiClb001ResponseOK> {
-    const result = await this.clubService.getClubs();
+  async getClubs(
+    @Query() query: ApiClb001RequestQuery,
+  ): Promise<ApiClb001ResponseOK> {
+    const result = await this.clubService.getClubs(query);
     // return apiClb001.responseBodyMap[200].parse(result);
     return result;
   }
@@ -68,8 +73,9 @@ export class ClubController {
   @UsePipes(new ZodPipe(apiClb002))
   async getClub(
     @Param() param: ApiClb002RequestParam,
+    @Query() query: ApiClb002RequestQuery,
   ): Promise<ApiClb002ResponseOK> {
-    const clubInfo = await this.clubService.getClub(param);
+    const clubInfo = await this.clubService.getClub(param, query);
     // return apiClb002.responseBodyMap[200].parse(clubInfo);
     return clubInfo;
   }
