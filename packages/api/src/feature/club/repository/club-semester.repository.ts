@@ -86,6 +86,26 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     return clubT.semesterId;
   }
 
+  async countClubsBySemester(excludedClubIds: number[]) {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const rows = await delegate.groupBy({
+      by: ["semesterId"],
+      where: {
+        clubId: { notIn: excludedClubIds },
+        clubStatusEnumId: {
+          in: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+        },
+        deletedAt: null,
+      },
+      _count: true,
+    });
+
+    return rows.map(({ semesterId, _count: clubCount }) => ({
+      semesterId,
+      clubCount,
+    }));
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected dbToModelMapping(result: any): MClubSemester {
     return new MClubSemester({

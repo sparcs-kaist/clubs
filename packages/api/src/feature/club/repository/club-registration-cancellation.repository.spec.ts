@@ -108,3 +108,33 @@ describe("club registration cancellation repositories", () => {
     },
   );
 });
+
+describe("ClubSemesterRepository countClubsBySemester", () => {
+  it("counts visible club semesters in one grouped query", async () => {
+    const groupBy = jest.fn().mockResolvedValue([
+      { semesterId: 18, _count: 101 },
+      { semesterId: 19, _count: 109 },
+    ]);
+    const repository = new ClubSemesterRepository({
+      tx: { clubT: { groupBy } },
+    } as never);
+
+    await expect(
+      repository.countClubsBySemester([112, 113, 121]),
+    ).resolves.toEqual([
+      { semesterId: 18, clubCount: 101 },
+      { semesterId: 19, clubCount: 109 },
+    ]);
+    expect(groupBy).toHaveBeenCalledWith({
+      by: ["semesterId"],
+      where: {
+        clubId: { notIn: [112, 113, 121] },
+        clubStatusEnumId: {
+          in: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+        },
+        deletedAt: null,
+      },
+      _count: true,
+    });
+  });
+});
