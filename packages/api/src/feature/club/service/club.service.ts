@@ -86,8 +86,9 @@ export class ClubService {
       const semester = await this.semesterPublicService.getById(
         query.semesterId,
       );
+      const snapshotDate = this.getSemesterSnapshotDate(semester.endTerm);
       const clubs = await this.clubPublicService.searchClubDetailByDate({
-        date: semester.startTerm,
+        date: snapshotDate,
         semesterId: semester.id,
         clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
       });
@@ -105,7 +106,7 @@ export class ClubService {
             ),
             this.divisionPermanentClubDRepository.findPermenantClub(
               club.id,
-              semester.startTerm,
+              snapshotDate,
             ),
           ]);
 
@@ -177,8 +178,9 @@ export class ClubService {
       const semester = await this.semesterPublicService.getById(
         query.semesterId,
       );
+      const snapshotDate = this.getSemesterSnapshotDate(semester.endTerm);
       const clubs = await this.clubPublicService.searchClubDetailByDate({
-        date: semester.startTerm,
+        date: snapshotDate,
         semesterId: semester.id,
         clubId,
         clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
@@ -194,7 +196,7 @@ export class ClubService {
         this.clubStudentTRepository.findTotalMemberCnt(club.id, semester.id),
         this.divisionPermanentClubDRepository.findPermenantClub(
           club.id,
-          semester.startTerm,
+          snapshotDate,
         ),
       ]);
 
@@ -259,6 +261,11 @@ export class ClubService {
         ? `${roomDetails.buildingName} ${roomDetails.room}`
         : "",
     };
+  }
+
+  private getSemesterSnapshotDate(endTerm: Date): Date {
+    const now = this.clock.now();
+    return now < endTerm ? now : new Date(endTerm.getTime() - 1);
   }
 
   async getStudentClubsMy(studentId: number): Promise<ApiClb003ResponseOK> {

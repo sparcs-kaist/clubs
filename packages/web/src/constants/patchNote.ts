@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.17 source=a10eb55e59d5
+  {
+    version: "v.0.1.17",
+    date: new Date("2026.08.31"),
+    patchNoteContent: `Clubs v0.1.17
+오류 수정은 다음과 같습니다.
+- 과거 학기 동아리 목록을 불러오지 못하던 문제를 수정했습니다. (#1901)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.16 source=b810bfd3ad99
   {
     version: "v.0.1.16",
