@@ -37,6 +37,8 @@ import {
   apiClb017,
   type ApiClb017RequestParam,
   type ApiClb017ResponseOk,
+  apiClb018,
+  type ApiClb018ResponseOk,
 } from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -66,6 +68,13 @@ export class ClubController {
     const result = await this.clubService.getClubs(query);
     // return apiClb001.responseBodyMap[200].parse(result);
     return result;
+  }
+
+  @Public()
+  @Get("clubs/semesters/counts")
+  @UsePipes(new ZodPipe(apiClb018))
+  async getClubSemesterCounts(): Promise<ApiClb018ResponseOk> {
+    return this.clubService.getClubSemesterCounts();
   }
 
   @Public()
