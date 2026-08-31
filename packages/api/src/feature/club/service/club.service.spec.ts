@@ -65,6 +65,8 @@ describe("ClubService getClubs", () => {
       {} as ClubServiceDependencies[12],
       {} as ClubServiceDependencies[13],
     );
+    Object.assign(service, { clock: { now: () => now } });
+    const snapshotDate = new Date(semester.endTerm.getTime() - 1);
 
     await expect(service.getClubs({ semesterId })).resolves.toEqual({
       divisions: [
@@ -88,10 +90,13 @@ describe("ClubService getClubs", () => {
       ],
     });
     expect(clubPublicService.searchClubDetailByDate).toHaveBeenCalledWith({
-      date: semester.startTerm,
+      date: snapshotDate,
       semesterId,
       clubTypeEnum: [1, 2],
     });
+    expect(
+      divisionPermanentClubDRepository.findPermenantClub,
+    ).toHaveBeenCalledWith(clubId, snapshotDate);
     expect(
       clubOldRepository.getAllClubsGroupedByDivision,
     ).not.toHaveBeenCalled();
