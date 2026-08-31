@@ -36,6 +36,7 @@ import {
 } from "@clubs/interface/api/club/endpoint/apiClb010";
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
 import type { ApiClb017ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb017";
+import type { ApiClb018ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb018";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -167,6 +168,13 @@ export class ClubService {
     }));
 
     return result;
+  }
+
+  async getClubSemesterCounts(): Promise<ApiClb018ResponseOk> {
+    const counts = await this.clubSemesterRepository.countClubsBySemester(
+      this.EXCLUDED_CLUB_IDS,
+    );
+    return { counts };
   }
 
   async getClub(
