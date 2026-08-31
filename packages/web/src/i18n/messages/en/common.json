@@ -10,5 +10,8 @@
   "박사과정": "Doctor",
   "집행부원": "Executive",
   "지도교수": "Professor",
-  "교직원": "Employee"
+  "교직원": "Employee",
+  "funding": {
+    "publicationPhotoRequired": "You must attach a photo of the publication."
+  }
 }
