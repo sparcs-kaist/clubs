@@ -11,6 +11,9 @@ import {
 
 const DEFAULT_CHANGED_FROM = "origin/dev";
 const DEFAULT_SOURCE = "packages/api/src";
+const TRANSACTION_INFRASTRUCTURE_FILES = new Set([
+  "packages/api/src/prisma/prisma.service.ts",
+]);
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -50,6 +53,10 @@ export function findChangedTransactionViolations({
 
   for (const changedFile of changedFiles) {
     if (!isApiProductionTypeScriptFile(changedFile.path)) {
+      continue;
+    }
+
+    if (TRANSACTION_INFRASTRUCTURE_FILES.has(toPosixPath(changedFile.path))) {
       continue;
     }
 

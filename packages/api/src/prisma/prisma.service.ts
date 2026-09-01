@@ -4,7 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 import { env } from "@sparcs-clubs/api/env";
 
@@ -259,18 +259,39 @@ export class PrismaService
    * @description $transaction을 override하여 interactive transaction에서도
    *              timezone 보정이 적용되도록 합니다.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async $transaction<T>(arg: any, options?: any): Promise<T> {
+  $transaction<P extends Prisma.PrismaPromise<unknown>[]>(
+    arg: [...P],
+    options?: { isolationLevel?: Prisma.TransactionIsolationLevel },
+  ): Promise<{ [K in keyof P]: Awaited<P[K]> }>;
+  $transaction<R>(
+    fn: (tx: Prisma.TransactionClient) => Promise<R>,
+    options?: {
+      maxWait?: number;
+      timeout?: number;
+      isolationLevel?: Prisma.TransactionIsolationLevel;
+    },
+  ): Promise<R>;
+  async $transaction(
+    arg:
+      | Prisma.PrismaPromise<unknown>[]
+      | ((tx: Prisma.TransactionClient) => Promise<unknown>),
+    options?: {
+      maxWait?: number;
+      timeout?: number;
+      isolationLevel?: Prisma.TransactionIsolationLevel;
+    },
+  ): Promise<unknown> {
     if (typeof arg === "function") {
       // Interactive transaction: callback receives a transaction client
       // Wrap the tx client with timezone proxy
       return super.$transaction(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx: any) => arg(wrapWithTimezoneProxy(tx)),
+        tx => arg(wrapWithTimezoneProxy(tx) as Prisma.TransactionClient),
         options,
-      ) as T;
+      );
     }
     // Sequential transactions (array of promises) - pass through
-    return super.$transaction(arg, options) as T;
+    return super.$transaction(arg, {
+      isolationLevel: options?.isolationLevel,
+    });
   }
 }
