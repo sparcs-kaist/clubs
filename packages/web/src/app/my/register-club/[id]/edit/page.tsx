@@ -1,9 +1,12 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getDisplayNameRegistration } from "@clubs/interface/common/enum/registration.enum";
+import {
+  getDisplayNameRegistration,
+  RegistrationStatusEnum,
+} from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
@@ -19,6 +22,7 @@ import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/s
 const MyRegisterClubEdit = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -41,6 +45,12 @@ const MyRegisterClubEdit = () => {
     },
     { enabled: isValidApplyId },
   );
+  const isApproved =
+    detail?.registrationStatusEnumId === RegistrationStatusEnum.Approved;
+
+  useEffect(() => {
+    if (isApproved) router.replace(`/my/register-club/${applyId}`);
+  }, [applyId, isApproved, router]);
 
   if (loading) {
     return <AsyncBoundary isLoading={loading} isError />;
@@ -52,6 +62,10 @@ const MyRegisterClubEdit = () => {
 
   if (!isValidApplyId) {
     return <NotFound />;
+  }
+
+  if (isApproved) {
+    return null;
   }
 
   if (profile?.type === UserTypeEnum.Executive) {
