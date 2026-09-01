@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.19 source=3619deb41150
+  {
+    version: "v.0.1.19",
+    date: new Date("2026.09.01"),
+    patchNoteContent: `Clubs v0.1.19
+오류 수정은 다음과 같습니다.
+- 동아리 등록 승인 오류를 수정하고, 승인된 신청을 다시 수정할 수 없도록 제한했습니다. (#1908)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.18 source=5586d350af80
   {
     version: "v.0.1.18",
