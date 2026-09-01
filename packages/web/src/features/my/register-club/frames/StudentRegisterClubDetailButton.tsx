@@ -2,6 +2,8 @@ import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
+import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -27,8 +29,9 @@ const StudentRegisterClubDetailButton: React.FC = () => {
     isError: isErrorMyClubRegistration,
   } = useGetMyClubRegistration();
 
-  const isMyRegistration =
-    myClubRegistrationData && myClubRegistrationData?.registrations.length > 0;
+  const registration = myClubRegistrationData?.registrations.find(
+    item => item.id === applyId,
+  );
 
   const deleteHandler = () => {
     overlay.open(({ isOpen, close }) => (
@@ -74,14 +77,17 @@ const StudentRegisterClubDetailButton: React.FC = () => {
       isLoading={isLoadingDeadline || isLoadingMyClubRegistration}
       isError={isErrorDeadline || isErrorMyClubRegistration}
     >
-      {deadlineData?.deadline && isMyRegistration && (
+      {deadlineData?.deadline && registration && (
         <FlexWrapper direction="row" gap={10}>
           <Button style={{ width: "max-content" }} onClick={deleteHandler}>
             삭제
           </Button>
-          <Button style={{ width: "max-content" }} onClick={editHandler}>
-            수정
-          </Button>
+          {registration.registrationStatusEnum !==
+            RegistrationStatusEnum.Approved && (
+            <Button style={{ width: "max-content" }} onClick={editHandler}>
+              수정
+            </Button>
+          )}
         </FlexWrapper>
       )}
     </AsyncBoundary>

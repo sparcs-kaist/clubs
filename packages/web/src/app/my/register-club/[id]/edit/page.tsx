@@ -1,14 +1,18 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { getDisplayNameRegistration } from "@clubs/interface/common/enum/registration.enum";
+import {
+  getDisplayNameRegistration,
+  RegistrationStatusEnum,
+} from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import ErrorModal from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import NotForExecutive from "@sparcs-clubs/web/common/frames/NotForExecutive";
@@ -19,6 +23,7 @@ import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/s
 const MyRegisterClubEdit = () => {
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     if (isLoggedIn !== undefined || profile !== undefined) {
@@ -41,6 +46,8 @@ const MyRegisterClubEdit = () => {
     },
     { enabled: isValidApplyId },
   );
+  const isApproved =
+    detail?.registrationStatusEnumId === RegistrationStatusEnum.Approved;
 
   if (loading) {
     return <AsyncBoundary isLoading={loading} isError />;
@@ -52,6 +59,16 @@ const MyRegisterClubEdit = () => {
 
   if (!isValidApplyId) {
     return <NotFound />;
+  }
+
+  if (isApproved) {
+    return (
+      <ErrorModal
+        isOpen
+        message="승인된 등록 신청은 수정하실 수 없습니다."
+        onConfirm={() => router.replace(`/my/register-club/${applyId}`)}
+      />
+    );
   }
 
   if (profile?.type === UserTypeEnum.Executive) {

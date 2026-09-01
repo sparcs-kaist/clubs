@@ -16,10 +16,12 @@ export type ClubDivisionHistoryQuery = {
   clubId: number;
   divisionId: number;
   date: Date;
+  startTerm: Date;
+  endTerm: Date;
 };
 
 type ClubDivisionHistoryOrderByKeys = "id";
-type ClubDivisionHistoryQuerySupport = { startTerm: Date; endTerm: Date }; // Query Support 용
+type ClubDivisionHistoryQuerySupport = {};
 
 type ClubDivisionHistoryFieldMapKeys = BaseTableFieldMapKeys<
   ClubDivisionHistoryQuery,
