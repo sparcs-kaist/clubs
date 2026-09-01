@@ -12,6 +12,7 @@ import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 import NotFound from "@sparcs-clubs/web/app/not-found";
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import ErrorModal from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
 import NotForExecutive from "@sparcs-clubs/web/common/frames/NotForExecutive";
@@ -48,10 +49,6 @@ const MyRegisterClubEdit = () => {
   const isApproved =
     detail?.registrationStatusEnumId === RegistrationStatusEnum.Approved;
 
-  useEffect(() => {
-    if (isApproved) router.replace(`/my/register-club/${applyId}`);
-  }, [applyId, isApproved, router]);
-
   if (loading) {
     return <AsyncBoundary isLoading={loading} isError />;
   }
@@ -65,7 +62,13 @@ const MyRegisterClubEdit = () => {
   }
 
   if (isApproved) {
-    return null;
+    return (
+      <ErrorModal
+        isOpen
+        message="승인된 등록 신청은 수정하실 수 없습니다."
+        onConfirm={() => router.replace(`/my/register-club/${applyId}`)}
+      />
+    );
   }
 
   if (profile?.type === UserTypeEnum.Executive) {
