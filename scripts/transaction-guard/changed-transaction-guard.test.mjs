@@ -14,6 +14,27 @@ const SERVICE_PATH =
   "packages/api/src/feature/operation-committee/service/operation-committee.service.ts";
 const REPOSITORY_PATH =
   "packages/api/src/feature/operation-committee/repository/operation-committee.repository.ts";
+const PRISMA_SERVICE_PATH = "packages/api/src/prisma/prisma.service.ts";
+
+test("ignores manual transaction implementation inside PrismaService", () => {
+  const workspace = makeGitWorkspace();
+  writeFile(workspace, PRISMA_SERVICE_PATH, "export class PrismaService {}\n");
+  commitAll(workspace, "base");
+
+  writeFile(
+    workspace,
+    PRISMA_SERVICE_PATH,
+    `
+export class PrismaService {
+  $transaction(callback: (tx: Prisma.TransactionClient) => Promise<unknown>) {
+    return super.$transaction(callback);
+  }
+}
+`,
+  );
+
+  assert.deepEqual(runGuard(workspace), []);
+});
 
 test("fails when a changed service method calls a repository command without @Transactional", () => {
   const workspace = makeGitWorkspace();

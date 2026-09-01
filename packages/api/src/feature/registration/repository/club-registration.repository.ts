@@ -26,6 +26,7 @@ import {
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { ClubDivisionHistoryRepository } from "@sparcs-clubs/api/feature/club/repository/club-division-history.repository";
 import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -40,7 +41,10 @@ type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 export class ClubRegistrationRepository {
   @Inject(CLOCK) private readonly clock: Clock;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly clubDivisionHistoryRepository: ClubDivisionHistoryRepository,
+  ) {}
 
   async selectDeadlineByDate(
     date: Date,
@@ -948,24 +952,26 @@ export class ClubRegistrationRepository {
         }));
 
       // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
-      const existingClubDivision = await tx.clubDivisionHistory.findFirst({
-        where: {
-          clubId: registration.clubId,
-          deletedAt: null,
-          startTerm: { lte: registration.semester!.endTerm },
-          endTerm: { gte: registration.semester!.startTerm },
-        },
-      });
-
-      if (!existingClubDivision) {
-        await tx.clubDivisionHistory.create({
-          data: {
+      const existingClubDivision =
+        await this.clubDivisionHistoryRepository.find(
+          {
             clubId: registration.clubId,
-            divisionId: registration.divisionId,
+            startTerm: { lte: registration.semester!.endTerm },
+            endTerm: { gte: registration.semester!.startTerm },
+          },
+          tx,
+        );
+
+      if (existingClubDivision.length === 0) {
+        await this.clubDivisionHistoryRepository.create(
+          {
+            club: { id: registration.clubId },
+            division: { id: registration.divisionId },
             startTerm: registration.semester!.startTerm,
             endTerm: registration.semester!.endTerm,
           },
-        });
+          tx,
+        );
       }
 
       const clubTEndTerm = clubT.endTerm ?? registration.semester.endTerm;
