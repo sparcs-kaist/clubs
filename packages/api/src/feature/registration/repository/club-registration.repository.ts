@@ -948,7 +948,7 @@ export class ClubRegistrationRepository {
         }));
 
       // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
-      const existingClubDivision = await tx.clubDivisionT.findFirst({
+      const existingClubDivision = await tx.clubDivisionHistory.findFirst({
         where: {
           clubId: registration.clubId,
           deletedAt: null,
@@ -958,7 +958,7 @@ export class ClubRegistrationRepository {
       });
 
       if (!existingClubDivision) {
-        await tx.clubDivisionT.create({
+        await tx.clubDivisionHistory.create({
           data: {
             clubId: registration.clubId,
             divisionId: registration.divisionId,
