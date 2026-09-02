@@ -96,6 +96,10 @@ const ExecutiveDashboardFrame = () => {
                 text="동아리 등록 무효 처리"
                 link="/executive/register-club/cancellation"
               />
+              <DashboardButton
+                text="동아리 등록기간 중 대표자 변경"
+                link="/executive/register-club/delegate-change"
+              />
             </FlexWrapper>
           </DashboardSectionInner>
         </FlexWrapper>

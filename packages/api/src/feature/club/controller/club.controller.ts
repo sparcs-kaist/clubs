@@ -39,6 +39,15 @@ import {
   type ApiClb017ResponseOk,
   apiClb018,
   type ApiClb018ResponseOk,
+  apiClb019,
+  type ApiClb019ResponseOk,
+  apiClb020,
+  type ApiClb020RequestParam,
+  type ApiClb020ResponseOk,
+  apiClb021,
+  type ApiClb021RequestBody,
+  type ApiClb021RequestParam,
+  type ApiClb021ResponseOk,
 } from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -174,5 +183,31 @@ export class ClubController {
     @Param() param: ApiClb017RequestParam,
   ): Promise<ApiClb017ResponseOk> {
     return this.clubService.cancelRegistration(param.clubId);
+  }
+
+  @Executive()
+  @Get("executive/clubs/registration-delegate-changes")
+  @UsePipes(new ZodPipe(apiClb019))
+  async getExecutiveRegistrationDelegateChangeClubs(): Promise<ApiClb019ResponseOk> {
+    return this.clubService.getRegistrationDelegateChangeClubs();
+  }
+
+  @Executive()
+  @Get("executive/clubs/club/:clubId/registration-delegate-change")
+  @UsePipes(new ZodPipe(apiClb020))
+  async getExecutiveRegistrationDelegateChangeDetail(
+    @Param() param: ApiClb020RequestParam,
+  ): Promise<ApiClb020ResponseOk> {
+    return this.clubService.getRegistrationDelegateChangeDetail(param);
+  }
+
+  @Executive()
+  @Patch("executive/clubs/club/:clubId/registration-delegate-change")
+  @UsePipes(new ZodPipe(apiClb021))
+  async patchExecutiveRegistrationDelegateChange(
+    @Param() param: ApiClb021RequestParam,
+    @Body() body: ApiClb021RequestBody,
+  ): Promise<ApiClb021ResponseOk> {
+    return this.clubService.changeRegistrationDelegate(param, body);
   }
 }
