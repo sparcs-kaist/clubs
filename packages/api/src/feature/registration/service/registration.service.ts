@@ -74,7 +74,10 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
-import { getMemberRegistrationStatistics } from "./member-registration-statistics";
+import {
+  getMemberRegistrationStatistics,
+  isUndergraduateMemberRegistration,
+} from "./member-registration-statistics";
 import { RegistrationPublicService } from "./registration.public.service";
 
 interface ApiReg006ResponseType {
@@ -1427,56 +1430,54 @@ export class RegistrationService {
       }),
     ]);
     const total = allRegistrations.length;
-    const studentEnums =
-      await this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
-        allRegistrations.map(registration => registration.student.id),
+    const studentIds = allRegistrations.map(
+      registration => registration.student.id,
+    );
+    const [studentEnums, studentById] = await Promise.all([
+      this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
+        studentIds,
         semesterId,
-      );
+      ),
+      this.userPublicService.getStudentMapByIds(studentIds),
+    ]);
     const studentEnumByStudentId = new Map(
       studentEnums.map(({ id, studentEnumId }) => [id, studentEnumId]),
     );
-    const regularStudentEnumId = 1;
     const registrationStatistics = getMemberRegistrationStatistics({
       registrations: allRegistrations,
       studentEnumByStudentId,
+      studentById,
       statusEnumIds: {
         pending: RegistrationApplicationStudentStatusEnum.Pending,
         approved: RegistrationApplicationStudentStatusEnum.Approved,
         rejected: RegistrationApplicationStudentStatusEnum.Rejected,
-        regularStudent: regularStudentEnumId,
       },
     });
-    const memberRegistrations = await Promise.all(
-      registrations.map(async registration => ({
-        id: registration.id,
-        registrationApplicationStudentEnum:
-          registration.registrationApplicationStudentEnum,
-        createdAt: registration.createdAt,
-        student: {
-          ...(await this.userPublicService.getStudentById(
-            registration.student,
-          )),
-          StudentEnumId: studentEnumByStudentId.get(registration.student.id),
-        },
-      })),
-    );
     return {
       ...registrationStatistics,
-      items: memberRegistrations.map(e => ({
-        memberRegistrationId: e.id,
-        RegistrationApplicationStudentStatusEnumId:
-          e.registrationApplicationStudentEnum,
-        isRegularMemberRegistration:
-          e.student.StudentEnumId === regularStudentEnumId,
-        student: {
-          id: e.student.id,
-          studentNumber: e.student.number,
-          name: e.student.name,
-          phoneNumber:
-            e.student.phoneNumber === null ? undefined : e.student.phoneNumber,
-          email: e.student.email,
-        },
-      })),
+      items: await Promise.all(
+        registrations.map(async registration => {
+          const student = await this.userPublicService.getStudentById(
+            registration.student,
+          );
+          return {
+            memberRegistrationId: registration.id,
+            RegistrationApplicationStudentStatusEnumId:
+              registration.registrationApplicationStudentEnum,
+            isRegularMemberRegistration: isUndergraduateMemberRegistration(
+              studentEnumByStudentId.get(student.id),
+              String(student.number),
+            ),
+            student: {
+              id: student.id,
+              studentNumber: student.number,
+              name: student.name,
+              phoneNumber: student.phoneNumber ?? undefined,
+              email: student.email,
+            },
+          };
+        }),
+      ),
       total,
       offset: param.query.pageOffset,
     };
@@ -1507,13 +1508,20 @@ export class RegistrationService {
       return acc;
     }, []);
 
-    const [studentEnums, clubSummaries] = await Promise.all([
+    const studentIds = registrations.map(
+      registration => registration.student.id,
+    );
+    const [studentEnums, studentById, clubSummaries] = await Promise.all([
       this.userPublicService.getStudentEnumsByIdsAndSemesterIdWithRollover(
-        registrations.map(e => e.student.id),
+        studentIds,
         semesterId,
       ),
+      this.userPublicService.getStudentMapByIds(studentIds),
       this.clubPublicService.fetchSummaries(clubIds, [semesterId]),
     ]);
+    const studentEnumByStudentId = new Map(
+      studentEnums.map(({ id, studentEnumId }) => [id, studentEnumId]),
+    );
 
     const divisions = await this.clubPublicService.fetchDivisionSummaries(
       Array.from(new Set(clubSummaries.map(club => club.division.id))),
@@ -1557,7 +1565,6 @@ export class RegistrationService {
           type: club.typeEnum,
           isPermanent,
           division,
-          studentEnum: studentEnums.find(e => e.id === registration.student.id),
           registrationApplicationStudentEnum:
             registration.registrationApplicationStudentEnum,
         };
@@ -1577,29 +1584,27 @@ export class RegistrationService {
         isPermanent: e.isPermanent,
         division: e.division,
       }));
-    const totalItems = clubs.map(e => ({
-      ...e,
-      totalRegistrations: memberRegistrations.filter(
-        e2 => e2.clubId === e.clubId,
-      ).length,
-      // 정회원의 enum이 1이라고 가정
-      regularMemberRegistrations: memberRegistrations.filter(
-        e2 => e2.studentEnum?.studentEnumId === 1 && e2.clubId === e.clubId,
-      ).length,
-      totalApprovals: memberRegistrations.filter(
-        e2 =>
-          e2.clubId === e.clubId &&
-          e2.registrationApplicationStudentEnum ===
-            RegistrationApplicationStudentStatusEnum.Approved,
-      ).length,
-      regularMemberApprovals: memberRegistrations.filter(
-        e2 =>
-          e2.studentEnum?.studentEnumId === 1 &&
-          e2.clubId === e.clubId &&
-          e2.registrationApplicationStudentEnum ===
-            RegistrationApplicationStudentStatusEnum.Approved,
-      ).length,
-    }));
+    const totalItems = clubs.map(club => {
+      const statistics = getMemberRegistrationStatistics({
+        registrations: registrations.filter(
+          registration => registration.club.id === club.clubId,
+        ),
+        studentEnumByStudentId,
+        studentById,
+        statusEnumIds: {
+          pending: RegistrationApplicationStudentStatusEnum.Pending,
+          approved: RegistrationApplicationStudentStatusEnum.Approved,
+          rejected: RegistrationApplicationStudentStatusEnum.Rejected,
+        },
+      });
+      return {
+        ...club,
+        totalRegistrations: statistics.totalRegistrations,
+        regularMemberRegistrations: statistics.regularMemberRegistrations,
+        totalApprovals: statistics.totalApprovals,
+        regularMemberApprovals: statistics.regularMemberApprovals,
+      };
+    });
 
     const pastSemesters =
       param.query.semesterId === undefined

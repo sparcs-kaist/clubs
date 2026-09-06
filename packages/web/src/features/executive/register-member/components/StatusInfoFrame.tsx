@@ -20,6 +20,8 @@ interface StatusInfoFrameProps {
 }
 
 const StatusWrapper = styled.div`
+  width: 100%;
+  min-width: 0;
   padding-left: 28px;
 `;
 
@@ -45,7 +47,10 @@ const TotalTitleContainer = styled.div`
 `;
 
 const StatusCountContainer = styled.div`
-  width: 160px;
+  width: max-content;
+  min-width: 160px;
+  gap: 16px;
+  white-space: nowrap;
   height: 24px;
   justify-content: space-between;
   align-items: center;
@@ -83,7 +88,11 @@ const StatusInfoFrame: React.FC<StatusInfoFrameProps> = ({
 
   return (
     <StatusWrapper>
-      <FlexWrapper gap={40} direction="row">
+      <FlexWrapper
+        gap={40}
+        direction="row"
+        style={{ flexWrap: "wrap", rowGap: 12 }}
+      >
         <TotalCountContainer>
           {isTotal ? (
             <TotalTitleContainer>전체</TotalTitleContainer>
@@ -94,14 +103,14 @@ const StatusInfoFrame: React.FC<StatusInfoFrameProps> = ({
         </TotalCountContainer>
 
         <StatusCountContainer>
-          <Tag color="BLUE">정회원</Tag>
+          <Tag color="BLUE">학부총학생회 회원 수</Tag>
           <StatusContentsContainer>
             {statusInfo.regular}명
           </StatusContentsContainer>
         </StatusCountContainer>
 
         <StatusCountContainer>
-          <Tag color="GRAY">준회원</Tag>
+          <Tag color="GRAY">기타</Tag>
           <StatusContentsContainer>
             {statusInfo.nonRegular}명
           </StatusContentsContainer>

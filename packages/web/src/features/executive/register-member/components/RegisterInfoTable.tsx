@@ -43,9 +43,9 @@ const columns = [
     id: "isRegularMemberRegistration",
     header: "구분",
     cell: info => {
-      if (info.getValue()) return <Tag color="BLUE">정회원</Tag>;
+      if (info.getValue()) return <Tag color="BLUE">학부생</Tag>;
 
-      return <Tag color="GRAY">준회원</Tag>;
+      return <Tag color="GRAY">기타</Tag>;
     },
     size: 220,
   }),

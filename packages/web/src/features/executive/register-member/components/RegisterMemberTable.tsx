@@ -58,14 +58,14 @@ const columns = [
   }),
   columnHelper.accessor("totalRegistrations", {
     id: "registeredAll",
-    header: "신청 (전체 / 정회원)",
+    header: "신청 (전체 / 학부총학생회 회원 수)",
     cell: info =>
       `${info.row.original.totalRegistrations}명 / ${info.row.original.regularMemberRegistrations}명`,
     size: 291.67,
   }),
   columnHelper.accessor("totalApprovals", {
     id: "approvedAll",
-    header: "승인 (전체 / 정회원)",
+    header: "승인 (전체 / 학부총학생회 회원 수)",
     cell: info =>
       `${info.row.original.totalApprovals}명 / ${info.row.original.regularMemberApprovals}명`,
     size: 291.67,
@@ -87,6 +87,7 @@ const RegistrationMemberTable: React.FC<RegisterMemberTableProps> = ({
     <Table
       table={table}
       count={registerMemberList.total}
+      contentWrap
       rowLink={row =>
         `/executive/register-member/${row.clubId}${semesterId ? `?semesterId=${semesterId}` : ""}`
       }

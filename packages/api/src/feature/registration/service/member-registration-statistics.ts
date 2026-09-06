@@ -9,12 +9,12 @@ type MemberRegistrationStatisticStatusEnumIds = {
   pending: number;
   approved: number;
   rejected: number;
-  regularStudent: number;
 };
 
 type GetMemberRegistrationStatisticsParam = {
   registrations: MemberRegistrationStatisticSource[];
   studentEnumByStudentId: Map<number, number>;
+  studentById: Map<number, { studentNumber: string }>;
   statusEnumIds: MemberRegistrationStatisticStatusEnumIds;
 };
 
@@ -29,19 +29,28 @@ export type MemberRegistrationStatistics = {
   regularMemberRejections: number;
 };
 
-/**
- * Computes REG-020 statistics from the full, unpaginated club registration list.
- */
+export function isUndergraduateMemberRegistration(
+  studentEnumId: number | undefined,
+  studentNumber: string | undefined,
+): boolean {
+  const studentNumberSuffix = Number(studentNumber?.slice(-4));
+  const isUndergraduate = studentEnumId === 1 && studentNumberSuffix < 6000;
+  return isUndergraduate;
+}
+
+/** Computes statistics from the full, unpaginated club registration list. */
 export function getMemberRegistrationStatistics({
   registrations,
   studentEnumByStudentId,
+  studentById,
   statusEnumIds,
 }: GetMemberRegistrationStatisticsParam): MemberRegistrationStatistics {
-  const isRegularMemberRegistration = (
-    registration: MemberRegistrationStatisticSource,
-  ) =>
-    studentEnumByStudentId.get(registration.student.id) ===
-    statusEnumIds.regularStudent;
+  const regularRegistrations = registrations.filter(registration =>
+    isUndergraduateMemberRegistration(
+      studentEnumByStudentId.get(registration.student.id),
+      studentById.get(registration.student.id)?.studentNumber,
+    ),
+  );
 
   const hasStatus = (
     registration: MemberRegistrationStatisticSource,
@@ -59,23 +68,15 @@ export function getMemberRegistrationStatistics({
     totalRejections: registrations.filter(registration =>
       hasStatus(registration, statusEnumIds.rejected),
     ).length,
-    regularMemberRegistrations: registrations.filter(
-      isRegularMemberRegistration,
+    regularMemberRegistrations: regularRegistrations.length,
+    regularMemberWaitings: regularRegistrations.filter(registration =>
+      hasStatus(registration, statusEnumIds.pending),
     ).length,
-    regularMemberWaitings: registrations.filter(
-      registration =>
-        isRegularMemberRegistration(registration) &&
-        hasStatus(registration, statusEnumIds.pending),
+    regularMemberApprovals: regularRegistrations.filter(registration =>
+      hasStatus(registration, statusEnumIds.approved),
     ).length,
-    regularMemberApprovals: registrations.filter(
-      registration =>
-        isRegularMemberRegistration(registration) &&
-        hasStatus(registration, statusEnumIds.approved),
-    ).length,
-    regularMemberRejections: registrations.filter(
-      registration =>
-        isRegularMemberRegistration(registration) &&
-        hasStatus(registration, statusEnumIds.rejected),
+    regularMemberRejections: regularRegistrations.filter(registration =>
+      hasStatus(registration, statusEnumIds.rejected),
     ).length,
   };
 }
