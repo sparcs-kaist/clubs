@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   HttpException,
   HttpStatus,
   Inject,
@@ -37,6 +38,16 @@ import {
 import type { ApiClb016ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb016";
 import type { ApiClb017ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb017";
 import type { ApiClb018ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb018";
+import type { ApiClb019ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb019";
+import type {
+  ApiClb020RequestParam,
+  ApiClb020ResponseOk,
+} from "@clubs/interface/api/club/endpoint/apiClb020";
+import type {
+  ApiClb021RequestBody,
+  ApiClb021RequestParam,
+  ApiClb021ResponseOk,
+} from "@clubs/interface/api/club/endpoint/apiClb021";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -45,6 +56,7 @@ import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "../delegate/club.club-delegate-d.repository";
 import { ClubDelegateChangeRequestRepository } from "../repository/club-delegate-change-request.repository";
@@ -77,6 +89,7 @@ export class ClubService {
     private readonly clubSemesterRepository: ClubSemesterRepository,
     private readonly clubDelegateRepository: ClubDelegateRepository,
     private readonly clubDelegateChangeRequestRepository: ClubDelegateChangeRequestRepository,
+    private readonly userPublicService: UserPublicService,
   ) {}
 
   private readonly EXCLUDED_CLUB_IDS: number[] =
@@ -175,6 +188,227 @@ export class ClubService {
       this.EXCLUDED_CLUB_IDS,
     );
     return { counts };
+  }
+
+  private async getRegistrationDelegateChangeContext() {
+    const [isChangeable, registrationSemester] = await Promise.all([
+      this.registrationPublicService.isDeadline({
+        enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
+      }),
+      this.semesterPublicService.load(),
+    ]);
+    if (registrationSemester.id <= 1) {
+      throw new ConflictException("Previous semester does not exist");
+    }
+    const previousSemester = await this.semesterPublicService.getById(
+      registrationSemester.id - 1,
+    );
+
+    return {
+      isChangeable,
+      registrationSemester: {
+        id: registrationSemester.id,
+        year: registrationSemester.year,
+        name: registrationSemester.name,
+      },
+      previousSemester: {
+        id: previousSemester.id,
+        year: previousSemester.year,
+        name: previousSemester.name,
+      },
+      effectiveAt: new Date(
+        previousSemester.endTerm.getTime() - 24 * 60 * 60 * 1000,
+      ),
+    };
+  }
+
+  async getRegistrationDelegateChangeClubs(): Promise<ApiClb019ResponseOk> {
+    const context = await this.getRegistrationDelegateChangeContext();
+    if (!context.isChangeable) return { ...context, clubs: [] };
+
+    const clubs = await this.clubPublicService.searchClubDetailByDate({
+      date: context.effectiveAt,
+      semesterId: context.previousSemester.id,
+      clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+    });
+    const registeredClubIds = new Set(
+      await this.registrationPublicService.getRegisteredClubIds(
+        clubs.map(club => club.id),
+        context.registrationSemester.id,
+      ),
+    );
+
+    return {
+      ...context,
+      clubs: clubs
+        .filter(club => !registeredClubIds.has(club.id))
+        .filter(club => !this.EXCLUDED_CLUB_IDS.includes(club.id))
+        .map(club => ({
+          id: club.id,
+          nameKr: club.nameKr,
+          nameEn: club.nameEn,
+          type: club.clubTypeEnum,
+          divisionName: club.division.name,
+          representative: club.clubRepresentative.name,
+        })),
+    };
+  }
+
+  async getRegistrationDelegateChangeDetail(
+    param: ApiClb020RequestParam,
+  ): Promise<ApiClb020ResponseOk> {
+    const context = await this.getRegistrationDelegateChangeContext();
+    const hasRegistration =
+      await this.registrationPublicService.hasClubRegistration(
+        param.clubId,
+        context.registrationSemester.id,
+      );
+    if (hasRegistration) {
+      throw new ConflictException("Club registration already exists");
+    }
+
+    const clubs = await this.clubPublicService.searchClubDetailByDate({
+      date: context.effectiveAt,
+      semesterId: context.previousSemester.id,
+      clubId: param.clubId,
+      clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+    });
+    const club = clubs[0];
+    if (!club) throw new NotFoundException("Club was not active last semester");
+
+    const memberships =
+      await this.clubStudentTRepository.findByClubIdAndSemesterId(
+        param.clubId,
+        context.previousSemester.id,
+      );
+    const studentIds = [
+      ...new Set(memberships.map(member => member.studentId)),
+    ];
+    const [students, studentEnums, delegateHistories] = await Promise.all([
+      this.userPublicService.getStudentsByIds(studentIds),
+      this.userPublicService.getStudentEnumsByIdsAndSemesterId(
+        studentIds,
+        context.previousSemester.id,
+      ),
+      this.clubDelegateRepository.find({
+        studentId: studentIds,
+        date: context.effectiveAt,
+      }),
+    ]);
+    const studentEnumMap = new Map(
+      studentEnums.map(student => [student.id, student.studentEnumId]),
+    );
+    const unavailableStudentIds = new Set<number>();
+    delegateHistories.forEach(delegate => {
+      if (delegate.club.id !== param.clubId) {
+        unavailableStudentIds.add(delegate.student.id);
+      }
+    });
+
+    return {
+      ...context,
+      club: {
+        id: club.id,
+        nameKr: club.nameKr,
+        nameEn: club.nameEn,
+        type: club.clubTypeEnum,
+        divisionName: club.division.name,
+      },
+      delegates: [
+        club.clubRepresentative,
+        club.clubDelegate1,
+        club.clubDelegate2,
+      ].flatMap(delegate =>
+        delegate
+          ? [
+              {
+                clubDelegateEnumId: delegate.clubDelegateEnum,
+                studentId: delegate.studentId,
+                studentNumber: delegate.studentNumber,
+                name: delegate.name,
+              },
+            ]
+          : [],
+      ),
+      members: students
+        .map(student => {
+          const isRegularMember = studentEnumMap.get(student.id) === 1;
+          const hasUserAccount = student.userId != null;
+          let isAssignable = isRegularMember;
+          if (!hasUserAccount) isAssignable = false;
+          if (unavailableStudentIds.has(student.id)) isAssignable = false;
+
+          return {
+            studentId: student.id,
+            studentNumber: student.studentNumber,
+            name: student.name,
+            isRegularMember,
+            hasUserAccount,
+            isAssignable,
+          };
+        })
+        .sort((a, b) => a.studentNumber.localeCompare(b.studentNumber)),
+    };
+  }
+
+  @Transactional()
+  async changeRegistrationDelegate(
+    param: ApiClb021RequestParam,
+    body: ApiClb021RequestBody,
+  ): Promise<ApiClb021ResponseOk> {
+    await this.registrationPublicService.checkDeadline({
+      enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
+    });
+    const context = await this.getRegistrationDelegateChangeContext();
+    const memberships =
+      await this.clubStudentTRepository.findByClubIdAndSemesterId(
+        param.clubId,
+        context.previousSemester.id,
+      );
+    if (!memberships.some(member => member.studentId === body.studentId)) {
+      throw new ConflictException("Student was not a member last semester");
+    }
+    const studentEnum =
+      await this.userPublicService.getStudentEnumsByIdsAndSemesterId(
+        [body.studentId],
+        context.previousSemester.id,
+      );
+    if (studentEnum[0]?.studentEnumId !== 1) {
+      throw new ConflictException("Student is not a regular member");
+    }
+    const student = (
+      await this.userPublicService.getStudentsByIds([body.studentId])
+    )[0];
+    if (!student) throw new NotFoundException("Student not found");
+    if (student.userId == null) {
+      throw new ConflictException("Student does not have a user account");
+    }
+
+    const now = this.clock.now();
+    await this.clubDelegateRepository.lockForRegistrationChange(
+      param.clubId,
+      body.studentId,
+      now,
+    );
+    await this.registrationPublicService.checkDeadline({
+      enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
+    });
+    const hasRegistration =
+      await this.registrationPublicService.hasClubRegistration(
+        param.clubId,
+        context.registrationSemester.id,
+      );
+    if (hasRegistration) {
+      throw new ConflictException("Club registration already exists");
+    }
+    await this.clubDelegateRepository.replaceForRegistration({
+      clubId: param.clubId,
+      studentId: body.studentId,
+      clubDelegateEnumId: body.clubDelegateEnumId,
+      effectiveAt: context.effectiveAt,
+    });
+
+    return {};
   }
 
   async getClub(
@@ -349,7 +583,10 @@ export class ClubService {
     param: ApiClb004RequestParam,
   ): Promise<ApiClb004ResponseOK> {
     const { clubId } = param;
-    const isAvailableClub = await this.clubTRepository.findClubById(clubId);
+    const isAvailableClub = await this.clubSemesterRepository.count({
+      clubId,
+      date: this.clock.now(),
+    });
     if (!isAvailableClub) {
       throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
@@ -376,7 +613,10 @@ export class ClubService {
     body: ApiClb005RequestBody,
   ): Promise<ApiClb005ResponseOk> {
     const { clubId } = param;
-    const isAvailableClub = await this.clubTRepository.findClubById(clubId);
+    const isAvailableClub = await this.clubSemesterRepository.count({
+      clubId,
+      date: this.clock.now(),
+    });
     if (!isAvailableClub) {
       throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }

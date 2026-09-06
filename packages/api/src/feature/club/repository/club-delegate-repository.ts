@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 
 import {
@@ -53,6 +53,114 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
         deletedAt: null,
       },
       data: { endTerm: now },
+    });
+  }
+
+  async lockForRegistrationChange(
+    clubId: number,
+    studentId: number,
+    now: Date,
+  ): Promise<void> {
+    const { tx } = this.txHost;
+    await this.acquireLock(tx, { clubId, date: now });
+    await this.acquireLock(tx, { studentId, date: now });
+  }
+
+  async replaceForRegistration(param: {
+    clubId: number;
+    studentId: number;
+    clubDelegateEnumId: number;
+    effectiveAt: Date;
+  }): Promise<void> {
+    const { tx } = this.txHost;
+    const delegate = this.getDelegate(tx);
+    const futureClubHistory = await delegate.findFirst({
+      where: {
+        clubId: param.clubId,
+        startTerm: { gt: param.effectiveAt },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (futureClubHistory) {
+      throw new ConflictException(
+        "Delegate history already exists after effectiveAt",
+      );
+    }
+
+    const otherClubHistory = await delegate.findFirst({
+      where: {
+        studentId: param.studentId,
+        clubId: { not: param.clubId },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (otherClubHistory) {
+      throw new ConflictException(
+        "Student is already a delegate of another club",
+      );
+    }
+
+    const currentRoles = await delegate.findMany({
+      where: {
+        clubId: param.clubId,
+        clubDelegateEnum: param.clubDelegateEnumId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      select: { studentId: true },
+    });
+    if (currentRoles.length > 1) {
+      throw new ConflictException("Multiple students have the selected role");
+    }
+    if (currentRoles[0]?.studentId === param.studentId) {
+      throw new ConflictException("Student already has the selected role");
+    }
+
+    const currentStudentRoles = await delegate.findMany({
+      where: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (currentStudentRoles.length > 1) {
+      throw new ConflictException("Student has multiple delegate roles");
+    }
+
+    await delegate.updateMany({
+      where: {
+        clubId: param.clubId,
+        clubDelegateEnum: param.clubDelegateEnumId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      data: { endTerm: param.effectiveAt },
+    });
+    await delegate.updateMany({
+      where: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      data: { endTerm: param.effectiveAt },
+    });
+    await delegate.create({
+      data: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        clubDelegateEnum: param.clubDelegateEnumId,
+        startTerm: param.effectiveAt,
+      },
     });
   }
 

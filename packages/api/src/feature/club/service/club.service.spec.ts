@@ -64,6 +64,7 @@ describe("ClubService getClubs", () => {
       {} as ClubServiceDependencies[11],
       {} as ClubServiceDependencies[12],
       {} as ClubServiceDependencies[13],
+      {} as ClubServiceDependencies[14],
     );
     Object.assign(service, { clock: { now: () => now } });
     const snapshotDate = new Date(semester.endTerm.getTime() - 1);
@@ -132,6 +133,7 @@ describe("ClubService cancelRegistration", () => {
       clubSemesterRepository as ClubServiceDependencies[11],
       clubDelegateRepository as ClubServiceDependencies[12],
       clubDelegateChangeRequestRepository as ClubServiceDependencies[13],
+      {} as ClubServiceDependencies[14],
     );
     Object.assign(service, { clock: { now: () => now } });
 
@@ -150,5 +152,215 @@ describe("ClubService cancelRegistration", () => {
     expect(
       registrationPublicService.rejectPendingMemberRegistrations,
     ).toHaveBeenCalledWith(clubId, semesterId);
+  });
+});
+
+describe("ClubService registration delegate change", () => {
+  const registrationSemester = {
+    id: 20,
+    year: 2026,
+    name: "가을",
+  };
+  const previousSemester = {
+    id: 19,
+    year: 2026,
+    name: "봄",
+    endTerm: new Date("2026-08-28T14:59:00.000Z"),
+  };
+
+  const createService = ({
+    clubStudentTRepository = {},
+    clubPublicService = {},
+    registrationPublicService = {},
+    semesterPublicService = {},
+    clubDelegateRepository = {},
+    userPublicService = {},
+  }: Partial<{
+    clubStudentTRepository: object;
+    clubPublicService: object;
+    registrationPublicService: object;
+    semesterPublicService: object;
+    clubDelegateRepository: object;
+    userPublicService: object;
+  }>) => {
+    const service = new ClubService(
+      {} as ClubServiceDependencies[0],
+      {} as ClubServiceDependencies[1],
+      {} as ClubServiceDependencies[2],
+      clubStudentTRepository as ClubServiceDependencies[3],
+      {} as ClubServiceDependencies[4],
+      {} as ClubServiceDependencies[5],
+      {} as ClubServiceDependencies[6],
+      {} as ClubServiceDependencies[7],
+      clubPublicService as ClubServiceDependencies[8],
+      registrationPublicService as ClubServiceDependencies[9],
+      semesterPublicService as ClubServiceDependencies[10],
+      {} as ClubServiceDependencies[11],
+      clubDelegateRepository as ClubServiceDependencies[12],
+      {} as ClubServiceDependencies[13],
+      userPublicService as ClubServiceDependencies[14],
+    );
+    Object.assign(service, { clock: { now: () => now } });
+    return service;
+  };
+
+  it("lists only previous-semester clubs without a current registration", async () => {
+    const clubPublicService = {
+      searchClubDetailByDate: jest.fn().mockResolvedValue([
+        {
+          id: 1,
+          nameKr: "미제출 동아리",
+          nameEn: "Available",
+          clubTypeEnum: 1,
+          division: { name: "학술" },
+          clubRepresentative: { name: "대표자" },
+        },
+        {
+          id: 2,
+          nameKr: "제출 동아리",
+          nameEn: "Submitted",
+          clubTypeEnum: 1,
+          division: { name: "생활문화" },
+          clubRepresentative: { name: "기존 대표자" },
+        },
+      ]),
+    };
+    const registrationPublicService = {
+      isDeadline: jest.fn().mockResolvedValue(true),
+      getRegisteredClubIds: jest.fn().mockResolvedValue([2]),
+    };
+    const semesterPublicService = {
+      load: jest.fn().mockResolvedValue(registrationSemester),
+      getById: jest.fn().mockResolvedValue(previousSemester),
+    };
+    const service = createService({
+      clubPublicService,
+      registrationPublicService,
+      semesterPublicService,
+    });
+
+    const result = await service.getRegistrationDelegateChangeClubs();
+
+    expect(result.clubs.map(club => club.id)).toEqual([1]);
+    expect(result.effectiveAt).toEqual(new Date("2026-08-27T14:59:00.000Z"));
+  });
+
+  it("locks delegates and rechecks registration before changing the role", async () => {
+    const clubStudentTRepository = {
+      findByClubIdAndSemesterId: jest
+        .fn()
+        .mockResolvedValue([{ studentId: 30 }]),
+    };
+    const registrationPublicService = {
+      checkDeadline: jest.fn().mockResolvedValue(undefined),
+      isDeadline: jest.fn().mockResolvedValue(true),
+      hasClubRegistration: jest.fn().mockResolvedValue(false),
+    };
+    const semesterPublicService = {
+      load: jest.fn().mockResolvedValue(registrationSemester),
+      getById: jest.fn().mockResolvedValue(previousSemester),
+    };
+    const clubDelegateRepository = {
+      lockForRegistrationChange: jest.fn().mockResolvedValue(undefined),
+      replaceForRegistration: jest.fn().mockResolvedValue(undefined),
+    };
+    const userPublicService = {
+      getStudentEnumsByIdsAndSemesterId: jest
+        .fn()
+        .mockResolvedValue([{ id: 30, studentEnumId: 1 }]),
+      getStudentsByIds: jest.fn().mockResolvedValue([{ id: 30, userId: 40 }]),
+    };
+    const service = createService({
+      clubStudentTRepository,
+      registrationPublicService,
+      semesterPublicService,
+      clubDelegateRepository,
+      userPublicService,
+    });
+
+    await expect(
+      service.changeRegistrationDelegate(
+        { clubId },
+        { studentId: 30, clubDelegateEnumId: 1 },
+      ),
+    ).resolves.toEqual({});
+    expect(
+      clubDelegateRepository.lockForRegistrationChange.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+    );
+    expect(
+      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      clubDelegateRepository.replaceForRegistration.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("does not change a role outside the club registration period", async () => {
+    const registrationPublicService = {
+      checkDeadline: jest.fn().mockRejectedValue(new Error("outside deadline")),
+    };
+    const clubDelegateRepository = {
+      replaceForRegistration: jest.fn(),
+    };
+    const service = createService({
+      registrationPublicService,
+      clubDelegateRepository,
+    });
+
+    await expect(
+      service.changeRegistrationDelegate(
+        { clubId },
+        { studentId: 30, clubDelegateEnumId: 1 },
+      ),
+    ).rejects.toThrow("outside deadline");
+    expect(
+      clubDelegateRepository.replaceForRegistration,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("does not change a role after registration documents are submitted", async () => {
+    const clubStudentTRepository = {
+      findByClubIdAndSemesterId: jest
+        .fn()
+        .mockResolvedValue([{ studentId: 30 }]),
+    };
+    const registrationPublicService = {
+      checkDeadline: jest.fn().mockResolvedValue(undefined),
+      isDeadline: jest.fn().mockResolvedValue(true),
+      hasClubRegistration: jest.fn().mockResolvedValue(true),
+    };
+    const semesterPublicService = {
+      load: jest.fn().mockResolvedValue(registrationSemester),
+      getById: jest.fn().mockResolvedValue(previousSemester),
+    };
+    const clubDelegateRepository = {
+      lockForRegistrationChange: jest.fn().mockResolvedValue(undefined),
+      replaceForRegistration: jest.fn(),
+    };
+    const userPublicService = {
+      getStudentEnumsByIdsAndSemesterId: jest
+        .fn()
+        .mockResolvedValue([{ id: 30, studentEnumId: 1 }]),
+      getStudentsByIds: jest.fn().mockResolvedValue([{ id: 30, userId: 40 }]),
+    };
+    const service = createService({
+      clubStudentTRepository,
+      registrationPublicService,
+      semesterPublicService,
+      clubDelegateRepository,
+      userPublicService,
+    });
+
+    await expect(
+      service.changeRegistrationDelegate(
+        { clubId },
+        { studentId: 30, clubDelegateEnumId: 1 },
+      ),
+    ).rejects.toThrow("Club registration already exists");
+    expect(
+      clubDelegateRepository.replaceForRegistration,
+    ).not.toHaveBeenCalled();
   });
 });

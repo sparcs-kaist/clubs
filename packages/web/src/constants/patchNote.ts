@@ -5,6 +5,19 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.20 source=4555336c3c1d
+  {
+    version: "v.0.1.20",
+    date: new Date("2026.09.07"),
+    patchNoteContent: `Clubs v0.1.20
+신규 기능은 다음과 같습니다.
+- 동아리 등록 기간 중 아직 등록 서류를 제출하지 않은 동아리의 대표자와 대의원을 집행부에서 변경할 수 있습니다. (#1912)
+- 동아리 등록 신청서를 제출한 경우 등록 신청 탭에서 신청 내역과 승인 상태를 바로 확인할 수 있도록 개선했습니다. (#1914)
+
+오류 수정은 다음과 같습니다.
+- 종료일이 없는 동아리도 현재 등록된 동아리로 올바르게 인식하도록 개선했습니다. (#1907)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.19 source=3619deb41150
   {
     version: "v.0.1.19",

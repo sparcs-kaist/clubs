@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -22,6 +22,7 @@ import {
 } from "@sparcs-clubs/web/features/register-club/constants";
 
 import useGetAvailableRegistrationInfo from "../hooks/useGetAvailableRegistrationInfo";
+import { getClubRegistrationRedirectPath } from "../utils/getClubRegistrationRedirectPath";
 
 const ClubButtonWrapper = styled.div`
   display: flex;
@@ -41,11 +42,21 @@ const RegisterClubFrame: React.FC = () => {
     null,
   );
 
+  const myClubRegistrationQuery = useGetMyClubRegistration({
+    refetchOnMount: "always",
+  });
   const {
-    data: myClubRegistrationData,
-    isLoading: isLoadingMyClubRegistration,
+    isFetchedAfterMount,
+    isFetching: isFetchingMyClubRegistration,
     isError: isErrorMyClubRegistration,
-  } = useGetMyClubRegistration();
+  } = myClubRegistrationQuery;
+  const registrationPath = getClubRegistrationRedirectPath(
+    myClubRegistrationQuery,
+  );
+
+  useEffect(() => {
+    if (registrationPath) router.replace(registrationPath);
+  }, [registrationPath, router]);
 
   const {
     data: availableRegistrationInfo,
@@ -68,12 +79,6 @@ const RegisterClubFrame: React.FC = () => {
       router.push(`register-club/provisional`);
     }
   }, [selectedType]);
-
-  const showWarningInfoLinkedText = useMemo(
-    () =>
-      myClubRegistrationData && myClubRegistrationData.registrations.length > 0,
-    [myClubRegistrationData],
-  );
 
   const canRegisterClub = useMemo<boolean>(() => {
     if (availableRegistrationInfo) {
@@ -113,57 +118,55 @@ const RegisterClubFrame: React.FC = () => {
         title="동아리 등록"
       />
       <AsyncBoundary
-        isLoading={isLoading || isLoadingMyClubRegistration}
-        isError={isError || isErrorMyClubRegistration}
+        isLoading={
+          !isErrorMyClubRegistration &&
+          (!isFetchedAfterMount ||
+            isFetchingMyClubRegistration ||
+            registrationPath !== null)
+        }
+        isError={isErrorMyClubRegistration}
       >
-        {selectedType && !canRegisterClub && (
-          <WarningInfo
-            linkText={
-              showWarningInfoLinkedText ? "동아리 등록 신청 내역 바로가기" : ""
-            }
-            onClickLink={() =>
-              router.push(
-                `my/register-club/${myClubRegistrationData?.registrations[0].id}`,
-              )
-            }
-          >
-            <Typography fs={16} lh={24}>
-              관리하는 동아리의 동아리 등록 신청 내역이 이미 존재하거나 등록
-              신청 조건에 만족하지 않아 신청할 수 없습니다.
-            </Typography>
-          </WarningInfo>
-        )}
+        <AsyncBoundary isLoading={isLoading} isError={isError}>
+          {selectedType && !canRegisterClub && (
+            <WarningInfo>
+              <Typography fs={16} lh={24}>
+                관리하는 동아리의 동아리 등록 신청 내역이 이미 존재하거나 등록
+                신청 조건에 만족하지 않아 신청할 수 없습니다.
+              </Typography>
+            </WarningInfo>
+          )}
+        </AsyncBoundary>
+        <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline}>
+          {clubDeadline?.deadline ? (
+            <Info
+              text={registerClubDeadlineInfoText(
+                clubDeadline.deadline.endTerm,
+                clubDeadline.semester,
+              )}
+            />
+          ) : (
+            <Info text="현재는 동아리 등록 기간이 아닙니다" />
+          )}
+        </AsyncBoundary>
+        <ClubButtonWrapper>
+          {registerClubOptions.map(({ type, title, buttonText }) => (
+            <ClubButton
+              key={type}
+              title={title}
+              buttonText={buttonText}
+              selected={selectedType === type}
+              onClick={() => setSelectedType(type)}
+            />
+          ))}
+        </ClubButtonWrapper>
+        <Button
+          type={isRegisterButtonDisabled ? "disabled" : "default"}
+          onClick={onClickRegisterClub}
+          style={{ alignSelf: "end" }}
+        >
+          등록 신청
+        </Button>
       </AsyncBoundary>
-      <AsyncBoundary isLoading={isLoadingDeadline} isError={isErrorDeadline}>
-        {clubDeadline?.deadline ? (
-          <Info
-            text={registerClubDeadlineInfoText(
-              clubDeadline.deadline.endTerm,
-              clubDeadline.semester,
-            )}
-          />
-        ) : (
-          <Info text="현재는 동아리 등록 기간이 아닙니다" />
-        )}
-      </AsyncBoundary>
-      <ClubButtonWrapper>
-        {registerClubOptions.map(({ type, title, buttonText }) => (
-          <ClubButton
-            key={type}
-            title={title}
-            buttonText={buttonText}
-            selected={selectedType === type}
-            onClick={() => setSelectedType(type)}
-          />
-        ))}
-      </ClubButtonWrapper>
-      <Button
-        type={isRegisterButtonDisabled ? "disabled" : "default"}
-        onClick={onClickRegisterClub}
-        style={{ alignSelf: "end" }}
-      >
-        등록 신청
-      </Button>
     </FlexWrapper>
   );
 };

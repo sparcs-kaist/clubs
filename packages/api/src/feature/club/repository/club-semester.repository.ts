@@ -7,6 +7,7 @@ import {
   BaseRepositoryFindQuery,
   BaseRepositoryQuery,
   BaseTableFieldMapKeys,
+  PrimitiveConditionValue,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
@@ -21,6 +22,7 @@ export type ClubSemesterQuery = {
   semesterId: number;
   clubTypeEnum: ClubTypeEnum;
   professorId: number;
+  date: Date;
 };
 
 type ClubSemesterOrderByKeys = "id";
@@ -159,6 +161,7 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
       semesterId: "semesterId",
       clubTypeEnum: "clubStatusEnumId",
       professorId: "professorId",
+      date: null,
     };
 
     if (!(field in fieldMappings)) {
@@ -166,5 +169,27 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     }
 
     return fieldMappings[field as keyof typeof fieldMappings];
+  }
+
+  protected processSpecialCondition(
+    key: ClubSemesterFieldMapKeys,
+    value: PrimitiveConditionValue,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Record<string, any> {
+    if (key !== "date") {
+      throw new Error(`Invalid key: ${key}`);
+    }
+    if (!(value instanceof Date)) {
+      throw new Error(`Invalid date: ${value}`);
+    }
+
+    return {
+      NOT: {
+        OR: [
+          { startTerm: { gt: value } },
+          { AND: [{ endTerm: { not: null } }, { endTerm: { lte: value } }] },
+        ],
+      },
+    };
   }
 }
