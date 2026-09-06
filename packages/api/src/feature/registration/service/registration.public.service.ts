@@ -36,6 +36,41 @@ export class RegistrationPublicService {
       });
   }
 
+  async isDeadline(param: {
+    enums: Array<RegistrationDeadlineEnum>;
+  }): Promise<boolean> {
+    const deadlines =
+      await this.clubRegistrationRepository.selectDeadlineByDate(
+        this.clock.now(),
+        param.enums,
+      );
+    return deadlines.length > 0;
+  }
+
+  async getRegisteredClubIds(
+    clubIds: number[],
+    semesterId: number,
+  ): Promise<number[]> {
+    // ponytail: 집행부 전용 저빈도 목록은 기존 단건 조회를 재사용한다. 병목이 확인되면 배치 조회로 교체한다.
+    const registrations = await Promise.all(
+      clubIds.map(clubId =>
+        this.clubRegistrationRepository.findByClubAndSemesterId(
+          clubId,
+          semesterId,
+        ),
+      ),
+    );
+    return clubIds.filter((_, index) => registrations[index].length > 0);
+  }
+
+  async hasClubRegistration(
+    clubId: number,
+    semesterId: number,
+  ): Promise<boolean> {
+    const ids = await this.getRegisteredClubIds([clubId], semesterId);
+    return ids.length > 0;
+  }
+
   /**
    * @param clubId
    * @returns void
