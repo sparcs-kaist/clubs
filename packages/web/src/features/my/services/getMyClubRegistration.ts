@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
 import type { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg012 from "@clubs/interface/api/registration/endpoint/apiReg012";
@@ -10,8 +10,11 @@ import {
 
 import { mockMyClubRegisterList } from "./_mock/mockMyClubRegisterDetail";
 
-export const useGetMyClubRegistration = () =>
+export const useGetMyClubRegistration = (
+  options?: Pick<UseQueryOptions<ApiReg012ResponseOk>, "refetchOnMount">,
+) =>
   useQuery<ApiReg012ResponseOk, Error>({
+    ...options,
     queryKey: [apiReg012.url()],
 
     queryFn: async (): Promise<ApiReg012ResponseOk> => {
