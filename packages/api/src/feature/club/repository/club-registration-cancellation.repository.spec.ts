@@ -138,3 +138,33 @@ describe("ClubSemesterRepository countClubsBySemester", () => {
     });
   });
 });
+
+describe("ClubSemesterRepository current club lookup", () => {
+  it("counts terms that include the requested date or have no end", async () => {
+    const count = jest.fn().mockResolvedValue(1);
+    const tx = { clubT: { count } };
+    const repository = new ClubSemesterRepository({ tx } as never);
+
+    await expect(
+      repository.count({ clubId, date: now }, tx as never),
+    ).resolves.toBe(1);
+    expect(count).toHaveBeenCalledWith({
+      where: {
+        AND: [
+          { deletedAt: null },
+          { clubId },
+          {
+            NOT: {
+              OR: [
+                { startTerm: { gt: now } },
+                {
+                  AND: [{ endTerm: { not: null } }, { endTerm: { lte: now } }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+  });
+});

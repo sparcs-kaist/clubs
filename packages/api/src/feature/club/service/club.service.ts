@@ -583,7 +583,10 @@ export class ClubService {
     param: ApiClb004RequestParam,
   ): Promise<ApiClb004ResponseOK> {
     const { clubId } = param;
-    const isAvailableClub = await this.clubTRepository.findClubById(clubId);
+    const isAvailableClub = await this.clubSemesterRepository.count({
+      clubId,
+      date: this.clock.now(),
+    });
     if (!isAvailableClub) {
       throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
@@ -610,7 +613,10 @@ export class ClubService {
     body: ApiClb005RequestBody,
   ): Promise<ApiClb005ResponseOk> {
     const { clubId } = param;
-    const isAvailableClub = await this.clubTRepository.findClubById(clubId);
+    const isAvailableClub = await this.clubSemesterRepository.count({
+      clubId,
+      date: this.clock.now(),
+    });
     if (!isAvailableClub) {
       throw new HttpException("ClubOld not available", HttpStatus.FORBIDDEN);
     }
