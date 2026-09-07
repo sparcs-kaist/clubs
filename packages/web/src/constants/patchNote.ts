@@ -5,6 +5,18 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.21 source=f142910bf08f
+  {
+    version: "v.0.1.21",
+    date: new Date("2026.09.07"),
+    patchNoteContent: `Clubs v0.1.21
+신규 기능은 다음과 같습니다.
+- 동아리 등록 기간 중 집행부가 대의원 직책을 취소하고 변경 이력을 적용일에 맞게 처리할 수 있습니다. (#1919)
+
+오류 수정은 다음과 같습니다.
+- 동아리 대표자·대의원 변경 후 직책 변경 버튼이 최신 명단에 맞게 갱신되지 않던 문제를 수정했습니다. (#1917)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.20 source=4555336c3c1d
   {
     version: "v.0.1.20",
