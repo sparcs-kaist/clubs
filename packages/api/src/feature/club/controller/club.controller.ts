@@ -48,6 +48,10 @@ import {
   type ApiClb021RequestBody,
   type ApiClb021RequestParam,
   type ApiClb021ResponseOk,
+  apiClb022,
+  type ApiClb022RequestBody,
+  type ApiClb022RequestParam,
+  type ApiClb022ResponseOk,
 } from "@clubs/interface/api/club/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -209,5 +213,15 @@ export class ClubController {
     @Body() body: ApiClb021RequestBody,
   ): Promise<ApiClb021ResponseOk> {
     return this.clubService.changeRegistrationDelegate(param, body);
+  }
+
+  @Executive()
+  @Patch("executive/clubs/club/:clubId/registration-delegate-cancellation")
+  @UsePipes(new ZodPipe(apiClb022))
+  async cancelExecutiveRegistrationDelegate(
+    @Param() param: ApiClb022RequestParam,
+    @Body() body: ApiClb022RequestBody,
+  ): Promise<ApiClb022ResponseOk> {
+    return this.clubService.cancelRegistrationDelegate(param, body);
   }
 }
