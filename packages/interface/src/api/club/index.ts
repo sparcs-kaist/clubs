@@ -42,6 +42,8 @@ export * from "./endpoint/apiClb020";
 export { default as apiClb020 } from "./endpoint/apiClb020";
 export * from "./endpoint/apiClb021";
 export { default as apiClb021 } from "./endpoint/apiClb021";
+export * from "./endpoint/apiClb022";
+export { default as apiClb022 } from "./endpoint/apiClb022";
 
 registry.registerPath({
   tags: ["club"],
@@ -61,7 +63,7 @@ registry.registerPath({
 - **CLB-016**: 지도교수가 지도했던 동아리 목록 조회 (교수용)
 - **CLB-017**: 동아리 등록 무효 처리 (집행부용)
 - **CLB-018**: 학기별 동아리 수 조회
-- **CLB-019~021**: 등록기간 중 대표자·대의원 변경 (집행부용)
+- **CLB-019~022**: 등록기간 중 대표자·대의원 변경·취소 (집행부용)
 
 ### 2. 동아리 기본 정보 관리
 - **CLB-004**: 동아리 기본 정보 조회 (설명, 동아리방 비밀번호)

@@ -48,6 +48,11 @@ import type {
   ApiClb021RequestParam,
   ApiClb021ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb021";
+import type {
+  ApiClb022RequestBody,
+  ApiClb022RequestParam,
+  ApiClb022ResponseOk,
+} from "@clubs/interface/api/club/endpoint/apiClb022";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -402,6 +407,42 @@ export class ClubService {
       throw new ConflictException("Club registration already exists");
     }
     await this.clubDelegateRepository.replaceForRegistration({
+      clubId: param.clubId,
+      studentId: body.studentId,
+      clubDelegateEnumId: body.clubDelegateEnumId,
+      effectiveAt: context.effectiveAt,
+    });
+
+    return {};
+  }
+
+  @Transactional()
+  async cancelRegistrationDelegate(
+    param: ApiClb022RequestParam,
+    body: ApiClb022RequestBody,
+  ): Promise<ApiClb022ResponseOk> {
+    await this.registrationPublicService.checkDeadline({
+      enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
+    });
+    const context = await this.getRegistrationDelegateChangeContext();
+    const now = this.clock.now();
+    await this.clubDelegateRepository.lockForRegistrationChange(
+      param.clubId,
+      body.studentId,
+      now,
+    );
+    await this.registrationPublicService.checkDeadline({
+      enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
+    });
+    const hasRegistration =
+      await this.registrationPublicService.hasClubRegistration(
+        param.clubId,
+        context.registrationSemester.id,
+      );
+    if (hasRegistration) {
+      throw new ConflictException("Club registration already exists");
+    }
+    await this.clubDelegateRepository.cancelForRegistration({
       clubId: param.clubId,
       studentId: body.studentId,
       clubDelegateEnumId: body.clubDelegateEnumId,
