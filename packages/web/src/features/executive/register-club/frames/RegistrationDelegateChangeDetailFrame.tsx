@@ -29,16 +29,16 @@ import {
   useChangeRegistrationDelegate,
   useGetRegistrationDelegateChangeDetail,
 } from "../services/useRegistrationDelegateChange";
+import getRegistrationDelegateChangeMemberRows, {
+  isRegistrationDelegateChangeButtonVisible,
+  type RegistrationDelegateChangeMemberRow,
+} from "../utils/getRegistrationDelegateChangeMemberRows";
 
 type Delegate = ApiClb020ResponseOk["delegates"][number];
 type Member = ApiClb020ResponseOk["members"][number];
-type MemberRow = Member & {
-  clubId: number;
-  effectiveAt: Date;
-  isChangeable: boolean;
-};
 const delegateColumnHelper = createColumnHelper<Delegate>();
-const memberColumnHelper = createColumnHelper<MemberRow>();
+const memberColumnHelper =
+  createColumnHelper<RegistrationDelegateChangeMemberRow>();
 const roleLabels: Record<ClubDelegateEnum, string> = {
   [ClubDelegateEnum.Representative]: "대표자",
   [ClubDelegateEnum.Delegate1]: "대의원 1",
@@ -116,12 +116,16 @@ const openSuccessModal = () => {
   ));
 };
 
-const MemberActionCell = ({ member }: { member: MemberRow }) => {
+const MemberActionCell = ({
+  member,
+}: {
+  member: RegistrationDelegateChangeMemberRow;
+}) => {
   const { mutate: changeDelegate, isPending } = useChangeRegistrationDelegate(
     member.clubId,
   );
 
-  if (!member.isRegularMember) return <>-</>;
+  if (!isRegistrationDelegateChangeButtonVisible(member)) return <>-</>;
 
   const openChangeModal = () => {
     overlay.open(({ isOpen, close }) => (
@@ -200,13 +204,7 @@ const RegistrationDelegateChangeDetailFrame = ({
   const { data, isLoading, isError } =
     useGetRegistrationDelegateChangeDetail(clubId);
   const memberRows = useMemo(
-    () =>
-      (data?.members ?? []).map(member => ({
-        ...member,
-        clubId,
-        effectiveAt: data?.effectiveAt ?? new Date(0),
-        isChangeable: data?.isChangeable ?? false,
-      })),
+    () => getRegistrationDelegateChangeMemberRows(data, clubId),
     [clubId, data],
   );
   const delegateTable = useReactTable({
