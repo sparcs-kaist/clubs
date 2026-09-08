@@ -31,6 +31,11 @@ const columns = [
   columnHelper.accessor("divisionName", { header: "분과", size: 160 }),
   columnHelper.accessor("nameKr", { header: "동아리", size: 240 }),
   columnHelper.accessor("representative", { header: "대표자", size: 160 }),
+  columnHelper.accessor("hasRegistration", {
+    header: "이번 학기 등록 서류",
+    cell: info => (info.getValue() ? "제출" : "미제출"),
+    size: 180,
+  }),
 ];
 
 const RegistrationDelegateChangeFrame = () => {
@@ -56,7 +61,7 @@ const RegistrationDelegateChangeFrame = () => {
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <Banner icon="warning">
         {data?.isChangeable
-          ? "동아리 등록 기간에만 대표자·대의원을 변경할 수 있습니다.\n이번 학기 등록 서류를 제출하지 않은 동아리만 표시됩니다.\n변경 이력은 이전 학기 마지막 전날에 변경된 것으로 기록됩니다."
+          ? "동아리 등록 기간에만 대표자·대의원을 변경하거나 대의원 임기를 종료할 수 있습니다.\n이번 학기 등록 서류를 제출한 동아리는 대의원 임기 종료만 가능합니다.\n변경 이력은 이전 학기 마지막 전날에 변경된 것으로 기록됩니다."
           : "현재 동아리 등록 기간이 아니므로 대표자·대의원을 변경할 수 없습니다."}
       </Banner>
       <SearchInput
@@ -67,7 +72,7 @@ const RegistrationDelegateChangeFrame = () => {
       <Table
         table={table}
         count={clubs.length}
-        minWidth={680}
+        minWidth={860}
         rowLink={
           data?.isChangeable
             ? club => `/executive/register-club/delegate-change/${club.id}`

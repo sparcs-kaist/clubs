@@ -58,6 +58,75 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     });
   }
 
+  async ensureRegistrationApplicantRepresentative(param: {
+    clubId: number;
+    studentId: number;
+    effectiveAt: Date;
+  }): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const otherClubDelegate = await delegate.findFirst({
+      where: {
+        clubId: { not: param.clubId },
+        studentId: param.studentId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+    });
+    if (otherClubDelegate) {
+      throw new ConflictException(
+        "Registration applicant is a delegate of another club",
+      );
+    }
+
+    const applicantRepresentative = await delegate.findFirst({
+      where: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        clubDelegateEnum: ClubDelegateEnum.Representative,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+    });
+
+    // Keep the applicant's existing representative term, including new clubs.
+    await delegate.updateMany({
+      where: {
+        clubId: param.clubId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+        AND: [
+          {
+            OR: [
+              { clubDelegateEnum: ClubDelegateEnum.Representative },
+              { studentId: param.studentId },
+            ],
+          },
+          {
+            NOT: {
+              studentId: param.studentId,
+              clubDelegateEnum: ClubDelegateEnum.Representative,
+            },
+          },
+        ],
+      },
+      data: { endTerm: param.effectiveAt },
+    });
+
+    if (!applicantRepresentative) {
+      await delegate.create({
+        data: {
+          clubId: param.clubId,
+          studentId: param.studentId,
+          clubDelegateEnum: ClubDelegateEnum.Representative,
+          startTerm: param.effectiveAt,
+        },
+      });
+    }
+  }
+
   async lockForRegistrationChange(
     clubId: number,
     studentId: number,

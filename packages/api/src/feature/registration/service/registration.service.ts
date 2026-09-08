@@ -73,6 +73,7 @@ import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.publi
 
 import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
+import { ClubRegistrationApprovalRepository } from "../repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
 import {
   getMemberRegistrationStatistics,
@@ -99,6 +100,7 @@ export class RegistrationService {
     private readonly memberRegistrationRepository: MemberRegistrationRepository,
     private readonly semesterPublicService: SemesterPublicService,
     private readonly registrationDeadlinePublicService: RegistrationDeadlinePublicService,
+    private readonly clubRegistrationApprovalRepository: ClubRegistrationApprovalRepository,
   ) {}
 
   private async getRegistrationTargetSemester(
@@ -728,6 +730,7 @@ export class RegistrationService {
     return { ...result, semesterId };
   }
 
+  @Transactional()
   async patchExecutiveRegistrationsClubRegistrationApproval(
     applyId: number,
   ): Promise<ApiReg016ResponseOk> {
@@ -739,11 +742,59 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
-    const result =
-      await this.clubRegistrationRepository.patchExecutiveRegistrationsClubRegistrationApproval(
-        applyId,
+    const approvedAt = this.clock.now();
+    const registration = await this.clubRegistrationApprovalRepository.approve(
+      applyId,
+      approvedAt,
+    );
+    if (!registration.clubId) {
+      throw new HttpException(
+        "Registration club is missing",
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
-    return result;
+    }
+    if (!registration.semesterId) {
+      throw new HttpException(
+        "Registration semester is missing",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const applicants = await this.userPublicService.getStudentsByIds([
+      registration.studentId,
+    ]);
+    if (applicants.length !== 1) {
+      throw new HttpException(
+        "Registration applicant does not exist",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const semester = await this.semesterPublicService.getById(
+      registration.semesterId,
+    );
+    const clubTypeEnum = [
+      RegistrationTypeEnum.Renewal,
+      RegistrationTypeEnum.Promotional,
+    ].includes(registration.registrationApplicationTypeEnumId)
+      ? ClubTypeEnum.Regular
+      : ClubTypeEnum.Provisional;
+
+    await this.clubPublicService.approveClubRegistration({
+      clubId: registration.clubId,
+      studentId: registration.studentId,
+      semester,
+      clubTypeEnum,
+      divisionId: registration.divisionId,
+      characteristicKr: registration.activityFieldKr,
+      characteristicEn: registration.activityFieldEn,
+      professorId: registration.professorId,
+      effectiveAt: approvedAt,
+    });
+    await this.memberRegistrationRepository.ensureApprovedForStudent({
+      clubId: registration.clubId,
+      semesterId: registration.semesterId,
+      studentId: registration.studentId,
+    });
+    return {};
   }
 
   @Transactional()

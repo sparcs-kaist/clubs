@@ -135,7 +135,7 @@ const CancellationModal = ({
       onClose={onClose}
       onConfirm={onConfirm}
       confirmDisabled={!confirmed}
-      confirmButtonText="직책 취소"
+      confirmButtonText="임기 종료"
       confirmButtonType="danger"
     >
       <FlexWrapper direction="column" gap={16}>
@@ -146,7 +146,7 @@ const CancellationModal = ({
           <Checkbox checked={confirmed} />
           <Typography fs={15} lh={22}>
             {delegate.name} 학생의 {roleLabels[delegate.clubDelegateEnumId]}{" "}
-            직책을 취소하며, {effectiveDate}에 임기가 종료된 것으로 기록되는
+            임기를 종료하며, {effectiveDate}에 임기가 종료된 것으로 기록되는
             것을 확인했습니다.
           </Typography>
         </ConfirmationLabel>
@@ -169,7 +169,7 @@ const openCancellationSuccessModal = () => {
   overlay.open(({ isOpen, close }) => (
     <Modal isOpen={isOpen} onClose={close}>
       <ConfirmModalContent onConfirm={close}>
-        대의원 직책 취소를 완료했습니다.
+        대의원 임기 종료를 완료했습니다.
       </ConfirmModalContent>
     </Modal>
   ));
@@ -212,7 +212,7 @@ const DelegateActionCell = ({ delegate }: { delegate: DelegateRow }) => {
       type={delegate.isChangeable && !isPending ? "danger" : "disabled"}
       onClick={openCancellationModal}
     >
-      취소
+      임기 종료
     </Button>
   );
 };
@@ -339,26 +339,36 @@ const RegistrationDelegateChangeDetailFrame = ({
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <Banner icon="warning">
         {data?.isChangeable
-          ? "동아리 등록 기간에만 변경할 수 있습니다. 등록 서류를 제출하면 더 이상 변경할 수 없습니다."
-          : "현재 동아리 등록 기간이 아니므로 대표자·대의원을 변경할 수 없습니다."}
+          ? "동아리 등록 기간에만 대표자·대의원을 변경하거나 대의원 임기를 종료할 수 있습니다. 이번 학기 등록 서류를 제출한 동아리는 대의원 임기 종료만 가능합니다."
+          : "현재 동아리 등록 기간이 아니므로 직책 변경과 대의원 임기 종료를 할 수 없습니다."}
       </Banner>
       <Typography fs={20} lh={28} fw="SEMIBOLD">
         {data?.club.nameKr} ({data?.club.nameEn}) · {data?.club.divisionName}
       </Typography>
-      <SectionTitle>대표자·대의원 명단</SectionTitle>
+      <SectionTitle>
+        {data?.hasRegistration ? "대의원 명단" : "대표자·대의원 명단"}
+      </SectionTitle>
       <Table
         table={delegateTable}
         count={data?.delegates.length ?? 0}
         minWidth={660}
-        emptyMessage="대표자·대의원 정보가 없습니다."
+        emptyMessage={
+          data?.hasRegistration
+            ? "임기를 종료할 대의원이 없습니다."
+            : "대표자·대의원 정보가 없습니다."
+        }
       />
-      <SectionTitle>전 학기 활동회원 명단</SectionTitle>
-      <Table
-        table={memberTable}
-        count={data?.members.length ?? 0}
-        minWidth={680}
-        emptyMessage="전 학기 활동회원이 없습니다."
-      />
+      {!data?.hasRegistration && (
+        <>
+          <SectionTitle>전 학기 활동회원 명단</SectionTitle>
+          <Table
+            table={memberTable}
+            count={memberRows.length}
+            minWidth={680}
+            emptyMessage="전 학기 활동회원이 없습니다."
+          />
+        </>
+      )}
     </AsyncBoundary>
   );
 };

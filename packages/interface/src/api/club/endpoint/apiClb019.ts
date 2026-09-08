@@ -26,6 +26,7 @@ const responseBodyMap = {
         type: z.nativeEnum(ClubTypeEnum),
         divisionName: z.string(),
         representative: z.string(),
+        hasRegistration: z.boolean(),
       }),
     ),
   }),
@@ -55,7 +56,8 @@ registry.registerPath({
   request: {},
   responses: {
     200: {
-      description: "등록 서류를 제출하지 않은 전 학기 활동 동아리 목록입니다.",
+      description:
+        "전 학기 및 이번 학기 활동 동아리와 이번 학기 등록 서류 제출 여부입니다.",
       content: { "application/json": { schema: responseBodyMap[200] } },
     },
   },

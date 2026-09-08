@@ -2,43 +2,59 @@ import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/commo
 
 import { MemberRegistrationRepository } from "./member-registration.repository";
 
-const studentId = 301;
-const clubId = 201;
-const semesterId = 7;
+describe("MemberRegistrationRepository ensureApprovedForStudent", () => {
+  const applicant = { clubId: 42, semesterId: 20, studentId: 17160 };
 
-describe("MemberRegistrationRepository commands", () => {
-  it("creates and rejects pending registrations", async () => {
-    const registrationApplicationStudent = {
-      create: jest.fn().mockResolvedValue({ id: 1 }),
-      updateMany: jest.fn().mockResolvedValue({ count: 2 }),
+  it("creates only the applicant's approved application when missing", async () => {
+    const delegate = {
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn(),
+      updateMany: jest.fn(),
     };
     const repository = new MemberRegistrationRepository({
-      tx: { registrationApplicationStudent },
+      tx: { registrationApplicationStudent: delegate },
     } as never);
 
-    await repository.createPending(studentId, clubId, semesterId);
-    await repository.rejectPending(clubId, semesterId);
+    await repository.ensureApprovedForStudent(applicant);
 
-    expect(registrationApplicationStudent.create).toHaveBeenCalledWith({
+    expect(delegate.findFirst).toHaveBeenCalledWith({
+      where: { ...applicant, deletedAt: null },
+      select: { id: true },
+    });
+    expect(delegate.create).toHaveBeenCalledWith({
       data: {
-        studentId,
-        clubId,
-        semesterId,
+        ...applicant,
         registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Pending,
+          RegistrationApplicationStudentStatusEnum.Approved,
       },
     });
-    expect(registrationApplicationStudent.updateMany).toHaveBeenCalledWith({
+    expect(delegate.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("approves existing applicant applications without duplicating them", async () => {
+    const delegate = {
+      findFirst: jest.fn().mockResolvedValue({ id: 77 }),
+      create: jest.fn(),
+      updateMany: jest.fn(),
+    };
+    const repository = new MemberRegistrationRepository({
+      tx: { registrationApplicationStudent: delegate },
+    } as never);
+
+    await repository.ensureApprovedForStudent(applicant);
+
+    expect(delegate.create).not.toHaveBeenCalled();
+    expect(delegate.updateMany).toHaveBeenCalledWith({
       where: {
-        clubId,
-        semesterId,
-        registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Pending,
+        ...applicant,
         deletedAt: null,
+        registrationApplicationStudentEnum: {
+          not: RegistrationApplicationStudentStatusEnum.Approved,
+        },
       },
       data: {
         registrationApplicationStudentEnum:
-          RegistrationApplicationStudentStatusEnum.Rejected,
+          RegistrationApplicationStudentStatusEnum.Approved,
       },
     });
   });
