@@ -22,6 +22,19 @@ import { VActivitySummary } from "../model/activity.summary.model";
 
 type PrismaTransactionClient = Prisma.TransactionClient;
 
+const activitySummarySelect = {
+  id: true,
+  activityStatusEnumId: true,
+  activityTypeEnumId: true,
+  clubId: true,
+  name: true,
+  commentedAt: true,
+  editedAt: true,
+  updatedAt: true,
+  chargedExecutiveId: true,
+  commentedExecutiveId: true,
+} satisfies Prisma.ActivitySelect;
+
 @Injectable()
 export default class ActivityRepository {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -412,8 +425,9 @@ export default class ActivityRepository {
   }
 
   async fetchSummary(id: number): Promise<IActivitySummary> {
-    const result = await this.prisma.activity.findUnique({
-      where: { id },
+    const result = await this.prisma.activity.findFirst({
+      where: { id, deletedAt: null },
+      select: activitySummarySelect,
     });
 
     if (!result) {
@@ -426,7 +440,8 @@ export default class ActivityRepository {
   async fetchSummaries(activityIds: number[]): Promise<IActivitySummary[]> {
     if (activityIds.length === 0) return [];
     const results = await this.prisma.activity.findMany({
-      where: { id: { in: activityIds } },
+      where: { id: { in: activityIds }, deletedAt: null },
+      select: activitySummarySelect,
     });
     return results.map(result => VActivitySummary.fromDBResult(result));
   }
@@ -538,48 +553,20 @@ export default class ActivityRepository {
   async fetchCommentedSummaries(
     executiveId: number,
   ): Promise<VActivitySummary[]> {
-    const results: Array<{
-      id: number;
-      activityStatusEnumId: number;
-      activityTypeEnumId: number;
-      clubId: number;
-      name: string;
-      commentedAt: Date | null;
-      editedAt: Date;
-      updatedAt: Date;
-      chargedExecutiveId: number | null;
-      commentedExecutiveId: number | null;
-    }> = await this.prisma.$queryRaw`
-      SELECT
-        a.id,
-        a.activity_status_enum_id AS activityStatusEnumId,
-        a.activity_type_enum_id AS activityTypeEnumId,
-        a.club_id AS clubId,
-        a.name,
-        a.commented_at AS commentedAt,
-        a.edited_at AS editedAt,
-        a.updated_at AS updatedAt,
-        a.charged_executive_id AS chargedExecutiveId,
-        lf.executive_id AS commentedExecutiveId
-      FROM activity a
-      LEFT JOIN (
-        SELECT af.activity_id, af.executive_id
-        FROM activity_feedback af
-        WHERE af.executive_id = ${executiveId}
-          AND af.deleted_at IS NULL
-        ORDER BY af.created_at DESC
-      ) lf ON lf.activity_id = a.id
-      WHERE a.deleted_at IS NULL
-        AND (
-          a.charged_executive_id = ${executiveId}
-          OR EXISTS (
-            SELECT 1 FROM activity_feedback af2
-            WHERE af2.activity_id = a.id
-              AND af2.executive_id = ${executiveId}
-              AND af2.deleted_at IS NULL
-          )
-        )
-    `;
+    const results = await this.prisma.activity.findMany({
+      select: activitySummarySelect,
+      where: {
+        deletedAt: null,
+        OR: [
+          { chargedExecutiveId: executiveId },
+          {
+            activityFeedbacks: {
+              some: { executiveId, deletedAt: null },
+            },
+          },
+        ],
+      },
+    });
 
     return results.map(result => VActivitySummary.fromDBResult(result));
   }
@@ -595,6 +582,7 @@ export default class ActivityRepository {
     activityDId: number,
   ): Promise<VActivitySummary[]> {
     const results = await this.prisma.activity.findMany({
+      select: activitySummarySelect,
       where: {
         clubId,
         activityDId,
@@ -640,10 +628,6 @@ export default class ActivityRepository {
       where: { activityId, deletedAt: null },
     });
 
-    const activityFeedback = await tx.activityFeedback.findMany({
-      where: { activityId, deletedAt: null },
-    });
-
     const activityClubChargedExecutive =
       await tx.activityClubChargedExecutive.findMany({
         where: { activityDId: activityId, deletedAt: null },
@@ -654,7 +638,6 @@ export default class ActivityRepository {
       activityT,
       activityParticipant,
       activityEvidenceFile,
-      activityFeedback,
       activityClubChargedExecutive,
     };
 
