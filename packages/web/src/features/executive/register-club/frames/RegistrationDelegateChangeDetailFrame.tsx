@@ -26,19 +26,25 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import {
+  useCancelRegistrationDelegate,
   useChangeRegistrationDelegate,
   useGetRegistrationDelegateChangeDetail,
 } from "../services/useRegistrationDelegateChange";
+import getRegistrationDelegateChangeMemberRows, {
+  isRegistrationDelegateChangeButtonVisible,
+  type RegistrationDelegateChangeMemberRow,
+} from "../utils/getRegistrationDelegateChangeMemberRows";
 
 type Delegate = ApiClb020ResponseOk["delegates"][number];
 type Member = ApiClb020ResponseOk["members"][number];
-type MemberRow = Member & {
+type DelegateRow = Delegate & {
   clubId: number;
   effectiveAt: Date;
   isChangeable: boolean;
 };
-const delegateColumnHelper = createColumnHelper<Delegate>();
-const memberColumnHelper = createColumnHelper<MemberRow>();
+const delegateColumnHelper = createColumnHelper<DelegateRow>();
+const memberColumnHelper =
+  createColumnHelper<RegistrationDelegateChangeMemberRow>();
 const roleLabels: Record<ClubDelegateEnum, string> = {
   [ClubDelegateEnum.Representative]: "대표자",
   [ClubDelegateEnum.Delegate1]: "대의원 1",
@@ -106,6 +112,49 @@ const ChangeModal = ({
   );
 };
 
+interface CancellationModalProps {
+  delegate: Delegate;
+  effectiveAt: Date;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const CancellationModal = ({
+  delegate,
+  effectiveAt,
+  onClose,
+  onConfirm,
+}: CancellationModalProps) => {
+  const [confirmed, setConfirmed] = useState(false);
+  const effectiveDate = effectiveAt.toLocaleDateString("ko-KR", {
+    timeZone: "Asia/Seoul",
+  });
+
+  return (
+    <CancellableModalContent
+      onClose={onClose}
+      onConfirm={onConfirm}
+      confirmDisabled={!confirmed}
+      confirmButtonText="직책 취소"
+      confirmButtonType="danger"
+    >
+      <FlexWrapper direction="column" gap={16}>
+        <Typography fs={18} lh={24} fw="SEMIBOLD">
+          {delegate.name} ({delegate.studentNumber})
+        </Typography>
+        <ConfirmationLabel onClick={() => setConfirmed(value => !value)}>
+          <Checkbox checked={confirmed} />
+          <Typography fs={15} lh={22}>
+            {delegate.name} 학생의 {roleLabels[delegate.clubDelegateEnumId]}{" "}
+            직책을 취소하며, {effectiveDate}에 임기가 종료된 것으로 기록되는
+            것을 확인했습니다.
+          </Typography>
+        </ConfirmationLabel>
+      </FlexWrapper>
+    </CancellableModalContent>
+  );
+};
+
 const openSuccessModal = () => {
   overlay.open(({ isOpen, close }) => (
     <Modal isOpen={isOpen} onClose={close}>
@@ -116,12 +165,68 @@ const openSuccessModal = () => {
   ));
 };
 
-const MemberActionCell = ({ member }: { member: MemberRow }) => {
+const openCancellationSuccessModal = () => {
+  overlay.open(({ isOpen, close }) => (
+    <Modal isOpen={isOpen} onClose={close}>
+      <ConfirmModalContent onConfirm={close}>
+        대의원 직책 취소를 완료했습니다.
+      </ConfirmModalContent>
+    </Modal>
+  ));
+};
+
+const DelegateActionCell = ({ delegate }: { delegate: DelegateRow }) => {
+  const { mutate: cancelDelegate, isPending } = useCancelRegistrationDelegate(
+    delegate.clubId,
+  );
+  const { clubDelegateEnumId } = delegate;
+
+  if (clubDelegateEnumId === ClubDelegateEnum.Representative) {
+    return <>-</>;
+  }
+
+  const openCancellationModal = () => {
+    overlay.open(({ isOpen, close }) => (
+      <Modal isOpen={isOpen} onClose={close}>
+        <CancellationModal
+          delegate={delegate}
+          effectiveAt={delegate.effectiveAt}
+          onClose={close}
+          onConfirm={() => {
+            close();
+            cancelDelegate(
+              {
+                studentId: delegate.studentId,
+                clubDelegateEnumId,
+              },
+              { onSuccess: openCancellationSuccessModal },
+            );
+          }}
+        />
+      </Modal>
+    ));
+  };
+
+  return (
+    <Button
+      type={delegate.isChangeable && !isPending ? "danger" : "disabled"}
+      onClick={openCancellationModal}
+    >
+      취소
+    </Button>
+  );
+};
+
+const MemberActionCell = ({
+  member,
+}: {
+  member: RegistrationDelegateChangeMemberRow;
+}) => {
   const { mutate: changeDelegate, isPending } = useChangeRegistrationDelegate(
     member.clubId,
   );
 
-  if (!member.isRegularMember) return <>-</>;
+  if (!isRegistrationDelegateChangeButtonVisible(member)) return <>-</>;
 
   const openChangeModal = () => {
     overlay.open(({ isOpen, close }) => (
@@ -172,6 +277,12 @@ const delegateColumns = [
     size: 180,
   }),
   delegateColumnHelper.accessor("name", { header: "이름", size: 180 }),
+  delegateColumnHelper.display({
+    id: "actions",
+    header: "관리",
+    cell: ({ row }) => <DelegateActionCell delegate={row.original} />,
+    size: 140,
+  }),
 ];
 const memberColumns = [
   memberColumnHelper.accessor("studentNumber", {
@@ -200,9 +311,13 @@ const RegistrationDelegateChangeDetailFrame = ({
   const { data, isLoading, isError } =
     useGetRegistrationDelegateChangeDetail(clubId);
   const memberRows = useMemo(
+    () => getRegistrationDelegateChangeMemberRows(data, clubId),
+    [clubId, data],
+  );
+  const delegateRows = useMemo(
     () =>
-      (data?.members ?? []).map(member => ({
-        ...member,
+      (data?.delegates ?? []).map(delegate => ({
+        ...delegate,
         clubId,
         effectiveAt: data?.effectiveAt ?? new Date(0),
         isChangeable: data?.isChangeable ?? false,
@@ -210,7 +325,7 @@ const RegistrationDelegateChangeDetailFrame = ({
     [clubId, data],
   );
   const delegateTable = useReactTable({
-    data: data?.delegates ?? [],
+    data: delegateRows,
     columns: delegateColumns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -234,7 +349,7 @@ const RegistrationDelegateChangeDetailFrame = ({
       <Table
         table={delegateTable}
         count={data?.delegates.length ?? 0}
-        minWidth={520}
+        minWidth={660}
         emptyMessage="대표자·대의원 정보가 없습니다."
       />
       <SectionTitle>전 학기 활동회원 명단</SectionTitle>

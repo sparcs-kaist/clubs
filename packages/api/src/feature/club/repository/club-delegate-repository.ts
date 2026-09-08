@@ -1,6 +1,8 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 
+import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
+
 import {
   BaseTableFieldMapKeys,
   PrimitiveConditionValue,
@@ -161,6 +163,38 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
         clubDelegateEnum: param.clubDelegateEnumId,
         startTerm: param.effectiveAt,
       },
+    });
+  }
+
+  async cancelForRegistration(param: {
+    clubId: number;
+    studentId: number;
+    clubDelegateEnumId: number;
+    effectiveAt: Date;
+  }): Promise<void> {
+    if (param.clubDelegateEnumId === ClubDelegateEnum.Representative) {
+      throw new ConflictException("Representative role cannot be canceled");
+    }
+
+    const delegate = this.getDelegate(this.txHost.tx);
+    const currentRoles = await delegate.findMany({
+      where: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        clubDelegateEnum: param.clubDelegateEnumId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (currentRoles.length !== 1) {
+      throw new ConflictException("Delegate role does not exist");
+    }
+
+    await delegate.updateMany({
+      where: { id: currentRoles[0].id, deletedAt: null },
+      data: { endTerm: param.effectiveAt },
     });
   }
 

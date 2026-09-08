@@ -363,4 +363,53 @@ describe("ClubService registration delegate change", () => {
       clubDelegateRepository.replaceForRegistration,
     ).not.toHaveBeenCalled();
   });
+
+  it("ends a delegate role at the registration change effective time", async () => {
+    const registrationPublicService = {
+      checkDeadline: jest.fn().mockResolvedValue(undefined),
+      isDeadline: jest.fn().mockResolvedValue(true),
+      hasClubRegistration: jest.fn().mockResolvedValue(false),
+    };
+    const semesterPublicService = {
+      load: jest.fn().mockResolvedValue(registrationSemester),
+      getById: jest.fn().mockResolvedValue(previousSemester),
+    };
+    const clubDelegateRepository = {
+      lockForRegistrationChange: jest.fn().mockResolvedValue(undefined),
+      cancelForRegistration: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = createService({
+      registrationPublicService,
+      semesterPublicService,
+      clubDelegateRepository,
+    });
+
+    await expect(
+      service.cancelRegistrationDelegate(
+        { clubId },
+        { studentId: 30, clubDelegateEnumId: 2 },
+      ),
+    ).resolves.toEqual({});
+    expect(registrationPublicService.checkDeadline).toHaveBeenCalledTimes(2);
+    expect(
+      clubDelegateRepository.lockForRegistrationChange,
+    ).toHaveBeenCalledWith(clubId, 30, now);
+    expect(
+      clubDelegateRepository.lockForRegistrationChange.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+    );
+    expect(
+      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      clubDelegateRepository.cancelForRegistration.mock.invocationCallOrder[0],
+    );
+    expect(clubDelegateRepository.cancelForRegistration).toHaveBeenCalledWith({
+      clubId,
+      studentId: 30,
+      clubDelegateEnumId: 2,
+      effectiveAt: new Date("2026-08-27T14:59:00.000Z"),
+    });
+  });
 });
