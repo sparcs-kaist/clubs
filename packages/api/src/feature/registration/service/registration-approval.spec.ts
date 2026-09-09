@@ -99,7 +99,7 @@ describe("club registration approval", () => {
     [RegistrationTypeEnum.NewProvisional, 2],
     [RegistrationTypeEnum.ReProvisional, 2],
   ])(
-    "registers only the applicant for registration type %s",
+    "ends all current roles before registering the applicant for type %s",
     async (registrationType, clubStatusEnumId) => {
       const { service, tx, getStudentsByIds } = setup(registrationType);
       await service.patchExecutiveRegistrationsClubRegistrationApproval(100);
@@ -135,33 +135,33 @@ describe("club registration approval", () => {
         },
       });
       expect(tx.clubDelegateD.updateMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
+        where: {
           clubId,
-          AND: [
-            {
-              OR: [
-                { clubDelegateEnum: ClubDelegateEnum.Representative },
-                { studentId: applicantId },
-              ],
-            },
-            {
-              NOT: {
-                studentId: applicantId,
-                clubDelegateEnum: ClubDelegateEnum.Representative,
-              },
-            },
-          ],
-        }),
+          startTerm: { lte: approvedAt },
+          OR: [{ endTerm: { gte: approvedAt } }, { endTerm: null }],
+          deletedAt: null,
+        },
         data: { endTerm: approvedAt },
       });
+      expect(tx.clubDelegateD.updateMany).toHaveBeenCalledTimes(1);
+      expect(tx.clubDelegateD.create).toHaveBeenCalledTimes(1);
+      expect(
+        tx.clubDelegateD.updateMany.mock.invocationCallOrder[0],
+      ).toBeLessThan(tx.clubDelegateD.create.mock.invocationCallOrder[0]);
     },
   );
 
-  it("preserves an existing applicant representative, membership, and club term", async () => {
+  it("recreates an existing applicant representative while preserving membership and club term", async () => {
     const { service, tx } = setup(RegistrationTypeEnum.NewProvisional);
-    tx.clubDelegateD.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 200 });
+    tx.clubDelegateD.findFirst.mockImplementation(({ where }) =>
+      where.clubId === clubId
+        ? {
+            id: 200,
+            studentId: applicantId,
+            clubDelegateEnum: ClubDelegateEnum.Representative,
+          }
+        : null,
+    );
     tx.registrationApplicationStudent.findFirst.mockResolvedValue({ id: 300 });
     tx.clubStudentT.findFirst.mockResolvedValue({ id: 400 });
     tx.clubT.findFirst.mockResolvedValue({ startTerm, endTerm });
@@ -169,7 +169,26 @@ describe("club registration approval", () => {
 
     await service.patchExecutiveRegistrationsClubRegistrationApproval(100);
 
-    expect(tx.clubDelegateD.create).not.toHaveBeenCalled();
+    expect(tx.clubDelegateD.updateMany).toHaveBeenCalledWith({
+      where: {
+        clubId,
+        startTerm: { lte: approvedAt },
+        OR: [{ endTerm: { gte: approvedAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      data: { endTerm: approvedAt },
+    });
+    expect(tx.clubDelegateD.create).toHaveBeenCalledWith({
+      data: {
+        clubId,
+        studentId: applicantId,
+        clubDelegateEnum: ClubDelegateEnum.Representative,
+        startTerm: approvedAt,
+      },
+    });
+    expect(
+      tx.clubDelegateD.updateMany.mock.invocationCallOrder[0],
+    ).toBeLessThan(tx.clubDelegateD.create.mock.invocationCallOrder[0]);
     expect(tx.clubStudentT.create).not.toHaveBeenCalled();
     expect(tx.clubT.create).not.toHaveBeenCalled();
     expect(tx.clubDivisionHistory.create).not.toHaveBeenCalled();
@@ -227,5 +246,7 @@ describe("club registration approval", () => {
       service.patchExecutiveRegistrationsClubRegistrationApproval(100),
     ).rejects.toThrow("Registration not found");
     expect(tx.clubT.create).not.toHaveBeenCalled();
+    expect(tx.clubDelegateD.updateMany).not.toHaveBeenCalled();
+    expect(tx.clubDelegateD.create).not.toHaveBeenCalled();
   });
 });
