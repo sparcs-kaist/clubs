@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -56,6 +57,7 @@ const OtherEvidenceBlock: React.FC<OtherEvidenceBlockProps> = ({
   fileOnChange,
   initialFiles,
 }) => {
+  const t = useTranslations("common");
   const [toggle, setToggle] = useState<boolean>(true);
 
   return (
@@ -76,6 +78,8 @@ const OtherEvidenceBlock: React.FC<OtherEvidenceBlockProps> = ({
               style={{ whiteSpace: "pre-wrap" }}
             >
               {EvidenceInfo.find(e => e.content === content)?.info || info}
+              {content === "발간물" &&
+                `\n* ${t("funding.publicationPhotoRequired")}`}
             </Typography>
             <FormController
               name={explanationControlName}
