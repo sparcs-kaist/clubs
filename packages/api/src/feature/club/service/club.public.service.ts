@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
 import { ISemester } from "@clubs/domain/semester/semester";
@@ -23,6 +24,7 @@ import { MClubOld } from "../model/club-old.model";
 import { ClubRepository } from "../repository/club.repository";
 import { ClubDelegateRepository } from "../repository/club-delegate-repository";
 import { ClubDivisionHistoryRepository } from "../repository/club-division-history.repository";
+import { ClubMemberRepository } from "../repository/club-member.repository";
 import { ClubSemesterRepository } from "../repository/club-semester.repository";
 import ClubStudentTRepository from "../repository-old/club.club-student-t.repository";
 import ClubTRepository from "../repository-old/club.club-t.repository";
@@ -47,7 +49,52 @@ export default class ClubPublicService {
     private clubSemesterRepository: ClubSemesterRepository,
     private clubDelegateRepository: ClubDelegateRepository,
     private clubDivisionHistoryRepository: ClubDivisionHistoryRepository,
+    private clubMemberRepository: ClubMemberRepository,
   ) {}
+
+  @Transactional()
+  async approveClubRegistration(param: {
+    clubId: number;
+    studentId: number;
+    semester: ISemester;
+    clubTypeEnum: ClubTypeEnum;
+    divisionId: number;
+    characteristicKr: string | null;
+    characteristicEn: string | null;
+    professorId: number | null;
+    effectiveAt: Date;
+  }): Promise<void> {
+    const clubTerm = await this.clubSemesterRepository.ensureForRegistration({
+      clubId: param.clubId,
+      semesterId: param.semester.id,
+      clubStatusEnumId: param.clubTypeEnum,
+      characteristicKr: param.characteristicKr,
+      characteristicEn: param.characteristicEn,
+      professorId: param.professorId,
+      startTerm: param.semester.startTerm,
+      endTerm: param.semester.endTerm,
+    });
+    await this.clubDivisionHistoryRepository.ensureForRegistration({
+      clubId: param.clubId,
+      divisionId: param.divisionId,
+      startTerm: param.semester.startTerm,
+      endTerm: param.semester.endTerm,
+    });
+    await this.clubDelegateRepository.ensureRegistrationApplicantRepresentative(
+      {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        effectiveAt: param.effectiveAt,
+      },
+    );
+    await this.clubMemberRepository.ensureMembershipForStudent({
+      clubId: param.clubId,
+      semesterId: param.semester.id,
+      studentId: param.studentId,
+      startTerm: clubTerm.startTerm,
+      endTerm: clubTerm.endTerm ?? param.semester.endTerm,
+    });
+  }
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.
   // studentId와 clubId가 유효한지 검사하지 않습니다.

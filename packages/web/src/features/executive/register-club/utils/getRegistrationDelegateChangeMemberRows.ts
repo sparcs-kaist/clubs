@@ -17,6 +17,8 @@ const getRegistrationDelegateChangeMemberRows = (
   data: ApiClb020ResponseOk | undefined,
   clubId: number,
 ): RegistrationDelegateChangeMemberRow[] => {
+  if (data?.hasRegistration) return [];
+
   const currentDelegateIds = new Set(
     data?.delegates.map(delegate => delegate.studentId),
   );

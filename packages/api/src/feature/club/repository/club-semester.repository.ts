@@ -55,6 +55,28 @@ export class ClubSemesterRepository extends BaseSingleTableRepository<
     super("clubT", MClubSemester);
   }
 
+  async ensureForRegistration(param: {
+    clubId: number;
+    semesterId: number;
+    clubStatusEnumId: ClubTypeEnum;
+    characteristicKr: string | null;
+    characteristicEn: string | null;
+    professorId: number | null;
+    startTerm: Date;
+    endTerm: Date;
+  }): Promise<{ startTerm: Date; endTerm: Date | null }> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const existing = await delegate.findFirst({
+      where: {
+        clubId: param.clubId,
+        semesterId: param.semesterId,
+        deletedAt: null,
+      },
+    });
+    if (existing) return existing;
+    return delegate.create({ data: param });
+  }
+
   async cancelRegistration(clubId: number, now: Date): Promise<number> {
     const delegate = this.getDelegate(this.txHost.tx);
     const where = {

@@ -14,7 +14,6 @@ import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/
 import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
 import { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
-import { ApiReg016ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg016";
 import { ApiReg017ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg017";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 import {
@@ -26,8 +25,6 @@ import {
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
-import { ClubDivisionHistoryRepository } from "@sparcs-clubs/api/feature/club/repository/club-division-history.repository";
-import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 type ClubRegistrationListResponse = Pick<
@@ -41,10 +38,7 @@ type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 export class ClubRegistrationRepository {
   @Inject(CLOCK) private readonly clock: Clock;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly clubDivisionHistoryRepository: ClubDivisionHistoryRepository,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async selectDeadlineByDate(
     date: Date,
@@ -871,138 +865,6 @@ export class ClubRegistrationRepository {
       },
     );
     return result;
-  }
-
-  async patchExecutiveRegistrationsClubRegistrationApproval(
-    applyId: number,
-  ): Promise<ApiReg016ResponseOk> {
-    const response = await this.prisma.$transaction(async tx => {
-      // 1. 등록 신청 상태를 승인으로 변경
-      const result = await tx.registration.updateMany({
-        where: {
-          id: applyId,
-          deletedAt: null,
-          registrationApplicationStatusEnumId: {
-            in: [
-              RegistrationStatusEnum.Pending,
-              RegistrationStatusEnum.Rejected,
-            ],
-          },
-        },
-        data: {
-          registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
-          reviewedAt: this.clock.now(),
-        },
-      });
-      if (result.count > 1) {
-        throw new HttpException("Registration update failed", 500);
-      } else if (result.count === 0) {
-        throw new HttpException(
-          "Registration not found",
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      // 2. 승인된 등록 신청 정보를 조회
-      const registration = await tx.registration.findUnique({
-        where: { id: applyId },
-        include: { semester: true },
-      });
-
-      if (!registration || !registration.clubId || !registration.semesterId) {
-        throw new HttpException(
-          "Registration data incomplete",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      // 3. 등록 유형에 따라 club_status_enum_id 결정
-      // Renewal(1), Promotional(2) → Regular(1), NewProvisional(3), ReProvisional(4) → Provisional(2)
-      const clubStatusEnumId =
-        registration.registrationApplicationTypeEnumId ===
-          RegistrationTypeEnum.Renewal ||
-        registration.registrationApplicationTypeEnumId ===
-          RegistrationTypeEnum.Promotional
-          ? 1 // Regular (정동아리)
-          : 2; // Provisional (가동아리)
-
-      // 4. 이미 해당 학기에 club_t 레코드가 있는지 확인
-      const existingClubT = await tx.clubT.findFirst({
-        where: {
-          clubId: registration.clubId,
-          semesterId: registration.semesterId,
-          deletedAt: null,
-        },
-      });
-
-      // 5. 없으면 club_t 레코드 생성
-      const clubT =
-        existingClubT ??
-        (await tx.clubT.create({
-          data: {
-            clubId: registration.clubId,
-            semesterId: registration.semesterId,
-            clubStatusEnumId,
-            characteristicKr: registration.activityFieldKr,
-            characteristicEn: registration.activityFieldEn,
-            professorId: registration.professorId,
-            startTerm: registration.semester!.startTerm,
-            endTerm: registration.semester!.endTerm,
-          },
-        }));
-
-      // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
-      const existingClubDivision =
-        await this.clubDivisionHistoryRepository.find(
-          {
-            clubId: registration.clubId,
-            startTerm: { lte: registration.semester!.endTerm },
-            endTerm: { gte: registration.semester!.startTerm },
-          },
-          tx,
-        );
-
-      if (existingClubDivision.length === 0) {
-        await this.clubDivisionHistoryRepository.create(
-          {
-            club: { id: registration.clubId },
-            division: { id: registration.divisionId },
-            startTerm: registration.semester!.startTerm,
-            endTerm: registration.semester!.endTerm,
-          },
-          tx,
-        );
-      }
-
-      const clubTEndTerm = clubT.endTerm ?? registration.semester.endTerm;
-      const delegateStudentIds: number[] = [
-        ...new Set<number>(
-          (
-            await tx.clubDelegateD.findMany({
-              where: {
-                clubId: registration.clubId,
-                startTerm: { lte: clubTEndTerm },
-                OR: [{ endTerm: { gte: clubT.startTerm } }, { endTerm: null }],
-                deletedAt: null,
-              },
-              select: { studentId: true },
-            })
-          ).map(delegate => delegate.studentId),
-        ),
-      ];
-
-      await syncDelegateMemberRegistrations({
-        tx,
-        clubId: registration.clubId,
-        semesterId: registration.semesterId,
-        startTerm: clubT.startTerm,
-        endTerm: clubTEndTerm,
-        studentIds: delegateStudentIds,
-      });
-
-      return {};
-    });
-    return response;
   }
 
   async postExecutiveRegistrationsClubRegistrationSendBack(

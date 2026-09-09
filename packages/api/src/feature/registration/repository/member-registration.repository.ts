@@ -71,6 +71,41 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
     });
   }
 
+  async ensureApprovedForStudent(param: {
+    studentId: number;
+    clubId: number;
+    semesterId: number;
+  }): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const where = { ...param, deletedAt: null };
+    const existingApplication = await delegate.findFirst({
+      where,
+      select: { id: true },
+    });
+    if (!existingApplication) {
+      await delegate.create({
+        data: {
+          ...param,
+          registrationApplicationStudentEnum:
+            RegistrationApplicationStudentStatusEnum.Approved,
+        },
+      });
+      return;
+    }
+    await delegate.updateMany({
+      where: {
+        ...where,
+        registrationApplicationStudentEnum: {
+          not: RegistrationApplicationStudentStatusEnum.Approved,
+        },
+      },
+      data: {
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Approved,
+      },
+    });
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected dbToModelMapping(result: any): MMemberRegistration {
     const res = new MMemberRegistration({
