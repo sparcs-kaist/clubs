@@ -26,6 +26,6 @@
     "concurrently": "^8.2.2",
     "eslint": "^9.24.0",
     "typescript": "^5.8.3",
-    "zod": "^3.21.4"
+    "zod": "^4.4.3"
   }
 }
