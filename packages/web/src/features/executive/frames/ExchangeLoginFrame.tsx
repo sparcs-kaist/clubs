@@ -168,7 +168,7 @@ const ExchangeLoginFrame = () => {
         >
           {exchange.isPending
             ? "로그인 변경 중..."
-            : `${selectedUser.name}(으)로 로그인`}
+            : `${selectedUser.name} 계정으로 로그인`}
         </Button>
       )}
       {exchange.isError && (
