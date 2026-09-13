@@ -64,10 +64,18 @@
 사용자의 이후 모든 행동을 기록하는 기능은 아니다. 토큰 원문은 넣지 않는다.
 기록과 대상 refresh token 저장은 하나의 트랜잭션으로 처리한다.
 
-배포 전에 변경된 Prisma 스키마를 적용해 감사 테이블을 생성해야 한다.
-저장소의 도메인 경계 규칙에 맞춰 기존 refresh token과 User 사이의 ORM
-관계 한 쌍을 제거했다. `userId` 컬럼과 기존 데이터는 유지되지만, 스키마
-동기화 시 기존 관계의 외래 키가 제거될 수 있다.
+배포 전에 `auth_exchange_login_log`를 생성하는 DDL을 별도로 적용해야 한다.
+이번 배포의 DB 변경 범위는 이 테이블과 두 인덱스 추가뿐이다.
+전체 Prisma 스키마를 `db push`로 동기화하는 방식은 사용하지 않는다.
+
+dev·main 모두 API에서 Prisma Client를 사용하지만, 저장소의 배포 workflow에는
+스키마 적용 단계가 없다. 2026-09-14 DB 도구로 조회한 dev·production 양쪽에는
+`_prisma_migrations`와 새 접속 기록 테이블이 없었다. 이 조회만으로 실제 배포
+이미지나 저장소 밖의 스키마 적용 절차까지 확인한 것은 아니다.
+
+저장소의 도메인 경계 규칙에 맞춰 refresh token과 User 사이의 ORM 관계 한 쌍을
+제거했지만, 실제 DB 양쪽에 있는 `auth_activated_refresh_tokens`의 사용자 외래
+키는 유지한다. `userId` 컬럼과 기존 데이터도 변경하지 않는다.
 
 ## 구현 및 검증
 
