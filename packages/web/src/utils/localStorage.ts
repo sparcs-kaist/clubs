@@ -1,5 +1,7 @@
 // WARNING: MUST BE CALLED IN A BROWSER ENVIRONMENT
 
+import type { ApiAut002ResponseCreated } from "@clubs/interface/api/auth/endpoint/apiAut002";
+
 const LOCAL_STORAGE_SET_EVENT = "local-storage-set";
 
 export const getLocalStorageItem = (key: string) => {
@@ -13,6 +15,22 @@ export const getLocalStorageItem = (key: string) => {
 export const setLocalStorageItem = (key: string, value: string) => {
   localStorage.setItem(key, value);
   window.dispatchEvent(new Event(LOCAL_STORAGE_SET_EVENT));
+};
+
+export const setLoginTokens = (
+  tokens: ApiAut002ResponseCreated["accessToken"],
+) => {
+  const accessToken =
+    tokens.professor ??
+    tokens.doctor ??
+    tokens.master ??
+    tokens.undergraduate ??
+    tokens.employee ??
+    tokens.executive ??
+    "";
+
+  localStorage.setItem("responseToken", JSON.stringify(tokens));
+  setLocalStorageItem("accessToken", accessToken);
 };
 
 export const removeLocalStorageItem = (key: string) => {
