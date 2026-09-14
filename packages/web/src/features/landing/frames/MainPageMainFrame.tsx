@@ -11,6 +11,7 @@ import useEasterEgg from "@sparcs-clubs/web/common/hooks/useEasteregg";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
 
 import Banner from "../components/Banner";
+import ProfessorApprovalNotice from "../components/ProfessorApprovalNotice";
 import NoticeSectionFrame from "./NoticeSectionFrame";
 
 const PageTitleWrapper = styled.div`
@@ -90,6 +91,7 @@ const MainPageMainFrame: React.FC = () => {
   const locale = useLocale();
   return (
     <ResponsiveWrapper direction="column" gap={60}>
+      <ProfessorApprovalNotice />
       <Banner icon="star">{t("beta_info")}</Banner>
       {locale === "ko" ? <KoSlogan /> : <EnSlogan />}
       <NoticeAndServiceWrapper>

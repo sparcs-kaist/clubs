@@ -1,3 +1,4 @@
+import type { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg021";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationApplicationStudentStatusEnum,
@@ -22,14 +23,17 @@ const mockClubRegister = {
   ],
 };
 
-const mockProfClubRegister = {
+const mockProfClubRegister: ApiReg021ResponseOk = {
   items: [
     {
       id: 1,
       clubId: 23,
+      semesterId: 1,
       registrationStatusEnumId: RegistrationStatusEnum.Pending,
       division: { id: 1, name: "생활문화" },
-      clubName: "술박스",
+      clubNameKr: "술박스",
+      newClubNameKr: "술박스",
+      newClubNameEn: "Soolbox",
       student: {
         id: 1,
         studentNumber: 20200000,

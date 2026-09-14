@@ -943,6 +943,7 @@ export class RegistrationService {
       items: registrations.map(e => ({
         id: e.registration.id,
         clubId: e.registration.clubId,
+        semesterId: e.registration.semesterId,
         registrationStatusEnumId:
           e.registration.registrationApplicationStatusEnumId,
         division: {
