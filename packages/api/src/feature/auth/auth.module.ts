@@ -6,8 +6,11 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import UserModule from "../user/user.module";
 import { AuthController } from "./controller/auth.controller";
+import { ExchangeLoginController } from "./controller/exchange-login.controller";
 import { AuthRepository } from "./repository/auth.repository";
+import { AuthExchangeLoginRepository } from "./repository/exchange-login/auth-exchange-login.repository";
 import { AuthService } from "./service/auth.service";
+import { ExchangeLoginService } from "./service/exchange-login.service";
 import { SsoClientService } from "./service/sso-client.service";
 import { JwtAccessStrategy } from "./strategy/jwt-access.strategy";
 import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
@@ -26,11 +29,13 @@ import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
     PassportModule,
     UserModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, ExchangeLoginController],
   providers: [
     AuthService,
     SsoClientService,
     AuthRepository,
+    AuthExchangeLoginRepository,
+    ExchangeLoginService,
     JwtRefreshStrategy,
     JwtAccessStrategy,
   ],

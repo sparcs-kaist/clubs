@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 
+import { ApiAut005RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut005";
 import {
   IExecutiveSummary,
   IProfessor,
@@ -11,6 +12,7 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { RMProfessor } from "../model/professor.model";
 import { MStudent } from "../model/student.model";
+import { ExchangeLoginUserRepository } from "../repository/exchange-login-user.repository";
 import ExecutiveRepository from "../repository/executive.repository";
 import OldProfessorRepository from "../repository/old.professor.repository";
 import OldStudentRepository from "../repository/old.student.repository";
@@ -27,7 +29,16 @@ export default class UserPublicService {
     private oldProfessorRepository: OldProfessorRepository,
     private professorRepository: ProfessorRepository,
     private studentRepository: StudentRepository,
+    private exchangeLoginUserRepository: ExchangeLoginUserRepository,
   ) {}
+
+  async searchExchangeLoginUsers(query: ApiAut005RequestQuery) {
+    return this.exchangeLoginUserRepository.searchExchangeLoginUsers(query);
+  }
+
+  async getExchangeLoginUserById(userId: number) {
+    return this.exchangeLoginUserRepository.getExchangeLoginUserById(userId);
+  }
 
   /**
    * 학생의 id를 통해 학생 정보를 가져옵니다.

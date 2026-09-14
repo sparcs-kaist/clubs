@@ -119,6 +119,15 @@ const ExecutiveDashboardFrame = () => {
           </DashboardSectionInner>
         </FlexWrapper>
       </FlexWrapper>
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>로그인 갈아끼우기</SectionTitle>
+        <DashboardSectionInner>
+          <DashboardButton
+            text="로그인 갈아끼우기"
+            link="/executive/exchange-login"
+          />
+        </DashboardSectionInner>
+      </FlexWrapper>
     </AsyncBoundary>
   );
 };
