@@ -1,27 +1,27 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
 import ErrorPageTemplate from "@sparcs-clubs/web/common/frames/ErrorPageTemplate";
+
+const renderBreak = () => <br />;
 
 interface LoginRequiredProps {
   login: () => void;
 }
 
 const LoginRequired: React.FC<LoginRequiredProps> = ({ login }) => {
+  const t = useTranslations("common");
   const Message = (
-    <ErrorMessage>
-      현재 접근한 페이지는
-      <br />
-      로그인해야 볼 수 있습니다
-    </ErrorMessage>
+    <ErrorMessage>{t.rich("loginRequired", { br: renderBreak })}</ErrorMessage>
   );
 
   return (
     <ErrorPageTemplate
       message={Message}
-      buttons={[{ text: "로그인 바로가기", onClick: login }]}
+      buttons={[{ text: t("goToLogin"), onClick: login }]}
     />
   );
 };

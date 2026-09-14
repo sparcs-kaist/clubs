@@ -2,17 +2,17 @@
 
 import type { NextPage } from "next";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
 import ErrorPageTemplate from "@sparcs-clubs/web/common/frames/ErrorPageTemplate";
 
+const renderBreak = () => <br />;
+
 const NotFound: NextPage = () => {
+  const t = useTranslations("common");
   const Message = (
-    <ErrorMessage>
-      현재 접근한 페이지는
-      <br />
-      존재하지 않습니다
-    </ErrorMessage>
+    <ErrorMessage>{t.rich("notFound", { br: renderBreak })}</ErrorMessage>
   );
 
   const router = useRouter();
@@ -26,7 +26,7 @@ const NotFound: NextPage = () => {
       message={Message}
       buttons={[
         {
-          text: "메인 바로가기",
+          text: t("goToMain"),
           onClick: goToMain,
         },
       ]}

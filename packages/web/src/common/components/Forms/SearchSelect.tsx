@@ -1,4 +1,5 @@
 import { hangulIncludes } from "es-hangul";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
@@ -62,9 +63,10 @@ const SearchSelect = <T,>({
   value,
   onChange = () => {},
   setErrorStatus = () => {},
-  placeholder = "검색어를 입력해주세요",
+  placeholder,
   required = true,
 }: SearchSelectProps<T>) => {
+  const t = useTranslations("common");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
@@ -125,7 +127,7 @@ const SearchSelect = <T,>({
     <SelectWrapper ref={containerRef}>
       {label && <Label>{label}</Label>}
       <SearchInput
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("forms.searchPlaceholder")}
         value={searchTerm}
         onChange={handleInputChange}
         onFocus={handleInputFocus}
@@ -146,14 +148,12 @@ const SearchSelect = <T,>({
               </SelectOption>
             ))
           ) : (
-            <NoOption>검색 결과가 없습니다</NoOption>
+            <NoOption>{t("forms.noResults")}</NoOption>
           )}
         </DropdownWrapper>
       )}
       {required && hasOpenedOnce && !value && items.length > 0 && (
-        <FormError>
-          {errorMessage || "필수로 선택해야 하는 항목입니다"}
-        </FormError>
+        <FormError>{errorMessage || t("forms.selectionRequired")}</FormError>
       )}
     </SelectWrapper>
   );

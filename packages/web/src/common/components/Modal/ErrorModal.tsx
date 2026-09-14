@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 
@@ -13,12 +14,17 @@ export interface ErrorModalProps {
 const ErrorModal: React.FC<ErrorModalProps> = ({
   isOpen,
   onConfirm,
-  message = "실패하였습니다",
-}) => (
-  <Modal isOpen={isOpen}>
-    <ConfirmModalContent onConfirm={onConfirm}>{message}</ConfirmModalContent>
-  </Modal>
-);
+  message,
+}) => {
+  const t = useTranslations("common");
+  return (
+    <Modal isOpen={isOpen}>
+      <ConfirmModalContent onConfirm={onConfirm}>
+        {message ?? t("failed")}
+      </ConfirmModalContent>
+    </Modal>
+  );
+};
 
 export default ErrorModal;
 

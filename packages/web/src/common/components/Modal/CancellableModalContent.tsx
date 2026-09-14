@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -28,26 +29,29 @@ const CancellableModalContent: React.FC<CancellableModalContentProps> = ({
   onClose,
   onConfirm,
   children,
-  closeButtonText = "취소",
-  confirmButtonText = "확인",
+  closeButtonText,
+  confirmButtonText,
   confirmButtonType = "default",
-}) => (
-  <FlexWrapper direction="column" gap={12}>
-    <Typography fs={16} lh={28} fw="MEDIUM" style={{ textAlign: "center" }}>
-      {children}
-    </Typography>
-    <ButtonWrapper>
-      <Button type="outlined" onClick={onClose}>
-        {closeButtonText}
-      </Button>
-      <Button
-        type={confirmDisabled ? "disabled" : confirmButtonType}
-        onClick={onConfirm}
-      >
-        {confirmButtonText}
-      </Button>
-    </ButtonWrapper>
-  </FlexWrapper>
-);
+}) => {
+  const t = useTranslations("common");
+  return (
+    <FlexWrapper direction="column" gap={12}>
+      <Typography fs={16} lh={28} fw="MEDIUM" style={{ textAlign: "center" }}>
+        {children}
+      </Typography>
+      <ButtonWrapper>
+        <Button type="outlined" onClick={onClose}>
+          {closeButtonText ?? t("cancel")}
+        </Button>
+        <Button
+          type={confirmDisabled ? "disabled" : confirmButtonType}
+          onClick={onConfirm}
+        >
+          {confirmButtonText ?? t("confirm")}
+        </Button>
+      </ButtonWrapper>
+    </FlexWrapper>
+  );
+};
 
 export default CancellableModalContent;

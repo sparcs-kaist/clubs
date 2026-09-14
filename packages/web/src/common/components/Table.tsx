@@ -1,6 +1,7 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { flexRender, type Table as TableType } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useCallback, useEffect, useRef } from "react";
 import styled from "styled-components";
 
@@ -111,7 +112,7 @@ const Table = <T,>({
   table,
   minWidth = 900,
   height = undefined,
-  emptyMessage = "내역이 없습니다",
+  emptyMessage,
   footer = null,
   count = undefined,
   rowLink = undefined,
@@ -123,6 +124,7 @@ const Table = <T,>({
   widthMode = "fill",
   unit = "개",
 }: TableProps<T>) => {
+  const t = useTranslations("common");
   // 야매로 min-width 바꿔치기 (고치지 마세요)
   // eslint-disable-next-line no-underscore-dangle
   table._getColumnDefs().forEach(column => {
@@ -191,8 +193,7 @@ const Table = <T,>({
       <Count>
         {(count || count === 0) && (
           <Typography fs={16} lh={20}>
-            총 {count}
-            {unit}
+            {t("totalCount", { count, unit: t.has(unit) ? t(unit) : unit })}
           </Typography>
         )}
       </Count>
@@ -277,7 +278,7 @@ const Table = <T,>({
                     ff="PRETENDARD"
                     fw="REGULAR"
                   >
-                    {emptyMessage}
+                    {emptyMessage ?? t("noHistory")}
                   </Typography>
                 </EmptyCenterCell>
               </EmptyCenterRow>

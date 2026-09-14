@@ -1,4 +1,5 @@
 import { toZonedTime } from "date-fns-tz";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -44,48 +45,52 @@ const PatchNoteModal: React.FC<AgreementModalProps> = ({
   isOpen,
   onConfirm,
   latestPatchNote,
-}) =>
-  latestPatchNote && (
-    <Modal isOpen={isOpen} onClose={() => {}}>
-      <StyledModalContainer>
-        <Typography fs={20} lh={24} fw="SEMIBOLD">
-          🛠️ 패치노트
-        </Typography>
-        <StyledVersionDateContainer>
-          <StyledTextContainer>
-            <Typography fs={16} lh={24} fw="BOLD">
-              버전
-            </Typography>
-            <Typography fs={16} lh={24} fw="MEDIUM">
-              {latestPatchNote.version}
-            </Typography>
-          </StyledTextContainer>
-          <StyledTextContainer>
-            <Typography fs={16} lh={24} fw="BOLD">
-              날짜
-            </Typography>
-            <Typography fs={16} lh={24} fw="MEDIUM">
-              {(() => {
-                const d = toZonedTime(latestPatchNote.date, "Asia/Seoul");
-                return `${String(d.getFullYear())}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
-              })()}
-            </Typography>
-          </StyledTextContainer>
-        </StyledVersionDateContainer>
-        <Card gap={16} padding="16px" outline>
-          <Typography
-            fs={16}
-            lh={24}
-            fw="MEDIUM"
-            style={{ whiteSpace: "pre-wrap", minHeight: "100px" }}
-          >
-            {latestPatchNote.patchNoteContent}
+}) => {
+  const t = useTranslations("common");
+  return (
+    latestPatchNote && (
+      <Modal isOpen={isOpen} onClose={() => {}}>
+        <StyledModalContainer>
+          <Typography fs={20} lh={24} fw="SEMIBOLD">
+            🛠️ {t("patchNote.title")}
           </Typography>
-        </Card>
+          <StyledVersionDateContainer>
+            <StyledTextContainer>
+              <Typography fs={16} lh={24} fw="BOLD">
+                {t("patchNote.version")}
+              </Typography>
+              <Typography fs={16} lh={24} fw="MEDIUM">
+                {latestPatchNote.version}
+              </Typography>
+            </StyledTextContainer>
+            <StyledTextContainer>
+              <Typography fs={16} lh={24} fw="BOLD">
+                {t("patchNote.date")}
+              </Typography>
+              <Typography fs={16} lh={24} fw="MEDIUM">
+                {(() => {
+                  const d = toZonedTime(latestPatchNote.date, "Asia/Seoul");
+                  return `${String(d.getFullYear())}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+                })()}
+              </Typography>
+            </StyledTextContainer>
+          </StyledVersionDateContainer>
+          <Card gap={16} padding="16px" outline>
+            <Typography
+              fs={16}
+              lh={24}
+              fw="MEDIUM"
+              style={{ whiteSpace: "pre-wrap", minHeight: "100px" }}
+            >
+              {latestPatchNote.patchNoteContent}
+            </Typography>
+          </Card>
 
-        <Button onClick={onConfirm}>확인</Button>
-      </StyledModalContainer>
-    </Modal>
+          <Button onClick={onConfirm}>{t("confirm")}</Button>
+        </StyledModalContainer>
+      </Modal>
+    )
   );
+};
 
 export default PatchNoteModal;

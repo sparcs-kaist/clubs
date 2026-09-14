@@ -1,4 +1,5 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
@@ -108,8 +109,9 @@ const FormSelect = <T,>({
   value,
   onChange = () => {},
   onBlur = () => {},
-  placeholder = "항목을 선택해주세요",
+  placeholder,
 }: SelectProps<T>) => {
+  const t = useTranslations("common");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +146,9 @@ const FormSelect = <T,>({
   };
 
   const selectedLabel =
-    items.find(item => item.value === value)?.label || placeholder;
+    items.find(item => item.value === value)?.label ||
+    placeholder ||
+    t("forms.selectPlaceholder");
 
   return (
     <SelectWrapper>
@@ -186,7 +190,7 @@ const FormSelect = <T,>({
                   </SelectOption>
                 ))
               ) : (
-                <NoOption>항목이 존재하지 않습니다</NoOption>
+                <NoOption>{t("forms.noOptions")}</NoOption>
               )}
             </Dropdown>
           )}

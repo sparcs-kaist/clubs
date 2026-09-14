@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -8,10 +9,7 @@ import FormController from "@sparcs-clubs/web/common/components/FormController";
 import PhoneInput from "@sparcs-clubs/web/common/components/Forms/PhoneInput";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
-import {
-  notAllowKrRegx,
-  regxErrorMessage,
-} from "@sparcs-clubs/web/features/register-club/constants";
+import { notAllowKrRegx } from "@sparcs-clubs/web/features/register-club/constants";
 
 import DivisionSelect from "./_atomic/DivisionSelect";
 import MonthSelect from "./_atomic/MonthSelect";
@@ -27,6 +25,7 @@ export interface ProvisionalBasicInformFrameProps {
 const ProvisionalBasicInformFrame: React.FC<
   ProvisionalBasicInformFrameProps
 > = ({ isInitialCheckedProfessor = false, children, profile = undefined }) => {
+  const t = useTranslations("my.registration");
   const { control, setValue } = useFormContext();
 
   const [isCheckedProfessor, setIsCheckedProfessor] = useState(
@@ -41,11 +40,11 @@ const ProvisionalBasicInformFrame: React.FC<
 
   return (
     <FlexWrapper direction="column" gap={40}>
-      <SectionTitle>기본 정보</SectionTitle>
+      <SectionTitle>{t("basicInfo")}</SectionTitle>
       <Card outline gap={32} style={{ marginLeft: 20 }}>
         <FlexWrapper direction="row" gap={32} style={{ width: "100%" }}>
           <TextInput
-            label="대표자 이름"
+            label={t("representativeName")}
             placeholder={profile?.name ?? ""}
             disabled
           />
@@ -59,12 +58,12 @@ const ProvisionalBasicInformFrame: React.FC<
               validate: value =>
                 /^010-\d{4}-\d{4}$/.test(value.trim())
                   ? undefined
-                  : "올바른 전화번호 형식이 아닙니다.",
+                  : t("invalidPhone"),
             }}
             renderItem={props => (
               <PhoneInput
                 {...props}
-                label="대표자 전화번호"
+                label={t("representativePhone")}
                 placeholder="010-XXXX-XXXX"
               />
             )}
@@ -83,8 +82,8 @@ const ProvisionalBasicInformFrame: React.FC<
           renderItem={props => (
             <TextInput
               {...props}
-              label="활동 분야 (국문)"
-              placeholder="활동 분야를 입력해주세요"
+              label={t("activityFieldKr")}
+              placeholder={t("activityFieldPlaceholder")}
             />
           )}
         />
@@ -94,18 +93,20 @@ const ProvisionalBasicInformFrame: React.FC<
           control={control}
           rules={{
             validate: value =>
-              notAllowKrRegx.test(value) ? undefined : regxErrorMessage,
+              notAllowKrRegx.test(value)
+                ? undefined
+                : t("invalidForeignCharacters"),
           }}
           renderItem={props => (
             <TextInput
               {...props}
-              label="활동 분야 (영문)"
-              placeholder="활동 분야를 입력해주세요"
+              label={t("activityFieldEn")}
+              placeholder={t("activityFieldPlaceholder")}
             />
           )}
         />
         <CheckboxOption
-          optionText="지도교수를 신청하겠습니다"
+          optionText={t("requestProfessor")}
           checked={isCheckedProfessor}
           onClick={() => {
             setIsCheckedProfessor(!isCheckedProfessor);

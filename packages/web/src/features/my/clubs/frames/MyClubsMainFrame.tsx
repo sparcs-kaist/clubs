@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -9,6 +10,7 @@ import ClubsSectionFrame from "@sparcs-clubs/web/features/clubs/frames/ClubsSect
 import useGetMyClub from "@sparcs-clubs/web/features/my/clubs/service/useGetMyClub";
 
 const MyClubsMainFrame: React.FC = () => {
+  const t = useTranslations("my.overview");
   const { data, isLoading, isError } = useGetMyClub();
   const isMyClubsExist = useMemo(
     () => (data?.semesters ?? []).length > 0,
@@ -23,7 +25,11 @@ const MyClubsMainFrame: React.FC = () => {
               myClub.clubs.length > 0 && (
                 <ClubsSectionFrame
                   showLength={false}
-                  title={myClub.name}
+                  title={myClub.name
+                    .replace("봄", t("season.spring"))
+                    .replace("여름", t("season.summer"))
+                    .replace("가을", t("season.fall"))
+                    .replace("겨울", t("season.winter"))}
                   clubList={myClub.clubs}
                   key={myClub.name}
                 />
@@ -32,7 +38,7 @@ const MyClubsMainFrame: React.FC = () => {
         </FlexWrapper>
       ) : (
         <Typography color="GRAY.300" fs={20} fw="MEDIUM">
-          동아리가 없습니다
+          {t("noClubs")}
         </Typography>
       )}
     </AsyncBoundary>

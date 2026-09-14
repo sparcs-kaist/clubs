@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -35,6 +36,8 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
   onSubmit,
   canCancel = true,
 }) => {
+  const t = useTranslations("my.registration.activity");
+
   const formCtx = useForm<ActivityReportFormData>({
     mode: "all",
     defaultValues: initialData,
@@ -102,12 +105,13 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
         <FormController
           name="name"
           required
+          requiredMessage={t("required")}
           control={control}
           renderItem={props => (
             <TextInput
               {...props}
-              label="활동명"
-              placeholder="활동명을 입력해주세요"
+              label={t("name")}
+              placeholder={t("namePlaceholder")}
             />
           )}
         />
@@ -116,25 +120,30 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
           <FormController
             name="activityTypeEnumId"
             required
+            requiredMessage={t("required")}
             control={control}
             renderItem={props => (
               <Select
                 {...props}
-                label="활동 분류"
+                label={t("type")}
                 items={[
                   {
                     value: ActivityTypeEnum.matchedInternalActivity,
-                    label: "동아리 성격에 합치하는 내부 활동",
+                    label: t(
+                      `types.${ActivityTypeEnum.matchedInternalActivity}`,
+                    ),
                     selectable: true,
                   },
                   {
                     value: ActivityTypeEnum.matchedExternalActivity,
-                    label: "동아리 성격에 합치하는 외부 활동",
+                    label: t(
+                      `types.${ActivityTypeEnum.matchedExternalActivity}`,
+                    ),
                     selectable: true,
                   },
                   {
                     value: ActivityTypeEnum.notMatchedActivity,
-                    label: "동아리 성격에 합치하지 않는 활동",
+                    label: t(`types.${ActivityTypeEnum.notMatchedActivity}`),
                     selectable: true,
                   },
                 ]}
@@ -174,44 +183,47 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
         <FormController
           name="location"
           required
+          requiredMessage={t("required")}
           control={control}
           renderItem={props => (
             <TextInput
               {...props}
-              label="활동 장소"
-              placeholder="활동 장소를 입력해주세요"
+              label={t("location")}
+              placeholder={t("locationPlaceholder")}
             />
           )}
         />
         <FormController
           name="purpose"
           required
+          requiredMessage={t("required")}
           control={control}
           renderItem={props => (
             <TextInput
               {...props}
-              label="활동 목적"
-              placeholder="활동 목적을 입력해주세요"
+              label={t("purpose")}
+              placeholder={t("purposePlaceholder")}
             />
           )}
         />
         <FormController
           name="detail"
           required
+          requiredMessage={t("required")}
           control={control}
           renderItem={props => (
             <TextInput
               {...props}
               area
-              label="활동 내용"
-              placeholder="활동 내용을 입력해주세요"
+              label={t("detail")}
+              placeholder={t("detailPlaceholder")}
             />
           )}
         />
         {durations && (
           <FlexWrapper direction="column" gap={4}>
             <Typography fs={16} lh={20} fw="MEDIUM" color="BLACK">
-              활동 인원
+              {t("participants")}
             </Typography>
             <AsyncBoundary isLoading={isLoading} isError={isError}>
               <SelectParticipant
@@ -234,17 +246,18 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
         )}
         <FlexWrapper direction="column" gap={4}>
           <Typography fs={16} lh={20} fw="MEDIUM" color="BLACK">
-            활동 증빙
+            {t("evidence")}
           </Typography>
           <FormController
             name="evidence"
             required
+            requiredMessage={t("required")}
             control={control}
             renderItem={props => (
               <TextInput
                 {...props}
                 area
-                placeholder="활동 증빙에 대해서 작성하고 싶은 것이 있다면 입력해주세요"
+                placeholder={t("evidencePlaceholder")}
               />
             )}
           />
@@ -252,10 +265,12 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
           <FormController
             name="evidenceFiles"
             required
+            requiredMessage={t("required")}
             control={control}
             renderItem={props => (
               <FileUpload
                 {...props}
+                placeholder={t("uploadPlaceholder")}
                 multiple
                 initialFiles={evidenceFiles}
                 onChange={files => {
@@ -278,7 +293,7 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
         >
           {canCancel && (
             <Button type="outlined" onClick={onCancel}>
-              취소
+              {t("cancel")}
             </Button>
           )}
 
@@ -290,7 +305,7 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
               onSubmit(watch());
             }}
           >
-            저장
+            {t("save")}
           </Button>
         </FlexWrapper>
       </FlexWrapper>

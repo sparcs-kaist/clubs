@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { PromotionalPrintingOrderStatusEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
@@ -13,6 +14,7 @@ import PrintingProgress from "@sparcs-clubs/web/features/printing-business/compo
 import PrintingDetailFrame from "@sparcs-clubs/web/features/printing-business/frames/PrintingDetailFrame";
 
 const MyPrintingDetail = () => {
+  const t = useTranslations("my.services");
   const router = useRouter();
   const onClick = () => {
     router.push("/my/printing-business");
@@ -21,13 +23,13 @@ const MyPrintingDetail = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
+          { name: t("myPage"), path: "/my" },
           {
-            name: "홍보물 인쇄 내역",
+            name: t("printing.title"),
             path: "/my/printing-business",
           },
         ]}
-        title="홍보물 인쇄 내역"
+        title={t("printing.title")}
         enableLast
       />
       <Card outline gap={20}>
@@ -37,7 +39,7 @@ const MyPrintingDetail = () => {
         <PrintingDetailFrame />
       </Card>
       <Button style={{ width: "max-content" }} onClick={onClick}>
-        목록으로 돌아가기
+        {t("backToList")}
       </Button>
     </FlexWrapper>
   );

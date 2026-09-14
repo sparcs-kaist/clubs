@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -20,16 +21,19 @@ const ButtonWrapper = styled.div`
 const ConfirmModalContent: React.FC<ConfirmModalContentProps> = ({
   onConfirm,
   children,
-  confirmButtonText = "확인",
-}) => (
-  <FlexWrapper direction="column" gap={12}>
-    <Typography fs={16} lh={28} fw="MEDIUM" style={{ textAlign: "center" }}>
-      {children}
-    </Typography>
-    <ButtonWrapper>
-      <Button onClick={onConfirm}>{confirmButtonText}</Button>
-    </ButtonWrapper>
-  </FlexWrapper>
-);
+  confirmButtonText,
+}) => {
+  const t = useTranslations("common");
+  return (
+    <FlexWrapper direction="column" gap={12}>
+      <Typography fs={16} lh={28} fw="MEDIUM" style={{ textAlign: "center" }}>
+        {children}
+      </Typography>
+      <ButtonWrapper>
+        <Button onClick={onConfirm}>{confirmButtonText ?? t("confirm")}</Button>
+      </ButtonWrapper>
+    </FlexWrapper>
+  );
+};
 
 export default ConfirmModalContent;

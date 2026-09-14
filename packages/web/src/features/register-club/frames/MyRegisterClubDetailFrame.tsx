@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { styled } from "styled-components";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -22,6 +23,7 @@ const ButtonWrapper = styled.div`
 `;
 
 const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
+  const t = useTranslations("my.registration");
   const { id: idParam } = useParams<{ id: string }>();
   const parsedApplyId = Number(idParam);
   const isValidApplyId = Number.isInteger(parsedApplyId) && parsedApplyId > 0;
@@ -60,7 +62,7 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
             router.push("/my");
           }}
         >
-          목록으로 돌아가기
+          {t("backToList")}
         </Button>
         {isProfessor ? (
           <ProfessorRegisterClubDetailButton clubDetail={clubDetail} />

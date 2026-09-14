@@ -3,7 +3,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React from "react";
+import { useTranslations } from "next-intl";
+import React, { useMemo } from "react";
 
 import { ApiReg006ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg006";
 
@@ -26,57 +27,79 @@ interface MyMemberTableProps {
 const columnHelper =
   createColumnHelper<ApiReg006ResponseOk["applies"][number]>();
 
-const columns = [
-  columnHelper.accessor("applyStatusEnumId", {
-    id: "applyStatusEnumId",
-    header: "상태",
-    cell: info => {
-      const { color, text } = getTagDetail(
-        info.getValue(),
-        RegistrationStatusTagList,
-      );
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 10,
-  }),
-  columnHelper.accessor("type", {
-    id: "type",
-    header: "구분",
-    cell: info => (
-      <Tag
-        color={getTagColorFromClubType(
-          info.row.original.type,
-          info.row.original.isPermanent,
-        )}
-      >
-        {getTagContentFromClubType(
-          info.row.original.type,
-          info.row.original.isPermanent,
-        )}
-      </Tag>
-    ),
-    size: 10,
-  }),
-  columnHelper.accessor("divisionName", {
-    id: "divisionName",
-    header: "분과",
-    cell: info => (
-      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
-    ),
-    size: 10,
-  }),
+const useColumns = () => {
+  const t = useTranslations("my.overview");
+  const clubT = useTranslations("club");
+  const divisionT = useTranslations("division");
+  return useMemo(
+    () => [
+      columnHelper.accessor("applyStatusEnumId", {
+        id: "applyStatusEnumId",
+        header: t("columns.status"),
+        cell: info => {
+          const { color, text } = getTagDetail(
+            info.getValue(),
+            RegistrationStatusTagList,
+          );
+          return (
+            <Tag color={color}>
+              {t(
+                `status.${({ 승인: "approved", 신청: "applied", 반려: "rejected" } as Record<string, string>)[text] ?? "unknown"}`,
+              )}
+            </Tag>
+          );
+        },
+        size: 10,
+      }),
+      columnHelper.accessor("type", {
+        id: "type",
+        header: t("columns.type"),
+        cell: info => (
+          <Tag
+            color={getTagColorFromClubType(
+              info.row.original.type,
+              info.row.original.isPermanent,
+            )}
+          >
+            {clubT(
+              getTagContentFromClubType(
+                info.row.original.type,
+                info.row.original.isPermanent,
+              ),
+            )}
+          </Tag>
+        ),
+        size: 10,
+      }),
+      columnHelper.accessor("divisionName", {
+        id: "divisionName",
+        header: clubT("분과"),
+        cell: info => (
+          <Tag color={getDivisionTagColor(info.getValue())}>
+            {divisionT.has(info.getValue())
+              ? divisionT(info.getValue())
+              : info.getValue()}
+          </Tag>
+        ),
+        size: 10,
+      }),
 
-  columnHelper.accessor("clubNameKr", {
-    id: "clubNameKr",
-    header: "동아리",
-    cell: info => info.getValue(),
-    size: 128,
-  }),
-];
+      columnHelper.accessor("clubNameKr", {
+        id: "clubNameKr",
+        header: t("columns.club"),
+        cell: info => info.getValue(),
+        size: 128,
+      }),
+    ],
+    [t, clubT, divisionT],
+  );
+};
 
 const MyMemberTable: React.FC<MyMemberTableProps> = ({
   memberRegisterList,
 }) => {
+  const t = useTranslations("my.overview");
+  const columns = useColumns();
   const table = useReactTable({
     columns,
     data: memberRegisterList.applies,
@@ -90,7 +113,7 @@ const MyMemberTable: React.FC<MyMemberTableProps> = ({
     <Table
       table={table}
       rowLink={getRowLink}
-      emptyMessage="회원 등록 내역이 없습니다."
+      emptyMessage={t("noMemberRegistrations")}
     />
   );
 };

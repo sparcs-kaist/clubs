@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -14,6 +15,8 @@ interface DivisionSelectProps {
 const DivisionSelect: React.FC<DivisionSelectProps> = ({
   isRenewal = false,
 }) => {
+  const t = useTranslations("my.registration");
+  const divisionT = useTranslations("division");
   const { control } = useFormContext<RegisterClubModel>();
 
   const { data, isLoading, isError } = useGetDivisionType();
@@ -21,7 +24,9 @@ const DivisionSelect: React.FC<DivisionSelectProps> = ({
   const divisionItems: SelectItem<number>[] =
     data?.divisions?.map(division => ({
       value: division.id,
-      label: division.name,
+      label: divisionT.has(division.name)
+        ? divisionT(division.name)
+        : division.name,
     })) ?? [];
 
   return (
@@ -33,11 +38,11 @@ const DivisionSelect: React.FC<DivisionSelectProps> = ({
         renderItem={props => (
           <Select
             {...props}
-            label={isRenewal ? "소속 분과" : "희망 분과"}
+            label={isRenewal ? t("division") : t("preferredDivision")}
             placeholder={
               isRenewal
-                ? "소속 분과를 선택해주세요"
-                : "희망 분과를 선택해주세요"
+                ? t("divisionPlaceholder")
+                : t("preferredDivisionPlaceholder")
             }
             items={divisionItems}
           />

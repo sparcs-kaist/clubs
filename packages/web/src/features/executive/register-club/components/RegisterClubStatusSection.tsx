@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
 
 import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -18,13 +19,14 @@ const RegisterClubStatusSection: React.FC<RegisterClubStatusSectionProps> = ({
   editedAt,
   comments,
 }) => {
+  const t = useTranslations("my.registration");
   const progressStatus = getRegisterClubProgress(status, editedAt);
 
   const ToastSection = useMemo(() => {
     if (status === RegistrationStatusEnum.Rejected) {
       return (
         <CommentToast
-          title="코멘트"
+          title={t("comment")}
           reasons={comments.map(comment => ({
             datetime: comment.createdAt,
             reason: comment.content,
@@ -36,7 +38,7 @@ const RegisterClubStatusSection: React.FC<RegisterClubStatusSectionProps> = ({
 
     return (
       <CommentToast
-        title="코멘트"
+        title={t("comment")}
         reasons={comments.map(comment => ({
           datetime: comment.createdAt,
           reason: comment.content,
@@ -44,11 +46,12 @@ const RegisterClubStatusSection: React.FC<RegisterClubStatusSectionProps> = ({
         color="green"
       />
     );
-  }, [comments, status]);
+  }, [comments, status, t]);
 
   return (
     <ProgressStatus
-      labels={progressStatus.labels}
+      title={t("statusTitle")}
+      labels={progressStatus.labels.map(label => t(`progress.${label}`))}
       progress={progressStatus.progress}
       optional={comments && comments.length > 0 && ToastSection}
     />

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -7,12 +8,17 @@ import { useGetMyMemberRegistration } from "@sparcs-clubs/web/features/clubs/ser
 import MyMemberTable from "@sparcs-clubs/web/features/my/components/MyMemberTable";
 
 const MyMemberRegisterFrame: React.FC = () => {
+  const t = useTranslations("my.overview");
   const { data, isLoading, isError } = useGetMyMemberRegistration();
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={20}>
-        <MoreDetailTitle title="회원 등록" moreDetail="" moreDetailPath="" />
+        <MoreDetailTitle
+          title={t("memberRegistration")}
+          moreDetail=""
+          moreDetailPath=""
+        />
         {data && <MyMemberTable memberRegisterList={data} />}
       </FlexWrapper>
     </AsyncBoundary>

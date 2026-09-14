@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
@@ -34,12 +35,12 @@ const SingleUploadWithTextAndTemplate: React.FC<
   SingleUploadWithTextAndTemplateProps
 > = ({
   fileId,
-  title,
   content = undefined,
   downloadUrl,
   downloadFileName,
   initialFile = undefined,
 }) => {
+  const t = useTranslations("my.registration");
   const formCtx = useFormContext<RegisterClubModel>();
   const { control, setValue } = formCtx;
 
@@ -64,11 +65,11 @@ const SingleUploadWithTextAndTemplate: React.FC<
   return (
     <SingleUploadWithTextAndTemplateInner>
       <Typography ff="PRETENDARD" fw="MEDIUM" fs={16} lh={20} color="BLACK">
-        {title}
+        {t(`files.${fileId}.title`)}
       </Typography>
       {content && (
         <Typography ff="PRETENDARD" fs={14} lh={20} color="GRAY.600">
-          {content}
+          {t(`files.${fileId}.content`)}
         </Typography>
       )}
       <FormController
@@ -90,7 +91,7 @@ const SingleUploadWithTextAndTemplate: React.FC<
         icon="save_alt"
         onClick={onDownload}
       >
-        양식 다운로드
+        {t("downloadTemplate")}
       </IconButton>
     </SingleUploadWithTextAndTemplateInner>
   );

@@ -1,4 +1,5 @@
 import { jwtDecode, JwtPayload } from "jwt-decode";
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -35,6 +36,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
   selectedToken,
   setSelectedToken,
 }) => {
+  const t = useTranslations("common");
   const handleProfileClick = (profile: {
     profileType: string;
     token: string;
@@ -47,7 +49,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
   return (
     <ProfileListWrapper>
       <Typography fw="MEDIUM" fs={14} lh={16}>
-        계정 선택
+        {t("selectAccount")}
       </Typography>
       {profiles.map(profile => {
         const decodedToken: DecodedToken = jwtDecode(profile.token);

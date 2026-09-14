@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import styled from "styled-components";
@@ -23,7 +24,6 @@ import BasicInformFrame from "@sparcs-clubs/web/features/register-club/component
 import NewProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/NewProvisionalBasicInformFrame";
 import ReProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/ReProvisionalBasicInformFrame";
 import ClubRulesFrame from "@sparcs-clubs/web/features/register-club/components/compliance/ClubRulesFrame";
-import { registerClubDeadlineInfoText } from "@sparcs-clubs/web/features/register-club/constants";
 import { RegisterClubModel } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import computeErrorMessage from "@sparcs-clubs/web/features/register-club/utils/computeErrorMessage";
 import { getRegistrationErrorMessage } from "@sparcs-clubs/web/features/register-club/utils/getRegistrationErrorMessage";
@@ -44,6 +44,14 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
   applyId,
   initialData,
 }) => {
+  const t = useTranslations("my.registration");
+  const validationT = useTranslations("my.registration.validation");
+  const errorT = useTranslations("my.registration.errors");
+  const format = useFormatter();
+  const semesterNames: Record<string, string> = {
+    봄: t("spring"),
+    가을: t("fall"),
+  };
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -85,8 +93,8 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     isValid;
 
   const errorMessage = useMemo(
-    () => computeErrorMessage({ ...formData, isAgreed }),
-    [formData, isAgreed],
+    () => computeErrorMessage({ ...formData, isAgreed }, validationT),
+    [formData, isAgreed, validationT],
   );
 
   const {
@@ -153,18 +161,32 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
             >
               {clubDeadline?.deadline && (
                 <Info
-                  text={registerClubDeadlineInfoText(
-                    clubDeadline.deadline.endTerm,
-                    semesterInfo,
-                  )}
+                  text={t("deadlineInfo", {
+                    year: semesterInfo?.year ?? "",
+                    semester:
+                      semesterNames[semesterInfo?.name ?? ""] ??
+                      semesterInfo?.name ??
+                      "",
+                    deadline: format.dateTime(
+                      new Date(clubDeadline.deadline.endTerm),
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        weekday: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                        timeZone: "Asia/Seoul",
+                      },
+                    ),
+                  })}
                 />
               )}
             </AsyncBoundary>
             <WarningInfo>
               <Typography lh={24} color="BLACK">
-                동아리 등록 구분(재등록 / 신규 등록 / 가등록) 변경 또는 가등록
-                신청 구분 변경을 원할 경우, 해당 신청 내역을 삭제한 후 새로운
-                신청을 해주시기 바랍니다
+                {t("typeChangeWarning")}
               </Typography>
             </WarningInfo>
           </FlexWrapper>
@@ -221,7 +243,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
           />
           {registrationError && (
             <Typography color="RED.600" role="alert">
-              {getRegistrationErrorMessage(registrationError)}
+              {getRegistrationErrorMessage(registrationError, errorT)}
             </Typography>
           )}
           <ButtonWrapper>
@@ -229,7 +251,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               type="outlined"
               onClick={() => router.replace(`/my/register-club/${applyId}`)}
             >
-              취소
+              {t("cancel")}
             </Button>
             <FlexWrapper
               direction="row"
@@ -253,7 +275,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
                     : "disabled"
                 }
               >
-                {isPending ? "저장 중" : "저장"}
+                {isPending ? t("saving") : t("save")}
               </Button>
             </FlexWrapper>
           </ButtonWrapper>

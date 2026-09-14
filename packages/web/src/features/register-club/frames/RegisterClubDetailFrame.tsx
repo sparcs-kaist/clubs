@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -52,11 +53,15 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   profile,
   clubDetail,
 }: ClubRegisterDetail) => {
+  const t = useTranslations("my.registration");
+  const divisionT = useTranslations("division");
   const {
     data: divisionData,
     isLoading: divisionLoading,
     isError: divisionError,
   } = useGetDivisionType();
+  const divisionName =
+    divisionData?.divisionTagList[clubDetail.divisionId]?.text;
 
   return (
     <AsyncBoundary isLoading={divisionLoading} isError={divisionError}>
@@ -71,7 +76,7 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
         )}
         <FlexWrapper gap={20} direction="row">
           <Typography fw="MEDIUM" lh={20} fs={16} style={{ flex: 1 }}>
-            등록 구분
+            {t("registrationType")}
           </Typography>
           <Tag
             color={
@@ -81,86 +86,101 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
               ).color
             }
           >
-            {
-              getTagDetail(
-                clubDetail.registrationTypeEnumId,
-                RegistrationTypeTagList,
-              ).text
-            }
+            {t(`types.${clubDetail.registrationTypeEnumId}`)}
           </Tag>
         </FlexWrapper>
         <FlexWrapper gap={16} direction="column">
           <Typography fw="MEDIUM" lh={20} fs={16}>
-            기본 정보
+            {t("basicInfo")}
           </Typography>
           <FlexWrapper gap={12} direction="column">
             <ListItem>
-              동아리명 (국문):{" "}
+              {t("clubNameKr")}:{" "}
               {clubDetail.clubNameKr ?? clubDetail.newClubNameKr}
             </ListItem>
             <ListItem>
-              동아리명 (영문):{" "}
+              {t("clubNameEn")}:{" "}
               {clubDetail.clubNameEn ?? clubDetail.newClubNameEn}
             </ListItem>
             {clubDetail.clubNameKr && clubDetail.newClubNameKr !== "" && (
               <ListItem>
-                신규 동아리명 (국문): {clubDetail.newClubNameKr}
+                {t("newClubNameKr")}: {clubDetail.newClubNameKr}
               </ListItem>
             )}
             {clubDetail.clubNameEn && clubDetail.newClubNameEn !== "" && (
               <ListItem>
-                신규 동아리명 (영문): {clubDetail.newClubNameEn}
+                {t("newClubNameEn")}: {clubDetail.newClubNameEn}
               </ListItem>
             )}
-            <ListItem>{`대표자 이름: ${clubDetail.representative.name}`}</ListItem>
             <ListItem>
-              {`대표자 전화번호: ${clubDetail.representative.phoneNumber}`}
+              {t("representativeName")}: {clubDetail.representative.name}
+            </ListItem>
+            <ListItem>
+              {t("representativePhone")}:{" "}
+              {clubDetail.representative.phoneNumber}
             </ListItem>
             {isProvisional(clubDetail.registrationTypeEnumId) ? (
               <ListItem>
-                설립 연월: {getActualYear(clubDetail.foundedAt)}년{" "}
-                {getActualMonth(clubDetail.foundedAt)}월
+                {t("foundedYearMonth", {
+                  year: getActualYear(clubDetail.foundedAt),
+                  month: getActualMonth(clubDetail.foundedAt),
+                })}
               </ListItem>
             ) : (
               <ListItem>
-                설립 연도: {getActualYear(clubDetail.foundedAt)}
+                {t("foundedYear")}: {getActualYear(clubDetail.foundedAt)}
               </ListItem>
             )}
             <ListItem>
-              {`소속 분과: ${clubDetail && divisionData?.divisionTagList[clubDetail.divisionId]?.text}`}
+              {t("division")}:{" "}
+              {divisionName &&
+                (divisionT.has(divisionName)
+                  ? divisionT(divisionName)
+                  : divisionName)}
             </ListItem>
-            <ListItem>{`활동 분야 (국문): ${clubDetail.activityFieldKr}`}</ListItem>
-            <ListItem>{`활동 분야 (영문): ${clubDetail.activityFieldEn}`}</ListItem>
+            <ListItem>
+              {t("activityFieldKr")}: {clubDetail.activityFieldKr}
+            </ListItem>
+            <ListItem>
+              {t("activityFieldEn")}: {clubDetail.activityFieldEn}
+            </ListItem>
           </FlexWrapper>
         </FlexWrapper>
         {clubDetail.professor && (
           <FlexWrapper gap={16} direction="column">
             <Typography fw="MEDIUM" lh={20} fs={16}>
-              지도교수 정보
+              {t("professorInfo")}
             </Typography>
             <FlexWrapper gap={12} direction="column">
-              <ListItem>{`성함: ${clubDetail.professor?.name}`}</ListItem>
               <ListItem>
-                {`직급: ${professorEnumToText(clubDetail.professor?.professorEnumId)}`}
+                {t("name")}: {clubDetail.professor?.name}
               </ListItem>
-              <ListItem>{`이메일: ${clubDetail.professor?.email}`}</ListItem>
+              <ListItem>
+                {t("rank")}:{" "}
+                {t(
+                  `professorRanks.${professorEnumToText(clubDetail.professor?.professorEnumId)}`,
+                )}
+              </ListItem>
+              <ListItem>
+                {t("email")}: {clubDetail.professor?.email}
+              </ListItem>
             </FlexWrapper>
           </FlexWrapper>
         )}
         <FlexWrapper gap={16} direction="column">
           <Typography fw="MEDIUM" lh={20} fs={16}>
-            동아리 정보
+            {t("clubInfo")}
           </Typography>
           <FlexWrapper gap={12} direction="column">
-            <ListItem>분과 정합성:</ListItem>
+            <ListItem>{t("divisionConsistency")}:</ListItem>
             <IndentedItem>{clubDetail.divisionConsistency}</IndentedItem>
-            <ListItem>설립 목적:</ListItem>
+            <ListItem>{t("foundationPurpose")}:</ListItem>
             <IndentedItem>{clubDetail.foundationPurpose}</IndentedItem>
-            <ListItem>주요 활동 계획:</ListItem>
+            <ListItem>{t("activityPlan")}:</ListItem>
             <IndentedItem>{clubDetail.activityPlan}</IndentedItem>
             {clubDetail.activityPlanFile && (
               <>
-                <ListItem>활동계획서</ListItem>
+                <ListItem>{t("activityPlanFile")}</ListItem>
                 {clubDetail.activityPlanFile && (
                   <FilePreviewContainer>
                     <ThumbnailPreviewList
@@ -174,7 +194,7 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
           </FlexWrapper>
           {clubDetail.clubRuleFile && (
             <>
-              <ListItem>동아리 회칙</ListItem>
+              <ListItem>{t("clubRulesFile")}</ListItem>
               {clubDetail.clubRuleFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
@@ -187,7 +207,7 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
           )}
           {clubDetail.externalInstructionFile && (
             <>
-              <ListItem>(선택) 외부 강사 지도 계획서</ListItem>
+              <ListItem>{t("externalInstructionFile")}</ListItem>
               {clubDetail.externalInstructionFile && (
                 <FilePreviewContainer>
                   <ThumbnailPreviewList
@@ -211,7 +231,7 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
         {clubDetail.professor && (
           <FlexWrapper gap={20} direction="row">
             <Typography fw="MEDIUM" lh={20} fs={16} style={{ flex: 1 }}>
-              지도교수 승인
+              {t("professorApproval")}
             </Typography>
             <Tag
               color={
@@ -219,8 +239,11 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
                 ProfessorIsApprovedTagList(clubDetail.isProfessorSigned).color
               }
             >
-              {clubDetail &&
-                ProfessorIsApprovedTagList(clubDetail.isProfessorSigned).text}
+              {t(
+                clubDetail.isProfessorSigned
+                  ? "approvalApproved"
+                  : "approvalPending",
+              )}
             </Tag>
           </FlexWrapper>
         )}

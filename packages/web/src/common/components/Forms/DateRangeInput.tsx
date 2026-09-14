@@ -1,5 +1,6 @@
 import { isValid, parse } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useTranslations } from "next-intl";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -49,6 +50,7 @@ const DateRangeInput: React.FC<DateRangeInputProps> = ({
   isTextAlignCenter = false,
   ...props
 }) => {
+  const t = useTranslations("common");
   const maxLength = useDays ? 10 : 7;
 
   const [error, setError] = useState("");
@@ -70,34 +72,34 @@ const DateRangeInput: React.FC<DateRangeInputProps> = ({
         return isValid(parsed);
       };
       if (!startValue) {
-        setError("시작 기간을 입력하지 않았습니다");
+        setError(t("forms.startRequired"));
       } else if (!isValidFormat) {
-        setError("입력 기간이 올바르지 않습니다");
+        setError(t("forms.invalidRange"));
       } else if (
         !(startValue.length === maxLength) ||
         !(endValue.length === maxLength)
       ) {
-        setError("입력 기간이 올바르지 않습니다");
+        setError(t("forms.invalidRange"));
       } else if (!isValidDate(startValue) || !isValidDate(endValue)) {
-        setError("유효하지 않은 날짜입니다");
+        setError(t("forms.invalidDate"));
       } else if (!endValue) {
-        setError("끝 기간을 입력하지 않았습니다");
+        setError(t("forms.endRequired"));
       } else if (
         new Date(startValue).getTime() > new Date(endValue).getTime()
       ) {
-        setError("종료일은 시작일보다 빠를 수 없습니다");
+        setError(t("forms.endBeforeStart"));
       } else if (
         new Date(startValue).getTime() < new Date(limitStartValue).getTime() ||
         new Date(limitEndValue).getTime() < new Date(startValue).getTime() ||
         new Date(endValue).getTime() < new Date(limitStartValue).getTime() ||
         new Date(limitEndValue).getTime() < new Date(endValue).getTime()
       ) {
-        setError("입력 가능 범위를 벗어났습니다");
+        setError(t("forms.outOfRange"));
       } else {
         setError("");
       }
     }
-  }, [startValue, endValue, touched, useDays]);
+  }, [startValue, endValue, touched, useDays, t]);
   const handleBlur = () => {
     setTouched(true);
   };

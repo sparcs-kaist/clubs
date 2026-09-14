@@ -1,4 +1,5 @@
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
 
@@ -14,6 +15,7 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import RentalProgress from "../components/RentalProgress";
 
 const RentalDetailFrame = () => {
+  const t = useTranslations("my.services");
   const router = useRouter();
   const onClick = () => {
     router.push("/my/rental-business");
@@ -26,36 +28,38 @@ const RentalDetailFrame = () => {
         <FlexWrapper direction="column" gap={20}>
           <FlexWrapper direction="column" gap={16}>
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              신청자 정보
+              {t("requesterInfo")}
             </Typography>
             <ListContainer>
-              <ListItem>동아리: 술박스</ListItem>
-              <ListItem>담당자: 이지윤</ListItem>
-              <ListItem>연락처: 010-0000-0000</ListItem>
+              <ListItem>{t("clubValue", { value: "술박스" })}</ListItem>
+              <ListItem>
+                {t("contactPersonValue", { value: "이지윤" })}
+              </ListItem>
+              <ListItem>{t("phoneValue", { value: "010-0000-0000" })}</ListItem>
             </ListContainer>
           </FlexWrapper>
           <FlexWrapper direction="row" gap={16}>
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              대여 기간
+              {t("rental.duration")}
             </Typography>
             <Typography fs={16} lh={20}>
-              2024년 3월 11일 (월) ~ 2024년 3월 18일 (월)
+              {t("rental.mockPeriod")}
             </Typography>
           </FlexWrapper>
           <FlexWrapper direction="column" gap={16}>
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              대여 물품
+              {t("rental.items")}
             </Typography>
             <ListContainer>
-              <ListItem>이젤 3개</ListItem>
-              <ListItem>돗자리 3개</ListItem>
-              <ListItem>공구 {">"} 드라이버 세트 3개</ListItem>
-              <ListItem>공구 {">"} 롱노우즈 3개</ListItem>
+              <ListItem>{t("rental.easel", { count: 3 })}</ListItem>
+              <ListItem>{t("rental.mat", { count: 3 })}</ListItem>
+              <ListItem>{t("rental.screwdriver", { count: 3 })}</ListItem>
+              <ListItem>{t("rental.pliers", { count: 3 })}</ListItem>
             </ListContainer>
           </FlexWrapper>
           <FlexWrapper direction="column" gap={16}>
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              대여 목적
+              {t("rental.purpose")}
             </Typography>
             <ListContainer>
               <ListItem>
@@ -67,7 +71,7 @@ const RentalDetailFrame = () => {
         </FlexWrapper>
       </Card>
       <Button style={{ width: "max-content" }} onClick={onClick}>
-        목록으로 돌아가기
+        {t("backToList")}
       </Button>
     </>
   );

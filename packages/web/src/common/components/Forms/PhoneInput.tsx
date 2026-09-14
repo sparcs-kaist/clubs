@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 import TextInput, {
@@ -15,6 +16,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   onChange,
   ...props
 }) => {
+  const t = useTranslations("common");
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
@@ -25,19 +27,19 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
         /^\d*$/.test(value.replace(/-/g, ""));
 
       if (!value) {
-        setError("필수로 채워야 하는 항목입니다");
+        setError(t("forms.required"));
       } else if (!isValidFormat) {
-        setError("숫자만 입력 가능합니다");
+        setError(t("forms.numbersOnly"));
       } else if (
         value.replace(/-/g, "").length !== 11 ||
         value.slice(0, 3) !== "010"
       ) {
-        setError("유효하지 않은 전화번호입니다");
+        setError(t("forms.invalidPhone"));
       } else {
         setError("");
       }
     }
-  }, [value, touched]);
+  }, [value, touched, t]);
 
   const handleBlur = () => {
     setTouched(true);

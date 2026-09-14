@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -27,12 +28,13 @@ const AdvancedInformFrame: React.FC<AdvancedInformFrameProps> = ({
   type,
   files = undefined,
 }) => {
+  const t = useTranslations("my.registration");
   const formCtx = useFormContext<RegisterClubModel>();
   const { control } = formCtx;
 
   return (
     <FlexWrapper direction="column" gap={40}>
-      <SectionTitle>동아리 신청 정보</SectionTitle>
+      <SectionTitle>{t("applicationInfo")}</SectionTitle>
       <Card outline gap={32} style={{ marginLeft: 20 }}>
         <FormController
           name="divisionConsistency"
@@ -41,8 +43,8 @@ const AdvancedInformFrame: React.FC<AdvancedInformFrameProps> = ({
           renderItem={props => (
             <TextInput
               {...props}
-              label="분과 정합성"
-              placeholder="분과 정합성을 입력해주세요"
+              label={t("divisionConsistency")}
+              placeholder={t("divisionConsistencyPlaceholder")}
               area
             />
           )}
@@ -54,8 +56,8 @@ const AdvancedInformFrame: React.FC<AdvancedInformFrameProps> = ({
           renderItem={props => (
             <TextInput
               {...props}
-              label="설립 목적"
-              placeholder="설립 목적을 입력해주세요"
+              label={t("foundationPurpose")}
+              placeholder={t("foundationPurposePlaceholder")}
               area
             />
           )}
@@ -67,8 +69,8 @@ const AdvancedInformFrame: React.FC<AdvancedInformFrameProps> = ({
           renderItem={props => (
             <TextInput
               {...props}
-              label="주요 활동 계획"
-              placeholder="주요 활동 계획을 입력해주세요"
+              label={t("activityPlan")}
+              placeholder={t("activityPlanPlaceholder")}
               style={{ height: 200 }}
               area
             />

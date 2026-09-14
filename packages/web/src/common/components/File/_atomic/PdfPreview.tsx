@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -25,14 +26,17 @@ const PdfPreviewWrapper = styled.div`
   gap: 8px;
 `;
 
-const PdfPreview: React.FC<PdfPreviewProps> = ({ file }) => (
-  <PdfPreviewWrapper>
-    <Icon type="picture_as_pdf" size={28} color={colors.RED[600]} />
-    <Typography fs={14} lh={16} color="GRAY.300">
-      PDF 미리보기
-      <img src={noPreview.src} alt={file.name} style={{ display: "none" }} />
-    </Typography>
-  </PdfPreviewWrapper>
-);
+const PdfPreview: React.FC<PdfPreviewProps> = ({ file }) => {
+  const t = useTranslations("common");
+  return (
+    <PdfPreviewWrapper>
+      <Icon type="picture_as_pdf" size={28} color={colors.RED[600]} />
+      <Typography fs={14} lh={16} color="GRAY.300">
+        {t("files.pdfPreview")}
+        <img src={noPreview.src} alt={file.name} style={{ display: "none" }} />
+      </Typography>
+    </PdfPreviewWrapper>
+  );
+};
 
 export default PdfPreview;

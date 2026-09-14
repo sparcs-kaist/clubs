@@ -3,7 +3,8 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React from "react";
+import { useTranslations } from "next-intl";
+import React, { useMemo } from "react";
 
 import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 
@@ -14,6 +15,7 @@ import {
   RegistrationStatusTagList,
   RegistrationTypeTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
+import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyClubTableProps {
@@ -21,59 +23,98 @@ interface MyClubTableProps {
 }
 const columnHelper =
   createColumnHelper<ApiReg012ResponseOk["registrations"][number]>();
-const columns = [
-  columnHelper.accessor("registrationStatusEnum", {
-    id: "registrationStatusEnum",
-    header: "상태",
-    cell: info => {
-      const { color, text } = getTagDetail(
-        info.getValue(),
-        RegistrationStatusTagList,
-      );
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 10,
-  }),
-  columnHelper.accessor("registrationTypeEnum", {
-    id: "registrationTypeEnum",
-    header: "구분",
-    cell: info => {
-      const { color, text } = getTagDetail(
-        info.getValue(),
-        RegistrationTypeTagList,
-      );
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 10,
-  }),
-  columnHelper.accessor("divisionName", {
-    id: "divisionName",
-    header: "분과",
-    cell: info => (
-      <Tag color={getDivisionTagColor(info.getValue())}>{info.getValue()}</Tag>
-    ),
-    size: 10,
-  }),
-  columnHelper.accessor(row => row.clubNameKr ?? row.newClubNameKr, {
-    id: "clubNameKr",
-    header: "동아리",
-    cell: info => info.getValue(),
-    size: 128,
-  }),
-  columnHelper.accessor("activityFieldKr", {
-    id: "activityFieldKr",
-    header: "활동 분야",
-    cell: info => info.getValue(),
-    size: 255,
-  }),
-  columnHelper.accessor("professorName", {
-    id: "professorName",
-    header: "지도교수",
-    cell: info => info.getValue() ?? "-",
-    size: 128,
-  }),
-];
+
+const useColumns = () => {
+  const t = useTranslations("my.overview");
+  const clubT = useTranslations("club");
+  const divisionT = useTranslations("division");
+  const commonT = useTranslations("common");
+  const { isEnglish } = useLanguage();
+  return useMemo(
+    () => [
+      columnHelper.accessor("registrationStatusEnum", {
+        id: "registrationStatusEnum",
+        header: t("columns.status"),
+        cell: info => {
+          const { color, text } = getTagDetail(
+            info.getValue(),
+            RegistrationStatusTagList,
+          );
+          return (
+            <Tag color={color}>
+              {t(
+                `status.${({ 승인: "approved", 신청: "applied", 반려: "rejected" } as Record<string, string>)[text] ?? "unknown"}`,
+              )}
+            </Tag>
+          );
+        },
+        size: 10,
+      }),
+      columnHelper.accessor("registrationTypeEnum", {
+        id: "registrationTypeEnum",
+        header: t("columns.type"),
+        cell: info => {
+          const { color, text } = getTagDetail(
+            info.getValue(),
+            RegistrationTypeTagList,
+          );
+          return (
+            <Tag color={color}>
+              {t(
+                `registrationType.${({ "재등록": "renewal", "신규 등록": "promotional", "가등록": "provisional" } as Record<string, string>)[text] ?? "unknown"}`,
+              )}
+            </Tag>
+          );
+        },
+        size: 10,
+      }),
+      columnHelper.accessor("divisionName", {
+        id: "divisionName",
+        header: clubT("분과"),
+        cell: info => (
+          <Tag color={getDivisionTagColor(info.getValue())}>
+            {divisionT.has(info.getValue())
+              ? divisionT(info.getValue())
+              : info.getValue()}
+          </Tag>
+        ),
+        size: 10,
+      }),
+      columnHelper.accessor(
+        row =>
+          (isEnglish ? row.clubNameEn || row.newClubNameEn : "") ||
+          row.clubNameKr ||
+          row.newClubNameKr,
+        {
+          id: "clubNameKr",
+          header: t("columns.club"),
+          cell: info => info.getValue(),
+          size: 128,
+        },
+      ),
+      columnHelper.accessor(
+        row => (isEnglish ? row.activityFieldEn : "") || row.activityFieldKr,
+        {
+          id: "activityFieldKr",
+          header: t("columns.activityField"),
+          cell: info => info.getValue(),
+          size: 255,
+        },
+      ),
+      columnHelper.accessor("professorName", {
+        id: "professorName",
+        header: commonT("지도교수"),
+        cell: info => info.getValue() ?? "-",
+        size: 128,
+      }),
+    ],
+    [t, clubT, divisionT, commonT, isEnglish],
+  );
+};
+
 const MyClubTable: React.FC<MyClubTableProps> = ({ clubRegisterList }) => {
+  const t = useTranslations("my.overview");
+  const columns = useColumns();
   const table = useReactTable({
     columns,
     data: clubRegisterList.registrations,
@@ -87,7 +128,7 @@ const MyClubTable: React.FC<MyClubTableProps> = ({ clubRegisterList }) => {
     <Table
       table={table}
       rowLink={getRowLink}
-      emptyMessage="동아리 등록 내역이 없습니다."
+      emptyMessage={t("noClubRegistrations")}
     />
   );
 };
