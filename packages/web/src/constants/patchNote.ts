@@ -5,6 +5,19 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.23 source=2596985b4b68
+  {
+    version: "v.0.1.23",
+    date: new Date("2026.09.15"),
+    patchNoteContent: `Clubs v0.1.23
+신규 기능은 다음과 같습니다.
+- 지도교수가 메인페이지에서 승인 대기 중인 활동보고서와 동아리 등록 신청을 확인하고 바로 이동할 수 있도록 알림을 추가했습니다. (#1928)
+
+오류 수정은 다음과 같습니다.
+- 마이페이지와 하위 화면, 수정 폼에서 누락된 영어 번역을 보완했습니다. (#1929)
+- 지도교수 화면의 동아리 신청 내역에 지도교수님의 승인 상태가 표시되도록 수정했습니다. (#1927)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.22 source=bf1de91d5092
   {
     version: "v.0.1.22",
