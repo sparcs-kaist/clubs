@@ -1,2 +1,2 @@
-export const CLUBS_VERSION = "0.1.22";
+export const CLUBS_VERSION = "0.1.23";
 export const CLUBS_DISPLAY_VERSION = `v${CLUBS_VERSION}`;
