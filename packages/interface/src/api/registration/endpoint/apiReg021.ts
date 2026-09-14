@@ -44,7 +44,7 @@ const responseBodyMap = {
           phoneNumber: zKrPhoneNumber.optional(),
           email: z.string(),
         }),
-        professorSignedAt: z.coerce.date(),
+        professorSignedAt: z.coerce.date().nullable(),
       }),
     ),
   }),

@@ -11,22 +11,20 @@ import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import {
   getDivisionTagColor,
-  RegistrationStatusTagList,
+  ProfessorIsApprovedTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
-import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyClubTableProps {
   clubProfRegisterList: ApiReg021ResponseOk;
 }
 const columnHelper = createColumnHelper<ApiReg021ResponseOk["items"][number]>();
 const columns = [
-  columnHelper.accessor("registrationStatusEnumId", {
-    id: "registrationStatusEnumId",
+  columnHelper.accessor("professorSignedAt", {
+    id: "professorSignedAt",
     header: "상태",
     cell: info => {
-      const { color, text } = getTagDetail(
-        info.getValue(),
-        RegistrationStatusTagList,
+      const { color, text } = ProfessorIsApprovedTagList(
+        Boolean(info.getValue()),
       );
       return <Tag color={color}>{text}</Tag>;
     },
