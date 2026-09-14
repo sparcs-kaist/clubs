@@ -946,6 +946,7 @@ export class RegistrationService {
   /**
    * @description getProfessorRegistrationsClubRegistrationApproval 의 서비스 진입점입니다.
    */
+  @Transactional()
   async getProfessorRegistrationsClubRegistrationApproval(param: {
     professorId: number;
     param: ApiReg023RequestParam;
