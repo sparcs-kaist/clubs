@@ -1,8 +1,7 @@
-import React from "react";
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { OverlayProvider } from "overlay-kit";
+import React from "react";
 import { ThemeProvider as StyledProvider } from "styled-components";
 
 import { defaultLocale } from "../src/i18n/config";
@@ -24,24 +23,22 @@ const queryClient = new QueryClient({
   },
 });
 
-const StoryProvider = ({ children }: React.PropsWithChildren) => {
-  return (
-    <>
-      <GlobalStyle />
-      {/* @ts-expect-error-next-line */}
-      <StyledProvider theme={theme}>
-        <NextIntlClientProvider
-          locale={defaultLocale}
-          messages={{ common, agree }}
-          timeZone="Asia/Seoul"
-        >
-          <QueryClientProvider client={queryClient}>
-            <OverlayProvider>{children}</OverlayProvider>
-          </QueryClientProvider>
-        </NextIntlClientProvider>
-      </StyledProvider>
-    </>
-  );
-};
+const StoryProvider = ({ children }: React.PropsWithChildren) => (
+  <>
+    <GlobalStyle />
+    {/* @ts-expect-error-next-line */}
+    <StyledProvider theme={theme}>
+      <NextIntlClientProvider
+        locale={defaultLocale}
+        messages={{ common, agree }}
+        timeZone="Asia/Seoul"
+      >
+        <QueryClientProvider client={queryClient}>
+          <OverlayProvider>{children}</OverlayProvider>
+        </QueryClientProvider>
+      </NextIntlClientProvider>
+    </StyledProvider>
+  </>
+);
 
 export default StoryProvider;
