@@ -2,19 +2,19 @@
 
 import type { NextPage } from "next";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
 import ErrorPageTemplate from "@sparcs-clubs/web/common/frames/ErrorPageTemplate";
 
+const renderBreak = () => <br />;
+
 const NoPermission: NextPage = () => {
+  const t = useTranslations("common");
   const router = useRouter();
 
   const Message = (
-    <ErrorMessage>
-      현재 페이지에 대한
-      <br />
-      접근 권한이 없습니다
-    </ErrorMessage>
+    <ErrorMessage>{t.rich("noPermission", { br: renderBreak })}</ErrorMessage>
   );
 
   const goToMain = () => {
@@ -24,7 +24,7 @@ const NoPermission: NextPage = () => {
   return (
     <ErrorPageTemplate
       message={Message}
-      buttons={[{ text: "메인 바로가기", onClick: goToMain }]}
+      buttons={[{ text: t("goToMain"), onClick: goToMain }]}
     />
   );
 };

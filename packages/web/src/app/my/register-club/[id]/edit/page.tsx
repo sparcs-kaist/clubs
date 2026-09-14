@@ -1,12 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import {
-  getDisplayNameRegistration,
-  RegistrationStatusEnum,
-} from "@clubs/interface/common/enum/registration.enum";
+import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
 import NotFound from "@sparcs-clubs/web/app/not-found";
@@ -21,6 +19,7 @@ import MyRegisterClubEditFrame from "@sparcs-clubs/web/features/my/register-club
 import useGetRegisterClubDetail from "@sparcs-clubs/web/features/register-club/services/useGetRegisterClubDetail";
 
 const MyRegisterClubEdit = () => {
+  const t = useTranslations("my.registration");
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -65,7 +64,7 @@ const MyRegisterClubEdit = () => {
     return (
       <ErrorModal
         isOpen
-        message="승인된 등록 신청은 수정하실 수 없습니다."
+        message={t("approvedNotEditable")}
         onConfirm={() => router.replace(`/my/register-club/${applyId}`)}
       />
     );
@@ -80,15 +79,17 @@ const MyRegisterClubEdit = () => {
       <PageHead
         items={[
           {
-            name: `마이페이지`,
+            name: t("myPage"),
             path: `/my`,
           },
           {
-            name: `동아리 등록`,
+            name: t("title"),
             path: `/my/register-club/${applyId}`,
           },
         ]}
-        title={`동아리 ${getDisplayNameRegistration(detail?.registrationTypeEnumId)} 신청 수정`}
+        title={t("editTitle", {
+          type: detail ? t(`types.${detail.registrationTypeEnumId}`) : "",
+        })}
         enableLast
       />
       <AsyncBoundary isLoading={isLoading} isError={isError}>

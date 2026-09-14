@@ -1,4 +1,6 @@
 import "react-datepicker/dist/react-datepicker.css";
+import { enUS, ko } from "date-fns/locale";
+import { useLocale, useTranslations } from "next-intl";
 import React, { useRef } from "react";
 import DatePicker, { DatePickerProps } from "react-datepicker";
 import styled from "styled-components";
@@ -61,6 +63,8 @@ const DateInput: React.FC<
   showIcon = false,
   ...props
 }) => {
+  const locale = useLocale();
+  const t = useTranslations("common");
   const datePickerRef = useRef<DatePicker | null>(null);
   const popperClassName = ["sparcs-date-input-popper", props.popperClassName]
     .filter(Boolean)
@@ -84,6 +88,8 @@ const DateInput: React.FC<
       )}
       <DateInputWrapper disabled={disabled} onClick={handleInputClick}>
         <DatePicker
+          locale={locale === "en" ? enUS : ko}
+          timeInputLabel={t("forms.time")}
           ref={datePickerRef}
           disabled={disabled}
           dateFormat={props.showTimeInput ? "yyyy.MM.dd HH:mm" : "yyyy.MM.dd"}

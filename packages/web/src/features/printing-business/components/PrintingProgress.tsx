@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { PromotionalPrintingOrderStatusEnum } from "@clubs/interface/common/enum/promotionalPrinting.enum";
@@ -13,7 +14,9 @@ interface ManagePrintingProgressProps {
 const PrintingProgress: React.FC<ManagePrintingProgressProps> = ({
   status,
 }) => {
-  const managePrinting = managePrintingProgress(status);
+  const t = useTranslations("my.services");
+  const progressT = useTranslations("my.services.progress");
+  const managePrinting = managePrintingProgress(status, progressT);
   const onClickCancel = () => {};
   return (
     <ProgressStatus
@@ -23,7 +26,7 @@ const PrintingProgress: React.FC<ManagePrintingProgressProps> = ({
       optional={
         status === PromotionalPrintingOrderStatusEnum.Applied && (
           <Button onClick={onClickCancel} style={{ width: "max-content" }}>
-            신청 취소
+            {t("cancel")}
           </Button>
         )
       }

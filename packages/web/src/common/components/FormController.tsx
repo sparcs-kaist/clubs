@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { ChangeEvent, ReactNode, useCallback } from "react";
 import {
   Control,
@@ -56,10 +57,15 @@ function FormController<
   defaultValue,
   ...props
 }: FormControllerProps<TFieldValues, TName>) {
-  const requiredMessage = "필수로 채워야 하는 항목입니다";
-  const maxLengthMessage = `최대 ${props.maxLength}자까지 가능합니다.`;
-  const minLengthMessage = `최소 ${props.minLength}자 이상이어야 합니다.`;
-  const patternMessage = "정해진 형식에 맞지 않습니다.";
+  const t = useTranslations("common");
+  const requiredMessage = t("forms.required");
+  const maxLengthMessage = t("forms.maxLength", {
+    count: props.maxLength ?? 0,
+  });
+  const minLengthMessage = t("forms.minLength", {
+    count: props.minLength ?? 0,
+  });
+  const patternMessage = t("forms.pattern");
 
   const isValidLength = (length: number | undefined) =>
     length !== undefined && length > 0;
@@ -99,6 +105,13 @@ function FormController<
     defaultValue,
   });
 
+  const messages: Record<string, string> = {
+    required: props.requiredMessage ?? requiredMessage,
+    maxLength: props.maxLengthMessage ?? maxLengthMessage,
+    minLength: props.minLengthMessage ?? minLengthMessage,
+    pattern: props.patternMessage ?? patternMessage,
+  };
+
   return renderItem({
     ...props,
     onChange: useCallback(e => onChange(e), [onChange]),
@@ -107,7 +120,7 @@ function FormController<
     }, [onBlur]),
     value,
     hasError: !!error?.message,
-    errorMessage: error?.message,
+    errorMessage: error ? (messages[error.type] ?? error.message) : undefined,
   });
 }
 

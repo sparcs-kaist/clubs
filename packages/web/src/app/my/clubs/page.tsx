@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -14,6 +15,7 @@ import MyClubsMainFrame from "@sparcs-clubs/web/features/my/clubs/frames/MyClubs
 import MyClubsProfessorFrame from "@sparcs-clubs/web/features/my/clubs/frames/MyClubsProfessorFrame";
 
 const MyClubs = () => {
+  const t = useTranslations("path");
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -39,10 +41,10 @@ const MyClubs = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
-          { name: "나의 동아리", path: "/my/clubs" },
+          { name: t("마이페이지"), path: "/my" },
+          { name: t("나의 동아리"), path: "/my/clubs" },
         ]}
-        title="나의 동아리"
+        title={t("나의 동아리")}
       />
       {profile?.type === UserTypeEnum.Professor ? (
         <MyClubsProfessorFrame />

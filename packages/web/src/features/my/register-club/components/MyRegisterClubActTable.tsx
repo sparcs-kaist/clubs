@@ -3,8 +3,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useFormatter, useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
-import React from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 
 import { ApiAct011ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct011";
@@ -16,7 +17,6 @@ import {
   ActTypeTagList,
 } from "@sparcs-clubs/web/constants/tableTagList";
 import PastActivityReportModal from "@sparcs-clubs/web/features/register-club/components/activity-report/PastActivityReportModal";
-import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyRegisterClubActTableProps {
@@ -37,37 +37,40 @@ const TableWrapper = styled.div`
 const columnHelper =
   createColumnHelper<ApiAct011ResponseOk["activities"][number]>();
 
-const columns = [
+const getColumns = (
+  t: ReturnType<typeof useTranslations<"my.registration.activity">>,
+  format: ReturnType<typeof useFormatter>,
+) => [
   columnHelper.accessor("activityStatusEnumId", {
     id: "activityStatusEnumId",
-    header: "상태",
+    header: t("statusLabel"),
     cell: info => {
-      const { color, text } = getTagDetail(info.getValue(), ActStatusTagList);
-      return <Tag color={color}>{text}</Tag>;
+      const { color } = getTagDetail(info.getValue(), ActStatusTagList);
+      return <Tag color={color}>{t(`status.${info.getValue()}`)}</Tag>;
     },
     size: 64,
   }),
   columnHelper.accessor("name", {
     id: "activityName",
-    header: "활동명",
+    header: t("name"),
     cell: info => info.getValue(),
     size: 128,
   }),
   columnHelper.accessor("activityTypeEnumId", {
     id: "activityType",
-    header: "분과",
+    header: t("division"),
     cell: info => {
-      const { color, text } = getTagDetail(info.getValue(), ActTypeTagList);
-      return <Tag color={color}>{text}</Tag>;
+      const { color } = getTagDetail(info.getValue(), ActTypeTagList);
+      return <Tag color={color}>{t(`types.${info.getValue()}`)}</Tag>;
     },
     size: 128,
   }),
   columnHelper.accessor(
     row =>
-      `${formatDate(row.durations[0].startTerm)} ~ ${formatDate(row.durations[0].endTerm)}${row.durations.length > 1 ? ` 외 ${row.durations.length - 1}개` : ""}`,
+      `${format.dateTime(new Date(row.durations[0].startTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })} ~ ${format.dateTime(new Date(row.durations[0].endTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })}${row.durations.length > 1 ? t("additionalPeriods", { count: row.durations.length - 1 }) : ""}`,
     {
       id: "activityPeriod",
-      header: "활동 기간",
+      header: t("period"),
       cell: info => info.getValue(),
       size: 255,
     },
@@ -79,6 +82,10 @@ const MyRegisterClubActTable: React.FC<MyRegisterClubActTableProps> = ({
   profile,
   clubId,
 }) => {
+  const t = useTranslations("my.registration.activity");
+  const format = useFormatter();
+  const columns = useMemo(() => getColumns(t, format), [format, t]);
+
   const table = useReactTable({
     columns,
     data: clubRegisterActList.activities,
@@ -103,7 +110,7 @@ const MyRegisterClubActTable: React.FC<MyRegisterClubActTableProps> = ({
     <TableWrapper>
       <Table
         table={table}
-        emptyMessage="활동 보고서 작성 내역이 없습니다."
+        emptyMessage={t("empty")}
         onClick={row => openPastActivityReportModal(row.id)}
       />
     </TableWrapper>

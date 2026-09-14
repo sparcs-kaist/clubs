@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -11,6 +12,8 @@ import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 import useGetMyClubProfessor from "../clubs/service/getMyClubProfessor";
 
 const ProfessorMyClubFrame: React.FC = () => {
+  const t = useTranslations("my.overview");
+  const pathT = useTranslations("path");
   const { data, isLoading, isError } = useGetMyClubProfessor();
   const {
     semester: semesterInfo,
@@ -19,15 +22,22 @@ const ProfessorMyClubFrame: React.FC = () => {
   } = useGetSemesterNow();
 
   return (
-    <FoldableSectionTitle title="나의 동아리">
+    <FoldableSectionTitle title={pathT("나의 동아리")}>
       <AsyncBoundary
         isLoading={isLoading || semesterLoading}
         isError={isError || semesterError}
       >
         <FlexWrapper direction="column" gap={20}>
           <MoreDetailTitle
-            title={`${semesterInfo?.year}년 ${semesterInfo?.name}학기`}
-            moreDetail="전체 보기"
+            title={t("semester", {
+              year: semesterInfo?.year ?? "",
+              name: (semesterInfo?.name ?? "")
+                .replace("봄", t("season.spring"))
+                .replace("여름", t("season.summer"))
+                .replace("가을", t("season.fall"))
+                .replace("겨울", t("season.winter")),
+            })}
+            moreDetail={t("viewAll")}
             moreDetailPath="/my/clubs"
           />
           {data &&
@@ -45,7 +55,7 @@ const ProfessorMyClubFrame: React.FC = () => {
             />
           ) : (
             <Typography color="GRAY.300" fs={16} fw="MEDIUM">
-              이번 학기 동아리가 없습니다
+              {t("noClubsThisSemester")}
             </Typography>
           )}
         </FlexWrapper>

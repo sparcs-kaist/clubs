@@ -118,28 +118,11 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                 <li>{t("제3자 동의 내용.sub-5")}</li>
               </StyledOl>
               <StyledOl>
-                <li>
-                  개인정보를 제공받는 자 : KAIST 학부 총학생회 및
-                  중앙선거관리위원회를 포함한 KAIST 학부 총학생회 산하 기구
-                </li>
-                <li>
-                  개인정보를 제공받는 자의 개인정보 이용 목적 : 본회 총선거 시행
-                  및 KAIST 학부 총학생회 사무 처리
-                </li>
-                <li>
-                  제공하는 개인정보의 항목 : 성명, KAIST 학번, 소속 학과, KAIST
-                  이메일 주소
-                </li>
-                <li>
-                  개인정보를 제공받는 자의 개인정보 보유 및 이용 기간 : 영구
-                  (KAIST 학부 총학생회 사무처리 및 사무기록 보존에 필요한
-                  기간입니다.)
-                </li>
-                <li>
-                  귀하는 개인정보의 제3자 제공의 동의를 거부할 수 있으며, 동의를
-                  거부하는 경우 KAIST 학부 동아리연합회의 회원이 되실 수
-                  없습니다.
-                </li>
+                <li>{t("studentCouncilDisclosure.recipient")}</li>
+                <li>{t("studentCouncilDisclosure.purpose")}</li>
+                <li>{t("studentCouncilDisclosure.information")}</li>
+                <li>{t("studentCouncilDisclosure.retention")}</li>
+                <li>{t("studentCouncilDisclosure.refusal")}</li>
               </StyledOl>
             </Typography>
           </Toggle>

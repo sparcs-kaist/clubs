@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import classNames from "classnames";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import React from "react";
 
 import Footer from "@sparcs-clubs/web/common/components/Footer";
@@ -25,34 +26,37 @@ export const metadata: Metadata = {
   description: "Created by SPARCS Clubs Team, Copyright 2024. 클럽스 최고!",
 };
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => (
-  <html
-    lang="ko-KR"
-    className={classNames(
-      nanumSquare.variable,
-      pretendard.variable,
-      raleway.variable,
-    )}
-  >
-    <body>
-      <AppRouterCacheProvider>
-        <StyledComponentsRegistry>
-          <NextIntlClientProvider>
-            <UseClientProvider>
-              <AuthProvider>
-                <DebugBadge />
-                <Header />
-                <ResponsiveContent>
-                  <PageContent>{children}</PageContent>
-                </ResponsiveContent>
-                <Footer />
-              </AuthProvider>
-            </UseClientProvider>
-          </NextIntlClientProvider>
-        </StyledComponentsRegistry>
-      </AppRouterCacheProvider>
-    </body>
-  </html>
-);
+const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const locale = await getLocale();
+  return (
+    <html
+      lang={locale}
+      className={classNames(
+        nanumSquare.variable,
+        pretendard.variable,
+        raleway.variable,
+      )}
+    >
+      <body>
+        <AppRouterCacheProvider>
+          <StyledComponentsRegistry>
+            <NextIntlClientProvider>
+              <UseClientProvider>
+                <AuthProvider>
+                  <DebugBadge />
+                  <Header />
+                  <ResponsiveContent>
+                    <PageContent>{children}</PageContent>
+                  </ResponsiveContent>
+                  <Footer />
+                </AuthProvider>
+              </UseClientProvider>
+            </NextIntlClientProvider>
+          </StyledComponentsRegistry>
+        </AppRouterCacheProvider>
+      </body>
+    </html>
+  );
+};
 
 export default RootLayout;

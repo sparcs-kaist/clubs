@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useCallback } from "react";
 import styled from "styled-components";
@@ -41,6 +42,8 @@ const ActivityReportFrame: React.FC<ActivityReportFrameProps> = ({
   clubId,
   semesterId,
 }) => {
+  const t = useTranslations("my.registration.activity");
+
   const { profile } = useAuth();
   const { data, isLoading, isError } = useGetActivityReportsForPromotional({
     clubId,
@@ -59,18 +62,18 @@ const ActivityReportFrame: React.FC<ActivityReportFrameProps> = ({
 
   return (
     <FlexWrapper direction="column" gap={40}>
-      <SectionTitle>가등록 / 등록 취소 기간 활동 보고서</SectionTitle>
+      <SectionTitle>{t("title")}</SectionTitle>
       <StyledCard outline gap={32}>
         <OptionOuter>
           <Typography fs={14} lh={20} color="GRAY.300">
-            활동 보고서는 최대 20개까지 작성 가능합니다
+            {t("limit")}
           </Typography>
           <IconButton
             type="default"
             icon="add"
             onClick={openCreateActivityReportModal}
           >
-            활동 보고서 작성
+            {t("create")}
           </IconButton>
         </OptionOuter>
         <AsyncBoundary isLoading={isLoading} isError={isError}>

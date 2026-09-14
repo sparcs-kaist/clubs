@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import React, { useCallback } from "react";
 
 import apiAct011 from "@clubs/interface/api/activity/endpoint/apiAct011";
@@ -27,6 +28,8 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
   isOpen,
   close,
 }) => {
+  const t = useTranslations("my.registration.activity");
+
   const queryClient = useQueryClient();
 
   const { savedData, isModalOpen, handleConfirm, handleClose } =
@@ -65,14 +68,12 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
             close();
           },
           onError: error => {
-            errorHandler(
-              getApiErrorMessage(error, "활동보고서 생성에 실패하였습니다"),
-            );
+            errorHandler(getApiErrorMessage(error, t("createError")));
           },
         },
       );
     },
-    [close, mutate],
+    [close, mutate, t],
   );
 
   const handleCancel = () => {
@@ -83,7 +84,7 @@ const CreateActivityReportModal: React.FC<CreateActivityReportModalProps> = ({
     return (
       <RestoreDraftModal
         isOpen={isModalOpen}
-        mainText="작성하시던 활동 보고서 내역이 있습니다. 불러오시겠습니까?"
+        mainText={t("restoreDraft")}
         onConfirm={handleConfirm}
         onClose={handleClose}
       />

@@ -3,6 +3,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useFormatter, useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
@@ -13,11 +14,7 @@ import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import { ActStatusTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { ActivityReport } from "@sparcs-clubs/web/features/register-club/types/registerClub";
-import {
-  getActivityTypeLabel,
-  getActivityTypeTagColor,
-} from "@sparcs-clubs/web/types/activityType";
-import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
+import { getActivityTypeTagColor } from "@sparcs-clubs/web/types/activityType";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 import PastActivityReportModal from "./PastActivityReportModal";
@@ -32,41 +29,6 @@ interface ActivityReportListProps {
 const columnHelper =
   createColumnHelper<ApiAct011ResponseOk["activities"][number]>();
 
-const columns = [
-  columnHelper.accessor("activityStatusEnumId", {
-    id: "activityStatusEnumId",
-    header: "상태",
-    cell: info => {
-      const { color, text } = getTagDetail(info.getValue(), ActStatusTagList);
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 64,
-  }),
-  columnHelper.accessor("name", {
-    header: "활동명",
-    cell: info => info.getValue(),
-    size: 128,
-  }),
-  columnHelper.accessor("activityTypeEnumId", {
-    header: "활동 분류",
-    cell: info => (
-      <Tag color={getActivityTypeTagColor(info.getValue())}>
-        {getActivityTypeLabel(info.getValue())}
-      </Tag>
-    ),
-    size: 128,
-  }),
-  columnHelper.accessor(
-    row =>
-      `${formatDate(row.durations[0].startTerm)} ~ ${formatDate(row.durations[0].endTerm)}${row.durations.length > 1 ? ` 외 ${row.durations.length - 1}개` : ""}`,
-    {
-      header: "활동 기간",
-      cell: info => info.getValue(),
-      size: 255,
-    },
-  ),
-];
-
 const TableOuter = styled.div`
   display: flex;
   flex-direction: column;
@@ -76,12 +38,53 @@ const TableOuter = styled.div`
   align-self: stretch;
 `;
 
+const getColumns = (
+  t: ReturnType<typeof useTranslations<"my.registration.activity">>,
+  format: ReturnType<typeof useFormatter>,
+) => [
+  columnHelper.accessor("activityStatusEnumId", {
+    id: "activityStatusEnumId",
+    header: t("statusLabel"),
+    cell: info => {
+      const { color } = getTagDetail(info.getValue(), ActStatusTagList);
+      return <Tag color={color}>{t(`status.${info.getValue()}`)}</Tag>;
+    },
+    size: 64,
+  }),
+  columnHelper.accessor("name", {
+    header: t("name"),
+    cell: info => info.getValue(),
+    size: 128,
+  }),
+  columnHelper.accessor("activityTypeEnumId", {
+    header: t("type"),
+    cell: info => (
+      <Tag color={getActivityTypeTagColor(info.getValue())}>
+        {t(`types.${info.getValue()}`)}
+      </Tag>
+    ),
+    size: 128,
+  }),
+  columnHelper.accessor(
+    row =>
+      `${format.dateTime(new Date(row.durations[0].startTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })} ~ ${format.dateTime(new Date(row.durations[0].endTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })}${row.durations.length > 1 ? t("additionalPeriods", { count: row.durations.length - 1 }) : ""}`,
+    {
+      header: t("period"),
+      cell: info => info.getValue(),
+      size: 255,
+    },
+  ),
+];
+
 const ActivityReportList: React.FC<ActivityReportListProps> = ({
   data,
   profile,
   refetch = () => {},
   clubId,
 }) => {
+  const t = useTranslations("my.registration.activity");
+  const format = useFormatter();
+  const columns = useMemo(() => getColumns(t, format), [format, t]);
   const processedData = useMemo(
     () =>
       data.map(item => ({
@@ -124,6 +127,7 @@ const ActivityReportList: React.FC<ActivityReportListProps> = ({
       <Table
         table={table}
         count={data.length}
+        emptyMessage={t("empty")}
         onClick={row => openPastActivityReportModal(row.id)}
       />
     </TableOuter>

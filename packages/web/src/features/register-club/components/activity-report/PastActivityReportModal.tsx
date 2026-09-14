@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useEffect, useState } from "react";
 
@@ -26,11 +27,6 @@ import {
   activityReportDetailQueryKey,
   useGetActivityReport,
 } from "@sparcs-clubs/web/features/activity-report/services/useGetActivityReport";
-import { getActivityTypeLabel } from "@sparcs-clubs/web/types/activityType";
-import {
-  formatDate,
-  formatSlashDateTime,
-} from "@sparcs-clubs/web/utils/Date/formatDate";
 
 import EditActivityReportModal from "./EditActivityReportModal";
 
@@ -51,6 +47,8 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
   viewOnly = false,
   clubId,
 }) => {
+  const t = useTranslations("my.registration.activity");
+  const format = useFormatter();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useGetActivityReport(
@@ -108,7 +106,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
         }) => (
           <Modal isOpen={isOpenDeleteSuccessModal}>
             <ConfirmModalContent onConfirm={closeDeleteSuccessModal}>
-              활동 보고서가 삭제되었습니다.
+              {t("deleted")}
             </ConfirmModalContent>
           </Modal>
         ),
@@ -120,13 +118,13 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
         ({ isOpen: isOpenDeleteErrorModal, close: closeDeleteErrorModal }) => (
           <Modal isOpen={isOpenDeleteErrorModal}>
             <ConfirmModalContent onConfirm={closeDeleteErrorModal}>
-              활동 보고서 삭제에 실패했습니다.
+              {t("deleteError")}
             </ConfirmModalContent>
           </Modal>
         ),
       );
     }
-  }, [isDeleteSuccess, isDeleteError]);
+  }, [isDeleteSuccess, isDeleteError, t]);
 
   const { mutate: patchActivityExecutive } = useExecutiveApproveActivityReport(
     activityId,
@@ -159,7 +157,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
       overlay.open(({ isOpen: isOpenCopyModal, close: closeCopyModal }) => (
         <Modal isOpen={isOpenCopyModal}>
           <ConfirmModalContent onConfirm={closeCopyModal}>
-            활동보고서 주소가 클립보드에 복사 되었습니다.
+            {t("urlCopied")}
           </ConfirmModalContent>
         </Modal>
       ));
@@ -167,7 +165,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
       overlay.open(({ isOpen: isOpenCopyModal, close: closeCopyModal }) => (
         <Modal isOpen={isOpenCopyModal}>
           <ConfirmModalContent onConfirm={closeCopyModal}>
-            활동보고서 주소 복사에 실패했습니다.
+            {t("urlCopyError")}
           </ConfirmModalContent>
         </Modal>
       ));
@@ -191,12 +189,14 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
             <Button
               style={{ padding: "8px" }}
               onClick={handleCopyActivityReportUrl}
+              aria-label={t("copyUrl")}
             >
               <Icon type="link_variant" size={16} color="white" />
             </Button>
             <Button
               style={{ padding: "8px" }}
               onClick={handleOpenActivityReportPage}
+              aria-label={t("openPage")}
             >
               <Icon type="open_in_new" size={16} color="white" />
             </Button>
@@ -207,7 +207,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
             data.activityStatusEnumId === ActivityStatusEnum.Rejected &&
             data.comments.length > 0 && (
               <CommentToast
-                title="반려 사유"
+                title={t("rejectionReason")}
                 reasons={data.comments.map(comment => ({
                   id: comment.id,
                   datetime: comment.createdAt,
@@ -219,14 +219,21 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
 
           <FlexWrapper gap={16} direction="column">
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              활동 정보
+              {t("information")}
             </Typography>
             <FlexWrapper gap={12} direction="column">
-              <ListItem>활동명: {data.name}</ListItem>
               <ListItem>
-                활동 분류: {getActivityTypeLabel(data.activityTypeEnumId)}
+                {t("fieldValue", { label: t("name"), value: data.name })}
               </ListItem>
-              <ListItem>활동 기간: </ListItem>
+              <ListItem>
+                {t("fieldValue", {
+                  label: t("type"),
+                  value: t(`types.${data.activityTypeEnumId}`),
+                })}
+              </ListItem>
+              <ListItem>
+                {t("fieldValue", { label: t("period"), value: "" })}
+              </ListItem>
               <FlexWrapper
                 direction="column"
                 gap={12}
@@ -234,18 +241,27 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
               >
                 {data.durations.map((duration, index) => (
                   <Typography key={index}>
-                    {`${formatDate(duration.startTerm)} ~ ${formatDate(duration.endTerm)}`}
+                    {`${format.dateTime(new Date(duration.startTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })} ~ ${format.dateTime(new Date(duration.endTerm), { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Seoul" })}`}
                   </Typography>
                 ))}
               </FlexWrapper>
-              <ListItem>활동 장소: {data.location}</ListItem>
-              <ListItem>활동 목적: {data.purpose}</ListItem>
-              <ListItem>활동 내용: {data.detail}</ListItem>
+              <ListItem>
+                {t("fieldValue", {
+                  label: t("location"),
+                  value: data.location,
+                })}
+              </ListItem>
+              <ListItem>
+                {t("fieldValue", { label: t("purpose"), value: data.purpose })}
+              </ListItem>
+              <ListItem>
+                {t("fieldValue", { label: t("detail"), value: data.detail })}
+              </ListItem>
             </FlexWrapper>
           </FlexWrapper>
           <FlexWrapper gap={16} direction="column">
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              활동 인원({data.participants.length ?? 0}명)
+              {t("participantCount", { count: data.participants.length ?? 0 })}
             </Typography>
 
             {data.participants.map(participant => (
@@ -256,11 +272,13 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
           </FlexWrapper>
           <FlexWrapper gap={16} direction="column">
             <Typography fw="MEDIUM" fs={16} lh={20}>
-              활동 증빙
+              {t("evidence")}
             </Typography>
             <FlexWrapper gap={12} direction="column">
               <ListItem>
-                첨부 파일 ({data.evidenceFiles.length ?? 0}개)
+                {t("attachmentCount", {
+                  count: data.evidenceFiles.length ?? 0,
+                })}
               </ListItem>
               {data.evidenceFiles.length > 0 && (
                 <FlexWrapper
@@ -278,7 +296,12 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
                   />
                 </FlexWrapper>
               )}
-              <ListItem>부가 설명: {data.evidence}</ListItem>
+              <ListItem>
+                {t("fieldValue", {
+                  label: t("additionalDescription"),
+                  value: data.evidence ?? "",
+                })}
+              </ListItem>
             </FlexWrapper>
           </FlexWrapper>
           {isExecutive && (
@@ -292,7 +315,15 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
                       key={`${index.toString()}`}
                     >
                       <Typography fs={14} lh={16} color="GRAY.600">
-                        {formatSlashDateTime(comment.createdAt)}
+                        {format.dateTime(new Date(comment.createdAt), {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hourCycle: "h23",
+                          timeZone: "Asia/Seoul",
+                        })}
                       </Typography>
                       <Typography fs={16} lh={24}>
                         {comment.content}
@@ -303,12 +334,12 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
               )}
               <FlexWrapper gap={16} direction="column">
                 <Typography fw="MEDIUM" fs={16} lh={20}>
-                  반려 사유 (반려 시에만 입력)
+                  {t("rejectionInputLabel")}
                 </Typography>
                 <TextInput
                   value={rejectionDetail}
                   handleChange={setRejectionDetail}
-                  placeholder="내용"
+                  placeholder={t("contentPlaceholder")}
                   area
                 />
               </FlexWrapper>
@@ -317,7 +348,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
           {!isExecutive && viewOnly ? (
             <FlexWrapper direction="row" gap={12}>
               <Button type="outlined" onClick={close}>
-                닫기
+                {t("close")}
               </Button>
             </FlexWrapper>
           ) : (
@@ -331,11 +362,11 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
               }}
             >
               <Button type="outlined" onClick={close}>
-                취소
+                {t("cancel")}
               </Button>
               <FlexWrapper direction="row" gap={12}>
                 <Button onClick={isExecutive ? handleApprove : handleDelete}>
-                  {isExecutive ? "신청 승인" : "삭제"}
+                  {isExecutive ? t("approve") : t("delete")}
                 </Button>
                 {/* TODO: 반려 연결 */}
                 <Button
@@ -346,7 +377,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
                       : "default"
                   }
                 >
-                  {isExecutive ? "신청 반려" : "수정"}
+                  {isExecutive ? t("reject") : t("edit")}
                 </Button>
               </FlexWrapper>
             </FlexWrapper>

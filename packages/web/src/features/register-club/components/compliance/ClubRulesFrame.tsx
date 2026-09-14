@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
@@ -8,10 +9,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import {
-  CLUB_ASSOCIATION_RULES,
-  DEPARTMENT_AUTONOMY_RULES,
-} from "@sparcs-clubs/web/features/register-club/constants/registerClub";
+import { CLUB_ASSOCIATION_RULES } from "@sparcs-clubs/web/features/register-club/constants/registerClub";
 
 import ClubRegulationsComplianceSection from "./ClubRegulationsComplianceSection";
 import RulesButton from "./RulesButton";
@@ -32,6 +30,7 @@ const ClubRulesFrame: React.FC<ClubRulesFrameProps> = ({
   isAgreed,
   setIsAgreed,
 }) => {
+  const t = useTranslations("my.registration");
   const openModal = () => {
     overlay.open(({ isOpen, close }) => (
       <Modal isOpen={isOpen}>
@@ -42,10 +41,10 @@ const ClubRulesFrame: React.FC<ClubRulesFrameProps> = ({
             fw="MEDIUM"
             style={{ textAlign: "start", whiteSpace: "pre-line" }}
           >
-            {DEPARTMENT_AUTONOMY_RULES}
+            {t("divisionRulesContent")}
           </Typography>
           <ButtonWrapper>
-            <Button onClick={close}>확인</Button>
+            <Button onClick={close}>{t("confirm")}</Button>
           </ButtonWrapper>
         </FlexWrapper>
       </Modal>
@@ -54,14 +53,19 @@ const ClubRulesFrame: React.FC<ClubRulesFrameProps> = ({
 
   return (
     <FlexWrapper direction="column" gap={40}>
-      <SectionTitle>동아리 연합 회칙</SectionTitle>
+      <SectionTitle>{t("associationRules")}</SectionTitle>
       <Card outline gap={32} style={{ marginLeft: 24 }}>
         <RulesButton
-          title="동아리연합회칙"
+          title={t("associationRulesTitle")}
+          buttonText={t("viewOriginal")}
           onClick={() => window.open(CLUB_ASSOCIATION_RULES)}
         />
         {!isNewProvisional && (
-          <RulesButton title="분과자치규칙" onClick={openModal} />
+          <RulesButton
+            title={t("divisionRules")}
+            buttonText={t("viewOriginal")}
+            onClick={openModal}
+          />
         )}
         <ClubRegulationsComplianceSection
           isProvisional={isNewProvisional}

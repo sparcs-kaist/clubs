@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 import styled from "styled-components";
 
@@ -23,9 +24,13 @@ const ButtonWrapper = styled.div`
 const ManageActivityCertificateProgress: React.FC<
   ManageActivityCertificateProgressProps
 > = ({ status }) => {
+  const progressT = useTranslations("my.services.progress");
   const [rejectReason, setRejectReason] = useState("");
 
-  const manageActivityCertificate = manageActivityCertificateProgress(status);
+  const manageActivityCertificate = manageActivityCertificateProgress(
+    status,
+    progressT,
+  );
   const rejectButtonType = rejectReason !== "" ? "default" : "disabled";
 
   const onClickConfirm = () => {};
@@ -40,22 +45,22 @@ const ManageActivityCertificateProgress: React.FC<
         status === ActivityCertificateOrderStatusEnum.Applied && (
           <>
             <TextInput
-              placeholder="반려 사유를 입력해주세요"
-              label="반려 사유 (반려 시에만 입력)"
+              placeholder={progressT("rejectPlaceholder")}
+              label={progressT("rejectLabel")}
               area
               value={rejectReason}
               handleChange={setRejectReason}
             />
             <ButtonWrapper>
               <Button style={{ width: "max-content" }} onClick={onClickConfirm}>
-                신청 승인
+                {progressT("approve")}
               </Button>
               <Button
                 style={{ width: "max-content" }}
                 type={rejectButtonType}
                 onClick={onClickReject}
               >
-                신청 반려
+                {progressT("reject")}
               </Button>
             </ButtonWrapper>
           </>

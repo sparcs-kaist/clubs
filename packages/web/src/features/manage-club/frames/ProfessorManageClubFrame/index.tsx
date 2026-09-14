@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -11,24 +12,21 @@ import { useGetProfessorManageClubList } from "@sparcs-clubs/web/hooks/getManage
 
 import ClubActivitySection from "./ClubActivitySection";
 import ClubInfoSection from "./ClubInfoSection";
+import { getProfessorManageClubId } from "./getProfessorManageClubId";
 
 const ProfessorManageClubFrame: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     data: manageClubList,
     isLoading,
     isError,
   } = useGetProfessorManageClubList();
 
-  const [clubId, setClubId] = useState<number | null>(null);
-  useEffect(() => {
-    if (clubId !== null) return;
-
-    if (manageClubList.length > 0) {
-      setClubId(manageClubList[0].id);
-    } else {
-      setClubId(null);
-    }
-  }, [clubId, manageClubList]);
+  const clubId = getProfessorManageClubId(
+    manageClubList,
+    searchParams.get("clubId"),
+  );
 
   // NOTE: (@dora) 동아리에 속해 있는 교수는 항상 해당 동아리의 지도교수임
   if (manageClubList.length === 0) {
@@ -52,7 +50,14 @@ const ProfessorManageClubFrame: React.FC = () => {
             selectable: true,
           }))}
           value={clubId}
-          onChange={setClubId}
+          onChange={selectedClubId => {
+            if (selectedClubId === null) return;
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("clubId", selectedClubId.toString());
+            router.replace(`/manage-club?${params.toString()}`, {
+              scroll: false,
+            });
+          }}
         />
 
         {clubId !== null && <ClubInfoSection clubId={clubId.toString()} />}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -14,6 +15,7 @@ import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import MyRegisterClubDetailFrame from "@sparcs-clubs/web/features/register-club/frames/MyRegisterClubDetailFrame";
 
 const MyRegisterClubDetail = () => {
+  const t = useTranslations("my.registration");
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -43,13 +45,13 @@ const MyRegisterClubDetail = () => {
     <FlexWrapper direction="column" gap={40}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
+          { name: t("myPage"), path: "/my" },
           {
-            name: "동아리 등록",
+            name: t("title"),
             path: "/my/register-club",
           },
         ]}
-        title="동아리 등록"
+        title={t("title")}
       />
       <MyRegisterClubDetailFrame profile={profile.type as UserTypeEnum} />
     </FlexWrapper>

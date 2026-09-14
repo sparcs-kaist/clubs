@@ -41,6 +41,7 @@ export type Profile = {
 };
 interface AuthContextType {
   isLoggedIn: boolean;
+  isLoginNoticeComplete: boolean;
   login: () => void;
   logout: () => void;
   profile: Profile | undefined;
@@ -54,11 +55,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [isAgreed, setIsAgreed] = useState(true);
-
-  const checkAgree = async () => {
-    const agree = await getUserAgree();
-    setIsAgreed(agree.status.isAgree);
-  };
+  const [agreementUserId, setAgreementUserId] = useState<number | null>(null);
+  const [isPatchNoteClosed, setIsPatchNoteClosed] = useState(false);
 
   const latestPatchNote = useMemo(
     () =>
@@ -145,34 +143,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   //패치노트
   useEffect(() => {
     if (!isLatest && isLoggedIn) {
+      setIsPatchNoteClosed(false);
       localStorage.setItem(
         LOCAL_STORAGE_KEY.LATEST_PATCH_NOTE_VERSION_SEEN,
         latestPatchNote.version,
       );
-      overlay.open(({ isOpen, close }) => (
+      const overlayId = overlay.open(({ isOpen, close }) => (
         <PatchNoteModal
           isOpen={isOpen}
-          onConfirm={close}
+          onConfirm={() => {
+            close();
+            setIsPatchNoteClosed(true);
+          }}
           latestPatchNote={latestPatchNote}
         />
       ));
+      return () => overlay.unmount(overlayId);
     }
+    return undefined;
   }, [isLatest, latestPatchNote, isLoggedIn]);
 
   //개인정보 제공 동의
   useEffect(() => {
-    if (isLoggedIn) {
-      checkAgree();
-    }
-    if (!isAgreed && isLoggedIn) {
-      overlay.open(({ isOpen, close }) => (
+    setAgreementUserId(null);
+    if (!isLoggedIn || profile?.id === undefined) return undefined;
+    let active = true;
+    getUserAgree()
+      .then(agree => {
+        if (!active) return;
+        setIsAgreed(agree.status.isAgree);
+        setAgreementUserId(profile.id);
+      })
+      .catch(error => logger.error("Failed to check user agreement", error));
+    return () => {
+      active = false;
+    };
+  }, [isLoggedIn, profile?.id]);
+
+  useEffect(() => {
+    if (!isAgreed && isLoggedIn && agreementUserId === profile?.id) {
+      const overlayId = overlay.open(({ isOpen, close }) => (
         <AgreementModal
           isOpen={isOpen}
           onAgree={async () => {
             try {
               await postUserAgree();
-              setIsAgreed(true);
               close();
+              setIsAgreed(true);
             } catch (_) {
               window.location.reload();
             }
@@ -183,12 +200,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }}
         />
       ));
+      return () => overlay.unmount(overlayId);
     }
-  }, [isAgreed, isLoggedIn]);
+    return undefined;
+  }, [isAgreed, isLoggedIn, agreementUserId, profile?.id]);
+
+  const isLoginNoticeComplete =
+    isLoggedIn &&
+    agreementUserId === profile?.id &&
+    isAgreed &&
+    (isLatest || isPatchNoteClosed);
 
   const value = useMemo(
-    () => ({ isLoggedIn, login, logout, profile }),
-    [isLoggedIn, profile],
+    () => ({ isLoggedIn, isLoginNoticeComplete, login, logout, profile }),
+    [isLoggedIn, isLoginNoticeComplete, profile],
   );
 
   useEffect(() => {

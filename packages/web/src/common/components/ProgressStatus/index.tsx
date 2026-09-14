@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -24,20 +25,23 @@ const ProgressCheckSectionWrapper = styled.div`
 `;
 
 const ProgressStatus: React.FC<ProgressStatusProps> = ({
-  title = "신청 상태",
+  title,
   labels,
   progress,
   infoText = "",
   optional = undefined,
-}) => (
-  <ProgressCheckSectionWrapper>
-    <Typography fw="MEDIUM" fs={16} lh={20} style={{ width: "100%" }}>
-      {title}
-    </Typography>
-    <ProgressCheckSection labels={labels} progress={progress} />
-    {infoText && <Info text={infoText} />}
-    {optional}
-    {/* TODO: onClick 달기 */}
-  </ProgressCheckSectionWrapper>
-);
+}) => {
+  const t = useTranslations("common");
+  return (
+    <ProgressCheckSectionWrapper>
+      <Typography fw="MEDIUM" fs={16} lh={20} style={{ width: "100%" }}>
+        {title ?? t("applicationStatus")}
+      </Typography>
+      <ProgressCheckSection labels={labels} progress={progress} />
+      {infoText && <Info text={infoText} />}
+      {optional}
+      {/* TODO: onClick 달기 */}
+    </ProgressCheckSectionWrapper>
+  );
+};
 export default ProgressStatus;

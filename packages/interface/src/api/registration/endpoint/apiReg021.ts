@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
@@ -28,6 +30,7 @@ const responseBodyMap = {
       z.object({
         id: z.coerce.number().int().min(1),
         clubId: z.coerce.number().int().min(1),
+        semesterId: zSemester.shape.id.nullable(),
         registrationStatusEnumId: z.nativeEnum(RegistrationStatusEnum),
         division: z.object({
           id: z.coerce.number().int().min(1),
