@@ -47,16 +47,16 @@ registry.registerPath({
   tags: ["club"],
   method: "patch",
   path: "/executive/clubs/club/{clubId}/registration-delegate-cancellation",
-  summary: "CLB-022: 등록기간 중 대의원 직책을 취소합니다",
+  summary: "CLB-022: 등록기간 중 과거 대의원 임기를 종료합니다",
   description:
-    "동아리 등록 기간에만 가능하며 기존 직책 변경과 같은 적용 시각에 대의원 임기를 종료합니다.",
+    "이번 학기 등록 서류 제출 여부와 관계없이 동아리 등록 기간에 가능합니다. 전 학기 종료 전날에 대의원 임기를 종료합니다.",
   request: {
     params: requestParam,
     body: { content: { "application/json": { schema: requestBody } } },
   },
   responses: {
     200: {
-      description: "대의원 직책을 취소했습니다.",
+      description: "대의원 임기를 종료했습니다.",
       content: { "application/json": { schema: responseBodyMap[200] } },
     },
   },
