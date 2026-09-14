@@ -32,7 +32,7 @@
     "noClubRegistrations": "There are no club registration applications.",
     "noMemberRegistrations": "There are no membership applications.",
     "professorBannerLocation": "Club registration applications are listed at the bottom of this page, from the most recent semester first.",
-    "professorBannerStatus": "The status shown in the table is separate from your approval. Open a club registration application to check your approval status.",
+    "professorBannerStatus": "The status in the table shows whether you have approved each application.",
     "columns": {
       "status": "Status",
       "type": "Type",
@@ -45,7 +45,8 @@
       "applied": "Applied",
       "approved": "Approved",
       "rejected": "Rejected",
-      "unknown": "None"
+      "unknown": "None",
+      "pending": "Pending"
     },
     "registrationType": {
       "renewal": "Renewal",

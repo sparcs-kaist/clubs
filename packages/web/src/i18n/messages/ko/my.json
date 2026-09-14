@@ -32,7 +32,7 @@
     "noClubRegistrations": "동아리 등록 내역이 없습니다.",
     "noMemberRegistrations": "회원 등록 내역이 없습니다.",
     "professorBannerLocation": "동아리 등록 신청서는 이 페이지 하단에서 확인하실 수 있으며, 동아리 등록 신청서는 학기 역순으로 정렬되어 있습니다.",
-    "professorBannerStatus": "표에 나와있는 승인 상태는 지도교수님 승인 상태와는 별개이므로, 실제 승인 상태는 동아리 등록 신청서에서 확인하실 수 있습니다.",
+    "professorBannerStatus": "표의 상태는 지도교수님의 승인 여부를 나타냅니다.",
     "columns": {
       "status": "상태",
       "type": "구분",
@@ -45,7 +45,8 @@
       "applied": "신청",
       "approved": "승인",
       "rejected": "반려",
-      "unknown": "None"
+      "unknown": "None",
+      "pending": "대기"
     },
     "registrationType": {
       "renewal": "재등록",
