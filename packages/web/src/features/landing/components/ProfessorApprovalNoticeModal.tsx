@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 
@@ -47,6 +48,7 @@ const ClubList = styled.ul`
 
 const ClubRow = styled.li`
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -101,6 +103,7 @@ const ProfessorApprovalNoticeModal = ({
   onClose: () => void;
   onHideToday: () => void;
 }) => {
+  const t = useTranslations("main.professor_approval_notice");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -120,7 +123,7 @@ const ProfessorApprovalNoticeModal = ({
       }}
     >
       <Title id="professor-approval-notice-title" ref={titleRef} tabIndex={-1}>
-        교수님의 승인을 기다리는 서류가 있어요!
+        {t("title")}
       </Title>
       <ClubList>
         {clubs.map(club => (
@@ -131,9 +134,12 @@ const ProfessorApprovalNoticeModal = ({
                 <Link
                   href={`/manage-club?clubId=${club.clubId}`}
                   onClick={onClose}
-                  aria-label={`${club.clubName} 활동보고서 ${club.activityCount}건 보기`}
+                  aria-label={t("view_activities_label", {
+                    clubName: club.clubName,
+                    count: club.activityCount,
+                  })}
                 >
-                  활동보고서 {club.activityCount}건 보기
+                  {t("view_activities", { count: club.activityCount })}
                 </Link>
               )}
               {club.registrationIds.map((id, index) => (
@@ -141,10 +147,17 @@ const ProfessorApprovalNoticeModal = ({
                   key={id}
                   href={`/my/register-club/${id}`}
                   onClick={onClose}
-                  aria-label={`${club.clubName} 등록 신청 ${index + 1} 보기`}
+                  aria-label={t("view_registration_label", {
+                    clubName: club.clubName,
+                    index: index + 1,
+                  })}
                 >
-                  등록 신청
-                  {club.registrationIds.length > 1 ? ` ${index + 1}` : ""} 보기
+                  {t(
+                    club.registrationIds.length > 1
+                      ? "view_numbered_registration"
+                      : "view_registration",
+                    { index: index + 1 },
+                  )}
                 </Link>
               ))}
             </Links>
@@ -153,9 +166,9 @@ const ProfessorApprovalNoticeModal = ({
       </ClubList>
       <Footer>
         <Button type="outlined" onClick={onHideToday}>
-          오늘 하루 보지 않기
+          {t("hide_today")}
         </Button>
-        <Button onClick={onClose}>닫기</Button>
+        <Button onClick={onClose}>{t("close")}</Button>
       </Footer>
     </Dialog>
   );

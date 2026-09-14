@@ -1,3 +1,13 @@
 {
-    "beta_info": "Clubs is operating as a beta service for applying for club registration.\nPlease share any inquiries and feedbacks through the Channel Talk button below!\nPlease note that English translation is currently in progress and being applied gradually."
+  "beta_info": "Clubs is operating as a beta service for applying for club registration.\nPlease share any inquiries and feedbacks through the Channel Talk button below!\nPlease note that English translation is currently in progress and being applied gradually.",
+  "professor_approval_notice": {
+    "title": "You have documents awaiting your approval!",
+    "view_activities": "View {count, plural, one {# activity report} other {# activity reports}}",
+    "view_activities_label": "View {count, plural, one {# activity report} other {# activity reports}} for {clubName}",
+    "view_registration": "View registration application",
+    "view_numbered_registration": "View registration application {index}",
+    "view_registration_label": "View registration application {index} for {clubName}",
+    "hide_today": "Hide for today",
+    "close": "Close"
+  }
 }
