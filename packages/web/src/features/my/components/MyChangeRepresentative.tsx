@@ -1,5 +1,6 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
@@ -11,10 +12,6 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import {
-  myChangeRepresentativeFinishText,
-  myChangeRepresentativeRequestText,
-} from "@sparcs-clubs/web/constants/changeRepresentative";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
 
 import ChangeRepresentativeModalContent from "./ChangeRepresentativeModalContent";
@@ -55,23 +52,18 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
   newRepresentative,
   requestId,
 }) => {
+  const t = useTranslations("my.representative");
   const router = useRouter();
   const Title =
     status === ClubDelegateChangeRequestStatusEnum.Applied
-      ? "동아리 대표자 변경 요청"
-      : "동아리 대표자 변경 완료";
-  const Text =
+      ? t("requestedTitle")
+      : t("completedTitle");
+  const Text = t(
     status === ClubDelegateChangeRequestStatusEnum.Applied
-      ? myChangeRepresentativeRequestText(
-          clubName,
-          prevRepresentative,
-          newRepresentative,
-        )
-      : myChangeRepresentativeFinishText(
-          clubName,
-          prevRepresentative,
-          newRepresentative,
-        );
+      ? "requestedBody"
+      : "completedBody",
+    { clubName, prevRepresentative, newRepresentative },
+  );
 
   const isNewRepresentative = true; // 이전 대표자한테도 보여주는지? -> 안 보여줄거면 이 부분 삭제
   const openConfirmModal = () => {
@@ -106,7 +98,7 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
         {status === ClubDelegateChangeRequestStatusEnum.Applied && (
           <TextButton
             color="GRAY"
-            text="클릭하여 더보기"
+            text={t("viewMore")}
             fw="REGULAR"
             onClick={openConfirmModal}
           />
@@ -115,7 +107,7 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
           isNewRepresentative && (
             <TextButton
               color="GRAY"
-              text="대표 동아리 관리 페이지 바로가기"
+              text={t("manageClub")}
               fw="REGULAR"
               onClick={() => {
                 router.push(`/manage-club/`);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
@@ -13,6 +14,7 @@ import CommonSpaceProgress from "@sparcs-clubs/web/features/common-space/compone
 import CommonSpaceDetailFrame from "@sparcs-clubs/web/features/common-space/frames/CommonSpaceDetailFrame";
 
 const MyCommonSpaceDetail = () => {
+  const t = useTranslations("my.services");
   const router = useRouter();
   const onClick = () => {
     router.push("/my/common-space");
@@ -21,13 +23,13 @@ const MyCommonSpaceDetail = () => {
     <FlexWrapper direction="column" gap={60}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
+          { name: t("myPage"), path: "/my" },
           {
-            name: "공용공간 비정기사용 내역",
+            name: t("commonSpace.title"),
             path: "/my/common-space",
           },
         ]}
-        title="공용공간 비정기사용 내역"
+        title={t("commonSpace.title")}
         enableLast
       />
       <Card outline gap={20}>
@@ -35,7 +37,7 @@ const MyCommonSpaceDetail = () => {
         <CommonSpaceDetailFrame />
       </Card>
       <Button style={{ width: "max-content" }} onClick={onClick}>
-        목록으로 돌아가기
+        {t("backToList")}
       </Button>
     </FlexWrapper>
   );

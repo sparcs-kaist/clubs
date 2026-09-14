@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useCallback, useMemo } from "react";
 import { Control, useFieldArray } from "react-hook-form";
 
@@ -30,6 +31,8 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
   onClose,
   onConfirm,
 }) => {
+  const t = useTranslations("my.registration.activity");
+
   const { data: deadline, isLoading, isError } = useGetActivityDeadline();
 
   const { fields, append, remove, update } = useFieldArray<
@@ -159,11 +162,11 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
               style={{ backgroundColor: "white", color: "black" }}
               type="outlined"
             >
-              활동 기간 추가
+              {t("addPeriod")}
             </IconButton>
             {isEmpty && (
               <Typography fw="MEDIUM" fs={12} lh={18} color="RED.600">
-                기간을 하나 이상 추가해주세요.
+                {t("periodRequired")}
               </Typography>
             )}
             {isSomethingEmpty && (
@@ -174,7 +177,7 @@ const EditActivityTermModal: React.FC<EditActivityTermModalProps> = ({
                 color="RED.600"
                 style={{ marginBottom: fields.length === 4 ? "60px" : "0px" }}
               >
-                기간을 입력하거나 해당 항목을 삭제해주세요.
+                {t("periodIncomplete")}
               </Typography>
             )}
           </FlexWrapper>

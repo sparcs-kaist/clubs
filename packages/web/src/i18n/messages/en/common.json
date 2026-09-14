@@ -1,7 +1,7 @@
 {
   "메인": "Main",
-  "펼치기": "See more",
-  "접기": "In brief",
+  "펼치기": "Expand",
+  "접기": "Collapse",
   "명": "people",
   "notice": "Notice",
   "view_more": "View more",
@@ -10,5 +10,61 @@
   "박사과정": "Doctor",
   "집행부원": "Executive",
   "지도교수": "Professor",
-  "교직원": "Employee"
+  "교직원": "Employee",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "failed": "The action failed.",
+  "noRecentHistory": "No usage history in the past three months.",
+  "applicationStatus": "Application Status",
+  "loginRequired": "Please log in<br></br>to view this page.",
+  "goToLogin": "Log in",
+  "noPermission": "You do not have permission<br></br>to view this page.",
+  "goToMain": "Go to Home",
+  "noSemesterInfo": "Unable to load semester information.",
+  "selectAccount": "Select Account",
+  "noHistory": "No records found.",
+  "totalCount": "Total: {count} {unit}",
+  "개": "items",
+  "draft": {
+    "restore": "Restore",
+    "startNew": "Start New",
+    "message": "You have a saved draft. Would you like to restore it?",
+    "description": "Selecting “Start New” deletes the existing draft. Drafts are automatically deleted after 24 hours."
+  },
+  "files": {
+    "pdfPreview": "PDF preview",
+    "noPreview": "No preview available",
+    "uploadFailed": "File upload failed.",
+    "select": "Select a file",
+    "selected": "{count, plural, one {# file selected} other {# files selected}}"
+  },
+  "forms": {
+    "required": "This field is required.",
+    "numbersOnly": "Only numbers are allowed.",
+    "numbersOnlyPeriod": "Only numbers are allowed.",
+    "invalidPhone": "Please enter a valid phone number.",
+    "startRequired": "Enter a start date.",
+    "invalidRange": "Please enter a valid date range.",
+    "invalidDate": "Please enter a valid date.",
+    "endRequired": "Enter an end date.",
+    "endBeforeStart": "The end date cannot be before the start date.",
+    "outOfRange": "The date is outside the allowed range.",
+    "quantityExceeded": "The requested quantity exceeds the limit.",
+    "selectPlaceholder": "Select an option",
+    "searchPlaceholder": "Enter a search term",
+    "noOptions": "No options available",
+    "noResults": "No results found",
+    "selectionRequired": "Please select an option.",
+    "maxLength": "Enter no more than {count} characters.",
+    "minLength": "Enter at least {count} characters.",
+    "pattern": "Please use the required format.",
+    "time": "Time"
+  },
+  "notFound": "This page<br></br>does not exist.",
+  "notForExecutive": "This page is not available<br></br>to executive members.",
+  "patchNote": {
+    "title": "Release Notes",
+    "version": "Version",
+    "date": "Date"
+  }
 }

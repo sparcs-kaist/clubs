@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -18,6 +19,7 @@ const MyRegisterClubActFrame: React.FC<MyRegisterClubActFrameProps> = ({
   clubId,
   semesterId,
 }) => {
+  const t = useTranslations("my.registration.activity");
   const { data, isLoading, isError } = useProvisionalActivities(profile, {
     clubId,
     semesterId,
@@ -26,8 +28,7 @@ const MyRegisterClubActFrame: React.FC<MyRegisterClubActFrameProps> = ({
     <AsyncBoundary isLoading={isLoading} isError={isError}>
       <FlexWrapper direction="column" gap={16}>
         <Typography fw="MEDIUM" fs={16} lh={20}>
-          가등록 / 등록 취소 기간 활동 보고서 (총{" "}
-          {data ? data.activities.length : 0}개)
+          {t("titleCount", { count: data?.activities.length ?? 0 })}
         </Typography>
         {data && (
           <MyRegisterClubActTable

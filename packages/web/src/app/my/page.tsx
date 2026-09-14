@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -26,6 +27,7 @@ const ResponsiveWrapper = styled(FlexWrapper)`
 `;
 
 const My: React.FC = () => {
+  const t = useTranslations("path");
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -46,8 +48,8 @@ const My: React.FC = () => {
   return (
     <ResponsiveWrapper direction="column" gap={60}>
       <PageHead
-        items={[{ name: "마이페이지", path: "/my" }]}
-        title="마이페이지"
+        items={[{ name: t("마이페이지"), path: "/my" }]}
+        title={t("마이페이지")}
       />
       {profile?.type === UserTypeEnum.Professor && (
         <ProfessorRegistrationBanner />

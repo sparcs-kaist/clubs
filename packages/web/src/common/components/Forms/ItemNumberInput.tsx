@@ -1,5 +1,6 @@
 import isPropValid from "@emotion/is-prop-valid";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useTranslations } from "next-intl";
 import React, {
   ChangeEvent,
   InputHTMLAttributes,
@@ -126,6 +127,7 @@ const ItemNumberInput: React.FC<ItemNumberInputProps> = ({
   onChange,
   setErrorStatus = () => {},
 }) => {
+  const t = useTranslations("common");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -134,16 +136,16 @@ const ItemNumberInput: React.FC<ItemNumberInputProps> = ({
       setError("");
       setErrorStatus(false);
     } else if (!isValidFormat) {
-      setError("숫자만 입력 가능합니다");
+      setError(t("forms.numbersOnly"));
       setErrorStatus(true);
     } else if (value && value > itemLimit) {
-      setError("신청 가능 개수를 초과했습니다");
+      setError(t("forms.quantityExceeded"));
       setErrorStatus(true);
     } else {
       setError("");
       setErrorStatus(false);
     }
-  }, [value, itemLimit, setErrorStatus]);
+  }, [value, itemLimit, setErrorStatus, t]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value.replace(/\D/g, "");
@@ -153,7 +155,9 @@ const ItemNumberInput: React.FC<ItemNumberInputProps> = ({
   };
 
   const displayValue =
-    value !== undefined && value !== 0 ? String(value) + unit : "";
+    value !== undefined && value !== 0
+      ? String(value) + (t.has(unit) ? t(unit) : unit)
+      : "";
 
   const mainInputRef = useRef<HTMLInputElement>(null);
 
@@ -194,7 +198,7 @@ const ItemNumberInput: React.FC<ItemNumberInputProps> = ({
         {itemLimit !== undefined && (
           <RightContentWrapper hasError={!!error}>
             / {itemLimit}
-            {unit}
+            {t.has(unit) ? t(unit) : unit}
           </RightContentWrapper>
         )}
       </InputContainer>

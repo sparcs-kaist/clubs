@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useMemo, useRef, useState } from "react";
 import styled from "styled-components";
@@ -103,13 +104,14 @@ const FlexExpand = styled.div`
 
 const FileUpload: React.FC<FileUploadProps> = ({
   fileId = "file-upload-input",
-  placeholder = "파일을 선택해주세요",
+  placeholder,
   initialFiles = [],
   onChange = () => {},
   allowedTypes = [],
   multiple = false,
   disabled = false,
 }) => {
+  const t = useTranslations("common");
   const { mutate: uploadFileMutation } = useFileUpload();
   const { mutate: putFileS3Mutation } = usePutFileS3();
 
@@ -189,7 +191,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   close();
                 }}
               >
-                파일 업로드에 실패했습니다.
+                {t("files.uploadFailed")}
                 <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
                   {error.message}
                 </Typography>
@@ -218,15 +220,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const text = useMemo(() => {
     if (files.length === 0) {
-      return placeholder;
+      return placeholder ?? t("files.select");
     }
 
     if (!multiple) {
       return files[0].name;
     }
 
-    return `${files.length}개의 파일을 선택했습니다`;
-  }, [files, multiple, placeholder]);
+    return t("files.selected", { count: files.length });
+  }, [files, multiple, placeholder, t]);
 
   return (
     <FlexWrapper direction="column" gap={12} style={{ alignSelf: "stretch" }}>

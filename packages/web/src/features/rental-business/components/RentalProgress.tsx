@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { RentalOrderStatusEnum } from "@clubs/interface/common/enum/rental.enum";
@@ -11,7 +12,9 @@ interface RentalProgressProps {
 }
 
 const RentalProgress: React.FC<RentalProgressProps> = ({ status }) => {
-  const manageRental = manageRentalProgress(status);
+  const t = useTranslations("my.services");
+  const progressT = useTranslations("my.services.progress");
+  const manageRental = manageRentalProgress(status, progressT);
   const onClickCancel = () => {};
   return (
     <ProgressStatus
@@ -21,7 +24,7 @@ const RentalProgress: React.FC<RentalProgressProps> = ({ status }) => {
       optional={
         status === RentalOrderStatusEnum.Applied && (
           <Button onClick={onClickCancel} style={{ width: "max-content" }}>
-            신청 취소
+            {t("cancel")}
           </Button>
         )
       }

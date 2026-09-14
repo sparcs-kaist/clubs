@@ -1,3 +1,4 @@
+import { useFormatter, useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
@@ -7,7 +8,6 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { ActivityReportFormData } from "@sparcs-clubs/web/features/activity-report/types/form";
 import { Duration } from "@sparcs-clubs/web/features/register-club/types/registerClub";
-import { formatDotDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 import EditActivityTermModal from "../EditActivityTermModal";
 import EditProvisionalActivityTermModal from "../EditProvisionalActivityTermModal";
@@ -53,6 +53,8 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
   onChange = () => {},
   source = "regular",
 }) => {
+  const t = useTranslations("my.registration.activity");
+  const format = useFormatter();
   const { control, watch } = useFormContext<ActivityReportFormData>();
   const durations = watch("durations");
 
@@ -87,7 +89,7 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
   return (
     <FlexWrapper direction="column" gap={4} style={{ width: "100%" }}>
       <Typography fw="MEDIUM" fs={16} lh={20}>
-        활동 기간
+        {t("period")}
       </Typography>
 
       <ActivityTermArea onClick={handleTerm}>
@@ -95,9 +97,7 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
           {activityTermList.length > 0 &&
           activityTermList[0].startTerm &&
           activityTermList[0].endTerm
-            ? `${formatDotDate(activityTermList[0].startTerm)} ~ ${formatDotDate(
-                activityTermList[0].endTerm,
-              )}${activityTermList.length > 1 ? ` 외 ${activityTermList.length - 1}개` : ""}`
+            ? `${format.dateTime(new Date(activityTermList[0].startTerm), { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Seoul" })} ~ ${format.dateTime(new Date(activityTermList[0].endTerm), { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Seoul" })}${activityTermList.length > 1 ? t("additionalPeriods", { count: activityTermList.length - 1 }) : ""}`
             : ""}
         </ActivityTermContent>
 
@@ -110,7 +110,7 @@ const SelectActivityTerm: React.FC<SelectActivityTermProps> = ({
             textDecoration: "underline",
           }}
         >
-          수정
+          {t("edit")}
         </Typography>
       </ActivityTermArea>
     </FlexWrapper>

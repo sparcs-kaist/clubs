@@ -10,5 +10,61 @@
   "박사과정": "박사과정",
   "집행부원": "집행부원",
   "지도교수": "지도교수",
-  "교직원": "교직원"
+  "교직원": "교직원",
+  "confirm": "확인",
+  "cancel": "취소",
+  "failed": "실패하였습니다",
+  "noRecentHistory": "지난 3개월 간 이용 기록이 없습니다.",
+  "applicationStatus": "신청 상태",
+  "loginRequired": "현재 접근한 페이지는<br></br>로그인해야 볼 수 있습니다",
+  "goToLogin": "로그인 바로가기",
+  "noPermission": "현재 페이지에 대한<br></br>접근 권한이 없습니다",
+  "goToMain": "메인 바로가기",
+  "noSemesterInfo": "학기 정보를 불러오지 못했습니다.",
+  "selectAccount": "계정 선택",
+  "noHistory": "내역이 없습니다",
+  "totalCount": "총 {count}{unit}",
+  "개": "개",
+  "draft": {
+    "restore": "불러오기",
+    "startNew": "새로 작성하기",
+    "message": "임시 저장된 데이터가 있습니다. 불러오시겠습니까?",
+    "description": "‘새로 작성하기’를 선택하면 기존 임시 저장된 데이터가 삭제됩니다. 임시 저장 된 데이터는 24시간 후 자동 삭제됩니다."
+  },
+  "files": {
+    "pdfPreview": "PDF 미리보기",
+    "noPreview": "미리보기가 없습니다",
+    "uploadFailed": "파일 업로드에 실패했습니다.",
+    "select": "파일을 선택해주세요",
+    "selected": "{count}개의 파일을 선택했습니다"
+  },
+  "forms": {
+    "required": "필수로 채워야 하는 항목입니다",
+    "numbersOnly": "숫자만 입력 가능합니다",
+    "numbersOnlyPeriod": "숫자만 입력 가능합니다.",
+    "invalidPhone": "유효하지 않은 전화번호입니다",
+    "startRequired": "시작 기간을 입력하지 않았습니다",
+    "invalidRange": "입력 기간이 올바르지 않습니다",
+    "invalidDate": "유효하지 않은 날짜입니다",
+    "endRequired": "끝 기간을 입력하지 않았습니다",
+    "endBeforeStart": "종료일은 시작일보다 빠를 수 없습니다",
+    "outOfRange": "입력 가능 범위를 벗어났습니다",
+    "quantityExceeded": "신청 가능 개수를 초과했습니다",
+    "selectPlaceholder": "항목을 선택해주세요",
+    "searchPlaceholder": "검색어를 입력해주세요",
+    "noOptions": "항목이 존재하지 않습니다",
+    "noResults": "검색 결과가 없습니다",
+    "selectionRequired": "필수로 선택해야 하는 항목입니다",
+    "maxLength": "최대 {count}자까지 가능합니다.",
+    "minLength": "최소 {count}자 이상이어야 합니다.",
+    "pattern": "정해진 형식에 맞지 않습니다.",
+    "time": "시간"
+  },
+  "notFound": "현재 접근한 페이지는<br></br>존재하지 않습니다",
+  "notForExecutive": "집행부원은 해당 페이지에<br></br>접근할 수 없습니다",
+  "patchNote": {
+    "title": "패치노트",
+    "version": "버전",
+    "date": "날짜"
+  }
 }

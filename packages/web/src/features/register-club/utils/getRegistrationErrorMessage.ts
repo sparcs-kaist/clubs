@@ -67,31 +67,49 @@ const legacyCodes: Record<string, RegistrationErrorCode> = {
     RegistrationErrorCode.NotEligible,
 };
 
-export const getRegistrationErrorMessage = (error: unknown): string => {
+export const getRegistrationErrorMessage = (
+  error: unknown,
+  translate?: (key: string, values?: Record<string, string>) => string,
+): string => {
   const uncertain =
+    translate?.("uncertain") ??
     "신청 처리 결과를 확인하지 못했습니다. 신청 내역을 확인한 뒤 다시 시도해주세요.";
   if (!isAxiosError(error)) return uncertain;
   if (!error.response) return uncertain;
   if (error.response.status >= 500) return uncertain;
   if (error.response.status === 401)
-    return "로그인이 만료되었습니다. 다시 로그인한 뒤 신청 내역을 확인해주세요.";
+    return (
+      translate?.("unauthorized") ??
+      "로그인이 만료되었습니다. 다시 로그인한 뒤 신청 내역을 확인해주세요."
+    );
   if (error.response.status === 403)
-    return "등록 신청 권한이 없습니다. 로그인한 계정과 대표자·대의원 정보를 확인해주세요.";
+    return (
+      translate?.("forbidden") ??
+      "등록 신청 권한이 없습니다. 로그인한 계정과 대표자·대의원 정보를 확인해주세요."
+    );
 
   const knownError = errorResponse.safeParse(error.response.data);
-  if (knownError.success) return messages[knownError.data.message.code];
+  if (knownError.success)
+    return (
+      translate?.(knownError.data.message.code) ??
+      messages[knownError.data.message.code]
+    );
   const validation = validationResponse.safeParse(error.response.data);
   if (validation.success) {
     const labels = [
       ...new Set(
         validation.data.message.map(issue =>
           Object.hasOwn(fieldLabels, String(issue.path[0]))
-            ? fieldLabels[String(issue.path[0])]
-            : "신청 유형 및 필수 입력값",
+            ? (translate?.(`fields.${String(issue.path[0])}`) ??
+              fieldLabels[String(issue.path[0])])
+            : (translate?.("fields.unknown") ?? "신청 유형 및 필수 입력값"),
         ),
       ),
     ];
-    return `다음 항목의 입력값을 확인해주세요: ${labels.join(", ")}.`;
+    return (
+      translate?.("invalidFields", { fields: labels.join(", ") }) ??
+      `다음 항목의 입력값을 확인해주세요: ${labels.join(", ")}.`
+    );
   }
   const legacy = z
     .object({ message: z.string() })
@@ -100,7 +118,7 @@ export const getRegistrationErrorMessage = (error: unknown): string => {
     const code = Object.hasOwn(legacyCodes, legacy.data.message)
       ? legacyCodes[legacy.data.message]
       : undefined;
-    if (code) return messages[code];
+    if (code) return translate?.(code) ?? messages[code];
   }
   return uncertain;
 };
