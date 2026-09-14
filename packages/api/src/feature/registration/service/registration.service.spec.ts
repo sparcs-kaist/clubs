@@ -20,6 +20,7 @@ const semesterId = 7;
 const createService = (clubTypeEnum: ClubTypeEnum) => {
   const clubRegistrationRepository = {
     selectRegistrationsById: jest.fn(),
+    updateRegistrationProfessorApprovedAt: jest.fn(),
     postExecutiveRegistrationsClubRegistrationSendBack: jest.fn(),
   };
   const clubPublicService = {
@@ -76,6 +77,7 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     memberRegistrationRepository,
     userPublicService,
     clubPublicService,
+    registrationPublicService,
   };
 };
 
@@ -129,6 +131,88 @@ describe("RegistrationService club registration review", () => {
     expect(
       clubRegistrationRepository.postExecutiveRegistrationsClubRegistrationSendBack,
     ).not.toHaveBeenCalled();
+  });
+});
+
+describe("RegistrationService professor club registration approval", () => {
+  it.each([null, undefined])(
+    "allows an unsigned registration (%s) after the application deadline",
+    async professorApprovedAt => {
+      const { service, clubRegistrationRepository, registrationPublicService } =
+        createService(ClubTypeEnum.Regular);
+      const approvedAt = new Date("2026-09-14T00:00:00.000Z");
+      Object.assign(service, { clock: { now: () => approvedAt } });
+      registrationPublicService.checkDeadline.mockRejectedValue(
+        new Error("Application deadline has passed"),
+      );
+      clubRegistrationRepository.selectRegistrationsById.mockResolvedValue([
+        { professorId: 1, professorApprovedAt },
+      ]);
+
+      await expect(
+        service.getProfessorRegistrationsClubRegistrationApproval({
+          professorId: 1,
+          param: { applyId: 2 },
+        }),
+      ).resolves.toEqual({});
+      expect(registrationPublicService.checkDeadline).not.toHaveBeenCalled();
+      expect(
+        clubRegistrationRepository.updateRegistrationProfessorApprovedAt,
+      ).toHaveBeenCalledWith({ registrationId: 2, approvedAt });
+    },
+  );
+
+  it.each([
+    {
+      name: "a missing registration",
+      registrations: [],
+      message: "no such registration-apply",
+    },
+    {
+      name: "another professor's registration",
+      registrations: [{ professorId: 2, professorApprovedAt: null }],
+      message: "It seems that you are not a advisor of the club",
+    },
+    {
+      name: "an already signed registration",
+      registrations: [{ professorId: 1, professorApprovedAt: new Date() }],
+      message: "It seems already approved",
+    },
+  ])("rejects $name", async ({ registrations, message }) => {
+    const { service, clubRegistrationRepository } = createService(
+      ClubTypeEnum.Regular,
+    );
+    clubRegistrationRepository.selectRegistrationsById.mockResolvedValue(
+      registrations,
+    );
+
+    await expect(
+      service.getProfessorRegistrationsClubRegistrationApproval({
+        professorId: 1,
+        param: { applyId: 2 },
+      }),
+    ).rejects.toThrow(message);
+    expect(
+      clubRegistrationRepository.updateRegistrationProfessorApprovedAt,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("still rejects student submissions after the application deadline", async () => {
+    const { service, registrationPublicService } = createService(
+      ClubTypeEnum.Regular,
+    );
+    registrationPublicService.checkDeadline.mockRejectedValue(
+      new Error("Application deadline has passed"),
+    );
+
+    await expect(
+      service.postStudentRegistrationClubRegistration(
+        studentId,
+        {} as Parameters<
+          RegistrationService["postStudentRegistrationClubRegistration"]
+        >[1],
+      ),
+    ).rejects.toThrow("Application deadline has passed");
   });
 });
 

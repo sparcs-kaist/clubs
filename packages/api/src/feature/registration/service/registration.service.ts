@@ -1082,19 +1082,11 @@ export class RegistrationService {
   /**
    * @description getProfessorRegistrationsClubRegistrationApproval 의 서비스 진입점입니다.
    */
+  @Transactional()
   async getProfessorRegistrationsClubRegistrationApproval(param: {
     professorId: number;
     param: ApiReg023RequestParam;
   }): Promise<ApiReg023ResponseOk> {
-    // 현재 동아리 등록 기간인지 검사합니다.
-    await this.registrationPublicService.checkDeadline({
-      enums: [
-        RegistrationDeadlineEnum.ClubRegistrationApplication,
-        // RegistrationDeadlineEnum.ClubRegistrationModification,
-        // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
-      ],
-    });
-
     const registrations =
       await this.clubRegistrationRepository.selectRegistrationsById({
         registrationId: param.param.applyId,
