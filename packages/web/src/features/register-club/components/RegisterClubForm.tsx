@@ -17,16 +17,18 @@ import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/Confi
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import useGetUserProfile from "@sparcs-clubs/web/common/services/getUserProfile";
 import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil";
-import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import { isObjectEmpty } from "@sparcs-clubs/web/utils";
 
 import useRegisterClub from "../services/useRegisterClub";
 import { RegisterClubModel } from "../types/registerClub";
 import computeErrorMessage from "../utils/computeErrorMessage";
+import { getRegistrationErrorMessage } from "../utils/getRegistrationErrorMessage";
+import { getRegisterClubDraftKey } from "../utils/registrationDraft";
 import ActivityReportFrame from "./activity-report/ActivityReportFrame";
 import AdvancedInformFrame from "./advanced-info/AdvancedInformFrame";
 import BasicInformFrame from "./basic-info/BasicInformFrame";
-import ProvisionalBasicInformFrame from "./basic-info/ProvisionalBasicInformFrame";
+import NewProvisionalBasicInformFrame from "./basic-info/NewProvisionalBasicInformFrame";
+import ReProvisionalBasicInformFrame from "./basic-info/ReProvisionalBasicInformFrame";
 import ClubRulesFrame from "./compliance/ClubRulesFrame";
 
 interface RegisterClubFormProps {
@@ -59,6 +61,10 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
     defaultValues: {
       ...initialData,
       registrationTypeEnumId: type,
+      clubId:
+        type === RegistrationTypeEnum.NewProvisional
+          ? undefined
+          : initialData?.clubId,
       phoneNumber: initialData?.phoneNumber ?? profile?.phoneNumber,
     },
   });
@@ -94,6 +100,8 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
   const {
     data: registrationData,
     mutate: registerClubApi,
+    error: registrationError,
+    isPending,
     isSuccess,
     isError,
   } = useRegisterClub();
@@ -102,26 +110,42 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
     type === RegistrationTypeEnum.NewProvisional ||
     type === RegistrationTypeEnum.ReProvisional;
 
+  const ProvisionalInfoFrame =
+    type === RegistrationTypeEnum.NewProvisional
+      ? NewProvisionalBasicInformFrame
+      : ReProvisionalBasicInformFrame;
+
   const submitHandler = useCallback(
-    (data: RegisterClubModel) => {
-      // logger.debug("submit", data);
+    (data: RegisterClubModel, event?: React.BaseSyntheticEvent) => {
+      // Eligibility may change while react-hook-form awaits validation.
+      const form = event?.target;
+      if (form instanceof HTMLFormElement && form.closest("fieldset")?.disabled)
+        return;
       registerClubApi({
         body: {
           ...data,
-          clubRuleFileId: data.clubRuleFile?.id,
+          registrationTypeEnumId: type,
+          clubId:
+            type === RegistrationTypeEnum.NewProvisional
+              ? undefined
+              : data.clubId,
+          clubRuleFileId:
+            type === RegistrationTypeEnum.Promotional
+              ? data.clubRuleFile?.id
+              : undefined,
           activityPlanFileId: data.activityPlanFile?.id,
           externalInstructionFileId: data.externalInstructionFile?.id,
         },
       });
     },
-    [registrationData, isSuccess, isError],
+    [registerClubApi, type],
   );
 
   useEffect(() => {
-    if (!isObjectEmpty(formData)) {
-      LocalStorageUtil.save(LOCAL_STORAGE_KEY.REGISTER_CLUB, formData);
+    if (!isSuccess && !isObjectEmpty(formData)) {
+      LocalStorageUtil.save(getRegisterClubDraftKey(type), formData);
     }
-  }, [formData]);
+  }, [formData, isSuccess, type]);
 
   useEffect(() => {
     if (isSuccess) {
@@ -137,7 +161,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               });
               close();
               router.push(`/my/register-club/${registrationData.id}`);
-              LocalStorageUtil.remove(LOCAL_STORAGE_KEY.REGISTER_CLUB);
+              LocalStorageUtil.remove(getRegisterClubDraftKey(type));
             }}
           >
             신청이 완료되었습니다.
@@ -149,13 +173,6 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
       return;
     }
     if (isError) {
-      /* 
-        TODO: (@dora)
-        원래 useGetClubDetail()을 통해 clubName을 가져와서 
-        "{clubName} 동아리 등록 신청이 이미 존재하여 등록 신청을 할 수 없습니다."라고 표시해주었는데,
-        해당 API 호출에 이슈가 있어서 clubName에 대한 부분을 임시로 빼둔 상태
-        그리고 에러 케이스가 다양해지면서 그냥 문구를 퉁쳐버림...
-      */
       overlay.open(({ isOpen, close }) => (
         <Modal isOpen={isOpen}>
           <ConfirmModalContent
@@ -163,18 +180,20 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               close();
             }}
           >
-            해당 동아리에 대한 등록 신청이 이미 존재하거나,
-            <br />
-            이미 등록 신청 기록이 있거나,
-            <br />
-            지도교수를 입력하지 않아
-            <br />
-            등록 신청을 할 수 없습니다.
+            {getRegistrationErrorMessage(registrationError)}
           </ConfirmModalContent>
         </Modal>
       ));
     }
-  }, [isSuccess, isError]);
+  }, [
+    isSuccess,
+    isError,
+    registrationError,
+    registrationData,
+    queryClient,
+    router,
+    type,
+  ]);
 
   return (
     <FormProvider {...formCtx}>
@@ -182,7 +201,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
         <FlexWrapper direction="column" gap={60}>
           <AsyncBoundary isLoading={isLoadingProfile} isError={isErrorProfile}>
             {isProvisionalClub ? (
-              <ProvisionalBasicInformFrame
+              <ProvisionalInfoFrame
                 isInitialCheckedProfessor={initialData?.professor != null}
                 profile={
                   profile
@@ -239,12 +258,16 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               <Button
                 buttonType="submit"
                 type={
-                  isFormValid && isAgreed && errorMessage === ""
+                  isFormValid &&
+                  isAgreed &&
+                  errorMessage === "" &&
+                  !isPending &&
+                  !isSuccess
                     ? "default"
                     : "disabled"
                 }
               >
-                신청
+                {isPending ? "신청 중" : "신청"}
               </Button>
             </FlexWrapper>
           </ButtonWrapper>

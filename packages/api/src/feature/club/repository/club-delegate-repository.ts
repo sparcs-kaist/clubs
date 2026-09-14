@@ -58,6 +58,38 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     });
   }
 
+  async ensureRegistrationApplicantRepresentative(param: {
+    clubId: number;
+    studentId: number;
+    effectiveAt: Date;
+  }): Promise<void> {
+    const delegate = this.getDelegate(this.txHost.tx);
+    const otherClubDelegate = await delegate.findFirst({
+      where: {
+        clubId: { not: param.clubId },
+        studentId: param.studentId,
+        startTerm: { lte: param.effectiveAt },
+        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        deletedAt: null,
+      },
+    });
+    if (otherClubDelegate) {
+      throw new ConflictException(
+        "Registration applicant is a delegate of another club",
+      );
+    }
+
+    await this.endCurrentTerms(param.clubId, param.effectiveAt);
+    await delegate.create({
+      data: {
+        clubId: param.clubId,
+        studentId: param.studentId,
+        clubDelegateEnum: ClubDelegateEnum.Representative,
+        startTerm: param.effectiveAt,
+      },
+    });
+  }
+
   async lockForRegistrationChange(
     clubId: number,
     studentId: number,

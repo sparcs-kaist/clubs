@@ -70,7 +70,7 @@ export const useCancelRegistrationDelegate = (clubId: number) => {
     },
     onError: () => {
       errorHandler(
-        "대의원 직책 취소에 실패했습니다. 등록 기간과 등록 서류 제출 여부를 확인해주세요.",
+        "대의원 임기 종료에 실패했습니다. 등록 기간과 해당 대의원의 임기를 확인해주세요.",
       );
     },
   });

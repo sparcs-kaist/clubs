@@ -35,6 +35,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, "access") {
       executiveId: payload.executiveId ? payload.executiveId : null,
       professorId: payload.professorId ? payload.professorId : null,
       employeeId: payload.employeeId ? payload.employeeId : null,
+      exchangeActor: payload.exchangeActor,
     };
   }
 }

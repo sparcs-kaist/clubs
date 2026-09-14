@@ -12,6 +12,7 @@ import { ClubRepository } from "./repository/club.repository";
 import { ClubDelegateChangeRequestRepository } from "./repository/club-delegate-change-request.repository";
 import { ClubDelegateRepository } from "./repository/club-delegate-repository";
 import { ClubDivisionHistoryRepository } from "./repository/club-division-history.repository";
+import { ClubMemberRepository } from "./repository/club-member.repository";
 import { ClubSemesterRepository } from "./repository/club-semester.repository";
 import { ClubRoomTRepository } from "./repository-old/club.club-room-t.repository";
 import ClubStudentTRepository from "./repository-old/club.club-student-t.repository";
@@ -50,6 +51,7 @@ import { ClubService } from "./service/club.service";
     ClubDelegateRepository,
     ClubDelegateChangeRequestRepository,
     ClubDivisionHistoryRepository,
+    ClubMemberRepository,
   ],
   exports: [ClubPublicService],
 })

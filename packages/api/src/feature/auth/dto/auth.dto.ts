@@ -8,10 +8,16 @@ interface User {
   studentId?: number;
   studentNumber?: number;
   executiveId?: number;
+  exchangeActor?: ExchangeLoginActor;
+}
+
+export interface ExchangeLoginActor {
+  id: number;
+  email: string | null;
 }
 
 export interface UserRefreshTokenPayload {
-  user: Pick<User, "id" | "sid" | "name" | "email">;
+  user: Pick<User, "id" | "sid" | "name" | "email" | "exchangeActor">;
 }
 
 export interface UserAccessTokenPayload {

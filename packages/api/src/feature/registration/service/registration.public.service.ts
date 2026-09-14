@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
+import { RegistrationErrorCode } from "@clubs/interface/api/registration/type/registration-error";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -29,7 +30,10 @@ export class RegistrationPublicService {
       .then(arr => {
         if (arr.length === 0)
           throw new HttpException(
-            `Today(${today}) is not in the range of deadline`,
+            {
+              code: RegistrationErrorCode.RegistrationPeriodClosed,
+              message: "현재는 동아리 등록 신청 기간이 아닙니다.",
+            },
             HttpStatus.BAD_REQUEST,
           );
         return arr[0];

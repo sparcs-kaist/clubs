@@ -30,7 +30,6 @@ model User {
   professors                  Professor[]
   employees                   Employee[]
   files                       File[]
-  authActivatedRefreshTokens  AuthActivatedRefreshTokens[]
   meetingAttendanceTimes      MeetingAttendanceTimeT[]
   meetingVoteResults          MeetingVoteResult[]
   userPrivacyPolicyAgreements UserPrivacyPolicyAgreement[]
@@ -253,10 +252,23 @@ model AuthActivatedRefreshTokens {
   expiresAt    DateTime @map("expires_at") @db.DateTime(0)
   refreshToken String   @map("refresh_token") @db.Text
 
-  user User @relation(fields: [userId], references: [id])
-
   @@index([expiresAt], map: "expires_at_idx")
   @@map("auth_activated_refresh_tokens")
+}
+
+model AuthExchangeLoginLog {
+  id                 Int      @id @default(autoincrement())
+  actorUserId        Int      @map("actor_user_id")
+  actorEmail         String?  @map("actor_email") @db.VarChar(255)
+  targetUserId       Int      @map("target_user_id")
+  targetEmail        String?  @map("target_email") @db.VarChar(255)
+  originalActorUserId Int      @map("original_actor_user_id")
+  originalActorEmail  String?  @map("original_actor_email") @db.VarChar(255)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@index([originalActorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@map("auth_exchange_login_log")
 }
 
 // ============================================================================

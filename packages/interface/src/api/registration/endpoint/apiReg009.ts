@@ -8,7 +8,7 @@ import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
-import registrationTypeEnumChecker from "../utils/registrationTypeEnumChecker";
+import { refineRegistrationRequest } from "../utils/registrationTypeEnumChecker";
 
 /**
  * @version v0.1
@@ -28,7 +28,7 @@ const requestQuery = z.object({});
 const requestBody = z
   .object({
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
-    clubId: z.coerce.number().int().nullable().optional(),
+    clubId: z.coerce.number().int().min(1).nullable().optional(),
     clubNameKr: zClubNameKr,
     clubNameEn: zClubNameEn,
     phoneNumber: zKrPhoneNumber,
@@ -57,7 +57,10 @@ const requestBody = z
     clubRuleFileId: z.coerce.string().max(128).optional(),
     externalInstructionFileId: z.coerce.string().max(128).optional(),
   })
-  .refine(args => registrationTypeEnumChecker(args));
+  // New provisional applications already own a clubId when edited.
+  .superRefine((args, context) =>
+    refineRegistrationRequest(args, context, true),
+  );
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({}),

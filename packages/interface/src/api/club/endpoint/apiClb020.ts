@@ -18,6 +18,7 @@ const requestBody = z.object({});
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     isChangeable: z.boolean(),
+    hasRegistration: z.boolean(),
     registrationSemester: zSemester.pick({ id: true, year: true, name: true }),
     previousSemester: zSemester.pick({ id: true, year: true, name: true }),
     effectiveAt: z.coerce.date(),
@@ -74,7 +75,8 @@ registry.registerPath({
   request: { params: requestParam },
   responses: {
     200: {
-      description: "전 학기 대표자·대의원과 활동회원 목록입니다.",
+      description:
+        "미제출 동아리는 전 학기 직책자·활동회원, 제출 동아리는 전 학기 대의원만 반환합니다.",
       content: { "application/json": { schema: responseBodyMap[200] } },
     },
   },

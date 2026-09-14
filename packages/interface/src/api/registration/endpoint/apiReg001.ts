@@ -12,7 +12,7 @@ import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
-import registrationTypeEnumChecker from "../utils/registrationTypeEnumChecker";
+import { refineRegistrationRequest } from "../utils/registrationTypeEnumChecker";
 
 /**
  * @version v0.1
@@ -30,7 +30,13 @@ const requestQuery = z.object({});
 
 const requestBody = z
   .object({
-    clubId: z.coerce.number().int().min(1).nullable().optional(),
+    clubId: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .nullable()
+      .optional()
+      .transform(value => value ?? undefined),
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
     clubNameKr: zClubNameKr,
     clubNameEn: zClubNameEn,
@@ -75,7 +81,7 @@ const requestBody = z
      */
     externalInstructionFileId: z.coerce.string().max(128).optional(),
   })
-  .refine(args => registrationTypeEnumChecker(args));
+  .superRefine((args, context) => refineRegistrationRequest(args, context));
 
 const responseBodyMap = {
   [HttpStatusCode.Created]: z.object({

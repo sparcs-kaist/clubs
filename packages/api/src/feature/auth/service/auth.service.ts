@@ -7,10 +7,14 @@ import { ApiAut003ResponseOk } from "@clubs/interface/api/auth/endpoint/apiAut00
 import { ApiAut004RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut004";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import {
+  RANDOM_GENERATOR,
+  RandomGenerator,
+} from "@sparcs-clubs/api/common/random/random-generator";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
-import { Request } from "../dto/auth.dto";
+import { ExchangeLoginActor, Request } from "../dto/auth.dto";
 import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
 import {
@@ -27,6 +31,7 @@ export class AuthService {
     private readonly ssoClient: SsoClientService,
     private readonly appConfigService: AppConfigService,
     @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(RANDOM_GENERATOR) private readonly randomGenerator: RandomGenerator,
   ) {}
 
   /**
@@ -260,9 +265,10 @@ export class AuthService {
     sid: string;
     name: string;
     email: string;
+    exchangeActor?: ExchangeLoginActor;
   }): Promise<ApiAut002ResponseCreated> {
     const user = await this.authRepository.findUserById(_user.id);
-    const accessToken = this.getAccessToken(user);
+    const accessToken = this.getAccessToken(user, _user.exchangeActor);
 
     return {
       accessToken,
@@ -289,34 +295,38 @@ export class AuthService {
         })();
   }
 
-  getAccessToken(user: {
-    id: number;
-    sid: string;
-    name: string;
-    email: string;
-    undergraduate?: {
+  getAccessToken(
+    user: {
       id: number;
-      number: number;
-    };
-    master?: {
-      id: number;
-      number: number;
-    };
-    doctor?: {
-      id: number;
-      number: number;
-    };
-    executive?: {
-      id: number;
-      studentId: number;
-    };
-    professor?: {
-      id: number;
-    };
-    employee?: {
-      id: number;
-    };
-  }) {
+      sid: string;
+      name: string;
+      email: string;
+      undergraduate?: {
+        id: number;
+        number: number;
+      };
+      master?: {
+        id: number;
+        number: number;
+      };
+      doctor?: {
+        id: number;
+        number: number;
+      };
+      executive?: {
+        id: number;
+        studentId: number;
+      };
+      professor?: {
+        id: number;
+      };
+      employee?: {
+        id: number;
+      };
+    },
+    exchangeActor?: ExchangeLoginActor,
+  ) {
+    const exchangeClaims = exchangeActor ? { exchangeActor } : {};
     const accessToken: {
       undergraduate?: string;
       master?: string;
@@ -336,6 +346,7 @@ export class AuthService {
           type: "undergraduate",
           studentId: user.undergraduate.id,
           studentNumber: user.undergraduate.number,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -354,6 +365,7 @@ export class AuthService {
           type: "master",
           studentId: user.master.id,
           studentNumber: user.master.number,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -372,6 +384,7 @@ export class AuthService {
           type: "doctor",
           studentId: user.doctor.id,
           studentNumber: user.doctor.number,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -390,6 +403,7 @@ export class AuthService {
           type: "executive",
           executiveId: user.executive.id,
           studentId: user.executive.studentId,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -407,6 +421,7 @@ export class AuthService {
           email: user.email,
           type: "professor",
           professorId: user.professor.id,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -424,6 +439,7 @@ export class AuthService {
           email: user.email,
           type: "employee",
           employeeId: user.employee.id,
+          ...exchangeClaims,
         },
         {
           secret: this.appConfigService.accessTokenSecretKey,
@@ -435,18 +451,24 @@ export class AuthService {
     return accessToken;
   }
 
-  getRefreshToken(user: {
-    id: number;
-    sid: string;
-    name: string;
-    email: string;
-  }) {
+  getRefreshToken(
+    user: {
+      id: number;
+      sid: string;
+      name: string;
+      email: string;
+    },
+    exchangeActor?: ExchangeLoginActor,
+  ) {
     const refreshToken = this.jwtService.sign(
       {
         email: user.email,
         id: user.id,
         sid: user.sid,
         name: user.name,
+        ...(exchangeActor
+          ? { exchangeActor, jti: this.randomGenerator.uuid() }
+          : {}),
       },
       {
         secret: this.appConfigService.refreshTokenSecretKey,

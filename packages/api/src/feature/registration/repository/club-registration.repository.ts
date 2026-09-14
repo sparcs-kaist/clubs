@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma, PrismaClient } from "@prisma/client";
 
 import {
@@ -14,8 +15,8 @@ import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/
 import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
 import { ApiReg015ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg015";
-import { ApiReg016ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg016";
 import { ApiReg017ResponseCreated } from "@clubs/interface/api/registration/endpoint/apiReg017";
+import { RegistrationErrorCode } from "@clubs/interface/api/registration/type/registration-error";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 import {
   RegistrationDeadlineEnum,
@@ -24,10 +25,9 @@ import {
 } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
-import { ClubDivisionHistoryRepository } from "@sparcs-clubs/api/feature/club/repository/club-division-history.repository";
-import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/registration/util/sync-delegate-member-registrations";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 type ClubRegistrationListResponse = Pick<
@@ -43,7 +43,7 @@ export class ClubRegistrationRepository {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly clubDivisionHistoryRepository: ClubDivisionHistoryRepository,
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {}
 
   async selectDeadlineByDate(
@@ -106,152 +106,160 @@ export class ClubRegistrationRepository {
     body: ApiReg001RequestBody,
   ): Promise<ApiReg001ResponseCreated> {
     const cur = this.clock.now();
-    let registrationId: number;
     let clubId: number;
-    await this.prisma.$transaction(async tx => {
-      // - 신규 가동아리 신청을 제외하곤 기존 동아리 대표자의 신청인지 검사합니다.
-      // 한 학생이 여러 동아리의 대표자나 대의원일 수 없기 때문에, 1개 또는 0개의 지위를 가지고 있다고 가정합니다.
-      if (body.registrationTypeEnumId !== RegistrationTypeEnum.NewProvisional) {
-        const delegate = await (tx as unknown as PrismaClient).$queryRaw<
-          Array<{ clubId: number; studentId: number }>
-        >(Prisma.sql`
-          SELECT cd.club_id AS clubId, cd.student_id AS studentId
-          FROM club_delegate_d cd
-          WHERE cd.student_id = ${studentId}
-            AND cd.club_id = ${body.clubId}
-            AND cd.start_term <= NOW()
-            AND (cd.end_term >= NOW() OR cd.end_term IS NULL)
-            AND cd.deleted_at IS NULL
-          FOR SHARE
-        `);
-        if (!takeOne(delegate)) {
-          throw new HttpException(
-            "Student is not delegate of the club",
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      } else {
-        // 신규 가동아리의 경우, club을 생성해줍니다.
-
-        // 신규 가동아리의 경우, 해당 학생이 동아리 대표자 및 대의원이 아니어야 합니다.
-        // TODO: Service layer로 이동 필요
-        const delegate = await tx.clubDelegateD.findMany({
-          where: {
-            studentId,
-            startTerm: { lte: cur },
-            OR: [{ endTerm: { gte: cur } }, { endTerm: null }],
-            deletedAt: null,
+    const { tx } = this.txHost;
+    // - 신규 가동아리 신청을 제외하곤 기존 동아리 대표자의 신청인지 검사합니다.
+    // 한 학생이 여러 동아리의 대표자나 대의원일 수 없기 때문에, 1개 또는 0개의 지위를 가지고 있다고 가정합니다.
+    if (body.registrationTypeEnumId !== RegistrationTypeEnum.NewProvisional) {
+      const delegate = await (tx as unknown as PrismaClient).$queryRaw<
+        Array<{ clubId: number; studentId: number }>
+      >(Prisma.sql`
+        SELECT cd.club_id AS clubId, cd.student_id AS studentId
+        FROM club_delegate_d cd
+        WHERE cd.student_id = ${studentId}
+          AND cd.club_id = ${body.clubId}
+          AND cd.start_term <= NOW()
+          AND (cd.end_term >= NOW() OR cd.end_term IS NULL)
+          AND cd.deleted_at IS NULL
+        FOR SHARE
+      `);
+      if (!takeOne(delegate)) {
+        throw new HttpException(
+          {
+            code: RegistrationErrorCode.NotClubDelegate,
+            message:
+              "해당 동아리의 현재 대표자 또는 대의원만 신청할 수 있습니다.",
           },
-        });
-        if (delegate.length > 0) {
-          throw new HttpException(
-            "Student is delegate of the club",
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        // 동아리 및 대표자를 생성합니다.
-        // TODO: Service layer로 이동 및 club & delegate public service 로 이동 필요
-        // Note: The club table has a division_id column used by ClubOld in Drizzle,
-        // but the Prisma Club model doesn't include it. Using raw SQL for insertion.
-        await tx.$queryRaw(
-          Prisma.sql`
-            INSERT INTO club (name_kr, name_en, division_id, founding_year, description)
-            VALUES (${body.clubNameKr}, ${body.clubNameEn}, ${body.divisionId}, ${body.foundedAt.getFullYear()}, ${body.foundationPurpose})
-          `,
+          HttpStatus.BAD_REQUEST,
         );
-        // For INSERT via $queryRaw, we need to fetch the last insert ID
-        // LAST_INSERT_ID() returns BigInt in MySQL, so we cast to Number
-        const lastInsertResult = await (
-          tx as unknown as PrismaClient
-        ).$queryRaw<Array<{ id: bigint }>>(
-          Prisma.sql`SELECT LAST_INSERT_ID() AS id`,
-        );
-        clubId = Number(lastInsertResult[0].id);
-        if (!clubId) {
-          throw new HttpException(
-            "ClubOld creation failed",
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        const delegateResult = await tx.clubDelegateD.create({
-          data: {
-            studentId,
-            startTerm: cur,
-            clubId,
-            clubDelegateEnum: ClubDelegateEnum.Representative,
-          },
-        });
-        if (!delegateResult.id) {
-          throw new HttpException(
-            "Delegate creation failed",
-            HttpStatus.BAD_REQUEST,
-          );
-        }
       }
+    } else {
+      // 신규 가동아리의 경우, club을 생성해줍니다.
 
-      let professor: { id: number } | null = null;
-      if (body.professor) {
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO professor (email, name)
-          VALUES (${body.professor.email}, ${body.professor.name})
-          ON DUPLICATE KEY UPDATE name = ${body.professor.name}
-        `);
-        const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
-          Array<{ id: number }>
-        >(
-          Prisma.sql`
-            SELECT p.id
-            FROM professor p
-            WHERE p.email = ${body.professor.email}
-              AND p.name = ${body.professor.name}
-              AND p.deleted_at IS NULL
-            FOR SHARE
-          `,
-        );
-        professor = takeOne(professorRows);
-
-        logger.debug(professor);
-
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO professor_t (professor_id, professor_enum, start_term)
-          VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
-          ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
-        `);
-      }
-
-      // registration insert 후 id 가져오기
-      const registrationInsertResult = await tx.registration.create({
-        data: {
-          clubId: body.clubId ?? clubId,
-          registrationApplicationTypeEnumId: body.registrationTypeEnumId,
-          semesterId,
-          clubNameKr: body.clubNameKr,
-          clubNameEn: body.clubNameEn,
+      // 신규 가동아리의 경우, 해당 학생이 동아리 대표자 및 대의원이 아니어야 합니다.
+      // TODO: Service layer로 이동 필요
+      const delegate = await tx.clubDelegateD.findMany({
+        where: {
           studentId,
-          phoneNumber: body.phoneNumber,
-          foundedAt: body.foundedAt,
-          divisionId: body.divisionId,
-          activityFieldKr: body.activityFieldKr,
-          activityFieldEn: body.activityFieldEn,
-          professorId: professor?.id ?? null,
-          divisionConsistency: body.divisionConsistency,
-          foundationPurpose: body.foundationPurpose,
-          activityPlan: body.activityPlan,
-          registrationActivityPlanFileId: body.activityPlanFileId,
-          registrationClubRuleFileId: body.clubRuleFileId,
-          registrationExternalInstructionFileId: body.externalInstructionFileId,
-          registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+          startTerm: { lte: cur },
+          OR: [{ endTerm: { gte: cur } }, { endTerm: null }],
+          deletedAt: null,
         },
       });
+      if (delegate.length > 0) {
+        throw new HttpException(
+          {
+            code: RegistrationErrorCode.AlreadyClubDelegate,
+            message:
+              "현재 다른 동아리의 대표자 또는 대의원이므로 신규 가등록을 신청할 수 없습니다.",
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-      registrationId = registrationInsertResult.id;
-
-      logger.debug(
-        `[createRegistration] Registration inserted with id ${registrationId}`,
+      // 동아리 및 대표자를 생성합니다.
+      // TODO: Service layer로 이동 및 club & delegate public service 로 이동 필요
+      // Note: The club table has a division_id column used by ClubOld in Drizzle,
+      // but the Prisma Club model doesn't include it. Using raw SQL for insertion.
+      await tx.$queryRaw(
+        Prisma.sql`
+          INSERT INTO club (name_kr, name_en, division_id, founding_year, description)
+          VALUES (${body.clubNameKr}, ${body.clubNameEn}, ${body.divisionId}, ${body.foundedAt.getFullYear()}, ${body.foundationPurpose})
+        `,
       );
+      // For INSERT via $queryRaw, we need to fetch the last insert ID
+      // LAST_INSERT_ID() returns BigInt in MySQL, so we cast to Number
+      // Preserve the legacy query text while migrating its transaction boundary.
+      // prettier-ignore
+      const lastInsertResult = await (
+        tx as unknown as PrismaClient
+      ).$queryRaw<Array<{ id: bigint }>>(
+        Prisma.sql`SELECT LAST_INSERT_ID() AS id`,
+      );
+      clubId = Number(lastInsertResult[0].id);
+      if (!clubId) {
+        throw new HttpException(
+          "ClubOld creation failed",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const delegateResult = await tx.clubDelegateD.create({
+        data: {
+          studentId,
+          startTerm: cur,
+          clubId,
+          clubDelegateEnum: ClubDelegateEnum.Representative,
+        },
+      });
+      if (!delegateResult.id) {
+        throw new HttpException(
+          "Delegate creation failed",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    let professor: { id: number } | null = null;
+    if (body.professor) {
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO professor (email, name)
+        VALUES (${body.professor.email}, ${body.professor.name})
+        ON DUPLICATE KEY UPDATE name = ${body.professor.name}
+      `);
+      const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
+        Array<{ id: number }>
+      >(
+        Prisma.sql`
+          SELECT p.id
+          FROM professor p
+          WHERE p.email = ${body.professor.email}
+            AND p.name = ${body.professor.name}
+            AND p.deleted_at IS NULL
+          FOR SHARE
+        `,
+      );
+      professor = takeOne(professorRows);
+
+      logger.debug(professor);
+
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO professor_t (professor_id, professor_enum, start_term)
+        VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
+        ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
+      `);
+    }
+
+    // registration insert 후 id 가져오기
+    const registrationInsertResult = await tx.registration.create({
+      data: {
+        clubId: body.clubId ?? clubId,
+        registrationApplicationTypeEnumId: body.registrationTypeEnumId,
+        semesterId,
+        clubNameKr: body.clubNameKr,
+        clubNameEn: body.clubNameEn,
+        studentId,
+        phoneNumber: body.phoneNumber,
+        foundedAt: body.foundedAt,
+        divisionId: body.divisionId,
+        activityFieldKr: body.activityFieldKr,
+        activityFieldEn: body.activityFieldEn,
+        professorId: professor?.id ?? null,
+        divisionConsistency: body.divisionConsistency,
+        foundationPurpose: body.foundationPurpose,
+        activityPlan: body.activityPlan,
+        registrationActivityPlanFileId: body.activityPlanFileId,
+        registrationClubRuleFileId: body.clubRuleFileId,
+        registrationExternalInstructionFileId: body.externalInstructionFileId,
+        registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+      },
     });
+
+    const registrationId = registrationInsertResult.id;
+
+    logger.debug(
+      `[createRegistration] Registration inserted with id ${registrationId}`,
+    );
 
     logger.debug("[createRegistration] insertion ends successfully");
     return { id: registrationId };
@@ -263,90 +271,93 @@ export class ClubRegistrationRepository {
     body: ApiReg009RequestBody,
   ): Promise<ApiReg009ResponseOk> {
     const cur = this.clock.now();
-    await this.prisma.$transaction(async tx => {
-      const registrationRows = await (tx as unknown as PrismaClient).$queryRaw<
-        Array<{ RegistrationStatusEnum: number }>
-      >(Prisma.sql`
-        SELECT r.registration_application_status_enum_id AS RegistrationStatusEnum
-        FROM registration r
-        WHERE r.id = ${applyId}
-          ${body.clubId !== undefined && body.clubId !== null ? Prisma.sql`AND r.club_id = ${body.clubId}` : Prisma.empty}
-          AND r.registration_application_type_enum_id = ${body.registrationTypeEnumId}
-          AND r.student_id = ${studentId}
-          AND r.deleted_at IS NULL
-        FOR UPDATE
+    const { tx } = this.txHost;
+    const registrationRows = await (tx as unknown as PrismaClient).$queryRaw<
+      Array<{ RegistrationStatusEnum: number }>
+    >(Prisma.sql`
+      SELECT r.registration_application_status_enum_id AS RegistrationStatusEnum
+      FROM registration r
+      WHERE r.id = ${applyId}
+        ${body.clubId !== undefined && body.clubId !== null ? Prisma.sql`AND r.club_id = ${body.clubId}` : Prisma.empty}
+        AND r.registration_application_type_enum_id = ${body.registrationTypeEnumId}
+        AND r.student_id = ${studentId}
+        AND r.deleted_at IS NULL
+      FOR UPDATE
+    `);
+    const registration = takeOne(registrationRows);
+    if (
+      !registration ||
+      registration.RegistrationStatusEnum === RegistrationStatusEnum.Approved
+    ) {
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.ApplicationNotEditable,
+          message:
+            "신청 내역을 수정할 수 없습니다. 신청 유형과 승인 상태를 확인해주세요.",
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    let professor: { id: number } | null = null;
+    if (body.professor) {
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO professor (email, name)
+        VALUES (${body.professor.email}, ${body.professor.name})
+        ON DUPLICATE KEY UPDATE name = ${body.professor.name}
       `);
-      const registration = takeOne(registrationRows);
-      if (
-        !registration ||
-        registration.RegistrationStatusEnum === RegistrationStatusEnum.Approved
-      ) {
-        throw new HttpException(
-          "No registration found",
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+      const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
+        Array<{ id: number }>
+      >(
+        Prisma.sql`
+          SELECT p.id
+          FROM professor p
+          WHERE p.email = ${body.professor.email}
+            AND p.name = ${body.professor.name}
+            AND p.deleted_at IS NULL
+          FOR SHARE
+        `,
+      );
+      professor = takeOne(professorRows);
 
-      let professor: { id: number } | null = null;
-      if (body.professor) {
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO professor (email, name)
-          VALUES (${body.professor.email}, ${body.professor.name})
-          ON DUPLICATE KEY UPDATE name = ${body.professor.name}
-        `);
-        const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
-          Array<{ id: number }>
-        >(
-          Prisma.sql`
-            SELECT p.id
-            FROM professor p
-            WHERE p.email = ${body.professor.email}
-              AND p.name = ${body.professor.name}
-              AND p.deleted_at IS NULL
-            FOR SHARE
-          `,
-        );
-        professor = takeOne(professorRows);
+      logger.debug(professor);
 
-        logger.debug(professor);
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO professor_t (professor_id, professor_enum, start_term)
+        VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
+        ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
+      `);
+    }
 
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO professor_t (professor_id, professor_enum, start_term)
-          VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
-          ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
-        `);
-      }
-
-      const result = await tx.registration.updateMany({
-        where: {
-          id: applyId,
-          studentId,
-          deletedAt: null,
-        },
-        data: {
-          clubNameKr: body.clubNameKr,
-          clubNameEn: body.clubNameEn,
-          phoneNumber: body.phoneNumber,
-          foundedAt: body.foundedAt,
-          divisionId: body.divisionId,
-          activityFieldKr: body.activityFieldKr,
-          activityFieldEn: body.activityFieldEn,
-          professorId: professor?.id ?? null,
-          divisionConsistency: body.divisionConsistency,
-          foundationPurpose: body.foundationPurpose,
-          activityPlan: body.activityPlan,
-          registrationActivityPlanFileId: body.activityPlanFileId,
-          registrationClubRuleFileId: body.clubRuleFileId,
-          registrationExternalInstructionFileId: body.externalInstructionFileId,
-          registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
-        },
-      });
-      if (result.count > 1) {
-        throw new HttpException("Registration update failed", 500);
-      } else if (result.count === 0) {
-        throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
-      }
+    const result = await tx.registration.updateMany({
+      where: {
+        id: applyId,
+        studentId,
+        deletedAt: null,
+      },
+      data: {
+        clubNameKr: body.clubNameKr,
+        clubNameEn: body.clubNameEn,
+        phoneNumber: body.phoneNumber,
+        foundedAt: body.foundedAt,
+        divisionId: body.divisionId,
+        activityFieldKr: body.activityFieldKr,
+        activityFieldEn: body.activityFieldEn,
+        professorId: professor?.id ?? null,
+        divisionConsistency: body.divisionConsistency,
+        foundationPurpose: body.foundationPurpose,
+        activityPlan: body.activityPlan,
+        registrationActivityPlanFileId: body.activityPlanFileId,
+        registrationClubRuleFileId: body.clubRuleFileId,
+        registrationExternalInstructionFileId: body.externalInstructionFileId,
+        registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+      },
     });
+    if (result.count > 1) {
+      throw new HttpException("Registration update failed", 500);
+    } else if (result.count === 0) {
+      throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
+    }
     return {};
   }
 
@@ -871,138 +882,6 @@ export class ClubRegistrationRepository {
       },
     );
     return result;
-  }
-
-  async patchExecutiveRegistrationsClubRegistrationApproval(
-    applyId: number,
-  ): Promise<ApiReg016ResponseOk> {
-    const response = await this.prisma.$transaction(async tx => {
-      // 1. 등록 신청 상태를 승인으로 변경
-      const result = await tx.registration.updateMany({
-        where: {
-          id: applyId,
-          deletedAt: null,
-          registrationApplicationStatusEnumId: {
-            in: [
-              RegistrationStatusEnum.Pending,
-              RegistrationStatusEnum.Rejected,
-            ],
-          },
-        },
-        data: {
-          registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
-          reviewedAt: this.clock.now(),
-        },
-      });
-      if (result.count > 1) {
-        throw new HttpException("Registration update failed", 500);
-      } else if (result.count === 0) {
-        throw new HttpException(
-          "Registration not found",
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      // 2. 승인된 등록 신청 정보를 조회
-      const registration = await tx.registration.findUnique({
-        where: { id: applyId },
-        include: { semester: true },
-      });
-
-      if (!registration || !registration.clubId || !registration.semesterId) {
-        throw new HttpException(
-          "Registration data incomplete",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      // 3. 등록 유형에 따라 club_status_enum_id 결정
-      // Renewal(1), Promotional(2) → Regular(1), NewProvisional(3), ReProvisional(4) → Provisional(2)
-      const clubStatusEnumId =
-        registration.registrationApplicationTypeEnumId ===
-          RegistrationTypeEnum.Renewal ||
-        registration.registrationApplicationTypeEnumId ===
-          RegistrationTypeEnum.Promotional
-          ? 1 // Regular (정동아리)
-          : 2; // Provisional (가동아리)
-
-      // 4. 이미 해당 학기에 club_t 레코드가 있는지 확인
-      const existingClubT = await tx.clubT.findFirst({
-        where: {
-          clubId: registration.clubId,
-          semesterId: registration.semesterId,
-          deletedAt: null,
-        },
-      });
-
-      // 5. 없으면 club_t 레코드 생성
-      const clubT =
-        existingClubT ??
-        (await tx.clubT.create({
-          data: {
-            clubId: registration.clubId,
-            semesterId: registration.semesterId,
-            clubStatusEnumId,
-            characteristicKr: registration.activityFieldKr,
-            characteristicEn: registration.activityFieldEn,
-            professorId: registration.professorId,
-            startTerm: registration.semester!.startTerm,
-            endTerm: registration.semester!.endTerm,
-          },
-        }));
-
-      // 6. 해당 학기에 club_division_t 레코드가 없으면 생성
-      const existingClubDivision =
-        await this.clubDivisionHistoryRepository.find(
-          {
-            clubId: registration.clubId,
-            startTerm: { lte: registration.semester!.endTerm },
-            endTerm: { gte: registration.semester!.startTerm },
-          },
-          tx,
-        );
-
-      if (existingClubDivision.length === 0) {
-        await this.clubDivisionHistoryRepository.create(
-          {
-            club: { id: registration.clubId },
-            division: { id: registration.divisionId },
-            startTerm: registration.semester!.startTerm,
-            endTerm: registration.semester!.endTerm,
-          },
-          tx,
-        );
-      }
-
-      const clubTEndTerm = clubT.endTerm ?? registration.semester.endTerm;
-      const delegateStudentIds: number[] = [
-        ...new Set<number>(
-          (
-            await tx.clubDelegateD.findMany({
-              where: {
-                clubId: registration.clubId,
-                startTerm: { lte: clubTEndTerm },
-                OR: [{ endTerm: { gte: clubT.startTerm } }, { endTerm: null }],
-                deletedAt: null,
-              },
-              select: { studentId: true },
-            })
-          ).map(delegate => delegate.studentId),
-        ),
-      ];
-
-      await syncDelegateMemberRegistrations({
-        tx,
-        clubId: registration.clubId,
-        semesterId: registration.semesterId,
-        startTerm: clubT.startTerm,
-        endTerm: clubTEndTerm,
-        studentIds: delegateStudentIds,
-      });
-
-      return {};
-    });
-    return response;
   }
 
   async postExecutiveRegistrationsClubRegistrationSendBack(

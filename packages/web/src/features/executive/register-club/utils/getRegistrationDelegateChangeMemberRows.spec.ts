@@ -10,6 +10,7 @@ import getRegistrationDelegateChangeMemberRows, {
 const detail = {
   effectiveAt: new Date("2026-08-27T14:59:00.000Z"),
   isChangeable: true,
+  hasRegistration: false,
   delegates: [{ studentId: 10 }],
   members: [
     { studentId: 10, name: "이전 대표자", isRegularMember: true },
@@ -18,6 +19,17 @@ const detail = {
 } as ApiClb020ResponseOk;
 
 describe("getRegistrationDelegateChangeMemberRows", () => {
+  it("removes member actions after a registration document is submitted", () => {
+    const before = getRegistrationDelegateChangeMemberRows(detail, 42);
+    const after = getRegistrationDelegateChangeMemberRows(
+      { ...detail, hasRegistration: true },
+      42,
+    );
+
+    assert.equal(before.length, 2);
+    assert.deepEqual(after, []);
+  });
+
   it("updates button visibility after a role change", () => {
     const before = getRegistrationDelegateChangeMemberRows(detail, 42);
     const after = getRegistrationDelegateChangeMemberRows(

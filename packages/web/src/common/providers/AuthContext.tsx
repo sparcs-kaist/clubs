@@ -20,7 +20,7 @@ import patchNoteList from "@sparcs-clubs/web/constants/patchNote";
 import {
   getLocalStorageItem,
   removeLocalStorageItem,
-  setLocalStorageItem,
+  setLoginTokens,
   subscribeLocalStorageSet,
   unsubscribeLocalStorageSet,
 } from "@sparcs-clubs/web/utils/localStorage";
@@ -104,18 +104,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const cookies = new Cookies();
       const responseToken = cookies.get("accessToken");
       if (responseToken !== undefined) {
-        setLocalStorageItem("responseToken", JSON.stringify(responseToken));
         if (responseToken) {
-          setLocalStorageItem(
-            "accessToken",
-            responseToken.professor ??
-              responseToken.doctor ??
-              responseToken.master ??
-              responseToken.undergraduate ??
-              responseToken.employee ??
-              responseToken.executive ??
-              "",
-          );
+          setLoginTokens(responseToken);
           setIsLoggedIn(true);
           cookies.remove("accessToken");
           logger.log("Logged in successfully.");

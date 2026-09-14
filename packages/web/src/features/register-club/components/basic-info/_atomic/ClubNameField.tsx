@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -31,7 +31,6 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
   const t = useTranslations("club");
   const { control, setValue, watch } = useFormContext<RegisterClubModel>();
 
-  const clubId = watch("clubId");
   const krName = watch("clubNameKr");
   const enName = watch("clubNameEn");
 
@@ -51,16 +50,6 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
       ),
     [clubList],
   );
-
-  useEffect(() => {
-    if (type !== RegistrationTypeEnum.NewProvisional && clubId != null) {
-      const clubInfo = clubList.find(club => club.id === clubId);
-      setValue("clubNameKr", clubInfo?.clubNameKr ?? "");
-      if (clubInfo && notAllowKrRegx.test(clubInfo.clubNameEn)) {
-        setValue("clubNameEn", clubInfo?.clubNameEn ?? "");
-      }
-    }
-  }, [clubId, clubList]);
 
   /*  NOTE: 2025 봄학기만 일괄로 동아리명 영문을 입력받기 위해 잠시 주석처리 */
   // useEffect(() => {
@@ -117,13 +106,24 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
         name="clubId"
         required
         control={control}
-        renderItem={props => (
+        renderItem={({ onChange, ...props }) => (
           <Select
             {...props}
             label="동아리명 (국문)"
             placeholder="동아리명을 선택해주세요"
             items={clubOptions}
             disabled={editMode}
+            onChange={id => {
+              onChange(id);
+              const club = clubList.find(item => item.id === id);
+              if (!club) return;
+              setValue("clubNameKr", club.clubNameKr, { shouldValidate: true });
+              setValue(
+                "clubNameEn",
+                notAllowKrRegx.test(club.clubNameEn) ? club.clubNameEn : "",
+                { shouldValidate: true },
+              );
+            }}
           />
         )}
       />
