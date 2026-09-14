@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 import styled from "styled-components";
 
@@ -26,14 +27,17 @@ const UnsupportedPreviewWrapper = styled.div`
   gap: 8px;
 `;
 
-const UnsupportedPreview: React.FC<UnsupportedPreviewProps> = ({ file }) => (
-  <UnsupportedPreviewWrapper>
-    <Icon type="insert_drive_file" size={24} color={colors.GRAY[300]} />
-    <Typography fs={14} lh={16} color="GRAY.300">
-      미리보기가 없습니다
-      <img src={noPreview.src} alt={file.name} style={{ display: "none" }} />
-    </Typography>
-  </UnsupportedPreviewWrapper>
-);
+const UnsupportedPreview: React.FC<UnsupportedPreviewProps> = ({ file }) => {
+  const t = useTranslations("common");
+  return (
+    <UnsupportedPreviewWrapper>
+      <Icon type="insert_drive_file" size={24} color={colors.GRAY[300]} />
+      <Typography fs={14} lh={16} color="GRAY.300">
+        {t("files.noPreview")}
+        <img src={noPreview.src} alt={file.name} style={{ display: "none" }} />
+      </Typography>
+    </UnsupportedPreviewWrapper>
+  );
+};
 
 export default UnsupportedPreview;

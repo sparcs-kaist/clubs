@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
@@ -21,6 +22,7 @@ const RowWrapper = styled.div`
 `;
 
 const ProfessorInformFrame: React.FC = () => {
+  const t = useTranslations("my.registration");
   const {
     control,
     trigger,
@@ -35,7 +37,7 @@ const ProfessorInformFrame: React.FC = () => {
 
   return (
     <FlexWrapper direction="column" gap={40}>
-      <SectionTitle>지도교수 정보</SectionTitle>
+      <SectionTitle>{t("professorInfo")}</SectionTitle>
       <Card outline gap={32} style={{ marginLeft: 20 }}>
         <RowWrapper>
           <FormController
@@ -45,8 +47,8 @@ const ProfessorInformFrame: React.FC = () => {
             renderItem={props => (
               <TextInput
                 {...props}
-                label="지도교수 성함"
-                placeholder="지도교수 성함을 입력해주세요"
+                label={t("professorName")}
+                placeholder={t("professorNamePlaceholder")}
               />
             )}
           />
@@ -57,20 +59,20 @@ const ProfessorInformFrame: React.FC = () => {
             renderItem={props => (
               <Select
                 {...props}
-                label="지도교수 직급"
-                placeholder="직급을 선택해주세요"
+                label={t("professorRank")}
+                placeholder={t("professorRankPlaceholder")}
                 items={[
                   {
                     value: ProfessorEnum.Full,
-                    label: "정교수",
+                    label: t("fullProfessor"),
                   },
                   {
                     value: ProfessorEnum.Associate,
-                    label: "부교수",
+                    label: t("associateProfessor"),
                   },
                   {
                     value: ProfessorEnum.Assistant,
-                    label: "조교수",
+                    label: t("assistantProfessor"),
                   },
                 ]}
               />
@@ -93,13 +95,15 @@ const ProfessorInformFrame: React.FC = () => {
                 return true;
               }
 
-              return EmailValidator.validate(value, true, emailRegex) || true;
+              return EmailValidator.validate(value, true, emailRegex)
+                ? t("invalidEmail")
+                : true;
             },
           }}
           renderItem={props => (
             <TextInput
               {...props}
-              label="지도교수 카이스트 이메일"
+              label={t("professorEmail")}
               placeholder="xxxxx@kaist.ac.kr"
             />
           )}

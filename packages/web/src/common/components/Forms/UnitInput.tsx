@@ -1,4 +1,5 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import React, {
   ChangeEvent,
   InputHTMLAttributes,
@@ -102,6 +103,7 @@ const UnitInput: React.FC<UnitInputProps> = ({
   unitOnClick = undefined,
   ...props
 }) => {
+  const t = useTranslations("common");
   const [error, setError] = useState(errorMessage);
   const [touched, setTouched] = useState(false);
 
@@ -110,20 +112,20 @@ const UnitInput: React.FC<UnitInputProps> = ({
 
     if (touched && !value) {
       if (required) {
-        setError("필수로 채워야 하는 항목입니다");
+        setError(t("forms.required"));
         setErrorStatus(true);
       } else {
         setError("");
         setErrorStatus(false);
       }
     } else if (touched && !isValidFormat) {
-      setError("숫자만 입력 가능합니다.");
+      setError(t("forms.numbersOnlyPeriod"));
       setErrorStatus(true);
     } else {
       setError("");
       setErrorStatus(false);
     }
-  }, [value, touched, required]);
+  }, [value, touched, required, t]);
 
   const handleBlur = () => {
     setTouched(true);
@@ -136,7 +138,7 @@ const UnitInput: React.FC<UnitInputProps> = ({
     if (isValidFormat) {
       handleChange(inputValue);
     } else {
-      setError("숫자만 입력 가능합니다.");
+      setError(t("forms.numbersOnlyPeriod"));
     }
   };
 

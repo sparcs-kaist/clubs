@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { CommonSpaceUsageOrderStatusEnum } from "@clubs/interface/common/enum/commonSpace.enum";
@@ -13,7 +14,9 @@ interface CommonSpaceProgressProps {
 const CommonSpaceProgress: React.FC<CommonSpaceProgressProps> = ({
   status,
 }) => {
-  const manageCommonSpace = manageCommonSpaceProgress(status);
+  const t = useTranslations("my.services");
+  const progressT = useTranslations("my.services.progress");
+  const manageCommonSpace = manageCommonSpaceProgress(status, progressT);
 
   // TODO: Implement onClickCancel
   const onClickCancel = () => {};
@@ -25,7 +28,7 @@ const CommonSpaceProgress: React.FC<CommonSpaceProgressProps> = ({
       optional={
         status === CommonSpaceUsageOrderStatusEnum.Applied && (
           <Button onClick={onClickCancel} style={{ width: "max-content" }}>
-            신청 취소
+            {t("cancel")}
           </Button>
         )
       }

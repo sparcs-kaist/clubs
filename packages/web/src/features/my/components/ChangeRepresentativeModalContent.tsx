@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 import styled from "styled-components";
 
@@ -9,7 +10,6 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PhoneInput from "@sparcs-clubs/web/common/components/Forms/PhoneInput";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import { ChangeRepresentativeModalText } from "@sparcs-clubs/web/constants/changeRepresentative";
 import { patchMyDelegateRequest } from "@sparcs-clubs/web/features/my/services/patchMyDelegateRequest";
 
 interface ChangeRepresentativeModalContentProps {
@@ -39,6 +39,7 @@ const ChangeRepresentativeModalContent: React.FC<
   onClose,
   requestId,
 }) => {
+  const t = useTranslations("my.representative");
   const [errorPhone, setErrorPhone] = useState<boolean>(false);
   const [phone, setPhone] = useState<string>("");
 
@@ -81,11 +82,7 @@ const ChangeRepresentativeModalContent: React.FC<
         lh={28}
         style={{ whiteSpace: "pre-wrap", textAlign: "center" }}
       >
-        {ChangeRepresentativeModalText(
-          clubName,
-          prevRepresentative,
-          newRepresentative,
-        )}
+        {t("modalBody", { clubName, prevRepresentative, newRepresentative })}
       </Typography>
       {needPhoneNumber && (
         <>
@@ -95,7 +92,7 @@ const ChangeRepresentativeModalContent: React.FC<
             lh={28}
             style={{ whiteSpace: "pre-wrap", textAlign: "center" }}
           >
-            전화번호를 입력해야 동아리 대표자 변경을 승인할 수 있습니다
+            {t("phoneRequired")}
           </Typography>
           <PhoneInput
             placeholder={phonePlaceholder}
@@ -107,11 +104,11 @@ const ChangeRepresentativeModalContent: React.FC<
       )}
       <ButtonWrapper>
         <Button type="outlined" onClick={onClose}>
-          취소
+          {t("cancel")}
         </Button>
         <FlexWrapper direction="row" gap={12}>
           <Button type="outlined" onClick={onReject}>
-            거절
+            {t("reject")}
           </Button>
           <Button
             type={
@@ -121,7 +118,7 @@ const ChangeRepresentativeModalContent: React.FC<
             }
             onClick={onConfirm}
           >
-            승인
+            {t("approve")}
           </Button>
         </FlexWrapper>
       </ButtonWrapper>

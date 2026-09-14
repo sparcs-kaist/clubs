@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
@@ -9,6 +10,7 @@ import {
 } from "@sparcs-clubs/web/utils/Date/extractDate";
 
 const MonthSelect: React.FC = () => {
+  const t = useTranslations("my.registration");
   const { setValue, watch } = useFormContext<RegisterClubModel>();
 
   const foundedAt = watch("foundedAt");
@@ -36,8 +38,8 @@ const MonthSelect: React.FC = () => {
 
   return (
     <Select
-      label="설립 월"
-      placeholder="설립 월을 선택해주세요"
+      label={t("foundedMonth")}
+      placeholder={t("foundedMonthPlaceholder")}
       items={items}
       value={value}
       onChange={onChange}

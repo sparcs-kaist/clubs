@@ -6,6 +6,7 @@ import {
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 
@@ -40,7 +41,10 @@ const CheckboxCenterPlacer = styled.div`
 
 const columnHelper = createColumnHelper<IStudentSummary>();
 
-const columns = [
+// TODO: es hangul 검색 달기
+const getColumns = (
+  t: ReturnType<typeof useTranslations<"my.registration.activity">>,
+) => [
   columnHelper.display({
     id: "multiSelect",
     header: ({ table }) => (
@@ -61,23 +65,25 @@ const columns = [
     ),
   }),
   columnHelper.accessor("studentNumber", {
-    header: "학번",
+    header: t("studentNumber"),
     cell: info => info.getValue(),
     enableGlobalFilter: true,
   }),
   columnHelper.accessor("name", {
-    header: "신청자",
+    header: t("applicant"),
     cell: info => info.getValue(),
     enableGlobalFilter: true,
   }),
 ];
 
-// TODO: es hangul 검색 달기
 const SelectParticipant: React.FC<SelectParticipantProps> = ({
   data,
   value = [],
   onChange = null,
 }) => {
+  const t = useTranslations("my.registration.activity");
+  const columns = useMemo(() => getColumns(t), [t]);
+
   const [searchText, setSearchText] = useState<string>("");
 
   const [selected, setSelected] = useState<IStudentSummary[]>(value);
@@ -140,23 +146,26 @@ const SelectParticipant: React.FC<SelectParticipantProps> = ({
       <SearchInput
         searchText={searchText}
         handleChange={setSearchText}
-        placeholder="학번 또는 이름을 검색해주세요"
+        placeholder={t("participantSearchPlaceholder")}
       />
       <SelectParticipantInner>
         <Typography fs={16} fw="REGULAR" lh={20} color="GRAY.600">
-          {searchText && `검색 결과 ${table.getRowModel().rows.length}명 / `}
-          {`총 ${data.length}명`}
+          {searchText &&
+            t("participantSearchCount", {
+              count: table.getRowModel().rows.length,
+            })}
+          {t("participantTotal", { count: data.length })}
         </Typography>
         <Table
           table={table}
           height={320}
-          emptyMessage="검색 결과가 존재하지 않습니다"
+          emptyMessage={t("participantSearchEmpty")}
         />
       </SelectParticipantInner>
       <Toggle
         label={
           <Typography fs={16} lh={20} fw="MEDIUM">
-            선택된 회원 목록 ({selected.length}명)
+            {t("selectedParticipantCount", { count: selected.length })}
           </Typography>
         }
       >
@@ -168,7 +177,7 @@ const SelectParticipant: React.FC<SelectParticipantProps> = ({
           ))
         ) : (
           <Typography fs={16} fw="REGULAR" color="GRAY.300">
-            선택된 회원이 없습니다.
+            {t("selectedParticipantsEmpty")}
           </Typography>
         )}
       </Toggle>

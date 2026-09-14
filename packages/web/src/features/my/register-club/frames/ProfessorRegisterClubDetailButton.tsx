@@ -1,4 +1,5 @@
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 
@@ -14,6 +15,7 @@ import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/servi
 const ProfessorRegisterClubDetailButton: React.FC<{
   clubDetail: ApiReg011ResponseOk;
 }> = ({ clubDetail }) => {
+  const t = useTranslations("my.registration");
   const { id: idParam } = useParams<{ id: string }>();
   const applyId = Number(idParam);
 
@@ -28,21 +30,21 @@ const ProfessorRegisterClubDetailButton: React.FC<{
               { param: { applyId } },
               {
                 onSuccess: () => {
-                  errorHandler("승인이 완료되었습니다.");
+                  errorHandler(t("approveSuccess"));
                   close();
                   window.location.reload();
                 },
                 onError: () => {
-                  errorHandler("승인에 실패하였습니다.");
+                  errorHandler(t("approveFailure"));
                   close();
                 },
               },
             );
           }}
           onClose={close}
-          confirmButtonText="승인"
+          confirmButtonText={t("approve")}
         >
-          동아리 등록을 승인하시겠습니까?
+          {t("approveQuestion")}
         </CancellableModalContent>
       </Modal>
     ));
@@ -56,7 +58,9 @@ const ProfessorRegisterClubDetailButton: React.FC<{
           clubDetail && clubDetail.isProfessorSigned ? "disabled" : "default"
         }
       >
-        {clubDetail && clubDetail.isProfessorSigned ? "승인 완료" : "승인"}
+        {clubDetail && clubDetail.isProfessorSigned
+          ? t("approved")
+          : t("approve")}
       </Button>
     </FlexWrapper>
   );

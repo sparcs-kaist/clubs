@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React from "react";
 
 import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
@@ -13,7 +14,12 @@ interface MyActivityCertificateProgressProps {
 const MyActivityCertificateProgress: React.FC<
   MyActivityCertificateProgressProps
 > = ({ status }) => {
-  const myActivityCertificate = manageActivityCertificateProgress(status);
+  const t = useTranslations("my.services");
+  const progressT = useTranslations("my.services.progress");
+  const myActivityCertificate = manageActivityCertificateProgress(
+    status,
+    progressT,
+  );
 
   const onClickCancel = () => {};
 
@@ -23,13 +29,13 @@ const MyActivityCertificateProgress: React.FC<
       progress={myActivityCertificate.progress}
       infoText={
         status === ActivityCertificateOrderStatusEnum.Applied
-          ? "승인이 완료되기 전까지 신청을 취소할 수 있습니다"
+          ? progressT("cancelBeforeApproval")
           : myActivityCertificate.infoText
       }
       optional={
         status === ActivityCertificateOrderStatusEnum.Applied && (
           <Button onClick={onClickCancel} style={{ width: "max-content" }}>
-            신청 취소
+            {t("cancel")}
           </Button>
         )
       }

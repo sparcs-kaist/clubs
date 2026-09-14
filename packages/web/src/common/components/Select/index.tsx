@@ -1,4 +1,5 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 
@@ -116,10 +117,11 @@ const Select = <T,>({
   value,
   onChange = () => {},
   setErrorStatus = () => {},
-  placeholder = "항목을 선택해주세요",
+  placeholder,
   isRequired = true,
   isTextAlignStart = false,
 }: SelectProps<T>) => {
+  const t = useTranslations("common");
   const [isOpen, setIsOpen] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,7 +164,9 @@ const Select = <T,>({
   };
 
   const selectedLabel =
-    items.find(item => item.value === value)?.label || placeholder;
+    items.find(item => item.value === value)?.label ||
+    placeholder ||
+    t("forms.selectPlaceholder");
 
   return (
     <SelectWrapper>
@@ -212,15 +216,13 @@ const Select = <T,>({
                   </SelectOption>
                 ))
               ) : (
-                <NoOption>항목이 존재하지 않습니다</NoOption>
+                <NoOption>{t("forms.noOptions")}</NoOption>
               )}
             </Dropdown>
           )}
         </SelectInner>
         {isRequired && hasOpenedOnce && !value && items.length > 0 && (
-          <FormError>
-            {errorMessage || "필수로 선택해야 하는 항목입니다"}
-          </FormError>
+          <FormError>{errorMessage || t("forms.selectionRequired")}</FormError>
         )}
       </SelectWrapper>
     </SelectWrapper>

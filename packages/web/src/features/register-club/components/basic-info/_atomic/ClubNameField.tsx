@@ -8,10 +8,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FormController from "@sparcs-clubs/web/common/components/FormController";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import Select, { SelectItem } from "@sparcs-clubs/web/common/components/Select";
-import {
-  notAllowKrRegx,
-  regxErrorMessage,
-} from "@sparcs-clubs/web/features/register-club/constants";
+import { notAllowKrRegx } from "@sparcs-clubs/web/features/register-club/constants";
 import {
   ClubRegistrationInfo,
   RegisterClubModel,
@@ -28,7 +25,8 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
   clubList = [],
   editMode = false,
 }) => {
-  const t = useTranslations("club");
+  const clubT = useTranslations("club");
+  const t = useTranslations("my.registration");
   const { control, setValue, watch } = useFormContext<RegisterClubModel>();
 
   const krName = watch("clubNameKr");
@@ -72,9 +70,9 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
             <TextInput
               {...props}
               value={krName}
-              label="동아리명 (국문)"
-              placeholder="국문 동아리명을 입력해주세요"
-              helperText={t("registerClub.koreanNameHelperText")}
+              label={t("clubNameKr")}
+              placeholder={t("clubNameKrPlaceholder")}
+              helperText={clubT("registerClub.koreanNameHelperText")}
             />
           )}
         />
@@ -84,15 +82,17 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
           control={control}
           rules={{
             validate: value =>
-              notAllowKrRegx.test(value) ? undefined : regxErrorMessage,
+              notAllowKrRegx.test(value)
+                ? undefined
+                : t("invalidForeignCharacters"),
           }}
           renderItem={props => (
             <TextInput
               {...props}
               value={enName}
-              label="동아리명 (영문)"
-              placeholder="영문 동아리명을 입력해주세요"
-              helperText={t("registerClub.foreignNameHelperText")}
+              label={t("clubNameEn")}
+              placeholder={t("clubNameEnPlaceholder")}
+              helperText={clubT("registerClub.foreignNameHelperText")}
             />
           )}
         />
@@ -109,8 +109,8 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
         renderItem={({ onChange, ...props }) => (
           <Select
             {...props}
-            label="동아리명 (국문)"
-            placeholder="동아리명을 선택해주세요"
+            label={t("clubNameKr")}
+            placeholder={t("clubNamePlaceholder")}
             items={clubOptions}
             disabled={editMode}
             onChange={id => {
@@ -143,9 +143,9 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
           renderItem={props => (
             <TextInput
               {...props}
-              label="동아리명 (국문)"
-              placeholder="국문 동아리명을 입력해주세요"
-              helperText={t("registerClub.koreanNameChangeHelperText")}
+              label={t("clubNameKr")}
+              placeholder={t("clubNameKrPlaceholder")}
+              helperText={clubT("registerClub.koreanNameChangeHelperText")}
             />
           )}
         />
@@ -156,14 +156,16 @@ const ClubNameField: React.FC<ClubNameFieldProps> = ({
           control={control}
           rules={{
             validate: value =>
-              notAllowKrRegx.test(value) ? undefined : regxErrorMessage,
+              notAllowKrRegx.test(value)
+                ? undefined
+                : t("invalidForeignCharacters"),
           }}
           renderItem={props => (
             <TextInput
               {...props}
-              label="동아리명 (영문)"
-              placeholder="영문 동아리명을 입력해주세요"
-              helperText={t("registerClub.foreignNameChangeHelperText")}
+              label={t("clubNameEn")}
+              placeholder={t("clubNameEnPlaceholder")}
+              helperText={clubT("registerClub.foreignNameChangeHelperText")}
             />
           )}
         />

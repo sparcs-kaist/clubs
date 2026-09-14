@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import React, { useCallback } from "react";
 
 import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
@@ -35,6 +36,8 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
   isOpen,
   close,
 }) => {
+  const t = useTranslations("my.registration.activity");
+
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useGetActivityReport(
     profile,
@@ -72,14 +75,12 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
             close();
           },
           onError: error => {
-            errorHandler(
-              getApiErrorMessage(error, "활동보고서 수정에 실패하였습니다"),
-            );
+            errorHandler(getApiErrorMessage(error, t("editError")));
           },
         },
       );
     },
-    [activityId, close, mutate],
+    [activityId, close, mutate, t],
   );
 
   const handleCancel = () => {
@@ -95,7 +96,7 @@ const EditActivityReportModal: React.FC<EditActivityReportModalProps> = ({
           {data.activityStatusEnumId === ActivityStatusEnum.Rejected &&
             data.comments.length > 0 && (
               <CommentToast
-                title="반려 사유"
+                title={t("rejectionReason")}
                 reasons={filterActivityComments(data.comments).map(comment => ({
                   id: comment.id,
                   datetime: comment.createdAt,

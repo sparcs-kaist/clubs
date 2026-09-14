@@ -5,6 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import React, { useMemo } from "react";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -17,60 +18,87 @@ import { mockupMyCms } from "@sparcs-clubs/web/features/my/services/_mock/mockMy
 import {
   formatDate,
   formatDateTime,
+  formatDateTimeEn,
   formatTime,
 } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 const columnHelper = createColumnHelper<(typeof mockupMyCms.items)[number]>();
 
-const columns = [
-  columnHelper.accessor("statusEnum", {
-    id: "status",
-    header: "상태",
-    cell: info => {
-      const { color, text } = getTagDetail(info.getValue(), CmsTagList);
-      return <Tag color={color}>{text}</Tag>;
-    },
-    size: 10,
-  }),
-  columnHelper.accessor("createdAt", {
-    id: "createdAt",
-    header: "신청 일시",
-    cell: info => formatDateTime(info.getValue()),
-    size: 20,
-  }),
-  columnHelper.accessor("chargeStudentName", {
-    id: "chargeStudentName",
-    header: "동아리",
-    cell: info => info.getValue(),
-    size: 10,
-  }),
-  columnHelper.accessor("startTerm", {
-    id: "startTerm",
-    header: "예약 일자",
-    cell: info => formatDate(info.getValue()),
-    size: 16,
-  }),
-  columnHelper.accessor(
-    row => `${formatTime(row.startTerm)} ~ ${formatTime(row.endTerm)}`,
-    {
-      id: "time-range",
-      header: "예약 시간",
-      cell: info => info.getValue(),
-      size: 16,
-    },
-  ),
-  columnHelper.accessor("spaceName", {
-    id: "spaceName",
-    header: "예약 호실",
-    cell: info => info.getValue(),
-    size: 28,
-  }),
-];
+const useColumns = () => {
+  const t = useTranslations("my.services");
+  const locale = useLocale();
+  const formatter = useFormatter();
+  return useMemo(
+    () => [
+      columnHelper.accessor("statusEnum", {
+        id: "status",
+        header: t("status"),
+        cell: info => {
+          const { color } = getTagDetail(info.getValue(), CmsTagList);
+          return (
+            <Tag color={color}>
+              {t(`statuses.commonSpace.${info.getValue()}`)}
+            </Tag>
+          );
+        },
+        size: 10,
+      }),
+      columnHelper.accessor("createdAt", {
+        id: "createdAt",
+        header: t("appliedAt"),
+        cell: info =>
+          locale === "en"
+            ? formatDateTimeEn(info.getValue())
+            : formatDateTime(info.getValue()),
+        size: 20,
+      }),
+      columnHelper.accessor("chargeStudentName", {
+        id: "chargeStudentName",
+        header: t("club"),
+        cell: info => info.getValue(),
+        size: 10,
+      }),
+      columnHelper.accessor("startTerm", {
+        id: "startTerm",
+        header: t("commonSpace.date"),
+        cell: info =>
+          locale === "en"
+            ? formatter.dateTime(new Date(info.getValue()), {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                weekday: "short",
+                timeZone: "Asia/Seoul",
+              })
+            : formatDate(info.getValue()),
+        size: 16,
+      }),
+      columnHelper.accessor(
+        row => `${formatTime(row.startTerm)} ~ ${formatTime(row.endTerm)}`,
+        {
+          id: "time-range",
+          header: t("commonSpace.time"),
+          cell: info => info.getValue(),
+          size: 16,
+        },
+      ),
+      columnHelper.accessor("spaceName", {
+        id: "spaceName",
+        header: t("commonSpace.room"),
+        cell: info => info.getValue(),
+        size: 28,
+      }),
+    ],
+    [locale, t, formatter],
+  );
+};
 
 const MyCommonSpace = () => {
+  const t = useTranslations("my.services");
   const data = useMemo(() => mockupMyCms.items, []);
 
+  const columns = useColumns();
   const table = useReactTable({
     columns,
     data,
@@ -82,10 +110,10 @@ const MyCommonSpace = () => {
     <FlexWrapper direction="column" gap={20}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
-          { name: "공용공간 비정기사용 내역", path: "/my/common-space" },
+          { name: t("myPage"), path: "/my" },
+          { name: t("commonSpace.title"), path: "/my/common-space" },
         ]}
-        title="공용공간 비정기사용 내역"
+        title={t("commonSpace.title")}
       />
       <FlexWrapper direction="row" gap={0} justify="flex-end">
         <Typography
@@ -95,7 +123,7 @@ const MyCommonSpace = () => {
           ff="PRETENDARD"
           color="GRAY.600"
         >
-          총 {data.length}개
+          {t("total", { count: data.length })}
         </Typography>
       </FlexWrapper>
       <Table table={table} />

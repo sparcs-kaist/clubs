@@ -1,4 +1,5 @@
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 
@@ -14,6 +15,7 @@ import { deleteMyClubRegistration } from "@sparcs-clubs/web/features/my/services
 import { useGetMyClubRegistration } from "@sparcs-clubs/web/features/my/services/getMyClubRegistration";
 
 const StudentRegisterClubDetailButton: React.FC = () => {
+  const t = useTranslations("my.registration");
   const { id: idParam } = useParams<{ id: string }>();
   const applyId = Number(idParam);
   const router = useRouter();
@@ -43,11 +45,11 @@ const StudentRegisterClubDetailButton: React.FC = () => {
             window.location.href = "/my";
           }}
           onClose={close}
-          confirmButtonText="삭제"
+          confirmButtonText={t("delete")}
         >
-          동아리 등록 신청을 삭제하면 복구할 수 없습니다.
+          {t("deleteWarning")}
           <br />
-          삭제하시겠습니까?
+          {t("deleteQuestion")}
         </CancellableModalContent>
       </Modal>
     ));
@@ -62,12 +64,11 @@ const StudentRegisterClubDetailButton: React.FC = () => {
             close();
           }}
           onClose={close}
-          confirmButtonText="수정"
+          confirmButtonText={t("edit")}
         >
-          동아리 등록 신청을 수정하면 신청 상태 및 지도교수 승인 여부가 모두
-          초기화됩니다.
+          {t("editWarning")}
           <br />
-          수정하시겠습니까?
+          {t("editQuestion")}
         </CancellableModalContent>
       </Modal>
     ));
@@ -80,12 +81,12 @@ const StudentRegisterClubDetailButton: React.FC = () => {
       {deadlineData?.deadline && registration && (
         <FlexWrapper direction="row" gap={10}>
           <Button style={{ width: "max-content" }} onClick={deleteHandler}>
-            삭제
+            {t("delete")}
           </Button>
           {registration.registrationStatusEnum !==
             RegistrationStatusEnum.Approved && (
             <Button style={{ width: "max-content" }} onClick={editHandler}>
-              수정
+              {t("edit")}
             </Button>
           )}
         </FlexWrapper>

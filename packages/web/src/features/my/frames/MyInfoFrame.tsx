@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -9,6 +10,7 @@ import useUserPhoneNumber from "@sparcs-clubs/web/common/services/getUserPhoneNu
 import usePatchMyPhoneNumber from "@sparcs-clubs/web/features/my/services/usePatchMyPhoneNumber";
 
 const MyInfoFrame: React.FC<{ profile: string }> = ({ profile }) => {
+  const t = useTranslations("my.overview");
   const {
     data: myInfo,
     isLoading: infoLoading,
@@ -34,11 +36,11 @@ const MyInfoFrame: React.FC<{ profile: string }> = ({ profile }) => {
 
   const buttonType = phone === myPhone || errorPhone ? "disabled" : "default";
   return (
-    <FoldableSectionTitle title="나의 정보">
+    <FoldableSectionTitle title={t("myInformation")}>
       <AsyncBoundary isLoading={infoLoading} isError={infoError}>
         <Card outline gap={32} style={{ flex: 1 }}>
           <PhoneInput
-            label="전화번호"
+            label={t("phoneNumber")}
             placeholder="010-XXXX-XXXX"
             value={phone}
             onChange={setPhone}
@@ -49,7 +51,7 @@ const MyInfoFrame: React.FC<{ profile: string }> = ({ profile }) => {
             style={{ width: "max-content", alignSelf: "flex-end" }}
             onClick={OnPhoneChange}
           >
-            저장
+            {t("save")}
           </Button>
         </Card>
       </AsyncBoundary>
