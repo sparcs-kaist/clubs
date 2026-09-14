@@ -1,3 +1,4 @@
+import apiReg021 from "@clubs/interface/api/registration/endpoint/apiReg021";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -19,6 +20,7 @@ const semesterId = 7;
 
 const createService = (clubTypeEnum: ClubTypeEnum) => {
   const clubRegistrationRepository = {
+    selectRegistrationsAndRepresentativeByProfessorId: jest.fn(),
     selectRegistrationsById: jest.fn(),
     updateRegistrationProfessorApprovedAt: jest.fn(),
     postExecutiveRegistrationsClubRegistrationSendBack: jest.fn(),
@@ -131,6 +133,59 @@ describe("RegistrationService club registration review", () => {
     expect(
       clubRegistrationRepository.postExecutiveRegistrationsClubRegistrationSendBack,
     ).not.toHaveBeenCalled();
+  });
+});
+
+describe("RegistrationService professor club registration brief", () => {
+  it("preserves semesters and independent professor approval through the response schema", async () => {
+    const { service, clubRegistrationRepository } = createService(
+      ClubTypeEnum.Regular,
+    );
+    const expected = [
+      { id: 1, semesterId, professorSignedAt: null },
+      {
+        id: 2,
+        semesterId: semesterId - 1,
+        professorSignedAt: new Date("2026-09-14T00:00:00.000Z"),
+      },
+      { id: 3, semesterId: null, professorSignedAt: null },
+    ];
+    clubRegistrationRepository.selectRegistrationsAndRepresentativeByProfessorId.mockResolvedValue(
+      expected.map(item => ({
+        registration: {
+          id: item.id,
+          clubId,
+          semesterId: item.semesterId,
+          registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
+          divisionId: item.id,
+          clubNameKr: "동아리",
+          clubNameEn: "Club",
+          professorApprovedAt: item.professorSignedAt,
+        },
+        club: { nameKr: "동아리", nameEn: "Club" },
+        division: { name: "분과" },
+        student: {
+          id: studentId,
+          number: 20260001,
+          name: "학생",
+          email: "student@kaist.ac.kr",
+        },
+        user: {},
+      })),
+    );
+
+    const response =
+      await service.getProfessorRegistrationsClubRegistrationsBrief({
+        professorId: 1,
+      });
+    const parsed = apiReg021.responseBodyMap[200].parse(
+      JSON.parse(JSON.stringify(response)),
+    );
+
+    expect(parsed.items).toMatchObject(expected);
+    expect(
+      clubRegistrationRepository.selectRegistrationsAndRepresentativeByProfessorId,
+    ).toHaveBeenCalledWith({ professorId: 1 });
   });
 });
 
