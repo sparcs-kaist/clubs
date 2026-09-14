@@ -40,8 +40,7 @@ const createContext = () => {
   };
   const repository = new ClubRegistrationRepository(
     prisma as unknown as Dependencies[0],
-    {} as Dependencies[1],
-    { tx: transaction } as unknown as Dependencies[2],
+    { tx: transaction } as unknown as Dependencies[1],
   );
   Object.assign(repository, {
     clock: { now: () => new Date("2026-09-01T00:00:00Z") },

@@ -67,6 +67,7 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     memberRegistrationRepository as RegistrationServiceDependencies[6],
     semesterPublicService as RegistrationServiceDependencies[7],
     registrationDeadlinePublicService as RegistrationServiceDependencies[8],
+    {} as RegistrationServiceDependencies[9],
   );
 
   return {

@@ -37,6 +37,7 @@ export const productionReadyPaths: {
     "/manage-club",
     // 집행부원 대시보드
     "/executive",
+    "/executive/exchange-login",
   ],
   startsWith: [
     // 공통

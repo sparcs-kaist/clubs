@@ -204,30 +204,50 @@ describe("ClubService registration delegate change", () => {
     return service;
   };
 
-  it("lists only previous-semester clubs without a current registration", async () => {
+  it("lists both semesters once with current registration submission status", async () => {
     const clubPublicService = {
-      searchClubDetailByDate: jest.fn().mockResolvedValue([
-        {
-          id: 1,
-          nameKr: "미제출 동아리",
-          nameEn: "Available",
-          clubTypeEnum: 1,
-          division: { name: "학술" },
-          clubRepresentative: { name: "대표자" },
-        },
-        {
-          id: 2,
-          nameKr: "제출 동아리",
-          nameEn: "Submitted",
-          clubTypeEnum: 1,
-          division: { name: "생활문화" },
-          clubRepresentative: { name: "기존 대표자" },
-        },
-      ]),
+      searchClubDetailByDate: jest
+        .fn()
+        .mockResolvedValueOnce([
+          {
+            id: 1,
+            nameKr: "미제출 동아리",
+            nameEn: "Available",
+            clubTypeEnum: 1,
+            division: { name: "학술" },
+            clubRepresentative: { name: "대표자" },
+          },
+          {
+            id: 2,
+            nameKr: "제출 동아리",
+            nameEn: "Submitted",
+            clubTypeEnum: 1,
+            division: { name: "생활문화" },
+            clubRepresentative: { name: "기존 대표자" },
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: 2,
+            nameKr: "제출 동아리",
+            nameEn: "Submitted",
+            clubTypeEnum: 1,
+            division: { name: "생활문화" },
+            clubRepresentative: { name: "이번 대표자" },
+          },
+          {
+            id: 3,
+            nameKr: "신규 동아리",
+            nameEn: "New",
+            clubTypeEnum: 2,
+            division: { name: "학술" },
+            clubRepresentative: { name: "신규 대표자" },
+          },
+        ]),
     };
     const registrationPublicService = {
       isDeadline: jest.fn().mockResolvedValue(true),
-      getRegisteredClubIds: jest.fn().mockResolvedValue([2]),
+      getRegisteredClubIds: jest.fn().mockResolvedValue([2, 3]),
     };
     const semesterPublicService = {
       load: jest.fn().mockResolvedValue(registrationSemester),
@@ -241,8 +261,193 @@ describe("ClubService registration delegate change", () => {
 
     const result = await service.getRegistrationDelegateChangeClubs();
 
-    expect(result.clubs.map(club => club.id)).toEqual([1]);
+    expect(result.clubs.map(club => [club.id, club.hasRegistration])).toEqual([
+      [1, false],
+      [2, true],
+      [3, true],
+    ]);
+    expect(result.clubs[1].representative).toBe("이번 대표자");
+    expect(clubPublicService.searchClubDetailByDate).toHaveBeenNthCalledWith(
+      2,
+      {
+        date: now,
+        semesterId: registrationSemester.id,
+        clubTypeEnum: [1, 2],
+      },
+    );
     expect(result.effectiveAt).toEqual(new Date("2026-08-27T14:59:00.000Z"));
+  });
+
+  it.each([false, true])(
+    "restricts submitted club detail to historical delegates (submitted: %s)",
+    async hasRegistration => {
+      const delegates = [1, 2, 3].map(role => ({
+        clubDelegateEnum: role,
+        studentId: role * 10,
+        studentNumber: `2026000${role}`,
+        name: `학생 ${role}`,
+      }));
+      const clubPublicService = {
+        searchClubDetailByDate: jest.fn().mockResolvedValue([
+          {
+            id: clubId,
+            nameKr: "동아리",
+            nameEn: "Club",
+            clubTypeEnum: 1,
+            division: { name: "학술" },
+            clubRepresentative: delegates[0],
+            clubDelegate1: delegates[1],
+            clubDelegate2: delegates[2],
+          },
+        ]),
+      };
+      const clubStudentTRepository = {
+        findByClubIdAndSemesterId: jest
+          .fn()
+          .mockResolvedValue([{ studentId: 40 }]),
+      };
+      const userPublicService = {
+        getStudentsByIds: jest.fn().mockResolvedValue(
+          hasRegistration
+            ? delegates.slice(1).map(delegate => ({
+                id: delegate.studentId,
+                name: delegate.name,
+                studentNumber: delegate.studentNumber,
+              }))
+            : [
+                {
+                  id: 40,
+                  userId: 50,
+                  studentNumber: "20260004",
+                  name: "회원",
+                },
+              ],
+        ),
+        getStudentEnumsByIdsAndSemesterId: jest
+          .fn()
+          .mockResolvedValue([{ id: 40, studentEnumId: 1 }]),
+      };
+      const service = createService({
+        clubPublicService,
+        clubStudentTRepository,
+        userPublicService,
+        clubDelegateRepository: {
+          find: jest.fn().mockResolvedValue(
+            hasRegistration
+              ? delegates.slice(1).map(delegate => ({
+                  clubDelegateEnum: delegate.clubDelegateEnum,
+                  student: { id: delegate.studentId },
+                }))
+              : [],
+          ),
+        },
+        registrationPublicService: {
+          isDeadline: jest.fn().mockResolvedValue(true),
+          hasClubRegistration: jest.fn().mockResolvedValue(hasRegistration),
+        },
+        semesterPublicService: {
+          load: jest.fn().mockResolvedValue(registrationSemester),
+          getById: jest.fn().mockResolvedValue(previousSemester),
+        },
+      });
+
+      const result = await service.getRegistrationDelegateChangeDetail({
+        clubId,
+      });
+
+      expect(result.hasRegistration).toBe(hasRegistration);
+      expect(
+        result.delegates.map(delegate => delegate.clubDelegateEnumId),
+      ).toEqual(hasRegistration ? [2, 3] : [1, 2, 3]);
+      if (hasRegistration) {
+        expect(result.members).toEqual([]);
+        expect(
+          clubStudentTRepository.findByClubIdAndSemesterId,
+        ).not.toHaveBeenCalled();
+        expect(userPublicService.getStudentsByIds).toHaveBeenCalledWith([
+          20, 30,
+        ]);
+        expect(
+          userPublicService.getStudentEnumsByIdsAndSemesterId,
+        ).not.toHaveBeenCalled();
+      } else {
+        expect(result.members).toEqual([
+          {
+            studentId: 40,
+            studentNumber: "20260004",
+            name: "회원",
+            isRegularMember: true,
+            hasUserAccount: true,
+            isAssignable: true,
+          },
+        ]);
+      }
+    },
+  );
+
+  it("finds surviving historical delegates even when the club skipped last semester", async () => {
+    const clubPublicService = {
+      searchClubDetailByDate: jest
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: clubId,
+            nameKr: "신규 동아리",
+            nameEn: "New",
+            clubTypeEnum: 2,
+            division: { name: "학술" },
+            clubRepresentative: { clubDelegateEnum: 1, studentId: 10 },
+            clubDelegate1: { clubDelegateEnum: 2, studentId: 20 },
+          },
+        ]),
+    };
+    const clubDelegateRepository = {
+      find: jest
+        .fn()
+        .mockResolvedValue([{ clubDelegateEnum: 3, student: { id: 30 } }]),
+    };
+    const service = createService({
+      clubPublicService,
+      clubDelegateRepository,
+      userPublicService: {
+        getStudentsByIds: jest
+          .fn()
+          .mockResolvedValue([
+            { id: 30, name: "과거 대의원", studentNumber: "20260003" },
+          ]),
+      },
+      registrationPublicService: {
+        isDeadline: jest.fn().mockResolvedValue(true),
+        hasClubRegistration: jest.fn().mockResolvedValue(true),
+      },
+      semesterPublicService: {
+        load: jest.fn().mockResolvedValue(registrationSemester),
+        getById: jest.fn().mockResolvedValue(previousSemester),
+      },
+    });
+
+    await expect(
+      service.getRegistrationDelegateChangeDetail({ clubId }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        hasRegistration: true,
+        delegates: [
+          {
+            clubDelegateEnumId: 3,
+            studentId: 30,
+            name: "과거 대의원",
+            studentNumber: "20260003",
+          },
+        ],
+        members: [],
+      }),
+    );
+    expect(clubDelegateRepository.find).toHaveBeenCalledWith({
+      clubId,
+      date: new Date("2026-08-27T14:59:00.000Z"),
+      clubDelegateEnum: [2, 3],
+    });
   });
 
   it("locks delegates and rechecks registration before changing the role", async () => {
@@ -364,11 +569,11 @@ describe("ClubService registration delegate change", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("ends a delegate role at the registration change effective time", async () => {
+  it("ends a historical delegate role even after registration is submitted", async () => {
     const registrationPublicService = {
       checkDeadline: jest.fn().mockResolvedValue(undefined),
       isDeadline: jest.fn().mockResolvedValue(true),
-      hasClubRegistration: jest.fn().mockResolvedValue(false),
+      hasClubRegistration: jest.fn().mockResolvedValue(true),
     };
     const semesterPublicService = {
       load: jest.fn().mockResolvedValue(registrationSemester),
@@ -398,10 +603,10 @@ describe("ClubService registration delegate change", () => {
       clubDelegateRepository.lockForRegistrationChange.mock
         .invocationCallOrder[0],
     ).toBeLessThan(
-      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+      registrationPublicService.checkDeadline.mock.invocationCallOrder[1],
     );
     expect(
-      registrationPublicService.hasClubRegistration.mock.invocationCallOrder[0],
+      registrationPublicService.checkDeadline.mock.invocationCallOrder[1],
     ).toBeLessThan(
       clubDelegateRepository.cancelForRegistration.mock.invocationCallOrder[0],
     );
@@ -411,5 +616,35 @@ describe("ClubService registration delegate change", () => {
       clubDelegateEnumId: 2,
       effectiveAt: new Date("2026-08-27T14:59:00.000Z"),
     });
+  });
+
+  it("does not end a delegate term after the registration period closes during lock acquisition", async () => {
+    const registrationPublicService = {
+      checkDeadline: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error("outside deadline")),
+      isDeadline: jest.fn().mockResolvedValue(true),
+    };
+    const clubDelegateRepository = {
+      lockForRegistrationChange: jest.fn().mockResolvedValue(undefined),
+      cancelForRegistration: jest.fn(),
+    };
+    const service = createService({
+      registrationPublicService,
+      clubDelegateRepository,
+      semesterPublicService: {
+        load: jest.fn().mockResolvedValue(registrationSemester),
+        getById: jest.fn().mockResolvedValue(previousSemester),
+      },
+    });
+
+    await expect(
+      service.cancelRegistrationDelegate(
+        { clubId },
+        { studentId: 30, clubDelegateEnumId: 2 },
+      ),
+    ).rejects.toThrow("outside deadline");
+    expect(clubDelegateRepository.cancelForRegistration).not.toHaveBeenCalled();
   });
 });

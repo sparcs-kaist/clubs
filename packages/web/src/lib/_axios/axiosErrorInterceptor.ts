@@ -2,7 +2,7 @@ import { AxiosError, AxiosResponse, HttpStatusCode } from "axios";
 
 import {
   removeLocalStorageItem,
-  setLocalStorageItem,
+  setLoginTokens,
 } from "@sparcs-clubs/web/utils/localStorage";
 import logger from "@sparcs-clubs/web/utils/logger";
 
@@ -17,22 +17,8 @@ const errorInterceptor = {
       case HttpStatusCode.Unauthorized: {
         try {
           const response = await postRefresh();
-          // TODO: 로그인시 기본 프로필 선택
-          setLocalStorageItem(
-            "responseToken",
-            JSON.stringify(response.accessToken),
-          );
           if (response.accessToken) {
-            setLocalStorageItem(
-              "accessToken",
-              response.accessToken.professor ??
-                response.accessToken.doctor ??
-                response.accessToken.master ??
-                response.accessToken.undergraduate ??
-                response.accessToken.employee ??
-                response.accessToken.executive ??
-                "",
-            );
+            setLoginTokens(response.accessToken);
             logger.log("Logged in successfully.");
           }
         } catch (refreshError) {

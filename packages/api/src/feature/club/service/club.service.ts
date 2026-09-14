@@ -53,7 +53,10 @@ import type {
   ApiClb022RequestParam,
   ApiClb022ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb022";
-import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+import {
+  ClubDelegateEnum,
+  ClubTypeEnum,
+} from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -231,11 +234,23 @@ export class ClubService {
     const context = await this.getRegistrationDelegateChangeContext();
     if (!context.isChangeable) return { ...context, clubs: [] };
 
-    const clubs = await this.clubPublicService.searchClubDetailByDate({
-      date: context.effectiveAt,
-      semesterId: context.previousSemester.id,
-      clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
-    });
+    const [previousClubs, currentClubs] = await Promise.all([
+      this.clubPublicService.searchClubDetailByDate({
+        date: context.effectiveAt,
+        semesterId: context.previousSemester.id,
+        clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      }),
+      this.clubPublicService.searchClubDetailByDate({
+        date: this.clock.now(),
+        semesterId: context.registrationSemester.id,
+        clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      }),
+    ]);
+    const clubs = [
+      ...new Map(
+        [...previousClubs, ...currentClubs].map(club => [club.id, club]),
+      ).values(),
+    ];
     const registeredClubIds = new Set(
       await this.registrationPublicService.getRegisteredClubIds(
         clubs.map(club => club.id),
@@ -246,7 +261,6 @@ export class ClubService {
     return {
       ...context,
       clubs: clubs
-        .filter(club => !registeredClubIds.has(club.id))
         .filter(club => !this.EXCLUDED_CLUB_IDS.includes(club.id))
         .map(club => ({
           id: club.id,
@@ -255,6 +269,7 @@ export class ClubService {
           type: club.clubTypeEnum,
           divisionName: club.division.name,
           representative: club.clubRepresentative.name,
+          hasRegistration: registeredClubIds.has(club.id),
         })),
     };
   }
@@ -268,18 +283,70 @@ export class ClubService {
         param.clubId,
         context.registrationSemester.id,
       );
-    if (hasRegistration) {
-      throw new ConflictException("Club registration already exists");
-    }
-
     const clubs = await this.clubPublicService.searchClubDetailByDate({
       date: context.effectiveAt,
       semesterId: context.previousSemester.id,
       clubId: param.clubId,
       clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
     });
-    const club = clubs[0];
-    if (!club) throw new NotFoundException("Club was not active last semester");
+    const previousClub = clubs[0];
+    let club = previousClub;
+    if (!club) {
+      if (hasRegistration) {
+        [club] = await this.clubPublicService.searchClubDetailByDate({
+          date: this.clock.now(),
+          semesterId: context.registrationSemester.id,
+          clubId: param.clubId,
+          clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+        });
+      }
+    }
+    if (!club)
+      throw new NotFoundException("Club was not active in either semester");
+
+    const detail = {
+      ...context,
+      hasRegistration,
+      club: {
+        id: club.id,
+        nameKr: club.nameKr,
+        nameEn: club.nameEn,
+        type: club.clubTypeEnum,
+        divisionName: club.division.name,
+      },
+    };
+    if (hasRegistration) {
+      // Delegate terms can survive semesters in which the club was unregistered.
+      const histories = await this.clubDelegateRepository.find({
+        clubId: param.clubId,
+        date: context.effectiveAt,
+        clubDelegateEnum: [
+          ClubDelegateEnum.Delegate1,
+          ClubDelegateEnum.Delegate2,
+        ],
+      });
+      const students = await this.userPublicService.getStudentsByIds(
+        histories.map(delegate => delegate.student.id),
+      );
+      const studentMap = new Map(
+        students.map(student => [student.id, student]),
+      );
+      return {
+        ...detail,
+        delegates: histories.map(delegate => {
+          const student = studentMap.get(delegate.student.id);
+          if (!student)
+            throw new NotFoundException("Delegate student not found");
+          return {
+            clubDelegateEnumId: delegate.clubDelegateEnum,
+            studentId: student.id,
+            studentNumber: student.studentNumber,
+            name: student.name,
+          };
+        }),
+        members: [],
+      };
+    }
 
     const memberships =
       await this.clubStudentTRepository.findByClubIdAndSemesterId(
@@ -311,14 +378,7 @@ export class ClubService {
     });
 
     return {
-      ...context,
-      club: {
-        id: club.id,
-        nameKr: club.nameKr,
-        nameEn: club.nameEn,
-        type: club.clubTypeEnum,
-        divisionName: club.division.name,
-      },
+      ...detail,
       delegates: [
         club.clubRepresentative,
         club.clubDelegate1,
@@ -434,14 +494,6 @@ export class ClubService {
     await this.registrationPublicService.checkDeadline({
       enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
     });
-    const hasRegistration =
-      await this.registrationPublicService.hasClubRegistration(
-        param.clubId,
-        context.registrationSemester.id,
-      );
-    if (hasRegistration) {
-      throw new ConflictException("Club registration already exists");
-    }
     await this.clubDelegateRepository.cancelForRegistration({
       clubId: param.clubId,
       studentId: body.studentId,

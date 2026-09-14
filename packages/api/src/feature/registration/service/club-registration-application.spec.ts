@@ -73,6 +73,7 @@ const createContext = (
     {} as Dependencies[6],
     semester as unknown as Dependencies[7],
     {} as Dependencies[8],
+    {} as Dependencies[9],
   );
   return { service, repository, clubs, files, registration };
 };

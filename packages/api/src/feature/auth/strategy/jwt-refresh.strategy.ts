@@ -42,6 +42,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, "refresh") {
           sid: payload.sid,
           name: payload.name,
           email: payload.email,
+          exchangeActor: payload.exchangeActor,
         }
       : (() => {
           throw new UnauthorizedException("Refresh token not match");

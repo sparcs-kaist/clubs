@@ -5,6 +5,14 @@ import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repos
 
 import { UserController } from "./controller/user.controller";
 import PrivacyPolicyModule from "./privacy-policy/privacy-policy.module";
+import {
+  ExchangeLoginEmployeeIdentityRepository,
+  ExchangeLoginExecutiveIdentityRepository,
+  ExchangeLoginProfessorIdentityRepository,
+  ExchangeLoginStudentIdentityRepository,
+  ExchangeLoginUserIdentityRepository,
+} from "./repository/exchange-login-identity.repository";
+import { ExchangeLoginUserRepository } from "./repository/exchange-login-user.repository";
 import ExecutiveRepository from "./repository/executive.repository";
 import OldProfessorRepository from "./repository/old.professor.repository";
 import OldStudentRepository from "./repository/old.student.repository";
@@ -26,6 +34,12 @@ import { UserService } from "./service/user.service";
     OldProfessorRepository,
     StudentRepository,
     ProfessorRepository,
+    ExchangeLoginUserRepository,
+    ExchangeLoginUserIdentityRepository,
+    ExchangeLoginStudentIdentityRepository,
+    ExchangeLoginProfessorIdentityRepository,
+    ExchangeLoginEmployeeIdentityRepository,
+    ExchangeLoginExecutiveIdentityRepository,
   ],
   exports: [UserPublicService],
 })

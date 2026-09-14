@@ -6,9 +6,9 @@ import FileModule from "@sparcs-clubs/api/feature/file/file.module";
 import { SemesterModule } from "@sparcs-clubs/api/feature/semester/semester.module";
 import UserModule from "@sparcs-clubs/api/feature/user/user.module";
 
-import { ClubDivisionHistoryRepository } from "../club/repository/club-division-history.repository";
 import { RegistrationController } from "./controller/registration.controller";
 import { ClubRegistrationRepository } from "./repository/club-registration.repository";
+import { ClubRegistrationApprovalRepository } from "./repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "./repository/member-registration.repository";
 import { RegistrationPublicService } from "./service/registration.public.service";
 import { RegistrationService } from "./service/registration.service";
@@ -26,7 +26,7 @@ import { RegistrationService } from "./service/registration.service";
     RegistrationService,
     RegistrationPublicService,
     ClubRegistrationRepository,
-    ClubDivisionHistoryRepository,
+    ClubRegistrationApprovalRepository,
     MemberRegistrationRepository,
   ],
   exports: [RegistrationPublicService],

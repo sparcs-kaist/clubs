@@ -91,6 +91,7 @@ DB schema 변경은 없다. 신청 자격의 학기·지위 정책은 기존 규
 
 - TU-494 작업 트리에서 구현. DB schema 변경 없음.
 - 등록 API 관련 Jest 5개 모음, 54개 테스트 통과.
+- 최신 dev 병합 후 전체 API Jest 55개 모음, 375개 테스트 및 MC/DC 재검증 통과.
 - 프론트 자격·오류·임시저장·기존 내역 이동 19개 테스트 통과.
 - 지도교수 없는 재등록 수정 및 선택 취소의 React 폼 동작 검사 통과.
 - API production 및 웹 TypeScript 검사 통과. 웹은 기존 테스트 import 규칙에 맞춰 `--allowImportingTsExtensions` 사용.
@@ -103,7 +104,7 @@ DB schema 변경은 없다. 신청 자격의 학기·지위 정책은 기존 규
 
 ### 남은 저장소 검사
 
-`repository-domain-guard:changed`는 실패한다. 기존 수동 트랜잭션을 정리하면서 위치가 바뀐 `clubDelegateD.findMany/create`, `registration.create/updateMany` 4곳이 `missing-repository-boundary`로 검출된다. 해당 도메인은 아직 boundary 선언이 없다. 전체 변경 규칙 검사는 이 문제 때문에 통과하지 않으며, push 전에 boundary migration을 정리해야 한다. 도메인 관계와 schema를 넓게 변경하는 후속 마이그레이션은 이 기능 변경에 포함하지 않았다.
+`repository-domain-guard:changed`는 실패한다. 기존 수동 트랜잭션을 정리하면서 위치가 바뀐 `clubDelegateD.findMany/create`, `registration.create/updateMany` 4곳이 `missing-repository-boundary`로 검출된다. 해당 도메인은 아직 boundary 선언이 없다. 전체 변경 규칙 검사는 이 문제 때문에 통과하지 않으며, merge 전에 boundary migration을 정리해야 한다. 사용자 요청에 따라 실패 내역을 공개한 리뷰용 PR을 생성하며, 프로젝트의 예외 절차대로 MC/DC를 별도로 통과시킨 뒤 pre-push 훅을 건너뛴다. 도메인 관계와 schema를 넓게 변경하는 후속 마이그레이션은 이 기능 변경에 포함하지 않았다.
 
 전체 API 테스트 파일까지 포함한 TypeScript 검사에는 기존 club/funding/registration 테스트의 TS2352 오류가 남아 있다. 배포 코드 기준 검사는 통과했다. 실제 브라우저에서 운영 신청을 제출하거나 배포한 것은 아니다.
 
