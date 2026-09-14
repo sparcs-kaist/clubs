@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
 import apiReg027, {
   ApiReg027ResponseOk,
@@ -9,8 +9,11 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useGetClubRegistrationDeadline = () =>
+const useGetClubRegistrationDeadline = (
+  options?: Pick<UseQueryOptions<ApiReg027ResponseOk>, "refetchOnMount">,
+) =>
   useQuery<ApiReg027ResponseOk, Error>({
+    ...options,
     queryKey: [apiReg027.url()],
     queryFn: async (): Promise<ApiReg027ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiReg027.url(), {});

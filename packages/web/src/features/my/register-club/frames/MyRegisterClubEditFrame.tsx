@@ -20,11 +20,13 @@ import usePutClubRegistration from "@sparcs-clubs/web/features/my/services/usePu
 import ActivityReportFrame from "@sparcs-clubs/web/features/register-club/components/activity-report/ActivityReportFrame";
 import AdvancedInformFrame from "@sparcs-clubs/web/features/register-club/components/advanced-info/AdvancedInformFrame";
 import BasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/BasicInformFrame";
-import ProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/ProvisionalBasicInformFrame";
+import NewProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/NewProvisionalBasicInformFrame";
+import ReProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/ReProvisionalBasicInformFrame";
 import ClubRulesFrame from "@sparcs-clubs/web/features/register-club/components/compliance/ClubRulesFrame";
 import { registerClubDeadlineInfoText } from "@sparcs-clubs/web/features/register-club/constants";
 import { RegisterClubModel } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import computeErrorMessage from "@sparcs-clubs/web/features/register-club/utils/computeErrorMessage";
+import { getRegistrationErrorMessage } from "@sparcs-clubs/web/features/register-club/utils/getRegistrationErrorMessage";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
 interface RegisterClubMainFrameProps {
@@ -57,13 +59,14 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     mode: "all",
     defaultValues: {
       ...initialData,
+      clubNameKr: initialData?.newClubNameKr || initialData?.clubNameKr,
+      clubNameEn: initialData?.newClubNameEn || initialData?.clubNameEn,
       phoneNumber: initialData?.representative.phoneNumber,
     },
   });
 
   const {
     watch,
-    setValue,
     handleSubmit,
     formState: { isValid },
   } = formCtx;
@@ -86,14 +89,24 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     [formData, isAgreed],
   );
 
-  const { mutate, isSuccess } = usePutClubRegistration();
+  const {
+    mutate,
+    isSuccess,
+    isPending,
+    error: registrationError,
+  } = usePutClubRegistration();
 
   const type =
     initialData?.registrationTypeEnumId ?? RegistrationTypeEnum.NewProvisional;
 
-  const isProvisionalClub =
-    type === RegistrationTypeEnum.NewProvisional ||
-    type === RegistrationTypeEnum.ReProvisional;
+  const existingClub = initialData?.clubId
+    ? {
+        id: initialData.clubId,
+        clubNameKr: initialData.clubNameKr,
+        clubNameEn: initialData.clubNameEn,
+        professor: initialData.professor,
+      }
+    : undefined;
 
   const submitHandler = useCallback(
     (data: RegisterClubModel) => {
@@ -101,13 +114,15 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
         requestParam: { applyId },
         body: {
           ...data,
+          registrationTypeEnumId: type,
+          clubId: initialData?.clubId,
           clubRuleFileId: data.clubRuleFile?.id,
           activityPlanFileId: data.activityPlanFile?.id,
           externalInstructionFileId: data.externalInstructionFile?.id,
         },
       });
     },
-    [mutate, applyId],
+    [mutate, applyId, type, initialData?.clubId],
   );
 
   useEffect(() => {
@@ -126,28 +141,6 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
   } = useGetSemesterNow();
 
   if (!initialData) return null;
-
-  useEffect(() => {
-    // 현재 신청 할 때엔 clubName만 사용하고 상세조회로 받을 때엔 clubName, newClubName 나눠서 받아서 야매로 처리함
-    // hook form에 동아리명, 신규 동아리명 모두 clubName으로 되어 있어서 발생한 문제
-    // 프론트에서 정의한 타입 RegisterClubModel에 newClubName 을 추가하든, 신청 api에서 두개 나눠서 보내도록 변경하든 해야 함
-    // 첫번째 조건: 신규가등록일 때 데이터가 newClubName으로 옴
-    // 두번째 조건: 그 외의 타입에서 만약 동아리명 변경 체크박스를 선택한 경우(newClubName이 존재할 경우)
-    if (
-      (initialData &&
-        registrationTypeEnumId === RegistrationTypeEnum.NewProvisional &&
-        initialData.clubNameKr == null) ||
-      (initialData.newClubNameKr !== null &&
-        initialData.newClubNameKr.length > 0)
-    ) {
-      setValue("clubNameKr", initialData.newClubNameKr);
-      setValue("clubNameEn", initialData.newClubNameEn);
-    }
-  }, [
-    initialData.clubNameKr,
-    initialData.newClubNameKr,
-    registrationTypeEnumId,
-  ]);
 
   return (
     <FormProvider {...formCtx}>
@@ -175,19 +168,32 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               </Typography>
             </WarningInfo>
           </FlexWrapper>
-          {isProvisionalClub ? (
-            <ProvisionalBasicInformFrame
+          {type === RegistrationTypeEnum.NewProvisional && (
+            <NewProvisionalBasicInformFrame
               isInitialCheckedProfessor={initialData.professor != null}
-              editMode
               profile={{
                 name: initialData.representative.name,
                 phoneNumber: initialData.representative.phoneNumber,
               }}
             />
-          ) : (
+          )}
+          {type === RegistrationTypeEnum.ReProvisional && (
+            <ReProvisionalBasicInformFrame
+              isInitialCheckedProfessor={initialData.professor != null}
+              editMode
+              existingClub={existingClub}
+              profile={{
+                name: initialData.representative.name,
+                phoneNumber: initialData.representative.phoneNumber,
+              }}
+            />
+          )}
+          {(type === RegistrationTypeEnum.Renewal ||
+            type === RegistrationTypeEnum.Promotional) && (
             <BasicInformFrame
               type={type}
               editMode
+              existingClub={existingClub}
               profile={{
                 name: initialData.representative.name,
                 phoneNumber: initialData.representative.phoneNumber,
@@ -213,6 +219,11 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
             isAgreed={isAgreed}
             setIsAgreed={setIsAgreed}
           />
+          {registrationError && (
+            <Typography color="RED.600" role="alert">
+              {getRegistrationErrorMessage(registrationError)}
+            </Typography>
+          )}
           <ButtonWrapper>
             <Button
               type="outlined"
@@ -233,12 +244,16 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               <Button
                 buttonType="submit"
                 type={
-                  isFormValid && isAgreed && errorMessage === ""
+                  isFormValid &&
+                  isAgreed &&
+                  errorMessage === "" &&
+                  !isPending &&
+                  !isSuccess
                     ? "default"
                     : "disabled"
                 }
               >
-                저장
+                {isPending ? "저장 중" : "저장"}
               </Button>
             </FlexWrapper>
           </ButtonWrapper>

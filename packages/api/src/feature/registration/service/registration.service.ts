@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { ISemester } from "@clubs/domain/semester/semester";
@@ -51,6 +57,7 @@ import { ApiReg025ResponseOk } from "@clubs/interface/api/registration/endpoint/
 import { ApiReg026ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg026";
 import { ApiReg027ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg027";
 import { ApiReg028ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg028";
+import { RegistrationErrorCode } from "@clubs/interface/api/registration/type/registration-error";
 import { IStudent } from "@clubs/interface/api/user/type/user.type";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
@@ -75,6 +82,7 @@ import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { ClubRegistrationApprovalRepository } from "../repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
+import { isClubNameConflict } from "../util/registration-error";
 import {
   getMemberRegistrationStatistics,
   isUndergraduateMemberRegistration,
@@ -158,6 +166,7 @@ export class RegistrationService {
   /**
    * @description 동아리 대표자인지 검증하는 로직은 repository쪽에서 진행됩니다.
    */
+  @Transactional()
   async postStudentRegistrationClubRegistration(
     studentId: number,
     body: ApiReg001RequestBody,
@@ -186,7 +195,10 @@ export class RegistrationService {
         );
       if (clubRegistrationList.length !== 0) {
         throw new HttpException(
-          "your club request already exists",
+          {
+            code: RegistrationErrorCode.ClubAlreadyApplied,
+            message: "이번 학기에 해당 동아리의 등록 신청이 이미 있습니다.",
+          },
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -198,7 +210,10 @@ export class RegistrationService {
       );
     if (myRegistrationList.length !== 0) {
       throw new HttpException(
-        "your request already exists",
+        {
+          code: RegistrationErrorCode.StudentAlreadyApplied,
+          message: "이번 학기에 제출한 동아리 등록 신청이 이미 있습니다.",
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -218,16 +233,15 @@ export class RegistrationService {
     const validateDivisionId =
       await this.divisionPublicService.findDivisionById(body.divisionId);
     if (!validateDivisionId)
-      throw new HttpException("division not found", HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.InvalidRequest,
+          message: "선택한 분과를 찾을 수 없습니다.",
+        },
+        HttpStatus.NOT_FOUND,
+      );
     // - 제출한 file들이 유효한 fileId인지 검사합니다.
-    const fileIds = [
-      body.activityPlanFileId ? "activityPlanFileId" : null,
-      body.clubRuleFileId ? "clubRuleFileId" : null,
-      body.externalInstructionFileId ? "externalInstructionFileId" : null,
-    ].filter(Boolean);
-    await Promise.all(
-      fileIds.map(key => this.filePublicService.getFileInfoById(body[key])),
-    );
+    await this.validateRegistrationFiles(body);
     // - 정동아리 재등록을 제외하고 활동계획서를 받아야합니다.
     await this.validateRegistration(
       studentId,
@@ -235,12 +249,24 @@ export class RegistrationService {
       body.registrationTypeEnumId,
     );
 
-    const result = await this.clubRegistrationRepository.createRegistration(
-      studentId,
-      semesterId,
-      transformedBody,
-    );
-    return result;
+    try {
+      return await this.clubRegistrationRepository.createRegistration(
+        studentId,
+        semesterId,
+        transformedBody,
+      );
+    } catch (error) {
+      if (isClubNameConflict(error)) {
+        throw new HttpException(
+          {
+            code: RegistrationErrorCode.ClubNameAlreadyExists,
+            message: "같은 국문 또는 영문 이름의 동아리가 이미 있습니다.",
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+      throw error;
+    }
   }
 
   // 정동아리 재등록 신청
@@ -447,19 +473,51 @@ export class RegistrationService {
     };
   }
 
+  private async validateRegistrationFiles(
+    body: Pick<
+      ApiReg001RequestBody,
+      "activityPlanFileId" | "clubRuleFileId" | "externalInstructionFileId"
+    >,
+  ) {
+    const fileIds = [
+      body.activityPlanFileId,
+      body.clubRuleFileId,
+      body.externalInstructionFileId,
+    ].filter(Boolean);
+    try {
+      await Promise.all(
+        fileIds.map(id => this.filePublicService.getFileInfoById(id)),
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new HttpException(
+          {
+            code: RegistrationErrorCode.InvalidAttachment,
+            message: "첨부파일을 찾을 수 없습니다. 파일을 다시 첨부해주세요.",
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      throw error;
+    }
+  }
+
   /**
-   * @description REG-001과 REG-009에서 공통적으로 검사하는 요소들에 대한 검사 메소드입니다.
+   * @description 신규 등록 신청 유형에 따른 동아리 자격을 검사합니다.
    */
   private async validateRegistration(
     studentId: number,
-    clubId: number | undefined,
+    clubId: number | null | undefined,
     registrationTypeEnumId: number,
   ) {
     if (registrationTypeEnumId === RegistrationTypeEnum.NewProvisional) {
-      // 가동아리 신규 신청 시 clubId는 undefined여야 함
-      if (clubId !== undefined) {
+      // 가동아리 신규 신청에는 기존 동아리 ID를 받지 않습니다.
+      if (clubId != null) {
         throw new HttpException(
-          "[postRegistration] invalid club id. club id should be undefined",
+          {
+            code: RegistrationErrorCode.InvalidClub,
+            message: "신규 가등록 신청에는 기존 동아리를 선택할 수 없습니다.",
+          },
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -472,6 +530,22 @@ export class RegistrationService {
       //   );
       // }
       switch (registrationTypeEnumId) {
+        case RegistrationTypeEnum.ReProvisional: {
+          const { club } =
+            await this.getStudentRegistrationsAvailableClub(studentId);
+          const availableTypes = club?.availableRegistrationTypeEnums ?? [];
+          if (!availableTypes.includes(RegistrationTypeEnum.ReProvisional)) {
+            throw new HttpException(
+              {
+                code: RegistrationErrorCode.NotEligible,
+                message:
+                  "직전 학기의 동아리 등록 기록이 있어야 가등록(재)을 신청할 수 있습니다.",
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          break;
+        }
         case RegistrationTypeEnum.Renewal: // 정동아리 재등록 신청
           if (
             !(
@@ -482,7 +556,11 @@ export class RegistrationService {
           ) {
             // clubId가 목록에 포함되지 않았을 때의 처리
             throw new HttpException(
-              "The clubId is not eligible for promotional registration",
+              {
+                code: RegistrationErrorCode.NotEligible,
+                message:
+                  "해당 동아리는 선택한 등록 유형의 신청 자격을 충족하지 않습니다.",
+              },
               HttpStatus.BAD_REQUEST,
             );
           }
@@ -497,7 +575,11 @@ export class RegistrationService {
           ) {
             // clubId가 목록에 포함되지 않았을 때의 처리
             throw new HttpException(
-              "The clubId is not eligible for promotional registration",
+              {
+                code: RegistrationErrorCode.NotEligible,
+                message:
+                  "해당 동아리는 선택한 등록 유형의 신청 자격을 충족하지 않습니다.",
+              },
               HttpStatus.BAD_REQUEST,
             );
           }
@@ -515,7 +597,10 @@ export class RegistrationService {
     const clubList = await this.clubPublicService.getClubByClubId({ clubId });
     if (clubList.length !== 1) {
       throw new HttpException(
-        "[postRegistration] club doesn't exist",
+        {
+          code: RegistrationErrorCode.InvalidClub,
+          message: "신청할 동아리를 찾을 수 없습니다.",
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -545,6 +630,7 @@ export class RegistrationService {
   /**
    * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
    */
+  @Transactional()
   async putStudentRegistrationsClubRegistration(
     studentId: number,
     applyId: number,
@@ -554,16 +640,15 @@ export class RegistrationService {
     const validateDivisionId =
       await this.divisionPublicService.findDivisionById(body.divisionId);
     if (!validateDivisionId)
-      throw new HttpException("division not found", HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.InvalidRequest,
+          message: "선택한 분과를 찾을 수 없습니다.",
+        },
+        HttpStatus.NOT_FOUND,
+      );
     // 각각의 fileid들이 실제로 존재하는지 확인
-    const fileIds = [
-      body.activityPlanFileId ? "activityPlanFileId" : null,
-      body.clubRuleFileId ? "clubRuleFileId" : null,
-      body.externalInstructionFileId ? "externalInstructionFileId" : null,
-    ].filter(Boolean);
-    await Promise.all(
-      fileIds.map(key => this.filePublicService.getFileInfoById(body[key])),
-    );
+    await this.validateRegistrationFiles(body);
     // 동아리 등록 기간인지 확인
     await this.registrationPublicService.checkDeadline({
       enums: [

@@ -17,7 +17,10 @@ import {
 } from "@sparcs-clubs/web/features/register-club/constants";
 import useGetClubsForPromotional from "@sparcs-clubs/web/features/register-club/services/useGetClubsForPromotional";
 import useGetClubsForRenewal from "@sparcs-clubs/web/features/register-club/services/useGetClubsForRenewal";
-import { RegisterClubModel } from "@sparcs-clubs/web/features/register-club/types/registerClub";
+import {
+  ClubRegistrationInfo,
+  RegisterClubModel,
+} from "@sparcs-clubs/web/features/register-club/types/registerClub";
 
 import ClubNameField from "./_atomic/ClubNameField";
 import DivisionSelect from "./_atomic/DivisionSelect";
@@ -27,17 +30,21 @@ import ProfessorInformFrame from "./ProfessorInformFrame";
 interface BasicInformSectionProps {
   type: RegistrationTypeEnum;
   editMode?: boolean;
+  existingClub?: ClubRegistrationInfo;
   profile?: { name: string; phoneNumber?: string };
 }
 
 const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
   type,
   editMode = false,
+  existingClub,
   profile = undefined,
 }) => {
   const isRenewal = type === RegistrationTypeEnum.Renewal;
 
-  const [isCheckedProfessor, setIsCheckedProfessor] = useState(true);
+  const [isCheckedProfessor, setIsCheckedProfessor] = useState(
+    !editMode || !isRenewal || existingClub?.professor != null,
+  );
 
   const { watch, control, setValue } = useFormContext<RegisterClubModel>();
   const clubId = watch("clubId");
@@ -56,24 +63,31 @@ const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
 
   const isLoading = isRenewal ? isLoadingRenewal : isLoadingPromotional;
   const isError = isRenewal ? isErrorRenewal : isErrorPromotional;
-  const clubList = isRenewal ? renewalList : promotionalList;
+  const availableClubList = isRenewal ? renewalList : promotionalList;
+  const clubList = editMode
+    ? { clubs: existingClub ? [existingClub] : [] }
+    : availableClubList;
 
   const professorInfo = useMemo(() => {
+    if (editMode) return existingClub?.professor ?? null;
     if (clubId === null) return undefined;
     return clubList?.clubs.find(club => club.id === clubId)?.professor;
-  }, [clubId, clubList]);
+  }, [clubId, clubList, editMode, existingClub]);
 
   useEffect(() => {
-    if (professor) return;
-    if (professorInfo === undefined || !isCheckedProfessor) {
+    if (!isCheckedProfessor) {
       setValue("professor", undefined, { shouldValidate: true });
       return;
     }
+    if (professor || professorInfo == null) return;
     setValue("professor", professorInfo, { shouldValidate: true });
-  }, [professorInfo, isCheckedProfessor]);
+  }, [professorInfo, isCheckedProfessor, setValue]);
 
   return (
-    <AsyncBoundary isLoading={isLoading} isError={isError}>
+    <AsyncBoundary
+      isLoading={!editMode && isLoading}
+      isError={!editMode && isError}
+    >
       <FlexWrapper direction="column" gap={40}>
         <SectionTitle>기본 정보</SectionTitle>
 

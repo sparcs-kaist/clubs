@@ -127,6 +127,7 @@ import {
 } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
 import logger from "@sparcs-clubs/api/common/util/logger";
 
+import { RegistrationRequestPipe } from "../pipe/registration-request.pipe";
 import { RegistrationService } from "../service/registration.service";
 
 @Controller()
@@ -135,7 +136,7 @@ export class RegistrationController {
 
   @Student()
   @Post("/student/registrations/club-registrations/club-registration")
-  @UsePipes(new ZodPipe(apiReg001))
+  @UsePipes(new RegistrationRequestPipe(apiReg001))
   async postStudentRegistrationClubRegistration(
     @GetStudent() user: GetStudent,
     @Body() body: ApiReg001RequestBody,
@@ -195,7 +196,7 @@ export class RegistrationController {
 
   @Student()
   @Put("/student/registrations/club-registrations/club-registration/:applyId")
-  @UsePipes(new ZodPipe(apiReg009))
+  @UsePipes(new RegistrationRequestPipe(apiReg009))
   async putStudentRegistrationsClubRegistration(
     @GetStudent() user: GetStudent,
     @Param() { applyId }: ApiReg009RequestParam,

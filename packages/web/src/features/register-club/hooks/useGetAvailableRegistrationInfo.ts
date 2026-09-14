@@ -1,18 +1,18 @@
 import useGetRegistrationAvailableClubs from "../services/useGetRegistrationAvailableClubs";
 
 const useGetAvailableRegistrationInfo = () => {
-  const { data, isLoading, isError } = useGetRegistrationAvailableClubs();
+  const query = useGetRegistrationAvailableClubs();
+  const { data } = query;
 
   return {
+    ...query,
     data: {
       ...data,
-      noManageClub: data?.club == null,
+      noManageClub: data?.club === null,
       haveAvailableRegistration:
         data?.club && data.club.availableRegistrationTypeEnums.length > 0,
       availableRegistrations: data?.club?.availableRegistrationTypeEnums ?? [],
     },
-    isLoading,
-    isError,
   };
 };
 
