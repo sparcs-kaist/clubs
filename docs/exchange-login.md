@@ -64,7 +64,10 @@
 사용자의 이후 모든 행동을 기록하는 기능은 아니다. 토큰 원문은 넣지 않는다.
 기록과 대상 refresh token 저장은 하나의 트랜잭션으로 처리한다.
 
-배포 전에 `auth_exchange_login_log`를 생성하는 DDL을 별도로 적용해야 한다.
+배포 전에 대상 DB를 선택한 MySQL 세션에서
+[TU-492-exchange-login.sql](ddl/TU-492-exchange-login.sql)을 실행한다.
+실행 후 `SHOW CREATE TABLE auth_exchange_login_log;`로 정의를 확인한다.
+이미 테이블이 있으면 오류로 중단하므로, 정의를 확인한 뒤 적용 여부를 판단한다.
 이번 배포의 DB 변경 범위는 이 테이블과 두 인덱스 추가뿐이다.
 전체 Prisma 스키마를 `db push`로 동기화하는 방식은 사용하지 않는다.
 
