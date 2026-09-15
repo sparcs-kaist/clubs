@@ -15,30 +15,35 @@ describe("student profile phone numbers", () => {
     jest.resetAllMocks();
   });
 
-  it.each(["undergraduate", "master", "doctor", "masterDoctor"])(
-    "reads and updates the student phone for %s",
-    async profile => {
-      users.getStudentPhoneNumberByUserId.mockResolvedValue({ phoneNumber });
-      await expect(
-        controller.getPhoneNumber(user, { profile }),
-      ).resolves.toEqual({
+  it.each([
+    "undergraduate",
+    "master",
+    "doctor",
+    "masterDoctorDoctor",
+    "masterDoctorMaster",
+    "allPrograms",
+    "auditor",
+  ])("reads and updates the student phone for %s", async profile => {
+    users.getStudentPhoneNumberByUserId.mockResolvedValue({ phoneNumber });
+    await expect(controller.getPhoneNumber(user, { profile })).resolves.toEqual(
+      {
         phoneNumber,
-      });
-      expect(users.getStudentPhoneNumberByUserId).toHaveBeenCalledWith(10);
+      },
+    );
+    expect(users.getStudentPhoneNumberByUserId).toHaveBeenCalledWith(10);
 
-      await controller.updatePhoneNumber(user, { profile, phoneNumber });
-      expect(publicUsers.updateStudentPhoneNumber).toHaveBeenCalledWith(
-        10,
-        phoneNumber,
-      );
-    },
-  );
+    await controller.updatePhoneNumber(user, { profile, phoneNumber });
+    expect(publicUsers.updateStudentPhoneNumber).toHaveBeenCalledWith(
+      10,
+      phoneNumber,
+    );
+  });
 
   it("fills a missing combined-degree student phone from the user record", async () => {
     users.getStudentPhoneNumberByUserId.mockResolvedValue(null);
     users.getUserPhoneNumber.mockResolvedValue({ phoneNumber });
     await expect(
-      controller.getPhoneNumber(user, { profile: "masterDoctor" }),
+      controller.getPhoneNumber(user, { profile: "masterDoctorDoctor" }),
     ).resolves.toEqual({ phoneNumber });
     expect(publicUsers.updateStudentPhoneNumber).toHaveBeenCalledWith(
       10,

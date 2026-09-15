@@ -161,23 +161,37 @@ describe("SSO failure logging with MySQL", () => {
     expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
   });
 
-  it.each(["first login", "existing degree"])(
-    "preserves the combined master's-doctoral degree through %s and token refresh",
-    async mode => {
-      const combinedProfile = {
+  it.each([
+    ["0", 1, "undergraduate", "first login"],
+    ["1", 2, "master", "first login"],
+    ["3", 2, "master", "first login"],
+    ["4", 2, "master", "first login"],
+    ["5", 3, "doctor", "first login"],
+    ["7", 4, "masterDoctorDoctor", "first login"],
+    ["8", 5, "masterDoctorMaster", "first login"],
+    ["9", 6, "allPrograms", "first login"],
+    ["10", 7, "auditor", "first login"],
+    ["7", 4, "masterDoctorDoctor", "existing degree"],
+    ["8", 5, "masterDoctorMaster", "existing degree"],
+    ["9", 6, "allPrograms", "existing degree"],
+    ["10", 7, "auditor", "existing degree"],
+  ] as const)(
+    "preserves SSO %s as degree %s / %s through %s and token refresh",
+    async (progCode, studentEnum, profileKey, mode) => {
+      const studentProfile = {
         ...profile(),
         kaist_v2_info: {
           ...profile().kaist_v2_info,
           std_no: "20268083",
-          std_prog_code: "7",
+          std_prog_code: progCode,
         },
       };
       if (mode === "existing degree") {
         sso.getUserInfo.mockResolvedValue({
-          ...combinedProfile,
+          ...studentProfile,
           kaist_v2_info: {
-            ...combinedProfile.kaist_v2_info,
-            std_prog_code: "2",
+            ...studentProfile.kaist_v2_info,
+            std_prog_code: "5",
           },
         });
         await signIn();
@@ -185,27 +199,25 @@ describe("SSO failure logging with MySQL", () => {
           studentEnum: 3,
         });
       }
-      sso.getUserInfo.mockResolvedValue(combinedProfile);
+      sso.getUserInfo.mockResolvedValue(studentProfile);
       await signIn();
       const user = await prisma.user.findFirstOrThrow();
       const student = await prisma.student.findFirstOrThrow();
       expect(await prisma.studentT.findFirstOrThrow()).toMatchObject({
         studentId: student.id,
-        studentEnum: 4,
+        studentEnum,
       });
       const identity = await module
         .get(UserPublicService)
         .findLoginIdentity(user.id);
       expect(identity).toMatchObject({
-        masterDoctor: { id: student.id, number: 20268083 },
+        [profileKey]: { id: student.id, number: 20268083 },
       });
-      expect(identity).not.toHaveProperty("doctor");
-      expect(identity).not.toHaveProperty("undergraduate");
       const refreshed = await module.get(AuthService).postAuthRefresh(identity);
-      expect(Object.keys(refreshed.accessToken)).toEqual(["masterDoctor"]);
+      expect(Object.keys(refreshed.accessToken)).toEqual([profileKey]);
       expect(jwt.sign).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          type: "masterDoctor",
+          type: profileKey,
           studentId: student.id,
           studentNumber: 20268083,
         }),

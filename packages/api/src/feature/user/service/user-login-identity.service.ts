@@ -21,7 +21,13 @@ import {
 
 type StudentProfile = Pick<
   LoginIdentity,
-  "undergraduate" | "master" | "doctor" | "masterDoctor"
+  | "undergraduate"
+  | "master"
+  | "doctor"
+  | "masterDoctorDoctor"
+  | "masterDoctorMaster"
+  | "allPrograms"
+  | "auditor"
 >;
 
 type StudentProfileKey = keyof StudentProfile;
@@ -30,7 +36,10 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [1, "undergraduate"],
   [2, "master"],
   [3, "doctor"],
-  [4, "masterDoctor"],
+  [4, "masterDoctorDoctor"],
+  [5, "masterDoctorMaster"],
+  [6, "allPrograms"],
+  [7, "auditor"],
 ]);
 
 const getStudentNumberSuffix = (studentNumber: string | number) =>
@@ -452,23 +461,26 @@ export class UserLoginIdentityService {
   }
 
   private getStudentEnumFromProgCodeV2(progCodeV2: string | null) {
-    if (progCodeV2 === "0") {
-      return 1;
+    switch (progCodeV2) {
+      case "0":
+        return 1;
+      case "1":
+      case "3":
+      case "4":
+        return 2;
+      case "5":
+        return 3;
+      case "7":
+        return 4;
+      case "8":
+        return 5;
+      case "9":
+        return 6;
+      case "10":
+        return 7;
+      default:
+        return undefined;
     }
-
-    if (progCodeV2 === "1") {
-      return 2;
-    }
-
-    if (progCodeV2 === "2") {
-      return 3;
-    }
-
-    if (progCodeV2 === "7") {
-      return 4;
-    }
-
-    return undefined;
   }
 
   private getFallbackStudentEnumFromStudentNumber(

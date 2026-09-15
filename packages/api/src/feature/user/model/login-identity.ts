@@ -6,7 +6,10 @@ export interface LoginIdentity {
   undergraduate?: { id: number; number: number };
   master?: { id: number; number: number };
   doctor?: { id: number; number: number };
-  masterDoctor?: { id: number; number: number };
+  masterDoctorDoctor?: { id: number; number: number };
+  masterDoctorMaster?: { id: number; number: number };
+  allPrograms?: { id: number; number: number };
+  auditor?: { id: number; number: number };
   executive?: { id: number; studentId: number };
   professor?: { id: number; email?: string };
   employee?: { id: number; email?: string };

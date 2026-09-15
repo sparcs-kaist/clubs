@@ -11,8 +11,14 @@ export const getUserType = (type: UserTypeEnum | string) => {
       return "석사과정";
     case UserTypeEnum.Doctor:
       return "박사과정";
-    case UserTypeEnum.MasterDoctor:
-      return "석박통합과정";
+    case UserTypeEnum.MasterDoctorDoctor:
+      return "석박통합과정(박사)";
+    case UserTypeEnum.MasterDoctorMaster:
+      return "석박통합과정(석사)";
+    case UserTypeEnum.AllPrograms:
+      return "과정전체";
+    case UserTypeEnum.Auditor:
+      return "청강생";
     case UserTypeEnum.Executive:
       return "집행부원";
     case UserTypeEnum.Professor:

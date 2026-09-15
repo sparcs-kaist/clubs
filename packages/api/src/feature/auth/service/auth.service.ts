@@ -424,35 +424,29 @@ export class AuthService {
     const exchangeClaims = exchangeActor ? { exchangeActor } : {};
     const accessToken: ApiAut002ResponseCreated["accessToken"] = {};
 
-    if (user.undergraduate) {
-      accessToken.undergraduate = this.jwtService.sign(
-        {
-          id: user.id,
-          sid: user.sid,
-          name: user.name,
-          email: user.email,
-          type: "undergraduate",
-          studentId: user.undergraduate.id,
-          studentNumber: user.undergraduate.number,
-          ...exchangeClaims,
-        },
-        {
-          secret: this.appConfigService.accessTokenSecretKey,
-          expiresIn: this.appConfigService.accessTokenExpiresIn,
-        },
-      );
-    }
+    (
+      [
+        "undergraduate",
+        "master",
+        "doctor",
+        "masterDoctorDoctor",
+        "masterDoctorMaster",
+        "allPrograms",
+        "auditor",
+      ] as const
+    ).forEach(type => {
+      const student = user[type];
+      if (!student) return;
 
-    if (user.master) {
-      accessToken.master = this.jwtService.sign(
+      accessToken[type] = this.jwtService.sign(
         {
           id: user.id,
           sid: user.sid,
           name: user.name,
           email: user.email,
-          type: "master",
-          studentId: user.master.id,
-          studentNumber: user.master.number,
+          type,
+          studentId: student.id,
+          studentNumber: student.number,
           ...exchangeClaims,
         },
         {
@@ -460,45 +454,7 @@ export class AuthService {
           expiresIn: this.appConfigService.accessTokenExpiresIn,
         },
       );
-    }
-
-    if (user.doctor) {
-      accessToken.doctor = this.jwtService.sign(
-        {
-          id: user.id,
-          sid: user.sid,
-          name: user.name,
-          email: user.email,
-          type: "doctor",
-          studentId: user.doctor.id,
-          studentNumber: user.doctor.number,
-          ...exchangeClaims,
-        },
-        {
-          secret: this.appConfigService.accessTokenSecretKey,
-          expiresIn: this.appConfigService.accessTokenExpiresIn,
-        },
-      );
-    }
-
-    if (user.masterDoctor) {
-      accessToken.masterDoctor = this.jwtService.sign(
-        {
-          id: user.id,
-          sid: user.sid,
-          name: user.name,
-          email: user.email,
-          type: "masterDoctor",
-          studentId: user.masterDoctor.id,
-          studentNumber: user.masterDoctor.number,
-          ...exchangeClaims,
-        },
-        {
-          secret: this.appConfigService.accessTokenSecretKey,
-          expiresIn: this.appConfigService.accessTokenExpiresIn,
-        },
-      );
-    }
+    });
 
     if (user.executive) {
       accessToken.executive = this.jwtService.sign(
