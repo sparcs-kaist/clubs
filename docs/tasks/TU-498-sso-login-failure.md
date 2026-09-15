@@ -98,6 +98,7 @@ LIMIT 50;
 - 전체 변경 가드, MC/DC, lint, API 및 의존 패키지 빌드.
 
 통합 테스트는 `TEST_DATABASE_URL`로 지정한 테스트 DB에서만 실행한다.
+각 suite가 같은 DB를 초기화하므로 Jest worker는 하나로 제한한다.
 
 ```sh
 pnpm build:api
