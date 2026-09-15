@@ -6,7 +6,6 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
-import { AuthRepository } from "../repository/auth.repository";
 import { AuthExchangeLoginRepository } from "../repository/exchange-login/auth-exchange-login.repository";
 import { AuthService } from "./auth.service";
 import { ExchangeLoginService } from "./exchange-login.service";
@@ -63,14 +62,11 @@ describe("exchange login transaction", () => {
         {
           provide: UserPublicService,
           useValue: {
+            findLoginIdentity: async () => target,
             checkCurrentExecutiveById: jest.fn(),
             getExchangeLoginUserById: async (id: number) =>
               id === 1 ? actor : target,
           },
-        },
-        {
-          provide: AuthRepository,
-          useValue: { findUserById: async () => target },
         },
         {
           provide: AuthService,

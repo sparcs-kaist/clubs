@@ -225,8 +225,16 @@ function findRepositoryDomainGuardNodes({
   const boundary = findNearestBoundary(filePath, boundaryIndex);
   const aliasIndex = buildPrismaAliasIndex(sourceFile);
   const nodes = [];
-  const record = (node, kind, detected, reason) => {
-    nodes.push(makeNode(sourceFile, node, kind, detected, reason));
+  const record = (node, kind, detected, reason, queryNode) => {
+    const result = makeNode(sourceFile, node, kind, detected, reason);
+    if (queryNode) {
+      const query = makeNode(sourceFile, queryNode, kind, detected, reason);
+      result.queryRange = {
+        startLine: query.startLine,
+        endLine: query.endLine,
+      };
+    }
+    nodes.push(result);
   };
 
   const visit = node => {
@@ -256,6 +264,7 @@ function findRepositoryDomainGuardNodes({
             rootModelDelegate: call.modelDelegate,
             ownedPrismaModels: boundary.ownedPrismaModels,
             relationFieldsByDelegate: schema.relationFieldsByDelegate,
+            listRelationFieldsByDelegate: schema.listRelationFieldsByDelegate,
             sourceFile,
           })) {
             record(
@@ -263,6 +272,7 @@ function findRepositoryDomainGuardNodes({
               "cross-boundary-relation-traversal",
               violation.detected,
               `${violation.detected} targets ${violation.targetDelegate}, which is outside ${boundary.filePath}`,
+              node,
             );
           }
         }
@@ -285,129 +295,132 @@ function findRelationTraversalViolations({
   rootModelDelegate,
   ownedPrismaModels,
   relationFieldsByDelegate,
-  sourceFile,
+  listRelationFieldsByDelegate,
 }) {
-  const argument = callNode.arguments[0];
-  if (!argument || !ts.isObjectLiteralExpression(argument)) {
-    return [];
-  }
-
   const violations = [];
-  const include = findPropertyAssignment(argument, "include");
-  const select = findPropertyAssignment(argument, "select");
-
-  if (include) {
-    inspectRelationProjection({
-      expression: include.initializer,
-      currentDelegate: rootModelDelegate,
-      ownedPrismaModels,
-      relationFieldsByDelegate,
-      sourceFile,
-      violations,
-    });
-  }
-
-  if (select) {
-    inspectRelationProjection({
-      expression: select.initializer,
-      currentDelegate: rootModelDelegate,
-      ownedPrismaModels,
-      relationFieldsByDelegate,
-      sourceFile,
-      violations,
-    });
-  }
-
+  const visited = new Map();
+  const containers = new Set([
+    "include",
+    "select",
+    "where",
+    "orderBy",
+    "_count",
+    "having",
+    "data",
+    "create",
+    "update",
+    "createMany",
+    "updateMany",
+    "upsert",
+    "connect",
+    "connectOrCreate",
+    "disconnect",
+    "set",
+    "delete",
+    "deleteMany",
+    "some",
+    "every",
+    "none",
+    "is",
+    "isNot",
+    "AND",
+    "OR",
+    "NOT",
+  ]);
+  const inspect = (expression, currentDelegate, countAll = false) => {
+    if (!expression) return;
+    const value = unwrapExpression(expression);
+    const delegates = visited.get(value) ?? new Set();
+    const context = `${currentDelegate}:${countAll}`;
+    if (delegates.has(context)) return;
+    delegates.add(context);
+    visited.set(value, delegates);
+    if (ts.isIdentifier(value)) {
+      inspect(findLocalInitializer(value), currentDelegate, countAll);
+      return;
+    }
+    const relations =
+      relationFieldsByDelegate.get(currentDelegate) ?? new Map();
+    if (countAll && value.kind === ts.SyntaxKind.TrueKeyword) {
+      for (const relation of listRelationFieldsByDelegate.get(
+        currentDelegate,
+      ) ?? []) {
+        const targetDelegate = relations.get(relation);
+        if (!ownedPrismaModels.has(targetDelegate)) {
+          violations.push({
+            node: value,
+            detected: `${currentDelegate}.${relation}`,
+            targetDelegate,
+          });
+        }
+      }
+    }
+    if (ts.isArrayLiteralExpression(value)) {
+      value.elements.forEach(item => inspect(item, currentDelegate));
+      return;
+    }
+    if (!ts.isObjectLiteralExpression(value)) return;
+    for (const property of value.properties) {
+      if (ts.isSpreadAssignment(property)) {
+        inspect(property.expression, currentDelegate);
+        continue;
+      }
+      if (
+        !ts.isPropertyAssignment(property) &&
+        !ts.isShorthandPropertyAssignment(property)
+      )
+        continue;
+      const name = getPropertyNameText(property.name);
+      const initializer = ts.isPropertyAssignment(property)
+        ? property.initializer
+        : property.name;
+      const targetDelegate = relations.get(name);
+      if (targetDelegate) {
+        if (!ownedPrismaModels.has(targetDelegate)) {
+          violations.push({
+            node: property.name,
+            detected: `${currentDelegate}.${name}`,
+            targetDelegate,
+          });
+        } else {
+          inspect(initializer, targetDelegate);
+        }
+      } else if (containers.has(name)) {
+        inspect(initializer, currentDelegate, name === "_count");
+      }
+    }
+  };
+  inspect(callNode.arguments[0], rootModelDelegate);
   return violations;
 }
 
-function inspectRelationProjection({
-  expression,
-  currentDelegate,
-  ownedPrismaModels,
-  relationFieldsByDelegate,
-  sourceFile,
-  violations,
-}) {
-  const objectLiteral = unwrapExpression(expression);
-  if (!ts.isObjectLiteralExpression(objectLiteral)) {
-    return;
-  }
-
-  const relationFields =
-    relationFieldsByDelegate.get(currentDelegate) ?? new Map();
-
-  for (const property of objectLiteral.properties) {
-    if (!ts.isPropertyAssignment(property)) {
-      continue;
+function findLocalInitializer(identifier) {
+  // Resolve literals declared in the same lexical scope; never execute source.
+  for (let scope = identifier.parent; scope; scope = scope.parent) {
+    if (
+      ts.isFunctionLike(scope) &&
+      scope.parameters.some(
+        parameter =>
+          ts.isIdentifier(parameter.name) &&
+          parameter.name.text === identifier.text,
+      )
+    ) {
+      return undefined;
     }
-
-    const propertyName = getPropertyNameText(property.name);
-    const targetDelegate = relationFields.get(propertyName);
-
-    if (!targetDelegate) {
-      continue;
+    if (!ts.isBlock(scope) && !ts.isSourceFile(scope)) continue;
+    for (const statement of scope.statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (
+          ts.isIdentifier(declaration.name) &&
+          declaration.name.text === identifier.text
+        ) {
+          return declaration.initializer;
+        }
+      }
     }
-
-    const detected = `${currentDelegate}.${propertyName}`;
-
-    if (!ownedPrismaModels.has(targetDelegate)) {
-      violations.push({
-        node: property.name,
-        detected,
-        targetDelegate,
-      });
-      continue;
-    }
-
-    inspectNestedProjection({
-      expression: property.initializer,
-      currentDelegate: targetDelegate,
-      ownedPrismaModels,
-      relationFieldsByDelegate,
-      sourceFile,
-      violations,
-    });
   }
-}
-
-function inspectNestedProjection({
-  expression,
-  currentDelegate,
-  ownedPrismaModels,
-  relationFieldsByDelegate,
-  sourceFile,
-  violations,
-}) {
-  const objectLiteral = unwrapExpression(expression);
-  if (!ts.isObjectLiteralExpression(objectLiteral)) {
-    return;
-  }
-
-  const include = findPropertyAssignment(objectLiteral, "include");
-  const select = findPropertyAssignment(objectLiteral, "select");
-
-  if (include) {
-    inspectRelationProjection({
-      expression: include.initializer,
-      currentDelegate,
-      ownedPrismaModels,
-      relationFieldsByDelegate,
-      sourceFile,
-      violations,
-    });
-  }
-
-  if (select) {
-    inspectRelationProjection({
-      expression: select.initializer,
-      currentDelegate,
-      ownedPrismaModels,
-      relationFieldsByDelegate,
-      sourceFile,
-      violations,
-    });
-  }
+  return undefined;
 }
 
 function readRepositoryBoundaryIndex({ repoRoot, sourceRoot, schema }) {
@@ -453,12 +466,15 @@ function readRepositoryBoundaryIndex({ repoRoot, sourceRoot, schema }) {
         ...result.boundary,
         directory: toPosixPath(path.dirname(filePath)),
         ownedPrismaModels: new Set(result.boundary.ownedPrismaModels),
+        exportedPrismaModels: new Set(result.boundary.exportedPrismaModels),
+        importedModels: new Set(),
       });
     }
   }
 
   violations.push(...validateBoundaryModelsExist({ boundaries, schema }));
   violations.push(...validateBoundaryModelUniqueness(boundaries));
+  violations.push(...validateBoundaryImports(boundaries));
   violations.push(
     ...validateBoundaryRelationsStayInside({ boundaries, schema }),
   );
@@ -540,11 +556,16 @@ function parseRepositoryBoundary({ sourceText, filePath }) {
   }
 
   const properties = initializer.properties.filter(ts.isPropertyAssignment);
+  const allowedFields = new Set([
+    "ownedPrismaModels",
+    "exportedPrismaModels",
+    "importedPrismaModels",
+  ]);
   const ownedProperty = properties.find(
     property => getPropertyNameText(property.name) === "ownedPrismaModels",
   );
   const extraProperty = properties.find(
-    property => getPropertyNameText(property.name) !== "ownedPrismaModels",
+    property => !allowedFields.has(getPropertyNameText(property.name)),
   );
 
   if (extraProperty) {
@@ -554,7 +575,33 @@ function parseRepositoryBoundary({ sourceText, filePath }) {
         extraProperty.name,
         "invalid-repository-boundary",
         getPropertyNameText(extraProperty.name),
-        "repositoryBoundary v1 only supports ownedPrismaModels",
+        "repositoryBoundary only supports ownedPrismaModels, exportedPrismaModels and importedPrismaModels",
+      ),
+    );
+  }
+
+  if (properties.length !== initializer.properties.length) {
+    violations.push(
+      makeNode(
+        sourceFile,
+        initializer,
+        "invalid-repository-boundary",
+        "repositoryBoundary",
+        "repositoryBoundary fields must be explicit property assignments",
+      ),
+    );
+  }
+  if (
+    new Set(properties.map(property => getPropertyNameText(property.name)))
+      .size !== properties.length
+  ) {
+    violations.push(
+      makeNode(
+        sourceFile,
+        initializer,
+        "invalid-repository-boundary",
+        "repositoryBoundary",
+        "repositoryBoundary fields must not be duplicated",
       ),
     );
   }
@@ -576,49 +623,113 @@ function parseRepositoryBoundary({ sourceText, filePath }) {
     };
   }
 
-  const ownedInitializer = unwrapExpression(ownedProperty.initializer);
-  if (!ts.isArrayLiteralExpression(ownedInitializer)) {
+  const invalid = (node, reason) =>
     violations.push(
       makeNode(
         sourceFile,
-        ownedProperty.name,
+        node,
         "invalid-repository-boundary",
-        "ownedPrismaModels",
-        "ownedPrismaModels must be a static string literal array",
+        node.getText(sourceFile),
+        reason,
       ),
     );
-    return {
-      boundary: null,
-      violations,
-      parseError: null,
-    };
-  }
-
-  const ownedPrismaModels = [];
-  for (const element of ownedInitializer.elements) {
-    if (
-      !ts.isStringLiteral(element) &&
-      !ts.isNoSubstitutionTemplateLiteral(element)
-    ) {
-      violations.push(
-        makeNode(
-          sourceFile,
-          element,
-          "invalid-repository-boundary",
-          element.getText(sourceFile),
-          "ownedPrismaModels must contain only string literals",
-        ),
+  const readModels = (expression, label) => {
+    const value = unwrapExpression(expression);
+    if (!value || !ts.isArrayLiteralExpression(value)) {
+      invalid(
+        expression ?? initializer,
+        `${label} must be a static string literal array`,
       );
-      continue;
+      return [];
     }
-
-    ownedPrismaModels.push(element.text);
+    const models = [];
+    for (const element of value.elements) {
+      if (
+        !ts.isStringLiteral(element) &&
+        !ts.isNoSubstitutionTemplateLiteral(element)
+      ) {
+        invalid(element, `${label} must contain only string literals`);
+      } else if (models.includes(element.text)) {
+        invalid(element, `${label} must not contain duplicates`);
+      } else {
+        models.push(element.text);
+      }
+    }
+    return models;
+  };
+  const ownedPrismaModels = readModels(
+    ownedProperty.initializer,
+    "ownedPrismaModels",
+  );
+  const exportedProperty = findPropertyAssignment(
+    initializer,
+    "exportedPrismaModels",
+  );
+  const exportedPrismaModels = exportedProperty
+    ? readModels(exportedProperty.initializer, "exportedPrismaModels")
+    : [];
+  const importedPrismaModels = [];
+  const importedProperty = findPropertyAssignment(
+    initializer,
+    "importedPrismaModels",
+  );
+  if (importedProperty) {
+    const imports = unwrapExpression(importedProperty.initializer);
+    if (!ts.isArrayLiteralExpression(imports)) {
+      invalid(imports, "importedPrismaModels must be a static array");
+    } else {
+      for (const entry of imports.elements) {
+        const value = unwrapExpression(entry);
+        if (!ts.isObjectLiteralExpression(value)) {
+          invalid(
+            entry,
+            "each import must be an explicit { from, models } object",
+          );
+          continue;
+        }
+        const from = findPropertyAssignment(value, "from")?.initializer;
+        const models = findPropertyAssignment(value, "models")?.initializer;
+        const names = value.properties.map(property =>
+          ts.isPropertyAssignment(property)
+            ? getPropertyNameText(property.name)
+            : null,
+        );
+        if (
+          names.length !== 2 ||
+          !names.includes("from") ||
+          !names.includes("models")
+        ) {
+          invalid(value, "each import must contain only from and models");
+        }
+        if (
+          !from ||
+          !ts.isStringLiteral(from) ||
+          path.posix.isAbsolute(from.text) ||
+          path.posix.normalize(from.text) !== from.text ||
+          from.text.startsWith("../") ||
+          from.text.includes("\\") ||
+          path.posix.basename(from.text) !== BOUNDARY_FILE_NAME
+        ) {
+          invalid(
+            from ?? value,
+            "from must be a static repository-root-relative boundary manifest path",
+          );
+          continue;
+        }
+        importedPrismaModels.push({
+          from: from.text,
+          models: readModels(models, "import models"),
+        });
+      }
+    }
   }
 
   return {
     boundary: {
       filePath,
       ownedPrismaModels,
+      exportedPrismaModels,
+      importedPrismaModels,
     },
     violations,
     parseError: null,
@@ -675,6 +786,74 @@ function validateBoundaryModelUniqueness(boundaries) {
   return violations;
 }
 
+function validateBoundaryImports(boundaries) {
+  const index = new Map(
+    boundaries.map(boundary => [boundary.filePath, boundary]),
+  );
+  const violations = [];
+  for (const boundary of boundaries) {
+    const invalid = (kind, detected, reason) =>
+      violations.push({
+        filePath: boundary.filePath,
+        line: 1,
+        column: 1,
+        kind,
+        detected,
+        reason,
+      });
+    for (const model of boundary.exportedPrismaModels) {
+      if (!boundary.ownedPrismaModels.has(model)) {
+        invalid(
+          "invalid-boundary-export",
+          model,
+          "only models owned by this boundary can be exported",
+        );
+      }
+    }
+    for (const imported of boundary.importedPrismaModels) {
+      const owner = index.get(imported.from);
+      if (!owner) {
+        invalid(
+          "invalid-boundary-import",
+          imported.from,
+          "import source must resolve to a declared repository boundary",
+        );
+        continue;
+      }
+      for (const model of imported.models) {
+        if (boundary.ownedPrismaModels.has(model)) {
+          invalid(
+            "invalid-boundary-import",
+            model,
+            "owned models must not also be imported",
+          );
+        } else if (!owner.ownedPrismaModels.has(model)) {
+          invalid(
+            "invalid-boundary-import",
+            model,
+            `${imported.from} does not own ${model}; import from its actual owner`,
+          );
+        } else if (!owner.exportedPrismaModels.has(model)) {
+          invalid(
+            "invalid-boundary-import",
+            model,
+            `${imported.from} does not export ${model}`,
+          );
+        } else if (boundary.importedModels.has(model)) {
+          invalid(
+            "invalid-boundary-import",
+            model,
+            "a model must not be imported more than once",
+          );
+        } else {
+          boundary.importedModels.add(model);
+        }
+      }
+    }
+  }
+  return violations;
+}
+
 function validateBoundaryRelationsStayInside({ boundaries, schema }) {
   const violations = [];
 
@@ -684,7 +863,10 @@ function validateBoundaryRelationsStayInside({ boundaries, schema }) {
         schema.relationFieldsByDelegate.get(modelDelegate) ?? new Map();
 
       for (const [fieldName, targetDelegate] of relationFields) {
-        if (boundary.ownedPrismaModels.has(targetDelegate)) {
+        if (
+          boundary.ownedPrismaModels.has(targetDelegate) ||
+          boundary.importedModels.has(targetDelegate)
+        ) {
           continue;
         }
 
@@ -694,7 +876,7 @@ function validateBoundaryRelationsStayInside({ boundaries, schema }) {
           column: 1,
           kind: "cross-boundary-schema-relation",
           detected: `${modelDelegate}.${fieldName}`,
-          reason: `${modelDelegate}.${fieldName} targets ${targetDelegate}, which is outside ${boundary.filePath}; keep only the scalar id field or move the target into the same boundary`,
+          reason: `${modelDelegate}.${fieldName} targets ${targetDelegate}, which must be owned or explicitly imported from its exporting owner in ${boundary.filePath}`,
         });
       }
     }
@@ -717,10 +899,12 @@ function readPrismaSchemaIndex(repoRoot, schemaPath) {
     [...modelNames].map(modelName => toPrismaDelegateName(modelName)),
   );
   const relationFieldsByDelegate = new Map();
+  const listRelationFieldsByDelegate = new Map();
 
   for (const [modelName, body] of modelBodies) {
     const modelDelegate = toPrismaDelegateName(modelName);
     const relationFields = new Map();
+    const listRelationFields = new Set();
 
     for (const line of body.split("\n")) {
       const field = parsePrismaFieldLine(line);
@@ -729,14 +913,17 @@ function readPrismaSchemaIndex(repoRoot, schemaPath) {
       }
 
       relationFields.set(field.name, toPrismaDelegateName(field.typeName));
+      if (field.isList) listRelationFields.add(field.name);
     }
 
     relationFieldsByDelegate.set(modelDelegate, relationFields);
+    listRelationFieldsByDelegate.set(modelDelegate, listRelationFields);
   }
 
   return {
     delegates,
     relationFieldsByDelegate,
+    listRelationFieldsByDelegate,
   };
 }
 
@@ -772,7 +959,7 @@ function parsePrismaFieldLine(line) {
   }
 
   const match = trimmed.match(
-    /^(?<name>[A-Za-z_][A-Za-z0-9_]*)\s+(?<typeName>[A-Za-z][A-Za-z0-9_]*)(?:\[\])?\??(?:\s|$)/u,
+    /^(?<name>[A-Za-z_][A-Za-z0-9_]*)\s+(?<typeName>[A-Za-z][A-Za-z0-9_]*)(?<list>\[\])?\??(?:\s|$)/u,
   );
 
   if (!match) {
@@ -782,6 +969,7 @@ function parsePrismaFieldLine(line) {
   return {
     name: match.groups.name,
     typeName: match.groups.typeName,
+    isList: Boolean(match.groups.list),
   };
 }
 
@@ -1118,6 +1306,8 @@ function lineRangesOverlapAny(node, ranges) {
 
 function isNodeTouchedByChangedLines(node, changedFile) {
   return (
+    (node.queryRange &&
+      isNodeTouchedByChangedLines(node.queryRange, changedFile)) ||
     lineRangesOverlapAny(node, changedFile.addedRanges) ||
     changedFile.deletedLines.some(deletedLine =>
       isDeletionTouchingNode(deletedLine, node),
@@ -1184,6 +1374,8 @@ function dedupeNodes(nodes) {
       node.column,
       node.kind,
       node.detected,
+      node.queryRange?.startLine,
+      node.queryRange?.endLine,
     ].join(":");
 
     if (seen.has(key)) {

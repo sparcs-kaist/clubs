@@ -17,13 +17,13 @@ const target = {
 
 const setup = () => {
   const users = {
+    findLoginIdentity: jest.fn().mockResolvedValue(target),
     checkCurrentExecutiveById: jest.fn().mockResolvedValue(undefined),
     searchExchangeLoginUsers: jest.fn().mockResolvedValue([]),
     getExchangeLoginUserById: jest.fn(async (id: number) =>
       id === 2 ? target : { ...actor, sid: "actor-sid", name: "집행부" },
     ),
   };
-  const repository = { findUserById: jest.fn().mockResolvedValue(target) };
   const exchange = {
     createExchangeLog: jest.fn().mockResolvedValue(undefined),
     storeRefreshToken: jest.fn().mockResolvedValue(undefined),
@@ -34,13 +34,12 @@ const setup = () => {
   };
   const service = new ExchangeLoginService(
     users as unknown as Dependencies[0],
-    repository as unknown as Dependencies[1],
-    exchange as unknown as Dependencies[2],
-    auth as unknown as Dependencies[3],
-    { refreshTokenExpiresInMs: 60000 } as Dependencies[4],
-    { now: () => new Date("2026-09-13T00:00:00Z") } as Dependencies[5],
+    exchange as unknown as Dependencies[1],
+    auth as unknown as Dependencies[2],
+    { refreshTokenExpiresInMs: 60000 } as Dependencies[3],
+    { now: () => new Date("2026-09-13T00:00:00Z") } as Dependencies[4],
   );
-  return { service, users, repository, exchange, auth };
+  return { service, users, exchange, auth };
 };
 
 describe("ExchangeLoginService", () => {

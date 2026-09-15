@@ -93,6 +93,10 @@ export class SemesterPublicService extends BasePublicService<
     return semester.id;
   }
 
+  loadForLogin(date: Date) {
+    return this.semesterRepository.findForLogin(date);
+  }
+
   // TODO: 아래 두 함수 적용해야 할 곳 (등록기간에 이전 학기 정보로 표기되어야 하는 곳들)에 적용해야 함
   /**
    * @description 만약 지금이 동아리 등록 제출 기간일 경우 이전 학기를, 그렇지 않으면 현재 학기를 반환합니다.

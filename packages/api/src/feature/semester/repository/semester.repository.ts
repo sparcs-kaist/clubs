@@ -7,6 +7,7 @@ import {
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
+import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import {
   ISemesterCreate,
   MSemester,
@@ -38,6 +39,19 @@ export class SemesterRepository extends BaseSingleTableRepository<
     private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {
     super("semesterD", MSemester);
+  }
+
+  findForLogin(date: Date) {
+    // The existing login query includes the semester end instant.
+    return this.txHost.tx.semesterD
+      .findMany({
+        where: {
+          startTerm: { lte: date },
+          endTerm: { gte: date },
+          deletedAt: null,
+        },
+      })
+      .then(takeOne);
   }
 
   async createSemester(value: ISemesterCreate): Promise<{ id: number }> {

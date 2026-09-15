@@ -1562,3 +1562,24 @@ model MeetingMapping {
 
   @@map("meeting_mapping")
 }
+
+model AuthSsoLoginFailureLog {
+  id           Int      @id @default(autoincrement())
+  occurredAt   DateTime @map("occurred_at") @db.DateTime(3)
+  traceId      String   @unique @map("trace_id") @db.VarChar(36)
+  stage        String   @db.VarChar(64)
+  httpStatus   Int      @map("http_status")
+  errorName    String   @map("error_name") @db.VarChar(128)
+  errorMessage String   @map("error_message") @db.Text
+  errorStack   String?  @map("error_stack") @db.Text
+  method       String   @db.VarChar(16)
+  path         String   @db.VarChar(128)
+  userId       Int?     @map("user_id")
+  studentId    Int?     @map("student_id")
+  diagnostics  Json
+
+  @@index([occurredAt])
+  @@index([userId, occurredAt])
+  @@index([studentId, occurredAt])
+  @@map("auth_sso_login_failure_log")
+}
