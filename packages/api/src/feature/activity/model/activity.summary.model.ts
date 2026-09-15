@@ -44,8 +44,8 @@ export class VActivitySummary implements IActivitySummary {
     commentedAt: Date | null;
     editedAt: Date;
     updatedAt: Date;
-    chargedExecutiveId?: number;
-    commentedExecutiveId?: number;
+    chargedExecutiveId?: number | null;
+    commentedExecutiveId?: number | null;
   }): VActivitySummary {
     return new VActivitySummary({
       id: activity.id,

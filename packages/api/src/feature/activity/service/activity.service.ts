@@ -562,15 +562,8 @@ export default class ActivityOldService {
   ): Promise<ApiAct028ResponseOk> {
     const executive =
       await this.userPublicService.fetchExecutiveSummary(executiveId);
-    let activities =
+    const activities =
       await this.activityRepository.fetchCommentedSummaries(executiveId);
-
-    // 중복된 activity 제거
-    // TODO: this.activityRepository.fetchCommentedSummaries가 중복된 activity를 반환하는 경우가 있는데, 이것이 정상인지 확인 필요
-    const uniqueActivities = new Map(
-      activities.map(activity => [activity.id, activity]),
-    );
-    activities = Array.from(uniqueActivities.values());
 
     // 필요한 모든 ID들을 수집
     const clubIds = new Set(activities.map(activity => activity.club.id));

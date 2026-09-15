@@ -76,6 +76,9 @@ const createRepository = (tx = createFundingTx()) => {
   const txHost = { tx };
   const prisma = {
     $transaction: jest.fn(),
+    funding: {
+      findMany: jest.fn(),
+    },
   };
   const repository = injectTestClock(
     new FundingRepository(txHost as never, prisma as never),
@@ -184,5 +187,67 @@ describe("FundingRepository transactions", () => {
       data: { id: 402, chargedExecutiveId: 101 },
     });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("stores the final reviewer through TransactionHost tx", async () => {
+    const { prisma, repository, tx } = createRepository();
+    jest.spyOn(repository, "fetchSummaryTx").mockResolvedValue({} as never);
+
+    await repository.patchStatus({
+      id: 401,
+      fundingStatusEnum: 2,
+      approvedAmount: 10000,
+      commentedAt: NOW,
+      commentedExecutiveId: 8,
+    });
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.funding.update).toHaveBeenCalledWith({
+      where: { id: 401 },
+      data: {
+        fundingStatusEnum: 2,
+        approvedAmount: 10000,
+        commentedAt: NOW,
+        commentedExecutiveId: 8,
+        editedAt: NOW,
+      },
+    });
+  });
+});
+
+describe("FundingRepository summaries", () => {
+  it("returns the denormalized final reviewer", async () => {
+    const { prisma, repository } = createRepository();
+    prisma.funding.findMany.mockResolvedValue([
+      {
+        id: 401,
+        fundingStatusEnum: 2,
+        name: "funding",
+        expenditureAmount: 10000,
+        approvedAmount: 10000,
+        purposeActivityId: 201,
+        clubId: 101,
+        chargedExecutiveId: 7,
+        commentedExecutiveId: 8,
+      },
+    ]);
+
+    const [result] = await repository.fetchCommentedSummaries(7);
+
+    expect(prisma.funding.findMany).toHaveBeenCalledWith({
+      select: expect.objectContaining({ commentedExecutiveId: true }),
+      where: {
+        deletedAt: null,
+        OR: [
+          { chargedExecutiveId: 7 },
+          {
+            feedbacks: {
+              some: { executiveId: 7, deletedAt: null },
+            },
+          },
+        ],
+      },
+    });
+    expect(result.commentedExecutive).toEqual({ id: 8 });
   });
 });

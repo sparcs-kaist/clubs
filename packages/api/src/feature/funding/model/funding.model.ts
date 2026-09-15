@@ -20,6 +20,7 @@ export type FundingDBResult = {
     expenditureDate: Date;
     expenditureAmount: number;
     approvedAmount?: number;
+    commentedExecutiveId?: number | null;
     editedAt: Date;
     commentedAt?: Date;
     createdAt: Date;
@@ -64,9 +65,6 @@ export type FundingDBResult = {
     origin: string;
     destination: string;
     purposeOfTransportation: string;
-  };
-  fundingFeedback?: {
-    feedback?: string;
   };
   tradeEvidenceFiles: { id: string }[];
   tradeDetailFiles: { id: string }[];
@@ -115,6 +113,8 @@ export class MFunding implements IFunding {
   expenditureAmount: number;
 
   approvedAmount?: number;
+
+  commentedExecutive?: IFunding["commentedExecutive"];
 
   tradeEvidenceFiles: { id: string }[];
 
@@ -191,6 +191,9 @@ export class MFunding implements IFunding {
       expenditureDate: result.funding.expenditureDate,
       expenditureAmount: result.funding.expenditureAmount,
       approvedAmount: result.funding.approvedAmount,
+      commentedExecutive: result.funding.commentedExecutiveId
+        ? { id: result.funding.commentedExecutiveId }
+        : undefined,
       tradeEvidenceFiles: result.tradeEvidenceFiles.map(file => ({
         id: file.id,
       })),
