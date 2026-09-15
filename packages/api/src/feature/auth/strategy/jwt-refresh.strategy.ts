@@ -5,13 +5,13 @@ import { Strategy } from "passport-jwt";
 
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
-import { AuthRepository } from "../repository/auth.repository";
+import { AuthService } from "../service/auth.service";
 
 // PassportStrategy(인증 방식, 이름)
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, "refresh") {
   constructor(
-    private readonly authRepository: AuthRepository,
+    private readonly authService: AuthService,
     appConfigService: AppConfigService,
   ) {
     super({
@@ -33,7 +33,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, "refresh") {
       (() => {
         throw new UnauthorizedException("No refresh token provided");
       })();
-    return (await this.authRepository.findUserAndRefreshToken(
+    return (await this.authService.hasActiveRefreshSession(
       payload.id,
       refreshToken,
     ))

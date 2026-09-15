@@ -14,18 +14,22 @@ import {
 } from "./repository/exchange-login-identity.repository";
 import { ExchangeLoginUserRepository } from "./repository/exchange-login-user.repository";
 import ExecutiveRepository from "./repository/executive.repository";
+import { UserLoginIdentityRepository } from "./repository/login-identity/user-login-identity.repository";
 import OldProfessorRepository from "./repository/old.professor.repository";
 import OldStudentRepository from "./repository/old.student.repository";
 import { ProfessorRepository } from "./repository/professor.repository";
 import { StudentRepository } from "./repository/student.repository";
 import UserPublicService from "./service/user.public.service";
 import { UserService } from "./service/user.service";
+import { UserLoginIdentityService } from "./service/user-login-identity.service";
 
 @Module({
   imports: [PrivacyPolicyModule],
   controllers: [UserController],
   providers: [
     UserPublicService,
+    UserLoginIdentityService,
+    UserLoginIdentityRepository,
     UserService,
     UserRepository,
     OldStudentRepository,

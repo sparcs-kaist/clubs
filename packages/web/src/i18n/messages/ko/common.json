@@ -66,5 +66,8 @@
     "title": "패치노트",
     "version": "버전",
     "date": "날짜"
+  },
+  "funding": {
+    "publicationPhotoRequired": "발간물을 촬영한 사진을 첨부해주셔야 합니다."
   }
 }

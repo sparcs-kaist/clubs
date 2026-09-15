@@ -10,6 +10,7 @@ import {
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import logger from "@sparcs-clubs/api/common/util/logger";
 
+import { LoginSemester, SsoIdentityInput } from "../model/login-identity";
 import { RMProfessor } from "../model/professor.model";
 import { MStudent } from "../model/student.model";
 import { ExchangeLoginUserRepository } from "../repository/exchange-login-user.repository";
@@ -18,6 +19,7 @@ import OldProfessorRepository from "../repository/old.professor.repository";
 import OldStudentRepository from "../repository/old.student.repository";
 import { ProfessorRepository } from "../repository/professor.repository";
 import { StudentRepository } from "../repository/student.repository";
+import { UserLoginIdentityService } from "./user-login-identity.service";
 
 @Injectable()
 export default class UserPublicService {
@@ -30,7 +32,20 @@ export default class UserPublicService {
     private professorRepository: ProfessorRepository,
     private studentRepository: StudentRepository,
     private exchangeLoginUserRepository: ExchangeLoginUserRepository,
+    private readonly loginIdentityService: UserLoginIdentityService,
   ) {}
+
+  syncSsoIdentity(input: SsoIdentityInput, semester: LoginSemester) {
+    return this.loginIdentityService.syncSsoIdentity(input, semester);
+  }
+
+  findLoginIdentity(userId: number) {
+    return this.loginIdentityService.findLoginIdentity(userId);
+  }
+
+  isActiveUser(userId: number) {
+    return this.loginIdentityService.isActiveUser(userId);
+  }
 
   async searchExchangeLoginUsers(query: ApiAut005RequestQuery) {
     return this.exchangeLoginUserRepository.searchExchangeLoginUsers(query);

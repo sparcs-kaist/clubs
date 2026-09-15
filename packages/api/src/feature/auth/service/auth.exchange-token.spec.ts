@@ -36,9 +36,9 @@ describe("exchanged login token provenance", () => {
   };
   const jwt = new JwtService();
   const repository = {
-    findUserById: jest.fn(),
-    findUserAndRefreshToken: jest.fn(),
+    hasActiveRefreshToken: jest.fn(),
   };
+  const users = { findLoginIdentity: jest.fn(), isActiveUser: jest.fn() };
   const auth = new AuthService(
     repository as unknown as AuthRepository,
     jwt,
@@ -46,12 +46,15 @@ describe("exchanged login token provenance", () => {
     config,
     {} as never,
     new SystemRandomGenerator(),
+    users as never,
+    {} as never,
   );
 
   beforeEach(() => {
     jest.resetAllMocks();
-    repository.findUserById.mockResolvedValue(user);
-    repository.findUserAndRefreshToken.mockResolvedValue(true);
+    users.findLoginIdentity.mockResolvedValue(user);
+    users.isActiveUser.mockResolvedValue(true);
+    repository.hasActiveRefreshToken.mockResolvedValue(true);
   });
 
   it.each([
@@ -88,21 +91,18 @@ describe("exchanged login token provenance", () => {
     const payload = jwt.verify(token, {
       secret: config.refreshTokenSecretKey,
     });
-    const strategy = new JwtRefreshStrategy(
-      repository as unknown as AuthRepository,
-      config,
-    );
+    const strategy = new JwtRefreshStrategy(auth, config);
     const principal = await strategy.validate(
       { cookies: { refreshToken: token } } as unknown as Request,
       payload,
     );
     const result = await auth.postAuthRefresh(principal);
 
-    expect(repository.findUserAndRefreshToken).toHaveBeenCalledWith(
+    expect(repository.hasActiveRefreshToken).toHaveBeenCalledWith(
       user.id,
       token,
     );
-    expect(repository.findUserById).toHaveBeenCalledWith(user.id);
+    expect(users.findLoginIdentity).toHaveBeenCalledWith(user.id);
     expect(principal).toMatchObject({ id: user.id, exchangeActor: actor });
     Object.values(result.accessToken).forEach(accessToken => {
       expect(
@@ -142,12 +142,21 @@ describe("exchanged login token provenance", () => {
     }
   });
 
+  it("rejects a deleted account even when a refresh token remains", async () => {
+    users.isActiveUser.mockResolvedValue(false);
+    const strategy = new JwtRefreshStrategy(auth, config);
+    await expect(
+      strategy.validate(
+        { cookies: { refreshToken: "active-token" } } as unknown as Request,
+        user,
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(repository.hasActiveRefreshToken).not.toHaveBeenCalled();
+  });
+
   it("still rejects revoked exchanged refresh tokens", async () => {
-    repository.findUserAndRefreshToken.mockResolvedValue(false);
-    const strategy = new JwtRefreshStrategy(
-      repository as unknown as AuthRepository,
-      config,
-    );
+    repository.hasActiveRefreshToken.mockResolvedValue(false);
+    const strategy = new JwtRefreshStrategy(auth, config);
 
     await expect(
       strategy.validate(

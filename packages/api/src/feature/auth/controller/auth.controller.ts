@@ -7,6 +7,7 @@ import {
   Res,
   Session,
   UseGuards,
+  UseInterceptors,
   UsePipes,
 } from "@nestjs/common";
 import { Response } from "express";
@@ -37,6 +38,7 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import { Request, UserRefreshTokenPayload } from "../dto/auth.dto";
 import { JwtRefreshGuard } from "../guard/jwt-refresh.guard";
 import { AuthService } from "../service/auth.service";
+import { SsoLoginDiagnosticInterceptor } from "./sso-login-diagnostic.interceptor";
 
 @Controller()
 export class AuthController {
@@ -47,6 +49,7 @@ export class AuthController {
 
   @Public()
   @Get("/auth/sign-in")
+  @UseInterceptors(SsoLoginDiagnosticInterceptor)
   @UsePipes(new ZodPipe(apiAut001))
   async getAuthSignIn(
     @Req() req: Request,
@@ -58,14 +61,26 @@ export class AuthController {
 
   @Public()
   @Get("/auth/sign-in/callback")
+  @UseInterceptors(SsoLoginDiagnosticInterceptor)
   @UsePipes(new ZodPipe(apiAut004))
   async postAuthSigninCallback(
     @Res() res: Response,
     @Query() query: ApiAut004RequestQuery,
     @Session() session: Request["session"],
+    @Req() req: Request,
   ) {
     const { next, token, isKaistIamLogin } =
-      await this.authService.getAuthSignInCallback(query, session);
+      await this.authService.getAuthSignInCallback(
+        query,
+        session,
+        req.ssoLoginDiagnostic,
+      );
+
+    if (req.ssoLoginDiagnostic) {
+      if (!req.ssoLoginDiagnostic.failure) {
+        req.ssoLoginDiagnostic.stage = "callback_response";
+      }
+    }
 
     if (!isKaistIamLogin) {
       const iamErrorRedirectionUrl = this.appConfigService.isLocal
@@ -90,7 +105,7 @@ export class AuthController {
       expires: token.accessTokenTokenExpiresAt,
       httpOnly: false,
     });
-    logger.debug(`Redirecting to ${next}`);
+    logger.debug("Redirecting after successful SSO login");
     return res.redirect(next);
   }
 
