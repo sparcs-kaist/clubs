@@ -29,10 +29,6 @@ model User {
   executives                  Executive[]
   professors                  Professor[]
   employees                   Employee[]
-  files                       File[]
-  meetingAttendanceTimes      MeetingAttendanceTimeT[]
-  meetingVoteResults          MeetingVoteResult[]
-  userPrivacyPolicyAgreements UserPrivacyPolicyAgreement[]
 
   @@map("user")
 }
@@ -48,18 +44,6 @@ model Student {
 
   user                            User?                            @relation(fields: [userId], references: [id])
   studentTs                       StudentT[]
-  activityCertificates            ActivityCertificate[]
-  clubStudentTs                   ClubStudentT[]
-  clubDelegateDs                  ClubDelegateD[]
-  commonSpaceUsageOrders          CommonSpaceUsageOrderD[]
-  divisionPresidentDs             DivisionPresidentD[]
-  registrations                   Registration[]
-  registrationApplicationStudents RegistrationApplicationStudent[]
-  rentalOrders                    RentalOrder[]
-  promotionalPrintingOrders       PromotionalPrintingOrder[]
-  fundingTransportationPassengers FundingTransportationPassenger[]
-  clubDelegateChangeRequestsPrev  ClubDelegateChangeRequest[]      @relation("PrevStudent")
-  clubDelegateChangeRequestsNew   ClubDelegateChangeRequest[]      @relation("NewStudent")
   executive                       Executive?
 
   @@map("student")
@@ -95,9 +79,6 @@ model Executive {
   user                          User?                          @relation(fields: [userId], references: [id])
   student                       Student                        @relation(fields: [studentId], references: [id])
   executiveTs                   ExecutiveT[]
-  fundingChargedFundings        Funding[]
-  fundingFeedbacks              FundingFeedback[]
-  registrationExecutiveComments RegistrationExecutiveComment[]
 
   @@map("executive")
 }
@@ -108,7 +89,6 @@ model ExecutiveStatusEnum {
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  executiveTs ExecutiveT[]
 
   @@map("executive_status_enum")
 }
@@ -117,7 +97,6 @@ model ExecutiveBureauEnum {
   id   Int     @id @default(autoincrement())
   name String? @db.VarChar(31)
 
-  executiveTs ExecutiveT[]
 
   @@map("executive_bureau_enum")
 }
@@ -133,8 +112,6 @@ model ExecutiveT {
   deletedAt           DateTime? @map("deleted_at") @db.Timestamp(0)
 
   executive          Executive           @relation(fields: [executiveId], references: [id])
-  executiveStatusRel ExecutiveStatusEnum @relation(fields: [executiveStatusEnum], references: [id])
-  executiveBureauRel ExecutiveBureauEnum @relation(fields: [executiveBureauEnum], references: [id])
 
   @@map("executive_t")
 }
@@ -149,8 +126,6 @@ model Professor {
 
   user          User?          @relation(fields: [userId], references: [id])
   professorTs   ProfessorT[]
-  clubTs        ClubT[]
-  registrations Registration[]
 
   @@map("professor")
 }
@@ -241,7 +216,6 @@ model UserPrivacyPolicyAgreement {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  user User @relation(fields: [userId], references: [id])
 
   @@map("user_privacy_policy_agreement")
 }
@@ -271,6 +245,27 @@ model AuthExchangeLoginLog {
   @@map("auth_exchange_login_log")
 }
 
+model AuthSsoLoginFailureLog {
+  id           Int      @id @default(autoincrement())
+  occurredAt   DateTime @map("occurred_at") @db.DateTime(3)
+  traceId      String   @unique @map("trace_id") @db.VarChar(36)
+  stage        String   @db.VarChar(64)
+  httpStatus   Int      @map("http_status")
+  errorName    String   @map("error_name") @db.VarChar(128)
+  errorMessage String   @map("error_message") @db.Text
+  errorStack   String?  @map("error_stack") @db.Text
+  method       String   @db.VarChar(16)
+  path         String   @db.VarChar(128)
+  userId       Int?     @map("user_id")
+  studentId    Int?     @map("student_id")
+  diagnostics  Json
+
+  @@index([occurredAt])
+  @@index([userId, occurredAt])
+  @@index([studentId, occurredAt])
+  @@map("auth_sso_login_failure_log")
+}
+
 // ============================================================================
 // Club
 // ============================================================================
@@ -288,7 +283,6 @@ model Club {
   clubTs                          ClubT[]
   clubDivisionHistories           ClubDivisionHistory[]
   clubStudentTs                   ClubStudentT[]
-  clubRoomTs                      ClubRoomT[]
   clubDelegateDs                  ClubDelegateD[]
   clubDelegateChangeRequests      ClubDelegateChangeRequest[]
   activityCertificates            ActivityCertificate[]
@@ -330,7 +324,6 @@ model ClubT {
 
   club           Club           @relation(fields: [clubId], references: [id])
   clubStatusEnum ClubStatusEnum @relation(fields: [clubStatusEnumId], references: [id])
-  professor      Professor?     @relation(fields: [professorId], references: [id])
   semester       SemesterD      @relation(fields: [semesterId], references: [id])
 
   @@map("club_t")
@@ -364,7 +357,6 @@ model ClubStudentT {
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  student  Student   @relation(fields: [studentId], references: [id])
   club     Club      @relation(fields: [clubId], references: [id])
   semester SemesterD @relation(fields: [semesterId], references: [id])
 
@@ -394,9 +386,7 @@ model ClubRoomT {
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club            Club             @relation(fields: [clubId], references: [id])
   clubBuildingRel ClubBuildingEnum @relation(fields: [clubBuildingEnum], references: [id])
-  semester        SemesterD        @relation(fields: [semesterId], references: [id])
 
   @@map("club_room_t")
 }
@@ -421,7 +411,6 @@ model ClubDelegateD {
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
   club    Club    @relation(fields: [clubId], references: [id])
-  student Student @relation(fields: [studentId], references: [id])
 
   @@index([clubDelegateEnum], map: "club_delegate_d_club_delegate_enum_id_fk")
   @@map("club_delegate_d")
@@ -448,8 +437,6 @@ model ClubDelegateChangeRequest {
   deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
 
   club        Club                                @relation(fields: [clubId], references: [id])
-  prevStudent Student                             @relation("PrevStudent", fields: [prevStudentId], references: [id])
-  student     Student                             @relation("NewStudent", fields: [studentId], references: [id])
   statusEnum  ClubDelegateChangeRequestStatusEnum @relation(fields: [clubDelegateChangeRequestStatusEnumId], references: [id], map: "club_delegate_change_request_fk")
 
   @@map("club_delegate_change_request")
@@ -499,7 +486,6 @@ model DivisionPresidentD {
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
   division Division @relation(fields: [divisionId], references: [id])
-  student  Student  @relation(fields: [studentId], references: [id])
 
   @@map("division_president_d")
 }
@@ -533,7 +519,6 @@ model SemesterD {
 
   clubTs                          ClubT[]
   clubStudentTs                   ClubStudentT[]
-  clubRoomTs                      ClubRoomT[]
   registrations                   Registration[]
   registrationApplicationStudents RegistrationApplicationStudent[]
   registrationDeadlineDs          RegistrationDeadlineD[]
@@ -741,7 +726,6 @@ model ActivityCertificate {
   deletedAt                     DateTime? @map("deleted_at") @db.Timestamp(0)
 
   club    Club                      @relation(fields: [clubId], references: [id])
-  student Student                   @relation(fields: [studentId], references: [id])
   items   ActivityCertificateItem[]
 
   @@index([activityCertificateStatusEnum], map: "activity_certificate_d_activity_certificate_enum_id_fk")
@@ -811,7 +795,6 @@ model CommonSpaceUsageOrderD {
 
   commonSpace CommonSpace @relation(fields: [commonSpaceId], references: [id])
   club        Club        @relation(fields: [clubId], references: [id])
-  student     Student     @relation(fields: [chargeStudentId], references: [id])
 
   @@map("common_space_usage_order_d")
 }
@@ -830,7 +813,6 @@ model File {
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  user User @relation(fields: [userId], references: [id])
 
   @@map("file")
 }
@@ -897,7 +879,6 @@ model Funding {
 
   club             Club       @relation(fields: [clubId], references: [id], map: "funding_club_id_fk")
   activityD        ActivityD  @relation(fields: [activityDId], references: [id])
-  chargedExecutive Executive? @relation(fields: [chargedExecutiveId], references: [id], map: "funding_charged_executive_id_fk")
 
   tradeEvidenceFiles                 FundingTradeEvidenceFile[]
   tradeDetailFiles                   FundingTradeDetailFile[]
@@ -1095,7 +1076,6 @@ model FundingTransportationPassenger {
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
   funding Funding @relation(fields: [fundingId], references: [id], map: "transportation_passenger_funding_id_fk")
-  student Student @relation(fields: [studentId], references: [id], map: "transportation_passenger_student_id_fk")
 
   @@map("funding_transportation_passenger")
 }
@@ -1111,7 +1091,6 @@ model FundingFeedback {
   deletedAt         DateTime? @map("deleted_at") @db.Timestamp(0)
 
   funding   Funding   @relation(fields: [fundingId], references: [id], map: "funding_feedback_funding_id_fk")
-  executive Executive @relation(fields: [executiveId], references: [id], map: "funding_feedback_executive_id_fk")
 
   @@map("funding_feedback")
 }
@@ -1187,7 +1166,6 @@ model PromotionalPrintingOrder {
   deletedAt                          DateTime? @map("deleted_at") @db.Timestamp(0)
 
   club    Club                           @relation(fields: [clubId], references: [id])
-  student Student                        @relation(fields: [studentId], references: [id])
   sizes   PromotionalPrintingOrderSize[]
 
   @@index([promotionalPrintingOrderStatusEnum], map: "pp_order_pp_order_status_enum_id_fk")
@@ -1267,9 +1245,7 @@ model Registration {
   semester          SemesterD?                     @relation(fields: [semesterId], references: [id], map: "registration_semester_d_id_fk")
   typeEnum          RegistrationTypeEnum           @relation(fields: [registrationApplicationTypeEnumId], references: [id], map: "registration_registration_type_enum_id_fk")
   statusEnum        RegistrationStatusEnum         @relation(fields: [registrationApplicationStatusEnumId], references: [id], map: "registration_registration_status_enum_id_fk")
-  student           Student                        @relation(fields: [studentId], references: [id])
   division          Division                       @relation(fields: [divisionId], references: [id])
-  professor         Professor?                     @relation(fields: [professorId], references: [id])
   executiveComments RegistrationExecutiveComment[]
 
   @@map("registration")
@@ -1284,7 +1260,6 @@ model RegistrationExecutiveComment {
   deletedAt      DateTime? @map("deleted_at") @db.Timestamp(0)
 
   registration Registration @relation(fields: [registrationId], references: [id], map: "registration_executive_comment_registration_id_fk")
-  executive    Executive    @relation(fields: [executiveId], references: [id], map: "registration_executive_comment_executive_id_fk")
 
   @@map("registration_executive_comment")
 }
@@ -1309,7 +1284,6 @@ model RegistrationApplicationStudent {
   createdAt                          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                          DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  student    Student                                  @relation(fields: [studentId], references: [id])
   club       Club                                     @relation(fields: [clubId], references: [id])
   semester   SemesterD?                               @relation(fields: [semesterId], references: [id])
   statusEnum RegistrationApplicationStudentStatusEnum @relation(fields: [registrationApplicationStudentEnum], references: [id], map: "registration_application_student_status_enum_id_fk")
@@ -1333,7 +1307,6 @@ model RentalOrder {
   updatedAt          DateTime? @map("updated_at") @db.Timestamp(0)
   deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  student Student            @relation(fields: [studentId], references: [id])
   club    Club               @relation(fields: [clubId], references: [id])
   items   RentalOrderItemD[]
 
@@ -1492,7 +1465,6 @@ model MeetingAttendanceTimeT {
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
   meeting Meeting @relation(fields: [meetingId], references: [id], map: "meeting_meeting_attendance_time_t_id_fk")
-  user    User    @relation(fields: [userId], references: [id], map: "user_meeting_attendance_time_t_id_fk")
 
   @@map("meeting_attendance_time_t")
 }
@@ -1536,7 +1508,6 @@ model MeetingVoteResult {
   deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
 
   vote   MeetingAgendaVote @relation(fields: [voteId], references: [id], map: "meeting_agenda_vote_result_id_fk")
-  user   User              @relation(fields: [userId], references: [id], map: "user_meeting_vote_result_id_fk")
   choice MeetingVoteChoice @relation(fields: [choiceId], references: [id], map: "meeting_vote_choice_result_id_fk")
 
   @@map("meeting_vote_result")

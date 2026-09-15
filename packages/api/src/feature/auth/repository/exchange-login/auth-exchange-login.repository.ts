@@ -26,6 +26,19 @@ export class AuthExchangeLoginRepository {
     await this.txHost.tx.authActivatedRefreshTokens.create({ data });
   }
 
+  async deleteRefreshToken(
+    userId: number,
+    refreshToken: string,
+    queriedAt: Date,
+  ): Promise<void> {
+    const result = await this.txHost.tx.authActivatedRefreshTokens.deleteMany({
+      where: { userId, refreshToken, expiresAt: { gte: queriedAt } },
+    });
+    if (result.count !== 1) {
+      throw new Error("deleteRefreshTokenRecord failed");
+    }
+  }
+
   async createExchangeLog(data: ExchangeLoginLogInput): Promise<void> {
     await this.txHost.tx.authExchangeLoginLog.create({ data });
   }

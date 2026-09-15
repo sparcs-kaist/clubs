@@ -1,9 +1,14 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+import { UserSsoLoginRepository } from "@sparcs-clubs/api/feature/user/repository/sso-login/user-sso-login.repository";
+
+import type { SsoLoginDiagnostic } from "../util/sso-login-diagnostic";
+import { AuthExchangeLoginRepository } from "./exchange-login/auth-exchange-login.repository";
 
 interface FindOrCreateUserReturn {
   id: number;
@@ -57,7 +62,16 @@ const FALLBACK_STUDENT_ENUM_ERROR_MESSAGE =
 export class AuthRepository {
   @Inject(CLOCK) private readonly clock: Clock;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+    private readonly userSsoLoginRepository: UserSsoLoginRepository,
+    private readonly authExchangeLoginRepository: AuthExchangeLoginRepository,
+  ) {}
+
+  // 기존 조회도 로그인 저장 작업과 같은 트랜잭션의 데이터를 읽습니다.
+  private get prisma() {
+    return this.txHost.tx;
+  }
 
   async findOrCreateUser(
     email: string,
@@ -69,19 +83,24 @@ export class AuthRepository {
     typeV2: string,
     statusV2: string | null,
     progCodeV2: string | null,
+    diagnostic?: SsoLoginDiagnostic,
   ): Promise<FindOrCreateUserReturn> {
-    // User table에 해당 email이 있는지 확인 후 upsert
-    await this.prisma.$executeRaw(Prisma.sql`
-      INSERT INTO user (sid, name, email)
-      VALUES (${sid}, ${name}, ${email})
-      ON DUPLICATE KEY UPDATE name = ${name}, email = ${email}
-    `);
+    const context = diagnostic ?? { stage: "db.user.upsert" };
+    const db = context.db ?? {};
+    context.db = db;
+    context.stage = "db.user.upsert";
+    await this.userSsoLoginRepository.ensureUser({ sid, name, email });
 
+    context.stage = "db.user.read";
+    db.userQueriedAt = this.clock.now();
     const user = await this.prisma.user
       .findMany({
         where: { email, deletedAt: null },
       })
       .then(takeOne);
+
+    db.user = user ? { id: user.id, deletedAt: user.deletedAt } : null;
+    context.userId = user?.id;
 
     let result: FindOrCreateUserReturn = {
       id: user.id,
@@ -91,7 +110,9 @@ export class AuthRepository {
     };
 
     // 오늘 날짜를 기준으로 semester_d 테이블에서 해당 학기를 찾아서 semester_id, startTerm, endTerm을 가져옴
+    context.stage = "db.semester.read";
     const currentDate = this.clock.now();
+    db.semesterQueriedAt = currentDate;
     const semester = await this.prisma.semesterD
       .findMany({
         where: {
@@ -102,6 +123,17 @@ export class AuthRepository {
       })
       .then(takeOne);
 
+    db.semester = semester
+      ? {
+          id: semester.id,
+          year: semester.year,
+          name: semester.name,
+          startTerm: semester.startTerm,
+          endTerm: semester.endTerm,
+          deletedAt: semester.deletedAt,
+        }
+      : null;
+
     // V2 기반 사용자 타입 결정 (하위 호환성을 위해 V1 타입도 고려)
     // type이 "Student"인 경우 student table에서 해당 studentNumber이 있는지 확인 후 upsert
     // student_t에서 이번 학기의 해당 student_id이 있는지 확인 후 upsert
@@ -110,6 +142,8 @@ export class AuthRepository {
       ((type === "Student" || type === "Ex-employee") &&
         !typeV2.startsWith("P")) // V1 fallback
     ) {
+      context.stage = "db.student.validate";
+      db.currentStudent = { ssoNumber: studentNumber };
       const studentNumberSuffix = getStudentNumberSuffix(studentNumber);
 
       //HP 학번(6900~6999)인 경우 로그인 불가
@@ -131,12 +165,16 @@ export class AuthRepository {
 
       const studentNum = parseInt(studentNumber);
 
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO student (name, number, user_id, email)
-        VALUES (${name}, ${studentNum}, ${user.id}, ${email})
-        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}, email = ${email}
-      `);
+      context.stage = "db.student.upsert";
+      await this.userSsoLoginRepository.ensureStudent({
+        name,
+        number: studentNum,
+        userId: user.id,
+        email,
+      });
 
+      context.stage = "db.student.read";
+      db.currentStudentQueriedAt = this.clock.now();
       const student = await this.prisma.student
         .findMany({
           where: {
@@ -146,6 +184,18 @@ export class AuthRepository {
         })
         .then(takeOne);
 
+      context.studentId = student?.id;
+      db.currentStudent = student
+        ? {
+            id: student.id,
+            number: student.number,
+            ssoNumber: studentNumber,
+            userId: student.userId,
+            createdAt: student.createdAt,
+            deletedAt: student.deletedAt,
+          }
+        : null;
+
       //v2info 기반 학적 상태 및 학위 구분
       let studentStatusEnum = 2;
 
@@ -154,9 +204,25 @@ export class AuthRepository {
         studentStatusEnum = 1;
       }
 
-      const existingStudentEnum = await this.getCurrentStudentEnumByStudentId([
-        student.id,
-      ]);
+      context.stage = "db.current-degree.read";
+      const currentStudentTerms: Record<string, unknown> = {};
+      db.currentStudentTerms = currentStudentTerms;
+      const resolvingStudent = {
+        id: student.id,
+        number: studentNumber,
+        source: "current",
+        progCodeV2,
+      };
+      db.resolvingStudent = resolvingStudent;
+      const existingStudentEnum = await this.getCurrentStudentEnumByStudentId(
+        [student.id],
+        currentStudentTerms,
+      );
+      context.stage = "db.current-degree.resolve";
+      Object.assign(resolvingStudent, {
+        hasExistingStudentEnum: existingStudentEnum.has(student.id),
+        existingStudentEnum: existingStudentEnum.get(student.id),
+      });
       const studentEnum = this.resolveStudentEnum({
         existingStudentEnum: existingStudentEnum.get(student.id),
         progCodeV2,
@@ -175,25 +241,58 @@ export class AuthRepository {
           ? parseInt(department)
           : null;
 
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO student_t (student_id, student_enum, student_status_enum, department, semester_id, start_term, end_term)
-        VALUES (${student.id}, ${studentEnum}, ${studentStatusEnum}, ${departmentId}, ${semester.id}, ${semester.startTerm}, ${semester.endTerm})
-        ON DUPLICATE KEY UPDATE student_enum = ${studentEnum}, student_status_enum = ${studentStatusEnum}, department = ${departmentId}
-      `);
+      db.currentStudentResolution = {
+        studentEnum,
+        studentStatusEnum,
+        departmentId,
+        existingStudentEnum: existingStudentEnum.get(student.id),
+      };
+      context.stage = "db.student_t.write";
+      await this.userSsoLoginRepository.ensureStudentTerm({
+        studentId: student.id,
+        studentEnum,
+        studentStatusEnum,
+        department: departmentId,
+        semesterId: semester.id,
+        startTerm: semester.startTerm,
+        endTerm: semester.endTerm,
+      });
 
       // student 테이블에서 해당 user id를 모두 검색
       // undergraduate, master, doctor 중 해당하는 경우 result에 추가
+      context.stage = "db.linked-students.read";
+      db.linkedStudentsQueriedAt = this.clock.now();
       const students = await this.prisma.student.findMany({
         where: { userId: user.id, deletedAt: null },
       });
 
+      db.linkedStudents = students.map(studentRow => ({
+        id: studentRow.id,
+        number: studentRow.number,
+        userId: studentRow.userId,
+        createdAt: studentRow.createdAt,
+        deletedAt: studentRow.deletedAt,
+      }));
+      context.stage = "db.linked-degree.read";
+      const linkedStudentTerms: Record<string, unknown> = {};
+      db.linkedStudentTerms = linkedStudentTerms;
       const studentEnumByStudentId =
         await this.getCurrentStudentEnumByStudentId(
           students.map(studentRow => studentRow.id),
+          linkedStudentTerms,
         );
 
       // eslint-disable-next-line no-restricted-syntax
       for (const studentRow of students) {
+        context.stage = "db.linked-degree.resolve";
+        db.resolvingStudent = {
+          id: studentRow.id,
+          number: studentRow.number,
+          source: "linked",
+          progCodeV2: null,
+          hasExistingStudentEnum: studentEnumByStudentId.has(studentRow.id),
+          existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+        };
         const resolvedStudentEnum = this.resolveStudentEnum({
           existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
           progCodeV2: null,
@@ -209,28 +308,22 @@ export class AuthRepository {
 
       // type이 "Student"인 경우 executive table에서 해당 studentNumber이 있는지 확인
       // 있으면 해당 칼럼의 user_id를 업데이트
-      await this.prisma.executive.updateMany({
-        where: { studentId: student.id },
-        data: { userId: user.id },
-      });
+      context.stage = "db.executive.update";
+      await this.userSsoLoginRepository.updateExecutiveUser(
+        student.id,
+        user.id,
+      );
 
-      const executiveRows = await this.prisma.$queryRaw<
-        Array<{
-          id: number;
-          studentId: number;
-        }>
-      >(Prisma.sql`
-        SELECT e.id, e.student_id AS studentId
-        FROM executive e
-        INNER JOIN executive_t et ON et.executive_id = e.id
-          AND et.start_term <= NOW()
-          AND (et.end_term >= NOW() OR et.end_term IS NULL)
-          AND et.deleted_at IS NULL
-        WHERE e.student_id = ${student.id}
-          AND e.deleted_at IS NULL
-        LIMIT 1
-      `);
+      context.stage = "db.executive.read";
+      const executiveQueriedAt = this.clock.now();
+      db.executiveQueriedAt = executiveQueriedAt;
+      const executiveRows =
+        await this.userSsoLoginRepository.findActiveExecutives(
+          student.id,
+          executiveQueriedAt,
+        );
 
+      db.executives = executiveRows;
       const executive = takeOne(executiveRows);
       if (executive) {
         result.executive = {
@@ -248,12 +341,15 @@ export class AuthRepository {
       type.includes("Teacher") ||
       typeV2.startsWith("P") // V1 fallback
     ) {
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO professor (user_id, name, email)
-        VALUES (${user.id}, ${name}, ${email})
-        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}
-      `);
+      context.stage = "db.professor.upsert";
+      await this.userSsoLoginRepository.ensureProfessor({
+        userId: user.id,
+        name,
+        email,
+      });
 
+      context.stage = "db.professor.read";
+      db.professorQueriedAt = this.clock.now();
       const professor = await this.prisma.professor
         .findMany({
           where: { userId: user.id, deletedAt: null },
@@ -266,11 +362,13 @@ export class AuthRepository {
           ? parseInt(department)
           : null;
 
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO professor_t (department, professor_id, professor_enum, start_term)
-        VALUES (${departmentId}, ${professor.id}, ${3}, ${semester.startTerm})
-        ON DUPLICATE KEY UPDATE department = ${departmentId}, professor_id = ${professor.id}, start_term = ${semester.startTerm}
-      `);
+      db.professor = professor ? { id: professor.id } : null;
+      context.stage = "db.professor.term-write";
+      await this.userSsoLoginRepository.ensureProfessorTerm({
+        department: departmentId,
+        professorId: professor.id,
+        startTerm: semester.startTerm,
+      });
 
       result.professor = {
         id: professor.id,
@@ -283,23 +381,27 @@ export class AuthRepository {
       typeV2 === "R" || // V2: 직원/연구원
       type === "Employee" // V1 fallback
     ) {
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO employee (user_id, name, email)
-        VALUES (${user.id}, ${name}, ${email})
-        ON DUPLICATE KEY UPDATE user_id = ${user.id}, name = ${name}, email = ${email}
-      `);
+      context.stage = "db.employee.upsert";
+      await this.userSsoLoginRepository.ensureEmployee({
+        userId: user.id,
+        name,
+        email,
+      });
 
+      context.stage = "db.employee.read";
+      db.employeeQueriedAt = this.clock.now();
       const employee = await this.prisma.employee
         .findMany({
           where: { userId: user.id, deletedAt: null },
         })
         .then(takeOne);
 
-      await this.prisma.$executeRaw(Prisma.sql`
-        INSERT INTO employee_t (employee_id, start_term)
-        VALUES (${employee.id}, ${semester.startTerm})
-        ON DUPLICATE KEY UPDATE employee_id = ${employee.id}, start_term = ${semester.startTerm}
-      `);
+      db.employee = employee ? { id: employee.id } : null;
+      context.stage = "db.employee.term-write";
+      await this.userSsoLoginRepository.ensureEmployeeTerm({
+        employeeId: employee.id,
+        startTerm: semester.startTerm,
+      });
 
       result.employee = {
         id: employee.id,
@@ -446,12 +548,23 @@ export class AuthRepository {
     return result;
   }
 
-  private async getCurrentStudentEnumByStudentId(studentIds: number[]) {
+  private async getCurrentStudentEnumByStudentId(
+    studentIds: number[],
+    diagnostic?: Record<string, unknown>,
+  ) {
+    const queryDiagnostic = diagnostic ?? {};
     if (studentIds.length === 0) {
+      queryDiagnostic.skipped = "no_student_ids";
       return new Map<number, number>();
     }
 
     const currentDate = this.clock.now();
+    queryDiagnostic.queriedAt = currentDate;
+    queryDiagnostic.studentIds = studentIds;
+    queryDiagnostic.validityFilter =
+      "startTerm <= queriedAt AND (endTerm IS NULL OR endTerm >= queriedAt) AND deletedAt IS NULL";
+    queryDiagnostic.orderBy = ["startTerm DESC", "id DESC"];
+    queryDiagnostic.selectedFields = ["studentId", "studentEnum"];
     const studentTerms = await this.prisma.studentT.findMany({
       where: {
         studentId: { in: studentIds },
@@ -463,6 +576,7 @@ export class AuthRepository {
       select: { studentId: true, studentEnum: true },
     });
 
+    queryDiagnostic.rows = studentTerms;
     const studentEnumByStudentId = new Map<number, number>();
 
     // eslint-disable-next-line no-restricted-syntax
@@ -584,34 +698,23 @@ export class AuthRepository {
     refreshToken: string,
     expiresAt: Date,
   ): Promise<boolean> {
-    return this.prisma.$transaction(async tx => {
-      const result = await tx.authActivatedRefreshTokens.create({
-        data: { userId, expiresAt, refreshToken },
-      });
-      if (!result) {
-        throw new Error("createRefreshTokenRecord failed");
-      }
-      return true;
+    await this.authExchangeLoginRepository.storeRefreshToken({
+      userId,
+      refreshToken,
+      expiresAt,
     });
+    return true;
   }
 
   async deleteRefreshTokenRecord(
     userId: number,
     refreshToken: string,
   ): Promise<boolean> {
-    const cur = this.clock.now();
-    return this.prisma.$transaction(async tx => {
-      const result = await tx.authActivatedRefreshTokens.deleteMany({
-        where: {
-          userId,
-          refreshToken,
-          expiresAt: { gte: cur },
-        },
-      });
-      if (result.count !== 1) {
-        throw new Error("deleteRefreshTokenRecord failed");
-      }
-      return true;
-    });
+    await this.authExchangeLoginRepository.deleteRefreshToken(
+      userId,
+      refreshToken,
+      this.clock.now(),
+    );
+    return true;
   }
 }

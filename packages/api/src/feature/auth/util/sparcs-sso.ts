@@ -4,9 +4,9 @@ import * as querystring from "querystring";
 
 import { Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { RandomGenerator } from "@sparcs-clubs/api/common/random/random-generator";
-import logger from "@sparcs-clubs/api/common/util/logger";
 
 import { SSOUser } from "../dto/sparcs-sso.dto";
+import { captureSsoProfile, SsoLoginDiagnostic } from "./sso-login-diagnostic";
 
 // CONVERT SPARCS SSO V2 Client Version 1.1 TO TYPESCRIPT
 // VALID ONLY AFTER ----(NOT VALID) ----
@@ -17,6 +17,12 @@ interface Urls {
 }
 interface Params {
   [key: string]: string;
+}
+
+function captureErrorFrames(error: unknown) {
+  const stack = error instanceof Error ? error.stack : "";
+  const frames = (stack ?? "").split("\n").filter(line => /^\s+at /.test(line));
+  return { frames: frames.slice(0, 12), truncated: frames.length > 12 };
 }
 
 /* eslint-disable camelcase */
@@ -115,17 +121,29 @@ export class Client {
     return true;
   }
 
-  // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
-  private async _post_data(url: any, data: any): Promise<SSOUser> {
+  // eslint-disable-next-line no-underscore-dangle
+  private async _post_data(
+    url: string,
+    data: querystring.ParsedUrlQueryInput,
+    context?: SsoLoginDiagnostic,
+  ): Promise<SSOUser> {
     /**
      *@SSO
      *querystring.stringify(data)인지 .toString('utf8')붙여야 하는지 확인 필요
      */
+    const diagnostic: SsoLoginDiagnostic = context ?? { stage: "sso_request" };
+    diagnostic.stage = "sso_request";
+    diagnostic.sso = { profileState: "not_received" };
     try {
       const r: AxiosResponse = await axios.post(
         url,
         querystring.stringify(data),
       );
+      diagnostic.stage = "sso_response";
+      diagnostic.sso.httpStatus = r.status;
+      if (r.status !== 200) {
+        diagnostic.sso.profileState = "http_error";
+      }
       if (r.status === 400) {
         throw new Error("INVALID_REQUEST");
       } else if (r.status === 403) {
@@ -135,26 +153,99 @@ export class Client {
       }
 
       const result = r.data;
-      // console.log(result);
+      diagnostic.sso.profile = captureSsoProfile(result);
+      diagnostic.sso.profileState = "invalid_shape";
+      if (result === null) {
+        diagnostic.sso.profileState = "missing";
+        throw new Error("INVALID_OBJECT");
+      }
+      if (typeof result !== "object") {
+        throw new Error("INVALID_OBJECT");
+      }
+      if (!Array.isArray(result)) {
+        diagnostic.sso.profileState = result.kaist_v2_info
+          ? "available"
+          : "missing";
+      }
 
       // V1 kaist_info 파싱 (하위 호환성 유지용, 실제로는 사용 안 함)
-      result.kaist_info = result.kaist_info
-        ? JSON.parse(result.kaist_info)
-        : {};
+      diagnostic.stage = "sso_parse";
+      try {
+        result.kaist_info = result.kaist_info
+          ? JSON.parse(result.kaist_info)
+          : {};
+      } catch (error) {
+        diagnostic.sso.profileState = "v1_parse_failed";
+        diagnostic.sso.parseErrors = [
+          {
+            target: "kaist_info",
+            name: error instanceof SyntaxError ? "SyntaxError" : "Error",
+            message: "Failed to parse kaist_info",
+            stack: captureErrorFrames(error),
+          },
+        ];
+        throw error;
+      }
 
       // V2 kaist_v2_info 파싱 추가
-      if (result.kaist_v2_info && typeof result.kaist_v2_info === "string") {
+      const hasV2Info = Boolean(result.kaist_v2_info);
+      const isV2String = typeof result.kaist_v2_info === "string";
+      if (hasV2Info && isV2String) {
         try {
           result.kaist_v2_info = JSON.parse(result.kaist_v2_info);
-        } catch (e) {
-          logger.error("Failed to parse kaist_v2_info in SSO client:", e);
+        } catch (error) {
+          diagnostic.sso.profileState = "v2_parse_failed";
+          diagnostic.sso.parseErrors = [
+            {
+              target: "kaist_v2_info",
+              name: error instanceof SyntaxError ? "SyntaxError" : "Error",
+              message: "Failed to parse kaist_v2_info",
+              stack: captureErrorFrames(error),
+            },
+          ];
           result.kaist_v2_info = null;
+        }
+      }
+      if (diagnostic.sso.profileState === "available") {
+        const v2Info = result.kaist_v2_info;
+        if (!v2Info) {
+          diagnostic.sso.profileState = "missing";
+        } else if (typeof v2Info !== "object") {
+          diagnostic.sso.profileState = "invalid_shape";
+        } else if (Array.isArray(v2Info)) {
+          diagnostic.sso.profileState = "invalid_shape";
         }
       }
 
       return result as SSOUser;
-    } catch (e) {
-      logger.error(e);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        diagnostic.sso.profileState = "http_error";
+        diagnostic.sso.transportErrorName = "AxiosError";
+        diagnostic.sso.transportErrorMessage = "SSO HTTP request failed";
+        diagnostic.sso.transportErrorStack = captureErrorFrames(error);
+        const httpStatus = error.response?.status;
+        if (Number.isInteger(httpStatus)) {
+          diagnostic.sso.httpStatus = httpStatus;
+        }
+        // Error messages/config/body can contain the signed request or tokens.
+        const allowedCodes = [
+          "ERR_BAD_REQUEST",
+          "ERR_BAD_RESPONSE",
+          "ERR_NETWORK",
+          "ERR_CANCELED",
+          "ECONNABORTED",
+          "ECONNRESET",
+          "ECONNREFUSED",
+          "ETIMEDOUT",
+          "ENOTFOUND",
+          "EAI_AGAIN",
+          "ERR_FR_TOO_MANY_REDIRECTS",
+        ];
+        diagnostic.sso.upstreamErrorCode = allowedCodes.includes(error.code)
+          ? error.code
+          : "UNRECOGNIZED";
+      }
       throw new Error("INVALID_OBJECT");
     }
   }
@@ -181,7 +272,10 @@ export class Client {
     return { url, state };
   }
 
-  public async get_user_info(code: string): Promise<SSOUser> {
+  public async get_user_info(
+    code: string,
+    diagnostic?: SsoLoginDiagnostic,
+  ): Promise<SSOUser> {
     /*
     Exchange a code to user information
     :param code: the code that given by SPARCS SSO server
@@ -189,6 +283,11 @@ export class Client {
     */
     // eslint-disable-next-line no-underscore-dangle
     const [sign, timestamp]: [string, number] = this._sign_payload([code]);
+    if (diagnostic) {
+      const secrets = diagnostic.secrets ?? [];
+      secrets.push(code, this.secret_key, sign);
+      Object.assign(diagnostic, { secrets });
+    }
     const params = {
       client_id: this.client_id,
       code,
@@ -196,7 +295,7 @@ export class Client {
       sign,
     };
     // eslint-disable-next-line no-underscore-dangle
-    return this._post_data(this.URLS.token_info, params);
+    return this._post_data(this.URLS.token_info, params, diagnostic);
   }
 
   public get_logout_url(sid: string, redirect_uri: string): string {

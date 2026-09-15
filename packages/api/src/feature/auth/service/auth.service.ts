@@ -1,5 +1,6 @@
 import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ApiAut001RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut001";
 import { ApiAut002ResponseCreated } from "@clubs/interface/api/auth/endpoint/apiAut002";
@@ -17,6 +18,10 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import { ExchangeLoginActor, Request } from "../dto/auth.dto";
 import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
 import { AuthRepository } from "../repository/auth.repository";
+import {
+  captureSsoProfile,
+  SsoLoginDiagnostic,
+} from "../util/sso-login-diagnostic";
 import {
   type ExtractedUserInfo,
   safeExtractUserInfoFromV2,
@@ -41,8 +46,17 @@ export class AuthService {
    * @returns SPRACS SSO의 로그인 url을 리턴합니다.
    */
   public async getAuthSignIn(query: ApiAut001RequestQuery, req: Request) {
+    if (req.ssoLoginDiagnostic)
+      req.ssoLoginDiagnostic.stage = "session_initialize";
     req.session.next = query.next ?? "/";
+    if (req.ssoLoginDiagnostic)
+      req.ssoLoginDiagnostic.stage = "sso_login_params";
     const { url, state } = this.ssoClient.getLoginParams();
+
+    if (req.ssoLoginDiagnostic) {
+      req.ssoLoginDiagnostic.secrets ??= [];
+      req.ssoLoginDiagnostic.secrets.push(state);
+    }
 
     req.session.ssoState = state;
     return url;
@@ -57,39 +71,62 @@ export class AuthService {
   public async getAuthSignInCallback(
     query: ApiAut004RequestQuery,
     session: Request["session"],
+    diagnosticContext?: SsoLoginDiagnostic,
   ) {
-    const stateBefore = session.ssoState;
-    if (!stateBefore || stateBefore !== query.state) {
+    const diagnostic: SsoLoginDiagnostic = diagnosticContext ?? {
+      stage: "session_validation",
+    };
+    const fail = (
+      name: string,
+      message: string,
+      nextUrl: string,
+      httpStatus = 400,
+    ) => {
+      diagnostic.failure = {
+        name,
+        message,
+        httpStatus,
+        stack: new Error(message).stack,
+      };
       return {
-        nextUrl: "/error/invalid-login",
+        nextUrl,
         refreshToken: null,
         refreshTokenOptions: null,
+        next: undefined,
+        token: undefined,
+        isKaistIamLogin: false,
       };
+    };
+    diagnostic.stage = "session_validation";
+    const stateBefore = session.ssoState;
+    if (!stateBefore || stateBefore !== query.state) {
+      return fail(
+        "InvalidSsoState",
+        "SSO session state missing or mismatched",
+        "/error/invalid-login",
+        401,
+      );
     }
 
-    const ssoProfile: SSOUser = await this.ssoClient.getUserInfo(query.code);
+    diagnostic.stage = "sso_request";
+    const ssoProfile: SSOUser = await this.ssoClient.getUserInfo(
+      query.code,
+      diagnostic,
+    );
+    diagnostic.sso ??= { profile: captureSsoProfile(ssoProfile) };
+    diagnostic.stage = "sso_profile_validation";
 
-    // SSO 프로필 정보 로깅 (보안상 민감한 정보는 제외)
-    logger.info("SSO profile retrieved", {
-      uid: ssoProfile.uid,
-      sid: ssoProfile.sid,
-      hasKaistInfo: !!ssoProfile.kaist_info,
-      hasKaistV2Info: !!ssoProfile.kaist_v2_info,
-    });
-    logger.info(JSON.stringify(ssoProfile));
-
-    const isKaistIamLogin: boolean = true;
     if (!this.appConfigService.isLocal) {
       if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
         logger.warn("Missing required SSO data", {
           hasSid: !!ssoProfile.sid,
           hasKaistV2Info: !!ssoProfile.kaist_v2_info,
         });
-        return {
-          nextUrl: "/error/sso-data-missing",
-          refreshToken: null,
-          refreshTokenOptions: null,
-        };
+        return fail(
+          "MissingSsoProfile",
+          "Required SSO sid or KAIST V2 profile missing",
+          "/error/sso-data-missing",
+        );
       }
     }
 
@@ -101,16 +138,18 @@ export class AuthService {
 
     // SSO에서 받은 V2 정보 파싱
     if (typeof ssoProfile.kaist_v2_info === "string") {
+      diagnostic.stage = "sso_parse";
       try {
         ssoProfile.kaist_v2_info = JSON.parse(ssoProfile.kaist_v2_info);
-      } catch (e) {
-        logger.error("Failed to parse kaist_v2_info", e);
+      } catch {
+        diagnostic.sso.serviceParseError = "kaist_v2_info";
         ssoProfile.kaist_v2_info = null;
       }
     }
 
     // SSO에서 받은 V2 정보가 있으면 우선 사용
     if (ssoProfile.kaist_v2_info) {
+      diagnostic.stage = "sso_field_validation";
       const extractionResult = safeExtractUserInfoFromV2(
         ssoProfile.kaist_v2_info,
       );
@@ -128,16 +167,15 @@ export class AuthService {
         });
       } else {
         logger.error("Invalid kaist_v2_info from SSO", {
-          error: extractionResult.error,
-          sid: ssoProfile.sid,
+          stage: diagnostic.stage,
         });
 
         if (!this.appConfigService.isLocal) {
-          return {
-            nextUrl: "/error/invalid-login",
-            refreshToken: null,
-            refreshTokenOptions: null,
-          };
+          return fail(
+            "InvalidSsoFields",
+            extractionResult.error,
+            "/error/invalid-login",
+          );
         }
         // local 환경이면 아래 fallback으로 진행
         ssoProfile.kaist_v2_info = null;
@@ -147,6 +185,8 @@ export class AuthService {
     // SSO V2 정보가 없거나 추출 실패한 경우, local 환경에서만 ENV fallback 사용
     if (!userInfo) {
       if (this.appConfigService.isLocal) {
+        diagnostic.stage = "local_profile_validation";
+        diagnostic.sso.usedLocalFallback = true;
         logger.info(
           "SSO V2 info not available, falling back to ENV mock data for local development",
         );
@@ -178,6 +218,9 @@ export class AuthService {
         };
 
         const localExtractionResult = safeExtractUserInfoFromV2(mockV2Info);
+        diagnostic.sso.localProfile = captureSsoProfile({
+          kaist_v2_info: mockV2Info,
+        });
         if (localExtractionResult.success) {
           userInfo = localExtractionResult.data;
           socpsCd = mockV2Info.socps_cd;
@@ -190,45 +233,75 @@ export class AuthService {
           });
         } else {
           logger.error("Failed to extract user info from ENV mock data", {
-            error: localExtractionResult.error,
+            stage: diagnostic.stage,
           });
-          return {
-            nextUrl: "/error/invalid-login",
-            refreshToken: null,
-            refreshTokenOptions: null,
-          };
+          return fail(
+            "InvalidLocalSsoFields",
+            localExtractionResult.error,
+            "/error/invalid-login",
+          );
         }
 
         localSid = this.appConfigService.userSid || localSid;
       } else {
-        return {
-          nextUrl: "/error/invalid-login",
-          refreshToken: null,
-          refreshTokenOptions: null,
-        };
+        return fail(
+          "MissingSsoUserInfo",
+          "No usable KAIST V2 user information",
+          "/error/invalid-login",
+        );
       }
     }
 
-    // 최종 사용자 정보
+    return this.completeSsoSignIn(
+      userInfo,
+      localSid,
+      socpsCd,
+      stdStatusKor,
+      stdProgCode,
+      session,
+      diagnostic,
+    );
+  }
+
+  @Transactional()
+  public async completeSsoSignIn(
+    userInfo: ExtractedUserInfo,
+    sid: string,
+    socpsCd: string,
+    stdStatusKor: string | null,
+    stdProgCode: string | null,
+    session: Request["session"],
+    diagnosticContext: SsoLoginDiagnostic,
+  ) {
+    const diagnostic = diagnosticContext;
     const { studentNumber, email, name, type, department } = userInfo;
 
+    diagnostic.stage = "user_processing";
     const user = await this.authRepository.findOrCreateUser(
       email,
       studentNumber,
-      localSid,
+      sid,
       name,
       type,
       department,
       socpsCd,
       stdStatusKor,
       stdProgCode,
+      diagnostic,
     );
     // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
     // if(user.executive){
     //   if(!(await this.executiveRepository.findExecutiveById(user.executive.id))) throw new HttpException("Cannot find Executive", 403);
     // }
+    diagnostic.userId = user.id;
+    diagnostic.stage = "access_token_issue";
     const accessToken = this.getAccessToken(user);
+    diagnostic.secrets ??= [];
+    diagnostic.secrets.push(...Object.values(accessToken));
+    diagnostic.stage = "refresh_token_issue";
     const refreshToken = this.getRefreshToken(user);
+    diagnostic.secrets.push(refreshToken);
+    diagnostic.stage = "token_expiry";
     const current = this.clock.now();
     const accessTokenTokenExpiresAt = new Date(
       current.getTime() + this.appConfigService.accessTokenExpiresInMs,
@@ -245,6 +318,7 @@ export class AuthService {
       accessTokenTokenExpiresAt,
     };
 
+    diagnostic.stage = "refresh_token_store";
     return (await this.authRepository.createRefreshTokenRecord(
       user.id,
       refreshToken,
@@ -253,7 +327,7 @@ export class AuthService {
       ? {
           next: nextUrl,
           token,
-          isKaistIamLogin,
+          isKaistIamLogin: true,
         }
       : (() => {
           throw new HttpException("Cannot store refreshtoken", 500);
@@ -275,7 +349,7 @@ export class AuthService {
     };
   }
 
-  // TODO: 로직 수정 필요
+  @Transactional()
   async postAuthSignout(
     _user: {
       id: number;

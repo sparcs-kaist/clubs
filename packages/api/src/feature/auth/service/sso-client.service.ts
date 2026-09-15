@@ -9,6 +9,7 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import { SSOUser } from "../dto/sparcs-sso.dto";
 import { Client } from "../util/sparcs-sso";
+import { SsoLoginDiagnostic } from "../util/sso-login-diagnostic";
 
 @Injectable()
 export class SsoClientService {
@@ -31,7 +32,7 @@ export class SsoClientService {
     return this.client.get_login_params();
   }
 
-  getUserInfo(code: string): Promise<SSOUser> {
-    return this.client.get_user_info(code);
+  getUserInfo(code: string, diagnostic?: SsoLoginDiagnostic): Promise<SSOUser> {
+    return this.client.get_user_info(code, diagnostic);
   }
 }

@@ -1,5 +1,7 @@
 import { Request as _Request } from "express";
 
+import { SsoLoginDiagnostic } from "../util/sso-login-diagnostic";
+
 interface User {
   id: number;
   sid: string;
@@ -26,6 +28,7 @@ export interface UserAccessTokenPayload {
 
 export type Request = _Request & RequestExtra;
 export interface RequestExtra {
+  ssoLoginDiagnostic?: SsoLoginDiagnostic;
   session: {
     next: string;
     ssoState: string;

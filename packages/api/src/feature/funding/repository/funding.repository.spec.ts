@@ -94,9 +94,6 @@ describe("buildFundingTransportationPassengerFindManyArgs", () => {
         funding: {
           deletedAt: null,
         },
-        student: {
-          deletedAt: null,
-        },
       },
       select: {
         studentId: true,
