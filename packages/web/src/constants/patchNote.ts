@@ -5,6 +5,14 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.24 source=16f9f2363ae1
+  {
+    version: "v.0.1.24",
+    date: new Date("2026.09.15"),
+    patchNoteContent: `Clubs v0.1.24
+내부 개선
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.23 source=2596985b4b68
   {
     version: "v.0.1.23",
