@@ -33,6 +33,7 @@ import {
   type ApiUsr009RequestParam,
   type ApiUsr009ResponseOk,
 } from "@clubs/interface/api/user/endpoint/index";
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -77,11 +78,7 @@ export class UserController {
   ): Promise<ApiUsr002ResponseOk> {
     let phoneNumber;
 
-    if (
-      query.profile === "undergraduate" ||
-      query.profile === "master" ||
-      query.profile === "doctor"
-    ) {
+    if (studentUserTypes.includes(query.profile)) {
       phoneNumber = await this.userService.getStudentPhoneNumberByUserId(
         user.id,
       );
@@ -110,11 +107,7 @@ export class UserController {
       ) {
         return { phoneNumber: null };
       }
-      if (
-        query.profile === "undergraduate" ||
-        query.profile === "master" ||
-        query.profile === "doctor"
-      ) {
+      if (studentUserTypes.includes(query.profile)) {
         await this.userPublicService.updateStudentPhoneNumber(
           user.id,
           phoneNumber.phoneNumber,
@@ -140,11 +133,7 @@ export class UserController {
     @GetUser() user: GetUser,
     @Body() body: ApiUsr003RequestBody,
   ) {
-    if (
-      body.profile === "undergraduate" ||
-      body.profile === "master" ||
-      body.profile === "doctor"
-    ) {
+    if (studentUserTypes.includes(body.profile)) {
       await this.userPublicService.updateStudentPhoneNumber(
         user.id,
         body.phoneNumber,

@@ -17,6 +17,7 @@ import { SsoLoginFailureRepository } from "@sparcs-clubs/api/feature/auth/reposi
 import { AuthService } from "@sparcs-clubs/api/feature/auth/service/auth.service";
 import { SsoClientService } from "@sparcs-clubs/api/feature/auth/service/sso-client.service";
 import { SsoLoginFailureService } from "@sparcs-clubs/api/feature/auth/service/sso-login-failure.service";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { clearDatabase, closeDatabase } from "./setup";
@@ -159,6 +160,72 @@ describe("SSO failure logging with MySQL", () => {
     expect(await prisma.authActivatedRefreshTokens.count()).toBe(1);
     expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
   });
+
+  it.each([
+    ["0", 1, "undergraduate", "first login"],
+    ["1", 2, "master", "first login"],
+    ["3", 2, "master", "first login"],
+    ["4", 2, "master", "first login"],
+    ["5", 3, "doctor", "first login"],
+    ["7", 4, "masterDoctorDoctor", "first login"],
+    ["8", 5, "masterDoctorMaster", "first login"],
+    ["9", 6, "allPrograms", "first login"],
+    ["10", 7, "auditor", "first login"],
+    ["7", 4, "masterDoctorDoctor", "existing degree"],
+    ["8", 5, "masterDoctorMaster", "existing degree"],
+    ["9", 6, "allPrograms", "existing degree"],
+    ["10", 7, "auditor", "existing degree"],
+  ] as const)(
+    "preserves SSO %s as degree %s / %s through %s and token refresh",
+    async (progCode, studentEnum, profileKey, mode) => {
+      const studentProfile = {
+        ...profile(),
+        kaist_v2_info: {
+          ...profile().kaist_v2_info,
+          std_no: "20268083",
+          std_prog_code: progCode,
+        },
+      };
+      if (mode === "existing degree") {
+        sso.getUserInfo.mockResolvedValue({
+          ...studentProfile,
+          kaist_v2_info: {
+            ...studentProfile.kaist_v2_info,
+            std_prog_code: "5",
+          },
+        });
+        await signIn();
+        expect(await prisma.studentT.findFirst()).toMatchObject({
+          studentEnum: 3,
+        });
+      }
+      sso.getUserInfo.mockResolvedValue(studentProfile);
+      await signIn();
+      const user = await prisma.user.findFirstOrThrow();
+      const student = await prisma.student.findFirstOrThrow();
+      expect(await prisma.studentT.findFirstOrThrow()).toMatchObject({
+        studentId: student.id,
+        studentEnum,
+      });
+      const identity = await module
+        .get(UserPublicService)
+        .findLoginIdentity(user.id);
+      expect(identity).toMatchObject({
+        [profileKey]: { id: student.id, number: 20268083 },
+      });
+      const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+      expect(Object.keys(refreshed.accessToken)).toEqual([profileKey]);
+      expect(jwt.sign).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: profileKey,
+          studentId: student.id,
+          studentNumber: 20268083,
+        }),
+        expect.any(Object),
+      );
+      expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+    },
+  );
 
   it.each(["classification", "token-store"])(
     "rolls back login writes and keeps the %s failure",

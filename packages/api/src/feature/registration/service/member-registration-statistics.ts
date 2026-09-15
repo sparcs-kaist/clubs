@@ -1,3 +1,5 @@
+import { StudentEnum } from "@clubs/interface/common/enum/user.enum";
+
 type MemberRegistrationStatisticSource = {
   registrationApplicationStudentEnum: number;
   student: {
@@ -34,7 +36,9 @@ export function isUndergraduateMemberRegistration(
   studentNumber: string | undefined,
 ): boolean {
   const studentNumberSuffix = Number(studentNumber?.slice(-4));
-  const isUndergraduate = studentEnumId === 1 && studentNumberSuffix < 6000;
+  const undergraduateEnum = StudentEnum.Undergraduate;
+  const isUndergraduate =
+    studentEnumId === undergraduateEnum && studentNumberSuffix < 6000;
   return isUndergraduate;
 }
 

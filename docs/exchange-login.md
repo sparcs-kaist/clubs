@@ -45,7 +45,8 @@
 요청: `{"userId": 2}`. 선택한 사용자 계정의 ID만 전달한다.
 
 201 응답은 기존 `/auth/refresh`의 access token 묶음과 동일하다.
-`undergraduate`, `master`, `doctor`, `executive`, `professor`, `employee` 중
+`undergraduate`, `master`, `doctor`, `masterDoctorDoctor`, `masterDoctorMaster`,
+`allPrograms`, `auditor`, `executive`, `professor`, `employee` 중
 대상 계정에 해당하는 프로필 토큰을 반환한다.
 
 대상 refresh token은 HttpOnly 쿠키의 `/auth/refresh`, `/auth/sign-out`

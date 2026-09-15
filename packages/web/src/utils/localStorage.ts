@@ -23,8 +23,12 @@ export const setLoginTokens = (
   const accessToken =
     tokens.professor ??
     tokens.doctor ??
+    tokens.masterDoctorDoctor ??
+    tokens.masterDoctorMaster ??
     tokens.master ??
     tokens.undergraduate ??
+    tokens.allPrograms ??
+    tokens.auditor ??
     tokens.employee ??
     tokens.executive ??
     "";
