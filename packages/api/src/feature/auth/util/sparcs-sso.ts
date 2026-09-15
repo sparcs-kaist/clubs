@@ -138,6 +138,7 @@ export class Client {
       const r: AxiosResponse = await axios.post(
         url,
         querystring.stringify(data),
+        { timeout: this.TIMEOUT * 1000 },
       );
       diagnostic.stage = "sso_response";
       diagnostic.sso.httpStatus = r.status;

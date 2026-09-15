@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { UserSsoLoginRepository } from "./user-sso-login.repository";
+import { UserLoginIdentityRepository } from "./user-login-identity.repository";
 
 const startTerm = new Date("2026-03-01T00:00:00.000Z");
 const endTerm = new Date("2026-08-31T00:00:00.000Z");
@@ -33,36 +33,36 @@ const createRepository = () => {
       findMany: jest.fn().mockResolvedValue([{ id: 2, studentId: 11 }]),
     },
   };
-  return { tx, repository: new UserSsoLoginRepository({ tx } as never) };
+  return { tx, repository: new UserLoginIdentityRepository({ tx } as never) };
 };
 
 const upsertCases = [
   {
     delegate: "user",
-    run: (r: UserSsoLoginRepository) =>
+    run: (r: UserLoginIdentityRepository) =>
       r.ensureUser({ sid: "sid", name: identity.name, email: identity.email }),
   },
   {
     delegate: "student",
-    run: (r: UserSsoLoginRepository) =>
+    run: (r: UserLoginIdentityRepository) =>
       r.ensureStudent({ ...identity, number: 20262001 }),
   },
   {
     delegate: "studentT",
-    run: (r: UserSsoLoginRepository) => r.ensureStudentTerm(studentTerm),
+    run: (r: UserLoginIdentityRepository) => r.ensureStudentTerm(studentTerm),
   },
   {
     delegate: "professor",
-    run: (r: UserSsoLoginRepository) => r.ensureProfessor(identity),
+    run: (r: UserLoginIdentityRepository) => r.ensureProfessor(identity),
   },
   {
     delegate: "professorT",
-    run: (r: UserSsoLoginRepository) =>
+    run: (r: UserLoginIdentityRepository) =>
       r.ensureProfessorTerm({ professorId: 13, department: null, startTerm }),
   },
   {
     delegate: "employeeT",
-    run: (r: UserSsoLoginRepository) =>
+    run: (r: UserLoginIdentityRepository) =>
       r.ensureEmployeeTerm({ employeeId: 17, startTerm }),
   },
 ] as const;
@@ -73,7 +73,7 @@ const prismaError = (code: string) =>
     clientVersion: "test",
   });
 
-describe("UserSsoLoginRepository", () => {
+describe("UserLoginIdentityRepository", () => {
   it("matches users by sid even when another user has the requested email, and preserves deleted rows", async () => {
     const { repository, tx } = createRepository();
     const deletedAt = new Date("2025-01-01T00:00:00.000Z");
@@ -227,39 +227,26 @@ describe("UserSsoLoginRepository", () => {
   });
 
   it.each(upsertCases)(
-    "updates the winning unique key after a concurrent collision for $delegate",
+    "propagates the unique collision for $delegate so the whole transaction can restart",
     async ({ delegate, run }) => {
       const { repository, tx } = createRepository();
-      tx[delegate].upsert.mockRejectedValueOnce(prismaError("P2002"));
-      await expect(run(repository)).resolves.toEqual({ id: 1 });
+      const error = prismaError("P2002");
+      tx[delegate].upsert.mockRejectedValueOnce(error);
+      await expect(run(repository)).rejects.toBe(error);
       expect(tx[delegate].upsert).toHaveBeenCalledTimes(1);
-      expect(tx[delegate].update).toHaveBeenCalledTimes(1);
-      const original = tx[delegate].upsert.mock.calls[0][0];
-      expect(tx[delegate].update).toHaveBeenCalledWith({
-        where: original.where,
-        data: original.update,
-      });
+      expect(tx[delegate].update).not.toHaveBeenCalled();
     },
   );
 
-  it.each([new Error("database unavailable"), prismaError("P2024")])(
-    "preserves unrelated database errors without a retry",
-    async error => {
-      const { repository, tx } = createRepository();
-      tx.user.upsert.mockRejectedValue(error);
-      await expect(upsertCases[0].run(repository)).rejects.toBe(error);
-      expect(tx.user.upsert).toHaveBeenCalledTimes(1);
-      expect(tx.user.update).not.toHaveBeenCalled();
-    },
-  );
-
-  it("preserves an update failure after a unique race", async () => {
+  it.each([
+    new Error("database unavailable"),
+    prismaError("P2024"),
+    prismaError("P2034"),
+  ])("preserves unrelated database errors without a retry", async error => {
     const { repository, tx } = createRepository();
-    const error = prismaError("P2002");
-    tx.user.upsert.mockRejectedValue(prismaError("P2002"));
-    tx.user.update.mockRejectedValue(error);
+    tx.user.upsert.mockRejectedValue(error);
     await expect(upsertCases[0].run(repository)).rejects.toBe(error);
     expect(tx.user.upsert).toHaveBeenCalledTimes(1);
-    expect(tx.user.update).toHaveBeenCalledTimes(1);
+    expect(tx.user.update).not.toHaveBeenCalled();
   });
 });

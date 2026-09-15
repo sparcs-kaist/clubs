@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
-import { UserSsoLoginRepository } from "./user-sso-login.repository";
+import { UserLoginIdentityRepository } from "./user-login-identity.repository";
 
 const mockDelegate = () => ({
   // PrismaService identifies a delegate using these two standard operations.
@@ -47,7 +47,7 @@ describe("SSO ORM dates through PrismaService's real transaction proxy", () => {
   it("stores student, professor, and employee term dates in KST and returns UTC Dates", async () => {
     const prisma = new PrismaService();
     await prisma.$transaction(async transaction => {
-      const repository = new UserSsoLoginRepository({
+      const repository = new UserLoginIdentityRepository({
         tx: transaction,
       } as never);
       const student = await repository.ensureStudentTerm({
@@ -88,39 +88,38 @@ describe("SSO ORM dates through PrismaService's real transaction proxy", () => {
     expect(startTerm.toISOString()).toBe("2026-02-28T15:00:00.000Z");
   });
 
-  it("does not shift dates twice when a concurrent insert falls back to update", async () => {
-    mockRawClient.professorT.upsert.mockRejectedValueOnce(
-      new Prisma.PrismaClientKnownRequestError("unique race", {
-        code: "P2002",
-        clientVersion: "test",
-      }),
-    );
-    const prisma = new PrismaService();
-    await prisma.$transaction(async transaction => {
-      const repository = new UserSsoLoginRepository({
-        tx: transaction,
-      } as never);
-      const result = await repository.ensureProfessorTerm({
-        professorId: 13,
-        department: null,
-        startTerm,
-      });
-      expect(result.startTerm).toEqual(startTerm);
+  it("preserves UTC inputs and the original collision error for a new transaction", async () => {
+    const error = new Prisma.PrismaClientKnownRequestError("unique race", {
+      code: "P2002",
+      clientVersion: "test",
     });
+    mockRawClient.professorT.upsert.mockRejectedValueOnce(error);
+    const prisma = new PrismaService();
+    await expect(
+      prisma.$transaction(async transaction => {
+        const repository = new UserLoginIdentityRepository({
+          tx: transaction,
+        } as never);
+        await repository.ensureProfessorTerm({
+          professorId: 13,
+          department: null,
+          startTerm,
+        });
+      }),
+    ).rejects.toBe(error);
 
     expect(
       mockRawClient.professorT.upsert.mock.calls[0][0].update.startTerm,
     ).toEqual(storedStart);
-    expect(
-      mockRawClient.professorT.update.mock.calls[0][0].data.startTerm,
-    ).toEqual(storedStart);
+    expect(mockRawClient.professorT.update).not.toHaveBeenCalled();
+    expect(startTerm.toISOString()).toBe("2026-02-28T15:00:00.000Z");
   });
 
   it("uses the same KST-shifted instant at both inclusive executive term boundaries", async () => {
     const queriedAt = new Date("2026-09-15T10:00:00.000Z");
     const prisma = new PrismaService();
     await prisma.$transaction(async transaction => {
-      const repository = new UserSsoLoginRepository({
+      const repository = new UserLoginIdentityRepository({
         tx: transaction,
       } as never);
       await repository.findActiveExecutives(11, queriedAt);

@@ -4,7 +4,7 @@ import { PassportModule } from "@nestjs/passport";
 
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
-import { UserSsoLoginRepository } from "../user/repository/sso-login/user-sso-login.repository";
+import { SemesterModule } from "../semester/semester.module";
 import UserModule from "../user/user.module";
 import { AuthController } from "./controller/auth.controller";
 import { ExchangeLoginController } from "./controller/exchange-login.controller";
@@ -15,6 +15,7 @@ import { SsoLoginFailureRepository } from "./repository/sso-login-failure/sso-lo
 import { AuthService } from "./service/auth.service";
 import { ExchangeLoginService } from "./service/exchange-login.service";
 import { SsoClientService } from "./service/sso-client.service";
+import { SsoLoginFailureService } from "./service/sso-login-failure.service";
 import { JwtAccessStrategy } from "./strategy/jwt-access.strategy";
 import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
 
@@ -31,15 +32,16 @@ import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
     }),
     PassportModule,
     UserModule,
+    SemesterModule,
   ],
   controllers: [AuthController, ExchangeLoginController],
   providers: [
     AuthService,
     SsoLoginDiagnosticInterceptor,
     SsoLoginFailureRepository,
+    SsoLoginFailureService,
     SsoClientService,
     AuthRepository,
-    UserSsoLoginRepository,
     AuthExchangeLoginRepository,
     ExchangeLoginService,
     JwtRefreshStrategy,

@@ -3,8 +3,6 @@ import {
   FundingStatusEnum,
 } from "@clubs/interface/common/enum/funding.enum";
 
-import OldStudentRepository from "@sparcs-clubs/api/feature/user/repository/old.student.repository";
-
 import FundingService from "./funding.service";
 
 jest.mock("@nestjs-cls/transactional", () => ({
@@ -66,10 +64,7 @@ const createFundingService = () => {
         isFinalComment: jest.fn().mockReturnValue(true),
       },
     ]),
-    find: jest.fn().mockResolvedValue([]),
-  };
-  const filePublicService = {
-    getFilesByIds: jest.fn().mockResolvedValue([]),
+    find: jest.fn(),
   };
   const userPublicService = {
     checkCurrentExecutive: jest.fn().mockResolvedValue(undefined),
@@ -77,19 +72,15 @@ const createFundingService = () => {
       .fn()
       .mockResolvedValue([chargedExecutive, latestCommentedExecutive]),
     findExecutiveSummary: jest.fn().mockResolvedValue(chargedExecutive),
-    getStudentById: jest.fn().mockResolvedValue({ id: studentId }),
-    fetchStudentSummaries: jest.fn(),
   };
   const clubPublicService = {
     checkStudentDelegate: jest.fn().mockResolvedValue(undefined),
-    checkIsStudentDelegate: jest.fn().mockResolvedValue(undefined),
     fetchSummary: jest.fn().mockResolvedValue(club),
     fetchSummaries: jest.fn().mockResolvedValue([club]),
     fetchDivisionSummaries: jest.fn().mockResolvedValue([division]),
   };
   const activityPublicService = {
     fetchSummaries: jest.fn().mockResolvedValue([activity]),
-    fetchSummary: jest.fn().mockResolvedValue(activity),
   };
   const semesterPublicService = {
     loadId: jest.fn().mockResolvedValue(activityDuration.semester.id),
@@ -122,16 +113,16 @@ const createFundingService = () => {
   };
 
   const service = new FundingService(
-    fundingRepository as unknown as FundingServiceDependencies[0],
-    fundingCommentRepository as unknown as FundingServiceDependencies[1],
-    filePublicService as unknown as FundingServiceDependencies[2],
-    userPublicService as unknown as FundingServiceDependencies[3],
-    clubPublicService as unknown as FundingServiceDependencies[4],
-    activityPublicService as unknown as FundingServiceDependencies[5],
-    semesterPublicService as unknown as FundingServiceDependencies[6],
-    activityDurationPublicService as unknown as FundingServiceDependencies[7],
-    fundingDeadlinePublicService as unknown as FundingServiceDependencies[8],
-    prisma as unknown as FundingServiceDependencies[9],
+    fundingRepository as FundingServiceDependencies[0],
+    fundingCommentRepository as FundingServiceDependencies[1],
+    {} as FundingServiceDependencies[2],
+    userPublicService as FundingServiceDependencies[3],
+    clubPublicService as FundingServiceDependencies[4],
+    activityPublicService as FundingServiceDependencies[5],
+    semesterPublicService as FundingServiceDependencies[6],
+    activityDurationPublicService as FundingServiceDependencies[7],
+    fundingDeadlinePublicService as FundingServiceDependencies[8],
+    prisma as FundingServiceDependencies[9],
     {} as FundingServiceDependencies[10],
   );
 
@@ -150,53 +141,6 @@ const createFundingService = () => {
     prisma,
   };
 };
-
-describe("FundingService transportation passenger responses", () => {
-  it.each(["legacy student", "student", "executive"])(
-    "omits soft-deleted passengers through the existing student query for %s reads",
-    async caller => {
-      const { service, fundingRepository, userPublicService } =
-        createFundingService();
-      const active = { id: 701, name: "재학생", number: 20260001 };
-      const studentDatabase = {
-        student: { findMany: jest.fn().mockResolvedValue([active]) },
-      };
-      const studentRepository = new OldStudentRepository(
-        studentDatabase as never,
-      );
-      userPublicService.fetchStudentSummaries.mockImplementation(ids =>
-        studentRepository.fetchStudentSummaries(ids),
-      );
-      fundingRepository.fetch.mockResolvedValue({
-        ...funding,
-        tradeEvidenceFiles: [],
-        tradeDetailFiles: [],
-        isTransportation: true,
-        transportation: { passengers: [{ id: active.id }, { id: 702 }] },
-      });
-
-      const response = await {
-        "legacy student": () =>
-          service.getStudentFunding({ id: funding.id }, studentId),
-        "student": () =>
-          service.getStudentFunding2(studentId, funding.id, undefined),
-        "executive": () =>
-          service.getExecutiveFunding(chargedExecutive.id, funding.id),
-      }[caller]();
-
-      expect(studentDatabase.student.findMany).toHaveBeenCalledWith({
-        where: { id: { in: [active.id, 702] }, deletedAt: null },
-      });
-      expect(response.funding.transportation.passengers).toEqual([
-        {
-          id: active.id,
-          name: active.name,
-          studentNumber: String(active.number),
-        },
-      ]);
-    },
-  );
-});
 
 describe("FundingService charged executive updates", () => {
   it("updates selected fundings before returning success", async () => {

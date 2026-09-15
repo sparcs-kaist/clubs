@@ -61,15 +61,15 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     checkDeadline: jest.fn().mockResolvedValue(undefined),
   };
   const service = new RegistrationService(
-    clubRegistrationRepository as unknown as RegistrationServiceDependencies[0],
-    clubPublicService as unknown as RegistrationServiceDependencies[1],
+    clubRegistrationRepository as RegistrationServiceDependencies[0],
+    clubPublicService as RegistrationServiceDependencies[1],
     {} as RegistrationServiceDependencies[2],
     {} as RegistrationServiceDependencies[3],
-    registrationPublicService as unknown as RegistrationServiceDependencies[4],
-    userPublicService as unknown as RegistrationServiceDependencies[5],
-    memberRegistrationRepository as unknown as RegistrationServiceDependencies[6],
-    semesterPublicService as unknown as RegistrationServiceDependencies[7],
-    registrationDeadlinePublicService as unknown as RegistrationServiceDependencies[8],
+    registrationPublicService as RegistrationServiceDependencies[4],
+    userPublicService as RegistrationServiceDependencies[5],
+    memberRegistrationRepository as RegistrationServiceDependencies[6],
+    semesterPublicService as RegistrationServiceDependencies[7],
+    registrationDeadlinePublicService as RegistrationServiceDependencies[8],
     {} as RegistrationServiceDependencies[9],
   );
 

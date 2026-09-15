@@ -8,7 +8,6 @@ import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ExchangeLoginActor } from "../dto/auth.dto";
-import { AuthRepository } from "../repository/auth.repository";
 import { AuthExchangeLoginRepository } from "../repository/exchange-login/auth-exchange-login.repository";
 import { AuthService } from "./auth.service";
 
@@ -20,7 +19,6 @@ type ExchangeLoginUser = ExchangeLoginActor & {
 export class ExchangeLoginService {
   constructor(
     private readonly userPublicService: UserPublicService,
-    private readonly authRepository: AuthRepository,
     private readonly exchangeRepository: AuthExchangeLoginRepository,
     private readonly authService: AuthService,
     private readonly appConfigService: AppConfigService,
@@ -56,7 +54,7 @@ export class ExchangeLoginService {
       id: currentActor.id,
       email: currentActor.email,
     };
-    const user = await this.authRepository.findUserById(userId);
+    const user = await this.userPublicService.findLoginIdentity(userId);
     const accessToken = this.authService.getAccessToken(user, originalActor);
     if (Object.keys(accessToken).length === 0) {
       throw new NotFoundException("로그인할 수 있는 프로필이 없는 계정입니다.");

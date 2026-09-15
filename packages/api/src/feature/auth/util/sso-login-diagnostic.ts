@@ -70,6 +70,8 @@ function captureProfilePart(raw: unknown, fields: string[]) {
   const type = valueType(raw);
   let value = raw;
   if (typeof raw === "string") {
+    if (raw.length > 65536)
+      return { type, state: "too_large", length: raw.length };
     try {
       value = JSON.parse(raw);
     } catch {
@@ -105,6 +107,8 @@ export function captureSsoProfile(profile: unknown): Record<string, unknown> {
 
 /** Known authentication values never enter persisted messages or JSON. */
 export function redactDiagnosticText(text: string, secrets: string[]): string {
+  // Omit oversized input whole: slicing first could expose a partial credential.
+  if (text.length > 65536) return "[TRUNCATED]";
   const values = secrets.flatMap(secret => {
     let encoded = "";
     try {
@@ -156,6 +160,10 @@ export function boundDiagnosticJson(input: unknown, secrets: string[]) {
     }
     if (value instanceof Date) return value.toISOString();
     if (typeof value === "string") {
+      if (value.length > 65536) {
+        truncated.push(path);
+        return "[TRUNCATED]";
+      }
       const safe = redactDiagnosticText(value, secrets);
       const limit = Math.max(0, Math.min(1024, remaining));
       const prefix = Buffer.from(safe).subarray(0, limit).toString("utf8");

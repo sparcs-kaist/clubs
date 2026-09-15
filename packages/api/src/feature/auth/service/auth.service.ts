@@ -1,6 +1,7 @@
 import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
 import { ApiAut001RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut001";
 import { ApiAut002ResponseCreated } from "@clubs/interface/api/auth/endpoint/apiAut002";
@@ -14,6 +15,12 @@ import {
 } from "@sparcs-clubs/api/common/random/random-generator";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+import {
+  LoginIdentity,
+  UserIdentitySyncError,
+} from "@sparcs-clubs/api/feature/user/model/login-identity";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ExchangeLoginActor, Request } from "../dto/auth.dto";
 import { KaistV2Info, SSOUser } from "../dto/sparcs-sso.dto";
@@ -37,6 +44,8 @@ export class AuthService {
     private readonly appConfigService: AppConfigService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(RANDOM_GENERATOR) private readonly randomGenerator: RandomGenerator,
+    private readonly userPublicService: UserPublicService,
+    private readonly semesterPublicService: SemesterPublicService,
   ) {}
 
   /**
@@ -252,15 +261,27 @@ export class AuthService {
       }
     }
 
-    return this.completeSsoSignIn(
-      userInfo,
-      localSid,
-      socpsCd,
-      stdStatusKor,
-      stdProgCode,
-      session,
-      diagnostic,
-    );
+    // A MySQL upsert race needs a fresh transaction snapshot. Reuse the SSO
+    // response; retrying the one-time authorization code would fail.
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        // eslint-disable-next-line no-await-in-loop -- each retry starts after the previous transaction rolls back
+        return await this.completeSsoSignIn(
+          userInfo,
+          localSid,
+          socpsCd,
+          stdStatusKor,
+          stdProgCode,
+          session,
+          diagnostic,
+        );
+      } catch (error) {
+        if (attempt >= 3) throw error;
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError))
+          throw error;
+        if (!["P2002", "P2034"].includes(error.code)) throw error;
+      }
+    }
   }
 
   @Transactional()
@@ -276,23 +297,45 @@ export class AuthService {
     const diagnostic = diagnosticContext;
     const { studentNumber, email, name, type, department } = userInfo;
 
+    delete diagnostic.userId;
+    delete diagnostic.studentId;
+    diagnostic.stage = "db.semester.read";
+    const queriedAt = this.clock.now();
+    diagnostic.db = { semesterQueriedAt: queriedAt };
+    const semester = await this.semesterPublicService.loadForLogin(queriedAt);
+    diagnostic.db.semester = semester;
+    if (!semester) throw new HttpException("Cannot find current semester", 500);
     diagnostic.stage = "user_processing";
-    const user = await this.authRepository.findOrCreateUser(
-      email,
-      studentNumber,
-      sid,
-      name,
-      type,
-      department,
-      socpsCd,
-      stdStatusKor,
-      stdProgCode,
-      diagnostic,
-    );
-    // executiverepository가 common에서 제거됨에 따라 집행부원 토큰 추가 로직은 후에 재구성이 필요합니다.
-    // if(user.executive){
-    //   if(!(await this.executiveRepository.findExecutiveById(user.executive.id))) throw new HttpException("Cannot find Executive", 403);
-    // }
+    let user: LoginIdentity;
+    try {
+      const result = await this.userPublicService.syncSsoIdentity(
+        {
+          email,
+          studentNumber,
+          sid,
+          name,
+          type,
+          department,
+          typeV2: socpsCd,
+          statusV2: stdStatusKor,
+          progCodeV2: stdProgCode,
+        },
+        semester,
+      );
+      user = result.identity;
+      diagnostic.stage = result.diagnostic.stage;
+      diagnostic.studentId = result.diagnostic.studentId;
+      Object.assign(diagnostic.db, result.diagnostic.db);
+    } catch (error) {
+      if (error instanceof UserIdentitySyncError) {
+        diagnostic.stage = error.diagnostic.stage;
+        diagnostic.userId = error.diagnostic.userId;
+        diagnostic.studentId = error.diagnostic.studentId;
+        Object.assign(diagnostic.db, error.diagnostic.db);
+        throw error.cause;
+      }
+      throw error;
+    }
     diagnostic.userId = user.id;
     diagnostic.stage = "access_token_issue";
     const accessToken = this.getAccessToken(user);
@@ -334,6 +377,14 @@ export class AuthService {
         })();
   }
 
+  async hasActiveRefreshSession(
+    userId: number,
+    refreshToken: string,
+  ): Promise<boolean> {
+    if (!(await this.userPublicService.isActiveUser(userId))) return false;
+    return this.authRepository.hasActiveRefreshToken(userId, refreshToken);
+  }
+
   async postAuthRefresh(_user: {
     id: number;
     sid: string;
@@ -341,7 +392,7 @@ export class AuthService {
     email: string;
     exchangeActor?: ExchangeLoginActor;
   }): Promise<ApiAut002ResponseCreated> {
-    const user = await this.authRepository.findUserById(_user.id);
+    const user = await this.userPublicService.findLoginIdentity(_user.id);
     const accessToken = this.getAccessToken(user, _user.exchangeActor);
 
     return {

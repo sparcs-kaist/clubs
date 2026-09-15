@@ -222,6 +222,23 @@ describe("Client", () => {
     },
   );
 
+  it("times out SSO requests and preserves the timeout reason for failure recording", async () => {
+    const post = jest
+      .spyOn(axios, "post")
+      .mockRejectedValue(new AxiosError("timeout", "ECONNABORTED"));
+    const diagnostic: SsoLoginDiagnostic = { stage: "start" };
+    await expect(
+      createClient().get_user_info("auth-code", diagnostic),
+    ).rejects.toThrow("INVALID_OBJECT");
+    expect(post).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
+      timeout: 60000,
+    });
+    expect(diagnostic).toMatchObject({
+      stage: "sso_request",
+      sso: { upstreamErrorCode: "ECONNABORTED" },
+    });
+  });
+
   it("omits arbitrary upstream error codes and missing response status", async () => {
     jest
       .spyOn(axios, "post")

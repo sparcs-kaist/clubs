@@ -19,7 +19,6 @@ describe("AuthExchangeLoginRepository", () => {
     const transaction = {
       authActivatedRefreshTokens: {
         create: jest.fn().mockResolvedValue({ id: 1 }),
-        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       authExchangeLoginLog: { create: jest.fn().mockResolvedValue({ id: 2 }) },
     };
@@ -49,55 +48,5 @@ describe("AuthExchangeLoginRepository", () => {
     const failure = new Error("audit write failed");
     transaction.authExchangeLoginLog.create.mockRejectedValue(failure);
     await expect(repository.createExchangeLog(log)).rejects.toBe(failure);
-  });
-  it("deletes exactly one unexpired token with the caller's lookup time", async () => {
-    const { repository, transaction } = setup();
-    const queriedAt = new Date("2026-09-15T10:00:00.000Z");
-    await expect(
-      repository.deleteRefreshToken(
-        token.userId,
-        token.refreshToken,
-        queriedAt,
-      ),
-    ).resolves.toBeUndefined();
-    expect(
-      transaction.authActivatedRefreshTokens.deleteMany,
-    ).toHaveBeenCalledWith({
-      where: {
-        userId: token.userId,
-        refreshToken: token.refreshToken,
-        expiresAt: { gte: queriedAt },
-      },
-    });
-  });
-
-  it.each([0, 2])(
-    "rejects a deletion count of %s so the enclosing sign-out transaction rolls back",
-    async count => {
-      const { repository, transaction } = setup();
-      transaction.authActivatedRefreshTokens.deleteMany.mockResolvedValue({
-        count,
-      });
-      await expect(
-        repository.deleteRefreshToken(
-          token.userId,
-          token.refreshToken,
-          token.expiresAt,
-        ),
-      ).rejects.toThrow("deleteRefreshTokenRecord failed");
-    },
-  );
-
-  it("preserves a token deletion error for the enclosing transaction", async () => {
-    const { repository, transaction } = setup();
-    const error = new Error("token deletion unavailable");
-    transaction.authActivatedRefreshTokens.deleteMany.mockRejectedValue(error);
-    await expect(
-      repository.deleteRefreshToken(
-        token.userId,
-        token.refreshToken,
-        token.expiresAt,
-      ),
-    ).rejects.toBe(error);
   });
 });

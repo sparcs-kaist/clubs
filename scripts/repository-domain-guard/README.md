@@ -15,13 +15,11 @@ export const repositoryBoundary = {
 } as const;
 ```
 
-The file name must be `repository-boundary.ts`, and the v1 schema supports only
-`ownedPrismaModels`.
-
-Do not add exception fields such as `allowedExternalReads` or
-`allowedExternalWrites`. If cross-boundary direct access becomes unavoidable,
-expand this manifest through a separate architecture review instead of opening
-an exception slot in advance.
+The file name must be `repository-boundary.ts`. `ownedPrismaModels` is required;
+`exportedPrismaModels` and `importedPrismaModels` are optional.
+Imports describe schema relationships only. They never grant permission to query
+another domain's models. Cross-domain application work must call the owning
+module's exported PublicService, rather than importing its repository provider.
 
 ## Guarded Rules
 
@@ -30,8 +28,9 @@ The guard fails when a changed production repository file:
 - queries a Prisma delegate not listed in the nearest
   `repository-boundary.ts`;
 - queries Prisma without a nearest `repository-boundary.ts`;
-- traverses a Prisma relation through `include` or relation `select` when the
-  relation target is outside `ownedPrismaModels`.
+- traverses a Prisma relation whose target is outside `ownedPrismaModels`,
+  including `include`, `select`, `where`, `orderBy`, `_count`, and nested writes
+  in `data`, `create`, or `update` (including `upsert`).
 
 Delegate access is checked through direct property access, bracket access,
 simple Prisma client aliases, and destructured delegates:
@@ -51,36 +50,40 @@ The guard also validates all boundary manifests:
 
 - every `ownedPrismaModels` entry must exist as a Prisma model delegate;
 - a Prisma model delegate can be owned by only one boundary;
-- owned Prisma models must not define Prisma relation fields whose target model
-  is outside the same boundary;
-- `ownedPrismaModels` must be a static string literal array;
-- no v1 manifest fields other than `ownedPrismaModels` are allowed.
+- every exported model must be owned by the exporting boundary;
+- imports must name an existing manifest that both owns and exports each model;
+- an import cannot re-export another owner's model or import the same model twice;
+- every schema relation target must be owned or explicitly imported;
+- model lists and import paths must be static string literals;
+- extra manifest fields, duplicate entries, and dynamic/spread definitions fail.
 
 ## Relation Policy
 
-Use scalar foreign-key fields such as `clubId` for cross-boundary references.
-Do not add Prisma relation fields that point outside the repository boundary. A
-relation field creates an ORM navigation path, so the schema should not expose
-that path when the target model is owned elsewhere.
+Keep existing Prisma relations and database foreign keys. An external relation
+requires an explicit export from its owner and an import in its source boundary:
 
-This fails at manifest/schema validation time:
+```ts
+// packages/api/src/feature/club/repository/repository-boundary.ts
+export const repositoryBoundary = {
+  ownedPrismaModels: ["club"],
+  exportedPrismaModels: ["club"],
+} as const;
 
-```prisma
-model Activity {
-  id     Int @id @default(autoincrement())
-  clubId Int
-  club   Club @relation(fields: [clubId], references: [id])
-}
+// packages/api/src/feature/activity/repository/repository-boundary.ts
+export const repositoryBoundary = {
+  ownedPrismaModels: ["activity"],
+  importedPrismaModels: [{
+    from: "packages/api/src/feature/club/repository/repository-boundary.ts",
+    models: ["club"],
+  }],
+} as const;
 ```
 
-Keep only the scalar id when the target belongs to another boundary:
-
-```prisma
-model Activity {
-  id     Int @id @default(autoincrement())
-  clubId Int
-}
-```
+`from` is a repository-root-relative path, not a runtime TypeScript import.
+Metadata cycles are allowed because Prisma relations can be bidirectional.
+Every imported owner's own relations are also validated; declaring a domain can
+therefore require registering the related domain boundaries. Schema-only domains
+need only this metadata, not new runtime modules or repository implementations.
 
 Relation traversal is also guarded inside queries:
 
@@ -88,7 +91,7 @@ Relation traversal is also guarded inside queries:
 this.prisma.activity.findMany({
   include: {
     participants: true, // OK when activityParticipant is owned here
-    club: true, // FAIL when club is owned by another repository
+    club: true, // FAIL even when club is explicitly imported
   },
 });
 ```
@@ -105,6 +108,9 @@ this.prisma.activity.findFirst({
 ```
 
 Relation `select` follows the same boundary rule as `include`.
+Relation filters and nested writes follow that rule too; for example,
+`where: { club: { is: { id } } }` and `data: { club: { connect: { id } } }` fail
+when `club` is external. Scalar foreign keys such as `clubId` remain allowed.
 
 ## Usage
 

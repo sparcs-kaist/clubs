@@ -11,8 +11,6 @@ export class SsoLoginFailureRepository {
   ) {}
 
   async create(data: Prisma.AuthSsoLoginFailureLogCreateInput): Promise<void> {
-    // The interceptor runs after the login transaction has ended, so tx falls
-    // back to the root client and the failure row survives the login rollback.
     await this.txHost.tx.authSsoLoginFailureLog.create({ data });
   }
 }

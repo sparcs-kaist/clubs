@@ -263,6 +263,32 @@ describe("SSO login diagnostic privacy boundaries", () => {
     });
   });
 
+  it("omits oversized input before parsing or redacting its contents", () => {
+    const oversized = `{"std_prog_code":"${"x".repeat(65536)}private-secret"}`;
+    const parse = jest.spyOn(JSON, "parse");
+    try {
+      expect(captureSsoProfile({ kaist_v2_info: oversized })).toMatchObject({
+        kaist_v2_info: {
+          type: "string",
+          state: "too_large",
+          length: oversized.length,
+        },
+      });
+      expect(parse).not.toHaveBeenCalled();
+    } finally {
+      parse.mockRestore();
+    }
+    expect(redactDiagnosticText(oversized, ["private-secret"])).toBe(
+      "[TRUNCATED]",
+    );
+    expect(
+      boundDiagnosticJson({ field: oversized }, ["private-secret"]),
+    ).toEqual({
+      data: { field: "[TRUNCATED]" },
+      truncated: ["$.field"],
+    });
+  });
+
   it("marks truncation while bounding oversized strings and DB arrays", () => {
     const result = boundDiagnosticJson(
       {

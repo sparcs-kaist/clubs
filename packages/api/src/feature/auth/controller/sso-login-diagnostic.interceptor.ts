@@ -20,7 +20,7 @@ import logger from "@sparcs-clubs/api/common/util/logger";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
 import { Request } from "../dto/auth.dto";
-import { SsoLoginFailureRepository } from "../repository/sso-login-failure/sso-login-failure.repository";
+import { SsoLoginFailureService } from "../service/sso-login-failure.service";
 import {
   boundDiagnosticJson,
   redactDiagnosticText,
@@ -30,7 +30,7 @@ import {
 @Injectable()
 export class SsoLoginDiagnosticInterceptor implements NestInterceptor {
   constructor(
-    private readonly repository: SsoLoginFailureRepository,
+    private readonly failureService: SsoLoginFailureService,
     private readonly config: AppConfigService,
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(RANDOM_GENERATOR) private readonly random: RandomGenerator,
@@ -105,12 +105,18 @@ export class SsoLoginDiagnosticInterceptor implements NestInterceptor {
               ),
               responseStatus: res.headersSent ? res.statusCode : httpStatus,
             },
+            error: {
+              code:
+                error instanceof Prisma.PrismaClientKnownRequestError
+                  ? error.code
+                  : undefined,
+            },
             sso: diagnostic.sso,
             db: diagnostic.db,
           },
           secrets,
         );
-        await this.repository.create({
+        await this.failureService.record({
           occurredAt: this.clock.now(),
           traceId,
           stage: diagnostic.stage,

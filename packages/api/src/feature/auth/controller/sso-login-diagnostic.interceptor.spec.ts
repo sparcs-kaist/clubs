@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
+import { Prisma } from "@prisma/client";
 import { lastValueFrom, throwError } from "rxjs";
 import request from "supertest";
 
@@ -18,12 +19,16 @@ import {
 } from "@sparcs-clubs/api/common/util/exception.filter";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
+import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+import { UserIdentitySyncError } from "@sparcs-clubs/api/feature/user/model/login-identity";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { AuthRepository } from "../repository/auth.repository";
 import { SsoLoginFailureRepository } from "../repository/sso-login-failure/sso-login-failure.repository";
 import { AuthService } from "../service/auth.service";
 import { SsoClientService } from "../service/sso-client.service";
+import { SsoLoginFailureService } from "../service/sso-login-failure.service";
 import { AuthController } from "./auth.controller";
 import { SsoLoginDiagnosticInterceptor } from "./sso-login-diagnostic.interceptor";
 
@@ -59,9 +64,10 @@ describe("SSO failure logging HTTP boundary", () => {
     refreshTokenExpiresInMs: 2000,
   };
   const repository = {
-    findOrCreateUser: jest.fn(),
     createRefreshTokenRecord: jest.fn(),
   };
+  const users = { syncSsoIdentity: jest.fn() };
+  const semesters = { loadForLogin: jest.fn() };
   const logs = { create: jest.fn() };
   const sso = { getUserInfo: jest.fn(), getLoginParams: jest.fn() };
   const jwt = { sign: jest.fn() };
@@ -91,6 +97,9 @@ describe("SSO failure logging HTTP boundary", () => {
       providers: [
         AuthService,
         SsoLoginDiagnosticInterceptor,
+        SsoLoginFailureService,
+        { provide: UserPublicService, useValue: users },
+        { provide: SemesterPublicService, useValue: semesters },
         { provide: AuthRepository, useValue: repository },
         { provide: SsoLoginFailureRepository, useValue: logs },
         { provide: SsoClientService, useValue: sso },
@@ -129,12 +138,20 @@ describe("SSO failure logging HTTP boundary", () => {
       url: "https://sso.example.test",
       state: "generated-state",
     });
-    repository.findOrCreateUser.mockResolvedValue({
-      id: 42,
-      sid: "test-sid",
-      email: "student@example.com",
-      name: "학생",
-      master: { id: 12, number: 20268001 },
+    semesters.loadForLogin.mockResolvedValue({
+      id: 7,
+      startTerm: now,
+      endTerm: now,
+    });
+    users.syncSsoIdentity.mockResolvedValue({
+      identity: {
+        id: 42,
+        sid: "test-sid",
+        email: "student@example.com",
+        name: "학생",
+        master: { id: 12, number: 20268001 },
+      },
+      diagnostic: { stage: "user_processed", userId: 42, studentId: 12 },
     });
     repository.createRefreshTokenRecord.mockResolvedValue(true);
     jwt.sign.mockReturnValue("private-issued-token");
@@ -210,23 +227,26 @@ describe("SSO failure logging HTTP boundary", () => {
     await callback().expect(302);
     expect(logs.create).toHaveBeenCalledTimes(1);
     expect(logs.create.mock.calls[0][0].errorName).toBe(errorName);
-    expect(repository.findOrCreateUser).not.toHaveBeenCalled();
+    expect(users.syncSsoIdentity).not.toHaveBeenCalled();
   });
 
   it("keeps the numeric program code and sanitized DB context on academic failure", async () => {
-    repository.findOrCreateUser.mockImplementation(async (...args) => {
-      const diagnostic = args[9];
-      diagnostic.stage = "db.current-degree.resolve";
-      diagnostic.userId = 42;
-      diagnostic.studentId = 12;
-      diagnostic.db = {
-        currentStudentTerms: { queriedAt: now, studentIds: [12], rows: [] },
-      };
-      throw new HttpException(
-        "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
-        400,
-      );
-    });
+    users.syncSsoIdentity.mockRejectedValue(
+      new UserIdentitySyncError(
+        new HttpException(
+          "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
+          400,
+        ),
+        {
+          stage: "db.current-degree.resolve",
+          userId: 42,
+          studentId: 12,
+          db: {
+            currentStudentTerms: { queriedAt: now, studentIds: [12], rows: [] },
+          },
+        },
+      ),
+    );
     const response = await callback().expect(400);
     expect(logs.create).toHaveBeenCalledTimes(1);
     expect(response.headers["x-sso-login-trace-id"]).toBe(random.uuid());
@@ -252,6 +272,56 @@ describe("SSO failure logging HTTP boundary", () => {
         },
       },
     });
+  });
+
+  it.each(["P2002", "P2034"])(
+    "retries the complete transaction on %s without reusing the SSO code",
+    async code => {
+      const conflict = new Prisma.PrismaClientKnownRequestError(
+        "write conflict",
+        { code, clientVersion: "test" },
+      );
+      users.syncSsoIdentity.mockRejectedValueOnce(
+        new UserIdentitySyncError(conflict, { stage: "db.user.upsert" }),
+      );
+      await callback().expect(302).expect("Location", "/welcome");
+      expect(users.syncSsoIdentity).toHaveBeenCalledTimes(2);
+      expect(semesters.loadForLogin).toHaveBeenCalledTimes(2);
+      expect(sso.getUserInfo).toHaveBeenCalledTimes(1);
+      expect(logs.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it("records one final failure after three conflicting transaction attempts", async () => {
+    const conflict = new Prisma.PrismaClientKnownRequestError(
+      "write conflict",
+      { code: "P2002", clientVersion: "test" },
+    );
+    users.syncSsoIdentity.mockRejectedValue(
+      new UserIdentitySyncError(conflict, { stage: "db.user.upsert" }),
+    );
+    await callback().expect(500);
+    expect(users.syncSsoIdentity).toHaveBeenCalledTimes(3);
+    expect(sso.getUserInfo).toHaveBeenCalledTimes(1);
+    expect(logs.create).toHaveBeenCalledTimes(1);
+    expect(logs.create.mock.calls[0][0]).toMatchObject({
+      stage: "db.user.upsert",
+      errorName: "PrismaClientKnownRequestError",
+      diagnostics: { data: { error: { code: "P2002" } } },
+    });
+  });
+
+  it("does not retry unrelated database errors", async () => {
+    const unavailable = new Prisma.PrismaClientKnownRequestError(
+      "pool unavailable",
+      { code: "P2024", clientVersion: "test" },
+    );
+    users.syncSsoIdentity.mockRejectedValue(
+      new UserIdentitySyncError(unavailable, { stage: "db.user.upsert" }),
+    );
+    await callback().expect(500);
+    expect(users.syncSsoIdentity).toHaveBeenCalledTimes(1);
+    expect(logs.create).toHaveBeenCalledTimes(1);
   });
 
   it("records a V2 parse failure swallowed by the service fallback", async () => {
