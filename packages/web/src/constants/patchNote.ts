@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.25 source=1403ce737fed
+  {
+    version: "v.0.1.25",
+    date: new Date("2026.09.16"),
+    patchNoteContent: `Clubs v0.1.25
+오류 수정은 다음과 같습니다.
+- 대학원 학적이 올바르게 표시되도록 수정하고 석박통합과정·과정전체·청강생의 로그인을 지원합니다. (#1935)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.24 source=16f9f2363ae1
   {
     version: "v.0.1.24",
