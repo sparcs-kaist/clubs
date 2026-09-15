@@ -21,6 +21,7 @@ const responseBodyMap = {
       undergraduate: z.coerce.string().optional(),
       master: z.coerce.string().optional(),
       doctor: z.coerce.string().optional(),
+      masterDoctor: z.coerce.string().optional(),
       executive: z.coerce.string().optional(),
       professor: z.coerce.string().optional(),
       employee: z.coerce.string().optional(),

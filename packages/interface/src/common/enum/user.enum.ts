@@ -13,7 +13,15 @@ export enum UserTypeEnum {
   Undergraduate = "undergraduate",
   Master = "master",
   Doctor = "doctor",
+  MasterDoctor = "masterDoctor",
   Executive = "executive",
   Professor = "professor",
   Employee = "employee",
 }
+
+export const studentUserTypes: readonly string[] = [
+  UserTypeEnum.Undergraduate,
+  UserTypeEnum.Master,
+  UserTypeEnum.Doctor,
+  UserTypeEnum.MasterDoctor,
+];

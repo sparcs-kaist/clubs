@@ -21,7 +21,7 @@ import {
 
 type StudentProfile = Pick<
   LoginIdentity,
-  "undergraduate" | "master" | "doctor"
+  "undergraduate" | "master" | "doctor" | "masterDoctor"
 >;
 
 type StudentProfileKey = keyof StudentProfile;
@@ -30,6 +30,7 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [1, "undergraduate"],
   [2, "master"],
   [3, "doctor"],
+  [4, "masterDoctor"],
 ]);
 
 const getStudentNumberSuffix = (studentNumber: string | number) =>
@@ -195,7 +196,7 @@ export class UserLoginIdentityService {
         });
 
         // student 테이블에서 해당 user id를 모두 검색
-        // undergraduate, master, doctor 중 해당하는 경우 result에 추가
+        // 현재 학위에 해당하는 profile을 result에 추가
         context.stage = "db.linked-students.read";
         db.linkedStudentsQueriedAt = this.clock.now();
         const students = await this.identityRepository.findStudentsByUserId(
@@ -461,6 +462,10 @@ export class UserLoginIdentityService {
 
     if (progCodeV2 === "2") {
       return 3;
+    }
+
+    if (progCodeV2 === "7") {
+      return 4;
     }
 
     return undefined;

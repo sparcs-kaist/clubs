@@ -17,6 +17,7 @@ import { SsoLoginFailureRepository } from "@sparcs-clubs/api/feature/auth/reposi
 import { AuthService } from "@sparcs-clubs/api/feature/auth/service/auth.service";
 import { SsoClientService } from "@sparcs-clubs/api/feature/auth/service/sso-client.service";
 import { SsoLoginFailureService } from "@sparcs-clubs/api/feature/auth/service/sso-login-failure.service";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { clearDatabase, closeDatabase } from "./setup";
@@ -159,6 +160,60 @@ describe("SSO failure logging with MySQL", () => {
     expect(await prisma.authActivatedRefreshTokens.count()).toBe(1);
     expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
   });
+
+  it.each(["first login", "existing degree"])(
+    "preserves the combined master's-doctoral degree through %s and token refresh",
+    async mode => {
+      const combinedProfile = {
+        ...profile(),
+        kaist_v2_info: {
+          ...profile().kaist_v2_info,
+          std_no: "20268083",
+          std_prog_code: "7",
+        },
+      };
+      if (mode === "existing degree") {
+        sso.getUserInfo.mockResolvedValue({
+          ...combinedProfile,
+          kaist_v2_info: {
+            ...combinedProfile.kaist_v2_info,
+            std_prog_code: "2",
+          },
+        });
+        await signIn();
+        expect(await prisma.studentT.findFirst()).toMatchObject({
+          studentEnum: 3,
+        });
+      }
+      sso.getUserInfo.mockResolvedValue(combinedProfile);
+      await signIn();
+      const user = await prisma.user.findFirstOrThrow();
+      const student = await prisma.student.findFirstOrThrow();
+      expect(await prisma.studentT.findFirstOrThrow()).toMatchObject({
+        studentId: student.id,
+        studentEnum: 4,
+      });
+      const identity = await module
+        .get(UserPublicService)
+        .findLoginIdentity(user.id);
+      expect(identity).toMatchObject({
+        masterDoctor: { id: student.id, number: 20268083 },
+      });
+      expect(identity).not.toHaveProperty("doctor");
+      expect(identity).not.toHaveProperty("undergraduate");
+      const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+      expect(Object.keys(refreshed.accessToken)).toEqual(["masterDoctor"]);
+      expect(jwt.sign).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: "masterDoctor",
+          studentId: student.id,
+          studentNumber: 20268083,
+        }),
+        expect.any(Object),
+      );
+      expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+    },
+  );
 
   it.each(["classification", "token-store"])(
     "rolls back login writes and keeps the %s failure",

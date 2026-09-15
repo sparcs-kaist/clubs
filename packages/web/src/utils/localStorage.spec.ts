@@ -58,6 +58,7 @@ describe("setLoginTokens", () => {
     const roles = [
       "professor",
       "doctor",
+      "masterDoctor",
       "master",
       "undergraduate",
       "employee",
@@ -75,5 +76,12 @@ describe("setLoginTokens", () => {
     setLoginTokens({});
     assert.equal(storage.get("accessToken"), "");
     assert.equal(storage.get("responseToken"), "{}");
+  });
+
+  it("selects an integrated degree token when it is the only login role", () => {
+    const tokens = { masterDoctor: "target-master-doctor" };
+    setLoginTokens(tokens);
+    assert.equal(storage.get("accessToken"), "target-master-doctor");
+    assert.deepEqual(JSON.parse(storage.get("responseToken") ?? ""), tokens);
   });
 });

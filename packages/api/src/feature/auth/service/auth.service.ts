@@ -420,46 +420,9 @@ export class AuthService {
         })();
   }
 
-  getAccessToken(
-    user: {
-      id: number;
-      sid: string;
-      name: string;
-      email: string;
-      undergraduate?: {
-        id: number;
-        number: number;
-      };
-      master?: {
-        id: number;
-        number: number;
-      };
-      doctor?: {
-        id: number;
-        number: number;
-      };
-      executive?: {
-        id: number;
-        studentId: number;
-      };
-      professor?: {
-        id: number;
-      };
-      employee?: {
-        id: number;
-      };
-    },
-    exchangeActor?: ExchangeLoginActor,
-  ) {
+  getAccessToken(user: LoginIdentity, exchangeActor?: ExchangeLoginActor) {
     const exchangeClaims = exchangeActor ? { exchangeActor } : {};
-    const accessToken: {
-      undergraduate?: string;
-      master?: string;
-      doctor?: string;
-      executive?: string;
-      professor?: string;
-      employee?: string;
-    } = {};
+    const accessToken: ApiAut002ResponseCreated["accessToken"] = {};
 
     if (user.undergraduate) {
       accessToken.undergraduate = this.jwtService.sign(
@@ -509,6 +472,25 @@ export class AuthService {
           type: "doctor",
           studentId: user.doctor.id,
           studentNumber: user.doctor.number,
+          ...exchangeClaims,
+        },
+        {
+          secret: this.appConfigService.accessTokenSecretKey,
+          expiresIn: this.appConfigService.accessTokenExpiresIn,
+        },
+      );
+    }
+
+    if (user.masterDoctor) {
+      accessToken.masterDoctor = this.jwtService.sign(
+        {
+          id: user.id,
+          sid: user.sid,
+          name: user.name,
+          email: user.email,
+          type: "masterDoctor",
+          studentId: user.masterDoctor.id,
+          studentNumber: user.masterDoctor.number,
           ...exchangeClaims,
         },
         {

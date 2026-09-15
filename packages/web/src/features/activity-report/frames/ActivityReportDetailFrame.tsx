@@ -118,6 +118,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
         break;
       case UserTypeEnum.Master:
       case UserTypeEnum.Doctor:
+      case UserTypeEnum.MasterDoctor:
       case UserTypeEnum.Employee:
       case UserTypeEnum.Undergraduate:
         router.push("/manage-club/activity-report");

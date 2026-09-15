@@ -253,9 +253,14 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     });
   });
 
-  it.each(["0", "1", "2"])(
+  it.each([
+    ["0", 1],
+    ["1", 2],
+    ["2", 3],
+    ["7", 4],
+  ] as const)(
     "accepts the string SSO degree %s",
-    async progCodeV2 => {
+    async (progCodeV2, studentEnum) => {
       const { service, prisma, semester } = createRepository();
       await service.syncSsoIdentity(
         {
@@ -272,12 +277,12 @@ describe("UserLoginIdentityService legacy login behavior", () => {
         semester,
       );
       expect(prisma.studentT.upsert.mock.calls[0][0].create.studentEnum).toBe(
-        Number(progCodeV2) + 1,
+        studentEnum,
       );
     },
   );
 
-  it.each([0, 1, 2, null, undefined, "3", "01", "1 "])(
+  it.each([0, 1, 2, 7, null, undefined, "3", "4", "01", "1 ", "07", "7 "])(
     "preserves unsupported degree input %p and the absence of current student_t",
     async progCodeV2 => {
       const { service, semester } = createRepository({
@@ -309,6 +314,53 @@ describe("UserLoginIdentityService legacy login behavior", () => {
       );
     },
   );
+
+  it.each([
+    ["creates the first term", []],
+    [
+      "corrects a previous doctor term",
+      [{ studentId: mockStudentId, studentEnum: 3 }],
+    ],
+  ] as const)("%s for SSO program 7", async (_, studentTerms) => {
+    const studentNumber = 20998083;
+    const { service, prisma, semester } = createRepository({
+      studentNumber,
+      studentTerms: [...studentTerms],
+    });
+    prisma.studentT.findMany
+      .mockResolvedValueOnce(studentTerms)
+      .mockResolvedValueOnce([{ studentId: mockStudentId, studentEnum: 4 }]);
+
+    const { identity, diagnostic } = await service.syncSsoIdentity(
+      {
+        email: "student@example.com",
+        studentNumber: studentNumber.toString(),
+        sid: mockSid,
+        name: mockStudentName,
+        type: "Student",
+        department: "151",
+        typeV2: "S",
+        statusV2: "재학",
+        progCodeV2: "7",
+      },
+      semester,
+    );
+
+    const studentTermUpsert = prisma.studentT.upsert.mock.calls[0][0];
+    expect(studentTermUpsert.create.studentEnum).toBe(4);
+    expect(studentTermUpsert.update.studentEnum).toBe(4);
+    expect(identity.masterDoctor).toEqual({
+      id: mockStudentId,
+      number: studentNumber,
+    });
+    expect(identity.undergraduate).toBeUndefined();
+    expect(identity.master).toBeUndefined();
+    expect(identity.doctor).toBeUndefined();
+    expect(diagnostic.db?.currentStudentResolution).toMatchObject({
+      studentEnum: 4,
+      studentStatusEnum: 1,
+    });
+  });
 
   it("uses the current student_t enum when returning student profiles after login", async () => {
     const { repository } = createRepository();
@@ -372,14 +424,34 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     expect(result.master).toBeUndefined();
   });
 
+  it("preserves the stored masterDoctor identity for token refresh without rewriting its degree", async () => {
+    const studentNumber = 20998083;
+    const { service, prisma } = createRepository({
+      studentNumber,
+      studentTerms: [{ studentId: mockStudentId, studentEnum: 4 }],
+    });
+
+    const identity = await service.findLoginIdentity(mockUserId);
+
+    expect(identity.masterDoctor).toEqual({
+      id: mockStudentId,
+      number: studentNumber,
+    });
+    expect(identity.undergraduate).toBeUndefined();
+    expect(identity.master).toBeUndefined();
+    expect(identity.doctor).toBeUndefined();
+    expect(prisma.studentT.upsert).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["6000-6899 undergraduate", 20996167, 1, "undergraduate"],
     ["6000-6899 master", 20996614, 2, "master"],
     ["7000+ doctor", 20998109, 3, "doctor"],
+    ["8000+ masterDoctor", 20998083, 4, "masterDoctor"],
   ] as const)(
     "uses the current student_t enum for %s when login has no SSO V2 degree",
     async (_, studentNumber, studentEnum, expectedProfileKey) => {
-      const { repository } = createRepository({
+      const { repository, prisma } = createRepository({
         studentNumber,
         studentTerms: [{ studentId: mockStudentId, studentEnum }],
       });
@@ -400,6 +472,9 @@ describe("UserLoginIdentityService legacy login behavior", () => {
         id: mockStudentId,
         number: studentNumber,
       });
+      expect(prisma.studentT.upsert.mock.calls[0][0].update.studentEnum).toBe(
+        studentEnum,
+      );
     },
   );
 
@@ -436,26 +511,29 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     },
   );
 
-  it("rejects HP students before SSO, DB, or fallback classification", async () => {
-    const { repository } = createRepository({
-      studentNumber: 20996901,
-      studentTerms: [{ studentId: mockStudentId, studentEnum: 2 }],
-    });
+  it.each(["1", "7"])(
+    "rejects HP students before SSO program %s, DB, or fallback classification",
+    async progCodeV2 => {
+      const { repository } = createRepository({
+        studentNumber: 20996901,
+        studentTerms: [{ studentId: mockStudentId, studentEnum: 2 }],
+      });
 
-    await expect(
-      repository.findOrCreateUser(
-        "hp@example.com",
-        "20996901",
-        mockSid,
-        mockStudentName,
-        "Student",
-        "1234",
-        "S",
-        "재학",
-        "1",
-      ),
-    ).rejects.toThrow("HP 학번은 로그인할 수 없습니다.");
-  });
+      await expect(
+        repository.findOrCreateUser(
+          "hp@example.com",
+          "20996901",
+          mockSid,
+          mockStudentName,
+          "Student",
+          "1234",
+          "S",
+          "재학",
+          progCodeV2,
+        ),
+      ).rejects.toThrow("HP 학번은 로그인할 수 없습니다.");
+    },
+  );
 
   it.each([
     ["6000-6899", 20996001],
