@@ -58,6 +58,7 @@ import {
   ClubTypeEnum,
 } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
+import { StudentEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { env } from "@sparcs-clubs/api/env";
@@ -397,7 +398,8 @@ export class ClubService {
       ),
       members: students
         .map(student => {
-          const isRegularMember = studentEnumMap.get(student.id) === 1;
+          const isRegularMember =
+            studentEnumMap.get(student.id) === StudentEnum.Undergraduate;
           const hasUserAccount = student.userId != null;
           let isAssignable = isRegularMember;
           if (!hasUserAccount) isAssignable = false;
@@ -438,7 +440,7 @@ export class ClubService {
         [body.studentId],
         context.previousSemester.id,
       );
-    if (studentEnum[0]?.studentEnumId !== 1) {
+    if (studentEnum[0]?.studentEnumId !== StudentEnum.Undergraduate) {
       throw new ConflictException("Student is not a regular member");
     }
     const student = (

@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
+import { StudentEnum } from "@clubs/interface/common/enum/user.enum";
+
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 
@@ -21,15 +23,25 @@ import {
 
 type StudentProfile = Pick<
   LoginIdentity,
-  "undergraduate" | "master" | "doctor"
+  | "undergraduate"
+  | "master"
+  | "doctor"
+  | "masterDoctorDoctor"
+  | "masterDoctorMaster"
+  | "allPrograms"
+  | "auditor"
 >;
 
 type StudentProfileKey = keyof StudentProfile;
 
 const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
-  [1, "undergraduate"],
-  [2, "master"],
-  [3, "doctor"],
+  [StudentEnum.Undergraduate, "undergraduate"],
+  [StudentEnum.Master, "master"],
+  [StudentEnum.Doctor, "doctor"],
+  [StudentEnum.MasterDoctorDoctor, "masterDoctorDoctor"],
+  [StudentEnum.MasterDoctorMaster, "masterDoctorMaster"],
+  [StudentEnum.AllPrograms, "allPrograms"],
+  [StudentEnum.Auditor, "auditor"],
 ]);
 
 const getStudentNumberSuffix = (studentNumber: string | number) =>
@@ -169,7 +181,7 @@ export class UserLoginIdentityService {
         });
 
         if (!progCodeV2) {
-          if (studentEnum === 1) {
+          if (studentEnum === StudentEnum.Undergraduate) {
             studentStatusEnum = 1;
           }
         }
@@ -195,7 +207,7 @@ export class UserLoginIdentityService {
         });
 
         // student 테이블에서 해당 user id를 모두 검색
-        // undergraduate, master, doctor 중 해당하는 경우 result에 추가
+        // 현재 학위에 해당하는 profile을 result에 추가
         context.stage = "db.linked-students.read";
         db.linkedStudentsQueriedAt = this.clock.now();
         const students = await this.identityRepository.findStudentsByUserId(
@@ -450,25 +462,34 @@ export class UserLoginIdentityService {
     return this.getFallbackStudentEnumFromStudentNumber(studentNumber);
   }
 
-  private getStudentEnumFromProgCodeV2(progCodeV2: string | null) {
-    if (progCodeV2 === "0") {
-      return 1;
+  private getStudentEnumFromProgCodeV2(
+    progCodeV2: string | null,
+  ): StudentEnum | undefined {
+    switch (progCodeV2) {
+      case "0":
+        return StudentEnum.Undergraduate;
+      case "1":
+      case "3":
+      case "4":
+        return StudentEnum.Master;
+      case "5":
+        return StudentEnum.Doctor;
+      case "7":
+        return StudentEnum.MasterDoctorDoctor;
+      case "8":
+        return StudentEnum.MasterDoctorMaster;
+      case "9":
+        return StudentEnum.AllPrograms;
+      case "10":
+        return StudentEnum.Auditor;
+      default:
+        return undefined;
     }
-
-    if (progCodeV2 === "1") {
-      return 2;
-    }
-
-    if (progCodeV2 === "2") {
-      return 3;
-    }
-
-    return undefined;
   }
 
   private getFallbackStudentEnumFromStudentNumber(
     studentNumber: string | number,
-  ) {
+  ): StudentEnum {
     const suffix = getStudentNumberSuffix(studentNumber);
 
     if (Number.isNaN(suffix)) {
@@ -479,15 +500,15 @@ export class UserLoginIdentityService {
     }
 
     if (suffix < 2000) {
-      return 1;
+      return StudentEnum.Undergraduate;
     }
 
     if (suffix < 5000) {
-      return 2;
+      return StudentEnum.Master;
     }
 
     if (suffix < 6000) {
-      return 3;
+      return StudentEnum.Doctor;
     }
 
     throw new HttpException(

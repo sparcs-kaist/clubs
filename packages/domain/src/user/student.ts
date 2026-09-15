@@ -8,6 +8,18 @@ import { zExtractId } from "../common/utils";
 
 extendZodWithOpenApi(z);
 
+export const StudentEnum = {
+  Undergraduate: 1,
+  Master: 2,
+  Doctor: 3,
+  MasterDoctorDoctor: 4,
+  MasterDoctorMaster: 5,
+  AllPrograms: 6,
+  Auditor: 7,
+} as const;
+
+export type StudentEnum = (typeof StudentEnum)[keyof typeof StudentEnum];
+
 export enum StudentStatusEnum {
   Attending = 1, // 재학
   LeaveOfAbsence, // 휴학
@@ -43,8 +55,8 @@ export const zStudent = z.object({
 export const zStudentHistory = z.object({
   id: zId,
   studentId: zExtractId(zStudent),
-  studentEnum: z.nativeEnum(StudentStatusEnum), // TODO: 학생 재학 상태를
-  StudentStatusEnum: z.nativeEnum(StudentStatusEnum), // TODO: 두 enum 정확히 비교 필요
+  studentEnum: z.nativeEnum(StudentEnum),
+  StudentStatusEnum: z.nativeEnum(StudentStatusEnum),
   department: z.coerce.number().int().min(1), // 학부코드
   semester: zExtractId(zSemester),
   startTerm: z.coerce.date(), // 언젠가 정상화 필요

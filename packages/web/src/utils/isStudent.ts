@@ -1,13 +1,9 @@
-import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
 
-import { Profile } from "../common/providers/AuthContext";
+import type { Profile } from "../common/providers/AuthContext";
 
 const isStudent = (profile?: Profile) => {
   if (!profile) return false;
-  return (
-    profile.type === UserTypeEnum.Undergraduate ||
-    profile.type === UserTypeEnum.Master ||
-    profile.type === UserTypeEnum.Doctor
-  );
+  return studentUserTypes.includes(profile.type);
 };
 export default isStudent;
