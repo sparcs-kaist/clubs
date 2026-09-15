@@ -20,8 +20,10 @@
 
 ## DB 정책
 
-- `student_enum` 테이블에는 현재 `1=학부생`, `2=석사생`, `3=박사생`이 있다. 새 사전 항목 4·5·6·7을 추가한다.
-- `student_t.student_enum`은 정수이며 Prisma에서 enum 테이블에 대한 relation은 없다. 기존 테이블과 relation을 유지한다.
+- 학위 정의는 `packages/domain/src/user/student.ts`의 `StudentEnum` const 객체와 `typeof` 기반 union 타입으로 관리한다. interface 패키지는 이 정의를 재export한다.
+- `student_t.student_enum`에는 위 표의 정수 값을 저장한다. SSO 판정, 학적 스키마 검증 및 학부생 판정은 코드 상수를 사용한다. enum 테이블에 행을 추가할 필요는 없다.
+- 확인한 DB에는 `student_enum`을 참조하는 FK가 없으며 Prisma에도 해당 relation이 없다. `student_t.student_id`의 FK는 유지한다.
+- 다른 환경에 `student_t.student_enum → student_enum` FK가 남아 있다면 [조건부 FK 제거 SQL](TU-499-drop-student-enum-fk.sql)을 적용한다. 해당 FK가 없으면 아무것도 변경하지 않는다. 기존 테이블·인덱스·데이터는 유지한다.
 - 과거 학위 값 4인 기록 64건(50명)이 있다. 모두 학번 8000대, 2023~2024년 학적이며 현재 유효한 기록은 0건이다. 과거 기록의 의미를 정의한 코드표는 확인하지 못했으며 값을 변경하지 않는다.
 - 추가하는 값 5·6·7은 enum 테이블과 학적 테이블에서 사용되지 않았다.
 
@@ -45,7 +47,7 @@
 
 ## 배포
 
-1. [enum 추가 SQL](TU-499-add-master-doctor-enum.sql)을 적용한다. 추가할 ID가 이미 있으면 INSERT가 실패하므로 기존 의미를 확인한다.
+1. [조건부 FK 제거 SQL](TU-499-drop-student-enum-fk.sql)을 적용한다. enum 사전 데이터 INSERT는 필요 없다.
 2. 신규 프로필을 인식하는 프론트엔드, API 순서로 배포한다. 이전 API 응답도 새 프론트엔드와 호환된다.
 3. 기존 계정은 새 SSO 로그인에서 확인된 학적을 갱신한다. 과거 기록은 일괄 변경하지 않는다.
 
@@ -59,5 +61,6 @@
 - 학생 기능 및 전화번호 처리 허용, 학부생 전용 기능 차단.
 - 신규 유형 단독 토큰 선택, 화면 표시 및 기존 프로필 선택 순서 회귀 검증.
 - 실제 MySQL 통합 테스트, API/web 빌드, 변경 코드 가드 및 MC/DC.
+- FK 제거 SQL의 FK 존재·부재·재실행, 학생 FK·기존 데이터·인덱스 보존 및 enum 사전 행 없이 신규 학적 저장.
 
 [Notion 작업](https://app.notion.com/p/3dcc25603b0b8175bde2e1183f087d6c)

@@ -9,6 +9,7 @@ import { zSemester } from "@clubs/domain/semester/semester";
 import { zUserName } from "@clubs/interface/common/commonString";
 import {
   ProfessorEnum,
+  StudentEnum,
   StudentStatusEnum,
 } from "@clubs/interface/common/enum/user.enum";
 import { zId } from "@clubs/interface/common/type/id.type";
@@ -67,8 +68,8 @@ export const zStudent = z.object({
 export const zStudentHistory = z.object({
   id: zId,
   studentId: zStudent.pick({ id: true }),
-  studentEnum: z.nativeEnum(StudentStatusEnum), // TODO: 학생 재학 상태를
-  StudentStatusEnum: z.nativeEnum(StudentStatusEnum), // TODO: 두 enum 정확히 비교 필요
+  studentEnum: z.nativeEnum(StudentEnum),
+  StudentStatusEnum: z.nativeEnum(StudentStatusEnum),
   department: z.coerce.number().int().min(1), // 학부코드
   semester: zSemester.pick({ id: true }),
   startTerm: z.coerce.date(), // 해당 상태가 시작된 시각
