@@ -15,7 +15,9 @@ import {
 } from "../model/login-identity";
 import { UserLoginIdentityRepository } from "../repository/login-identity/user-login-identity.repository";
 import {
+  getStudentNumberSuffix,
   isEmployeeIdentity,
+  isHpStudentNumber,
   isProfessorIdentity,
   isStudentIdentity,
   parseIdentityDepartment,
@@ -43,9 +45,6 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [StudentEnum.AllPrograms, "allPrograms"],
   [StudentEnum.Auditor, "auditor"],
 ]);
-
-const getStudentNumberSuffix = (studentNumber: string | number) =>
-  Number(studentNumber.toString().slice(-4));
 
 const FALLBACK_STUDENT_ENUM_ERROR_MESSAGE =
   "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.";
@@ -104,13 +103,11 @@ export class UserLoginIdentityService {
         const studentNumberSuffix = getStudentNumberSuffix(studentNumber);
 
         //HP 학번(6900~6999)인 경우 로그인 불가
-        if (studentNumberSuffix >= 6900) {
-          if (studentNumberSuffix < 7000) {
-            throw new HttpException(
-              "HP 학번은 로그인할 수 없습니다.",
-              HttpStatus.BAD_REQUEST,
-            );
-          }
+        if (isHpStudentNumber(studentNumber)) {
+          throw new HttpException(
+            "HP 학번은 로그인할 수 없습니다.",
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (Number.isNaN(studentNumberSuffix)) {
@@ -221,17 +218,20 @@ export class UserLoginIdentityService {
           createdAt: studentRow.createdAt,
           deletedAt: studentRow.deletedAt,
         }));
+        const profileStudents = students.filter(
+          studentRow => !isHpStudentNumber(studentRow.number),
+        );
         context.stage = "db.linked-degree.read";
         const linkedStudentTerms: Record<string, unknown> = {};
         db.linkedStudentTerms = linkedStudentTerms;
         const studentEnumByStudentId =
           await this.getCurrentStudentEnumByStudentId(
-            students.map(studentRow => studentRow.id),
+            profileStudents.map(studentRow => studentRow.id),
             linkedStudentTerms,
           );
 
         // eslint-disable-next-line no-restricted-syntax
-        for (const studentRow of students) {
+        for (const studentRow of profileStudents) {
           context.stage = "db.linked-degree.resolve";
           db.resolvingStudent = {
             id: studentRow.id,
@@ -352,7 +352,9 @@ export class UserLoginIdentityService {
       email: user.email,
     };
 
-    const students = await this.identityRepository.findStudentsByUserId(id);
+    const students = (
+      await this.identityRepository.findStudentsByUserId(id)
+    ).filter(student => !isHpStudentNumber(student.number));
 
     const studentEnumByStudentId = await this.getCurrentStudentEnumByStudentId(
       students.map(student => student.id),

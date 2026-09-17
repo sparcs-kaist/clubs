@@ -596,6 +596,103 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     },
   );
 
+  it.each([
+    ["재학", 1, false],
+    ["휴학", 2, false],
+    ["재학", 1, true],
+    ["휴학", 2, true],
+  ] as const)(
+    "excludes linked HP profiles on login and refresh: status=%s(%s), HP degree=%s",
+    async (statusV2, studentStatusEnum, hasHpDegree) => {
+      const currentStudent = { id: mockStudentId, number: 20991001 };
+      const hpStudent = { id: mockStudentId + 1, number: 20986954 };
+      const { service, prisma, semester } = createRepository({
+        studentNumber: currentStudent.number,
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([currentStudent])
+        .mockResolvedValue([hpStudent, currentStudent]);
+      prisma.studentT.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValue([
+          { studentId: currentStudent.id, studentEnum: 1 },
+          ...(hasHpDegree ? [{ studentId: hpStudent.id, studentEnum: 2 }] : []),
+        ]);
+
+      const { identity, diagnostic } = await service.syncSsoIdentity(
+        {
+          email: "student@example.com",
+          studentNumber: currentStudent.number.toString(),
+          sid: mockSid,
+          name: mockStudentName,
+          type: "Student",
+          department: "1234",
+          typeV2: "S",
+          statusV2,
+          progCodeV2: "0",
+        },
+        semester,
+      );
+      const refreshed = await service.findLoginIdentity(mockUserId);
+
+      [identity, refreshed].forEach(result => {
+        expect(result.undergraduate).toEqual(currentStudent);
+        expect(result.master).toBeUndefined();
+      });
+      expect(prisma.studentT.upsert.mock.calls[0][0].update).toMatchObject({
+        studentEnum: 1,
+        studentStatusEnum,
+      });
+      expect(diagnostic.db?.linkedStudents).toEqual([
+        expect.objectContaining(hpStudent),
+        expect.objectContaining(currentStudent),
+      ]);
+    },
+  );
+
+  it.each([
+    [20996954, "0", "HP 학번은 로그인할 수 없습니다."],
+    [20997001, null, "교환학생의 학적 정보를 추적할 수 없습니다."],
+  ] as const)(
+    "does not use a past regular student to bypass current rejection for %s",
+    async (studentNumber, progCodeV2, message) => {
+      const { service, prisma, semester } = createRepository({
+        studentNumber,
+        studentTerms: [],
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([{ id: mockStudentId, number: studentNumber }])
+        .mockResolvedValue([
+          { id: mockStudentId + 1, number: 20981001 },
+          { id: mockStudentId, number: studentNumber },
+        ]);
+
+      await expect(
+        service.syncSsoIdentity(
+          {
+            email: "student@example.com",
+            studentNumber: studentNumber.toString(),
+            sid: mockSid,
+            name: mockStudentName,
+            type: "Student",
+            department: "1234",
+            typeV2: "S",
+            statusV2: "휴학",
+            progCodeV2,
+          },
+          semester,
+        ),
+      ).rejects.toMatchObject({
+        cause: expect.objectContaining({
+          message: expect.stringContaining(message),
+        }),
+      });
+      expect(prisma.studentT.upsert).not.toHaveBeenCalled();
+    },
+  );
+
   it.each(["1", "7", "8", "9", "10"])(
     "rejects HP students before SSO program %s, DB, or fallback classification",
     async progCodeV2 => {
