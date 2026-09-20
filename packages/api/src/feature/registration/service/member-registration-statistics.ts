@@ -1,4 +1,4 @@
-import { StudentEnum } from "@clubs/interface/common/enum/user.enum";
+import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 
 type MemberRegistrationStatisticSource = {
   registrationApplicationStudentEnum: number;
@@ -31,16 +31,7 @@ export type MemberRegistrationStatistics = {
   regularMemberRejections: number;
 };
 
-export function isUndergraduateMemberRegistration(
-  studentEnumId: number | undefined,
-  studentNumber: string | undefined,
-): boolean {
-  const studentNumberSuffix = Number(studentNumber?.slice(-4));
-  const undergraduateEnum = StudentEnum.Undergraduate;
-  const isUndergraduate =
-    studentEnumId === undergraduateEnum && studentNumberSuffix < 6000;
-  return isUndergraduate;
-}
+export const isUndergraduateMemberRegistration = isRegularClubMember;
 
 /** Computes statistics from the full, unpaginated club registration list. */
 export function getMemberRegistrationStatistics({

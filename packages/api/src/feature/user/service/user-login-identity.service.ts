@@ -46,8 +46,8 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [StudentEnum.Auditor, "auditor"],
 ]);
 
-const FALLBACK_STUDENT_ENUM_ERROR_MESSAGE =
-  "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.";
+const CURRENT_STUDENT_ENUM_ERROR_MESSAGE =
+  "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.";
 
 @Injectable()
 export class UserLoginIdentityService {
@@ -176,6 +176,12 @@ export class UserLoginIdentityService {
           progCodeV2,
           studentNumber,
         });
+        if (studentEnum === undefined) {
+          throw new HttpException(
+            CURRENT_STUDENT_ENUM_ERROR_MESSAGE,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
 
         if (!progCodeV2) {
           if (studentEnum === StudentEnum.Undergraduate) {
@@ -491,7 +497,7 @@ export class UserLoginIdentityService {
 
   private getFallbackStudentEnumFromStudentNumber(
     studentNumber: string | number,
-  ): StudentEnum {
+  ): StudentEnum | undefined {
     const suffix = getStudentNumberSuffix(studentNumber);
 
     if (Number.isNaN(suffix)) {
@@ -513,16 +519,17 @@ export class UserLoginIdentityService {
       return StudentEnum.Doctor;
     }
 
-    throw new HttpException(
-      FALLBACK_STUDENT_ENUM_ERROR_MESSAGE,
-      HttpStatus.BAD_REQUEST,
-    );
+    return undefined;
   }
 
   private withStudentProfile<T extends StudentProfile>(
     result: T,
-    student: { id: number; number: number; studentEnum: number },
+    student: { id: number; number: number; studentEnum: number | undefined },
   ) {
+    // 과거 학번의 학위를 알 수 없으면 해당 프로필에 대한 권한은 발급하지 않는다.
+    if (student.studentEnum === undefined) {
+      return result;
+    }
     const profileKey = studentProfileKeyByEnum.get(student.studentEnum);
     if (profileKey === undefined) {
       return result;

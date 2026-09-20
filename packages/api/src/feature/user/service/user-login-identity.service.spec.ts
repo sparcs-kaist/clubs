@@ -347,7 +347,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
         .catch(error => error);
       expect(failure).toBeInstanceOf(UserIdentitySyncError);
       expect(failure.cause.message).toBe(
-        "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
+        "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.",
       );
       expect(failure.diagnostic.db.resolvingStudent.progCodeV2).toBe(
         progCodeV2,
@@ -653,7 +653,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
 
   it.each([
     [20996954, "0", "HP 학번은 로그인할 수 없습니다."],
-    [20997001, null, "교환학생의 학적 정보를 추적할 수 없습니다."],
+    [20997001, null, "현재 학적의 학위 정보를 확인할 수 없습니다."],
   ] as const)(
     "does not use a past regular student to bypass current rejection for %s",
     async (studentNumber, progCodeV2, message) => {
@@ -741,7 +741,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
           null,
         ),
       ).rejects.toThrow(
-        "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.",
+        "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.",
       );
     },
   );
@@ -767,7 +767,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
         1 as never,
         diagnostic,
       ),
-    ).rejects.toThrow("교환학생의 학적 정보를 추적할 수 없습니다.");
+    ).rejects.toThrow("현재 학적의 학위 정보를 확인할 수 없습니다.");
 
     expect(diagnostic).toMatchObject({
       stage: "db.current-degree.resolve",
@@ -836,8 +836,8 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     });
   });
 
-  it("retains current and linked student context when a different linked number cannot resolve", async () => {
-    const { repository, prisma, clock } = createRepository();
+  it("omits an unresolved linked profile on login and refresh while retaining diagnostics", async () => {
+    const { repository, service, prisma, clock } = createRepository();
     const linkedStudent = {
       id: mockStudentId + 1,
       number: 20997001,
@@ -855,32 +855,35 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     prisma.student.findMany
       .mockReset()
       .mockResolvedValueOnce([currentStudent])
-      .mockResolvedValueOnce([currentStudent, linkedStudent]);
+      .mockResolvedValue([currentStudent, linkedStudent]);
     prisma.studentT.findMany.mockResolvedValue(terms);
     clock.now.mockImplementation(
       () => new Date(currentDate.getTime() + clock.now.mock.calls.length),
     );
     const diagnostic: IdentitySyncDiagnostic = { stage: "start" };
 
-    await expect(
-      repository.findOrCreateUser(
-        "student@example.com",
-        defaultStudentNumber.toString(),
-        mockSid,
-        mockStudentName,
-        "Student",
-        "1234",
-        "S",
-        "재학",
-        "5",
-        diagnostic,
-      ),
-    ).rejects.toThrow("교환학생의 학적 정보를 추적할 수 없습니다.");
+    const identity = await repository.findOrCreateUser(
+      "student@example.com",
+      defaultStudentNumber.toString(),
+      mockSid,
+      mockStudentName,
+      "Student",
+      "1234",
+      "S",
+      "재학",
+      "5",
+      diagnostic,
+    );
+    expect(identity.doctor).toEqual({
+      id: mockStudentId,
+      number: defaultStudentNumber,
+    });
+    expect(identity.master).toBeUndefined();
 
     const currentQuery = prisma.studentT.findMany.mock.calls[0][0];
     const linkedQuery = prisma.studentT.findMany.mock.calls[1][0];
     expect(diagnostic).toMatchObject({
-      stage: "db.linked-degree.resolve",
+      stage: "db.executive.read",
       userId: mockUserId,
       studentId: mockStudentId,
       db: {
@@ -931,6 +934,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     expect(prisma.user.upsert).toHaveBeenCalledTimes(1);
     expect(prisma.student.upsert).toHaveBeenCalledTimes(1);
     expect(prisma.studentT.upsert).toHaveBeenCalledTimes(1);
+    expect(await service.findLoginIdentity(mockUserId)).toEqual(identity);
   });
 
   it("preserves the student term write failure and the resolved academic context", async () => {

@@ -302,17 +302,17 @@ export class OverviewRepository {
       new Map<number, Set<number>>(),
     );
 
-    const regularMemberStudentIdsByClubId = approvedRegistrationRows.reduce(
+    const approvedMemberStudentIdsByClubId = approvedRegistrationRows.reduce(
       (map, registration) => {
         const memberStudentIds = memberStudentIdsByClubId.get(
           registration.clubId,
         );
 
         if (memberStudentIds?.has(registration.studentId)) {
-          const regularMemberStudentIds =
+          const approvedMemberStudentIds =
             map.get(registration.clubId) ?? new Set<number>();
-          regularMemberStudentIds.add(registration.studentId);
-          map.set(registration.clubId, regularMemberStudentIds);
+          approvedMemberStudentIds.add(registration.studentId);
+          map.set(registration.clubId, approvedMemberStudentIds);
         }
 
         return map;
@@ -351,9 +351,10 @@ export class OverviewRepository {
         totalMemberCnt: BigInt(
           memberStudentIdsByClubId.get(club.club.id)?.size ?? 0,
         ),
-        regularMemberCnt: BigInt(
-          regularMemberStudentIdsByClubId.get(club.club.id)?.size ?? 0,
-        ),
+        semesterId: semester.id,
+        approvedMemberStudentIds: [
+          ...(approvedMemberStudentIdsByClubId.get(club.club.id) ?? []),
+        ],
       };
     });
   }

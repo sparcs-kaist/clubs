@@ -136,11 +136,17 @@ describe("OverviewRepository", () => {
         clubStudentT: {
           findMany: jest.fn().mockResolvedValue([
             { clubId: 5, studentId: 1 },
+            { clubId: 5, studentId: 1 },
             { clubId: 5, studentId: 2 },
           ]),
         },
         registrationApplicationStudent: {
-          findMany: jest.fn().mockResolvedValue([{ clubId: 5, studentId: 1 }]),
+          findMany: jest.fn().mockResolvedValue([
+            { clubId: 5, studentId: 1 },
+            { clubId: 5, studentId: 1 },
+            { clubId: 5, studentId: 3 },
+            { clubId: 6, studentId: 1 },
+          ]),
         },
       };
       const repository = new OverviewRepository(
@@ -165,7 +171,8 @@ describe("OverviewRepository", () => {
           roomLocation: "N11",
           roomPassword: "1234",
           totalMemberCnt: 2n,
-          regularMemberCnt: 1n,
+          semesterId: 15,
+          approvedMemberStudentIds: [1],
         },
       ]);
     });
@@ -240,7 +247,8 @@ describe("OverviewRepository", () => {
           roomLocation: null,
           roomPassword: null,
           totalMemberCnt: 2n,
-          regularMemberCnt: 1n,
+          semesterId: 19,
+          approvedMemberStudentIds: [1],
         },
       ]);
     });
