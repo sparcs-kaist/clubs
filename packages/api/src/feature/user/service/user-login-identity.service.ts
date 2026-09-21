@@ -238,27 +238,36 @@ export class UserLoginIdentityService {
 
         // eslint-disable-next-line no-restricted-syntax
         for (const studentRow of profileStudents) {
-          context.stage = "db.linked-degree.resolve";
-          db.resolvingStudent = {
-            id: studentRow.id,
-            number: studentRow.number,
-            source: "linked",
-            progCodeV2: null,
-            hasExistingStudentEnum: studentEnumByStudentId.has(studentRow.id),
-            existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
-          };
-          const resolvedStudentEnum = this.resolveStudentEnum({
-            existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
-            progCodeV2: null,
-            studentNumber: studentRow.number,
-          });
+          if (studentRow.id !== student.id) {
+            context.stage = "db.linked-degree.resolve";
+            db.resolvingStudent = {
+              id: studentRow.id,
+              number: studentRow.number,
+              source: "linked",
+              progCodeV2: null,
+              hasExistingStudentEnum: studentEnumByStudentId.has(studentRow.id),
+              existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+            };
+            const resolvedStudentEnum = this.resolveStudentEnum({
+              existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+              progCodeV2: null,
+              studentNumber: studentRow.number,
+            });
 
-          result = this.withStudentProfile(result, {
-            id: studentRow.id,
-            number: studentRow.number,
-            studentEnum: resolvedStudentEnum,
-          });
+            result = this.withStudentProfile(result, {
+              id: studentRow.id,
+              number: studentRow.number,
+              studentEnum: resolvedStudentEnum,
+            });
+          }
         }
+
+        // 현재 SSO 학적은 재판정하지 않고 같은 학위의 과거 프로필보다 우선한다.
+        result = this.withStudentProfile(result, {
+          id: student.id,
+          number: student.number,
+          studentEnum,
+        });
 
         // type이 "Student"인 경우 executive table에서 해당 studentNumber이 있는지 확인
         // 있으면 해당 칼럼의 user_id를 업데이트
@@ -464,7 +473,9 @@ export class UserLoginIdentityService {
     }
 
     if (existingStudentEnum !== undefined) {
-      return existingStudentEnum;
+      return studentProfileKeyByEnum.has(existingStudentEnum)
+        ? existingStudentEnum
+        : undefined;
     }
 
     return this.getFallbackStudentEnumFromStudentNumber(studentNumber);

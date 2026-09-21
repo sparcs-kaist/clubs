@@ -1,4 +1,4 @@
-import { UnauthorizedException } from "@nestjs/common";
+import { NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 
@@ -37,6 +37,12 @@ describe("exchanged login token provenance", () => {
     executive: { id: 6, studentId: 3 },
     professor: { id: 7 },
     employee: { id: 8 },
+  };
+  const withoutProfiles = {
+    id: user.id,
+    sid: user.sid,
+    name: user.name,
+    email: user.email,
   };
   const jwt = new JwtService();
   const repository = {
@@ -134,6 +140,43 @@ describe("exchanged login token provenance", () => {
         secret: config.refreshTokenSecretKey,
       }),
     ).not.toHaveProperty("exchangeActor");
+  });
+
+  it.each([undefined, actor])(
+    "rejects access issuance and refresh when no usable profiles remain (actor: %p)",
+    async exchangeActor => {
+      expect(() => auth.getAccessToken(withoutProfiles, exchangeActor)).toThrow(
+        NotFoundException,
+      );
+      users.findLoginIdentity.mockResolvedValue(withoutProfiles);
+
+      await expect(
+        auth.postAuthRefresh({ ...withoutProfiles, exchangeActor }),
+      ).rejects.toThrow("로그인할 수 있는 프로필이 없는 계정입니다.");
+    },
+  );
+
+  it.each([
+    "undergraduate",
+    "master",
+    "doctor",
+    "masterDoctorDoctor",
+    "masterDoctorMaster",
+    "allPrograms",
+    "auditor",
+    "executive",
+    "professor",
+    "employee",
+  ] as const)("allows a single usable %s profile", role => {
+    const tokens = auth.getAccessToken({
+      ...withoutProfiles,
+      [role]: user[role],
+    });
+
+    expect(Object.keys(tokens)).toEqual([role]);
+    expect(
+      jwt.verify(tokens[role], { secret: config.accessTokenSecretKey }),
+    ).toMatchObject({ id: user.id, type: role });
   });
 
   it("gives separate exchanges within the same second distinct refresh tokens", () => {

@@ -464,6 +464,142 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     expect(result.master).toBeUndefined();
   });
 
+  it.each([false, true])(
+    "keeps the current SSO profile ahead of a prior profile with the same degree: currentFirst=%s",
+    async currentFirst => {
+      const current = { id: mockStudentId, number: 20996535 };
+      const prior = { id: mockStudentId + 1, number: 20981001 };
+      const { repository, prisma } = createRepository({
+        studentNumber: current.number,
+        studentTerms: [{ studentId: current.id, studentEnum: 1 }],
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([current])
+        .mockResolvedValue(currentFirst ? [current, prior] : [prior, current]);
+
+      const identity = await repository.findOrCreateUser(
+        "student@example.com",
+        String(current.number),
+        mockSid,
+        mockStudentName,
+        "Student",
+        "",
+        "S",
+        "재학",
+        "0",
+      );
+
+      expect(identity.undergraduate).toEqual(current);
+    },
+  );
+
+  it.each([
+    ["missing", []],
+    ["different", [{ studentId: mockStudentId, studentEnum: 3 }]],
+  ])(
+    "keeps the resolved current degree when its linked degree query is %s",
+    async (_, linkedTerms) => {
+      const current = { id: mockStudentId, number: 20996535 };
+      const prior = { id: mockStudentId + 1, number: 20981001 };
+      const { repository, prisma } = createRepository({
+        studentNumber: current.number,
+        studentTerms: [],
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([current])
+        .mockResolvedValue([current, prior]);
+      prisma.studentT.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce(linkedTerms);
+
+      const identity = await repository.findOrCreateUser(
+        "student@example.com",
+        String(current.number),
+        mockSid,
+        mockStudentName,
+        "Student",
+        "",
+        "S",
+        "재학",
+        "1",
+      );
+
+      expect(identity.master).toEqual(current);
+      expect(identity.undergraduate).toEqual(prior);
+      expect(identity.doctor).toBeUndefined();
+    },
+  );
+
+  it.each([0, 99])(
+    "rejects unsupported current DB degree %s despite a valid prior profile",
+    async studentEnum => {
+      const current = { id: mockStudentId, number: 20996535 };
+      const prior = { id: mockStudentId + 1, number: 20981001 };
+      const { repository, prisma } = createRepository({
+        studentNumber: current.number,
+        studentTerms: [{ studentId: current.id, studentEnum }],
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([current])
+        .mockResolvedValue([current, prior]);
+
+      await expect(
+        repository.findOrCreateUser(
+          "student@example.com",
+          String(current.number),
+          mockSid,
+          mockStudentName,
+          "Student",
+          "",
+          "S",
+          "재학",
+          null,
+        ),
+      ).rejects.toThrow("현재 학적의 학위 정보를 확인할 수 없습니다.");
+      expect(prisma.studentT.upsert).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([0, 99])(
+    "skips unsupported prior DB degree %s on login and refresh",
+    async studentEnum => {
+      const current = { id: mockStudentId, number: 20996535 };
+      const prior = { id: mockStudentId + 1, number: 20981001 };
+      const { repository, service, prisma } = createRepository({
+        studentNumber: current.number,
+        studentTerms: [
+          { studentId: current.id, studentEnum: 2 },
+          { studentId: prior.id, studentEnum },
+        ],
+      });
+      prisma.student.findMany
+        .mockReset()
+        .mockResolvedValueOnce([current])
+        .mockResolvedValue([current, prior]);
+
+      const identity = await repository.findOrCreateUser(
+        "student@example.com",
+        String(current.number),
+        mockSid,
+        mockStudentName,
+        "Student",
+        "",
+        "S",
+        "재학",
+        "1",
+      );
+      const refreshed = await service.findLoginIdentity(mockUserId);
+
+      [identity, refreshed].forEach(result => {
+        expect(result.master).toEqual(current);
+        expect(result.undergraduate).toBeUndefined();
+      });
+    },
+  );
+
   it.each([
     [4, "masterDoctorDoctor"],
     [5, "masterDoctorMaster"],

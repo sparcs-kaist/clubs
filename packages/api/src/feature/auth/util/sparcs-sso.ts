@@ -169,26 +169,8 @@ export class Client {
           : "missing";
       }
 
-      // V1 kaist_info 파싱 (하위 호환성 유지용, 실제로는 사용 안 함)
+      // V1은 위의 진단 정보에만 보존하고 로그인에는 V2만 사용한다.
       diagnostic.stage = "sso_parse";
-      try {
-        result.kaist_info = result.kaist_info
-          ? JSON.parse(result.kaist_info)
-          : {};
-      } catch (error) {
-        diagnostic.sso.profileState = "v1_parse_failed";
-        diagnostic.sso.parseErrors = [
-          {
-            target: "kaist_info",
-            name: error instanceof SyntaxError ? "SyntaxError" : "Error",
-            message: "Failed to parse kaist_info",
-            stack: captureErrorFrames(error),
-          },
-        ];
-        throw error;
-      }
-
-      // V2 kaist_v2_info 파싱 추가
       const hasV2Info = Boolean(result.kaist_v2_info);
       const isV2String = typeof result.kaist_v2_info === "string";
       if (hasV2Info && isV2String) {

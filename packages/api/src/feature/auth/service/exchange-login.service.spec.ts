@@ -123,7 +123,9 @@ describe("ExchangeLoginService", () => {
 
   it("rejects targets without login profiles", async () => {
     const { service, auth, exchange } = setup();
-    auth.getAccessToken.mockReturnValue({} as { professor: string });
+    auth.getAccessToken.mockImplementation(() => {
+      throw new NotFoundException("로그인할 수 있는 프로필이 없는 계정입니다.");
+    });
     await expect(service.exchangeLogin(actor, 2)).rejects.toThrow(
       NotFoundException,
     );
