@@ -15,7 +15,9 @@ import {
 } from "../model/login-identity";
 import { UserLoginIdentityRepository } from "../repository/login-identity/user-login-identity.repository";
 import {
+  getStudentNumberSuffix,
   isEmployeeIdentity,
+  isHpStudentNumber,
   isProfessorIdentity,
   isStudentIdentity,
   parseIdentityDepartment,
@@ -30,6 +32,7 @@ type StudentProfile = Pick<
   | "masterDoctorMaster"
   | "allPrograms"
   | "auditor"
+  | "exchangeStudent"
 >;
 
 type StudentProfileKey = keyof StudentProfile;
@@ -42,13 +45,11 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [StudentEnum.MasterDoctorMaster, "masterDoctorMaster"],
   [StudentEnum.AllPrograms, "allPrograms"],
   [StudentEnum.Auditor, "auditor"],
+  [StudentEnum.Exchange, "exchangeStudent"],
 ]);
 
-const getStudentNumberSuffix = (studentNumber: string | number) =>
-  Number(studentNumber.toString().slice(-4));
-
-const FALLBACK_STUDENT_ENUM_ERROR_MESSAGE =
-  "교환학생의 학적 정보를 추적할 수 없습니다. 관리자에게 문의해주세요.";
+const CURRENT_STUDENT_ENUM_ERROR_MESSAGE =
+  "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.";
 
 @Injectable()
 export class UserLoginIdentityService {
@@ -104,13 +105,11 @@ export class UserLoginIdentityService {
         const studentNumberSuffix = getStudentNumberSuffix(studentNumber);
 
         //HP 학번(6900~6999)인 경우 로그인 불가
-        if (studentNumberSuffix >= 6900) {
-          if (studentNumberSuffix < 7000) {
-            throw new HttpException(
-              "HP 학번은 로그인할 수 없습니다.",
-              HttpStatus.BAD_REQUEST,
-            );
-          }
+        if (isHpStudentNumber(studentNumber)) {
+          throw new HttpException(
+            "HP 학번은 로그인할 수 없습니다.",
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         if (Number.isNaN(studentNumberSuffix)) {
@@ -179,6 +178,12 @@ export class UserLoginIdentityService {
           progCodeV2,
           studentNumber,
         });
+        if (studentEnum === undefined) {
+          throw new HttpException(
+            CURRENT_STUDENT_ENUM_ERROR_MESSAGE,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
 
         if (!progCodeV2) {
           if (studentEnum === StudentEnum.Undergraduate) {
@@ -221,38 +226,50 @@ export class UserLoginIdentityService {
           createdAt: studentRow.createdAt,
           deletedAt: studentRow.deletedAt,
         }));
+        const profileStudents = students.filter(
+          studentRow => !isHpStudentNumber(studentRow.number),
+        );
         context.stage = "db.linked-degree.read";
         const linkedStudentTerms: Record<string, unknown> = {};
         db.linkedStudentTerms = linkedStudentTerms;
         const studentEnumByStudentId =
           await this.getCurrentStudentEnumByStudentId(
-            students.map(studentRow => studentRow.id),
+            profileStudents.map(studentRow => studentRow.id),
             linkedStudentTerms,
           );
 
         // eslint-disable-next-line no-restricted-syntax
-        for (const studentRow of students) {
-          context.stage = "db.linked-degree.resolve";
-          db.resolvingStudent = {
-            id: studentRow.id,
-            number: studentRow.number,
-            source: "linked",
-            progCodeV2: null,
-            hasExistingStudentEnum: studentEnumByStudentId.has(studentRow.id),
-            existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
-          };
-          const resolvedStudentEnum = this.resolveStudentEnum({
-            existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
-            progCodeV2: null,
-            studentNumber: studentRow.number,
-          });
+        for (const studentRow of profileStudents) {
+          if (studentRow.id !== student.id) {
+            context.stage = "db.linked-degree.resolve";
+            db.resolvingStudent = {
+              id: studentRow.id,
+              number: studentRow.number,
+              source: "linked",
+              progCodeV2: null,
+              hasExistingStudentEnum: studentEnumByStudentId.has(studentRow.id),
+              existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+            };
+            const resolvedStudentEnum = this.resolveStudentEnum({
+              existingStudentEnum: studentEnumByStudentId.get(studentRow.id),
+              progCodeV2: null,
+              studentNumber: studentRow.number,
+            });
 
-          result = this.withStudentProfile(result, {
-            id: studentRow.id,
-            number: studentRow.number,
-            studentEnum: resolvedStudentEnum,
-          });
+            result = this.withStudentProfile(result, {
+              id: studentRow.id,
+              number: studentRow.number,
+              studentEnum: resolvedStudentEnum,
+            });
+          }
         }
+
+        // 현재 SSO 학적은 재판정하지 않고 같은 학위의 과거 프로필보다 우선한다.
+        result = this.withStudentProfile(result, {
+          id: student.id,
+          number: student.number,
+          studentEnum,
+        });
 
         // type이 "Student"인 경우 executive table에서 해당 studentNumber이 있는지 확인
         // 있으면 해당 칼럼의 user_id를 업데이트
@@ -352,7 +369,9 @@ export class UserLoginIdentityService {
       email: user.email,
     };
 
-    const students = await this.identityRepository.findStudentsByUserId(id);
+    const students = (
+      await this.identityRepository.findStudentsByUserId(id)
+    ).filter(student => !isHpStudentNumber(student.number));
 
     const studentEnumByStudentId = await this.getCurrentStudentEnumByStudentId(
       students.map(student => student.id),
@@ -456,7 +475,9 @@ export class UserLoginIdentityService {
     }
 
     if (existingStudentEnum !== undefined) {
-      return existingStudentEnum;
+      return studentProfileKeyByEnum.has(existingStudentEnum)
+        ? existingStudentEnum
+        : undefined;
     }
 
     return this.getFallbackStudentEnumFromStudentNumber(studentNumber);
@@ -489,7 +510,7 @@ export class UserLoginIdentityService {
 
   private getFallbackStudentEnumFromStudentNumber(
     studentNumber: string | number,
-  ): StudentEnum {
+  ): StudentEnum | undefined {
     const suffix = getStudentNumberSuffix(studentNumber);
 
     if (Number.isNaN(suffix)) {
@@ -511,16 +532,19 @@ export class UserLoginIdentityService {
       return StudentEnum.Doctor;
     }
 
-    throw new HttpException(
-      FALLBACK_STUDENT_ENUM_ERROR_MESSAGE,
-      HttpStatus.BAD_REQUEST,
-    );
+    // ponytail: 학위 정보가 없는 6000+ 학번은 기존 규칙상 교환으로 분류한다.
+    // 공식 교환 구분값이 제공되면 이 추정을 대체한다. HP는 호출 전에 제외한다.
+    return StudentEnum.Exchange;
   }
 
   private withStudentProfile<T extends StudentProfile>(
     result: T,
-    student: { id: number; number: number; studentEnum: number },
+    student: { id: number; number: number; studentEnum: number | undefined },
   ) {
+    // 과거 학번의 학위를 알 수 없으면 해당 프로필에 대한 권한은 발급하지 않는다.
+    if (student.studentEnum === undefined) {
+      return result;
+    }
     const profileKey = studentProfileKeyByEnum.get(student.studentEnum);
     if (profileKey === undefined) {
       return result;

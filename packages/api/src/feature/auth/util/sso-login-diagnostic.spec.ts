@@ -5,6 +5,28 @@ import {
 } from "./sso-login-diagnostic";
 
 describe("SSO login diagnostic privacy boundaries", () => {
+  it("records the independent V1 and V2 update dates as received", () => {
+    expect(
+      captureSsoProfile({
+        kaist_info_time: "2024-09-01",
+        kaist_v2_info_time: "2026-09-15",
+      }),
+    ).toMatchObject({
+      fields: {
+        kaist_info_time: {
+          present: true,
+          type: "string",
+          value: "2024-09-01",
+        },
+        kaist_v2_info_time: {
+          present: true,
+          type: "string",
+          value: "2026-09-15",
+        },
+      },
+    });
+  });
+
   it.each([1, "1", null, undefined])(
     "preserves academic field types and explicit undefined: %s",
     value => {

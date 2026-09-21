@@ -4,10 +4,13 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { TransactionHost } from "@nestjs-cls/transactional";
 import { defer, lastValueFrom } from "rxjs";
 
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
+
 import { CLOCK } from "@sparcs-clubs/api/common/clock/clock";
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
 import { RandomModule } from "@sparcs-clubs/api/common/random/random.module";
 import { TransactionModule } from "@sparcs-clubs/api/common/transaction/transaction.module";
+import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import { AuthModule } from "@sparcs-clubs/api/feature/auth/auth.module";
 import { SsoLoginDiagnosticInterceptor } from "@sparcs-clubs/api/feature/auth/controller/sso-login-diagnostic.interceptor";
@@ -227,13 +230,403 @@ describe("SSO failure logging with MySQL", () => {
     },
   );
 
-  it.each(["classification", "token-store"])(
+  it.each([
+    ["재학", 1, "expired"],
+    ["휴학", 2, "expired"],
+    ["재학", 1, "current"],
+  ] as const)(
+    "logs in a former HP student: status=%s(%s), HP term=%s",
+    async (status, studentStatusEnum, hpTermState) => {
+      const semester = await prisma.semesterD.findFirstOrThrow();
+      const user = await prisma.user.create({
+        data: {
+          sid: profile().sid,
+          name: "HP 전환 테스트 학생",
+          email: profile().kaist_v2_info.email,
+        },
+      });
+      const current = await prisma.student.create({
+        data: { userId: user.id, name: user.name, number: 20990127 },
+      });
+      const hp = await prisma.student.create({
+        data: { userId: user.id, name: user.name, number: 20986954 },
+      });
+      const hpSemester =
+        hpTermState === "current"
+          ? semester
+          : await prisma.semesterD.create({
+              data: {
+                year: 2025,
+                name: "봄",
+                startTerm: new Date("2025-03-01"),
+                endTerm: new Date("2025-09-01"),
+              },
+            });
+      const hpTerm = await prisma.studentT.create({
+        data: {
+          studentId: hp.id,
+          semesterId: hpSemester.id,
+          startTerm: hpSemester.startTerm,
+          endTerm: hpSemester.endTerm,
+          studentEnum: 3,
+          studentStatusEnum: 1,
+        },
+      });
+      sso.getUserInfo.mockResolvedValue({
+        ...profile(),
+        kaist_v2_info: {
+          ...profile().kaist_v2_info,
+          std_no: String(current.number),
+          std_prog_code: "0",
+          std_status_kor: status,
+        },
+      });
+
+      const signedIn = await signIn();
+      expect(signedIn.isKaistIamLogin).toBe(true);
+      expect(Object.keys(signedIn.token.accessToken)).toEqual([
+        "undergraduate",
+      ]);
+      expect(
+        await prisma.studentT.findMany({ where: { studentId: current.id } }),
+      ).toEqual([
+        expect.objectContaining({
+          semesterId: semester.id,
+          studentEnum: 1,
+          studentStatusEnum,
+        }),
+      ]);
+      expect(
+        await prisma.student.findUniqueOrThrow({ where: { id: hp.id } }),
+      ).toEqual(hp);
+      expect(
+        await prisma.studentT.findMany({ where: { studentId: hp.id } }),
+      ).toEqual([hpTerm]);
+
+      const identity = await module
+        .get(UserPublicService)
+        .findLoginIdentity(user.id);
+      expect(identity).toEqual({
+        id: user.id,
+        sid: user.sid,
+        name: profile().kaist_v2_info.user_nm,
+        email: user.email,
+        undergraduate: { id: current.id, number: current.number },
+      });
+      const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+      expect(Object.keys(refreshed.accessToken)).toEqual(["undergraduate"]);
+      expect(jwt.sign).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: "undergraduate",
+          studentId: current.id,
+          studentNumber: current.number,
+        }),
+        expect.any(Object),
+      );
+      expect(jwt.sign).not.toHaveBeenCalledWith(
+        expect.objectContaining({ studentId: hp.id }),
+        expect.any(Object),
+      );
+      expect(await prisma.student.count()).toBe(2);
+      expect(await prisma.authActivatedRefreshTokens.count()).toBe(1);
+      expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+    },
+  );
+
+  it("logs in and refreshes a combined-degree student with an expired exchange record", async () => {
+    const semester = await prisma.semesterD.findFirstOrThrow();
+    const user = await prisma.user.create({
+      data: {
+        sid: profile().sid,
+        name: "교환 이력 테스트 학생",
+        email: profile().kaist_v2_info.email,
+      },
+    });
+    const current = await prisma.student.create({
+      data: { userId: user.id, name: user.name, number: 20998369 },
+    });
+    const prior = await prisma.student.create({
+      data: { userId: user.id, name: user.name, number: 20986535 },
+    });
+    const priorSemester = await prisma.semesterD.create({
+      data: {
+        year: 2025,
+        name: "봄",
+        startTerm: new Date("2025-03-01"),
+        endTerm: new Date("2025-09-01"),
+      },
+    });
+    const priorTerm = await prisma.studentT.create({
+      data: {
+        studentId: prior.id,
+        semesterId: priorSemester.id,
+        startTerm: priorSemester.startTerm,
+        endTerm: priorSemester.endTerm,
+        studentEnum: 2,
+        studentStatusEnum: 1,
+      },
+    });
+    sso.getUserInfo.mockResolvedValue({
+      ...profile(),
+      kaist_v2_info: {
+        ...profile().kaist_v2_info,
+        std_no: String(current.number),
+        std_prog_code: "8",
+      },
+    });
+
+    const signedIn = await signIn();
+    expect(signedIn.isKaistIamLogin).toBe(true);
+    expect(Object.keys(signedIn.token.accessToken)).toEqual([
+      "masterDoctorMaster",
+      "exchangeStudent",
+    ]);
+    expect(
+      await prisma.studentT.findMany({ where: { studentId: current.id } }),
+    ).toEqual([
+      expect.objectContaining({
+        semesterId: semester.id,
+        studentEnum: 5,
+        studentStatusEnum: 1,
+      }),
+    ]);
+    const identity = await module
+      .get(UserPublicService)
+      .findLoginIdentity(user.id);
+    expect(identity.masterDoctorMaster).toEqual({
+      id: current.id,
+      number: current.number,
+    });
+    expect(identity.master).toBeUndefined();
+    expect(identity.exchangeStudent).toEqual({
+      id: prior.id,
+      number: prior.number,
+    });
+    const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+    expect(Object.keys(refreshed.accessToken)).toEqual([
+      "masterDoctorMaster",
+      "exchangeStudent",
+    ]);
+    expect(jwt.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "masterDoctorMaster",
+        studentId: current.id,
+        studentNumber: current.number,
+      }),
+      expect.any(Object),
+    );
+    expect(jwt.sign).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: "exchangeStudent",
+        studentId: prior.id,
+        studentNumber: prior.number,
+      }),
+      expect.any(Object),
+    );
+    expect(
+      await prisma.student.findUniqueOrThrow({ where: { id: prior.id } }),
+    ).toEqual(prior);
+    expect(
+      await prisma.studentT.findMany({ where: { studentId: prior.id } }),
+    ).toEqual([priorTerm]);
+    expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+  });
+
+  it.each([
+    [20996535, "0", 1, "undergraduate", "재학", 1],
+    [20996535, "0", 1, "undergraduate", "휴학", 2],
+    [20998001, "1", 2, "master", "재학", 1],
+    [20998001, "1", 2, "master", "휴학", 2],
+    [20996535, null, 8, "exchangeStudent", "재학", 1],
+    [20996535, null, 8, "exchangeStudent", "휴학", 2],
+    [20998001, null, 8, "exchangeStudent", "재학", 1],
+    [20998001, null, 8, "exchangeStudent", "휴학", 2],
+  ] as const)(
+    "logs in exchange number %s with code %s, degree %s, profile %s and status %s(%s)",
+    async (
+      studentNumber,
+      progCode,
+      studentEnum,
+      profileKey,
+      status,
+      studentStatusEnum,
+    ) => {
+      sso.getUserInfo.mockResolvedValue({
+        ...profile(),
+        kaist_v2_info: {
+          ...profile().kaist_v2_info,
+          std_no: String(studentNumber),
+          std_prog_code: progCode,
+          std_status_kor: status,
+        },
+      });
+
+      const signedIn = await signIn();
+      expect(signedIn.isKaistIamLogin).toBe(true);
+      expect(Object.keys(signedIn.token.accessToken)).toEqual([profileKey]);
+      const user = await prisma.user.findFirstOrThrow();
+      const student = await prisma.student.findFirstOrThrow();
+      expect(student.number).toBe(studentNumber);
+      expect(studentUserTypes).toContain(profileKey);
+      expect(isRegularClubMember(studentEnum, String(studentNumber))).toBe(
+        false,
+      );
+      const semester = await prisma.semesterD.findFirstOrThrow();
+      await expect(
+        module
+          .get(UserPublicService)
+          .isNotGraduateStudent(student.id, semester.id),
+      ).resolves.toBe(true);
+      expect(await prisma.studentT.findMany()).toEqual([
+        expect.objectContaining({
+          studentId: student.id,
+          studentEnum,
+          studentStatusEnum,
+        }),
+      ]);
+      const identity = await module
+        .get(UserPublicService)
+        .findLoginIdentity(user.id);
+      expect(identity[profileKey]).toEqual({
+        id: student.id,
+        number: studentNumber,
+      });
+      const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+      expect(Object.keys(refreshed.accessToken)).toEqual([profileKey]);
+      expect(jwt.sign).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: profileKey,
+          studentId: student.id,
+          studentNumber,
+        }),
+        expect.any(Object),
+      );
+      expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+    },
+  );
+
+  it("keeps a known current DB degree when an exchange-number student's SSO code is null", async () => {
+    const studentProfile = {
+      ...profile(),
+      kaist_v2_info: {
+        ...profile().kaist_v2_info,
+        std_no: "20996535",
+        std_prog_code: "1",
+      },
+    };
+    sso.getUserInfo.mockResolvedValue(studentProfile);
+    await signIn();
+    sso.getUserInfo.mockResolvedValue({
+      ...studentProfile,
+      kaist_v2_info: {
+        ...studentProfile.kaist_v2_info,
+        std_prog_code: null,
+        std_status_kor: "휴학",
+      },
+    });
+
+    const signedIn = await signIn();
+    expect(Object.keys(signedIn.token.accessToken)).toEqual(["master"]);
+    const student = await prisma.student.findFirstOrThrow();
+    expect(await prisma.studentT.findMany()).toEqual([
+      expect.objectContaining({
+        studentId: student.id,
+        studentEnum: 2,
+        studentStatusEnum: 2,
+      }),
+    ]);
+    const identity = await module
+      .get(UserPublicService)
+      .findLoginIdentity(student.userId);
+    expect(identity.master).toEqual({ id: student.id, number: student.number });
+    expect(identity.exchangeStudent).toBeUndefined();
+    const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+    expect(Object.keys(refreshed.accessToken)).toEqual(["master"]);
+    expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+  });
+
+  it("preserves an ordinary prior degree profile after its academic term expires", async () => {
+    const studentProfile = profile();
+    studentProfile.kaist_v2_info.std_no = "20980127";
+    studentProfile.kaist_v2_info.std_prog_code = "0";
+    sso.getUserInfo.mockResolvedValue(studentProfile);
+    await signIn();
+    const prior = await prisma.student.findFirstOrThrow();
+    await prisma.studentT.updateMany({
+      data: {
+        startTerm: new Date("2025-03-01"),
+        endTerm: new Date("2025-09-01"),
+      },
+    });
+    sso.getUserInfo.mockResolvedValue({
+      ...studentProfile,
+      kaist_v2_info: {
+        ...studentProfile.kaist_v2_info,
+        std_no: "20998083",
+        std_prog_code: "7",
+      },
+    });
+    const signedIn = await signIn();
+    expect(Object.keys(signedIn.token.accessToken)).toEqual([
+      "undergraduate",
+      "masterDoctorDoctor",
+    ]);
+    const identity = await module
+      .get(UserPublicService)
+      .findLoginIdentity(prior.userId);
+    expect(identity.undergraduate).toEqual({
+      id: prior.id,
+      number: prior.number,
+    });
+    const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+    expect(Object.keys(refreshed.accessToken)).toEqual([
+      "undergraduate",
+      "masterDoctorDoctor",
+    ]);
+    expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+  });
+
+  it("rejects a current HP number even when the user already has a regular student profile", async () => {
+    const studentProfile = profile();
+    studentProfile.kaist_v2_info.std_no = "20980127";
+    studentProfile.kaist_v2_info.std_prog_code = "0";
+    sso.getUserInfo.mockResolvedValue(studentProfile);
+    await signIn();
+    const user = await prisma.user.findFirstOrThrow();
+    const student = await prisma.student.findFirstOrThrow();
+    const term = await prisma.studentT.findFirstOrThrow();
+    jwt.sign.mockClear();
+    sso.getUserInfo.mockResolvedValue({
+      ...studentProfile,
+      kaist_v2_info: {
+        ...studentProfile.kaist_v2_info,
+        std_no: "20996954",
+      },
+    });
+    await expect(signIn()).rejects.toThrow("HP 학번은 로그인할 수 없습니다.");
+    expect(await prisma.user.findMany()).toEqual([user]);
+    expect(await prisma.student.findMany()).toEqual([student]);
+    expect(await prisma.studentT.findMany()).toEqual([term]);
+    expect(await prisma.authActivatedRefreshTokens.count()).toBe(1);
+    expect(jwt.sign).not.toHaveBeenCalled();
+    expect(await prisma.authSsoLoginFailureLog.findMany()).toEqual([
+      expect.objectContaining({
+        stage: "db.student.validate",
+        userId: user.id,
+      }),
+    ]);
+  });
+
+  it.each(["student-validation", "token-store"])(
     "rolls back login writes and keeps the %s failure",
     async mode => {
-      if (mode === "classification") {
+      if (mode === "student-validation") {
         sso.getUserInfo.mockResolvedValue({
           ...profile(),
-          kaist_v2_info: { ...profile().kaist_v2_info, std_prog_code: 1 },
+          kaist_v2_info: {
+            ...profile().kaist_v2_info,
+            std_no: "20996954",
+          },
         });
       } else {
         jest
@@ -250,8 +643,8 @@ describe("SSO failure logging with MySQL", () => {
       expect(logs[0]).toMatchObject({
         occurredAt: now,
         stage:
-          mode === "classification"
-            ? "db.current-degree.resolve"
+          mode === "student-validation"
+            ? "db.student.validate"
             : "refresh_token_store",
       });
       expect(logs[0].userId).toBeGreaterThan(0);

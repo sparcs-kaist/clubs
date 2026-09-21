@@ -15,8 +15,10 @@ import {
 } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
+import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { OverviewRepository } from "@sparcs-clubs/api/feature/overview/repository/overview.repository";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 type ClubFundamental = {
   clubId: number;
@@ -65,7 +67,10 @@ type OverviewSortableClub = {
 
 @Injectable()
 export class OverviewService {
-  constructor(private clubDelegateRepository: OverviewRepository) {}
+  constructor(
+    private clubDelegateRepository: OverviewRepository,
+    private userPublicService: UserPublicService,
+  ) {}
 
   private sortOverviewClubs<T extends OverviewSortableClub>(clubs: T[]): T[] {
     return [...clubs].sort((a, b) => {
@@ -217,6 +222,24 @@ export class OverviewService {
       query.year,
       query.semesterName,
     );
+    if (clubs.length === 0) {
+      return [];
+    }
+
+    const studentIds = [
+      ...new Set(clubs.flatMap(club => club.approvedMemberStudentIds)),
+    ];
+    const [studentEnums, students] = await Promise.all([
+      this.userPublicService.getStudentEnumsByIdsAndSemesterId(
+        studentIds,
+        clubs[0].semesterId,
+      ),
+      this.userPublicService.fetchStudentSummaries(studentIds),
+    ]);
+    const studentById = new Map(students.map(student => [student.id, student]));
+    const studentEnumById = new Map(
+      studentEnums.map(student => [student.id, student.studentEnumId]),
+    );
     const filteredClubs = clubs
       .filter(this.clubTypeOf(query))
       .filter(this.divisionIn(query))
@@ -231,7 +254,12 @@ export class OverviewService {
         foundingYear: club.foundingYear,
         professor: club.advisor,
         totalMemberCnt: Number(club.totalMemberCnt),
-        regularMemberCnt: Number(club.regularMemberCnt),
+        regularMemberCnt: club.approvedMemberStudentIds.filter(studentId =>
+          isRegularClubMember(
+            studentEnumById.get(studentId),
+            studentById.get(studentId)?.studentNumber,
+          ),
+        ).length,
         clubBuildingEnum: club.clubBuildingEnum as ClubBuildingEnum,
         roomLocation: club.roomLocation || undefined,
         roomPassword: club.roomPassword?.trim(),

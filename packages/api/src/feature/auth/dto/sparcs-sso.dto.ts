@@ -36,16 +36,19 @@ export class SSOUser {
   kaist_id!: string;
 
   /**
-   * @deprecated V1 KAIST Portal 데이터 - 하위 호환성을 위해 유지하지만 사용 안 함
-   * 실제로는 kaist_v2_info를 사용할 것
+   * @deprecated V1 KAIST Portal 원본 데이터 - 진단에만 보존하며 파싱하지 않음
+   * 로그인에는 kaist_v2_info를 사용할 것
    */
-  kaist_info!: KaistInfo;
+  kaist_info?: unknown;
 
   /**
-   * @deprecated kaist_info를 업데이트한 날짜 - 더 이상 사용 안 함
+   * kaist_info를 마지막으로 업데이트한 날짜 (진단용)
    * YYYY-MM-DD 형식의 날짜 또는 빈 문자열 값입니다.
    */
-  kaist_info_time?: Date;
+  kaist_info_time?: string;
+
+  /** kaist_v2_info를 마지막으로 업데이트한 날짜 (YYYY-MM-DD 또는 빈 문자열, 진단용) */
+  kaist_v2_info_time?: string;
 
   /** 사용자의 SPARCS ID입니다. SPARCS 회원이 아닌 경우 빈 문자열 값입니다. */
   sparcs_id!: string;

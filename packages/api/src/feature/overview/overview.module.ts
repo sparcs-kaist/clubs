@@ -3,9 +3,10 @@ import { Module } from "@nestjs/common";
 import { OverviewController } from "@sparcs-clubs/api/feature/overview/controller/overview.controller";
 import { OverviewRepository } from "@sparcs-clubs/api/feature/overview/repository/overview.repository";
 import { OverviewService } from "@sparcs-clubs/api/feature/overview/service/overview.service";
+import UserModule from "@sparcs-clubs/api/feature/user/user.module";
 
 @Module({
-  imports: [],
+  imports: [UserModule],
   controllers: [OverviewController],
   providers: [OverviewService, OverviewRepository],
 })

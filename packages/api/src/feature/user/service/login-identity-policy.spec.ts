@@ -1,11 +1,26 @@
 import {
   isEmployeeIdentity,
+  isHpStudentNumber,
   isProfessorIdentity,
   isStudentIdentity,
   parseIdentityDepartment,
 } from "./login-identity-policy";
 
 describe("login identity role policy", () => {
+  it.each([
+    [20996899, false],
+    [20996900, true],
+    [20996999, true],
+    [20997000, false],
+    ["20996899", false],
+    ["20996900", true],
+    ["20996999", true],
+    ["20997000", false],
+    ["not-a-number", false],
+  ] as const)("identifies HP student number %s", (studentNumber, expected) => {
+    expect(isHpStudentNumber(studentNumber)).toBe(expected);
+  });
+
   it.each([
     ["", "", false],
     ["", "S", true],
