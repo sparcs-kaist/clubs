@@ -5,6 +5,17 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.26 source=04147b1078c6
+  {
+    version: "v.0.1.26",
+    date: new Date("2026.09.21"),
+    patchNoteContent: `Clubs v0.1.26
+오류 수정은 다음과 같습니다.
+- 과거 HP·교환 학번이 연결된 학생의 로그인 오류를 수정했습니다. (#1938)
+- 학위 정보가 없는 교환학생도 교환학생 프로필로 로그인할 수 있도록 개선했습니다. (#1938)
+- 교환학생이 준회원으로 분류되도록 대표자 후보와 정회원 수 집계를 수정했습니다. (#1938)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.25 source=1403ce737fed
   {
     version: "v.0.1.25",
