@@ -8,10 +8,10 @@ it.each([
 ] as const)(
   "validates academic degrees separately from attendance in %s",
   (_, schema) => {
-    [1, 2, 3, 4, 5, 6, 7].forEach(degree => {
+    [1, 2, 3, 4, 5, 6, 7, 8].forEach(degree => {
       expect(schema.shape.studentEnum.parse(degree)).toBe(degree);
     });
-    [0, 8, "4", null].forEach(degree => {
+    [0, 9, "4", null].forEach(degree => {
       expect(schema.shape.studentEnum.safeParse(degree).success).toBe(false);
     });
     expect(schema.shape.StudentStatusEnum.parse(1)).toBe(1);

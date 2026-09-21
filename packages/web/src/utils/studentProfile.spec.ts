@@ -6,7 +6,7 @@ import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 import { getUserType } from "./getUserType.ts";
 import isStudent from "./isStudent.ts";
 
-it("recognizes both integrated phases, all programs, and auditors as students", () => {
+it("recognizes all academic profiles, including exchange students, as students", () => {
   const studentTypes = [
     UserTypeEnum.Undergraduate,
     UserTypeEnum.Master,
@@ -15,6 +15,7 @@ it("recognizes both integrated phases, all programs, and auditors as students", 
     UserTypeEnum.MasterDoctorMaster,
     UserTypeEnum.AllPrograms,
     UserTypeEnum.Auditor,
+    UserTypeEnum.ExchangeStudent,
   ];
   Object.values(UserTypeEnum).forEach(type => {
     assert.equal(
@@ -37,5 +38,6 @@ it("labels each academic program distinctly", () => {
   );
   assert.equal(getUserType(UserTypeEnum.AllPrograms), "과정전체");
   assert.equal(getUserType(UserTypeEnum.Auditor), "청강생");
+  assert.equal(getUserType(UserTypeEnum.ExchangeStudent), "교환학생");
   assert.equal(getUserType(UserTypeEnum.Doctor), "박사과정");
 });

@@ -32,6 +32,7 @@ type StudentProfile = Pick<
   | "masterDoctorMaster"
   | "allPrograms"
   | "auditor"
+  | "exchangeStudent"
 >;
 
 type StudentProfileKey = keyof StudentProfile;
@@ -44,6 +45,7 @@ const studentProfileKeyByEnum = new Map<number, StudentProfileKey>([
   [StudentEnum.MasterDoctorMaster, "masterDoctorMaster"],
   [StudentEnum.AllPrograms, "allPrograms"],
   [StudentEnum.Auditor, "auditor"],
+  [StudentEnum.Exchange, "exchangeStudent"],
 ]);
 
 const CURRENT_STUDENT_ENUM_ERROR_MESSAGE =
@@ -530,7 +532,9 @@ export class UserLoginIdentityService {
       return StudentEnum.Doctor;
     }
 
-    return undefined;
+    // ponytail: 학위 정보가 없는 6000+ 학번은 기존 규칙상 교환으로 분류한다.
+    // 공식 교환 구분값이 제공되면 이 추정을 대체한다. HP는 호출 전에 제외한다.
+    return StudentEnum.Exchange;
   }
 
   private withStudentProfile<T extends StudentProfile>(

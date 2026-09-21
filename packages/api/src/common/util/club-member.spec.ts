@@ -15,6 +15,8 @@ describe("isRegularClubMember", () => {
     [StudentEnum.MasterDoctorMaster, "20260001", false],
     [StudentEnum.AllPrograms, "20260001", false],
     [StudentEnum.Auditor, "20260001", false],
+    [StudentEnum.Exchange, "20260001", false],
+    [StudentEnum.Exchange, "20266001", false],
     [undefined, "20260001", false],
     [StudentEnum.Undergraduate, undefined, false],
   ])("classifies degree %s and number %s as %s", (degree, number, expected) => {

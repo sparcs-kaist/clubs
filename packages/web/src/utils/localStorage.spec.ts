@@ -64,6 +64,7 @@ describe("setLoginTokens", () => {
       "undergraduate",
       "allPrograms",
       "auditor",
+      "exchangeStudent",
       "employee",
       "executive",
     ];
@@ -87,6 +88,7 @@ describe("setLoginTokens", () => {
       "masterDoctorMaster",
       "allPrograms",
       "auditor",
+      "exchangeStudent",
     ].forEach(role => {
       const tokens = { [role]: `target-${role}` };
       setLoginTokens(tokens);

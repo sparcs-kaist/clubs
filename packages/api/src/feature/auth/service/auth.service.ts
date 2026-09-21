@@ -438,6 +438,7 @@ export class AuthService {
         "masterDoctorMaster",
         "allPrograms",
         "auditor",
+        "exchangeStudent",
       ] as const
     ).forEach(type => {
       const student = user[type];

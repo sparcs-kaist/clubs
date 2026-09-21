@@ -29,6 +29,7 @@ describe("student role permissions", () => {
     "masterDoctorMaster",
     "allPrograms",
     "auditor",
+    "exchangeStudent",
   ])("allows %s to access student routes", type => {
     const user = { type, studentId: 1 };
     expect(guard.handleRequest(null, user, null, context("student"))).toBe(
@@ -43,6 +44,7 @@ describe("student role permissions", () => {
     "masterDoctorMaster",
     "allPrograms",
     "auditor",
+    "exchangeStudent",
   ])("does not grant undergraduate access to %s", type => {
     expect(() =>
       guard.handleRequest(null, { type }, null, context("undergraduate")),

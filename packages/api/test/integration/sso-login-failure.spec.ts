@@ -4,10 +4,13 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { TransactionHost } from "@nestjs-cls/transactional";
 import { defer, lastValueFrom } from "rxjs";
 
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
+
 import { CLOCK } from "@sparcs-clubs/api/common/clock/clock";
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
 import { RandomModule } from "@sparcs-clubs/api/common/random/random.module";
 import { TransactionModule } from "@sparcs-clubs/api/common/transaction/transaction.module";
+import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import { AuthModule } from "@sparcs-clubs/api/feature/auth/auth.module";
 import { SsoLoginDiagnosticInterceptor } from "@sparcs-clubs/api/feature/auth/controller/sso-login-diagnostic.interceptor";
@@ -376,6 +379,7 @@ describe("SSO failure logging with MySQL", () => {
     expect(signedIn.isKaistIamLogin).toBe(true);
     expect(Object.keys(signedIn.token.accessToken)).toEqual([
       "masterDoctorMaster",
+      "exchangeStudent",
     ]);
     expect(
       await prisma.studentT.findMany({ where: { studentId: current.id } }),
@@ -394,9 +398,16 @@ describe("SSO failure logging with MySQL", () => {
       number: current.number,
     });
     expect(identity.master).toBeUndefined();
+    expect(identity.exchangeStudent).toEqual({
+      id: prior.id,
+      number: prior.number,
+    });
     const refreshed = await module.get(AuthService).postAuthRefresh(identity);
-    expect(Object.keys(refreshed.accessToken)).toEqual(["masterDoctorMaster"]);
-    expect(jwt.sign).toHaveBeenLastCalledWith(
+    expect(Object.keys(refreshed.accessToken)).toEqual([
+      "masterDoctorMaster",
+      "exchangeStudent",
+    ]);
+    expect(jwt.sign).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "masterDoctorMaster",
         studentId: current.id,
@@ -404,8 +415,12 @@ describe("SSO failure logging with MySQL", () => {
       }),
       expect.any(Object),
     );
-    expect(jwt.sign).not.toHaveBeenCalledWith(
-      expect.objectContaining({ studentId: prior.id }),
+    expect(jwt.sign).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: "exchangeStudent",
+        studentId: prior.id,
+        studentNumber: prior.number,
+      }),
       expect.any(Object),
     );
     expect(
@@ -422,6 +437,10 @@ describe("SSO failure logging with MySQL", () => {
     [20996535, "0", 1, "undergraduate", "휴학", 2],
     [20998001, "1", 2, "master", "재학", 1],
     [20998001, "1", 2, "master", "휴학", 2],
+    [20996535, null, 8, "exchangeStudent", "재학", 1],
+    [20996535, null, 8, "exchangeStudent", "휴학", 2],
+    [20998001, null, 8, "exchangeStudent", "재학", 1],
+    [20998001, null, 8, "exchangeStudent", "휴학", 2],
   ] as const)(
     "logs in exchange number %s with code %s, degree %s, profile %s and status %s(%s)",
     async (
@@ -448,6 +467,10 @@ describe("SSO failure logging with MySQL", () => {
       const user = await prisma.user.findFirstOrThrow();
       const student = await prisma.student.findFirstOrThrow();
       expect(student.number).toBe(studentNumber);
+      expect(studentUserTypes).toContain(profileKey);
+      expect(isRegularClubMember(studentEnum, String(studentNumber))).toBe(
+        false,
+      );
       const semester = await prisma.semesterD.findFirstOrThrow();
       await expect(
         module
@@ -481,6 +504,46 @@ describe("SSO failure logging with MySQL", () => {
       expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
     },
   );
+
+  it("keeps a known current DB degree when an exchange-number student's SSO code is null", async () => {
+    const studentProfile = {
+      ...profile(),
+      kaist_v2_info: {
+        ...profile().kaist_v2_info,
+        std_no: "20996535",
+        std_prog_code: "1",
+      },
+    };
+    sso.getUserInfo.mockResolvedValue(studentProfile);
+    await signIn();
+    sso.getUserInfo.mockResolvedValue({
+      ...studentProfile,
+      kaist_v2_info: {
+        ...studentProfile.kaist_v2_info,
+        std_prog_code: null,
+        std_status_kor: "휴학",
+      },
+    });
+
+    const signedIn = await signIn();
+    expect(Object.keys(signedIn.token.accessToken)).toEqual(["master"]);
+    const student = await prisma.student.findFirstOrThrow();
+    expect(await prisma.studentT.findMany()).toEqual([
+      expect.objectContaining({
+        studentId: student.id,
+        studentEnum: 2,
+        studentStatusEnum: 2,
+      }),
+    ]);
+    const identity = await module
+      .get(UserPublicService)
+      .findLoginIdentity(student.userId);
+    expect(identity.master).toEqual({ id: student.id, number: student.number });
+    expect(identity.exchangeStudent).toBeUndefined();
+    const refreshed = await module.get(AuthService).postAuthRefresh(identity);
+    expect(Object.keys(refreshed.accessToken)).toEqual(["master"]);
+    expect(await prisma.authSsoLoginFailureLog.count()).toBe(0);
+  });
 
   it("preserves an ordinary prior degree profile after its academic term expires", async () => {
     const studentProfile = profile();
@@ -554,13 +617,16 @@ describe("SSO failure logging with MySQL", () => {
     ]);
   });
 
-  it.each(["classification", "token-store"])(
+  it.each(["student-validation", "token-store"])(
     "rolls back login writes and keeps the %s failure",
     async mode => {
-      if (mode === "classification") {
+      if (mode === "student-validation") {
         sso.getUserInfo.mockResolvedValue({
           ...profile(),
-          kaist_v2_info: { ...profile().kaist_v2_info, std_prog_code: 1 },
+          kaist_v2_info: {
+            ...profile().kaist_v2_info,
+            std_no: "20996954",
+          },
         });
       } else {
         jest
@@ -577,8 +643,8 @@ describe("SSO failure logging with MySQL", () => {
       expect(logs[0]).toMatchObject({
         occurredAt: now,
         stage:
-          mode === "classification"
-            ? "db.current-degree.resolve"
+          mode === "student-validation"
+            ? "db.student.validate"
             : "refresh_token_store",
       });
       expect(logs[0].userId).toBeGreaterThan(0);

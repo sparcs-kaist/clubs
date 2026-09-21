@@ -29,6 +29,7 @@ export const setLoginTokens = (
     tokens.undergraduate ??
     tokens.allPrograms ??
     tokens.auditor ??
+    tokens.exchangeStudent ??
     tokens.employee ??
     tokens.executive ??
     "";

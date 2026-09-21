@@ -323,35 +323,32 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     "7 ",
     "10 ",
   ])(
-    "preserves unsupported degree input %p and the absence of current student_t",
+    "uses an exchange profile for unsupported SSO degree %p without a stored degree",
     async progCodeV2 => {
       const { service, semester } = createRepository({
         studentNumber: 20996001,
         studentTerms: [],
       });
-      const failure = await service
-        .syncSsoIdentity(
-          {
-            email: "student@example.com",
-            studentNumber: "20996001",
-            sid: mockSid,
-            name: mockStudentName,
-            type: "Student",
-            department: "",
-            typeV2: "S",
-            statusV2: "재학",
-            progCodeV2: progCodeV2 as never,
-          },
-          semester,
-        )
-        .catch(error => error);
-      expect(failure).toBeInstanceOf(UserIdentitySyncError);
-      expect(failure.cause.message).toBe(
-        "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.",
+      const { identity, diagnostic } = await service.syncSsoIdentity(
+        {
+          email: "student@example.com",
+          studentNumber: "20996001",
+          sid: mockSid,
+          name: mockStudentName,
+          type: "Student",
+          department: "",
+          typeV2: "S",
+          statusV2: "재학",
+          progCodeV2: progCodeV2 as never,
+        },
+        semester,
       );
-      expect(failure.diagnostic.db.resolvingStudent.progCodeV2).toBe(
-        progCodeV2,
-      );
+      expect(identity.exchangeStudent).toEqual({
+        id: mockStudentId,
+        number: 20996001,
+      });
+      expect(identity.masterDoctorMaster).toBeUndefined();
+      expect(diagnostic.db.resolvingStudent.progCodeV2).toBe(progCodeV2);
     },
   );
 
@@ -360,6 +357,10 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     [
       "corrects a previous doctor term",
       [{ studentId: mockStudentId, studentEnum: 3 }],
+    ],
+    [
+      "replaces a previous exchange fallback",
+      [{ studentId: mockStudentId, studentEnum: 8 }],
     ],
   ] as const)("%s for SSO program 7", async (_, studentTerms) => {
     const studentNumber = 20998083;
@@ -396,6 +397,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     expect(identity.undergraduate).toBeUndefined();
     expect(identity.master).toBeUndefined();
     expect(identity.doctor).toBeUndefined();
+    expect(identity.exchangeStudent).toBeUndefined();
     expect(diagnostic.db?.currentStudentResolution).toMatchObject({
       studentEnum: 4,
       studentStatusEnum: 1,
@@ -605,6 +607,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     [5, "masterDoctorMaster"],
     [6, "allPrograms"],
     [7, "auditor"],
+    [8, "exchangeStudent"],
   ] as const)(
     "preserves stored enum %s for token refresh without rewriting its degree",
     async (studentEnum, profileKey) => {
@@ -635,6 +638,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     ["8000+ masterDoctorMaster", 20998083, 5, "masterDoctorMaster"],
     ["8000+ allPrograms", 20998083, 6, "allPrograms"],
     ["8000+ auditor", 20998083, 7, "auditor"],
+    ["stored exchange", 20996535, 8, "exchangeStudent"],
   ] as const)(
     "uses the current student_t enum for %s when login has no SSO V2 degree",
     async (_, studentNumber, studentEnum, expectedProfileKey) => {
@@ -671,6 +675,11 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     ["3000-3999", "master", 20993001],
     ["4000-4999", "master", 20994001],
     ["5000-5999", "doctor", 20995001],
+    ["5999", "doctor", 20995999],
+    ["6000", "exchangeStudent", 20996000],
+    ["6899", "exchangeStudent", 20996899],
+    ["7000", "exchangeStudent", 20997000],
+    ["9999", "exchangeStudent", 20999999],
   ] as const)(
     "classifies %s as %s when falling back to student number",
     async (_, expectedProfileKey, studentNumber) => {
@@ -789,7 +798,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
 
   it.each([
     [20996954, "0", "HP 학번은 로그인할 수 없습니다."],
-    [20997001, null, "현재 학적의 학위 정보를 확인할 수 없습니다."],
+    [20996999, null, "HP 학번은 로그인할 수 없습니다."],
   ] as const)(
     "does not use a past regular student to bypass current rejection for %s",
     async (studentNumber, progCodeV2, message) => {
@@ -857,36 +866,43 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     ["6000-6899", 20996001],
     ["7000+", 20997001],
   ] as const)(
-    "rejects %s students when falling back to student number",
+    "creates an exchange profile on login and refresh for %s without a degree",
     async (_, studentNumber) => {
-      const { repository } = createRepository({
+      const { repository, service, prisma } = createRepository({
         studentNumber,
         studentTerms: [],
       });
 
-      await expect(
-        repository.findOrCreateUser(
-          "exchange@example.com",
-          studentNumber.toString(),
-          mockSid,
-          mockStudentName,
-          "Student",
-          "1234",
-          "S",
-          "재학",
-          null,
-        ),
-      ).rejects.toThrow(
-        "현재 학적의 학위 정보를 확인할 수 없습니다. 관리자에게 문의해주세요.",
+      const identity = await repository.findOrCreateUser(
+        "exchange@example.com",
+        studentNumber.toString(),
+        mockSid,
+        mockStudentName,
+        "Student",
+        "1234",
+        "S",
+        "휴학",
+        null,
       );
+      const refreshed = await service.findLoginIdentity(mockUserId);
+      [identity, refreshed].forEach(result => {
+        expect(result.exchangeStudent).toEqual({
+          id: mockStudentId,
+          number: studentNumber,
+        });
+      });
+      expect(prisma.studentT.upsert.mock.calls[0][0].create).toMatchObject({
+        studentEnum: 8,
+        studentStatusEnum: 2,
+      });
     },
   );
 
-  it("captures the current student failure and the empty query actually used", async () => {
+  it("captures the current student failure and the unsupported DB enum actually used", async () => {
     const studentNumber = "20996001";
     const { repository, prisma } = createRepository({
       studentNumber: Number(studentNumber),
-      studentTerms: [],
+      studentTerms: [{ studentId: mockStudentId, studentEnum: 99 }],
     });
     const diagnostic: IdentitySyncDiagnostic = { stage: "start" };
 
@@ -923,13 +939,13 @@ describe("UserLoginIdentityService legacy login behavior", () => {
           number: studentNumber,
           source: "current",
           progCodeV2: 1,
-          hasExistingStudentEnum: false,
-          existingStudentEnum: undefined,
+          hasExistingStudentEnum: true,
+          existingStudentEnum: 99,
         },
         currentStudentTerms: {
           queriedAt: currentDate,
           studentIds: [mockStudentId],
-          rows: [],
+          rows: [{ studentId: mockStudentId, studentEnum: 99 }],
         },
       },
     });
@@ -972,7 +988,7 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     });
   });
 
-  it("omits an unresolved linked profile on login and refresh while retaining diagnostics", async () => {
+  it("creates an exchange profile for a linked special number without a degree while retaining diagnostics", async () => {
     const { repository, service, prisma, clock } = createRepository();
     const linkedStudent = {
       id: mockStudentId + 1,
@@ -1017,6 +1033,10 @@ describe("UserLoginIdentityService legacy login behavior", () => {
     expect(identity.master).toBeUndefined();
 
     const currentQuery = prisma.studentT.findMany.mock.calls[0][0];
+    expect(identity.exchangeStudent).toEqual({
+      id: linkedStudent.id,
+      number: linkedStudent.number,
+    });
     const linkedQuery = prisma.studentT.findMany.mock.calls[1][0];
     expect(diagnostic).toMatchObject({
       stage: "db.executive.read",

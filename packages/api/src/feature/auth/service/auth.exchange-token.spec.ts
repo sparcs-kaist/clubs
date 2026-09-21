@@ -2,6 +2,8 @@ import { NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 
+import apiAut002 from "@clubs/interface/api/auth/endpoint/apiAut002";
+
 import { SystemRandomGenerator } from "@sparcs-clubs/api/common/random/system-random-generator";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 
@@ -34,6 +36,7 @@ describe("exchanged login token provenance", () => {
     masterDoctorMaster: { id: 10, number: 20268084 },
     allPrograms: { id: 11, number: 20268085 },
     auditor: { id: 12, number: 20268086 },
+    exchangeStudent: { id: 13, number: 20266001 },
     executive: { id: 6, studentId: 3 },
     professor: { id: 7 },
     employee: { id: 8 },
@@ -75,6 +78,7 @@ describe("exchanged login token provenance", () => {
     ["masterDoctorMaster", { studentId: 10, studentNumber: 20268084 }],
     ["allPrograms", { studentId: 11, studentNumber: 20268085 }],
     ["auditor", { studentId: 12, studentNumber: 20268086 }],
+    ["exchangeStudent", { studentId: 13, studentNumber: 20266001 }],
     ["executive", { executiveId: 6, studentId: 3 }],
     ["professor", { professorId: 7 }],
     ["employee", { employeeId: 8 }],
@@ -164,6 +168,7 @@ describe("exchanged login token provenance", () => {
     "masterDoctorMaster",
     "allPrograms",
     "auditor",
+    "exchangeStudent",
     "executive",
     "professor",
     "employee",
@@ -174,6 +179,11 @@ describe("exchanged login token provenance", () => {
     });
 
     expect(Object.keys(tokens)).toEqual([role]);
+    expect(
+      apiAut002.responseBodyMap[201].parse({ accessToken: tokens }),
+    ).toEqual({
+      accessToken: tokens,
+    });
     expect(
       jwt.verify(tokens[role], { secret: config.accessTokenSecretKey }),
     ).toMatchObject({ id: user.id, type: role });

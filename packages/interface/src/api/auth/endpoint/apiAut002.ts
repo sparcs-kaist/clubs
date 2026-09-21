@@ -25,6 +25,7 @@ const responseBodyMap = {
       masterDoctorMaster: z.coerce.string().optional(),
       allPrograms: z.coerce.string().optional(),
       auditor: z.coerce.string().optional(),
+      exchangeStudent: z.coerce.string().optional(),
       executive: z.coerce.string().optional(),
       professor: z.coerce.string().optional(),
       employee: z.coerce.string().optional(),
