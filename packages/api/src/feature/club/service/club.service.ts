@@ -58,9 +58,9 @@ import {
   ClubTypeEnum,
 } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
-import { StudentEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
@@ -398,8 +398,10 @@ export class ClubService {
       ),
       members: students
         .map(student => {
-          const isRegularMember =
-            studentEnumMap.get(student.id) === StudentEnum.Undergraduate;
+          const isRegularMember = isRegularClubMember(
+            studentEnumMap.get(student.id),
+            student.studentNumber,
+          );
           const hasUserAccount = student.userId != null;
           let isAssignable = isRegularMember;
           if (!hasUserAccount) isAssignable = false;
@@ -440,13 +442,15 @@ export class ClubService {
         [body.studentId],
         context.previousSemester.id,
       );
-    if (studentEnum[0]?.studentEnumId !== StudentEnum.Undergraduate) {
-      throw new ConflictException("Student is not a regular member");
-    }
     const student = (
       await this.userPublicService.getStudentsByIds([body.studentId])
     )[0];
     if (!student) throw new NotFoundException("Student not found");
+    if (
+      !isRegularClubMember(studentEnum[0]?.studentEnumId, student.studentNumber)
+    ) {
+      throw new ConflictException("Student is not a regular member");
+    }
     if (student.userId == null) {
       throw new ConflictException("Student does not have a user account");
     }

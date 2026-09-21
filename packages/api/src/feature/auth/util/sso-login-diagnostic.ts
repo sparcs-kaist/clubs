@@ -93,6 +93,8 @@ export function captureSsoProfile(profile: unknown): Record<string, unknown> {
     "sid",
     "kaist_id",
     "email",
+    "kaist_info_time",
+    "kaist_v2_info_time",
   ]);
   if (result.state !== "available") return result;
   const source = (

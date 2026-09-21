@@ -1,6 +1,8 @@
-import { UnauthorizedException } from "@nestjs/common";
+import { NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
+
+import apiAut002 from "@clubs/interface/api/auth/endpoint/apiAut002";
 
 import { SystemRandomGenerator } from "@sparcs-clubs/api/common/random/system-random-generator";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
@@ -34,9 +36,16 @@ describe("exchanged login token provenance", () => {
     masterDoctorMaster: { id: 10, number: 20268084 },
     allPrograms: { id: 11, number: 20268085 },
     auditor: { id: 12, number: 20268086 },
+    exchangeStudent: { id: 13, number: 20266001 },
     executive: { id: 6, studentId: 3 },
     professor: { id: 7 },
     employee: { id: 8 },
+  };
+  const withoutProfiles = {
+    id: user.id,
+    sid: user.sid,
+    name: user.name,
+    email: user.email,
   };
   const jwt = new JwtService();
   const repository = {
@@ -69,6 +78,7 @@ describe("exchanged login token provenance", () => {
     ["masterDoctorMaster", { studentId: 10, studentNumber: 20268084 }],
     ["allPrograms", { studentId: 11, studentNumber: 20268085 }],
     ["auditor", { studentId: 12, studentNumber: 20268086 }],
+    ["exchangeStudent", { studentId: 13, studentNumber: 20266001 }],
     ["executive", { executiveId: 6, studentId: 3 }],
     ["professor", { professorId: 7 }],
     ["employee", { employeeId: 8 }],
@@ -134,6 +144,49 @@ describe("exchanged login token provenance", () => {
         secret: config.refreshTokenSecretKey,
       }),
     ).not.toHaveProperty("exchangeActor");
+  });
+
+  it.each([undefined, actor])(
+    "rejects access issuance and refresh when no usable profiles remain (actor: %p)",
+    async exchangeActor => {
+      expect(() => auth.getAccessToken(withoutProfiles, exchangeActor)).toThrow(
+        NotFoundException,
+      );
+      users.findLoginIdentity.mockResolvedValue(withoutProfiles);
+
+      await expect(
+        auth.postAuthRefresh({ ...withoutProfiles, exchangeActor }),
+      ).rejects.toThrow("로그인할 수 있는 프로필이 없는 계정입니다.");
+    },
+  );
+
+  it.each([
+    "undergraduate",
+    "master",
+    "doctor",
+    "masterDoctorDoctor",
+    "masterDoctorMaster",
+    "allPrograms",
+    "auditor",
+    "exchangeStudent",
+    "executive",
+    "professor",
+    "employee",
+  ] as const)("allows a single usable %s profile", role => {
+    const tokens = auth.getAccessToken({
+      ...withoutProfiles,
+      [role]: user[role],
+    });
+
+    expect(Object.keys(tokens)).toEqual([role]);
+    expect(
+      apiAut002.responseBodyMap[201].parse({ accessToken: tokens }),
+    ).toEqual({
+      accessToken: tokens,
+    });
+    expect(
+      jwt.verify(tokens[role], { secret: config.accessTokenSecretKey }),
+    ).toMatchObject({ id: user.id, type: role });
   });
 
   it("gives separate exchanges within the same second distinct refresh tokens", () => {

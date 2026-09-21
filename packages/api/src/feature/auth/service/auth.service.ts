@@ -1,4 +1,9 @@
-import { HttpException, Inject, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Transactional } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
@@ -433,6 +438,7 @@ export class AuthService {
         "masterDoctorMaster",
         "allPrograms",
         "auditor",
+        "exchangeStudent",
       ] as const
     ).forEach(type => {
       const student = user[type];
@@ -511,6 +517,9 @@ export class AuthService {
       );
     }
 
+    if (Object.keys(accessToken).length === 0) {
+      throw new NotFoundException("로그인할 수 있는 프로필이 없는 계정입니다.");
+    }
     return accessToken;
   }
 

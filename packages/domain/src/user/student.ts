@@ -16,6 +16,7 @@ export const StudentEnum = {
   MasterDoctorMaster: 5,
   AllPrograms: 6,
   Auditor: 7,
+  Exchange: 8,
 } as const;
 
 export type StudentEnum = (typeof StudentEnum)[keyof typeof StudentEnum];

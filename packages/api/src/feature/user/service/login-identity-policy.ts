@@ -1,3 +1,14 @@
+export const getStudentNumberSuffix = (studentNumber: string | number) =>
+  Number(studentNumber.toString().slice(-4));
+
+export function isHpStudentNumber(studentNumber: string | number): boolean {
+  const suffix = getStudentNumberSuffix(studentNumber);
+  const atLeastHpStart = suffix >= 6900;
+  const beforeHpEnd = suffix < 7000;
+  const isHp = atLeastHpStart && beforeHpEnd;
+  return isHp;
+}
+
 export function isStudentIdentity(type: string, typeV2: string): boolean {
   const studentV2 = typeV2 === "S";
   const studentV1 = type === "Student";

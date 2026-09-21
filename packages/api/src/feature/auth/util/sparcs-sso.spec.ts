@@ -86,7 +86,6 @@ describe("Client", () => {
         diagnostic,
       );
 
-      expect(profile.kaist_info).toEqual({});
       expect(profile.kaist_v2_info).toBe(v2);
       expect(diagnostic.sso.parseErrors).toBeUndefined();
     },
@@ -116,38 +115,31 @@ describe("Client", () => {
     },
   );
 
-  it("retains V1 parse target without logging a secret-bearing parser error", async () => {
-    respond({
-      kaist_info: "{password=secret-password",
-      kaist_v2_info: '{"std_prog_code":1}',
-    });
+  it.each([
+    [undefined, "missing"],
+    [null, "null"],
+    ["", "parse_failed"],
+    ["{password=secret-password", "parse_failed"],
+    [{ ku_acad_prog_code: "0" }, "available"],
+    ['{"ku_acad_prog_code":"0"}', "available"],
+  ])("uses valid V2 independently of legacy V1: %s", async (v1, state) => {
+    const v2 = { std_no: "20268369", std_prog_code: "8" };
+    respond({ kaist_info: v1, kaist_v2_info: JSON.stringify(v2) });
     const diagnostic: SsoLoginDiagnostic = { stage: "start" };
 
-    await expect(
-      createClient().get_user_info("auth-code", diagnostic),
-    ).rejects.toThrow("INVALID_OBJECT");
+    const profile = await createClient().get_user_info("auth-code", diagnostic);
 
-    expect(diagnostic.stage).toBe("sso_parse");
+    expect(profile.kaist_v2_info).toEqual(v2);
     expect(diagnostic.sso).toMatchObject({
-      profileState: "v1_parse_failed",
-      parseErrors: [
-        {
-          target: "kaist_info",
-          name: "SyntaxError",
-          message: "Failed to parse kaist_info",
-          stack: {
-            frames: expect.arrayContaining([
-              expect.stringContaining("at JSON.parse"),
-            ]),
-          },
-        },
-      ],
+      profileState: "available",
       profile: {
+        kaist_info: { state },
         kaist_v2_info: {
-          fields: { std_prog_code: { type: "number", value: 1 } },
+          fields: { std_prog_code: { type: "string", value: "8" } },
         },
       },
     });
+    expect(diagnostic.sso.parseErrors).toBeUndefined();
     expect(JSON.stringify(diagnostic.sso)).not.toContain("secret-password");
     expect(logger.error).not.toHaveBeenCalled();
   });

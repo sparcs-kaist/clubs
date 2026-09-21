@@ -23,6 +23,7 @@ describe("student profile phone numbers", () => {
     "masterDoctorMaster",
     "allPrograms",
     "auditor",
+    "exchangeStudent",
   ])("reads and updates the student phone for %s", async profile => {
     users.getStudentPhoneNumberByUserId.mockResolvedValue({ phoneNumber });
     await expect(controller.getPhoneNumber(user, { profile })).resolves.toEqual(

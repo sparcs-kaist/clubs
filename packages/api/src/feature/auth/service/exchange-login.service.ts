@@ -56,9 +56,6 @@ export class ExchangeLoginService {
     };
     const user = await this.userPublicService.findLoginIdentity(userId);
     const accessToken = this.authService.getAccessToken(user, originalActor);
-    if (Object.keys(accessToken).length === 0) {
-      throw new NotFoundException("로그인할 수 있는 프로필이 없는 계정입니다.");
-    }
     const refreshToken = this.authService.getRefreshToken(user, originalActor);
     const refreshTokenExpiresAt = new Date(
       this.clock.now().getTime() +
