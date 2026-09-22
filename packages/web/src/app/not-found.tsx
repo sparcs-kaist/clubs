@@ -1,36 +1,38 @@
 "use client";
 
 import type { NextPage } from "next";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
+import styled from "styled-components";
 
-import ErrorMessage from "@sparcs-clubs/web/common/components/ErrorMessage";
-import ErrorPageTemplate from "@sparcs-clubs/web/common/frames/ErrorPageTemplate";
+import notFoundImage from "@sparcs-clubs/web/assets/not-found.png";
 
-const renderBreak = () => <br />;
+const ImageWrapper = styled.div`
+  display: flex;
+  min-height: inherit;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Illustration = styled(Image)`
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  mix-blend-mode: multiply;
+`;
 
 const NotFound: NextPage = () => {
   const t = useTranslations("common");
-  const Message = (
-    <ErrorMessage>{t.rich("notFound", { br: renderBreak })}</ErrorMessage>
-  );
-
-  const router = useRouter();
-
-  const goToMain = () => {
-    router.push("/");
-  };
 
   return (
-    <ErrorPageTemplate
-      message={Message}
-      buttons={[
-        {
-          text: t("goToMain"),
-          onClick: goToMain,
-        },
-      ]}
-    />
+    <ImageWrapper>
+      <Illustration
+        src={notFoundImage}
+        alt={t("notFound")}
+        sizes="(max-width: 720px) calc(100vw - 40px), (max-width: 960px) 560px, (max-width: 1200px) 640px, 800px"
+        priority
+      />
+    </ImageWrapper>
   );
 };
 
