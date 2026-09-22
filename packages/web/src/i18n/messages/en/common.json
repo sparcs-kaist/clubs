@@ -65,7 +65,7 @@
     "pattern": "Please use the required format.",
     "time": "Time"
   },
-  "notFound": "This page<br></br>does not exist.",
+  "notFound": "Oops! You're lost in Clubs (404).",
   "notForExecutive": "This page is not available<br></br>to executive members.",
   "patchNote": {
     "title": "Release Notes",

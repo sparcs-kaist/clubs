@@ -65,7 +65,7 @@
     "pattern": "정해진 형식에 맞지 않습니다.",
     "time": "시간"
   },
-  "notFound": "현재 접근한 페이지는<br></br>존재하지 않습니다",
+  "notFound": "앗! Clubs 에서 길을 잃었어요 (404)",
   "notForExecutive": "집행부원은 해당 페이지에<br></br>접근할 수 없습니다",
   "patchNote": {
     "title": "패치노트",
