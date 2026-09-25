@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 
 import { ApiSem001ResponseOK } from "@clubs/interface/api/semester/apiSem001";
@@ -13,6 +13,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useGetSemesters from "@sparcs-clubs/web/common/services/getSemesters";
 import OverviewFrame from "@sparcs-clubs/web/features/overview/frames/OverviewFrame";
@@ -64,37 +65,21 @@ const ExecutiveOverview = () => {
     isLoading: isSemestersLoading,
     isError: isSemestersError,
   } = useGetSemesters({ pageOffset: 1, itemCount: 100 });
-  const [selectedSemesterId, setSelectedSemesterId] = useState<
-    number | undefined
-  >(undefined);
-
   const semesters = useMemo(
     () => (semestersData?.semesters ?? []).filter(isOverviewSelectableSemester),
     [semestersData?.semesters],
   );
 
-  useEffect(() => {
-    if (semesters.length === 0) {
-      return;
-    }
-
-    if (
-      selectedSemesterId !== undefined &&
-      semesters.some(semester => semester.id === selectedSemesterId)
-    ) {
-      return;
-    }
-
-    const currentSemester = semesterInfo
-      ? semesters.find(semester => semester.id === semesterInfo.id)
-      : undefined;
-
-    setSelectedSemesterId((currentSemester ?? semesters[0]).id);
-  }, [semesterInfo, semesters, selectedSemesterId]);
-
-  const selectedSemester = semesters.find(
-    semester => semester.id === selectedSemesterId,
+  const defaultSemester =
+    semesters.find(semester => semester.id === semesterInfo?.id) ??
+    semesters[0];
+  const [selectedSemesterId, setSelectedSemesterId] = useQueryState<number>(
+    "semesterId",
+    defaultSemester?.id ?? 0,
   );
+  const selectedSemester =
+    semesters.find(semester => semester.id === selectedSemesterId) ??
+    defaultSemester;
 
   const isAuthLoading =
     isLoggedIn === undefined || (isLoggedIn && profile === undefined);
@@ -131,7 +116,7 @@ const ExecutiveOverview = () => {
       <FlexWrapper direction="row" gap={12}>
         <Select
           label="학기"
-          value={selectedSemesterId}
+          value={selectedSemester.id}
           items={semesters.map(semester => ({
             label: `${semester.year} ${semester.name}`,
             value: semester.id,

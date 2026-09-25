@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import ExecutivePrintingTable from "@sparcs-clubs/web/features/printing-business/components/ExecutivePrintingTable";
 import mockupPrint from "@sparcs-clubs/web/features/printing-business/services/_mock/mockPrinting";
 
 const PrintingBusiness = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useQueryState<number>("page", 1);
   const limit = 10;
 
   /* TODO : API로 데이터 받아오기 */

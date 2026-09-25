@@ -2,12 +2,13 @@
 
 import { hangulIncludes } from "es-hangul";
 import { useTranslations } from "next-intl";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useEasterEgg from "@sparcs-clubs/web/common/hooks/useEasteregg";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import ClubsSectionFrame from "@sparcs-clubs/web/features/clubs/frames/ClubsSectionFrame";
 import { useGetClubsList } from "@sparcs-clubs/web/features/clubs/services/useGetClubsList";
 
@@ -26,7 +27,7 @@ const ClubsListFrame: React.FC<ClubsListProps> = ({
 
   const { data, isLoading, isError } = useGetClubsList({ semesterId });
 
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
 
   const filteredDivisions = useMemo(
     () =>

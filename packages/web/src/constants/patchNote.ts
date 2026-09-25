@@ -5,6 +5,18 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.27 source=16a7d83a978f
+  {
+    version: "v.0.1.27",
+    date: new Date("2026.09.25"),
+    patchNoteContent: `Clubs v0.1.27
+오류 수정은 다음과 같습니다.
+- 목록에서 상세 화면을 확인한 뒤 돌아왔을 때 페이지와 검색·필터 조건이 유지되도록 수정했습니다. (#1943)
+
+디자인 수정은 다음과 같습니다.
+- 페이지를 찾을 수 없을 때 고래와 거베라가 담긴 Clubs 안내 이미지가 표시되도록 바꿨습니다. (#1941)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.26 source=04147b1078c6
   {
     version: "v.0.1.26",

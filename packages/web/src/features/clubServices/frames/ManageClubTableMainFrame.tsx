@@ -9,6 +9,7 @@ import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import TableCell from "@sparcs-clubs/web/common/components/Table/TableCell";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 
 import {
   activityCertificateColumnSort,
@@ -126,7 +127,7 @@ const ManageClubTableMainFrame: React.FC<ManageClubTableMainFrameProps> = ({
 }) => {
   // TODO - 실제 API 연결 시 올바른 형식으로 실제 데이터 값 넣어주기
 
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useQueryState<number>("page", 1);
   const [sortColumnName, setSortColumnName] = useState<string>("신청 일시");
 
   const unslicedData = mockData(pageType, sortColumnName);

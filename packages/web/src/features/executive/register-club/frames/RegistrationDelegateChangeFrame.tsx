@@ -6,7 +6,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { hangulIncludes } from "es-hangul";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 
@@ -15,6 +15,7 @@ import { ApiClb019ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb01
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import Banner from "@sparcs-clubs/web/features/landing/components/Banner";
 
 import { useGetRegistrationDelegateChangeClubs } from "../services/useRegistrationDelegateChange";
@@ -40,7 +41,7 @@ const columns = [
 
 const RegistrationDelegateChangeFrame = () => {
   const { data, isLoading, isError } = useGetRegistrationDelegateChangeClubs();
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
   const clubs = useMemo(() => {
     const query = searchText.toLowerCase();
     return (data?.clubs ?? []).filter(

@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import {
   indexPerPagination,
   noticePerPage,
@@ -35,7 +36,7 @@ const NoticeLastUpdateTimeListAndPagination = styled.div`
 `;
 
 const NoticeListAndPaginationFrame = () => {
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useQueryState<number>("page", 1);
   const { data, isLoading, isError } = useGetNotice(page, noticePerPage);
 
   const totalPage = Math.floor((data?.total ?? 0) / noticePerPage) + 1;
