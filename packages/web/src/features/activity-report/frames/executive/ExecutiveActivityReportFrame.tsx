@@ -7,6 +7,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import ActivityReportStatistic from "@sparcs-clubs/web/features/activity-report/components/executive/ActivityReportStatistic";
 import ChargedChangeClubModalContent from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalContent";
 import { ChargedChangeClubProps } from "@sparcs-clubs/web/features/activity-report/components/executive/ChargedChangeClubModalTable";
@@ -34,19 +35,13 @@ interface ExecutiveActivityReportContentProps {
 export const ExecutiveActivityReportContent = ({
   data,
 }: ExecutiveActivityReportContentProps) => {
-  const [isClubView, setIsClubView] = useState<boolean>(
-    window.history.state.isClubView ?? true,
-  );
-  const [searchText, setSearchText] = useState("");
+  const [isClubView, setIsClubView] = useQueryState<boolean>("clubView", true);
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
 
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
     ChargedChangeClubProps[]
   >([]);
-
-  useEffect(() => {
-    window.history.replaceState({ isClubView }, "");
-  }, [isClubView]);
 
   useEffect(() => {
     setSelectedClubInfos(

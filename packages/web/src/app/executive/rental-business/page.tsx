@@ -15,6 +15,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { RntTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import mockupMyExeRnt from "@sparcs-clubs/web/features/rental-business/services/_mock/mockMyExeRnt";
 import {
@@ -122,7 +123,7 @@ interface MockUpDataType {
 }
 
 const ExecutiveRental = () => {
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useQueryState<number>("page", 1);
   const [mockUpData, setMockUpData] = useState<MockUpDataType[]>(
     mockupMyExeRnt.items.slice(0, 10),
   );

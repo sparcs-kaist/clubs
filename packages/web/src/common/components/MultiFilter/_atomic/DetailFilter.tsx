@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 
 import DetailFilterButton from "./DetailFilterButton";
@@ -27,17 +27,15 @@ export const DetailFilter: React.FC<DetailFilterProps> = ({
   setCategory,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [selectedContents, setSelectedContents] = useState<string[]>(
-    category.selectedContent,
-  );
-
-  useEffect(() => {
+  const setSelectedContents: React.Dispatch<
+    React.SetStateAction<string[]>
+  > = next => {
     setCategory(category.name, {
-      name: category.name,
-      content: category.content,
-      selectedContent: selectedContents,
+      ...category,
+      selectedContent:
+        typeof next === "function" ? next(category.selectedContent) : next,
     });
-  }, [selectedContents]);
+  };
   // TODO: filter 아닌 곳 클릭했을 때 닫히게 하기
   return (
     <DetailFilterWrapper>

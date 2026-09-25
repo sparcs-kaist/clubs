@@ -5,13 +5,14 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import Table from "@sparcs-clubs/web/common/components/Table";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { useGetClubsList } from "@sparcs-clubs/web/features/clubs/services/useGetClubsList";
 
 import ClubRegistrationCancellationButton from "../components/ClubRegistrationCancellationButton";
@@ -55,7 +56,7 @@ const columns = [
 
 const ClubRegistrationCancellationFrame = () => {
   const { data, isLoading, isError } = useGetClubsList();
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
   const clubs = useMemo(
     () =>
       getClubRegistrationCancellationRows(data?.divisions ?? [], searchText),
