@@ -12,7 +12,6 @@ export type FundingSummaryDBResult = {
   clubId: number;
   chargedExecutiveId: number | null;
   commentedExecutiveId?: number | null;
-  feedbacks?: { executiveId: number }[];
 };
 
 export class VFundingSummary implements IFundingSummary {
@@ -54,9 +53,6 @@ export class VFundingSummary implements IFundingSummary {
   }
 
   static fromDBResult(result: FundingSummaryDBResult) {
-    const commentedExecutiveId =
-      result.commentedExecutiveId ?? result.feedbacks?.[0]?.executiveId;
-
     return new VFundingSummary({
       id: result.id,
       name: result.name,
@@ -70,8 +66,8 @@ export class VFundingSummary implements IFundingSummary {
       chargedExecutive: result.chargedExecutiveId
         ? { id: result.chargedExecutiveId }
         : undefined,
-      commentedExecutive: commentedExecutiveId
-        ? { id: commentedExecutiveId }
+      commentedExecutive: result.commentedExecutiveId
+        ? { id: result.commentedExecutiveId }
         : undefined,
     });
   }
