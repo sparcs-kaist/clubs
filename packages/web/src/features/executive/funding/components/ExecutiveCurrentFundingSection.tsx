@@ -8,6 +8,7 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 
 import useGetExecutiveClubFundingForDuration from "../services/useGetExecutiveClubFundingForDuration";
 import { defaultActivityDuration } from "../utils/formatActivityDuration";
@@ -23,7 +24,7 @@ interface ExecutiveCurrentFundingSectionProps {
 const ExecutiveCurrentFundingSection: React.FC<
   ExecutiveCurrentFundingSectionProps
 > = ({ clubId }) => {
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
   const [selectedFundingIds, setSelectedFundingIds] = useState<number[]>([]);
   const [selectedFundingInfos, setSelectedFundingInfos] = useState<
     ChargedChangeFundingProps[]

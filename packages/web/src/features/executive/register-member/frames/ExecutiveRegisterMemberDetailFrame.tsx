@@ -2,7 +2,7 @@
 
 import { Divider } from "@mui/material";
 import { useParams, useSearchParams } from "next/navigation";
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
@@ -13,6 +13,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Toggle from "@sparcs-clubs/web/common/components/Toggle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import RegisterInfoTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterInfoTable";
 import StatusInfoFrame from "@sparcs-clubs/web/features/executive/register-member/components/StatusInfoFrame";
@@ -26,7 +27,7 @@ const defaultStatusInfo = {
 };
 
 const ExecutiveRegisterMemberDetail: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useQueryState<number>("page", 1);
   const limit = 10;
 
   const { id } = useParams<{ id: string }>();

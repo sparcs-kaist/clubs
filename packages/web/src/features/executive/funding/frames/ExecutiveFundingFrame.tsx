@@ -7,6 +7,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 
 import ChargedChangeFundingModalContent from "../components/ChargedChangeFundingClubModalContent";
 import { ChargedChangeFundingProps } from "../components/ChargedChangeFundingModalTable";
@@ -39,18 +40,12 @@ interface ExecutiveFundingContentProps {
 export const ExecutiveFundingContent = ({
   data,
 }: ExecutiveFundingContentProps) => {
-  const [isClubView, setIsClubView] = useState<boolean>(
-    window.history.state.isClubView ?? true,
-  );
-  const [searchText, setSearchText] = useState<string>("");
+  const [isClubView, setIsClubView] = useQueryState<boolean>("clubView", true);
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
   const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [selectedClubInfos, setSelectedClubInfos] = useState<
     ChargedChangeFundingProps[]
   >([]);
-
-  useEffect(() => {
-    window.history.replaceState({ isClubView }, "");
-  }, [isClubView]);
 
   useEffect(() => {
     setSelectedClubInfos(

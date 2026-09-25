@@ -1,4 +1,3 @@
-import { useState } from "react";
 import styled from "styled-components";
 
 import { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb002";
@@ -8,6 +7,7 @@ import { ApiReg008ResponseOk } from "@clubs/interface/api/registration/endpoint/
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { useGetClubDetail } from "@sparcs-clubs/web/features/clubs/services/useGetClubDetail";
 import MembersTable from "@sparcs-clubs/web/features/manage-club/components/MembersTable";
 import { useGetMemberRegistration } from "@sparcs-clubs/web/features/manage-club/members/services/useGetClubMemberRegistration";
@@ -23,7 +23,7 @@ const TableWithPagination = styled.div`
 `;
 
 const RegisterMemberList = () => {
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useQueryState<number>("registrationPage", 1);
   const pageSize = 10;
 
   const { data: idData } = useGetMyManageClub() as {

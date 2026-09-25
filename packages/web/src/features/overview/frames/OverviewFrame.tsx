@@ -1,12 +1,13 @@
 import { ColumnFiltersState } from "@tanstack/react-table";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
-import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useQueryCategories from "@sparcs-clubs/web/common/hooks/useQueryCategories";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import useGetDivisions from "@sparcs-clubs/web/common/services/getDivisions";
 import { ClubTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { OverviewFilteredRow } from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
@@ -58,31 +59,34 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     [divisionData?.divisions],
   );
 
-  const [isDelegateView, setIsDelegateView] = useState<boolean>(
-    window.history.state?.isDelegateView ?? true,
+  const [isDelegateView, setIsDelegateView] = useQueryState<boolean>(
+    "delegateView",
+    true,
   );
-
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
-    { id: "clubNameKr", value: "" },
-    { id: "clubTypeEnum", value: ["정동아리", "가동아리"] },
-    {
-      id: "divisionName",
-      value: overviewDivisionNames,
-    },
-  ]);
-
-  useEffect(() => {
-    if (overviewDivisionNames.length === 0) {
-      return;
-    }
-
-    setColumnFilters(prev => [
-      prev[0],
-      prev[1],
-      { id: "divisionName", value: overviewDivisionNames },
-      ...prev.slice(3),
-    ]);
-  }, [overviewDivisionNames]);
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
+  const [categories, setCategories] = useQueryCategories(
+    [
+      {
+        name: "동아리 구분",
+        content: ["정동아리", "가동아리"],
+        selectedContent: ["정동아리", "가동아리"],
+      },
+      {
+        name: "분과",
+        content: overviewDivisionNames,
+        selectedContent: overviewDivisionNames,
+      },
+    ],
+    ["clubType", "division"],
+  );
+  const columnFilters = useMemo<ColumnFiltersState>(
+    () => [
+      { id: "clubNameKr", value: searchText },
+      { id: "clubTypeEnum", value: categories[0].selectedContent },
+      { id: "divisionName", value: categories[1].selectedContent },
+    ],
+    [searchText, categories],
+  );
 
   const delegates = useGetDelegatesOverview({
     division: overviewDivisionNames.join(","),
@@ -101,23 +105,6 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
     semesterName,
     year,
   });
-
-  useEffect(() => {
-    window.history.replaceState({ isClubView: isDelegateView }, "");
-  }, [isDelegateView]);
-
-  const getFilterCategories = () => [
-    {
-      name: "동아리 구분",
-      content: ["정동아리", "가동아리"],
-      selectedContent: columnFilters[1].value as string[],
-    },
-    {
-      name: "분과",
-      content: overviewDivisionNames,
-      selectedContent: columnFilters[2].value as string[],
-    },
-  ];
 
   return (
     <AsyncBoundary
@@ -142,29 +129,11 @@ const OverviewFrame: React.FC<OverviewFrameProps> = ({
       </FlexWrapper>
       <FlexWrapper direction="row" gap={16}>
         <SearchInput
-          searchText={columnFilters[0].value as string}
-          handleChange={value => {
-            setColumnFilters([
-              { id: "clubNameKr", value },
-              ...columnFilters.slice(1),
-            ]);
-          }}
+          searchText={searchText}
+          handleChange={setSearchText}
           placeholder="동아리 이름을 입력하세요"
         />
-        <MultiFilter
-          categories={getFilterCategories()}
-          setCategories={updated => {
-            const categories = (
-              updated as (prevState: CategoryProps[]) => CategoryProps[]
-            )(getFilterCategories());
-            setColumnFilters([
-              columnFilters[0],
-              { id: "clubTypeEnum", value: categories[0].selectedContent },
-              { id: "divisionName", value: categories[1].selectedContent },
-              ...columnFilters.slice(3),
-            ]);
-          }}
-        />
+        <MultiFilter categories={categories} setCategories={setCategories} />
         <Button
           onClick={() =>
             downloadDelegateOverviewExcel(

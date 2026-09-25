@@ -2,18 +2,19 @@
 
 import { hangulIncludes } from "es-hangul";
 import { useTranslations } from "next-intl";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
-import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import PastSemesterDashboardSection from "@sparcs-clubs/web/common/components/PastSemesterDashboardSection";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
+import useQueryCategories from "@sparcs-clubs/web/common/hooks/useQueryCategories";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import RegistrationMemberTable from "@sparcs-clubs/web/features/executive/register-member/components/RegisterMemberTable";
 import { useGetMemberRegistration } from "@sparcs-clubs/web/features/executive/register-member/services/useGetMemberRegistration";
 
@@ -63,7 +64,7 @@ export const ExecutiveRegisterMember: React.FC<
   ExecutiveRegisterMemberProps
 > = ({ semesterId, showPastDashboard = false }) => {
   const t = useTranslations("club");
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useQueryState<number>("page", 1);
   const limit = 200;
 
   const { data, isLoading, isError } = useGetMemberRegistration({
@@ -85,20 +86,28 @@ export const ExecutiveRegisterMember: React.FC<
     [divisions],
   );
 
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useQueryState<string>(
+    "query",
+    "",
+    "page",
+  );
 
-  const [categories, setCategories] = useState<CategoryProps[]>([
-    {
-      name: "구분",
-      content: ["정동아리", "가동아리", "상임동아리"],
-      selectedContent: ["정동아리", "가동아리", "상임동아리"],
-    },
-    {
-      name: "분과",
-      content: DivisionNameList,
-      selectedContent: DivisionNameList,
-    },
-  ]);
+  const [categories, setCategories] = useQueryCategories(
+    [
+      {
+        name: "구분",
+        content: ["정동아리", "가동아리", "상임동아리"],
+        selectedContent: ["정동아리", "가동아리", "상임동아리"],
+      },
+      {
+        name: "분과",
+        content: DivisionNameList,
+        selectedContent: DivisionNameList,
+      },
+    ],
+    ["clubType", "division"],
+    "page",
+  );
 
   const convertedCategories = useMemo<ConvertedSelectedCategories[]>(() => {
     const convertedClubType = categories[0].selectedContent.map(item => {
@@ -149,27 +158,6 @@ export const ExecutiveRegisterMember: React.FC<
     };
   }, [data, searchText, convertedCategories]);
 
-  useEffect(() => {
-    if (DivisionNameList.length === 0) {
-      return;
-    }
-
-    setCategories(prevCategories => {
-      if (prevCategories[1].content.length > 0) {
-        return prevCategories;
-      }
-
-      return [
-        ...prevCategories.slice(0, 1),
-        {
-          name: "분과",
-          content: DivisionNameList,
-          selectedContent: DivisionNameList,
-        },
-      ];
-    });
-  }, [DivisionNameList]);
-
   return (
     <AsyncBoundary
       isLoading={isLoading || divisionLoading}
@@ -193,6 +181,7 @@ export const ExecutiveRegisterMember: React.FC<
               <TextButton
                 text="검색/필터 초기화"
                 onClick={() => {
+                  setCurrentPage(1);
                   setSearchText("");
                   setCategories([
                     {

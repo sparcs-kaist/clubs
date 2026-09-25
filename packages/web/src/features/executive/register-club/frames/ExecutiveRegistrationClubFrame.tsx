@@ -2,7 +2,7 @@
 
 import { hangulIncludes } from "es-hangul";
 import { useTranslations } from "next-intl";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 
 import {
@@ -15,11 +15,12 @@ import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import ExecutiveRegistrationTable from "@sparcs-clubs/web/common/components/ExecutiveRegistrationTable";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import MultiFilter from "@sparcs-clubs/web/common/components/MultiFilter/Index";
-import { CategoryProps } from "@sparcs-clubs/web/common/components/MultiFilter/types/FilterCategories";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import PastSemesterDashboardSection from "@sparcs-clubs/web/common/components/PastSemesterDashboardSection";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
+import useQueryCategories from "@sparcs-clubs/web/common/hooks/useQueryCategories";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { RegistrationTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { useGetRegisterClub } from "@sparcs-clubs/web/features/executive/register-club/services/useGetRegisterClub";
 
@@ -74,9 +75,13 @@ export const ExecutiveRegistrationClubFrame: React.FC<
   ExecutiveRegistrationClubFrameProps
 > = ({ url, semesterId, showPastDashboard = false }) => {
   const t = useTranslations();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useQueryState<number>("page", 1);
   const limit = 200;
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useQueryState<string>(
+    "query",
+    "",
+    "page",
+  );
 
   const { data, isLoading, isError } = useGetRegisterClub({
     pageOffset: currentPage,
@@ -97,40 +102,39 @@ export const ExecutiveRegistrationClubFrame: React.FC<
     [divisions],
   );
 
-  const DivisionIdList = useMemo(
-    () => divisions?.map(item => item.id.toString()) ?? [],
-    [divisions],
+  const [categories, setCategories] = useQueryCategories(
+    [
+      {
+        name: "등록 구분",
+        content: Array.from(
+          new Set(
+            RegistrationTypeList.map(item => getDisplayNameRegistration(item)),
+          ),
+        ),
+        selectedContent: Array.from(
+          new Set(
+            RegistrationTypeList.map(item => getDisplayNameRegistration(item)),
+          ),
+        ),
+      },
+      {
+        name: "분과",
+        content: DivisionNameList,
+        selectedContent: DivisionNameList,
+      },
+    ],
+    ["registrationType", "division"],
+    "page",
   );
-
-  const [categories, setCategories] = useState<CategoryProps[]>([
-    {
-      name: "등록 구분",
-      content: Array.from(
-        new Set(
-          RegistrationTypeList.map(item => getDisplayNameRegistration(item)),
-        ),
-      ),
-      selectedContent: Array.from(
-        new Set(
-          RegistrationTypeList.map(item => getDisplayNameRegistration(item)),
-        ),
-      ),
-    },
-    {
-      name: "분과",
-      content: DivisionNameList,
-      selectedContent: DivisionIdList,
-    },
-  ]);
 
   const convertedCategories = useMemo<ConvertedSelectedCategories[]>(() => {
     const convertedRegistrationType = categories[0].selectedContent.flatMap(
       item => getEnumRegistration(item),
     );
 
-    const convertedDivisionId = categories[1].selectedContent.map(item =>
-      parseInt(item),
-    );
+    const convertedDivisionId = (divisions ?? [])
+      .filter(division => categories[1].selectedContent.includes(division.name))
+      .map(division => division.id);
 
     return [
       {
@@ -142,7 +146,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<
         selectedContent: convertedDivisionId,
       },
     ];
-  }, [categories]);
+  }, [categories, divisions]);
 
   const filterClubsWithSearch = useMemo(() => {
     const filteredRowsWithSearch = data?.items.filter(
@@ -188,27 +192,6 @@ export const ExecutiveRegistrationClubFrame: React.FC<
     [searchText, filterClubsWithoutSearch, filterClubsWithSearch],
   );
 
-  useEffect(() => {
-    if (DivisionNameList.length === 0 || DivisionIdList.length === 0) {
-      return;
-    }
-
-    setCategories(prevCategories => {
-      if (prevCategories[1].content.length > 0) {
-        return prevCategories;
-      }
-
-      return [
-        ...prevCategories.slice(0, 1),
-        {
-          name: "분과",
-          content: DivisionNameList,
-          selectedContent: DivisionIdList,
-        },
-      ];
-    });
-  }, [DivisionIdList, DivisionNameList]);
-
   return (
     <AsyncBoundary
       isLoading={isLoading || divisionLoading}
@@ -227,6 +210,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<
           <TextButton
             text="검색/필터 초기화"
             onClick={() => {
+              setCurrentPage(1);
               setSearchText("");
               setCategories([
                 {
@@ -249,7 +233,7 @@ export const ExecutiveRegistrationClubFrame: React.FC<
                 {
                   name: "분과",
                   content: DivisionNameList,
-                  selectedContent: DivisionIdList,
+                  selectedContent: DivisionNameList,
                 },
               ]);
             }}

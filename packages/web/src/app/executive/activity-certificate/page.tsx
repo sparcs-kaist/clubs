@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import ExecutiveAcfTable from "@sparcs-clubs/web/features/activity-certificate/components/ExecutiveAcfTable";
 import { mockExecutiveAcf } from "@sparcs-clubs/web/features/activity-certificate/services/_mock/mockExecutiveAcf";
 
 const ActivityCertificate = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useQueryState<number>("page", 1);
   const limit = 10;
 
   /* TODO - API 연결 */

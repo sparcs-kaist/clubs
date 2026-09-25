@@ -8,6 +8,7 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import useGetExecutiveClubActivitiesForDuration from "@sparcs-clubs/web/features/activity-report/services/executive/useGetExecutiveClubActivitiesForDuration";
 import { defaultActivityDuration } from "@sparcs-clubs/web/features/activity-report/utils/formatActivityDurationName";
 
@@ -23,7 +24,7 @@ interface ExecutiveCurrentActivityReportSectionProps {
 const ExecutiveCurrentActivityReportSection: React.FC<
   ExecutiveCurrentActivityReportSectionProps
 > = ({ clubId }) => {
-  const [searchText, setSearchText] = useState<string>("");
+  const [searchText, setSearchText] = useQueryState<string>("query", "");
   const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
   const [selectedActivityInfos, setSelectedActivityInfos] = useState<
     ChargedChangeActivityProps[]

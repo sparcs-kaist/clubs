@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 
 import AllMemberList from "../components/AllMemberList";
 import MemberSearchAndFilter from "../components/MemberSearchAndFilter";
@@ -30,24 +31,28 @@ const IconButtonWrapper = styled.div`
 `;
 
 const AllMemberListFrame: React.FC<AllMemberListFrameProps> = ({ clubId }) => {
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useQueryState<string>("memberQuery", "");
   const {
     data: semesterData,
     isLoading,
     isError,
   } = useGetClubSemesters({ clubId });
 
-  const [selectedSemesters, setSelectedSemesters] = useState<SemesterProps[]>(
-    [],
+  const semesters = semesterData?.semesters ?? [];
+  const [semesterIds, setSemesterIds] = useQueryState<string[]>(
+    "memberSemesters",
+    semesters.map(semester => String(semester.id)),
   );
-
+  const selectedSemesters = semesters.filter(semester =>
+    semesterIds.includes(String(semester.id)),
+  );
+  const setSelectedSemesters: React.Dispatch<
+    React.SetStateAction<SemesterProps[]>
+  > = next => {
+    const updated = typeof next === "function" ? next(selectedSemesters) : next;
+    setSemesterIds(updated.map(semester => String(semester.id)));
+  };
   const { isDownloading, downloadMembers } = useDownloadMembers();
-
-  useEffect(() => {
-    if (semesterData?.semesters) {
-      setSelectedSemesters(semesterData.semesters);
-    }
-  }, [semesterData]);
 
   const handleDownload = () => {
     downloadMembers(clubId, selectedSemesters);

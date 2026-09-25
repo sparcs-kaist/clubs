@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -9,6 +9,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Pagination from "@sparcs-clubs/web/common/components/Pagination";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
 import { MeetingNoticeItem } from "@sparcs-clubs/web/features/meeting/components/MeetingNoticeItem";
 import {
   MEETING_LIST_PAGINATION_LIMIT,
@@ -81,7 +82,7 @@ const ListWithPaginationWrapper = styled.div`
 const MeetingMainFrame: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useQueryState<number>("page", 1);
 
   const meetingEnumId = getMeetingEnumFromValue(searchParams.get("type"));
 
