@@ -22,10 +22,13 @@ export interface PostCrawlResult {
   link: string;
 }
 
-enum UpdatePeriodEnum {
-  After3Pages = -10,
-  Among3Pages = -5,
-}
+const UpdatePeriodEnum = {
+  After3Pages: -10,
+  Among3Pages: -5,
+} as const;
+
+type UpdatePeriodEnum =
+  (typeof UpdatePeriodEnum)[keyof typeof UpdatePeriodEnum];
 
 function findArticleId(link: string): number {
   const match = link.match(/(?:articleid=|\/articles\/)([0-9]+)/i);

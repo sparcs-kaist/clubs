@@ -1,13 +1,10 @@
 export const repositoryBoundary = {
   ownedPrismaModels: [
     "club",
-    "clubBuildingEnum",
     "clubDelegateChangeRequest",
-    "clubDelegateChangeRequestStatusEnum",
     "clubDelegateD",
     "clubDivisionHistory",
     "clubRoomT",
-    "clubStatusEnum",
     "clubStudentT",
     "clubT",
   ],

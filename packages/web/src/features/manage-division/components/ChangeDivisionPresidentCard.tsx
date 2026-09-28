@@ -10,10 +10,10 @@ import DivisionCard from "@sparcs-clubs/web/features/manage-division/components/
 import ChangeDivisionPresident from "@sparcs-clubs/web/features/manage-division/components/ChangeDivisionPresident";
 
 type ChangeNoticeStatusEnum =
-  | ChangeDivisionPresidentStatusEnum.Requested
-  | ChangeDivisionPresidentStatusEnum.Canceled
-  | ChangeDivisionPresidentStatusEnum.Rejected
-  | ChangeDivisionPresidentStatusEnum.None;
+  | typeof ChangeDivisionPresidentStatusEnum.Requested
+  | typeof ChangeDivisionPresidentStatusEnum.Canceled
+  | typeof ChangeDivisionPresidentStatusEnum.Rejected
+  | typeof ChangeDivisionPresidentStatusEnum.None;
 
 const ChangeDivisionPresidentCard = () => {
   const mockIsActingPresident = true;
@@ -75,7 +75,7 @@ const ChangeDivisionPresidentCard = () => {
           status={
             changeNoticeStatus as Exclude<
               ChangeNoticeStatusEnum,
-              ChangeDivisionPresidentStatusEnum.None
+              typeof ChangeDivisionPresidentStatusEnum.None
             >
           }
           actingPresident={mockIsActingPresident}

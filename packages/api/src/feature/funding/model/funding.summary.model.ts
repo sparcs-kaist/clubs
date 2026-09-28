@@ -60,7 +60,8 @@ export class VFundingSummary implements IFundingSummary {
     return new VFundingSummary({
       id: result.id,
       name: result.name,
-      fundingStatusEnum: result.fundingStatusEnum,
+      fundingStatusEnum:
+        result.fundingStatusEnum as IFundingSummary["fundingStatusEnum"],
       expenditureAmount: result.expenditureAmount,
       purposeActivity: result.purposeActivityId
         ? { id: result.purposeActivityId }

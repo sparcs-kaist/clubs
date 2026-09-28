@@ -11,7 +11,10 @@ export interface ClubRegistrationCancellationRow extends Club {
   divisionName: string;
 }
 
-const cancelableClubTypes = [ClubTypeEnum.Regular, ClubTypeEnum.Provisional];
+const cancelableClubTypes: ClubTypeEnum[] = [
+  ClubTypeEnum.Regular,
+  ClubTypeEnum.Provisional,
+];
 
 const matchesSearch = (club: Club, searchText: string) => {
   const query = searchText.toLowerCase();

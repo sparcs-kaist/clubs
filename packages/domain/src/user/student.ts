@@ -21,10 +21,13 @@ export const StudentEnum = {
 
 export type StudentEnum = (typeof StudentEnum)[keyof typeof StudentEnum];
 
-export enum StudentStatusEnum {
-  Attending = 1, // 재학
-  LeaveOfAbsence, // 휴학
-}
+export const StudentStatusEnum = {
+  Attending: 1, // 재학
+  LeaveOfAbsence: 2, // 휴학
+} as const;
+
+export type StudentStatusEnum =
+  (typeof StudentStatusEnum)[keyof typeof StudentStatusEnum];
 
 export const zStudent = z.object({
   id: z.coerce

@@ -6,8 +6,11 @@
  *  Agenda: 그냥 Agenda까지만 나타내기 위한 Mapping인 경우
  */
 
-export enum MeetingAgendaEntityType {
-  Content = 1,
-  Vote,
-  Agenda,
-}
+export const MeetingAgendaEntityType = {
+  Content: 1,
+  Vote: 2,
+  Agenda: 3,
+} as const;
+
+export type MeetingAgendaEntityType =
+  (typeof MeetingAgendaEntityType)[keyof typeof MeetingAgendaEntityType];

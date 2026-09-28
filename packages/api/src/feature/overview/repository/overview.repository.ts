@@ -1,5 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 
+import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
+import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/domain/registration/member-registration";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -111,7 +113,7 @@ export class OverviewRepository {
           historyDivision?.district.name ?? fallbackDivision?.district ?? "",
         clubNameKr: club.club.nameKr ?? "",
         clubNameEn: club.club.nameEn ?? "",
-        clubStatus: club.clubStatusEnumId,
+        clubStatus: club.clubStatusEnumId as ClubTypeEnum,
       };
     });
   }
@@ -192,7 +194,7 @@ export class OverviewRepository {
 
       return {
         clubId: delegate.clubId,
-        delegateType: delegate.clubDelegateEnum,
+        delegateType: delegate.clubDelegateEnum as ClubDelegateEnum,
         name: delegate.student.user?.name ?? delegate.student.name,
         studentNumber: delegate.student.number,
         phoneNumber: delegate.student.user?.phoneNumber ?? null,
@@ -339,7 +341,7 @@ export class OverviewRepository {
           historyDivision?.district.name ?? fallbackDivision?.district ?? "",
         clubNameKr: club.club.nameKr ?? "",
         clubNameEn: club.club.nameEn ?? "",
-        clubStatus: club.clubStatusEnumId,
+        clubStatus: club.clubStatusEnumId as ClubTypeEnum,
         description: club.club.description,
         characteristicKr: club.characteristicKr,
         characteristicEn: club.characteristicEn,

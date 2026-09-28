@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
-export enum Step {
-  Before,
-  Current,
-  After,
-}
+export const Step = {
+  Before: 0,
+  Current: 1,
+  After: 2,
+} as const;
+
+export type Step = (typeof Step)[keyof typeof Step];
 
 const StepDot = styled.div<{ step: Step }>`
   display: flex;

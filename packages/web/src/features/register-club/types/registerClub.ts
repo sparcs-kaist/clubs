@@ -1,15 +1,21 @@
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import {
+  ActivityStatusEnum,
+  ActivityTypeEnum,
+} from "@clubs/domain/activity/activity";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { FileDetail } from "@sparcs-clubs/web/common/components/File/attachment";
 
-export enum RegistrationType {
-  Renewal = "renewalRegistration",
-  Promotional = "promotionalRegistration",
-  Provisional = "provisionalRegistration",
-}
+export const RegistrationType = {
+  Renewal: "renewalRegistration",
+  Promotional: "promotionalRegistration",
+  Provisional: "provisionalRegistration",
+} as const;
+
+export type RegistrationType =
+  (typeof RegistrationType)[keyof typeof RegistrationType];
 
 export type FileIdType =
   | "activityPlanFile"
@@ -61,7 +67,7 @@ export interface Duration {
 export type ActivityReport = {
   id: number;
   name: string;
-  activityTypeEnumId: number;
+  activityTypeEnumId: ActivityTypeEnum;
   activityStatusEnumId: ActivityStatusEnum;
   durations: Duration[];
 };

@@ -10,10 +10,13 @@ import { zExtractId } from "../common/utils";
 
 extendZodWithOpenApi(z);
 
-export enum ClubMemberTypeEnum {
-  Regular = 1, // 정회원
-  Associate = 2, // 준회원
-}
+export const ClubMemberTypeEnum = {
+  Regular: 1, // 정회원
+  Associate: 2, // 준회원
+} as const;
+
+export type ClubMemberTypeEnum =
+  (typeof ClubMemberTypeEnum)[keyof typeof ClubMemberTypeEnum];
 
 export const zClubMember = z.object({
   id: zId.openapi({

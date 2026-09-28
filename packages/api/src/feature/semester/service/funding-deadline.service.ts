@@ -127,7 +127,8 @@ export class FundingDeadlineService {
             id: deadline.id,
             startTerm: deadline.startTerm,
             endTerm: deadline.endTerm,
-            deadlineEnum: deadline.deadlineEnum,
+            deadlineEnum:
+              deadline.deadlineEnum as MFundingDeadline["deadlineEnum"],
             semesterId: duration.semester.id,
             activityDId: duration.id,
           }));

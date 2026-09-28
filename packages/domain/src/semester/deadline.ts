@@ -8,12 +8,15 @@ extendZodWithOpenApi(z);
 
 // 활동보고서 기간 종류
 // 작성 | 집행부 검토 | 수정 제출 | 이의제기
-export enum ActivityDeadlineEnum {
-  Writing = 1, // 작성 (동아리 신규작성 및 수정 가능)
-  Executive, // 집행부 검토 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
-  Modification, // 수정 제출 (집행부 검토 가능, 동아리 신규작성 불가, 수정만 가능)
-  Exception, // 이의제기 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
-}
+export const ActivityDeadlineEnum = {
+  Writing: 1, // 작성 (동아리 신규작성 및 수정 가능)
+  Executive: 2, // 집행부 검토 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
+  Modification: 3, // 수정 제출 (집행부 검토 가능, 동아리 신규작성 불가, 수정만 가능)
+  Exception: 4, // 이의제기 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
+} as const;
+
+export type ActivityDeadlineEnum =
+  (typeof ActivityDeadlineEnum)[keyof typeof ActivityDeadlineEnum];
 
 export const zActivityDeadline = z.object({
   id: zId.openapi({
@@ -43,12 +46,15 @@ export const zActivityDeadline = z.object({
 
 // 지원금 기간 종류
 // 작성 | 집행부 검토 | 수정 제출 | 이의제기
-export enum FundingDeadlineEnum {
-  Writing = 1, // 작성 (동아리 신규작성 및 수정 가능)
-  Executive, // 집행부 검토 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
-  Modification, // 수정 제출 (집행부 검토 가능, 동아리 신규작성 불가, 수정만 가능)
-  Exception, // 이의제기 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
-}
+export const FundingDeadlineEnum = {
+  Writing: 1, // 작성 (동아리 신규작성 및 수정 가능)
+  Executive: 2, // 집행부 검토 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
+  Modification: 3, // 수정 제출 (집행부 검토 가능, 동아리 신규작성 불가, 수정만 가능)
+  Exception: 4, // 이의제기 (집행부 검토만 가능, 동아리 신규작성 및 수정 불가)
+} as const;
+
+export type FundingDeadlineEnum =
+  (typeof FundingDeadlineEnum)[keyof typeof FundingDeadlineEnum];
 
 export const zFundingDeadline = z.object({
   id: zId.openapi({
@@ -76,12 +82,15 @@ export const zFundingDeadline = z.object({
   }),
 });
 
-export enum RegistrationDeadlineEnum {
-  ClubRegistrationApplication = 1, // 동아리 등록 신청 기간, 동연 요청으로 이 기간에 동아리 등록 신청 생성/검토/수정/승인을 전부 진행합니다.
-  ClubRegistrationLate, // 동아리 등록 신청 지연 제출 기간, 동아리 등록 신청 기간 종료 후 2주 정도
-  StudentRegistrationApplication, // 회원 등록 신청 기간
-  StudentRegistrationLate, // 회원 등록 신청 지연 제출 기간, 회원 등록 신청 기간 종료 후 2주 정도
-}
+export const RegistrationDeadlineEnum = {
+  ClubRegistrationApplication: 1, // 동아리 등록 신청 기간, 동연 요청으로 이 기간에 동아리 등록 신청 생성/검토/수정/승인을 전부 진행합니다.
+  ClubRegistrationLate: 2, // 동아리 등록 신청 지연 제출 기간, 동아리 등록 신청 기간 종료 후 2주 정도
+  StudentRegistrationApplication: 3, // 회원 등록 신청 기간
+  StudentRegistrationLate: 4, // 회원 등록 신청 지연 제출 기간, 회원 등록 신청 기간 종료 후 2주 정도
+} as const;
+
+export type RegistrationDeadlineEnum =
+  (typeof RegistrationDeadlineEnum)[keyof typeof RegistrationDeadlineEnum];
 
 export const zRegistrationDeadline = z.object({
   id: zId.openapi({

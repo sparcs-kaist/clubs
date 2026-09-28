@@ -1,10 +1,10 @@
 import * as XLSX from "sheetjs-style";
 
-import { ClubBuildingEnum } from "@clubs/domain/club/club-semester";
-
 import { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv001";
 import { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
+
+import { clubBuildingNames } from "@sparcs-clubs/web/features/overview/utils/clubBuildingNames";
 
 interface ClubsOverviewData {
   delegates?: ApiOvv001ResponseOK;
@@ -212,7 +212,7 @@ function createClubInfoOverviewSheet(data: ApiOvv002ResponseOK) {
     row.totalMemberCnt ?? "없음",
     row.regularMemberCnt ?? "없음",
     row.clubBuildingEnum
-      ? `${ClubBuildingEnum[row.clubBuildingEnum]}/${row.roomLocation ?? " -"}`
+      ? `${clubBuildingNames[row.clubBuildingEnum]}/${row.roomLocation ?? " -"}`
       : "없음",
     row.roomPassword ?? "없음",
     row.caution ?? "없음",

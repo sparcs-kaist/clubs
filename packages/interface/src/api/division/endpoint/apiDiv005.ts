@@ -21,13 +21,16 @@ const requestQuery = z.object({});
 
 const requestBody = z.object({});
 
-export enum ChangeDivisionPresidentStatusEnum {
-  Requested = 1,
-  Canceled,
-  Rejected,
-  Confirmed,
-  None,
-}
+export const ChangeDivisionPresidentStatusEnum = {
+  Requested: 1,
+  Canceled: 2,
+  Rejected: 3,
+  Confirmed: 4,
+  None: 5,
+} as const;
+
+export type ChangeDivisionPresidentStatusEnum =
+  (typeof ChangeDivisionPresidentStatusEnum)[keyof typeof ChangeDivisionPresidentStatusEnum];
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({

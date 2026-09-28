@@ -120,11 +120,7 @@ const ActivityDurationFormModal = ({
                 placeholder="분류를 선택해주세요"
                 value={typeEnum}
                 onChange={e => setTypeEnum(e as ActivityDurationTypeEnum)}
-                items={(
-                  Object.values(ActivityDurationTypeEnum).filter(
-                    value => typeof value === "number",
-                  ) as Array<ActivityDurationTypeEnum>
-                ).map((value: ActivityDurationTypeEnum) => ({
+                items={Object.values(ActivityDurationTypeEnum).map(value => ({
                   label: activityDurationTypeEnumToString(value),
                   value,
                 }))}

@@ -26,6 +26,10 @@ import eslintPluginZodCoerce from "./custom_rules/eslint-plugin-zod-coerce.mjs";
 import eslintPluginZodRequestQueryArray from "./custom_rules/eslint-plugin-zod-requestquery-array.mjs";
 // 이것도 서드파티이긴한데...
 const compat = new FlatCompat({});
+const airbnbConfig = compat.extends("airbnb");
+const airbnbRestrictedSyntax = airbnbConfig.find(
+  config => config.rules?.["no-restricted-syntax"],
+)?.rules?.["no-restricted-syntax"];
 
 /** 이 설정 파일도 ts server를 통해 검사하기 위해,
  * typescript-eslint에서 권장하는 tseslint.config()를 통해 flat config를 생성합니다.
@@ -35,7 +39,7 @@ export const baseConfig = tseslint.config(
   tseslint.configs.recommended,
   eslintPluginPrettierRecommended, // prettier는 없애고 stylistic으로 통합합니다.
   // eslintImportConfigs.recommended, // airbnb가 이미 설정해줘서 충돌나는듯
-  compat.extends("airbnb"), // 👴 airbnb 일해라 참고로 이친구가 import rule 사용중
+  airbnbConfig, // 👴 airbnb 일해라 참고로 이친구가 import rule 사용중
   // compat.extends("airbnb-typescript"), // 👴 airbnb 레포 팀? 일해라
   eslintPluginStylistic.configs["disable-legacy"], // 스타일과 관련된 설정은 prettier로 통합합니다.
   {
@@ -81,6 +85,17 @@ export const baseConfig = tseslint.config(
     name: "typescript settings for all packages",
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...(Array.isArray(airbnbRestrictedSyntax)
+          ? airbnbRestrictedSyntax.slice(1)
+          : []),
+        {
+          selector: "TSEnumDeclaration",
+          message:
+            "Use an object with as const and a typeof value union instead of enum.",
+        },
+      ],
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",

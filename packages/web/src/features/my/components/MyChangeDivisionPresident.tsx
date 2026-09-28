@@ -14,8 +14,8 @@ import {
 import ChangeDivisionPresidentModalContent from "@sparcs-clubs/web/features/my/components/ChangeDivisionPresidentModalContent";
 
 export type MyChangeDivisionPresidentStatusEnum =
-  | ChangeDivisionPresidentStatusEnum.Requested
-  | ChangeDivisionPresidentStatusEnum.Confirmed;
+  | typeof ChangeDivisionPresidentStatusEnum.Requested
+  | typeof ChangeDivisionPresidentStatusEnum.Confirmed;
 
 interface MyChangeDivisionPresidentProps {
   status: MyChangeDivisionPresidentStatusEnum;

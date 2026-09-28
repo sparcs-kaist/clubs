@@ -2,10 +2,7 @@ export const repositoryBoundary = {
   ownedPrismaModels: [
     "registration",
     "registrationApplicationStudent",
-    "registrationApplicationStudentStatusEnum",
     "registrationExecutiveComment",
-    "registrationStatusEnum",
-    "registrationTypeEnum",
   ],
   exportedPrismaModels: [
     "registration",

@@ -6,14 +6,17 @@ export type ServiceType =
   | "activity-certificate"
   | "common-space";
 
-export enum ManageClubRentalBusinessStatus {
-  submit = "신청",
-  cancel = "취소",
-  approve = "승인",
-  rent = "대여",
-  return = "반납",
-  overdue = "연체",
-}
+export const ManageClubRentalBusinessStatus = {
+  submit: "신청",
+  cancel: "취소",
+  approve: "승인",
+  rent: "대여",
+  return: "반납",
+  overdue: "연체",
+} as const;
+
+export type ManageClubRentalBusinessStatus =
+  (typeof ManageClubRentalBusinessStatus)[keyof typeof ManageClubRentalBusinessStatus];
 
 export interface ManageClubRentalBusinessData {
   status: ManageClubRentalBusinessStatus;
@@ -25,13 +28,16 @@ export interface ManageClubRentalBusinessData {
   rentProducts: string;
 }
 
-export enum ManageClubPrintingBusinessStatus {
-  submit = "신청",
-  cancel = "취소",
-  approve = "승인",
-  print = "출력",
-  receive = "수령",
-}
+export const ManageClubPrintingBusinessStatus = {
+  submit: "신청",
+  cancel: "취소",
+  approve: "승인",
+  print: "출력",
+  receive: "수령",
+} as const;
+
+export type ManageClubPrintingBusinessStatus =
+  (typeof ManageClubPrintingBusinessStatus)[keyof typeof ManageClubPrintingBusinessStatus];
 
 export interface ManageClubPrintingBusinessData {
   status: ManageClubPrintingBusinessStatus;
@@ -42,13 +48,16 @@ export interface ManageClubPrintingBusinessData {
   printNumber: string;
 }
 
-export enum ManageClubActivityCertificateStatus {
-  submit = "신청",
-  cancel = "취소",
-  approve = "승인",
-  issue = "발급",
-  reject = "반려",
-}
+export const ManageClubActivityCertificateStatus = {
+  submit: "신청",
+  cancel: "취소",
+  approve: "승인",
+  issue: "발급",
+  reject: "반려",
+} as const;
+
+export type ManageClubActivityCertificateStatus =
+  (typeof ManageClubActivityCertificateStatus)[keyof typeof ManageClubActivityCertificateStatus];
 
 export interface ManageClubActivityCertificateData {
   status: ManageClubActivityCertificateStatus;
@@ -59,11 +68,14 @@ export interface ManageClubActivityCertificateData {
   note: string;
 }
 
-export enum ManageClubCommonSpaceStatus {
-  submit = "신청",
-  cancel = "취소",
-  use = "사용",
-}
+export const ManageClubCommonSpaceStatus = {
+  submit: "신청",
+  cancel: "취소",
+  use: "사용",
+} as const;
+
+export type ManageClubCommonSpaceStatus =
+  (typeof ManageClubCommonSpaceStatus)[keyof typeof ManageClubCommonSpaceStatus];
 
 export interface ManageClubCommonSpaceData {
   status: ManageClubCommonSpaceStatus;

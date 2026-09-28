@@ -8,6 +8,7 @@ import styled from "styled-components";
 import {
   getDisplayNameRegistration,
   getEnumRegistration,
+  RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -21,7 +22,6 @@ import SearchInput from "@sparcs-clubs/web/common/components/SearchInput";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
 import useQueryCategories from "@sparcs-clubs/web/common/hooks/useQueryCategories";
 import useQueryState from "@sparcs-clubs/web/common/hooks/useQueryState";
-import { RegistrationTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
 import { useGetRegisterClub } from "@sparcs-clubs/web/features/executive/register-club/services/useGetRegisterClub";
 
 interface ConvertedSelectedCategories {
@@ -61,9 +61,7 @@ const TableWithPaginationWrapper = styled.div`
   align-self: stretch;
 `;
 
-const RegistrationTypeList = Object.keys(RegistrationTypeTagList).map(key =>
-  parseInt(key),
-);
+const RegistrationTypeList = Object.values(RegistrationTypeEnum);
 
 interface ExecutiveRegistrationClubFrameProps {
   url: string;

@@ -114,7 +114,7 @@ export default class ClubDelegateService {
         return {
           name: student.name,
           studentId: student.id,
-          delegateEnumId: e.clubDelegateEnum,
+          delegateEnumId: e.clubDelegateEnum as ClubDelegateEnum,
           studentNumber: student.number,
           phoneNumber:
             student.phoneNumber === null
@@ -298,7 +298,7 @@ export default class ClubDelegateService {
           studentNumber: student.number,
           studentName: student.name,
           clubDelegateChangeRequestStatusEnumId:
-            e.clubDelegateChangeRequestStatusEnumId,
+            e.clubDelegateChangeRequestStatusEnumId as ClubDelegateChangeRequestStatusEnum,
         };
       }),
     );
@@ -342,7 +342,7 @@ export default class ClubDelegateService {
           id: e.id,
           clubId: e.clubId,
           clubDelegateChangeRequestStatusEnumId:
-            e.clubDelegateChangeRequestStatusEnumId,
+            e.clubDelegateChangeRequestStatusEnumId as ClubDelegateChangeRequestStatusEnum,
           prevStudentId: e.prevStudentId,
           clubName: club.nameKr,
         };

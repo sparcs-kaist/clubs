@@ -9,9 +9,9 @@ import {
 } from "@sparcs-clubs/web/constants/changeDivisionPresident";
 
 type ManageDivisionPresidentStatusEnum =
-  | ChangeDivisionPresidentStatusEnum.Requested
-  | ChangeDivisionPresidentStatusEnum.Canceled
-  | ChangeDivisionPresidentStatusEnum.Rejected;
+  | typeof ChangeDivisionPresidentStatusEnum.Requested
+  | typeof ChangeDivisionPresidentStatusEnum.Canceled
+  | typeof ChangeDivisionPresidentStatusEnum.Rejected;
 
 interface ChangeDivisionPresidentProps {
   status: ManageDivisionPresidentStatusEnum;
