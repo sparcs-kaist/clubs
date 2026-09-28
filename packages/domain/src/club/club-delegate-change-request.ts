@@ -8,11 +8,14 @@ import { zClub } from "./club";
 
 extendZodWithOpenApi(z);
 
-export enum ClubDelegateChangeRequestStatusEnum {
-  Applied = 1, // 제출
-  Approved, // 승인
-  Rejected, // 반려
-}
+export const ClubDelegateChangeRequestStatusEnum = {
+  Applied: 1, // 제출
+  Approved: 2, // 승인
+  Rejected: 3, // 반려
+} as const;
+
+export type ClubDelegateChangeRequestStatusEnum =
+  (typeof ClubDelegateChangeRequestStatusEnum)[keyof typeof ClubDelegateChangeRequestStatusEnum];
 
 export const zClubDelegateChangeRequest = z.object({
   id: zId,

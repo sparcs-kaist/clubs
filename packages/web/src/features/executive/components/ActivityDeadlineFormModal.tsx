@@ -91,11 +91,7 @@ const ActivityDeadlineFormModal = ({
                 placeholder="제출 기간 유형을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as ActivityDeadlineEnum)}
-                items={(
-                  Object.values(ActivityDeadlineEnum).filter(
-                    value => typeof value === "number",
-                  ) as Array<ActivityDeadlineEnum>
-                ).map((value: ActivityDeadlineEnum) => ({
+                items={Object.values(ActivityDeadlineEnum).map(value => ({
                   label: activityDeadlineEnumToString(value),
                   value,
                 }))}

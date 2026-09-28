@@ -10,20 +10,25 @@ import { zClub } from "./club";
 
 extendZodWithOpenApi(z);
 
-export enum ClubTypeEnum {
-  Regular = 1, // 정동아리
-  Provisional, // 가동아리
-  RegistrationCanceled, // 등록취소
-  Special, // 특수등록
-  Unregistered, // 미등록
-}
+export const ClubTypeEnum = {
+  Regular: 1, // 정동아리
+  Provisional: 2, // 가동아리
+  RegistrationCanceled: 3, // 등록취소
+  Special: 4, // 특수등록
+  Unregistered: 5, // 미등록
+} as const;
 
-export enum ClubBuildingEnum {
-  Taeul = 1, // 태울관(N13)
-  Store, // 매점건물, 학부학생회관별관(N12)
-  Post, // 우체국건물, 학부학생회관(N11)
-  Sports, // 스포츠컴플렉스(N10)
-}
+export type ClubTypeEnum = (typeof ClubTypeEnum)[keyof typeof ClubTypeEnum];
+
+export const ClubBuildingEnum = {
+  Taeul: 1, // 태울관(N13)
+  Store: 2, // 매점건물, 학부학생회관별관(N12)
+  Post: 3, // 우체국건물, 학부학생회관(N11)
+  Sports: 4, // 스포츠컴플렉스(N10)
+} as const;
+
+export type ClubBuildingEnum =
+  (typeof ClubBuildingEnum)[keyof typeof ClubBuildingEnum];
 
 // TODO: ClubOld Room 관련 Feature 추가 후 별도 모델 파일로 분리
 // 영준이 화이팅~

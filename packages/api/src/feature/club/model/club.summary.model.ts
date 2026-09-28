@@ -39,7 +39,7 @@ export class VClubSummary implements IClubSummary {
       name: result.club.nameKr,
       nameEn: result.club.nameEn,
       typeEnum: result.club_t // left join 및 기본값 처리로 club_t 가 없을 때 가등록 상태로 처리하게 함 -> reg025 이슈
-        ? result.club_t.clubStatusEnumId
+        ? (result.club_t.clubStatusEnumId as ClubTypeEnum)
         : ClubTypeEnum.Provisional,
       division: {
         id: result.club.divisionId,

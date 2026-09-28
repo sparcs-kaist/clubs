@@ -42,6 +42,11 @@ export const meetingEnumToText = (meetingEnum: string) => {
   }
 };
 
+export const meetingTypeOptions = Object.values(MeetingEnum).map(value => ({
+  label: meetingEnumToText(String(value)),
+  value,
+}));
+
 export interface MeetingNoticeItemType {
   id: number;
   meetingEnumId: MeetingEnum;

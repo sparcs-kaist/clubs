@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { ESLint } from "eslint";
 
@@ -32,6 +33,49 @@ export { value };
 `);
 
   assert.deepEqual(goodMessages, []);
+});
+
+test("every package rejects enums and accepts const objects with typeof value unions", async () => {
+  for (const [packageName, filePath] of [
+    ["api", "src/app.controller.ts"],
+    ["web", "src/env.ts"],
+    ["domain", "src/index.ts"],
+    ["interface", "src/index.ts"],
+  ]) {
+    const eslint = new ESLint({
+      cwd: fileURLToPath(new URL(`../${packageName}`, import.meta.url)),
+    });
+    const config = await eslint.calculateConfigForFile(filePath);
+    assert.deepEqual(
+      config.rules["no-restricted-syntax"].slice(1).map(rule => rule.selector),
+      [
+        "ForInStatement",
+        "ForOfStatement",
+        "LabeledStatement",
+        "WithStatement",
+        "TSEnumDeclaration",
+      ],
+      `${packageName} preserves the inherited syntax restrictions`,
+    );
+    for (const declaration of ["enum", "const enum"]) {
+      const [result] = await eslint.lintText(
+        `export ${declaration} Status { Open = 1 }\n`,
+        { filePath },
+      );
+      assert.ok(
+        result.messages.some(
+          message => message.ruleId === "no-restricted-syntax",
+        ),
+        `${packageName} must reject ${declaration}`,
+      );
+    }
+    const [result] = await eslint.lintText(
+      "export const Status = { Open: 1 } as const;\n" +
+        "export type Status = (typeof Status)[keyof typeof Status];\n",
+      { filePath },
+    );
+    assert.deepEqual(result.messages, [], packageName);
+  }
 });
 
 function readProjectDotNotationRule() {

@@ -76,7 +76,9 @@ const ChangeModal = ({
   onClose,
   onConfirm,
 }: ChangeModalProps) => {
-  const [role, setRole] = useState(ClubDelegateEnum.Representative);
+  const [role, setRole] = useState<ClubDelegateEnum>(
+    ClubDelegateEnum.Representative,
+  );
   const [confirmed, setConfirmed] = useState(false);
   const effectiveDate = effectiveAt.toLocaleDateString("ko-KR", {
     timeZone: "Asia/Seoul",

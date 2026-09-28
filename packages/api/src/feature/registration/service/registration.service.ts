@@ -856,10 +856,13 @@ export class RegistrationService {
     const semester = await this.semesterPublicService.getById(
       registration.semesterId,
     );
-    const clubTypeEnum = [
+    const regularRegistrationTypes: readonly number[] = [
       RegistrationTypeEnum.Renewal,
       RegistrationTypeEnum.Promotional,
-    ].includes(registration.registrationApplicationTypeEnumId)
+    ];
+    const clubTypeEnum = regularRegistrationTypes.includes(
+      registration.registrationApplicationTypeEnumId,
+    )
       ? ClubTypeEnum.Regular
       : ClubTypeEnum.Provisional;
 
@@ -1290,10 +1293,12 @@ export class RegistrationService {
         clubId,
         [semesterId],
       );
+    const operatingClubTypes: readonly ClubTypeEnum[] = [
+      ClubTypeEnum.Regular,
+      ClubTypeEnum.Provisional,
+    ];
     const isClubOperatingThisSemester = clubSemesters.some(clubSemester =>
-      [ClubTypeEnum.Regular, ClubTypeEnum.Provisional].includes(
-        clubSemester.typeEnum,
-      ),
+      operatingClubTypes.includes(clubSemester.typeEnum),
     );
     if (!isClubOperatingThisSemester) {
       throw new HttpException(

@@ -16,8 +16,8 @@ import {
 
 interface ChangeDivisionPresidentModalContentProps {
   status:
-    | ChangeDivisionPresidentStatusEnum.Requested
-    | ChangeDivisionPresidentStatusEnum.Confirmed;
+    | typeof ChangeDivisionPresidentStatusEnum.Requested
+    | typeof ChangeDivisionPresidentStatusEnum.Confirmed;
   actingPresident: boolean;
   change: [string, string];
   phoneNumber: string | undefined;

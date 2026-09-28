@@ -177,8 +177,10 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
           id: activity.id,
           club: { id: activity.clubId },
           name: activity.name,
-          activityTypeEnum: activity.activityTypeEnumId,
-          activityStatusEnum: activity.activityStatusEnumId,
+          activityTypeEnum:
+            activity.activityTypeEnumId as MActivity["activityTypeEnum"],
+          activityStatusEnum:
+            activity.activityStatusEnumId as MActivity["activityStatusEnum"],
           activityDuration: { id: activity.activityDId },
           durations: activity.activityTs.map(duration => ({
             startTerm: duration.startTerm,

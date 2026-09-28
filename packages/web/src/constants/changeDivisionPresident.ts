@@ -1,10 +1,13 @@
-export enum ChangeDivisionPresidentStatusEnum {
-  Requested = 1,
-  Canceled,
-  Rejected,
-  Confirmed,
-  None,
-}
+export const ChangeDivisionPresidentStatusEnum = {
+  Requested: 1,
+  Canceled: 2,
+  Rejected: 3,
+  Confirmed: 4,
+  None: 5,
+} as const;
+
+export type ChangeDivisionPresidentStatusEnum =
+  (typeof ChangeDivisionPresidentStatusEnum)[keyof typeof ChangeDivisionPresidentStatusEnum];
 
 type Pages = "/my" | "/manage-division";
 
@@ -13,7 +16,7 @@ interface ChangeDivisionPresidentMessageContextProps {
   division: string;
   status: Exclude<
     ChangeDivisionPresidentStatusEnum,
-    ChangeDivisionPresidentStatusEnum.None
+    typeof ChangeDivisionPresidentStatusEnum.None
   >;
   page: Pages;
   change?: [string, string];
@@ -27,7 +30,7 @@ export class ChangeDivisionPresidentMessageContext {
 
   status: Exclude<
     ChangeDivisionPresidentStatusEnum,
-    ChangeDivisionPresidentStatusEnum.None
+    typeof ChangeDivisionPresidentStatusEnum.None
   >;
 
   page: Pages;

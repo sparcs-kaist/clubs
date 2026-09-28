@@ -1,11 +1,14 @@
 import * as assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import type { ApiSem012ResponseOK } from "@clubs/interface/api/semester/apiSem012";
+import type { ApiSem016ResponseOk } from "@clubs/interface/api/semester/apiSem016";
+
 import { groupFundingDeadlinesByActivityDuration } from "./groupFundingDeadlines.ts";
 
 describe("groupFundingDeadlinesByActivityDuration", () => {
   it("groups one funding deadline response by activity duration id", () => {
-    const activityDurations = [
+    const activityDurations: ApiSem012ResponseOK["activityDurations"] = [
       {
         id: 1,
         semester: { id: 10, name: "봄", year: 2026 },
@@ -25,7 +28,7 @@ describe("groupFundingDeadlinesByActivityDuration", () => {
         endTerm: new Date("2026-12-01"),
       },
     ];
-    const deadlines = [
+    const deadlines: ApiSem016ResponseOk["deadlines"] = [
       {
         id: 101,
         semesterId: 10,

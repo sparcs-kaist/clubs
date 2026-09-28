@@ -33,11 +33,7 @@ const AgendaEditor: React.FC<AgendaEditorProps> = ({
           안건 종류
         </Typography>
         <Select
-          items={(
-            Object.values(AgendaTypeEnum).filter(
-              value => typeof value === "number",
-            ) as Array<AgendaTypeEnum>
-          ).map((value: AgendaTypeEnum) => ({
+          items={Object.values(AgendaTypeEnum).map(value => ({
             label: AgendaTypeName[value],
             value,
           }))}

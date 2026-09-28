@@ -90,11 +90,7 @@ const FundingDeadlineFormModal = ({
                 placeholder="지원금 제출 기간을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as FundingDeadlineEnum)}
-                items={(
-                  Object.values(FundingDeadlineEnum).filter(
-                    value => typeof value === "number",
-                  ) as Array<FundingDeadlineEnum>
-                ).map((value: FundingDeadlineEnum) => ({
+                items={Object.values(FundingDeadlineEnum).map(value => ({
                   label: fundingDeadlineEnumToString(value),
                   value,
                 }))}

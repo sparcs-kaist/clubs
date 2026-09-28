@@ -2,11 +2,13 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 extendZodWithOpenApi(z);
-export enum ProfessorEnum {
-  Assistant = 1, // 조교수
-  Associate, // 부교수
-  Full, // 정교수
-}
+export const ProfessorEnum = {
+  Assistant: 1, // 조교수
+  Associate: 2, // 부교수
+  Full: 3, // 정교수
+} as const;
+
+export type ProfessorEnum = (typeof ProfessorEnum)[keyof typeof ProfessorEnum];
 
 export const zProfessor = z.object({
   id: z.coerce.number(),

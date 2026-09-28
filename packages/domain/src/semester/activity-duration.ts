@@ -6,10 +6,13 @@ import { zSemester } from "@clubs/domain/semester/semester";
 
 extendZodWithOpenApi(z);
 
-export enum ActivityDurationTypeEnum {
-  Regular = 1, // 정규 활동 보고서
-  Registration = 2, // 신규등록용 활동보고서
-}
+export const ActivityDurationTypeEnum = {
+  Regular: 1, // 정규 활동 보고서
+  Registration: 2, // 신규등록용 활동보고서
+} as const;
+
+export type ActivityDurationTypeEnum =
+  (typeof ActivityDurationTypeEnum)[keyof typeof ActivityDurationTypeEnum];
 
 export const zActivityDuration = z.object({
   id: zId.openapi({

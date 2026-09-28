@@ -1,7 +1,9 @@
-export enum OperationType {
-  CREATE = "create",
-  PUT = "put",
-}
+export const OperationType = {
+  CREATE: "create",
+  PUT: "put",
+} as const;
+
+export type OperationType = (typeof OperationType)[keyof typeof OperationType];
 
 export interface ClassConstructor<T = unknown> {
   new (...args: unknown[]): T;

@@ -1,10 +1,12 @@
-enum RoleType {
-  PM,
-  APM_FE,
-  APM_BE,
-  member,
-  intern,
-}
+const RoleType = {
+  PM: 0,
+  APM_FE: 1,
+  APM_BE: 2,
+  member: 3,
+  intern: 4,
+} as const;
+
+type RoleType = (typeof RoleType)[keyof typeof RoleType];
 
 export interface Member {
   nickname: string;

@@ -15,7 +15,7 @@ import Select from "@sparcs-clubs/web/common/components/Select";
 import FormSelect from "@sparcs-clubs/web/common/components/Select/Form";
 import {
   MeetingAnnouncementModel,
-  meetingEnumToText,
+  meetingTypeOptions,
 } from "@sparcs-clubs/web/features/meeting/types/meeting";
 
 interface MeetingInformationFrameProps {
@@ -80,12 +80,7 @@ const MeetingInformationFrame: React.FC<MeetingInformationFrameProps> = ({
                 {...props}
                 label="회의체 종류"
                 placeholder="회의체 종류를 선택해주세요"
-                items={Object.keys(MeetingEnum)
-                  .slice(0, 4)
-                  .map(value => ({
-                    label: meetingEnumToText(value),
-                    value: +value,
-                  }))}
+                items={meetingTypeOptions}
                 disabled={onCreateTemplate == null}
               />
             )}
