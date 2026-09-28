@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import axios from "axios";
-import jsdom from "jsdom";
 
 import type { ApiNtc001ResponseOK } from "@clubs/interface/api/notice/endpoint/apiNtc001";
 
@@ -9,13 +8,13 @@ import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
 import { NoticeRepository } from "@sparcs-clubs/api/feature/notice/repository/notice.repository";
+import { parseNaverNoticePage } from "@sparcs-clubs/api/feature/notice/util/naver-notice";
 
-const urlPrefix = "https://cafe.naver.com/kaistclubs";
 const maxAttempts = 10;
 const userDisplay = 50;
 
 export interface PostCrawlResult {
-  // 네이버 블로그에서 공지사항 글을 구분하는 고유한 번호
+  // 네이버 카페에서 공지사항 글을 구분하는 고유한 번호
   articleId: number;
   author: string;
   title: string;
@@ -29,12 +28,8 @@ enum UpdatePeriodEnum {
 }
 
 function findArticleId(link: string): number {
-  const match = link.match(/articleid=[0-9]+/i);
-  if (match) {
-    return Number.parseInt(match[0].replace("articleid=", ""));
-  }
-
-  return -1;
+  const match = link.match(/(?:articleid=|\/articles\/)([0-9]+)/i);
+  return Number(match?.[1] ?? -1);
 }
 @Injectable()
 export class NoticeService {
@@ -42,132 +37,52 @@ export class NoticeService {
 
   constructor(private readonly noticeRepository: NoticeRepository) {}
 
-  private async tryFetch(pageNum: number): Promise<string> {
+  private async tryFetch(pageNum: number) {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        const response = await axios.get(
-          `https://cafe.naver.com/kaistclubs/ArticleList.nhn?search.clubid=26985838&search.menuid=1&search.boardtype=L&userDisplay=${userDisplay}&search.page=${pageNum}`,
+        const response = await axios.get<unknown>(
+          "https://apis.naver.com/cafe-web/cafe-boardlist-api/v1/cafes/26985838/menus/1/articles",
           {
-            headers: {
-              "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
+            params: {
+              page: pageNum,
+              pageSize: userDisplay,
+              sortBy: "TIME",
+              viewType: "L",
             },
-            timeout: 5000, // 5초 후에 요청 타임아웃
-            responseType: "arraybuffer", // Make sure the raw data is returned
-            responseEncoding: "arraybuffer",
+            headers: { Referer: "https://cafe.naver.com/" },
+            timeout: 5000,
           },
         );
-        const decoder = new TextDecoder("EUC-KR");
-        return decoder.decode(response.data);
+        return parseNaverNoticePage(response.data);
       } catch (error) {
-        if (attempt > maxAttempts) {
-          throw error;
-        }
+        if (attempt === maxAttempts - 1) throw error;
       }
     }
-    return Promise.reject();
-  }
-
-  private getPostsFromHTML(html: string): PostCrawlResult[] {
-    const { window } = new jsdom.JSDOM(html);
-    const posts: PostCrawlResult[] = [];
-    const rows = window.document.querySelectorAll("tr");
-    rows.forEach(element => {
-      const titleElement = element.querySelector(".article");
-      if (titleElement !== null) {
-        let title = titleElement.textContent || "";
-        title = title.replace(/\s+/g, " ").trim();
-        const link = urlPrefix + titleElement.getAttribute("href");
-        const articleId = findArticleId(link);
-
-        let author =
-          element.querySelector(".td_name .p-nick a")?.textContent || "";
-        author = author.replace(/\s+/g, " ").trim();
-
-        let date = element.querySelector(".td_date")?.textContent || "";
-        date = date.replace(/\s+/g, " ").trim();
-
-        // 시간만 제공되는 경우 오늘 날짜로 설정
-        if (date.includes(":")) {
-          const kstDate = this.clock.now();
-          const mm = kstDate.getMonth() + 1;
-          const dd = kstDate.getDate();
-          date = `${kstDate.getFullYear()}.${(mm > 9 ? "" : "0") + mm}.${(dd > 9 ? "" : "0") + dd}.`;
-        }
-        if (title && author && date && link) {
-          if (posts.every(post => post.articleId !== articleId)) {
-            posts.unshift({ title, author, date, link, articleId });
-          }
-        }
-      }
-    });
-    return posts;
-  }
-
-  private determinePagesToCrawl(
-    totalCount: number,
-    maxPages: number,
-  ): number[] {
-    const totalPages = Math.ceil(totalCount / userDisplay);
-    const untilPage = Math.min(totalPages, maxPages);
-    const result = [];
-    // 모든 페이지 크롤링
-    for (let page = 2; page <= untilPage; page += 1) {
-      result.push(page);
-    }
-    return result;
+    throw new Error("Failed to fetch Naver notices");
   }
 
   async crawlNotices(maxPages: number): Promise<PostCrawlResult[]> {
     try {
-      let pagenum = 1;
-      // 1페이지는 항상 크롤링
-      const html = await this.tryFetch(pagenum);
-      // 공지가 총 몇 개 있는지
-      let totalCount = Number.parseInt(
-        (html.match(/search\.totalCount=[0-9]+(?=&)/) || ["0"])[0].replace(
-          "search.totalCount=",
-          "",
-        ),
-      );
-      const posts = this.getPostsFromHTML(html);
-
-      // 1페이지에서는 공지개수가 짤려서 나옴
-      // 501개, 1001개처럼 500n+1 형태
-      // 마지막 페이지까지 가봐야 함
-      while (totalCount % 500 === 1) {
-        pagenum += 10;
-        if (pagenum > maxPages) {
-          break;
-        }
+      const posts = new Map<number, PostCrawlResult>();
+      for (let page = 1; page <= maxPages; page += 1) {
         // eslint-disable-next-line no-await-in-loop
-        const nextPage = await this.tryFetch(pagenum);
-        totalCount = Number.parseInt(
-          (nextPage.match(/search\.totalCount=[0-9]+(?=&)/) || [
-            "0",
-          ])[0].replace("search.totalCount=", ""),
-        );
+        const result = await this.tryFetch(page);
+        const previousSize = posts.size;
+        result.posts.forEach(post => posts.set(post.articleId, post));
+        if (posts.size === previousSize) {
+          throw new Error(`Notice crawl made no progress on page ${page}`);
+        }
+        // Naver exposes navigation in blocks of ten pages, not a total count.
+        const reachedLastPage = page >= result.lastNavigationPageNumber;
+        const hasNext = result.visibleNextButton;
+        if (reachedLastPage && !hasNext) break;
       }
-      const postOfPages = await Promise.all(
-        this.determinePagesToCrawl(totalCount, maxPages).map(page =>
-          this.tryFetch(page).then(this.getPostsFromHTML),
-        ),
-      );
-
-      postOfPages.forEach(postOfPage => {
-        const ids = posts.map(post => post.articleId);
-        posts.unshift(
-          ...postOfPage.filter(post => !ids.includes(post.articleId)),
-        );
-        // 중복 제거
-      });
-
-      return posts;
+      return [...posts.values()];
     } catch (error) {
       logger.error("Error during scraping and saving:", error);
+      throw error;
     }
-    return [];
   }
 
   async updateNotices(maxPages: number) {
