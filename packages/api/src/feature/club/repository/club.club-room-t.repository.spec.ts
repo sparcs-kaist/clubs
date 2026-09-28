@@ -13,7 +13,13 @@ describe("ClubRoomTRepository", () => {
   });
 
   describe("findClubLocationById", () => {
-    it("finds the latest current club room with Prisma Query API", async () => {
+    it.each([
+      [1, "태울관(N13)"],
+      [2, "학부학생회관별관(N12)"],
+      [3, "학부학생회관(N11)"],
+      [4, "스포츠컴플렉스(N3)"],
+      [99, null],
+    ])("maps building code %s without an enum table", async (code, name) => {
       const now = new Date("2026-06-02T12:00:00.000Z");
       jest.useFakeTimers().setSystemTime(now);
 
@@ -21,7 +27,7 @@ describe("ClubRoomTRepository", () => {
         clubRoomT: {
           findFirst: jest.fn().mockResolvedValue({
             roomLocation: "301",
-            clubBuildingRel: { buildingName: "N1" },
+            clubBuildingEnum: code,
           }),
         },
       };
@@ -44,12 +50,10 @@ describe("ClubRoomTRepository", () => {
         orderBy: { createdAt: "desc" },
         select: {
           roomLocation: true,
-          clubBuildingRel: {
-            select: { buildingName: true },
-          },
+          clubBuildingEnum: true,
         },
       });
-      expect(result).toEqual({ room: "301", buildingName: "N1" });
+      expect(result).toEqual({ room: "301", buildingName: name });
     });
 
     it("returns null when no current club room exists", async () => {

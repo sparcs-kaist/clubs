@@ -62,7 +62,7 @@ import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registrat
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { env } from "@sparcs-clubs/api/env";
-import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository-old/club.club-room-t.repository";
+import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
 import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registration/service/registration.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";

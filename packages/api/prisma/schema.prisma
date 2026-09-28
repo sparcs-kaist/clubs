@@ -102,26 +102,6 @@ model Executive {
   @@map("executive")
 }
 
-model ExecutiveStatusEnum {
-  id        Int       @id @default(autoincrement())
-  name      String?   @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  executiveTs ExecutiveT[]
-
-  @@map("executive_status_enum")
-}
-
-model ExecutiveBureauEnum {
-  id   Int     @id @default(autoincrement())
-  name String? @db.VarChar(31)
-
-  executiveTs ExecutiveT[]
-
-  @@map("executive_bureau_enum")
-}
-
 model ExecutiveT {
   id                  Int       @id @default(autoincrement())
   executiveId         Int       @map("executive_id")
@@ -132,9 +112,7 @@ model ExecutiveT {
   createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt           DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  executive          Executive           @relation(fields: [executiveId], references: [id])
-  executiveStatusRel ExecutiveStatusEnum @relation(fields: [executiveStatusEnum], references: [id])
-  executiveBureauRel ExecutiveBureauEnum @relation(fields: [executiveBureauEnum], references: [id])
+  executive Executive @relation(fields: [executiveId], references: [id])
 
   @@map("executive_t")
 }
@@ -197,33 +175,6 @@ model EmployeeT {
   @@map("employee_t")
 }
 
-model StudentStatusEnum {
-  id        Int       @id @default(autoincrement())
-  name      String?   @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("student_status_enum")
-}
-
-model StudentEnum {
-  id        Int       @id @default(autoincrement())
-  name      String?   @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("student_enum")
-}
-
-model ProfessorEnum {
-  id        Int       @id @default(autoincrement())
-  name      String?   @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("professor_enum")
-}
-
 model Department {
   id           Int       @id @default(autoincrement())
   departmentId Int?      @unique @map("department_id")
@@ -257,14 +208,14 @@ model AuthActivatedRefreshTokens {
 }
 
 model AuthExchangeLoginLog {
-  id                 Int      @id @default(autoincrement())
-  actorUserId        Int      @map("actor_user_id")
-  actorEmail         String?  @map("actor_email") @db.VarChar(255)
-  targetUserId       Int      @map("target_user_id")
-  targetEmail        String?  @map("target_email") @db.VarChar(255)
+  id                  Int      @id @default(autoincrement())
+  actorUserId         Int      @map("actor_user_id")
+  actorEmail          String?  @map("actor_email") @db.VarChar(255)
+  targetUserId        Int      @map("target_user_id")
+  targetEmail         String?  @map("target_email") @db.VarChar(255)
   originalActorUserId Int      @map("original_actor_user_id")
   originalActorEmail  String?  @map("original_actor_email") @db.VarChar(255)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(0)
 
   @@index([originalActorUserId, createdAt])
   @@index([targetUserId, createdAt])
@@ -304,17 +255,6 @@ model Club {
   @@map("club")
 }
 
-model ClubStatusEnum {
-  id         Int       @id @default(autoincrement())
-  statusName String?   @map("status_name") @db.VarChar(30)
-  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  clubTs ClubT[]
-
-  @@map("club_status_enum")
-}
-
 model ClubT {
   id               Int       @id @default(autoincrement())
   clubId           Int       @map("club_id")
@@ -328,10 +268,9 @@ model ClubT {
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club           Club           @relation(fields: [clubId], references: [id])
-  clubStatusEnum ClubStatusEnum @relation(fields: [clubStatusEnumId], references: [id])
-  professor      Professor?     @relation(fields: [professorId], references: [id])
-  semester       SemesterD      @relation(fields: [semesterId], references: [id])
+  club      Club       @relation(fields: [clubId], references: [id])
+  professor Professor? @relation(fields: [professorId], references: [id])
+  semester  SemesterD  @relation(fields: [semesterId], references: [id])
 
   @@map("club_t")
 }
@@ -371,17 +310,6 @@ model ClubStudentT {
   @@map("club_student_t")
 }
 
-model ClubBuildingEnum {
-  id           Int       @id @default(autoincrement())
-  buildingName String?   @map("building_name") @db.VarChar(30)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  clubRoomTs ClubRoomT[]
-
-  @@map("club_building_enum")
-}
-
 model ClubRoomT {
   id               Int       @id @default(autoincrement())
   clubId           Int       @map("club_id")
@@ -394,20 +322,10 @@ model ClubRoomT {
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club            Club             @relation(fields: [clubId], references: [id])
-  clubBuildingRel ClubBuildingEnum @relation(fields: [clubBuildingEnum], references: [id])
-  semester        SemesterD        @relation(fields: [semesterId], references: [id])
+  club     Club      @relation(fields: [clubId], references: [id])
+  semester SemesterD @relation(fields: [semesterId], references: [id])
 
   @@map("club_room_t")
-}
-
-model ClubDelegateEnum {
-  id        Int       @id @default(autoincrement())
-  name      String?   @map("enum_name") @db.VarChar(255)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("club_delegate_enum")
 }
 
 model ClubDelegateD {
@@ -427,17 +345,6 @@ model ClubDelegateD {
   @@map("club_delegate_d")
 }
 
-model ClubDelegateChangeRequestStatusEnum {
-  id        Int       @id @default(autoincrement()) @map("enum_id")
-  enumName  String    @map("enum_name") @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  clubDelegateChangeRequests ClubDelegateChangeRequest[]
-
-  @@map("club_delegate_change_request_status_enum")
-}
-
 model ClubDelegateChangeRequest {
   id                                    Int       @id @default(autoincrement())
   clubId                                Int       @map("club_id")
@@ -447,10 +354,9 @@ model ClubDelegateChangeRequest {
   createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club        Club                                @relation(fields: [clubId], references: [id])
-  prevStudent Student                             @relation("PrevStudent", fields: [prevStudentId], references: [id])
-  student     Student                             @relation("NewStudent", fields: [studentId], references: [id])
-  statusEnum  ClubDelegateChangeRequestStatusEnum @relation(fields: [clubDelegateChangeRequestStatusEnumId], references: [id], map: "club_delegate_change_request_fk")
+  club        Club    @relation(fields: [clubId], references: [id])
+  prevStudent Student @relation("PrevStudent", fields: [prevStudentId], references: [id])
+  student     Student @relation("NewStudent", fields: [studentId], references: [id])
 
   @@map("club_delegate_change_request")
 }
@@ -552,7 +458,7 @@ model ActivityD {
   createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  fundings                      Funding[]
+  fundings Funding[]
 
   @@map("activity_d")
 }
@@ -599,27 +505,6 @@ model RegistrationDeadlineD {
 // Activity
 // ============================================================================
 
-model ActivityTypeEnum {
-  id        Int       @id @default(autoincrement())
-  typeName  String    @map("type_name") @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("activity_type_enum")
-}
-
-model ActivityStatusEnum {
-  id         Int       @id @default(autoincrement())
-  statusName String    @map("status_name") @db.VarChar(255)
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  activities        Activity[]
-  activityFeedbacks ActivityFeedback[]
-
-  @@map("activity_status_enum")
-}
-
 model Activity {
   id                   Int       @id @default(autoincrement())
   clubId               Int       @map("club_id")
@@ -642,7 +527,6 @@ model Activity {
   updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  activityStatusEnum    ActivityStatusEnum     @relation(fields: [activityStatusEnumId], references: [id])
   activityParticipants  ActivityParticipant[]
   activityTs            ActivityT[]
   activityFeedbacks     ActivityFeedback[]
@@ -685,8 +569,7 @@ model ActivityFeedback {
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt          DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  activity          Activity           @relation(fields: [activityId], references: [id])
-  activityStatusRel ActivityStatusEnum @relation(fields: [activityStatusEnum], references: [id])
+  activity Activity @relation(fields: [activityId], references: [id])
 
   @@map("activity_feedback")
 }
@@ -717,16 +600,6 @@ model ActivityClubChargedExecutive {
 // ============================================================================
 // Activity Certificate
 // ============================================================================
-
-model ActivityCertificateStatusEnum {
-  id         Int       @id @default(autoincrement())
-  statusName String    @map("status_name") @db.VarChar(30)
-  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime? @map("updated_at") @db.Timestamp(0)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("activity_certificate_status_enum")
-}
 
 model ActivityCertificate {
   id                            Int       @id @default(autoincrement())
@@ -769,18 +642,6 @@ model ActivityCertificateItem {
 // Common Space
 // ============================================================================
 
-model CommonSpaceEnum {
-  id        Int       @id @default(autoincrement())
-  typeName  String    @map("type_name") @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  commonSpaces CommonSpace[]
-
-  @@map("common_space_enum")
-}
-
 model CommonSpace {
   id                    Int       @id @default(autoincrement())
   commonSpaceEnum       Int       @map("common_space_enum")
@@ -791,8 +652,7 @@ model CommonSpace {
   updatedAt             DateTime? @map("updated_at") @db.Timestamp(0)
   deletedAt             DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  commonSpaceEnumRel CommonSpaceEnum          @relation(fields: [commonSpaceEnum], references: [id])
-  usageOrders        CommonSpaceUsageOrderD[]
+  usageOrders CommonSpaceUsageOrderD[]
 
   @@map("common_space")
 }
@@ -1150,26 +1010,6 @@ model OperationCommittee {
 // Promotional Printing
 // ============================================================================
 
-model PromotionalPrintingOrderStatusEnum {
-  id         Int       @id @default(autoincrement())
-  statusName String?   @map("status_name") @db.VarChar(30)
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("promotional_printing_order_status_enum")
-}
-
-model PromotionalPrintingSizeEnum {
-  id           Int       @id @default(autoincrement())
-  printingSize String?   @map("printing_size") @db.VarChar(30)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  @@map("promotional_printing_size_enum")
-}
-
 model PromotionalPrintingOrder {
   id                                 Int       @id @default(autoincrement())
   clubId                             Int       @map("club_id")
@@ -1214,28 +1054,6 @@ model PromotionalPrintingOrderSize {
 // Registration
 // ============================================================================
 
-model RegistrationTypeEnum {
-  id        Int       @id @default(autoincrement()) @map("enum_id")
-  enumName  String    @map("enum_name") @db.VarChar(30)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  registrations Registration[]
-
-  @@map("registration_type_enum")
-}
-
-model RegistrationStatusEnum {
-  id        Int       @id @default(autoincrement()) @map("enum_id")
-  enumName  String    @map("enum_name") @db.VarChar(30)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  registrations Registration[]
-
-  @@map("registration_status_enum")
-}
-
 model Registration {
   id                                    Int       @id @default(autoincrement())
   clubId                                Int?      @map("club_id")
@@ -1265,8 +1083,6 @@ model Registration {
 
   club              Club?                          @relation(fields: [clubId], references: [id])
   semester          SemesterD?                     @relation(fields: [semesterId], references: [id], map: "registration_semester_d_id_fk")
-  typeEnum          RegistrationTypeEnum           @relation(fields: [registrationApplicationTypeEnumId], references: [id], map: "registration_registration_type_enum_id_fk")
-  statusEnum        RegistrationStatusEnum         @relation(fields: [registrationApplicationStatusEnumId], references: [id], map: "registration_registration_status_enum_id_fk")
   student           Student                        @relation(fields: [studentId], references: [id])
   division          Division                       @relation(fields: [divisionId], references: [id])
   professor         Professor?                     @relation(fields: [professorId], references: [id])
@@ -1289,17 +1105,6 @@ model RegistrationExecutiveComment {
   @@map("registration_executive_comment")
 }
 
-model RegistrationApplicationStudentStatusEnum {
-  id        Int       @id @default(autoincrement()) @map("enum_id")
-  enumName  String?   @map("enum_name") @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  registrationApplicationStudents RegistrationApplicationStudent[]
-
-  @@map("registration_application_student_status_enum")
-}
-
 model RegistrationApplicationStudent {
   id                                 Int       @id @default(autoincrement())
   studentId                          Int       @map("student_id")
@@ -1309,10 +1114,9 @@ model RegistrationApplicationStudent {
   createdAt                          DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                          DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  student    Student                                  @relation(fields: [studentId], references: [id])
-  club       Club                                     @relation(fields: [clubId], references: [id])
-  semester   SemesterD?                               @relation(fields: [semesterId], references: [id])
-  statusEnum RegistrationApplicationStudentStatusEnum @relation(fields: [registrationApplicationStudentEnum], references: [id], map: "registration_application_student_status_enum_id_fk")
+  student  Student    @relation(fields: [studentId], references: [id])
+  club     Club       @relation(fields: [clubId], references: [id])
+  semester SemesterD? @relation(fields: [semesterId], references: [id])
 
   @@map("registration_application_student")
 }
@@ -1340,18 +1144,6 @@ model RentalOrder {
   @@map("rental_order")
 }
 
-model RentalEnum {
-  id        Int       @id @default(autoincrement())
-  typeName  String?   @map("type_name") @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  rentalObjects RentalObject[]
-
-  @@map("rental_enum")
-}
-
 model RentalObject {
   id         Int       @id @default(autoincrement())
   rentalEnum Int       @map("rental_enum")
@@ -1360,8 +1152,7 @@ model RentalObject {
   updatedAt  DateTime? @map("updated_at") @db.Timestamp(0)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  rentalEnumRel RentalEnum         @relation(fields: [rentalEnum], references: [id])
-  orderItems    RentalOrderItemD[]
+  orderItems RentalOrderItemD[]
 
   @@map("rental_object")
 }
@@ -1385,18 +1176,6 @@ model RentalOrderItemD {
 // ============================================================================
 // Meeting
 // ============================================================================
-
-model MeetingRoleEnum {
-  id        Int       @id
-  name      String    @db.VarChar(30)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamp(0)
-
-  meetingAttendanceDays MeetingAttendanceDay[]
-
-  @@map("meeting_role_enum")
-}
 
 model MeetingAnnouncement {
   id                  Int       @id @default(autoincrement())
@@ -1473,10 +1252,9 @@ model MeetingAttendanceDay {
   updatedAt       DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt       DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  meeting     Meeting         @relation(fields: [meetingId], references: [id], map: "meeting_meeting_attendance_day_id_fk")
-  meetingRole MeetingRoleEnum @relation(fields: [meetingRoleEnum], references: [id], map: "meeting_attendance_day_role_enum_fk")
-  club        Club?           @relation(fields: [whichClubId], references: [id])
-  division    Division?       @relation(fields: [whichDivisionId], references: [id])
+  meeting  Meeting   @relation(fields: [meetingId], references: [id], map: "meeting_meeting_attendance_day_id_fk")
+  club     Club?     @relation(fields: [whichClubId], references: [id])
+  division Division? @relation(fields: [whichDivisionId], references: [id])
 
   @@map("meeting_attendance_day")
 }

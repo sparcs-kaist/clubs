@@ -1,9 +1,5 @@
 export const repositoryBoundary = {
-  ownedPrismaModels: [
-    "commonSpace",
-    "commonSpaceEnum",
-    "commonSpaceUsageOrderD",
-  ],
+  ownedPrismaModels: ["commonSpace", "commonSpaceUsageOrderD"],
   exportedPrismaModels: ["commonSpaceUsageOrderD"],
   importedPrismaModels: [
     {
