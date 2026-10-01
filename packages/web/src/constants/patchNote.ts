@@ -5,6 +5,16 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.28 source=953ef7ce04d5
+  {
+    version: "v.0.1.28",
+    date: new Date("2026.10.01"),
+    patchNoteContent: `Clubs v0.1.28
+오류 수정은 다음과 같습니다.
+- 등록 목록 필터의 높이를 늘려 분과 선택 목록을 더 넓게 볼 수 있도록 개선했습니다. (#1945)
+- 네이버 카페의 새 공지사항이 목록에 반영되지 않던 문제와 동기화에 실패해도 갱신 시각이 표시되던 문제를 수정했습니다. (#1947)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.27 source=16a7d83a978f
   {
     version: "v.0.1.27",
