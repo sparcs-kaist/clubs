@@ -71,7 +71,7 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
-import { takeExist, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
+import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -1090,36 +1090,29 @@ export default class FundingService {
       throw new HttpException(amountValidationError, HttpStatus.BAD_REQUEST);
     }
 
-    const fundingComment = await this.prisma.$transaction(async tx => {
-      const comment = await this.fundingCommentRepository
-        .create(
-          {
-            fundingStatusEnum,
-            approvedAmount,
-            funding: { id },
-            executive: { id: executiveId },
-            content,
-          },
-          tx,
-        )
-        .then(takeOnlyOne());
-      const funding = await this.fundingRepository.patchStatusTx(tx, {
-        id,
+    const fundingComment =
+      await this.fundingCommentRepository.createExecutiveReviewComment({
         fundingStatusEnum,
         approvedAmount,
-        commentedAt: this.clock.now(),
+        funding: { id },
+        executive: { id: executiveId },
+        content,
       });
-
-      // funding 이랑 comment 의 값들이 다르면 에러
-      if (!comment.isFinalComment(funding)) {
-        throw new HttpException(
-          "Funding and Comment Has Different Value",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-
-      return comment;
+    const funding = await this.fundingRepository.patchStatus({
+      id,
+      fundingStatusEnum,
+      approvedAmount,
+      commentedAt: this.clock.now(),
+      commentedExecutiveId: executiveId,
     });
+
+    // funding 이랑 comment 의 값들이 다르면 에러
+    if (!fundingComment.isFinalComment(funding)) {
+      throw new HttpException(
+        "Funding and Comment Has Different Value",
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
 
     return fundingComment;
   }

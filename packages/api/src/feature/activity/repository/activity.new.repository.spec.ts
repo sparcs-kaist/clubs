@@ -26,6 +26,7 @@ describe("ActivityNewRepository", () => {
       const result = await repository.approveExecutiveActivity({
         activityId: 42,
         commentedAt,
+        commentedExecutiveId: 7,
       });
 
       expect(result).toBe(true);
@@ -37,6 +38,7 @@ describe("ActivityNewRepository", () => {
         data: {
           activityStatusEnumId: ActivityStatusEnum.Approved,
           commentedAt,
+          commentedExecutiveId: 7,
           updatedAt,
         },
       });

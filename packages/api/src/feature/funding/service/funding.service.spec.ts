@@ -53,17 +53,15 @@ const createFundingService = () => {
     fetchSummaries: jest.fn(),
     fetchCommentedSummaries: jest.fn(),
     updateChargedExecutive: jest.fn().mockResolvedValue(1),
-    patchStatusTx: jest.fn().mockResolvedValue(funding),
+    patchStatus: jest.fn().mockResolvedValue(funding),
   };
   const fundingCommentRepository = {
-    create: jest.fn().mockResolvedValue([
-      {
-        funding: { id: funding.id },
-        approvedAmount: funding.approvedAmount,
-        fundingStatusEnum: funding.fundingStatusEnum,
-        isFinalComment: jest.fn().mockReturnValue(true),
-      },
-    ]),
+    createExecutiveReviewComment: jest.fn().mockResolvedValue({
+      funding: { id: funding.id },
+      approvedAmount: funding.approvedAmount,
+      fundingStatusEnum: funding.fundingStatusEnum,
+      isFinalComment: jest.fn().mockReturnValue(true),
+    }),
     find: jest.fn(),
   };
   const userPublicService = {
@@ -334,7 +332,7 @@ describe("FundingService historical semester club summaries", () => {
 });
 
 describe("FundingService final commented executive", () => {
-  it("uses the latest funding feedback by descending id for club brief", async () => {
+  it("uses the denormalized final reviewer for club brief", async () => {
     const { service, fundingRepository, fundingCommentRepository } =
       createFundingService();
     fundingRepository.fetchSummaries.mockResolvedValue([funding]);
@@ -351,7 +349,7 @@ describe("FundingService final commented executive", () => {
     );
   });
 
-  it("uses the latest funding feedback by descending id for executive brief", async () => {
+  it("uses the denormalized final reviewer for executive brief", async () => {
     const { service, fundingRepository, fundingCommentRepository } =
       createFundingService();
     fundingRepository.fetchCommentedSummaries.mockResolvedValue([funding]);
@@ -369,6 +367,26 @@ describe("FundingService final commented executive", () => {
 });
 
 describe("FundingService executive review semester guard", () => {
+  it("stores the final reviewer on the funding with the comment", async () => {
+    const { fundingRepository, service } = createFundingService();
+
+    await service.postExecutiveFundingComment(
+      latestCommentedExecutive.id,
+      funding.id,
+      FundingStatusEnum.Partial,
+      funding.approvedAmount,
+      "승인합니다",
+    );
+
+    expect(fundingRepository.patchStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: funding.id,
+        commentedExecutiveId: latestCommentedExecutive.id,
+        commentedAt: now,
+      }),
+    );
+  });
+
   it("rejects funding comments for fundings from another semester before feedback mutation", async () => {
     const {
       activityDurationPublicService,
@@ -400,7 +418,9 @@ describe("FundingService executive review semester guard", () => {
 
     expect(activityDurationPublicService.getById).toHaveBeenCalledWith(999);
     expect(prisma.$transaction).not.toHaveBeenCalled();
-    expect(fundingCommentRepository.create).not.toHaveBeenCalled();
-    expect(fundingRepository.patchStatusTx).not.toHaveBeenCalled();
+    expect(
+      fundingCommentRepository.createExecutiveReviewComment,
+    ).not.toHaveBeenCalled();
+    expect(fundingRepository.patchStatus).not.toHaveBeenCalled();
   });
 });

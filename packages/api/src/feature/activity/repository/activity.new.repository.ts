@@ -81,6 +81,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
   async approveExecutiveActivity(param: {
     activityId: number;
     commentedAt: Date;
+    commentedExecutiveId: number;
   }): Promise<boolean> {
     const result = await this.txHost.tx.activity.updateMany({
       where: {
@@ -90,6 +91,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       data: {
         activityStatusEnumId: ActivityStatusEnum.Approved,
         commentedAt: param.commentedAt,
+        commentedExecutiveId: param.commentedExecutiveId,
         updatedAt: this.clock.now(),
       },
     });
@@ -100,6 +102,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
   async sendBackExecutiveActivity(param: {
     activityId: number;
     commentedAt: Date;
+    commentedExecutiveId: number;
   }): Promise<boolean> {
     const result = await this.txHost.tx.activity.updateMany({
       where: {
@@ -109,6 +112,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       data: {
         activityStatusEnumId: ActivityStatusEnum.Rejected,
         commentedAt: param.commentedAt,
+        commentedExecutiveId: param.commentedExecutiveId,
         updatedAt: this.clock.now(),
       },
     });
@@ -214,7 +218,9 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         id: participant.studentId,
       })),
       chargedExecutive: { id: result.main.chargedExecutiveId },
-      commentedExecutive: undefined,
+      commentedExecutive: result.main.commentedExecutiveId
+        ? { id: result.main.commentedExecutiveId }
+        : undefined,
       commentedAt: result.main.commentedAt,
       editedAt: result.main.editedAt,
       professorApprovedAt: result.main.professorApprovedAt,
@@ -239,6 +245,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         detail: model.detail,
         evidence: model.evidence,
         chargedExecutiveId: model.chargedExecutive?.id,
+        commentedExecutiveId: model.commentedExecutive?.id ?? null,
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
         updatedAt: this.clock.now(),
