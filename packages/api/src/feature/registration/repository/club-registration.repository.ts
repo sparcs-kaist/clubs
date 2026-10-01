@@ -23,6 +23,7 @@ import {
   RegistrationStatusEnum,
   RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
@@ -535,8 +536,10 @@ export class ClubRegistrationRepository {
         });
         return {
           id: registration.id,
-          registrationTypeEnumId: registration.registrationTypeEnumId,
-          registrationStatusEnumId: registration.registrationStatusEnumId,
+          registrationTypeEnumId:
+            registration.registrationTypeEnumId as RegistrationTypeEnum,
+          registrationStatusEnumId:
+            registration.registrationStatusEnumId as RegistrationStatusEnum,
           clubId: registration.clubId,
           clubNameKr: registration.clubNameKr,
           clubNameEn: registration.clubNameEn,
@@ -555,7 +558,7 @@ export class ClubRegistrationRepository {
             ? {
                 name: registration.professorName,
                 email: registration.professorEmail,
-                professorEnumId: registration.professorEnumId,
+                professorEnumId: registration.professorEnumId as ProfessorEnum,
               }
             : undefined,
           divisionConsistency: registration.divisionConsistency,
@@ -637,7 +640,15 @@ export class ClubRegistrationRepository {
         AND r.semester_d_id = ${semesterId}
         AND r.deleted_at IS NULL
     `);
-    return { registrations: result };
+    return {
+      registrations: result.map(registration => ({
+        ...registration,
+        registrationTypeEnum:
+          registration.registrationTypeEnum as RegistrationTypeEnum,
+        registrationStatusEnum:
+          registration.registrationStatusEnum as RegistrationStatusEnum,
+      })),
+    };
   }
 
   async getRegistrationsClubRegistrations(
@@ -695,7 +706,13 @@ export class ClubRegistrationRepository {
     `);
 
     return {
-      items: clubRegistrations,
+      items: clubRegistrations.map(registration => ({
+        ...registration,
+        registrationTypeEnumId:
+          registration.registrationTypeEnumId as RegistrationTypeEnum,
+        registrationStatusEnumId:
+          registration.registrationStatusEnumId as RegistrationStatusEnum,
+      })),
       total: numberOfClubRegistrations,
       offset: pageOffset,
     };
@@ -825,8 +842,10 @@ export class ClubRegistrationRepository {
         });
         return {
           id: registration.id,
-          registrationTypeEnumId: registration.registrationTypeEnumId,
-          registrationStatusEnumId: registration.registrationStatusEnumId,
+          registrationTypeEnumId:
+            registration.registrationTypeEnumId as RegistrationTypeEnum,
+          registrationStatusEnumId:
+            registration.registrationStatusEnumId as RegistrationStatusEnum,
           clubId: registration.clubId,
           clubNameKr: registration.clubNameKr,
           clubNameEn: registration.clubNameEn,
@@ -845,7 +864,7 @@ export class ClubRegistrationRepository {
             ? {
                 name: registration.professorName,
                 email: registration.professorEmail,
-                professorEnumId: registration.professorEnumId,
+                professorEnumId: registration.professorEnumId as ProfessorEnum,
               }
             : undefined,
           divisionConsistency: registration.divisionConsistency,
@@ -1023,9 +1042,9 @@ export class ClubRegistrationRepository {
         clubId: row.registrationClubId,
         semesterId: row.registrationSemesterId,
         registrationApplicationTypeEnumId:
-          row.registrationApplicationTypeEnumId,
+          row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
         registrationApplicationStatusEnumId:
-          row.registrationApplicationStatusEnumId,
+          row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
         clubNameKr: row.registrationClubNameKr,
         clubNameEn: row.registrationClubNameEn,
         studentId: row.registrationStudentId,
@@ -1229,9 +1248,9 @@ export class ClubRegistrationRepository {
         clubId: row.registrationClubId,
         semesterId: row.registrationSemesterId,
         registrationApplicationTypeEnumId:
-          row.registrationApplicationTypeEnumId,
+          row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
         registrationApplicationStatusEnumId:
-          row.registrationApplicationStatusEnumId,
+          row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
         clubNameKr: row.registrationClubNameKr,
         clubNameEn: row.registrationClubNameEn,
         studentId: row.registrationStudentId,
@@ -1269,7 +1288,7 @@ export class ClubRegistrationRepository {
         email: row.professorEmail,
       },
       professor_t: {
-        professorEnum: row.professorEnum,
+        professorEnum: row.professorEnum as ProfessorEnum,
       },
       comments,
     };

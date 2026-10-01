@@ -91,11 +91,7 @@ const RegistrationDeadlineFormModal = ({
                 placeholder="제출 기간 유형을 선택해주세요"
                 value={deadlineEnum}
                 onChange={e => setDeadlineEnum(e as RegistrationDeadlineEnum)}
-                items={(
-                  Object.values(RegistrationDeadlineEnum).filter(
-                    value => typeof value === "number",
-                  ) as Array<RegistrationDeadlineEnum>
-                ).map((value: RegistrationDeadlineEnum) => ({
+                items={Object.values(RegistrationDeadlineEnum).map(value => ({
                   label: registrationDeadlineEnumToString(value),
                   value,
                 }))}

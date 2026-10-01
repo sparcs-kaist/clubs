@@ -45,7 +45,7 @@ const MultiFilterDropdown: React.FC<MultiFilterDropdownProps> = ({
   };
 
   return (
-    <Dropdown marginTop={40} maxContent>
+    <Dropdown marginTop={40} maxContent style={{ maxHeight: 400 }}>
       <MultiFilterDropdownWrapper>
         {categories.map(element => (
           <CategoryNameWithContent key={element.name}>

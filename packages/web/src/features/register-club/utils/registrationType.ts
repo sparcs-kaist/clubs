@@ -4,4 +4,4 @@ export const isProvisional = (registrationTypeEnumId: RegistrationTypeEnum) =>
   [
     RegistrationTypeEnum.NewProvisional,
     RegistrationTypeEnum.ReProvisional,
-  ].includes(registrationTypeEnumId);
+  ].some(type => type === registrationTypeEnumId);

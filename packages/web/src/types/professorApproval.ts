@@ -1,10 +1,13 @@
 import { TagColor } from "@sparcs-clubs/web/common/components/Tag";
 
-enum ProfessorApprovalEnum {
-  Pending = 1, // 대기
-  Approved, // 승인
-  Rejected, // 반려
-}
+const ProfessorApprovalEnum = {
+  Pending: 1, // 대기
+  Approved: 2, // 승인
+  Rejected: 3, // 반려
+} as const;
+
+type ProfessorApprovalEnum =
+  (typeof ProfessorApprovalEnum)[keyof typeof ProfessorApprovalEnum];
 
 const ProfessorApprovalLabel: Record<ProfessorApprovalEnum, string> = {
   [ProfessorApprovalEnum.Pending]: "대기",

@@ -36,24 +36,33 @@ export interface Funding {
   approvedAmount: number | null;
 }
 
-export enum ActivityStatusEnum {
-  Applied = 1, // 신청
-  Committee, // 운위
-  Approved, // 승인
-  Rejected, // 반려
-}
+export const ActivityStatusEnum = {
+  Applied: 1, // 신청
+  Committee: 2, // 운위
+  Approved: 3, // 승인
+  Rejected: 4, // 반려
+} as const;
 
-export enum ActivityProfessorApprovalEnum {
-  Requested = 1, // 대기
-  Approved, // 완료
-  Denied, // 반려
-}
+export type ActivityStatusEnum =
+  (typeof ActivityStatusEnum)[keyof typeof ActivityStatusEnum];
 
-export enum MemberStatusEnum {
-  Applied = 1, // 신청
-  Approved, // 승인
-  Rejected, // 반려
-}
+export const ActivityProfessorApprovalEnum = {
+  Requested: 1, // 대기
+  Approved: 2, // 완료
+  Denied: 3, // 반려
+} as const;
+
+export type ActivityProfessorApprovalEnum =
+  (typeof ActivityProfessorApprovalEnum)[keyof typeof ActivityProfessorApprovalEnum];
+
+export const MemberStatusEnum = {
+  Applied: 1, // 신청
+  Approved: 2, // 승인
+  Rejected: 3, // 반려
+} as const;
+
+export type MemberStatusEnum =
+  (typeof MemberStatusEnum)[keyof typeof MemberStatusEnum];
 const mockClubDescription: ApiClb004ResponseOK = {
   description: "동아리 설명입니다",
   roomPassword: "password",

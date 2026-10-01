@@ -1,10 +1,5 @@
 export const repositoryBoundary = {
-  ownedPrismaModels: [
-    "rentalEnum",
-    "rentalObject",
-    "rentalOrder",
-    "rentalOrderItemD",
-  ],
+  ownedPrismaModels: ["rentalObject", "rentalOrder", "rentalOrderItemD"],
   exportedPrismaModels: ["rentalOrder"],
   importedPrismaModels: [
     {

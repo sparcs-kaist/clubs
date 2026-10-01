@@ -10,6 +10,7 @@ import type {
   ApiAcf007RequestQuery,
   ApiAcf007ResponseOk,
 } from "@clubs/interface/api/activity-certificate/endpoint/apiAcf007";
+import { ActivityCertificateOrderStatusEnum } from "@clubs/interface/common/enum/activityCertificate.enum";
 
 import { ClubDelegateDRepository } from "@sparcs-clubs/api/feature/club/delegate/club.club-delegate-d.repository";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -79,7 +80,8 @@ export class ActivityCertificateService {
           await this.userPublicService.getStudentById({ id: row.studentId })
         ).name,
         issuedNumber: row.issueNumber,
-        statusEnum: row.activityCertificateStatusEnum,
+        statusEnum:
+          row.activityCertificateStatusEnum as ActivityCertificateOrderStatusEnum,
         createdAt: row.createdAt,
       })),
     );
@@ -115,7 +117,8 @@ export class ActivityCertificateService {
           await this.userPublicService.getStudentById({ id: row.studentId })
         ).name,
         issuedNumber: row.issueNumber,
-        statusEnum: row.activityCertificateStatusEnum,
+        statusEnum:
+          row.activityCertificateStatusEnum as ActivityCertificateOrderStatusEnum,
         createdAt: row.createdAt,
       })),
     );

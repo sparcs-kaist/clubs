@@ -3,8 +3,6 @@ export const repositoryBoundary = {
     "employee",
     "employeeT",
     "executive",
-    "executiveBureauEnum",
-    "executiveStatusEnum",
     "executiveT",
     "professor",
     "professorT",

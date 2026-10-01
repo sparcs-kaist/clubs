@@ -1,4 +1,4 @@
-import { ApiReg019ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg019";
+import type { ApiReg019ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg019";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 const divisionName = [
@@ -18,13 +18,13 @@ const divisionName = [
   "대중문화",
 ];
 
-const clubType = [ClubTypeEnum.Provisional, ClubTypeEnum.Regular];
+const clubType = [ClubTypeEnum.Regular, ClubTypeEnum.Provisional];
 
 const permanentType = [false, true, false];
 
 const items = Array.from({ length: 120 }, (_, index) => ({
   clubId: index + 1,
-  clubTypeEnumId: (index % clubType.length) + 1,
+  clubTypeEnumId: clubType[index % clubType.length],
   isPermanent: permanentType[index % permanentType.length],
   division: {
     id: (index % divisionName.length) + 1,

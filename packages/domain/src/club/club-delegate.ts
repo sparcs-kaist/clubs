@@ -8,11 +8,14 @@ import { zClub } from "./club";
 
 extendZodWithOpenApi(z);
 
-export enum ClubDelegateEnum {
-  Representative = 1, // 대표자
-  Delegate1, // 대의원 1
-  Delegate2, // 대의원 2
-}
+export const ClubDelegateEnum = {
+  Representative: 1, // 대표자
+  Delegate1: 2, // 대의원 1
+  Delegate2: 3, // 대의원 2
+} as const;
+
+export type ClubDelegateEnum =
+  (typeof ClubDelegateEnum)[keyof typeof ClubDelegateEnum];
 
 export const zClubDelegate = z.object({
   id: zId.openapi({

@@ -182,7 +182,7 @@ export class MFunding implements IFunding {
       club: { id: result.funding.clubId },
       name: result.funding.name,
       activityD: { id: result.funding.activityDId },
-      fundingStatusEnum: result.funding.fundingStatusEnum,
+      fundingStatusEnum: result.funding.fundingStatusEnum as FundingStatusEnum,
       purposeActivity: result.funding.purposeActivityId
         ? {
             id: result.funding.purposeActivityId,
@@ -213,8 +213,10 @@ export class MFunding implements IFunding {
         ? undefined
         : {
             name: result.funding.clubSuppliesName,
-            evidenceEnum: result.funding.clubSuppliesEvidenceEnum,
-            classEnum: result.funding.clubSuppliesClassEnum,
+            evidenceEnum: result.funding
+              .clubSuppliesEvidenceEnum as IClubSupplies["evidenceEnum"],
+            classEnum: result.funding
+              .clubSuppliesClassEnum as IClubSupplies["classEnum"],
             purpose: result.funding.clubSuppliesPurpose,
             softwareEvidence: result.funding.clubSuppliesSoftwareEvidence,
             number: result.funding.numberOfClubSupplies,
@@ -232,8 +234,9 @@ export class MFunding implements IFunding {
         ? {
             name: result.funding.fixtureName,
             purpose: result.funding.fixturePurpose,
-            evidenceEnum: result.funding.fixtureEvidenceEnum,
-            classEnum: result.funding.fixtureClassEnum,
+            evidenceEnum: result.funding
+              .fixtureEvidenceEnum as IFixture["evidenceEnum"],
+            classEnum: result.funding.fixtureClassEnum as IFixture["classEnum"],
             softwareEvidence: result.funding.fixtureSoftwareEvidence,
             number: result.funding.numberOfFixture,
             price: result.funding.priceOfFixture,
@@ -249,7 +252,7 @@ export class MFunding implements IFunding {
         : undefined,
       transportation: result.funding.isTransportation
         ? {
-            enum: result.funding.transportationEnum,
+            enum: result.funding.transportationEnum as ITransportation["enum"],
             origin: result.funding.origin,
             destination: result.funding.destination,
             purpose: result.funding.purposeOfTransportation,

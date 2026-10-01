@@ -7,14 +7,13 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-import { ClubBuildingEnum } from "@clubs/domain/club/club-semester";
-
 import { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import OverviewCommonColumns from "@sparcs-clubs/web/features/overview/_atomic/OverviewCommonColumns";
 import OverviewCopyableTable from "@sparcs-clubs/web/features/overview/components/OverviewCopyableTable";
+import { clubBuildingNames } from "@sparcs-clubs/web/features/overview/utils/clubBuildingNames";
 
 interface ClubInfoKROverviewTableProps {
   clubInfos: ApiOvv002ResponseOK;
@@ -51,7 +50,7 @@ const columns = [
   }),
   columnHelper.accessor(
     row =>
-      `${row.clubBuildingEnum ? ClubBuildingEnum[row.clubBuildingEnum] : "- "}/${row.roomLocation ?? " -"}`,
+      `${row.clubBuildingEnum ? clubBuildingNames[row.clubBuildingEnum] : "- "}/${row.roomLocation ?? " -"}`,
     {
       id: "roomLocation",
       header: "동아리방 위치",

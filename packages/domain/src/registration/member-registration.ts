@@ -8,11 +8,14 @@ import { zStudent } from "@clubs/domain/user/student";
 
 extendZodWithOpenApi(z);
 
-export enum RegistrationApplicationStudentStatusEnum {
-  Pending = 1, // 대기중
-  Approved, // 승인됨
-  Rejected, // 반려됨
-}
+export const RegistrationApplicationStudentStatusEnum = {
+  Pending: 1, // 대기중
+  Approved: 2, // 승인됨
+  Rejected: 3, // 반려됨
+} as const;
+
+export type RegistrationApplicationStudentStatusEnum =
+  (typeof RegistrationApplicationStudentStatusEnum)[keyof typeof RegistrationApplicationStudentStatusEnum];
 
 export const zMemberRegistration = z.object({
   id: zId.openapi({ description: "가입 신청 ID", examples: [1, 2, 3] }),

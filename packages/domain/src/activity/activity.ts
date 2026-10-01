@@ -12,18 +12,24 @@ import { zStudent } from "@clubs/domain/user/student";
 
 extendZodWithOpenApi(z);
 
-export enum ActivityTypeEnum {
-  matchedInternalActivity = 1,
-  matchedExternalActivity,
-  notMatchedActivity,
-}
+export const ActivityTypeEnum = {
+  matchedInternalActivity: 1,
+  matchedExternalActivity: 2,
+  notMatchedActivity: 3,
+} as const;
 
-export enum ActivityStatusEnum {
-  Applied = 1, // 신청
-  Approved, // 승인
-  Rejected, // 반려
-  Committee, // 운영위원회
-}
+export type ActivityTypeEnum =
+  (typeof ActivityTypeEnum)[keyof typeof ActivityTypeEnum];
+
+export const ActivityStatusEnum = {
+  Applied: 1, // 신청
+  Approved: 2, // 승인
+  Rejected: 3, // 반려
+  Committee: 4, // 운영위원회
+} as const;
+
+export type ActivityStatusEnum =
+  (typeof ActivityStatusEnum)[keyof typeof ActivityStatusEnum];
 
 export const zActivity = z.object({
   id: zId,

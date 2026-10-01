@@ -92,8 +92,10 @@ export class MActivity implements IActivity {
       id: dbResult.activity.id,
       club: { id: dbResult.activity.clubId },
       name: dbResult.activity.name,
-      activityTypeEnum: dbResult.activity.activityTypeEnumId,
-      activityStatusEnum: dbResult.activity.activityStatusEnumId,
+      activityTypeEnum: dbResult.activity
+        .activityTypeEnumId as IActivity["activityTypeEnum"],
+      activityStatusEnum: dbResult.activity
+        .activityStatusEnumId as IActivity["activityStatusEnum"],
       activityDuration: {
         id: dbResult.activity.activityDId,
       },

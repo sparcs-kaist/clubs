@@ -88,7 +88,7 @@ export class MClubOld implements IClub {
       id: result.club.id,
       nameKr: result.club.nameKr,
       nameEn: result.club.nameEn,
-      typeEnum: result.club_t.clubStatusEnumId,
+      typeEnum: result.club_t.clubStatusEnumId as IClub["typeEnum"],
       description: result.club.description,
       foundingYear: result.club.foundingYear,
       characteristicKr: result.club_t.characteristicKr,
@@ -106,7 +106,7 @@ export class MClubOld implements IClub {
         student: {
           id: president.studentId,
         },
-        clubDelegateEnum: president.clubDelegateEnum,
+        clubDelegateEnum: ClubDelegateEnum.Representative,
       },
       clubDelegate1: delegate1
         ? {
@@ -114,7 +114,7 @@ export class MClubOld implements IClub {
             student: {
               id: delegate1.studentId,
             },
-            clubDelegateEnum: delegate1.clubDelegateEnum,
+            clubDelegateEnum: ClubDelegateEnum.Delegate1,
           }
         : null,
       clubDelegate2: delegate2
@@ -123,7 +123,7 @@ export class MClubOld implements IClub {
             student: {
               id: delegate2.studentId,
             },
-            clubDelegateEnum: delegate2.clubDelegateEnum,
+            clubDelegateEnum: ClubDelegateEnum.Delegate2,
           }
         : null,
       division: {

@@ -37,8 +37,8 @@ export class VActivitySummary implements IActivitySummary {
 
   static fromDBResult(activity: {
     id: number;
-    activityStatusEnumId: ActivityStatusEnum;
-    activityTypeEnumId: ActivityTypeEnum;
+    activityStatusEnumId: number;
+    activityTypeEnumId: number;
     clubId: number;
     name: string;
     commentedAt: Date | null;
@@ -49,8 +49,8 @@ export class VActivitySummary implements IActivitySummary {
   }): VActivitySummary {
     return new VActivitySummary({
       id: activity.id,
-      activityStatusEnum: activity.activityStatusEnumId,
-      activityTypeEnum: activity.activityTypeEnumId,
+      activityStatusEnum: activity.activityStatusEnumId as ActivityStatusEnum,
+      activityTypeEnum: activity.activityTypeEnumId as ActivityTypeEnum,
       club: {
         id: activity.clubId,
       },

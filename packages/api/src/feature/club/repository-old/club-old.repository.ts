@@ -28,7 +28,7 @@ interface IClubs {
   name: string;
   districtId: number;
   clubs: {
-    type: number;
+    type: ClubTypeEnum;
     id: number;
     nameKr: string;
     nameEn: string;
@@ -103,7 +103,7 @@ export class ClubOldRepository {
       LIMIT 1
     `);
     const division = takeOne(divisionRows);
-    return { ...clubInfo, division };
+    return { ...clubInfo, type: clubInfo?.type as ClubTypeEnum, division };
   }
 
   async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
@@ -173,7 +173,7 @@ export class ClubOldRepository {
 
       if (row.clubId) {
         acc[row.divId].clubs.push({
-          type: row.type,
+          type: row.type as ClubTypeEnum,
           id: row.clubId,
           nameKr: row.nameKr,
           nameEn: row.nameEn,

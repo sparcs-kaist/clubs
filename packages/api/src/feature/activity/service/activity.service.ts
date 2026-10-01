@@ -26,6 +26,7 @@ import {
   ActivityDeadlineEnum,
   ActivityDurationTypeEnum,
   ActivityStatusEnum,
+  ActivityTypeEnum,
 } from "@clubs/interface/common/enum/activity.enum";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -199,9 +200,9 @@ export default class ActivityOldService {
 
     return result.map(row => ({
       id: row.id,
-      activityStatusEnumId: row.activityStatusEnumId,
+      activityStatusEnumId: row.activityStatusEnumId as ActivityStatusEnum,
       name: row.name,
-      activityTypeEnumId: row.activityTypeEnumId,
+      activityTypeEnumId: row.activityTypeEnumId as ActivityTypeEnum,
       durations: row.durations,
       professorApprovedAt: row.professorApprovedAt,
       editedAt: row.editedAt,

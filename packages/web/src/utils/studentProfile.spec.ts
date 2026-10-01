@@ -7,7 +7,7 @@ import { getUserType } from "./getUserType.ts";
 import isStudent from "./isStudent.ts";
 
 it("recognizes all academic profiles, including exchange students, as students", () => {
-  const studentTypes = [
+  const studentTypes: UserTypeEnum[] = [
     UserTypeEnum.Undergraduate,
     UserTypeEnum.Master,
     UserTypeEnum.Doctor,

@@ -8,7 +8,6 @@ export const repositoryBoundary = {
     "meetingAttendanceDay",
     "meetingAttendanceTimeT",
     "meetingMapping",
-    "meetingRoleEnum",
     "meetingVoteChoice",
     "meetingVoteResult",
   ],
