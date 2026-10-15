@@ -54,7 +54,7 @@
     "express": "^4.21.2",
     "express-session": "^1.18.0",
     "jsdom": "^26.0.0",
-    "mysql2": "^3.9.8",
+    "mysql2": "^3.22.0",
     "nestjs-cls": "^6.2.1",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
