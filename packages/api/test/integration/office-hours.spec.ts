@@ -6,6 +6,7 @@ import request from "supertest";
 
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
 import { TransactionModule } from "@sparcs-clubs/api/common/transaction/transaction.module";
+import { parseKstDate } from "@sparcs-clubs/api/common/util/calendar-date";
 import { AppConfigService } from "@sparcs-clubs/api/config/app-config.service";
 import { JwtAccessGuard } from "@sparcs-clubs/api/feature/auth/guard/jwt-access.guard";
 import { JwtAccessStrategy } from "@sparcs-clubs/api/feature/auth/strategy/jwt-access.strategy";
@@ -151,8 +152,20 @@ describe("Office hours API with MySQL", () => {
     ]);
     expect(
       await prisma.officeHour.findUnique({
-        where: { date_version: { date: exceptionDate, version: 2 } },
+        where: {
+          date_version: { date: parseKstDate(exceptionDate), version: 2 },
+        },
       }),
     ).toMatchObject({ updatedByExecutiveId: executiveId });
+    const stored = await prisma.$queryRaw<{ date: string; dataType: string }[]>`
+      SELECT CAST(shift.date AS CHAR) AS date, col.DATA_TYPE AS dataType
+      FROM office_hour AS shift
+      JOIN information_schema.COLUMNS AS col
+        ON col.TABLE_SCHEMA = DATABASE()
+        AND col.TABLE_NAME = 'office_hour'
+        AND col.COLUMN_NAME = 'date'
+      WHERE shift.date = ${exceptionDate} AND shift.version = 2
+    `;
+    expect(stored).toEqual([{ date: exceptionDate, dataType: "date" }]);
   });
 });

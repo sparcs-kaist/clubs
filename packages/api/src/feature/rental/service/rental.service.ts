@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 import type { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma";
-import { Prisma, type RentalReservation } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
 
@@ -25,7 +25,11 @@ import {
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 
-import { RentalRepository } from "../repository/rental.repository";
+import {
+  RentalRepository,
+  type RentalReservationRow,
+  type RentalReservationUpdate,
+} from "../repository/rental.repository";
 import {
   activeRentalStatus,
   addRentalDays,
@@ -359,7 +363,7 @@ export class RentalService {
     });
   }
 
-  private async findApprovedExtension(row: RentalReservation) {
+  private async findApprovedExtension(row: RentalReservationRow) {
     if (row.approvedExtensionId === null) return null;
     const extension = await this.repository.findExtension(
       row.id,
@@ -385,19 +389,19 @@ export class RentalService {
     return { row, item };
   }
 
-  private async otherReservations(row: RentalReservation) {
+  private async otherReservations(row: RentalReservationRow) {
     const reservations = await this.repository.listActiveReservations([
       row.itemId,
     ]);
     return reservations.filter(reservation => reservation.id !== row.id);
   }
 
-  private requireStatus(row: RentalReservation, status: RentalStatus) {
+  private requireStatus(row: RentalReservationRow, status: RentalStatus) {
     if (row.status !== status)
       throw new ConflictException("INVALID_RENTAL_STATE");
   }
 
-  private requireActive(row: RentalReservation) {
+  private requireActive(row: RentalReservationRow) {
     if (!activeRentalStatus(zRentalStatus.parse(row.status))) {
       throw new ConflictException("INVALID_RENTAL_STATE");
     }
@@ -405,8 +409,8 @@ export class RentalService {
 
   @Transactional()
   private async change(
-    row: RentalReservation,
-    data: Prisma.RentalReservationUncheckedUpdateManyInput,
+    row: RentalReservationRow,
+    data: RentalReservationUpdate,
   ) {
     const updated = await this.repository.changeReservation(
       row.id,

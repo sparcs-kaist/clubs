@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
 } from "@nestjs/common";
-import type { RentalReservation } from "@prisma/client";
 
 import type {
   RentalPeriodPolicy,
@@ -13,6 +12,7 @@ import type {
 
 import { OfficeHoursPublicService } from "@sparcs-clubs/api/feature/office-hours/publicService/office-hours.public.service";
 
+import type { RentalReservationRow } from "../repository/rental.repository";
 import { addRentalDays, regularReturnLimit } from "./rental-policy";
 
 export type OfficeWindow = Awaited<
@@ -37,13 +37,13 @@ export function serializeWindow(
 }
 
 export function pickupKey(
-  rental: Pick<RentalReservation, "pickupDate" | "pickupVersion">,
+  rental: Pick<RentalReservationRow, "pickupDate" | "pickupVersion">,
 ): RentalSlotSelection {
   return { date: rental.pickupDate, version: rental.pickupVersion };
 }
 
 export function returnKey(
-  rental: Pick<RentalReservation, "returnDate" | "returnVersion">,
+  rental: Pick<RentalReservationRow, "returnDate" | "returnVersion">,
 ): RentalSlotSelection {
   return { date: rental.returnDate, version: rental.returnVersion };
 }
