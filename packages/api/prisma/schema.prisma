@@ -1374,7 +1374,7 @@ model AuthSsoLoginFailureLog {
 }
 
 model OfficeHour {
-  date                 String   @db.Char(10)
+  date                 DateTime @db.Date
   opensAt              DateTime @map("opens_at") @db.DateTime(0)
   closesAt             DateTime @map("closes_at") @db.DateTime(0)
   isClosed             Boolean  @default(false) @map("is_closed")
@@ -1418,11 +1418,11 @@ model RentalReservation {
   quantity                Int       @db.UnsignedInt
   status                  String    @db.VarChar(16)
   durationPolicy          String    @map("duration_policy") @db.VarChar(30)
-  regularReturnLimitDate  String    @map("regular_return_limit_date") @db.Char(10)
+  regularReturnLimitDate  DateTime  @map("regular_return_limit_date") @db.Date
   approvedExtensionId     Int?      @map("approved_extension_id")
-  pickupDate              String    @map("pickup_date") @db.Char(10)
+  pickupDate              DateTime  @map("pickup_date") @db.Date
   pickupVersion           Int       @map("pickup_version")
-  returnDate              String    @map("return_date") @db.Char(10)
+  returnDate              DateTime  @map("return_date") @db.Date
   returnVersion           Int       @map("return_version")
   clientRequestId         String    @map("client_request_id") @db.Char(36)
   requestFingerprint      String    @map("request_fingerprint") @db.Char(64)
@@ -1460,9 +1460,9 @@ model RentalReservation {
 model RentalExtension {
   id                     Int      @id @default(autoincrement())
   reservationId          Int      @map("reservation_id")
-  previousReturnDate     String   @map("previous_return_date") @db.Char(10)
+  previousReturnDate     DateTime @map("previous_return_date") @db.Date
   previousReturnVersion  Int      @map("previous_return_version")
-  newReturnDate          String   @map("new_return_date") @db.Char(10)
+  newReturnDate          DateTime @map("new_return_date") @db.Date
   newReturnVersion       Int      @map("new_return_version")
   reason                 String   @db.VarChar(500)
   processedByExecutiveId Int      @map("processed_by_executive_id")

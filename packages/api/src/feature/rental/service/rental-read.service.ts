@@ -5,10 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import type {
-  RentalItem as ItemRow,
-  RentalReservation as ReservationRow,
-} from "@prisma/client";
+import type { RentalItem as ItemRow } from "@prisma/client";
 import type { z } from "zod";
 
 import {
@@ -27,7 +24,10 @@ import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.publi
 import { OfficeHoursPublicService } from "@sparcs-clubs/api/feature/office-hours/publicService/office-hours.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
-import { RentalRepository } from "../repository/rental.repository";
+import {
+  RentalRepository,
+  type RentalReservationRow as ReservationRow,
+} from "../repository/rental.repository";
 import {
   beforeSameDayReturns,
   checkoutQuantity,
