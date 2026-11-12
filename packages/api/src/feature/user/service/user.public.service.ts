@@ -233,6 +233,12 @@ export default class UserPublicService {
     return students;
   }
 
+  fetchStudentSummariesIncludingDeleted(studentIds: number[]) {
+    return this.oldStudentRepository.fetchStudentSummariesIncludingDeleted(
+      studentIds,
+    );
+  }
+
   async fetchCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
     const today = this.clock.now();
     const executives =
