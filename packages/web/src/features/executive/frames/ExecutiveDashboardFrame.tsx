@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -18,6 +19,7 @@ const DashboardSectionInner = styled.div`
 `;
 
 const ExecutiveDashboardFrame = () => {
+  const t = useTranslations("path");
   const isLoading = false;
   const isError = false;
 
@@ -118,6 +120,19 @@ const ExecutiveDashboardFrame = () => {
             </FlexWrapper>
           </DashboardSectionInner>
         </FlexWrapper>
+      </FlexWrapper>
+      <FlexWrapper direction="column" gap={20}>
+        <SectionTitle>{t("대여 사업")}</SectionTitle>
+        <DashboardSectionInner>
+          <DashboardButton
+            text={t("물품 대여 관리")}
+            link="/executive/rental-business"
+          />
+          <DashboardButton
+            text={t("상근일 관리")}
+            link="/executive/office-hours"
+          />
+        </DashboardSectionInner>
       </FlexWrapper>
       <FlexWrapper direction="column" gap={20}>
         <SectionTitle>로그인 갈아끼우기</SectionTitle>

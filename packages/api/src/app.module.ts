@@ -16,9 +16,11 @@ import DivisionModule from "./feature/division/division.module";
 import FileModule from "./feature/file/file.module";
 import FundingModule from "./feature/funding/funding.module";
 import { NoticeModule } from "./feature/notice/notice.module";
+import { OfficeHoursModule } from "./feature/office-hours/office-hours.module";
 import { OperationCommitteeModule } from "./feature/operation-committee/operation-committee.module";
 import { OverviewModule } from "./feature/overview/overview.module";
 import RegistrationModule from "./feature/registration/registration.module";
+import { RentalModule } from "./feature/rental/rental.module";
 import { SemesterModule } from "./feature/semester/semester.module";
 import UserModule from "./feature/user/user.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -39,6 +41,8 @@ import { PrismaModule } from "./prisma/prisma.module";
     FileModule,
     FundingModule,
     NoticeModule,
+    OfficeHoursModule,
+    RentalModule,
     RegistrationModule,
     UserModule,
     ActivityCertificateModule,
