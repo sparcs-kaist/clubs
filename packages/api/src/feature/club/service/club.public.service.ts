@@ -402,6 +402,10 @@ export default class ClubPublicService {
     return result;
   }
 
+  fetchNamesIncludingDeleted(ids: number[]) {
+    return this.clubRepository.fetchNamesIncludingDeleted(ids);
+  }
+
   async fetchSummaries(
     ids: number[],
     semesterIds?: number[],
@@ -433,6 +437,14 @@ export default class ClubPublicService {
     if (result.length === 0) return null;
     const club = await this.clubOldRepository.fetchSummary(result[0].clubId);
     return club;
+  }
+
+  async findStudentClubDelegates(studentId: number): Promise<IClubSummary[]> {
+    const delegates =
+      await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
+    if (delegates.length === 0) return [];
+    const clubIds = [...new Set(delegates.map(delegate => delegate.clubId))];
+    return this.fetchSummaries(clubIds);
   }
 
   async makeClubSummaryResponse(
