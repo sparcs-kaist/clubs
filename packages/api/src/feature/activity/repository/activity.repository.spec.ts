@@ -1,4 +1,7 @@
-import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
+import {
+  ActivityStatusEnum,
+  ActivityTypeEnum,
+} from "@clubs/interface/common/enum/activity.enum";
 
 import ActivityRepository from "./activity.repository";
 
@@ -9,6 +12,52 @@ jest.mock("@sparcs-clubs/api/env", () => ({
 }));
 
 describe("ActivityRepository", () => {
+  describe("fetchCommentedSummaries", () => {
+    it("returns the denormalized final reviewer when filtering by the first reviewer", async () => {
+      const firstReviewerId = 7;
+      const finalReviewerId = 8;
+      const now = new Date("2026-08-28T00:00:00.000Z");
+      const findMany = jest.fn().mockResolvedValue([
+        {
+          id: 42,
+          activityStatusEnumId: ActivityStatusEnum.Approved,
+          activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
+          clubId: 3,
+          name: "weekly seminar",
+          commentedAt: now,
+          editedAt: now,
+          updatedAt: now,
+          chargedExecutiveId: firstReviewerId,
+          commentedExecutiveId: finalReviewerId,
+        },
+      ]);
+      const repository = new ActivityRepository({
+        activity: { findMany },
+      } as unknown as ConstructorParameters<typeof ActivityRepository>[0]);
+
+      const [result] =
+        await repository.fetchCommentedSummaries(firstReviewerId);
+
+      expect(findMany).toHaveBeenCalledWith({
+        select: expect.objectContaining({
+          commentedExecutiveId: true,
+        }),
+        where: {
+          deletedAt: null,
+          OR: [
+            { chargedExecutiveId: firstReviewerId },
+            {
+              activityFeedbacks: {
+                some: { executiveId: firstReviewerId, deletedAt: null },
+              },
+            },
+          ],
+        },
+      });
+      expect(result.commentedExecutive).toEqual({ id: finalReviewerId });
+    });
+  });
+
   describe("insertActivity", () => {
     it("creates an activity report without a professor sign status dependency", async () => {
       const tx = {

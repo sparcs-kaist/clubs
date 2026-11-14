@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import {
   IFundingCommentCreate,
   MFundingComment,
@@ -19,8 +21,17 @@ export class FundingCommentRepository extends BaseSingleTableRepository<
   IFundingCommentCreate,
   FundingCommentQuery
 > {
-  constructor() {
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {
     super("fundingFeedback", MFundingComment);
+  }
+
+  async createExecutiveReviewComment(
+    param: IFundingCommentCreate,
+  ): Promise<MFundingComment> {
+    const [result] = await this.createImplementation([param], this.txHost.tx);
+    return result;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
