@@ -134,7 +134,7 @@ export class AuthService {
       return this.completeCopiedSignIn(session, diagnostic);
     }
 
-    if (!this.appConfigService.isLocal) {
+    if (this.appConfigService.isProduction) {
       if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
         logger.warn("Missing required SSO data", {
           hasSid: !!ssoProfile.sid,
