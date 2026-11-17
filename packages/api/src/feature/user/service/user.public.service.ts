@@ -43,6 +43,10 @@ export default class UserPublicService {
     return this.loginIdentityService.findLoginIdentity(userId);
   }
 
+  findUniqueLoginIdentityByEmail(email: string) {
+    return this.loginIdentityService.findUniqueLoginIdentityByEmail(email);
+  }
+
   isActiveUser(userId: number) {
     return this.loginIdentityService.isActiveUser(userId);
   }

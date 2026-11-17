@@ -61,6 +61,21 @@ export class AppConfigService {
     return this.getOptionalString("SSO_SECRET_KEY");
   }
 
+  get copyLoginSsoUid(): string | undefined {
+    const deployment = this.getOptional("CLUBS_API_DEPLOYMENT");
+    if (deployment === "production") return undefined;
+
+    const { nodeEnv } = this;
+    const isStage = deployment === "stage";
+    const isLocal = nodeEnv === "local";
+    const isDevelopment = nodeEnv === "development";
+    if (!isStage && !isLocal && !isDevelopment) return undefined;
+
+    const uid = this.getOptional("COPY_LOGIN_SSO_UID")?.trim();
+    if (!uid) return undefined;
+    return /^test/i.test(uid) ? undefined : uid;
+  }
+
   get jwtSecret(): string {
     return this.getOptionalString("JWT_SECRET");
   }

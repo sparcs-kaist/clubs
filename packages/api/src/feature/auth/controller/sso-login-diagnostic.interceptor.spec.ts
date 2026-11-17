@@ -55,6 +55,7 @@ describe("SSO failure logging HTTP boundary", () => {
   };
   const config = {
     isLocal: false,
+    copyLoginSsoUid: undefined as string | undefined,
     ssoSecretKey: "client-private-secret",
     secretKey: "session-private-secret",
     jwtSecret: "jwt-private-secret",
@@ -66,7 +67,10 @@ describe("SSO failure logging HTTP boundary", () => {
   const repository = {
     createRefreshTokenRecord: jest.fn(),
   };
-  const users = { syncSsoIdentity: jest.fn() };
+  const users = {
+    syncSsoIdentity: jest.fn(),
+    findUniqueLoginIdentityByEmail: jest.fn(),
+  };
   const semesters = { loadForLogin: jest.fn() };
   const logs = { create: jest.fn() };
   const sso = { getUserInfo: jest.fn(), getLoginParams: jest.fn() };
@@ -133,6 +137,7 @@ describe("SSO failure logging HTTP boundary", () => {
     jest.resetAllMocks();
     session = { ssoState: "expected-state", next: "/welcome" };
     config.isLocal = false;
+    config.copyLoginSsoUid = undefined;
     sso.getUserInfo.mockResolvedValue(profile());
     sso.getLoginParams.mockReturnValue({
       url: "https://sso.example.test",
@@ -168,6 +173,146 @@ describe("SSO failure logging HTTP boundary", () => {
     expect(response.headers.location).toBe("/");
     expect(response.headers["set-cookie"]).toHaveLength(3);
     expect(logs.create).not.toHaveBeenCalled();
+  });
+
+  describe("copied login identity", () => {
+    const copiedIdentity = {
+      id: 77,
+      sid: "copied-sid",
+      email: "gerbera3090@kaist.ac.kr",
+      name: "복제 계정",
+      master: { id: 66, number: 20262001 },
+    };
+    const linkedSsoProfile = () => ({ ...profile(), email: "gb@sparcs.org" });
+    const profileWithoutV2 = () => ({
+      ...linkedSsoProfile(),
+      kaist_v2_info: null,
+    });
+
+    beforeEach(() => {
+      config.copyLoginSsoUid = profile().uid;
+      sso.getUserInfo.mockResolvedValue(profileWithoutV2());
+      users.findUniqueLoginIdentityByEmail.mockResolvedValue(copiedIdentity);
+    });
+
+    it.each([null, undefined])(
+      "issues tokens for the stored identity when the V2 profile is %s",
+      async kaistV2Info => {
+        sso.getUserInfo.mockResolvedValue({
+          ...linkedSsoProfile(),
+          kaist_v2_info: kaistV2Info,
+        });
+        const response = await callback()
+          .expect(302)
+          .expect("Location", "/welcome");
+
+        expect(response.headers["set-cookie"]).toHaveLength(3);
+        expect(sso.getUserInfo).toHaveBeenCalledTimes(1);
+        expect(users.findUniqueLoginIdentityByEmail).toHaveBeenCalledWith(
+          copiedIdentity.email,
+        );
+        expect(users.syncSsoIdentity).not.toHaveBeenCalled();
+        expect(jwt.sign).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({
+            id: copiedIdentity.id,
+            sid: copiedIdentity.sid,
+            email: copiedIdentity.email,
+            type: "master",
+            studentId: copiedIdentity.master.id,
+          }),
+          expect.objectContaining({ secret: config.accessTokenSecretKey }),
+        );
+        expect(jwt.sign).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({
+            id: copiedIdentity.id,
+            sid: copiedIdentity.sid,
+          }),
+          expect.objectContaining({ secret: config.refreshTokenSecretKey }),
+        );
+        expect(repository.createRefreshTokenRecord).toHaveBeenCalledWith(
+          copiedIdentity.id,
+          "private-issued-token",
+          new Date(now.getTime() + config.refreshTokenExpiresInMs),
+        );
+      },
+    );
+
+    it.each([
+      ["another UID", { uid: "other-uid" }],
+      ["another SPARCS address", { email: "someone@sparcs.org" }],
+      ["no service SID", { sid: "" }],
+      ["malformed V2", { kaist_v2_info: "{not-json" }],
+      ["boolean V2", { kaist_v2_info: false }],
+    ])("rejects the fallback for %s", async (_reason, fields) => {
+      sso.getUserInfo.mockResolvedValue({ ...profileWithoutV2(), ...fields });
+      const response = await callback().expect(302);
+
+      expect(response.headers.location).toContain("/errors/not-iam-login");
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+      expect(repository.createRefreshTokenRecord).not.toHaveBeenCalled();
+    });
+
+    it("rejects upstream V2 parse failures even when the returned profile is null", async () => {
+      sso.getUserInfo.mockImplementation(async (_code, diagnostic) => {
+        Object.assign(diagnostic, { sso: { profileState: "v2_parse_failed" } });
+        return profileWithoutV2();
+      });
+      const response = await callback().expect(302);
+
+      expect(response.headers.location).toContain("/errors/not-iam-login");
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+    });
+
+    it("rejects the fallback without a configured UID even if the SSO UID is missing", async () => {
+      config.copyLoginSsoUid = undefined;
+      sso.getUserInfo.mockResolvedValue({
+        ...profileWithoutV2(),
+        uid: undefined,
+      });
+      const response = await callback().expect(302);
+
+      expect(response.headers.location).toContain("/errors/not-iam-login");
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+    });
+
+    it("rejects a mismatched state before verifying the SSO code", async () => {
+      session.ssoState = "mismatched-state";
+      const response = await callback().expect(302);
+
+      expect(response.headers.location).toContain("/errors/not-iam-login");
+      expect(sso.getUserInfo).not.toHaveBeenCalled();
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+    });
+
+    it("rejects an SSO code the identity provider could not verify", async () => {
+      sso.getUserInfo.mockRejectedValue(new Error("invalid SSO code"));
+      await callback().expect(500);
+
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+      expect(jwt.sign).not.toHaveBeenCalled();
+    });
+
+    it.each([null, { ...copiedIdentity, sid: null }])(
+      "issues no tokens without a usable stored identity (%p)",
+      async identity => {
+        users.findUniqueLoginIdentityByEmail.mockResolvedValue(identity);
+        const response = await callback().expect(404);
+
+        expect(response.headers["set-cookie"]).toBeUndefined();
+        expect(jwt.sign).not.toHaveBeenCalled();
+        expect(repository.createRefreshTokenRecord).not.toHaveBeenCalled();
+      },
+    );
+
+    it("syncs a valid V2 profile for the same SSO identity", async () => {
+      sso.getUserInfo.mockResolvedValue(linkedSsoProfile());
+      await callback().expect(302).expect("Location", "/welcome");
+
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+      expect(users.syncSsoIdentity).toHaveBeenCalledTimes(1);
+    });
   });
 
   it.each([undefined, "mismatched-state"])(

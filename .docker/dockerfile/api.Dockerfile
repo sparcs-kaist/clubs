@@ -32,6 +32,9 @@ RUN pnpm dlx turbo run build --filter=api
 
 FROM base AS runner
 
+ARG CLUBS_API_DEPLOYMENT=production
+ENV CLUBS_API_DEPLOYMENT=${CLUBS_API_DEPLOYMENT}
+
 WORKDIR /app
 COPY --from=builder /app/ .
 

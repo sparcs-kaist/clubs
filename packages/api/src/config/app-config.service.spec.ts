@@ -27,4 +27,53 @@ describe("AppConfigService", () => {
     expect(appConfigService.s3BucketName).toBe("clubs-bucket");
     expect(appConfigService.jwtSecret).toBeUndefined();
   });
+
+  describe("copyLoginSsoUid", () => {
+    const uid = "personal-sso-uid";
+    const deployedConfig = (
+      nodeEnv: string,
+      deployment?: string,
+      configuredUid?: string,
+    ) => {
+      const values = {
+        NODE_ENV: nodeEnv,
+        CLUBS_API_DEPLOYMENT: deployment,
+        COPY_LOGIN_SSO_UID: configuredUid,
+      };
+      const configService = {
+        getOrThrow: (key: keyof typeof values) => values[key],
+        get: (key: keyof typeof values) => values[key],
+      } as unknown as ConfigService;
+      return new AppConfigService(configService);
+    };
+
+    it.each<[string, string | undefined]>([
+      ["local", undefined],
+      ["development", undefined],
+      ["production", "stage"],
+    ])("reads the configured UID in %s (%s)", (nodeEnv, deployment) => {
+      expect(
+        deployedConfig(nodeEnv, deployment, ` ${uid} `).copyLoginSsoUid,
+      ).toBe(uid);
+    });
+
+    it.each<[string, string | undefined]>([
+      ["production", undefined],
+      ["development", "production"],
+      ["test", undefined],
+    ])("disables copied login in %s (%s)", (nodeEnv, deployment) => {
+      expect(
+        deployedConfig(nodeEnv, deployment, uid).copyLoginSsoUid,
+      ).toBeUndefined();
+    });
+
+    it.each([undefined, "  ", "  TeSt-mock-uid  "])(
+      "ignores an absent, blank or shared test UID (%s)",
+      configuredUid => {
+        expect(
+          deployedConfig("production", "stage", configuredUid).copyLoginSsoUid,
+        ).toBeUndefined();
+      },
+    );
+  });
 });
