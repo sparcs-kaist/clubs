@@ -130,22 +130,8 @@ export class AuthService {
     diagnostic.sso ??= { profile: captureSsoProfile(ssoProfile) };
     diagnostic.stage = "sso_profile_validation";
 
-    const { copyLoginSsoUid } = this.appConfigService;
-    if (copyLoginSsoUid) {
-      const matchesUid = ssoProfile.uid === copyLoginSsoUid;
-      const matchesSparcsEmail = ssoProfile.email === "gb@sparcs.org";
-      const hasSid = Boolean(ssoProfile.sid);
-      const kaistProfileMissing = (ssoProfile.kaist_v2_info ?? null) === null;
-      const failedToParse = diagnostic.sso.profileState === "v2_parse_failed";
-      if (
-        matchesUid &&
-        matchesSparcsEmail &&
-        hasSid &&
-        kaistProfileMissing &&
-        !failedToParse
-      ) {
-        return this.completeCopiedSignIn(session, diagnostic);
-      }
+    if (this.appConfigService.isDevelopment) {
+      return this.completeCopiedSignIn(session, diagnostic);
     }
 
     if (!this.appConfigService.isLocal) {
