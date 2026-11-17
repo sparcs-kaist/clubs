@@ -55,6 +55,7 @@ describe("SSO failure logging HTTP boundary", () => {
   };
   const config = {
     isLocal: false,
+    isDevelopment: false,
     ssoSecretKey: "client-private-secret",
     secretKey: "session-private-secret",
     jwtSecret: "jwt-private-secret",
@@ -66,7 +67,10 @@ describe("SSO failure logging HTTP boundary", () => {
   const repository = {
     createRefreshTokenRecord: jest.fn(),
   };
-  const users = { syncSsoIdentity: jest.fn() };
+  const users = {
+    syncSsoIdentity: jest.fn(),
+    findUniqueLoginIdentityByEmail: jest.fn(),
+  };
   const semesters = { loadForLogin: jest.fn() };
   const logs = { create: jest.fn() };
   const sso = { getUserInfo: jest.fn(), getLoginParams: jest.fn() };
@@ -133,6 +137,7 @@ describe("SSO failure logging HTTP boundary", () => {
     jest.resetAllMocks();
     session = { ssoState: "expected-state", next: "/welcome" };
     config.isLocal = false;
+    config.isDevelopment = false;
     sso.getUserInfo.mockResolvedValue(profile());
     sso.getLoginParams.mockReturnValue({
       url: "https://sso.example.test",
@@ -167,7 +172,85 @@ describe("SSO failure logging HTTP boundary", () => {
     const response = await callback().expect(302);
     expect(response.headers.location).toBe("/");
     expect(response.headers["set-cookie"]).toHaveLength(3);
+    expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
     expect(logs.create).not.toHaveBeenCalled();
+  });
+
+  describe("copied login identity in development", () => {
+    const copiedIdentity = {
+      id: 77,
+      sid: "copied-sid",
+      email: "gerbera3090@kaist.ac.kr",
+      name: "복제 계정",
+      master: { id: 66, number: 20262001 },
+    };
+
+    beforeEach(() => {
+      config.isDevelopment = true;
+      sso.getUserInfo.mockResolvedValue({
+        ...profile(),
+        email: "gb@sparcs.org",
+        kaist_v2_info: null,
+      });
+      users.findUniqueLoginIdentityByEmail.mockResolvedValue(copiedIdentity);
+    });
+
+    it("issues tokens for the stored identity after SSO verification", async () => {
+      const response = await callback()
+        .expect(302)
+        .expect("Location", "/welcome");
+
+      expect(response.headers["set-cookie"]).toHaveLength(3);
+      expect(sso.getUserInfo).toHaveBeenCalledTimes(1);
+      expect(users.findUniqueLoginIdentityByEmail).toHaveBeenCalledWith(
+        copiedIdentity.email,
+      );
+      expect(users.syncSsoIdentity).not.toHaveBeenCalled();
+      expect(jwt.sign).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          id: copiedIdentity.id,
+          sid: copiedIdentity.sid,
+          email: copiedIdentity.email,
+          type: "master",
+          studentId: copiedIdentity.master.id,
+        }),
+        expect.objectContaining({ secret: config.accessTokenSecretKey }),
+      );
+      expect(jwt.sign).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          id: copiedIdentity.id,
+          sid: copiedIdentity.sid,
+        }),
+        expect.objectContaining({ secret: config.refreshTokenSecretKey }),
+      );
+      expect(repository.createRefreshTokenRecord).toHaveBeenCalledWith(
+        copiedIdentity.id,
+        "private-issued-token",
+        new Date(now.getTime() + config.refreshTokenExpiresInMs),
+      );
+    });
+
+    it("rejects an SSO code the identity provider could not verify", async () => {
+      sso.getUserInfo.mockRejectedValue(new Error("invalid SSO code"));
+      await callback().expect(500);
+
+      expect(users.findUniqueLoginIdentityByEmail).not.toHaveBeenCalled();
+      expect(jwt.sign).not.toHaveBeenCalled();
+    });
+
+    it.each([null, { ...copiedIdentity, sid: null }])(
+      "issues no tokens without a usable stored identity (%p)",
+      async identity => {
+        users.findUniqueLoginIdentityByEmail.mockResolvedValue(identity);
+        const response = await callback().expect(404);
+
+        expect(response.headers["set-cookie"]).toBeUndefined();
+        expect(jwt.sign).not.toHaveBeenCalled();
+        expect(repository.createRefreshTokenRecord).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it.each([undefined, "mismatched-state"])(

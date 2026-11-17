@@ -17,6 +17,14 @@ export class UserLoginIdentityRepository {
       .then(takeOne);
   }
 
+  async findUniqueActiveUserByEmail(email: string) {
+    const users = await this.txHost.tx.user.findMany({
+      where: { email, deletedAt: null },
+      take: 2,
+    });
+    return users.length === 1 ? users[0] : null;
+  }
+
   findUserById(id: number) {
     return this.txHost.tx.user
       .findMany({ where: { id, deletedAt: null } })

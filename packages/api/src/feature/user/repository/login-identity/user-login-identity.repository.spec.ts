@@ -21,7 +21,7 @@ const createRepository = () => {
     update: jest.fn().mockResolvedValue({ id: 1 }),
   });
   const tx = {
-    user: upsert(),
+    user: { ...upsert(), findMany: jest.fn() },
     student: upsert(),
     studentT: upsert(),
     professor: upsert(),
@@ -74,6 +74,26 @@ const prismaError = (code: string) =>
   });
 
 describe("UserLoginIdentityRepository", () => {
+  it.each([
+    { rows: [], expected: null },
+    { rows: [{ id: 1 }], expected: { id: 1 } },
+    { rows: [{ id: 1 }, { id: 2 }], expected: null },
+  ])(
+    "requires a unique active email match ($rows.length rows)",
+    async ({ rows, expected }) => {
+      const { repository, tx } = createRepository();
+      tx.user.findMany.mockResolvedValue(rows);
+
+      await expect(
+        repository.findUniqueActiveUserByEmail(identity.email),
+      ).resolves.toEqual(expected);
+      expect(tx.user.findMany).toHaveBeenCalledWith({
+        where: { email: identity.email, deletedAt: null },
+        take: 2,
+      });
+    },
+  );
+
   it("matches users by sid even when another user has the requested email, and preserves deleted rows", async () => {
     const { repository, tx } = createRepository();
     const deletedAt = new Date("2025-01-01T00:00:00.000Z");
