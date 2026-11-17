@@ -56,6 +56,9 @@ describe("SSO failure logging HTTP boundary", () => {
   const config = {
     isLocal: false,
     isDevelopment: false,
+    get isProduction() {
+      return !this.isLocal && !this.isDevelopment;
+    },
     ssoSecretKey: "client-private-secret",
     secretKey: "session-private-secret",
     jwtSecret: "jwt-private-secret",
