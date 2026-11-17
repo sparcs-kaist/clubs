@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(["local", "development", "production", "test"]),
-  CLUBS_API_DEPLOYMENT: z.enum(["stage", "production"]).optional(),
   SERVER_PORT: z.coerce.number(),
   SECRET_KEY: z.string(),
   DATABASE_URL: z.string(),
@@ -11,7 +10,6 @@ export const envSchema = z.object({
   CLIENT_PORT: z.string().optional(),
   SSO_CLIENT_ID: z.string().optional(),
   SSO_SECRET_KEY: z.string().optional(),
-  COPY_LOGIN_SSO_UID: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   JWT_EXPIRES_IN: z.string().optional(),
   ACCESS_TOKEN_SECRET_KEY: z.string().optional(),
