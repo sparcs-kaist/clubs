@@ -8,6 +8,7 @@ export const envSchema = z.object({
   TEST_DATABASE_URL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   CLIENT_PORT: z.string().optional(),
+  FRONT_URL: z.string().optional(),
   SSO_CLIENT_ID: z.string().optional(),
   SSO_SECRET_KEY: z.string().optional(),
   JWT_SECRET: z.string().optional(),
