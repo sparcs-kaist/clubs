@@ -468,9 +468,7 @@ describe("SSO failure logging HTTP boundary", () => {
       new Error("connection password=private-db-secret"),
     );
     session.ssoState = "mismatch";
-    await callback()
-      .expect(302)
-      .expect("Location", "https://clubs.sparcs.org/errors/not-iam-login");
+    await callback().expect(302).expect("Location", "/errors/not-iam-login");
     expect(logs.create).toHaveBeenCalledTimes(1);
     expect(
       JSON.stringify((logger.error as jest.Mock).mock.calls),

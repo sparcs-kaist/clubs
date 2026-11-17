@@ -83,9 +83,13 @@ export class AuthController {
     }
 
     if (!isKaistIamLogin) {
-      const iamErrorRedirectionUrl = this.appConfigService.isLocal
-        ? "http://localhost:3000/errors/not-iam-login"
-        : "https://clubs.sparcs.org/errors/not-iam-login";
+      const { frontUrl, isLocal } = this.appConfigService;
+      const errorPath = "/errors/not-iam-login";
+      const frontend =
+        frontUrl || (isLocal ? "http://localhost:3000" : undefined);
+      const iamErrorRedirectionUrl = frontend
+        ? new URL(errorPath, frontend).href
+        : errorPath;
       logger.info(
         `Can't find kaist iam info. Redirecting to ${iamErrorRedirectionUrl}`,
       );

@@ -32,6 +32,9 @@ RUN pnpm dlx turbo run build --filter=api
 
 FROM base AS runner
 
+ARG FRONT_URL=https://clubs.sparcs.org
+ENV FRONT_URL=${FRONT_URL}
+
 WORKDIR /app
 COPY --from=builder /app/ .
 
