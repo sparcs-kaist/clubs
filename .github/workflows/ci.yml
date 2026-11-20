@@ -47,7 +47,8 @@ jobs:
           # Hash the checkout before pnpm adds node_modules to each package.
           key: >-
             ${{ runner.os }}-${{ runner.arch }}-nextjs-${{ matrix.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{
-            hashFiles('packages/web/**', 'packages/domain/**', 'packages/interface/**', 'turbo.json', 'pnpm-workspace.yaml', 'package.json') }}
+            hashFiles('packages/web/**', 'packages/domain/**', 'packages/interface/**',
+            'packages/typescript-config/**', 'turbo.json', 'pnpm-workspace.yaml', 'package.json') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-nextjs-${{ matrix.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - *install-pnpm
