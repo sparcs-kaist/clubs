@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: AR-002 PR CI
 
 on:
@@ -12,35 +9,55 @@ on:
 jobs:
   lint-and-format:
     name: Lint and Format
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: &runner blacksmith-4vcpu-ubuntu-2404
 
-    strategy:
+    strategy: &node-matrix
       matrix:
         node-version: [22.22.1]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v6
-      - name: Use Node.js ${{ matrix.node-version }}
+      - &checkout
+        uses: actions/checkout@v6
+      - &setup-node
+        name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install pnpm
+      - &install-pnpm
+        name: Install pnpm dependencies
         uses: pnpm/action-setup@v6
         with:
+          cache: true
           run_install: true
       - name: Check coding styles and formatting
         run: pnpm lint
-      - name: Check build passing
-        run: pnpm build
+
+  web-build:
+    name: Web Build
+    runs-on: *runner
+    strategy: *node-matrix
+
+    steps:
+      - *checkout
+      - *setup-node
+      - name: Cache Next.js build data
+        uses: actions/cache@v5
+        with:
+          path: packages/web/.next/cache
+          # Hash the checkout before pnpm adds node_modules to each package.
+          key: >-
+            ${{ runner.os }}-${{ runner.arch }}-nextjs-${{ matrix.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{
+            hashFiles('packages/web/**', 'packages/domain/**', 'packages/interface/**', 'turbo.json', 'pnpm-workspace.yaml', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-nextjs-${{ matrix.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - *install-pnpm
+      - name: Build web
+        run: pnpm exec turbo run build --filter=web
 
   integration-tests:
     name: Integration Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    strategy:
-      matrix:
-        node-version: [22.22.1]
+    runs-on: *runner
+    strategy: *node-matrix
 
     services:
       mysql:
@@ -57,21 +74,13 @@ jobs:
           --health-retries=5
 
     steps:
-      - uses: actions/checkout@v6
-      
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-          
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          run_install: true
+      - *checkout
+      - *setup-node
+      - *install-pnpm
 
-      - name: Build packages
-        run: pnpm build
-        
+      - name: Build API
+        run: pnpm build:api
+
       - name: Create .env file for tests
         run: |
           cat > .env << EOF
@@ -86,13 +95,13 @@ jobs:
           TEST_DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test
           DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test
           EOF
-        
+
       - name: Run database migrations
         run: |
           cd packages/api
           DATABASE_URL=mysql://root:test_password_123@127.0.0.1:3307/clubs_test \
           pnpm exec prisma db push --skip-generate
-          
+
       - name: Run Integration tests
         run: |
           NODE_ENV=test \
