@@ -19,6 +19,8 @@ import {
 import {
   addRentalDays,
   formatRentalSlot,
+  isSameRentalSlot,
+  rentalSlotSelection,
   todayRentalDate,
 } from "../utils/rentalSchedule";
 import {
@@ -86,8 +88,7 @@ const ScheduleForm = ({
       slot => !slot.isClosed && new Date(slot.closesAt).getTime() > Date.now(),
     ) ?? [];
   const pickupSlots = slots.filter(
-    slot =>
-      slot.date !== order.pickup.date || slot.version !== order.pickup.version,
+    slot => !isSameRentalSlot(slot, order.pickup),
   );
   const pickup = pickupSlots.find(slot => slot.date === pickupDate);
   const nextPickupDate = pickup?.date ?? order.pickup.date;
@@ -116,20 +117,14 @@ const ScheduleForm = ({
         slot =>
           regularLimit !== undefined &&
           slot.date <= regularLimit &&
-          (slot.date !== order.return.date ||
-            slot.version !== order.return.version),
+          !isSameRentalSlot(slot, order.return),
       );
   const returnSlot = returnSlots.find(slot => slot.date === returnDate);
   const keepReturn = Boolean(
     pickup &&
     regularLimit &&
     order.return.date <= regularLimit &&
-    laterSlots.some(
-      slot =>
-        slot.date === order.return.date &&
-        slot.opensAt === order.return.opensAt &&
-        slot.closesAt === order.return.closesAt,
-    ),
+    laterSlots.some(slot => isSameRentalSlot(slot, order.return)),
   );
   const canSubmit =
     (!pickupDate || Boolean(pickup)) &&
@@ -138,10 +133,7 @@ const ScheduleForm = ({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit || busy) return;
-    const nextReturn = returnSlot && {
-      date: returnSlot.date,
-      version: returnSlot.version,
-    };
+    const nextReturn = returnSlot && rentalSlotSelection(returnSlot);
     if (isExtension && nextReturn) {
       const reason = String(
         new FormData(event.currentTarget).get("reason") ?? "",
@@ -151,7 +143,7 @@ const ScheduleForm = ({
       onSubmit({
         name: "schedule",
         body: {
-          pickup: pickup && { date: pickup.date, version: pickup.version },
+          pickup: pickup && rentalSlotSelection(pickup),
           return: nextReturn,
         },
       });

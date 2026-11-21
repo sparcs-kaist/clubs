@@ -13,7 +13,6 @@ import {
   type ExecutiveRentalReservation,
   type RentalItem,
   type RentalReservation,
-  type RentalSlotSelection,
   zRentalPeriodPolicy,
   zRentalStatus,
 } from "@clubs/interface/api/rental/v2";
@@ -35,12 +34,13 @@ import {
   peakReservedQuantity,
 } from "./rental-policy";
 import {
+  bookedHourIds,
+  type BookedRental,
   type OfficeWindow,
-  pickupKey,
-  rentalDate,
   RentalScheduleService,
-  returnKey,
+  requireBookedWindow,
   serializeWindow,
+  withBookedWindows,
 } from "./rental-schedule.service";
 
 export function serializeItem(row: ItemRow): RentalItem {
@@ -60,40 +60,31 @@ function windowChanged(saved: OfficeWindow, current: OfficeWindow | undefined) {
   return +saved.closesAt !== +current.closesAt;
 }
 
-interface ReadTime {
-  now: Date;
-  date: string;
-  elapsedVersions: number[];
-}
-
-function isExpiredPickup(row: ReservationRow, time: ReadTime) {
+function isExpiredPickup(row: BookedRental, now: Date) {
   if (row.status !== "RESERVED") return false;
-  if (row.pickupDate !== time.date) return row.pickupDate < time.date;
-  return time.elapsedVersions.includes(row.pickupVersion);
+  return row.pickup.closesAt <= now;
 }
 
 function appointmentNeedsAttention(
-  row: ReservationRow,
-  pickup: OfficeWindow,
-  returned: OfficeWindow,
+  row: BookedRental,
   now: Date,
   calendar: Map<string, OfficeWindow>,
 ) {
   if (row.status === "RESERVED") {
-    if (pickup.closesAt <= now) return true;
-    if (windowChanged(pickup, calendar.get(row.pickupDate))) return true;
-    return windowChanged(returned, calendar.get(row.returnDate));
+    if (isExpiredPickup(row, now)) return true;
+    if (windowChanged(row.pickup, calendar.get(row.pickupDate))) return true;
+    return windowChanged(row.returned, calendar.get(row.returnDate));
   }
   if (row.status === "CHECKED_OUT") {
-    return windowChanged(returned, calendar.get(row.returnDate));
+    return windowChanged(row.returned, calendar.get(row.returnDate));
   }
   return false;
 }
 
 function requiresReturn(
-  row: ReservationRow,
+  row: BookedRental,
   total: number,
-  active: ReservationRow[],
+  active: BookedRental[],
 ) {
   if (row.status !== "RESERVED") return false;
   if (!hasSameDayReturn(active, row.pickupDate)) return false;
@@ -102,9 +93,9 @@ function requiresReturn(
 }
 
 function hasDependentPickup(
-  row: ReservationRow,
+  row: BookedRental,
   total: number,
-  active: ReservationRow[],
+  active: BookedRental[],
 ) {
   if (row.status !== "CHECKED_OUT") return false;
   return active.some(pickup => {
@@ -114,25 +105,20 @@ function hasDependentPickup(
 }
 
 function waitingForReturn(
-  row: ReservationRow,
-  pickup: OfficeWindow,
+  row: BookedRental,
   total: number,
-  active: ReservationRow[],
+  active: BookedRental[],
   now: Date,
 ) {
   if (row.status !== "RESERVED") return false;
-  if (pickup.opensAt > now) return false;
-  if (pickup.closesAt <= now) return false;
+  if (row.pickup.opensAt > now) return false;
+  if (row.pickup.closesAt <= now) return false;
   return checkoutQuantity(total, active, row) < row.quantity;
 }
 
-function isOverdue(row: ReservationRow, returned: OfficeWindow, now: Date) {
+function isOverdue(row: BookedRental, now: Date) {
   if (row.status !== "CHECKED_OUT") return false;
-  return returned.closesAt <= now;
-}
-
-function versionKey(window: RentalSlotSelection) {
-  return `${window.date}/${window.version}`;
+  return row.returned.closesAt <= now;
 }
 
 function requireReference<T>(value: T | undefined): T {
@@ -175,11 +161,9 @@ export class RentalReadService {
     const now = this.clock.now();
     if (pickup.closesAt <= now)
       throw new BadRequestException("INVALID_PICKUP_DATE");
-    const [active, time] = await Promise.all([
-      this.repository.listActiveReservations([itemId]),
-      this.readTime(now),
-    ]);
-    const planned = active.filter(row => !isExpiredPickup(row, time));
+    const rows = await this.repository.listActiveReservations([itemId]);
+    const active = await this.schedule.bookedRentals(rows);
+    const planned = active.filter(row => !isExpiredPickup(row, now));
     const availableWithoutSameDayReturns = beforeSameDayReturns(
       item.totalQuantity,
       planned,
@@ -203,33 +187,28 @@ export class RentalReadService {
   }
 
   async myList(studentId: number, query: RentalQuery) {
-    const time = await this.readTime();
-    const { items, ...page } = await this.repository.listReservations(
+    const now = this.clock.now();
+    const { items, ...page } = await this.listReservations(
       query,
-      time.date,
-      time.elapsedVersions,
+      now,
       studentId,
     );
-    return { ...page, items: await this.views(items, time) };
+    return { ...page, items: await this.views(items, now) };
   }
 
   async myDetail(id: number, studentId: number) {
     const row = await this.requireReservation(id);
     if (row.studentId !== studentId)
       throw new NotFoundException("RENTAL_NOT_FOUND");
-    const [view] = await this.views([row], await this.readTime());
+    const [view] = await this.views([row], this.clock.now());
     return view;
   }
 
   async executiveList(query: RentalQuery) {
-    const time = await this.readTime();
-    const { items, ...page } = await this.repository.listReservations(
-      query,
-      time.date,
-      time.elapsedVersions,
-    );
+    const now = this.clock.now();
+    const { items, ...page } = await this.listReservations(query, now);
     const [views, students] = await Promise.all([
-      this.views(items, time),
+      this.views(items, now),
       this.studentSummaries(items),
     ]);
     return {
@@ -247,10 +226,16 @@ export class RentalReadService {
   async executiveDetail(id: number) {
     const row = await this.requireReservation(id);
     const [views, extensions, students] = await Promise.all([
-      this.readTime().then(time => this.views([row], time)),
+      this.views([row], this.clock.now()),
       this.repository.listExtensions(id),
       this.studentSummaries([row]),
     ]);
+    const extensionWindows = await this.schedule.bookedWindows(
+      extensions.flatMap(extension => [
+        extension.previousReturnHourId,
+        extension.newReturnHourId,
+      ]),
+    );
     return {
       ...this.executiveView(
         row,
@@ -258,8 +243,14 @@ export class RentalReadService {
         requireReference(students.get(row.studentId)),
       ),
       extensions: extensions.map(extension => ({
-        previousReturnDate: extension.previousReturnDate,
-        newReturnDate: extension.newReturnDate,
+        previousReturnDate: requireBookedWindow(
+          extensionWindows,
+          extension.previousReturnHourId,
+        ).date,
+        newReturnDate: requireBookedWindow(
+          extensionWindows,
+          extension.newReturnHourId,
+        ).date,
         reason: extension.reason,
         processedByExecutiveId: extension.processedByExecutiveId,
         processedAt: extension.processedAt.toISOString(),
@@ -273,13 +264,24 @@ export class RentalReadService {
     return row;
   }
 
-  private async readTime(now = this.clock.now()): Promise<ReadTime> {
-    const date = rentalDate(now);
-    const versions = await this.officeHours.listDayVersions(date);
-    const elapsedVersions = versions
-      .filter(version => version.closesAt <= now)
-      .map(version => version.version);
-    return { now, date, elapsedVersions };
+  private async listReservations(
+    query: RentalQuery,
+    now: Date,
+    studentId?: number,
+  ) {
+    const [officeHourIds, overdueReturnHourIds] = await Promise.all([
+      query.officeDate === undefined
+        ? undefined
+        : this.officeHours.listIdsByDate(query.officeDate),
+      query.overdue === undefined
+        ? undefined
+        : this.officeHours.listIdsClosedBy(now),
+    ]);
+    return this.repository.listReservations(
+      query,
+      { officeHourIds, overdueReturnHourIds },
+      studentId,
+    );
   }
 
   private async studentSummaries(rows: ReservationRow[]) {
@@ -291,7 +293,7 @@ export class RentalReadService {
 
   private async views(
     rows: ReservationRow[],
-    time: ReadTime,
+    now: Date,
   ): Promise<RentalReservation[]> {
     if (rows.length === 0) return [];
     const itemIds = [...new Set(rows.map(row => row.itemId))];
@@ -299,39 +301,44 @@ export class RentalReadService {
     const extensions = rows
       .map(row => row.approvedExtensionId)
       .filter(id => id !== null);
-    const keys = rows.flatMap(row => [pickupKey(row), returnKey(row)]);
-    const dates = keys.map(key => key.date).sort();
-    const [items, active, windows, versions, clubs, approvals] =
-      await Promise.all([
-        this.repository.listItemsByIds(itemIds),
-        this.repository.listActiveReservations(itemIds),
-        this.officeHours.list(dates[0], dates[dates.length - 1]),
-        this.officeHours.listVersions(keys),
-        this.clubs.fetchNamesIncludingDeleted(clubIds),
-        this.repository.listExtensionsByIds(extensions),
-      ]);
-    const calendar = new Map(windows.map(window => [window.date, window]));
-    const history = new Map(
-      versions.map(window => [versionKey(window), window]),
+    const [items, activeRows, clubs, approvals] = await Promise.all([
+      this.repository.listItemsByIds(itemIds),
+      this.repository.listActiveReservations(itemIds),
+      this.clubs.fetchNamesIncludingDeleted(clubIds),
+      this.repository.listExtensionsByIds(extensions),
+    ]);
+    const bookedWindows = await this.schedule.bookedWindows([
+      ...bookedHourIds(rows),
+      ...bookedHourIds(activeRows),
+      ...approvals.map(approval => approval.newReturnHourId),
+    ]);
+    const booked = rows.map(row => withBookedWindows(row, bookedWindows));
+    const active = activeRows.map(row => withBookedWindows(row, bookedWindows));
+    const dates = booked
+      .flatMap(row => [row.pickupDate, row.returnDate])
+      .sort();
+    const windows = await this.officeHours.list(
+      dates[0],
+      dates[dates.length - 1],
     );
+    const calendar = new Map(windows.map(window => [window.date, window]));
     const itemsById = new Map(items.map(item => [item.id, item]));
     const clubNames = new Map(clubs.map(club => [club.id, club.nameKr]));
     const approvedLimits = new Map(
-      approvals.map(approval => [approval.id, approval.newReturnDate]),
+      approvals.map(approval => [
+        approval.id,
+        requireBookedWindow(bookedWindows, approval.newReturnHourId).date,
+      ]),
     );
 
-    return rows.map(row => {
+    return booked.map(row => {
       const item = requireReference(itemsById.get(row.itemId));
-      const pickup = requireReference(history.get(versionKey(pickupKey(row))));
-      const returned = requireReference(
-        history.get(versionKey(returnKey(row))),
-      );
       const itemReservations = active.filter(
         rental => rental.itemId === row.itemId,
       );
       const total = item.totalQuantity;
       const planned = itemReservations.filter(
-        rental => !isExpiredPickup(rental, time),
+        rental => !isExpiredPickup(rental, now),
       );
       return {
         id: row.id,
@@ -341,8 +348,8 @@ export class RentalReadService {
         itemName: item.name,
         quantity: row.quantity,
         status: zRentalStatus.parse(row.status),
-        pickup: serializeWindow(pickup),
-        return: serializeWindow(returned),
+        pickup: serializeWindow(row.pickup),
+        return: serializeWindow(row.returned),
         regularReturnLimitDate: row.regularReturnLimitDate,
         approvedReturnLimitDate:
           row.approvedExtensionId === null
@@ -352,25 +359,13 @@ export class RentalReadService {
         createdAt: row.createdAt.toISOString(),
         checkedOutAt: row.checkedOutAt?.toISOString() ?? null,
         returnedAt: row.returnedAt?.toISOString() ?? null,
-        overdue: isOverdue(row, returned, time.now),
-        needsReschedule: appointmentNeedsAttention(
-          row,
-          pickup,
-          returned,
-          time.now,
-          calendar,
-        ),
-        requiresSameDayReturn: isExpiredPickup(row, time)
+        overdue: isOverdue(row, now),
+        needsReschedule: appointmentNeedsAttention(row, now, calendar),
+        requiresSameDayReturn: isExpiredPickup(row, now)
           ? false
           : requiresReturn(row, total, planned),
         hasDependentPickup: hasDependentPickup(row, total, planned),
-        waitingForReturn: waitingForReturn(
-          row,
-          pickup,
-          total,
-          itemReservations,
-          time.now,
-        ),
+        waitingForReturn: waitingForReturn(row, total, itemReservations, now),
         closeReason: row.closeReason,
       };
     });

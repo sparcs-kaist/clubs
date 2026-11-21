@@ -2,7 +2,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import type {
   RentalPeriodPolicy,
-  RentalSlot,
+  RentalSlotSelection,
 } from "@clubs/interface/api/rental/v2";
 
 const timeZone = "Asia/Seoul";
@@ -35,8 +35,19 @@ export const formatRentalSlot = ({
   date,
   opensAt,
   closesAt,
-}: Pick<RentalSlot, "date" | "opensAt" | "closesAt">) =>
+}: RentalSlotSelection) =>
   `${formatRentalDate(date)} ${timeLabel.format(new Date(opensAt))}–${timeLabel.format(new Date(closesAt))}`;
+
+export const rentalSlotSelection = ({
+  date,
+  opensAt,
+  closesAt,
+}: RentalSlotSelection): RentalSlotSelection => ({ date, opensAt, closesAt });
+
+export const isSameRentalSlot = (
+  a: RentalSlotSelection,
+  b: RentalSlotSelection,
+) => a.date === b.date && a.opensAt === b.opensAt && a.closesAt === b.closesAt;
 
 export const formatRentalInstant = (date: string) =>
   formatInTimeZone(new Date(date), timeZone, "yyyy-MM-dd HH:mm");

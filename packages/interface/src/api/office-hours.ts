@@ -15,16 +15,23 @@ const zOfficeTimestamp = z.union([
   z.string().datetime(),
   z.date().transform(date => date.toISOString()),
 ]);
+const zOfficeMemo = z.string().trim().max(500).nullable();
 
 export const zOfficeHour = z.object({
   date: zOfficeDate,
   opensAt: zOfficeTimestamp,
   closesAt: zOfficeTimestamp,
   isClosed: z.boolean(),
-  version: z.coerce.number().int().positive(),
+  publicMemo: zOfficeMemo,
 });
 
 export type OfficeHour = z.infer<typeof zOfficeHour>;
+
+const zExecutiveOfficeHour = zOfficeHour.extend({
+  internalMemo: zOfficeMemo,
+});
+
+export type ExecutiveOfficeHour = z.infer<typeof zExecutiveOfficeHour>;
 
 const zOfficeDateRange = z
   .object({ from: zOfficeDate, to: zOfficeDate })
@@ -38,6 +45,8 @@ const zOfficeHourInput = z
     openTime: zOfficeTime,
     closeTime: zOfficeTime,
     isClosed: z.boolean(),
+    publicMemo: zOfficeMemo.optional(),
+    internalMemo: zOfficeMemo.optional(),
   })
   .refine(({ openTime, closeTime }) => openTime < closeTime, {
     message: "종료 시각은 시작 시각보다 늦어야 합니다.",
@@ -67,6 +76,9 @@ export const apiOfh001 = {
 export const apiOfh002 = {
   ...officeHoursList,
   url: () => "/executive/office-hours",
+  responseBodyMap: {
+    [HttpStatusCode.Ok]: z.object({ items: z.array(zExecutiveOfficeHour) }),
+  },
 } as const;
 
 export const apiOfh003 = {
@@ -90,7 +102,7 @@ export const apiOfh004 = {
   requestQuery: empty,
   requestBody: zOfficeHourInput,
   responseBodyMap: {
-    [HttpStatusCode.Ok]: z.object({ officeHour: zOfficeHour }),
+    [HttpStatusCode.Ok]: z.object({ officeHour: zExecutiveOfficeHour }),
   },
   responseErrorMap: {},
 } as const;

@@ -33,6 +33,7 @@ import {
   addRentalDays,
   formatRentalSlot,
   rentalPolicyLabels,
+  rentalSlotSelection,
   todayRentalDate,
 } from "../utils/rentalSchedule";
 
@@ -70,13 +71,13 @@ const RentalApplicationForm = ({
 
   const selectedClub = clubs.data?.find(club => club.id === clubId);
   const selectedItem = items.data?.find(item => item.id === itemId);
-  const pickup = returnOptions.data?.pickup;
   const returnSlot = returnOptions.data?.options.find(
     option => option.date === returnDate && option.availableQuantity > 0,
   );
   const pickupSlots = officeHours.data?.filter(
     slot => !slot.isClosed && new Date(slot.closesAt).getTime() > Date.now(),
   );
+  const pickup = pickupSlots?.find(slot => slot.date === pickupDate);
   const availableQuantity = returnSlot?.availableQuantity ?? 0;
   const dependsOnReturn =
     returnSlot && quantity > returnSlot.availableWithoutSameDayReturns;
@@ -97,8 +98,8 @@ const RentalApplicationForm = ({
       clubId: selectedClub.id,
       itemId: selectedItem.id,
       quantity,
-      pickup: { date: pickup.date, version: pickup.version },
-      return: { date: returnSlot.date, version: returnSlot.version },
+      pickup: rentalSlotSelection(pickup),
+      return: rentalSlotSelection(returnSlot),
       contactPhoneNumber: String(form.get("phone") ?? "").trim(),
       purpose: String(form.get("purpose") ?? "").trim(),
     };

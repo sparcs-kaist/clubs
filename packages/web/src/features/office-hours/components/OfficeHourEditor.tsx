@@ -3,12 +3,16 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { apiOfh004, type OfficeHour } from "@clubs/interface/api/office-hours";
+import {
+  apiOfh004,
+  type ExecutiveOfficeHour,
+} from "@clubs/interface/api/office-hours";
 import { apiRentalsExecutive } from "@clubs/interface/api/rental/v2";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import NotificationCard from "@sparcs-clubs/web/common/components/NotificationCard";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import getApiErrorMessage from "@sparcs-clubs/web/common/services/getApiErrorMessage";
@@ -19,6 +23,11 @@ import { formatTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { OfficeHoursFields } from "./OfficeHoursForm";
 
 const reservationsPerPage = 100;
+
+function changedMemo(input: string, saved: string | null | undefined) {
+  const memo = input.trim() || null;
+  return memo === (saved ?? null) ? undefined : memo;
+}
 
 async function fetchReservations(officeDate: string, pageOffset: number) {
   const { data } = await axiosClientWithAuth.get(apiRentalsExecutive.url(), {
@@ -33,7 +42,7 @@ const OfficeHourEditor = ({
   officeHour,
 }: {
   date: string;
-  officeHour?: OfficeHour;
+  officeHour?: ExecutiveOfficeHour;
 }) => {
   const t = useTranslations("officeHours");
   const queryClient = useQueryClient();
@@ -45,6 +54,10 @@ const OfficeHourEditor = ({
     officeHour ? formatTime(new Date(officeHour.closesAt)) : "22:00",
   );
   const [isClosed, setIsClosed] = useState(officeHour?.isClosed ?? false);
+  const [publicMemo, setPublicMemo] = useState(officeHour?.publicMemo ?? "");
+  const [internalMemo, setInternalMemo] = useState(
+    officeHour?.internalMemo ?? "",
+  );
   const reservations = useQuery({
     queryKey: [...rentalQueryKey, "office-hours-impact", profile?.id, date],
     staleTime: 0,
@@ -71,6 +84,8 @@ const OfficeHourEditor = ({
         openTime,
         closeTime,
         isClosed,
+        publicMemo: changedMemo(publicMemo, officeHour?.publicMemo),
+        internalMemo: changedMemo(internalMemo, officeHour?.internalMemo),
       });
       const { data } = await axiosClientWithAuth.put(
         apiOfh004.url(date),
@@ -133,6 +148,30 @@ const OfficeHourEditor = ({
             />{" "}
             {t("markClosed")}
           </label>
+          <FlexWrapper direction="column" gap={4}>
+            <label htmlFor="office-hour-public-memo">{t("publicMemo")}</label>
+            <TextInput
+              area
+              id="office-hour-public-memo"
+              maxLength={500}
+              placeholder=""
+              value={publicMemo}
+              handleChange={setPublicMemo}
+            />
+          </FlexWrapper>
+          <FlexWrapper direction="column" gap={4}>
+            <label htmlFor="office-hour-internal-memo">
+              {t("internalMemo")}
+            </label>
+            <TextInput
+              area
+              id="office-hour-internal-memo"
+              maxLength={500}
+              placeholder=""
+              value={internalMemo}
+              handleChange={setInternalMemo}
+            />
+          </FlexWrapper>
           {invalidTimes && <p role="alert">{t("invalidTimes")}</p>}
           {reservations.isFetching && <p role="status">{t("loadingImpact")}</p>}
           {reservations.isError && (

@@ -39,10 +39,10 @@ import {
   type ReservedStock,
 } from "./rental-policy";
 import {
-  pickupKey,
   rentalDate,
   RentalScheduleService,
-  returnKey,
+  requireBookedWindow,
+  selectionMatches,
 } from "./rental-schedule.service";
 
 type CreateRental = z.output<typeof apiRentalCreate.requestBody>;
@@ -51,20 +51,6 @@ type ScheduleUpdate = z.output<typeof apiRentalSchedule.requestBody>;
 const readCommitted = {
   isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
 };
-
-function pickupData(window: RentalSlotSelection) {
-  return {
-    pickupDate: window.date,
-    pickupVersion: window.version,
-  };
-}
-
-function returnData(window: RentalSlotSelection) {
-  return {
-    returnDate: window.date,
-    returnVersion: window.version,
-  };
-}
 
 function assertCapacity(
   total: number,
@@ -136,7 +122,7 @@ export class RentalService {
       now,
     );
 
-    const active = await this.repository.listActiveReservations([item.id]);
+    const active = await this.activeReservations(item.id);
     assertCapacity(
       item.totalQuantity,
       active,
@@ -159,8 +145,8 @@ export class RentalService {
         clientRequestId: input.clientRequestId,
         requestFingerprint: fingerprint,
         createdAt: now,
-        ...pickupData(pickup),
-        ...returnData(returned),
+        pickupHourId: pickup.id,
+        returnHourId: returned.id,
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -183,7 +169,7 @@ export class RentalService {
   ) {
     const item = await this.lockItem(id);
     if (input.totalQuantity !== undefined) {
-      const active = await this.repository.listActiveReservations([item.id]);
+      const active = await this.activeReservations(item.id);
       const stillOut =
         item.totalQuantity - physicalQuantity(item.totalQuantity, active);
       const reserved = peakReservedQuantity(
@@ -204,13 +190,14 @@ export class RentalService {
     this.requireStatus(row, "RESERVED");
 
     const now = this.clock.now();
+    const [booked] = await this.schedule.bookedRentals([row]);
     const [pickup] = await Promise.all([
-      this.schedule.resolveBooked(pickupKey(row), now),
-      this.schedule.resolveBooked(returnKey(row), now),
+      this.schedule.resolveBooked(booked.pickup, now),
+      this.schedule.resolveBooked(booked.returned, now),
     ]);
     if (now < pickup.opensAt) throw new ConflictException("PICKUP_NOT_STARTED");
-    const active = await this.repository.listActiveReservations([item.id]);
-    if (checkoutQuantity(item.totalQuantity, active, row) < row.quantity) {
+    const active = await this.activeReservations(item.id);
+    if (checkoutQuantity(item.totalQuantity, active, booked) < row.quantity) {
       throw new ConflictException("WAITING_FOR_RETURN");
     }
     return this.change(row, {
@@ -262,7 +249,8 @@ export class RentalService {
     this.requireActive(row);
     const now = this.clock.now();
 
-    let pickup = pickupKey(row);
+    const [booked] = await this.schedule.bookedRentals([row]);
+    let { pickup } = booked;
     if (row.status === "RESERVED") {
       pickup = input.pickup
         ? await this.schedule.resolve(input.pickup, now)
@@ -273,12 +261,12 @@ export class RentalService {
 
     const nextReturn = input.return
       ? await this.schedule.resolve(input.return, now)
-      : await this.schedule.resolveBooked(returnKey(row), now);
+      : await this.schedule.resolveBooked(booked.returned, now);
     const policy = zRentalPeriodPolicy.parse(row.durationPolicy);
     let regularLimit = row.regularReturnLimitDate;
     let { approvedExtensionId } = row;
     let returnLimit: string;
-    if (pickup.date !== row.pickupDate) {
+    if (pickup.date !== booked.pickupDate) {
       regularLimit = await this.schedule.requireRegularLimit(
         policy,
         pickup.date,
@@ -286,8 +274,8 @@ export class RentalService {
       approvedExtensionId = null;
       returnLimit = regularLimit;
     } else {
-      const approval = await this.findApprovedExtension(row);
-      returnLimit = approval?.newReturnDate ?? regularLimit;
+      const approval = await this.approvedReturnWindow(row);
+      returnLimit = approval?.date ?? regularLimit;
     }
     if (nextReturn.date <= pickup.date)
       throw new BadRequestException("INVALID_RENTAL_PERIOD");
@@ -303,8 +291,8 @@ export class RentalService {
       nextReturn.date,
     );
     return this.change(row, {
-      ...pickupData(pickup),
-      ...returnData(nextReturn),
+      pickupHourId: pickup.id,
+      returnHourId: nextReturn.id,
       regularReturnLimitDate: regularLimit,
       approvedExtensionId,
     });
@@ -321,14 +309,15 @@ export class RentalService {
     this.requireActive(row);
     const now = this.clock.now();
 
-    if (selection.date === row.returnDate) {
-      const approval = await this.findApprovedExtension(row);
-      if (approval?.newReturnDate === selection.date) {
-        if (approval.newReturnVersion === selection.version) return row;
+    const [booked] = await this.schedule.bookedRentals([row]);
+    if (selection.date === booked.returnDate) {
+      const approval = await this.approvedReturnWindow(row);
+      if (approval) {
+        if (selectionMatches(approval, selection)) return row;
       }
     }
     const nextReturn = await this.schedule.resolve(selection, now);
-    if (nextReturn.date <= row.returnDate)
+    if (nextReturn.date <= booked.returnDate)
       throw new BadRequestException("INVALID_EXTENSION");
     if (nextReturn.date <= row.regularReturnLimitDate)
       throw new BadRequestException("INVALID_EXTENSION");
@@ -339,7 +328,7 @@ export class RentalService {
 
     const active = await this.otherReservations(row);
     // Extending a loan rechecks the part of the schedule it newly occupies.
-    const from = [row.returnDate, rentalDate(now)].sort()[1];
+    const from = [booked.returnDate, rentalDate(now)].sort()[1];
     assertCapacity(
       item.totalQuantity,
       active,
@@ -349,28 +338,29 @@ export class RentalService {
     );
     const extension = await this.repository.recordExtension({
       reservationId: id,
-      previousReturnDate: row.returnDate,
-      previousReturnVersion: row.returnVersion,
-      newReturnDate: nextReturn.date,
-      newReturnVersion: nextReturn.version,
+      previousReturnHourId: row.returnHourId,
+      newReturnHourId: nextReturn.id,
       reason,
       processedByExecutiveId: executiveId,
       processedAt: now,
     });
     return this.change(row, {
-      ...returnData(nextReturn),
+      returnHourId: nextReturn.id,
       approvedExtensionId: extension.id,
     });
   }
 
-  private async findApprovedExtension(row: RentalReservationRow) {
+  private async approvedReturnWindow(row: RentalReservationRow) {
     if (row.approvedExtensionId === null) return null;
     const extension = await this.repository.findExtension(
       row.id,
       row.approvedExtensionId,
     );
     if (!extension) throw new ConflictException("INVALID_RENTAL_STATE");
-    return extension;
+    const windows = await this.schedule.bookedWindows([
+      extension.newReturnHourId,
+    ]);
+    return requireBookedWindow(windows, extension.newReturnHourId);
   }
 
   @Transactional()
@@ -389,10 +379,13 @@ export class RentalService {
     return { row, item };
   }
 
+  private async activeReservations(itemId: number) {
+    const reservations = await this.repository.listActiveReservations([itemId]);
+    return this.schedule.bookedRentals(reservations);
+  }
+
   private async otherReservations(row: RentalReservationRow) {
-    const reservations = await this.repository.listActiveReservations([
-      row.itemId,
-    ]);
+    const reservations = await this.activeReservations(row.itemId);
     return reservations.filter(reservation => reservation.id !== row.id);
   }
 
