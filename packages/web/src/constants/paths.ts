@@ -31,13 +31,17 @@ export const productionReadyPaths: {
   exact: [
     // 공통
     "/",
+    "/office-hours",
+    "/rental-business",
     // 마이페이지
     "/my",
+    "/my/rental-business",
     // 대표 동아리 관리
     "/manage-club",
     // 집행부원 대시보드
     "/executive",
     "/executive/exchange-login",
+    "/executive/office-hours",
   ],
   startsWith: [
     // 공통
@@ -47,6 +51,7 @@ export const productionReadyPaths: {
     "/errors/not-iam-login",
     // 마이페이지
     "/my/clubs",
+    "/my/rental-business/",
     // 대표 동아리 관리
     "/manage-club/members",
     // 활동 보고서
@@ -65,6 +70,7 @@ export const productionReadyPaths: {
     "/executive/semester",
     "/executive/activity-duration",
     "/executive/registration/deadline",
+    "/executive/rental-business",
     // 상임동아리 대표자 대시보드
     "/manage-club/permanent",
     // 동아리 등록 신청 내역
@@ -80,7 +86,6 @@ export const productionReadyPaths: {
     "/example",
     "/executive/activity-certificate",
     "/executive/printing-business",
-    "/executive/rental-business",
     "/manage-club/activity-certificate",
     "/manage-club/activity-certificate/[id]",
     "/manage-club/common-space",
@@ -101,10 +106,7 @@ export const productionReadyPaths: {
     "/my/common-space/[id]",
     "/my/printing-business",
     "/my/printing-business/[id]",
-    "/my/rental-business",
-    "/my/rental-business/[id]",
     "/printing-business",
-    "/rental-business",
   ],
 };
 
@@ -216,13 +218,13 @@ const paths = {
   },
   SERVICE: {
     name: "path.서비스 신청",
-    featureFlag: "NO_RELEASE",
+    featureFlag: "DEFAULT",
     sub: [
       {
         name: "path.대여 사업",
         path: "/rental-business",
         authority: ["all"],
-        featureFlag: "NO_RELEASE",
+        featureFlag: "DEFAULT",
       },
       {
         name: "path.홍보물 인쇄",
@@ -241,6 +243,12 @@ const paths = {
         path: "/common-space",
         authority: ["all"],
         featureFlag: "NO_RELEASE",
+      },
+      {
+        name: "path.상근일 현황",
+        path: "/office-hours",
+        authority: ["all"],
+        featureFlag: "DEFAULT",
       },
     ],
     authority: ["all"],
@@ -277,6 +285,18 @@ const paths = {
       {
         name: "path.동아리 총람",
         path: "/executive/overview",
+        authority: ["executive"],
+        featureFlag: "DEFAULT",
+      },
+      {
+        name: "path.물품 대여 관리",
+        path: "/executive/rental-business",
+        authority: ["executive"],
+        featureFlag: "DEFAULT",
+      },
+      {
+        name: "path.상근일 관리",
+        path: "/executive/office-hours",
         authority: ["executive"],
         featureFlag: "DEFAULT",
       },

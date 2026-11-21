@@ -1,6 +1,7 @@
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
-
-import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
+import {
+  ActivityStatusEnum,
+  ProfessorApprovalStatus,
+} from "@clubs/domain/activity/activity";
 
 import { BaseActivityReport } from "./activityReport";
 
@@ -13,11 +14,7 @@ export interface BaseActivityReportTableData extends Pick<
 
 export interface ActivityReportTableData extends BaseActivityReportTableData {
   activityStatusEnumId: ActivityStatusEnum;
-  professorApproval: ProfessorApprovalEnum | null;
-}
-
-export interface ProfessorActivityReportTableData extends ActivityReportTableData {
-  professorApproval: ProfessorApprovalEnum;
+  professorApprovalStatus: ProfessorApprovalStatus | null;
 }
 
 export interface PastActivityReportTableData extends BaseActivityReportTableData {}

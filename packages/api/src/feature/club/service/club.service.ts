@@ -60,6 +60,7 @@ import {
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
@@ -142,6 +143,7 @@ export class ClubService {
               type: club.clubTypeEnum,
               isPermanent,
               characteristic: club.characteristicKr,
+              characteristicEn: club.characteristicEn,
               representative: club.clubRepresentative.name,
               advisor: club.professor?.name,
               totalMemberCnt,
@@ -182,14 +184,46 @@ export class ClubService {
 
     const result = await this.clubOldRepository.getAllClubsGroupedByDivision();
 
-    result.divisions = result.divisions.map(division => ({
+    const divisions = result.divisions.map(division => ({
       ...division,
       clubs: division.clubs.filter(
         club => !this.EXCLUDED_CLUB_IDS.includes(club.id),
       ),
     }));
 
-    return result;
+    const clubIds = divisions.flatMap(division =>
+      division.clubs.map(club => club.id),
+    );
+    const clubSemesters =
+      clubIds.length > 0 ? await this.findActiveClubSemesters(clubIds) : [];
+    const clubSemesterById = new Map(
+      clubSemesters.map(semester => [semester.club.id, semester]),
+    );
+
+    return {
+      divisions: divisions.map(division => ({
+        ...division,
+        clubs: division.clubs.map(club => {
+          const clubSemester = clubSemesterById.get(club.id);
+          return {
+            ...club,
+            characteristic: clubSemester
+              ? clubSemester.characteristicKr
+              : club.characteristic,
+            characteristicEn: clubSemester?.characteristicEn ?? null,
+          };
+        }),
+      })),
+    };
+  }
+
+  private findActiveClubSemesters(clubId: number | number[]) {
+    return this.clubSemesterRepository.find({
+      clubId,
+      date: this.clock.now(),
+      clubTypeEnum: [ClubTypeEnum.Regular, ClubTypeEnum.Provisional],
+      orderBy: { id: OrderByTypeEnum.ASC },
+    });
   }
 
   async getClubSemesterCounts(): Promise<ApiClb018ResponseOk> {
@@ -547,6 +581,7 @@ export class ClubService {
         nameEn: club.nameEn,
         type: club.clubTypeEnum,
         characteristic: club.characteristicKr,
+        characteristicEn: club.characteristicEn,
         advisor: club.professor?.name,
         division: { id: club.division.id, name: club.division.name },
         description: club.description ?? "",
@@ -574,23 +609,29 @@ export class ClubService {
       representative,
       roomDetails,
       isPermanent,
+      clubSemesters,
     ] = await Promise.all([
       this.clubOldRepository.findClubDetail(clubId),
       this.clubStudentTRepository.findTotalMemberCnt(clubId, targetSemesterId),
       this.clubDelegateDRepository.findRepresentativeName(clubId),
       this.clubRoomTRepository.findClubLocationById(clubId),
       this.divisionPermanentClubDRepository.findPermenantClub(clubId),
+      this.findActiveClubSemesters(clubId),
     ]);
 
     if (!clubDetails) {
       throw new NotFoundException(`ClubOld with ID ${clubId} not found.`);
     }
+    const clubSemester = clubSemesters.at(-1);
     return {
       id: clubDetails.id,
       nameKr: clubDetails.nameKr,
       nameEn: clubDetails.nameEn,
       type: clubDetails.type,
-      characteristic: clubDetails.characteristic,
+      characteristic: clubSemester
+        ? clubSemester.characteristicKr
+        : clubDetails.characteristic,
+      characteristicEn: clubSemester?.characteristicEn ?? null,
       advisor: clubDetails.advisor,
       division: clubDetails.division,
       description: clubDetails.description ? clubDetails.description : "",

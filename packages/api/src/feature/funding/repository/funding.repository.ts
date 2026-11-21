@@ -27,18 +27,7 @@ const fundingSummarySelect = {
   purposeActivityId: true,
   clubId: true,
   chargedExecutiveId: true,
-  feedbacks: {
-    where: {
-      deletedAt: null,
-    },
-    orderBy: {
-      id: "desc",
-    },
-    take: 1,
-    select: {
-      executiveId: true,
-    },
-  },
+  commentedExecutiveId: true,
 } satisfies Prisma.FundingSelect;
 
 @Injectable()
@@ -967,20 +956,10 @@ export default class FundingRepository {
     fundingStatusEnum: IFunding["fundingStatusEnum"];
     approvedAmount: IFunding["approvedAmount"];
     commentedAt: IFunding["commentedAt"];
+    commentedExecutiveId: NonNullable<IFunding["commentedExecutive"]>["id"];
   }): Promise<VFundingSummary> {
-    return this.prisma.$transaction(async tx => this.patchStatusTx(tx, param));
-  }
-
-  async patchStatusTx(
-    tx: PrismaTransactionClient,
-    param: {
-      id: IFunding["id"];
-      fundingStatusEnum: IFunding["fundingStatusEnum"];
-      approvedAmount: IFunding["approvedAmount"];
-      commentedAt: IFunding["commentedAt"];
-    },
-  ): Promise<VFundingSummary> {
     const now = this.clock.now();
+    const { tx } = this.txHost;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (tx as any).funding.update({
@@ -989,6 +968,7 @@ export default class FundingRepository {
         fundingStatusEnum: param.fundingStatusEnum,
         approvedAmount: param.approvedAmount,
         commentedAt: param.commentedAt,
+        commentedExecutiveId: param.commentedExecutiveId,
         editedAt: now,
       },
     });

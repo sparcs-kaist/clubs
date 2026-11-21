@@ -1,7 +1,16 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import {
+  ActivityStatusEnum,
+  ProfessorApprovalStatus,
+} from "@clubs/domain/activity/activity";
 import {
   ActivityDurationTypeEnum,
   IActivityDuration,
@@ -174,6 +183,7 @@ export default class ActivityService {
         activityTypeEnumId: row.activityTypeEnum,
         durations: row.durations,
         professorApprovedAt: row.professorApprovedAt,
+        professorApprovalStatus: row.professorApprovalStatus,
         editedAt: row.editedAt,
         commentedAt: row.commentedAt,
       }))
@@ -295,6 +305,7 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -372,10 +383,21 @@ export default class ActivityService {
       studentId,
       clubId: activity.club.id,
     });
+    const now = this.clock.now();
+    // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
+    const activityD = await this.activityDurationPublicService.load({
+      date: now,
+    });
+    if (activity.activityDuration.id !== activityD.id)
+      throw new HttpException(
+        "The activity is not the activity of the last activity duration ",
+        HttpStatus.BAD_REQUEST,
+      );
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
     const availableDeadlines = await this.activityDeadlinePublicService
       .search({
-        date: this.clock.now(),
+        semesterId: activityD.semester.id,
+        date: now,
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Modification,
@@ -386,13 +408,6 @@ export default class ActivityService {
     const shouldResetProfessorApproval = availableDeadlines.some(
       deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Writing,
     );
-    // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
-    const activityD = await this.activityDurationPublicService.load();
-    if (activity.activityDuration.id !== activityD.id)
-      throw new HttpException(
-        "The activity is not the activity of the last activity duration ",
-        HttpStatus.BAD_REQUEST,
-      );
     // 제출한 활동 기간들이 지난 활동기간 이내인지 확인합니다.
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
     // 파일 uuid의 유효성을 검사하지 않습니다.
@@ -424,7 +439,7 @@ export default class ActivityService {
         );
     });
 
-    const isUpdateSucceed = await this.activityRepository.put(
+    const isUpdateSucceed = await this.persistRegularActivityReport(
       new MActivity({
         id: param.activityId,
         name: body.name,
@@ -444,8 +459,11 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
-        editedAt: this.clock.now(),
+        editedAt: now,
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
+        professorApprovalStatus: shouldResetProfessorApproval
+          ? ProfessorApprovalStatus.Pending
+          : undefined,
         commentedAt: null,
         commentedExecutive: undefined,
       }),
@@ -457,6 +475,12 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
   }
+
+  @Transactional()
+  private persistRegularActivityReport(activity: MActivity): Promise<boolean> {
+    return this.activityRepository.updateActivityReport(activity);
+  }
+
   async deleteStudentActivityProvisional(
     activityId: number,
     studentId: number,
@@ -717,6 +741,15 @@ export default class ActivityService {
     const activityD = await this.activityDurationPublicService.getById(
       activity.activityDuration.id,
     );
+    if (
+      activityD.activityDurationTypeEnum !==
+      ActivityDurationTypeEnum.Registration
+    ) {
+      throw new HttpException(
+        "The activity is not in a registration reporting period",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
 
     // 파일 uuid의 유효성을 검사합니다.
@@ -770,6 +803,7 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         professorApprovedAt: undefined,
+        professorApprovalStatus: undefined,
         commentedAt: null,
       }),
     );
@@ -970,6 +1004,7 @@ export default class ActivityService {
     const isUpdated = await this.activityRepository.approveExecutiveActivity({
       activityId: param.param.activityId,
       commentedAt,
+      commentedExecutiveId: param.executiveId,
     });
     if (!isUpdated)
       throw new HttpException(
@@ -1012,6 +1047,7 @@ export default class ActivityService {
     const isUpdated = await this.activityRepository.sendBackExecutiveActivity({
       activityId: param.param.activityId,
       commentedAt,
+      commentedExecutiveId: param.executiveId,
     });
     if (!isUpdated)
       throw new HttpException(
@@ -1087,27 +1123,12 @@ export default class ActivityService {
 
     const items: ApiAct024ResponseOk["items"] = await Promise.all(
       activities.map(async activity => {
-        const lastFeedback = await this.activityCommentRepository
-          .find({
-            activityId: activity.id,
-          })
-          .then(arr =>
-            arr.reduce((acc, cur) => {
-              if (acc === undefined || acc.createdAt < cur.createdAt) {
-                return cur;
-              }
-              return acc;
-            }, undefined),
-          );
-
         const commentedExecutive =
-          lastFeedback === undefined ||
-          lastFeedback.executive === undefined ||
-          lastFeedback.executive.id === null
+          activity.commentedExecutive?.id == null
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
-                  executiveId: lastFeedback.executive.id,
+                  executiveId: activity.commentedExecutive.id,
                 })
                 .then(e =>
                   e === undefined
@@ -1280,6 +1301,7 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -1290,11 +1312,22 @@ export default class ActivityService {
     professorId: number,
   ): Promise<ApiAct015ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
+    const now = this.clock.now();
     await this.clubPublicService.checkIsProfessor({
       professorId,
       clubId: activity.club.id,
-      date: this.clock.now(),
+      date: now,
     });
+    const currentTermId = await this.activityDurationPublicService
+      .loadId({ date: now })
+      .catch(error => {
+        if (error instanceof NotFoundException) return undefined;
+        throw error;
+      });
+    const isCurrentTerm = activity.activityDuration.id === currentTermId;
+    const isPendingApproval =
+      activity.professorApprovalStatus === ProfessorApprovalStatus.Pending;
+    const canProfessorApprove = isCurrentTerm && isPendingApproval;
 
     const studentMap = await this.userPublicService.getStudentMapByIds(
       activity.participants.map(e => e.id),
@@ -1342,6 +1375,8 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
+      canProfessorApprove,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };

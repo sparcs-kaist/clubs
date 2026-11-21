@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
@@ -402,6 +408,10 @@ export default class ClubPublicService {
     return result;
   }
 
+  fetchNamesIncludingDeleted(ids: number[]) {
+    return this.clubRepository.fetchNamesIncludingDeleted(ids);
+  }
+
   async fetchSummaries(
     ids: number[],
     semesterIds?: number[],
@@ -433,6 +443,14 @@ export default class ClubPublicService {
     if (result.length === 0) return null;
     const club = await this.clubOldRepository.fetchSummary(result[0].clubId);
     return club;
+  }
+
+  async findStudentClubDelegates(studentId: number): Promise<IClubSummary[]> {
+    const delegates =
+      await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
+    if (delegates.length === 0) return [];
+    const clubIds = [...new Set(delegates.map(delegate => delegate.clubId))];
+    return this.fetchSummaries(clubIds);
   }
 
   async makeClubSummaryResponse(
@@ -740,16 +758,16 @@ export default class ClubPublicService {
     clubId: number;
     date?: Date;
   }): Promise<void> {
-    const semesterId = await this.semesterPublicService.loadId({
-      date: query.date,
-    });
+    const date = query.date ?? this.clock.now();
+    const semesterId = await this.semesterPublicService.loadId({ date });
     const isProfessor = await this.clubSemesterRepository.count({
       professorId: query.professorId,
       clubId: query.clubId,
       semesterId,
+      date,
     });
     if (isProfessor === 0) {
-      throw new Error(
+      throw new ForbiddenException(
         `Professor ${query.professorId} is not a professor of club: ${query.clubId}`,
       );
     }

@@ -6,6 +6,7 @@ import {
   BaseTableFieldMapKeys,
 } from "@sparcs-clubs/api/common/base/base.repository";
 import { BaseSingleTableRepository } from "@sparcs-clubs/api/common/base/base.single.repository";
+import { withDeleted } from "@sparcs-clubs/api/common/util/soft-delete";
 import {
   IClubCreate,
   MClub,
@@ -42,6 +43,13 @@ export class ClubRepository extends BaseSingleTableRepository<
 > {
   constructor() {
     super("club", MClub);
+  }
+
+  fetchNamesIncludingDeleted(ids: number[]) {
+    return this.prisma.club.findMany({
+      where: withDeleted({ id: { in: ids } }),
+      select: { id: true, nameKr: true },
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

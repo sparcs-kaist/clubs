@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
@@ -17,8 +18,7 @@ import MyClubFrame from "@sparcs-clubs/web/features/my/frames/MyClubFrame";
 import MyInfoFrame from "@sparcs-clubs/web/features/my/frames/MyInfoFrame";
 import MyRegisterFrame from "@sparcs-clubs/web/features/my/frames/MyRegisterFrame";
 import ProfessorMyClubFrame from "@sparcs-clubs/web/features/my/frames/ProfessorMyClubFrame";
-// import isStudent from "@sparcs-clubs/web/utils/isStudent";
-// import MyServiceFrame from "@sparcs-clubs/web/features/my/frames/MyServiceFrame";
+import isStudent from "@sparcs-clubs/web/utils/isStudent";
 
 const ResponsiveWrapper = styled(FlexWrapper)`
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
@@ -65,7 +65,9 @@ const My: React.FC = () => {
       {profile && profile.type !== UserTypeEnum.Executive && (
         <MyRegisterFrame profile={profile.type} />
       )}
-      {/* {isStudent(profile) && <MyServiceFrame />} */}
+      {isStudent(profile) && (
+        <Link href="/my/rental-business">{t("내 대여 내역")}</Link>
+      )}
     </ResponsiveWrapper>
   );
 };

@@ -23,22 +23,10 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 import { VClubSummary } from "../model/club.summary.model";
 import { MClubOld } from "../model/club-old.model";
 
-interface IClubs {
-  id: number;
-  name: string;
-  districtId: number;
-  clubs: {
-    type: ClubTypeEnum;
-    id: number;
-    nameKr: string;
-    nameEn: string;
-    isPermanent: boolean;
-    characteristic: string;
-    representative: string;
-    advisor: string;
-    totalMemberCnt: number;
-  }[];
-}
+type ClubListDivision = ApiClb001ResponseOK["divisions"][number];
+type LegacyClubListDivision = Omit<ClubListDivision, "clubs"> & {
+  clubs: Omit<ClubListDivision["clubs"][number], "characteristicEn">[];
+};
 
 @Injectable()
 export class ClubOldRepository {
@@ -106,7 +94,9 @@ export class ClubOldRepository {
     return { ...clubInfo, type: clubInfo?.type as ClubTypeEnum, division };
   }
 
-  async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
+  async getAllClubsGroupedByDivision(): Promise<{
+    divisions: LegacyClubListDivision[];
+  }> {
     const clubs = await this.prisma.$queryRaw<
       Array<{
         divId: number;
@@ -163,7 +153,9 @@ export class ClubOldRepository {
                s.name, p.name, dpcd.id
     `);
 
-    const stackedClubs = clubs.reduce<Record<number, IClubs>>((acc, row) => {
+    const stackedClubs = clubs.reduce<
+      Record<number, LegacyClubListDivision & { districtId: number }>
+    >((acc, row) => {
       acc[row.divId] ??= {
         id: row.divId,
         name: row.divName,
@@ -773,8 +765,8 @@ export class ClubOldRepository {
   }
 
   async find(param: {
-    id?: IClubs["id"];
-    ids?: IClubs["id"][];
+    id?: MClubOld["id"];
+    ids?: MClubOld["id"][];
     semester: ISemester;
     clubStatusEnumId?: ClubTypeEnum;
     clubStatusEnumIds?: ClubTypeEnum[];

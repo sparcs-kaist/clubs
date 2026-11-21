@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
+import { withDeleted } from "@sparcs-clubs/api/common/util/soft-delete";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -269,6 +270,20 @@ export default class OldStudentRepository {
       id: student.id,
       name: student.name,
       studentNumber: student.number.toString(),
+    }));
+  }
+
+  async fetchStudentSummariesIncludingDeleted(
+    studentIds: number[],
+  ): Promise<IStudentSummary[]> {
+    const students = await this.prisma.student.findMany({
+      where: withDeleted({ id: { in: studentIds } }),
+      select: { id: true, name: true, number: true },
+    });
+    return students.map(({ id, name, number }) => ({
+      id,
+      name,
+      studentNumber: number.toString(),
     }));
   }
 }

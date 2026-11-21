@@ -53,6 +53,10 @@ export class AppConfigService {
     return this.getOptional("CLIENT_PORT");
   }
 
+  get frontUrl(): string | undefined {
+    return this.getOptional("FRONT_URL");
+  }
+
   get ssoClientId(): string {
     return this.getOptionalString("SSO_CLIENT_ID");
   }

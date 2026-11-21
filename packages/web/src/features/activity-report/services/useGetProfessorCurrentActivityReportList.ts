@@ -35,7 +35,5 @@ const useProfessorGetCurrentActivityReportList = (
 export default useProfessorGetCurrentActivityReportList;
 
 defineAxiosMock(mock => {
-  mock
-    .onGet(apiAct019.url())
-    .reply(() => [200, mockActivityReportData as ApiAct019ResponseOk]);
+  mock.onGet(apiAct019.url()).reply(() => [200, mockActivityReportData]);
 });

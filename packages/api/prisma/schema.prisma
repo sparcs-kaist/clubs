@@ -34,6 +34,8 @@ model User {
   meetingVoteResults          MeetingVoteResult[]
   userPrivacyPolicyAgreements UserPrivacyPolicyAgreement[]
 
+  closedRentalReservations RentalReservation[] @relation("RentalClosedBy")
+
   @@map("user")
 }
 
@@ -61,6 +63,8 @@ model Student {
   clubDelegateChangeRequestsPrev  ClubDelegateChangeRequest[]      @relation("PrevStudent")
   clubDelegateChangeRequestsNew   ClubDelegateChangeRequest[]      @relation("NewStudent")
   executive                       Executive?
+
+  rentalReservations RentalReservation[]
 
   @@map("student")
 }
@@ -98,6 +102,11 @@ model Executive {
   fundingChargedFundings        Funding[]
   fundingFeedbacks              FundingFeedback[]
   registrationExecutiveComments RegistrationExecutiveComment[]
+
+  updatedOfficeHours           OfficeHour[]
+  checkedOutRentalReservations RentalReservation[] @relation("RentalCheckedOutBy")
+  returnedRentalReservations   RentalReservation[] @relation("RentalReturnedBy")
+  rentalExtensions             RentalExtension[]
 
   @@map("executive")
 }
@@ -251,6 +260,8 @@ model Club {
   rentalOrders                    RentalOrder[]
   promotionalPrintingOrders       PromotionalPrintingOrder[]
   meetingAttendanceDays           MeetingAttendanceDay[]
+
+  rentalReservations RentalReservation[]
 
   @@map("club")
 }
@@ -506,26 +517,26 @@ model RegistrationDeadlineD {
 // ============================================================================
 
 model Activity {
-  id                   Int       @id @default(autoincrement())
-  clubId               Int       @map("club_id")
-  originalName         String    @map("original_name") @db.VarChar(255)
-  name                 String    @db.VarChar(255)
-  activityTypeEnumId   Int       @map("activity_type_enum_id")
-  location             String    @db.VarChar(255)
-  purpose              String    @db.Text
-  detail               String    @db.Text
-  evidence             String    @db.Text
-  activityDId          Int       @map("activity_d_id")
-  activityStatusEnumId Int       @map("activity_status_enum_id")
-  chargedExecutiveId   Int?      @map("charged_executive_id")
-  professorApprovedAt  DateTime? @map("professor_approved_at") @db.Timestamp(0)
-  commentedAt          DateTime? @map("commented_at") @db.Timestamp(0)
-  /// @deprecated Use the latest non-deleted `activity_feedback.executive_id` for the final reviewer.
-  commentedExecutiveId Int?      @map("commented_executive_id")
-  editedAt             DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
+  id                      Int                     @id @default(autoincrement())
+  clubId                  Int                     @map("club_id")
+  originalName            String                  @map("original_name") @db.VarChar(255)
+  name                    String                  @db.VarChar(255)
+  activityTypeEnumId      Int                     @map("activity_type_enum_id")
+  location                String                  @db.VarChar(255)
+  purpose                 String                  @db.Text
+  detail                  String                  @db.Text
+  evidence                String                  @db.Text
+  activityDId             Int                     @map("activity_d_id")
+  activityStatusEnumId    Int                     @map("activity_status_enum_id")
+  chargedExecutiveId      Int?                    @map("charged_executive_id")
+  professorApprovedAt     DateTime?               @map("professor_approved_at") @db.Timestamp(0)
+  professorApprovalStatus ProfessorApprovalStatus @default(PENDING) @map("professor_approval_status")
+  commentedAt             DateTime?               @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId    Int?                    @map("commented_executive_id")
+  editedAt                DateTime                @default(now()) @map("edited_at") @db.Timestamp(0)
+  createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt               DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt               DateTime?               @map("deleted_at") @db.Timestamp(0)
 
   activityParticipants  ActivityParticipant[]
   activityTs            ActivityT[]
@@ -533,6 +544,23 @@ model Activity {
   activityEvidenceFiles ActivityEvidenceFile[]
 
   @@map("activity")
+}
+
+enum ProfessorApprovalStatus {
+  PENDING
+  APPROVED
+  LATE_APPROVED
+}
+
+model ActivityProfessorApprovalLog {
+  id             Int                     @id @default(autoincrement())
+  activityId     Int                     @map("activity_id")
+  professorId    Int                     @map("professor_id")
+  approvedAt     DateTime                @map("approved_at") @db.Timestamp(0)
+  approvalStatus ProfessorApprovalStatus @map("approval_status")
+
+  @@index([activityId, approvedAt], map: "idx_activity_professor_approval_log_activity_time")
+  @@map("activity_professor_approval_log")
 }
 
 model ActivityParticipant {
@@ -751,6 +779,7 @@ model Funding {
   chargedExecutiveId                       Int?      @map("charged_executive_id")
   editedAt                                 DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
   commentedAt                              DateTime? @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId                     Int?      @map("commented_executive_id")
   createdAt                                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt                                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt                                DateTime? @map("deleted_at") @db.Timestamp(0)
@@ -1360,4 +1389,109 @@ model AuthSsoLoginFailureLog {
   @@index([userId, occurredAt])
   @@index([studentId, occurredAt])
   @@map("auth_sso_login_failure_log")
+}
+
+model OfficeHour {
+  id                   Int      @id @default(autoincrement())
+  date                 DateTime @db.Date
+  opensAt              DateTime @map("opens_at") @db.DateTime(0)
+  closesAt             DateTime @map("closes_at") @db.DateTime(0)
+  isClosed             Boolean  @default(false) @map("is_closed")
+  publicMemo           String?  @map("public_memo") @db.VarChar(500)
+  internalMemo         String?  @map("internal_memo") @db.VarChar(500)
+  updatedByExecutiveId Int?     @map("updated_by_executive_id")
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  updatedBy Executive? @relation(fields: [updatedByExecutiveId], references: [id])
+
+  rentalPickups            RentalReservation[] @relation("RentalPickupHour")
+  rentalReturns            RentalReservation[] @relation("RentalReturnHour")
+  extensionPreviousReturns RentalExtension[]   @relation("RentalExtensionPreviousReturnHour")
+  extensionNewReturns      RentalExtension[]   @relation("RentalExtensionNewReturnHour")
+
+  @@index([date, updatedAt, id])
+  @@index([closesAt])
+  @@map("office_hour")
+}
+
+model RentalItem {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(100)
+  totalQuantity  Int      @map("total_quantity") @db.UnsignedInt
+  durationPolicy String   @map("duration_policy") @db.VarChar(30)
+  isActive       Boolean  @default(true) @map("is_active")
+  lockVersion    BigInt   @default(0) @map("lock_version") @db.UnsignedBigInt
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  reservations RentalReservation[]
+
+  @@map("rental_item")
+}
+
+model RentalReservation {
+  id                      Int       @id @default(autoincrement())
+  itemId                  Int       @map("item_id")
+  clubId                  Int       @map("club_id")
+  studentId               Int       @map("student_id")
+  contactPhoneNumber      String    @map("contact_phone_number") @db.VarChar(30)
+  purpose                 String    @db.VarChar(500)
+  quantity                Int       @db.UnsignedInt
+  status                  String    @db.VarChar(16)
+  durationPolicy          String    @map("duration_policy") @db.VarChar(30)
+  regularReturnLimitDate  DateTime  @map("regular_return_limit_date") @db.Date
+  approvedExtensionId     Int?      @map("approved_extension_id")
+  pickupHourId            Int       @map("pickup_hour_id")
+  returnHourId            Int       @map("return_hour_id")
+  clientRequestId         String    @map("client_request_id") @db.Char(36)
+  requestFingerprint      String    @map("request_fingerprint") @db.Char(64)
+  checkedOutAt            DateTime? @map("checked_out_at") @db.DateTime(3)
+  checkedOutByExecutiveId Int?      @map("checked_out_by_executive_id")
+  checkoutMemo            String?   @map("checkout_memo") @db.VarChar(500)
+  returnedAt              DateTime? @map("returned_at") @db.DateTime(3)
+  returnedByExecutiveId   Int?      @map("returned_by_executive_id")
+  closedAt                DateTime? @map("closed_at") @db.DateTime(3)
+  closedByUserId          Int?      @map("closed_by_user_id")
+  closeReason             String?   @map("close_reason") @db.VarChar(500)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  item              RentalItem        @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  club              Club              @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  student           Student           @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  checkedOutBy      Executive?        @relation("RentalCheckedOutBy", fields: [checkedOutByExecutiveId], references: [id])
+  returnedBy        Executive?        @relation("RentalReturnedBy", fields: [returnedByExecutiveId], references: [id])
+  closedBy          User?             @relation("RentalClosedBy", fields: [closedByUserId], references: [id])
+  pickupHour        OfficeHour        @relation("RentalPickupHour", fields: [pickupHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  returnHour        OfficeHour        @relation("RentalReturnHour", fields: [returnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  extensions        RentalExtension[] @relation("RentalExtensionHistory")
+  approvedExtension RentalExtension?  @relation("RentalApprovedExtension", fields: [id, approvedExtensionId], references: [reservationId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([studentId, clientRequestId])
+  @@index([itemId, status, pickupHourId])
+  @@index([studentId, createdAt])
+  @@index([pickupHourId])
+  @@index([returnHourId])
+  @@index([id, approvedExtensionId])
+  @@map("rental_reservation")
+}
+
+model RentalExtension {
+  id                     Int      @id @default(autoincrement())
+  reservationId          Int      @map("reservation_id")
+  previousReturnHourId   Int      @map("previous_return_hour_id")
+  newReturnHourId        Int      @map("new_return_hour_id")
+  reason                 String   @db.VarChar(500)
+  processedByExecutiveId Int      @map("processed_by_executive_id")
+  processedAt            DateTime @map("processed_at") @db.DateTime(3)
+
+  reservation        RentalReservation   @relation("RentalExtensionHistory", fields: [reservationId], references: [id], onDelete: Restrict)
+  approvedFor        RentalReservation[] @relation("RentalApprovedExtension")
+  previousReturnHour OfficeHour          @relation("RentalExtensionPreviousReturnHour", fields: [previousReturnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  newReturnHour      OfficeHour          @relation("RentalExtensionNewReturnHour", fields: [newReturnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  processedBy        Executive           @relation(fields: [processedByExecutiveId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, id])
+  @@index([reservationId, processedAt])
+  @@map("rental_extension")
 }

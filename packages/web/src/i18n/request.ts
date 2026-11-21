@@ -10,6 +10,7 @@ const NAMESPACES = [
   "division",
   "club",
   "my",
+  "officeHours",
 ];
 
 export default getRequestConfig(async () => {

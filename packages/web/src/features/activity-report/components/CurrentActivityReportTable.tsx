@@ -23,8 +23,7 @@ interface CurrentActivityReportTableProps {
 
 const columnHelper = createColumnHelper<ActivityReportTableData>();
 const columns = [
-  columnHelper.accessor("professorApproval", {
-    id: "professorApproval",
+  columnHelper.accessor("professorApprovalStatus", {
     header: "지도교수 승인",
     cell: info => (
       <ActivityApprovalStatusTag

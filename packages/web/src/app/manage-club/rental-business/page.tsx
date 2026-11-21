@@ -1,9 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import ManageClubTableMainFrame from "@sparcs-clubs/web/features/clubServices/frames/ManageClubTableMainFrame";
-
-const ManageClubRentalBusiness = () => (
-  <ManageClubTableMainFrame pageType="rental-business" />
-);
+const ManageClubRentalBusiness = () => redirect("/my/rental-business");
 
 export default ManageClubRentalBusiness;

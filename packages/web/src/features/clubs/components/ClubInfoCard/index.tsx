@@ -10,6 +10,7 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import useGetDivisionType from "@sparcs-clubs/web/common/hooks/useGetDivisionType";
+import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 import {
   getTagColorFromClubType,
   getTagContentFromClubType,
@@ -58,8 +59,12 @@ const ResponsiveClubCard = styled(Card)`
 
 const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
   const t = useTranslations();
+  const { isEnglish } = useLanguage();
   const theme = useTheme();
   const [isMobile, setIsMobile] = useState(false);
+  const characteristic = isEnglish
+    ? club.characteristicEn?.trim() || club.characteristic
+    : club.characteristic;
 
   const { data: divisionData, isLoading, isError } = useGetDivisionType();
 
@@ -111,7 +116,7 @@ const ClubInfoCard: React.FC<ClubInfoCardProps> = ({ club }) => {
       <ResponsiveClubInfoRow>
         <ClubInfoItem
           title={isMobile ? t("club.Charac") : t("club.성격")}
-          content={club.characteristic}
+          content={characteristic}
         />
         <ClubInfoItem
           title={isMobile ? t("club.연도") : t("club.설립연도")}

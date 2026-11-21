@@ -43,6 +43,10 @@ export default class UserPublicService {
     return this.loginIdentityService.findLoginIdentity(userId);
   }
 
+  findUniqueLoginIdentityByEmail(email: string) {
+    return this.loginIdentityService.findUniqueLoginIdentityByEmail(email);
+  }
+
   isActiveUser(userId: number) {
     return this.loginIdentityService.isActiveUser(userId);
   }
@@ -231,6 +235,12 @@ export default class UserPublicService {
     const students =
       await this.oldStudentRepository.fetchStudentSummaries(studentIds);
     return students;
+  }
+
+  fetchStudentSummariesIncludingDeleted(studentIds: number[]) {
+    return this.oldStudentRepository.fetchStudentSummariesIncludingDeleted(
+      studentIds,
+    );
   }
 
   async fetchCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
