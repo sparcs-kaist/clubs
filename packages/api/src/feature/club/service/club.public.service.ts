@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
@@ -752,16 +758,16 @@ export default class ClubPublicService {
     clubId: number;
     date?: Date;
   }): Promise<void> {
-    const semesterId = await this.semesterPublicService.loadId({
-      date: query.date,
-    });
+    const date = query.date ?? this.clock.now();
+    const semesterId = await this.semesterPublicService.loadId({ date });
     const isProfessor = await this.clubSemesterRepository.count({
       professorId: query.professorId,
       clubId: query.clubId,
       semesterId,
+      date,
     });
     if (isProfessor === 0) {
-      throw new Error(
+      throw new ForbiddenException(
         `Professor ${query.professorId} is not a professor of club: ${query.clubId}`,
       );
     }

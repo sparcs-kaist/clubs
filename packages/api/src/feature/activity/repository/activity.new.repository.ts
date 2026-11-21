@@ -1,6 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
+
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 
 import {
   ActivityStatusEnum,
@@ -16,6 +22,7 @@ import {
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
+import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
 import {
   IActivityCreate,
   MActivity,
@@ -78,6 +85,72 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     super(activityTableConfig, MActivity, "activityId");
   }
 
+  selectActivityByIds(activityIds: number[]) {
+    return this.txHost.tx.activity.findMany({
+      where: { id: { in: activityIds }, deletedAt: null },
+      select: { id: true, clubId: true, activityDId: true },
+    });
+  }
+
+  async recordProfessorActivityApprovals(param: {
+    activityIds: number[];
+    clubId: number;
+    activityDId: number;
+    professorId: number;
+    approvalStatus: Exclude<
+      ProfessorApprovalStatus,
+      typeof ProfessorApprovalStatus.Pending
+    >;
+    approvedAt: Date;
+  }): Promise<void> {
+    const { clubId, activityDId, professorId, approvalStatus, approvedAt } =
+      param;
+    const logEntries: Prisma.ActivityProfessorApprovalLogCreateManyInput[] = [];
+
+    // The caller orders IDs so overlapping batches acquire row locks in the same order.
+    await forEachAsyncSequentially(param.activityIds, async id => {
+      const scope = { id, clubId, activityDId };
+      const result = await this.txHost.tx.activity.updateMany({
+        where: {
+          ...scope,
+          deletedAt: null,
+          professorApprovalStatus: ProfessorApprovalStatus.Pending,
+        },
+        data: {
+          professorApprovalStatus: approvalStatus,
+          professorApprovedAt: approvedAt,
+        },
+      });
+      if (result.count === 1) {
+        logEntries.push({
+          activityId: id,
+          professorId,
+          approvalStatus,
+          approvedAt,
+        });
+      } else {
+        const activity = await this.txHost.tx.activity.findFirst({
+          where: { ...scope, deletedAt: null },
+          select: { professorApprovalStatus: true },
+        });
+        if (!activity) throw new NotFoundException("No such activity");
+        if (
+          activity.professorApprovalStatus === ProfessorApprovalStatus.Pending
+        ) {
+          throw new ConflictException(
+            "Activity changed while it was being approved",
+          );
+        }
+      }
+    });
+
+    if (logEntries.length > 0) {
+      await this.txHost.tx.activityProfessorApprovalLog.createMany({
+        data: logEntries,
+      });
+    }
+  }
+
   async approveExecutiveActivity(param: {
     activityId: number;
     commentedAt: Date;
@@ -120,7 +193,6 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     return result.count > 0;
   }
 
-  @Transactional()
   async updateActivityReport(activity: MActivity): Promise<boolean> {
     const data = this.modelToDB(activity);
     const { id: _, ...mainData } = data.main;
@@ -147,7 +219,11 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         id: activity.id,
         deletedAt: null,
       },
-      data: mainData,
+      data: {
+        ...mainData,
+        professorApprovedAt: activity.professorApprovedAt,
+        professorApprovalStatus: activity.professorApprovalStatus,
+      },
     });
 
     if (activityResult.count !== 1) return false;
@@ -224,6 +300,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       commentedAt: result.main.commentedAt,
       editedAt: result.main.editedAt,
       professorApprovedAt: result.main.professorApprovedAt,
+      professorApprovalStatus: result.main.professorApprovalStatus,
       durations: result.oneToMany.activityT as {
         startTerm: Date;
         endTerm: Date;
@@ -249,7 +326,6 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
         updatedAt: this.clock.now(),
-        professorApprovedAt: model.professorApprovedAt,
       },
       oneToOne: {},
       oneToMany: {

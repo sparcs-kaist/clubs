@@ -1,10 +1,12 @@
 import React from "react";
 
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import { ActivityStatusEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import { ApplyTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import ProfessorApprovalEnum, {
+import {
   getProfessorApprovalLabel,
   getProfessorApprovalTagColor,
 } from "@sparcs-clubs/web/types/professorApproval";
@@ -18,7 +20,7 @@ type ActivityApprovalStatusTagProps =
     }
   | {
       type: "professor";
-      status: ProfessorApprovalEnum | null;
+      status: ProfessorApprovalStatus | null;
       width?: string;
     };
 

@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import {
+  ActivityStatusEnum,
+  ProfessorApprovalStatus,
+} from "@clubs/domain/activity/activity";
 
 import apiAct002, {
   ApiAct002ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct002";
+import type { ApiAct015ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct015";
 
 import { activityDetailGet } from "@sparcs-clubs/web/features/register-club/services/_atomic/actApiList";
 import {
@@ -18,17 +22,20 @@ export const activityReportDetailQueryKey = (
   activityId: number,
 ) => [activityDetailGet(profile, activityId)];
 
+type ActivityReportDetailResponse = ApiAct002ResponseOk &
+  Partial<Pick<ApiAct015ResponseOk, "canProfessorApprove">>;
+
 export const useGetActivityReport = (
   profile: string,
   activityId: number,
   operatingCommitteeSecret?: string,
 ) =>
-  useQuery<ApiAct002ResponseOk, Error>({
+  useQuery<ActivityReportDetailResponse, Error>({
     queryKey: [
-      operatingCommitteeSecret,
       ...activityReportDetailQueryKey(profile, activityId),
+      operatingCommitteeSecret,
     ],
-    queryFn: async (): Promise<ApiAct002ResponseOk> => {
+    queryFn: async (): Promise<ActivityReportDetailResponse> => {
       const { data } = await axiosClientWithAuth.get(
         activityDetailGet(profile, activityId),
         { params: { operatingCommitteeSecret } },
@@ -88,6 +95,7 @@ defineAxiosMock(mock => {
         },
       ],
       updatedAt: new Date(),
+      professorApprovalStatus: ProfessorApprovalStatus.Approved,
       professorApprovedAt: new Date(),
       editedAt: new Date(),
       commentedAt: null,

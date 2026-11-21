@@ -55,6 +55,7 @@ const responseBodyMap = {
     updatedAt: z.coerce.date(),
     // TODO: domain object로 교체
     professorApprovedAt: z.coerce.date().nullable(),
+    professorApprovalStatus: zActivity.shape.professorApprovalStatus,
     // TODO: domain object로 교체
     editedAt: z.coerce.date(),
     // TODO: domain object로 교체

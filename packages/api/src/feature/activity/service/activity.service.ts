@@ -1,5 +1,8 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
 import {
@@ -32,6 +35,7 @@ import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import FilePublicService from "@sparcs-clubs/api/feature/file/service/file.public.service";
@@ -172,12 +176,16 @@ export default class ActivityOldService {
     clubId: number,
     professorId: number,
   ): Promise<ApiAct019ResponseOk> {
+    const now = this.clock.now();
     await this.clubPublicService.checkIsProfessor({
       professorId,
       clubId,
+      date: now,
     });
 
-    const activityDId = await this.activityDurationPublicService.loadId();
+    const activityDId = await this.activityDurationPublicService.loadId({
+      date: now,
+    });
     const activities =
       await this.activityRepository.selectActivityByClubIdAndActivityDId(
         clubId,
@@ -205,6 +213,9 @@ export default class ActivityOldService {
       activityTypeEnumId: row.activityTypeEnumId as ActivityTypeEnum,
       durations: row.durations,
       professorApprovedAt: row.professorApprovedAt,
+      professorApprovalStatus: row.professorApprovalStatus,
+      canProfessorApprove:
+        row.professorApprovalStatus === ProfessorApprovalStatus.Pending,
       editedAt: row.editedAt,
       commentedAt: row.commentedAt,
     }));
@@ -214,20 +225,76 @@ export default class ActivityOldService {
     activityIds: number[],
     professorId: number,
   ) {
+    const uniqueIds = [...new Set(activityIds)].sort((a, b) => a - b);
+    if (uniqueIds.length === 0) {
+      throw new HttpException(
+        "No activities requested",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const activities =
-      await this.activityRepository.selectActivityByIds(activityIds);
+      await this.activityNewRepository.selectActivityByIds(uniqueIds);
+    if (activities.length !== uniqueIds.length) {
+      throw new HttpException("No such activity", HttpStatus.NOT_FOUND);
+    }
+
+    const now = this.clock.now();
+    const { clubId } = activities[0];
+    if (activities.some(activity => activity.clubId !== clubId)) {
+      throw new HttpException("Invalid club id", HttpStatus.BAD_REQUEST);
+    }
     await this.clubPublicService.checkIsProfessor({
       professorId,
-      clubId: activities[0].clubId,
+      clubId,
+      date: now,
     });
 
-    if (activities.some(activity => activity.clubId !== activities[0].clubId))
-      throw new HttpException("Invalid club id", HttpStatus.BAD_REQUEST);
+    const term = await this.activityDurationPublicService.load({ date: now });
+    if (activities.some(activity => activity.activityDId !== term.id)) {
+      throw new HttpException(
+        "The activity is not in the current regular reporting period",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-    await this.activityRepository.updateActivityProfessorApprovedAt({
-      activityIds,
+    const writingDeadlines = await this.activityDeadlinePublicService.search({
+      semesterId: term.semester.id,
+      deadlineEnum: ActivityDeadlineEnum.Writing,
+    });
+    // With no configured deadline, retain the normal approval classification.
+    const latestWritingEnd =
+      writingDeadlines.length === 0
+        ? Infinity
+        : Math.max(
+            ...writingDeadlines.map(deadline => deadline.endTerm.getTime()),
+          );
+    const approvalStatus =
+      now.getTime() < latestWritingEnd
+        ? ProfessorApprovalStatus.Approved
+        : ProfessorApprovalStatus.LateApproved;
+
+    await this.persistProfessorActivityApprovals({
+      activityIds: uniqueIds,
+      clubId,
+      activityDId: term.id,
       professorId,
+      approvalStatus,
+      approvedAt: now,
     });
+  }
+
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
+  private persistProfessorActivityApprovals(
+    approval: Parameters<
+      ActivityNewRepository["recordProfessorActivityApprovals"]
+    >[0],
+  ): Promise<void> {
+    return this.activityNewRepository.recordProfessorActivityApprovals(
+      approval,
+    );
   }
 
   async getExecutiveActivitiesClubs(

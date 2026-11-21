@@ -7,19 +7,20 @@ import { useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
+import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
+import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { ActTypeTagList } from "@sparcs-clubs/web/constants/tableTagList";
-import useGetProfessorActivityReportList from "@sparcs-clubs/web/features/activity-report/hooks/useGetProfessorActivityReportList";
+import useGetProfessorCurrentActivityReportList from "@sparcs-clubs/web/features/activity-report/services/useGetProfessorCurrentActivityReportList";
 import usePostProfessorApproveActivityReport from "@sparcs-clubs/web/features/activity-report/services/useProfessorApproveActivityReport";
-import { ProfessorActivityReportTableData } from "@sparcs-clubs/web/features/activity-report/types/table";
-import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 import { formatDate } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
@@ -29,10 +30,10 @@ interface ProfessorActivityReportTableProps {
   clubId: number;
 }
 
-const columnHelper = createColumnHelper<ProfessorActivityReportTableData>();
+const emptyReports: ApiAct019ResponseOk = [];
+const columnHelper = createColumnHelper<ApiAct019ResponseOk[number]>();
 const columns = [
-  columnHelper.accessor("professorApproval", {
-    id: "professorApproval",
+  columnHelper.accessor("professorApprovalStatus", {
     header: "지도교수 승인",
     cell: info => (
       <ActivityApprovalStatusTag
@@ -74,9 +75,12 @@ const ProfessorActivityReportTable: React.FC<
 > = ({ clubId }) => {
   const router = useRouter();
 
-  const { data, isLoading, isError } =
-    useGetProfessorActivityReportList(clubId);
-  const { mutate: approveActivityReport } =
+  const {
+    data = emptyReports,
+    isLoading,
+    isError,
+  } = useGetProfessorCurrentActivityReportList({ clubId });
+  const { mutateAsync: approveActivityReport, isPending: isApproving } =
     usePostProfessorApproveActivityReport();
 
   const table = useReactTable({
@@ -86,28 +90,40 @@ const ProfessorActivityReportTable: React.FC<
     enableSorting: false,
   });
 
-  const hasActivitiesToApprove = data.some(
-    activity => activity.professorApproval === ProfessorApprovalEnum.Pending,
-  );
+  const approvableActivityIds = data
+    .filter(activity => activity.canProfessorApprove)
+    .map(activity => activity.id);
+
+  const handleApproveAll = async () => {
+    try {
+      await approveActivityReport({
+        activityIds: approvableActivityIds,
+        clubId,
+      });
+    } catch {
+      overlay.open(({ isOpen, close }) => (
+        <Modal isOpen={isOpen}>
+          <ConfirmModalContent onConfirm={close}>
+            활동 보고서 일괄 승인에 실패했습니다.
+          </ConfirmModalContent>
+        </Modal>
+      ));
+    }
+  };
 
   const openApproveAllModal = () => {
     overlay.open(({ isOpen, close }) => (
       <Modal isOpen={isOpen}>
         <CancellableModalContent
           confirmButtonText="승인"
-          onConfirm={() => {
-            approveActivityReport({
-              body: {
-                activities: data.map(activity => ({ id: activity.id })),
-              },
-            });
+          onConfirm={async () => {
             close();
-
-            window.location.href = "/manage-club";
+            await handleApproveAll();
           }}
           onClose={close}
         >
-          모든 활동 보고서를 일괄 승인합니다. <br />
+          승인 가능한 활동 보고서 {approvableActivityIds.length}건을 일괄
+          승인합니다. <br />
           해당 작업은 되돌릴 수 없습니다.
         </CancellableModalContent>
       </Modal>
@@ -121,7 +137,11 @@ const ProfessorActivityReportTable: React.FC<
           활동 보고서
         </Typography>
         <Button
-          type={hasActivitiesToApprove ? "default" : "disabled"}
+          type={
+            approvableActivityIds.length > 0 && !isApproving
+              ? "default"
+              : "disabled"
+          }
           onClick={openApproveAllModal}
         >
           전체 승인

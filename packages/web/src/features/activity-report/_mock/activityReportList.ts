@@ -1,9 +1,10 @@
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
+import type { ApiAct019ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct019";
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
 } from "@clubs/interface/common/enum/activity.enum";
-
-import { ActivityProfessorApprovalEnum } from "@sparcs-clubs/web/features/manage-club/services/_mock/mockManageClub";
 
 export const mockActivityReportData = [
   {
@@ -11,7 +12,6 @@ export const mockActivityReportData = [
     name: "2024 가을학기 신입생 프로그래밍 교육",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 102호",
     purpose: "신입생 프로그래밍 기초 교육",
     detail: "Python 기초 문법부터 알고리즘까지 단계별 교육",
@@ -37,7 +37,6 @@ export const mockActivityReportData = [
     name: "오픈소스 프로젝트 기여 활동",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "온라인",
     purpose: "오픈소스 생태계 기여",
     detail: "React 커뮤니티 버그 수정 및 문서화 작업",
@@ -62,7 +61,6 @@ export const mockActivityReportData = [
     name: "동아리 홈페이지 리뉴얼 프로젝트",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Rejected,
-    professorApproval: ActivityProfessorApprovalEnum.Denied,
     location: "N1 204호",
     purpose: "동아리 인프라 개선",
     detail: "기존 홈페이지 리뉴얼 및 기능 개선",
@@ -87,7 +85,6 @@ export const mockActivityReportData = [
     name: "AI 스터디 그룹 운영",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -121,7 +118,6 @@ export const mockActivityReportData = [
     name: "가을학기 알고리즘 대회",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "N1 대강당",
     purpose: "알고리즘 실력 향상",
     detail: "알고리즘 대회 개최 및 운영",
@@ -146,7 +142,6 @@ export const mockActivityReportData = [
     name: "클라우드 인프라 구축 프로젝트",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -172,7 +167,6 @@ export const mockActivityReportData = [
     name: "기술 블로그 운영",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -206,7 +200,6 @@ export const mockActivityReportData = [
     name: "신입회원 멘토링 프로그램",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -232,7 +225,6 @@ export const mockActivityReportData = [
     name: "보안 취약점 분석 프로젝트",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Rejected,
-    professorApproval: ActivityProfessorApprovalEnum.Denied,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -258,7 +250,6 @@ export const mockActivityReportData = [
     name: "데이터베이스 최적화 스터디",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -284,7 +275,6 @@ export const mockActivityReportData = [
     name: "모바일 앱 개발 워크샵",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -310,7 +300,6 @@ export const mockActivityReportData = [
     name: "DevOps 파이프라인 구축",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -336,7 +325,6 @@ export const mockActivityReportData = [
     name: "코딩 테스트 대비 스터디",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -374,7 +362,6 @@ export const mockActivityReportData = [
     name: "웹 접근성 개선 프로젝트",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -400,7 +387,6 @@ export const mockActivityReportData = [
     name: "머신러닝 모델 최적화 연구",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Rejected,
-    professorApproval: ActivityProfessorApprovalEnum.Denied,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -426,7 +412,6 @@ export const mockActivityReportData = [
     name: "오픈소스 컨트리뷰톤 참가",
     activityTypeEnumId: ActivityTypeEnum.matchedInternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -468,7 +453,6 @@ export const mockActivityReportData = [
     name: "블록체인 기술 세미나",
     activityTypeEnumId: ActivityTypeEnum.matchedExternalActivity,
     activityStatusEnumId: ActivityStatusEnum.Approved,
-    professorApproval: ActivityProfessorApprovalEnum.Approved,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -494,7 +478,6 @@ export const mockActivityReportData = [
     name: "서버리스 아키텍처 구현",
     activityTypeEnumId: ActivityTypeEnum.notMatchedActivity,
     activityStatusEnumId: ActivityStatusEnum.Applied,
-    professorApproval: ActivityProfessorApprovalEnum.Requested,
     location: "N1 세미나실",
     purpose: "AI 학습 및 연구",
     detail: "최신 AI 기술 학습 및 실습",
@@ -515,4 +498,10 @@ export const mockActivityReportData = [
     editedAt: new Date("2024-08-15"),
     commentedAt: null,
   },
-];
+].map(activity => ({
+  ...activity,
+  professorApprovalStatus: activity.professorApprovedAt
+    ? ProfessorApprovalStatus.Approved
+    : ProfessorApprovalStatus.Pending,
+  canProfessorApprove: activity.professorApprovedAt === null,
+})) satisfies ApiAct019ResponseOk;

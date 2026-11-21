@@ -13,7 +13,7 @@ export const getProfessorPendingApprovals = (
   clubActivities: {
     id: number;
     nameKr: string;
-    activities: Pick<ApiAct019ResponseOk[number], "professorApprovedAt">[];
+    activities: Pick<ApiAct019ResponseOk[number], "canProfessorApprove">[];
   }[],
   registrations: Pick<
     ApiReg021ResponseOk["items"][number],
@@ -23,7 +23,7 @@ export const getProfessorPendingApprovals = (
   const clubs = new Map<number, ProfessorPendingApproval>();
   clubActivities.forEach(club => {
     const activityCount = club.activities.filter(
-      activity => activity.professorApprovedAt === null,
+      activity => activity.canProfessorApprove,
     ).length;
     if (activityCount === 0) return;
     clubs.set(club.id, {
