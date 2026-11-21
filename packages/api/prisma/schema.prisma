@@ -517,25 +517,26 @@ model RegistrationDeadlineD {
 // ============================================================================
 
 model Activity {
-  id                   Int       @id @default(autoincrement())
-  clubId               Int       @map("club_id")
-  originalName         String    @map("original_name") @db.VarChar(255)
-  name                 String    @db.VarChar(255)
-  activityTypeEnumId   Int       @map("activity_type_enum_id")
-  location             String    @db.VarChar(255)
-  purpose              String    @db.Text
-  detail               String    @db.Text
-  evidence             String    @db.Text
-  activityDId          Int       @map("activity_d_id")
-  activityStatusEnumId Int       @map("activity_status_enum_id")
-  chargedExecutiveId   Int?      @map("charged_executive_id")
-  professorApprovedAt  DateTime? @map("professor_approved_at") @db.Timestamp(0)
-  commentedAt          DateTime? @map("commented_at") @db.Timestamp(0)
-  commentedExecutiveId Int?      @map("commented_executive_id")
-  editedAt             DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
+  id                      Int                     @id @default(autoincrement())
+  clubId                  Int                     @map("club_id")
+  originalName            String                  @map("original_name") @db.VarChar(255)
+  name                    String                  @db.VarChar(255)
+  activityTypeEnumId      Int                     @map("activity_type_enum_id")
+  location                String                  @db.VarChar(255)
+  purpose                 String                  @db.Text
+  detail                  String                  @db.Text
+  evidence                String                  @db.Text
+  activityDId             Int                     @map("activity_d_id")
+  activityStatusEnumId    Int                     @map("activity_status_enum_id")
+  chargedExecutiveId      Int?                    @map("charged_executive_id")
+  professorApprovedAt     DateTime?               @map("professor_approved_at") @db.Timestamp(0)
+  professorApprovalStatus ProfessorApprovalStatus @default(PENDING) @map("professor_approval_status")
+  commentedAt             DateTime?               @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId    Int?                    @map("commented_executive_id")
+  editedAt                DateTime                @default(now()) @map("edited_at") @db.Timestamp(0)
+  createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt               DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt               DateTime?               @map("deleted_at") @db.Timestamp(0)
 
   activityParticipants  ActivityParticipant[]
   activityTs            ActivityT[]
@@ -543,6 +544,23 @@ model Activity {
   activityEvidenceFiles ActivityEvidenceFile[]
 
   @@map("activity")
+}
+
+enum ProfessorApprovalStatus {
+  PENDING
+  APPROVED
+  LATE_APPROVED
+}
+
+model ActivityProfessorApprovalLog {
+  id             Int                     @id @default(autoincrement())
+  activityId     Int                     @map("activity_id")
+  professorId    Int                     @map("professor_id")
+  approvedAt     DateTime                @map("approved_at") @db.Timestamp(0)
+  approvalStatus ProfessorApprovalStatus @map("approval_status")
+
+  @@index([activityId, approvedAt], map: "idx_activity_professor_approval_log_activity_time")
+  @@map("activity_professor_approval_log")
 }
 
 model ActivityParticipant {

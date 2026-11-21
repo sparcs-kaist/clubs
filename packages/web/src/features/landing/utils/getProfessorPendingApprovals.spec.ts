@@ -12,7 +12,7 @@ const registration = {
 };
 
 describe("professor pending approvals", () => {
-  it("groups unsigned reports and current-semester registrations by club", () => {
+  it("groups approvable reports and current-semester registrations by club", () => {
     assert.deepEqual(
       getProfessorPendingApprovals(
         4,
@@ -21,9 +21,9 @@ describe("professor pending approvals", () => {
             id: 1,
             nameKr: "가나다",
             activities: [
-              { professorApprovedAt: null },
-              { professorApprovedAt: new Date() },
-              { professorApprovedAt: null },
+              { canProfessorApprove: true },
+              { canProfessorApprove: false },
+              { canProfessorApprove: true },
             ],
           },
         ],
@@ -40,7 +40,7 @@ describe("professor pending approvals", () => {
     );
   });
 
-  it("excludes past/unknown semesters and signed documents", () => {
+  it("excludes ineligible reports and registrations outside the current semester or already signed", () => {
     assert.deepEqual(
       getProfessorPendingApprovals(
         4,
@@ -48,7 +48,7 @@ describe("professor pending approvals", () => {
           {
             id: 1,
             nameKr: "가나다",
-            activities: [{ professorApprovedAt: new Date() }],
+            activities: [{ canProfessorApprove: false }],
           },
         ],
         [

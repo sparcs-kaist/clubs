@@ -47,24 +47,6 @@ export default class ActivityRepository {
     return this.prisma.$transaction(callback);
   }
 
-  selectActivityByIds(activityIds: number[]) {
-    return this.prisma.activity.findMany({
-      where: { id: { in: activityIds } },
-    });
-  }
-
-  updateActivityProfessorApprovedAt(param: {
-    activityIds: number[];
-    professorId: number;
-  }) {
-    const today = this.clock.now();
-
-    return this.prisma.activity.updateMany({
-      where: { id: { in: param.activityIds } },
-      data: { professorApprovedAt: today },
-    });
-  }
-
   // 활동을 DB에서 soft delete 합니다.
   // 작성에 성공하면 True, 실패하면 False를 리턴합니다.
   async deleteActivity(contents: { activityId: number }): Promise<boolean> {

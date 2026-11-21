@@ -31,6 +31,17 @@ export const ActivityStatusEnum = {
 export type ActivityStatusEnum =
   (typeof ActivityStatusEnum)[keyof typeof ActivityStatusEnum];
 
+export const ProfessorApprovalStatus = {
+  Pending: "PENDING",
+  Approved: "APPROVED",
+  LateApproved: "LATE_APPROVED",
+} as const;
+
+export type ProfessorApprovalStatus =
+  (typeof ProfessorApprovalStatus)[keyof typeof ProfessorApprovalStatus];
+
+export const zProfessorApprovalStatus = z.nativeEnum(ProfessorApprovalStatus);
+
 export const zActivity = z.object({
   id: zId,
   club: zExtractId(zClub),
@@ -64,6 +75,7 @@ export const zActivity = z.object({
   chargedExecutive: zExtractId(zExecutive).nullable(),
   editedAt: z.coerce.date(),
   professorApprovedAt: z.coerce.date().nullable(),
+  professorApprovalStatus: zProfessorApprovalStatus,
   commentedAt: z.coerce.date().nullable(),
   commentedExecutive: zExtractId(zExecutive).nullable(),
 });

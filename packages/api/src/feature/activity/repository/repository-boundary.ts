@@ -5,6 +5,7 @@ export const repositoryBoundary = {
     "activityT",
     "activityEvidenceFile",
     "activityFeedback",
+    "activityProfessorApprovalLog",
     "activityClubChargedExecutive",
   ],
 } as const;

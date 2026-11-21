@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import {
   ActivityStatusEnum,
   ActivityTypeEnum,
@@ -36,6 +38,8 @@ const responseBodyMap = {
         }),
       ),
       professorApprovedAt: z.coerce.date().nullable(),
+      professorApprovalStatus: zProfessorApprovalStatus,
+      canProfessorApprove: z.boolean(),
       editedAt: z.coerce.date(),
       commentedAt: z.coerce.date().nullable(),
     })

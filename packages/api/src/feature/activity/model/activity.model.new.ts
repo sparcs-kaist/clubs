@@ -37,6 +37,7 @@ export class MActivity extends MEntity implements IActivity {
   commentedAt: IActivity["commentedAt"];
   editedAt: IActivity["editedAt"];
   professorApprovedAt: IActivity["professorApprovedAt"];
+  professorApprovalStatus: IActivity["professorApprovalStatus"];
 
   constructor(data: IActivity) {
     super();

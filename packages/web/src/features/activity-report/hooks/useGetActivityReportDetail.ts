@@ -7,7 +7,6 @@ import useHasAdvisor from "@sparcs-clubs/web/features/clubs/hooks/useHasAdvisor"
 
 import { useGetActivityReport } from "../services/useGetActivityReport";
 import { CurrentActivityReport } from "../types/activityReport";
-import getProfessorApprovalStatus from "../utils/getProfessorApprovalStatus";
 
 const useGetActivityReportDetail = (
   activityId: number,
@@ -55,14 +54,11 @@ const useGetActivityReportDetail = (
         name: participant.name,
         studentNumber: participant.studentNumber.toString(),
       })),
-      professorApproval: getProfessorApprovalStatus({
-        hasProfessor,
-        professorApprovedAt: activityReport.professorApprovedAt,
-      }),
-      professorApprovedAt:
-        activityReport.professorApprovedAt !== null
-          ? activityReport.professorApprovedAt
-          : undefined,
+      professorApprovalStatus: hasProfessor
+        ? activityReport.professorApprovalStatus
+        : null,
+      professorApprovedAt: activityReport.professorApprovedAt ?? undefined,
+      canProfessorApprove: activityReport.canProfessorApprove ?? false,
     };
   }, [activityReport, activityId, hasProfessor, isLoading, isError]);
 
