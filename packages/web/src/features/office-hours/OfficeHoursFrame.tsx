@@ -2,25 +2,41 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
+import styled from "styled-components";
 
 import { apiOfh001, apiOfh002 } from "@clubs/interface/api/office-hours";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
+import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
+import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import { axiosClient, axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 import { getLocalDateOnly } from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import OfficeHourEditor from "./components/OfficeHourEditor";
-import OfficeHoursCalendar from "./components/OfficeHoursCalendar";
+import OfficeHoursCalendar, {
+  officeHourMemoId,
+} from "./components/OfficeHoursCalendar";
 import OfficeHoursForm from "./components/OfficeHoursForm";
+
+const PublicMemo = styled.article`
+  scroll-margin-top: 72px;
+
+  p {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+`;
 
 const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
   const t = useTranslations("officeHours");
   const paths = useTranslations("path");
+  const formatter = useFormatter();
+  const { profile } = useAuth();
   const [month, setMonth] = useState(() =>
     startOfMonth(getLocalDateOnly(new Date())),
   );
@@ -30,17 +46,26 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
   const endpoint = executive ? apiOfh002 : apiOfh001;
   const client = executive ? axiosClientWithAuth : axiosClient;
   const officeHours = useQuery({
-    queryKey: ["office-hours", endpoint.url(), { from, to }],
+    queryKey: [
+      "office-hours",
+      endpoint.url(),
+      { from, to, viewerId: executive ? profile?.id : undefined },
+    ],
     queryFn: async () => {
       const { data } = await client.get(endpoint.url(), {
         params: { from, to },
       });
-      return endpoint.responseBodyMap[200].parse(data);
+      return executive
+        ? { executive, ...apiOfh002.responseBodyMap[200].parse(data) }
+        : { executive, ...apiOfh001.responseBodyMap[200].parse(data) };
     },
   });
   const items = officeHours.data?.items ?? [];
-  const selectedOfficeHour = items.find(item => item.date === selectedDate);
+  const selectedOfficeHour = officeHours.data?.executive
+    ? officeHours.data.items.find(item => item.date === selectedDate)
+    : undefined;
   const title = executive ? paths("상근일 관리") : paths("상근일 현황");
+  const publicMemos = items.filter(item => item.publicMemo);
 
   return (
     <FlexWrapper direction="column" gap={24}>
@@ -82,9 +107,38 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
           {items.length === 0 && <p role="status">{t("emptyMonth")}</p>}
         </AsyncBoundary>
       </OfficeHoursCalendar>
+      {!executive && publicMemos.length > 0 && (
+        <Card outline gap={16}>
+          {publicMemos.map(({ date, publicMemo }) => (
+            <PublicMemo key={date} id={officeHourMemoId(date)} tabIndex={-1}>
+              <FlexWrapper direction="column" gap={8}>
+                <h2>
+                  {t("dateMemo", {
+                    date: formatter.dateTime(
+                      new Date(`${date}T00:00:00+09:00`),
+                      {
+                        timeZone: "Asia/Seoul",
+                        dateStyle: "long",
+                      },
+                    ),
+                  })}
+                </h2>
+                <p>{publicMemo}</p>
+              </FlexWrapper>
+            </PublicMemo>
+          ))}
+        </Card>
+      )}
       {executive && officeHours.isSuccess && selectedDate && (
         <OfficeHourEditor
-          key={`${selectedDate}:${selectedOfficeHour?.version ?? 0}`}
+          key={JSON.stringify([
+            selectedDate,
+            selectedOfficeHour?.opensAt,
+            selectedOfficeHour?.closesAt,
+            selectedOfficeHour?.isClosed,
+            selectedOfficeHour?.publicMemo,
+            selectedOfficeHour?.internalMemo,
+          ])}
           date={selectedDate}
           officeHour={selectedOfficeHour}
         />

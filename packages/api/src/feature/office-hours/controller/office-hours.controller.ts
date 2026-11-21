@@ -14,6 +14,7 @@ import {
   apiOfh002,
   apiOfh003,
   apiOfh004,
+  type ExecutiveOfficeHour,
   type OfficeDateRange,
   type OfficeHour,
   type OfficeHourInput,
@@ -26,37 +27,43 @@ import {
 } from "@sparcs-clubs/api/common/util/decorators/method-decorator";
 import { GetExecutive } from "@sparcs-clubs/api/common/util/decorators/param-decorator";
 
-import { OfficeHoursPublicService } from "../publicService/office-hours.public.service";
-import type { OfficeHourRow } from "../repository/office-hours.repository";
+import type { ExecutiveOfficeHourRow } from "../repository/office-hours.repository";
 import { OfficeHoursService } from "../service/office-hours.service";
 
-function serializeOfficeHour(row: OfficeHourRow): OfficeHour {
+function serializeOfficeHour(row: ExecutiveOfficeHourRow): OfficeHour {
   return {
-    ...row,
+    date: row.date,
+    isClosed: row.isClosed,
     opensAt: row.opensAt.toISOString(),
     closesAt: row.closesAt.toISOString(),
+    publicMemo: row.publicMemo,
   };
+}
+
+function serializeExecutiveOfficeHour(
+  row: ExecutiveOfficeHourRow,
+): ExecutiveOfficeHour {
+  return { ...serializeOfficeHour(row), internalMemo: row.internalMemo };
 }
 
 @Controller()
 export class OfficeHoursController {
-  constructor(
-    private readonly officeHoursPublicService: OfficeHoursPublicService,
-    private readonly officeHoursService: OfficeHoursService,
-  ) {}
+  constructor(private readonly officeHoursService: OfficeHoursService) {}
 
   @Public()
   @Get(apiOfh001.url())
   @UsePipes(new ZodPipe(apiOfh001))
   async getPublic(@Query() query: OfficeDateRange) {
-    return this.list(query);
+    const rows = await this.officeHoursService.list(query);
+    return { items: rows.map(serializeOfficeHour) };
   }
 
   @Executive()
   @Get(apiOfh002.url())
   @UsePipes(new ZodPipe(apiOfh002))
   async getExecutive(@Query() query: OfficeDateRange) {
-    return this.list(query);
+    const rows = await this.officeHoursService.list(query);
+    return { items: rows.map(serializeExecutiveOfficeHour) };
   }
 
   @Executive()
@@ -82,11 +89,6 @@ export class OfficeHoursController {
       body,
       executive.executiveId,
     );
-    return { officeHour: serializeOfficeHour(row) };
-  }
-
-  private async list({ from, to }: OfficeDateRange) {
-    const rows = await this.officeHoursPublicService.list(from, to);
-    return { items: rows.map(serializeOfficeHour) };
+    return { officeHour: serializeExecutiveOfficeHour(row) };
   }
 }

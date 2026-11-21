@@ -78,7 +78,7 @@ const DayCell = styled.div<{ $selected?: boolean }>`
     cursor: pointer;
   }
 
-  &:is(button):hover,
+  &:is(button, a):hover,
   &:focus-visible {
     border-color: ${({ theme }) => theme.colors.PRIMARY};
   }
@@ -98,6 +98,14 @@ const DayStatus = styled.span<{ $closed?: boolean }>`
   color: ${({ theme, $closed }) =>
     $closed ? theme.colors.RED[600] : theme.colors.MINT[800]};
 `;
+
+const DayMemo = styled.span`
+  color: ${({ theme }) => theme.colors.MINT[800]};
+  font-size: 12px;
+  text-decoration: underline;
+`;
+
+export const officeHourMemoId = (date: string) => `office-hours-memo-${date}`;
 
 interface OfficeHoursCalendarProps {
   month: Date;
@@ -183,6 +191,21 @@ const OfficeHoursCalendar = ({
               )}
             </>
           );
+
+          if (!onDateSelect && officeHour?.publicMemo) {
+            return (
+              <DayCell
+                as="a"
+                key={date}
+                href={`#${officeHourMemoId(date)}`}
+                aria-label={t("dateMemo", { date })}
+                aria-describedby={statusId}
+              >
+                {label}
+                <DayMemo>{t("note")}</DayMemo>
+              </DayCell>
+            );
+          }
 
           return onDateSelect ? (
             <DayCell

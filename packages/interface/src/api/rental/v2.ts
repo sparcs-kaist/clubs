@@ -24,9 +24,6 @@ const instant = z.union([
 ]);
 const zSlotSelection = z.object({
   date: zOfficeDate,
-  version: z.coerce.number().int().positive(),
-});
-const zRentalSlot = zSlotSelection.extend({
   opensAt: instant,
   closesAt: instant,
 });
@@ -45,8 +42,8 @@ const zRentalReservation = z.object({
   itemName: z.string(),
   quantity: z.coerce.number().int().positive(),
   status: zRentalStatus,
-  pickup: zRentalSlot,
-  return: zRentalSlot,
+  pickup: zSlotSelection,
+  return: zSlotSelection,
   regularReturnLimitDate: zOfficeDate,
   approvedReturnLimitDate: zOfficeDate.nullable(),
   durationPolicy: zRentalPeriodPolicy,
@@ -79,8 +76,8 @@ const zExecutiveRentalReservation = zRentalReservation.extend({
   extensions: z.array(zRentalExtension),
 });
 export type RentalItem = z.infer<typeof zRentalItem>;
-export type RentalSlot = z.infer<typeof zRentalSlot>;
 export type RentalSlotSelection = z.infer<typeof zSlotSelection>;
+export type RentalSlot = RentalSlotSelection;
 export type RentalReservation = z.infer<typeof zRentalReservation>;
 export type ExecutiveRentalReservation = z.infer<
   typeof zExecutiveRentalReservation
@@ -163,9 +160,9 @@ export const apiRentalReturnOptions = endpoint(
   empty,
   200,
   z.object({
-    pickup: zRentalSlot,
+    pickup: zSlotSelection,
     options: z.array(
-      zRentalSlot.extend({
+      zSlotSelection.extend({
         availableQuantity: z.coerce.number().int().nonnegative(),
         availableWithoutSameDayReturns: z.coerce.number().int().nonnegative(),
       }),

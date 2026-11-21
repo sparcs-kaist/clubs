@@ -1,11 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 import { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma";
-import type {
-  Prisma,
-  RentalExtension,
-  RentalReservation,
-} from "@prisma/client";
+import type { Prisma, RentalReservation } from "@prisma/client";
 
 import type { RentalStatus } from "@clubs/interface/api/rental/v2";
 
@@ -14,55 +10,27 @@ import {
   parseKstDate,
 } from "@sparcs-clubs/api/common/util/calendar-date";
 
-type ReservationDates = {
-  pickupDate: string;
-  returnDate: string;
-  regularReturnLimitDate: string;
-};
+type ReturnLimit = { regularReturnLimitDate: string };
 
-export type RentalReservationRow = Omit<
-  RentalReservation,
-  keyof ReservationDates
-> &
-  ReservationDates;
+export type RentalReservationRow = Omit<RentalReservation, keyof ReturnLimit> &
+  ReturnLimit;
 
 type ReservationCreate = Omit<
   Prisma.RentalReservationUncheckedCreateInput,
-  keyof ReservationDates
+  keyof ReturnLimit
 > &
-  ReservationDates;
+  ReturnLimit;
 
 export type RentalReservationUpdate = Omit<
   Prisma.RentalReservationUncheckedUpdateManyInput,
-  keyof ReservationDates
+  keyof ReturnLimit
 > &
-  Partial<ReservationDates>;
-
-type ExtensionDates = {
-  previousReturnDate: string;
-  newReturnDate: string;
-};
-
-type ExtensionCreate = Omit<
-  Prisma.RentalExtensionUncheckedCreateInput,
-  keyof ExtensionDates
-> &
-  ExtensionDates;
+  Partial<ReturnLimit>;
 
 function reservationFromDb(row: RentalReservation): RentalReservationRow {
   return {
     ...row,
-    pickupDate: formatKstDate(row.pickupDate),
-    returnDate: formatKstDate(row.returnDate),
     regularReturnLimitDate: formatKstDate(row.regularReturnLimitDate),
-  };
-}
-
-function extensionFromDb(row: RentalExtension) {
-  return {
-    ...row,
-    previousReturnDate: formatKstDate(row.previousReturnDate),
-    newReturnDate: formatKstDate(row.newReturnDate),
   };
 }
 
@@ -124,8 +92,6 @@ export class RentalRepository {
     const row = await this.txHost.tx.rentalReservation.create({
       data: {
         ...data,
-        pickupDate: parseKstDate(data.pickupDate),
-        returnDate: parseKstDate(data.returnDate),
         regularReturnLimitDate: parseKstDate(data.regularReturnLimitDate),
       },
     });
@@ -137,15 +103,11 @@ export class RentalRepository {
     status: string,
     data: RentalReservationUpdate,
   ) {
-    const { pickupDate, returnDate, regularReturnLimitDate } = data;
+    const { regularReturnLimitDate } = data;
     const updated = await this.txHost.tx.rentalReservation.updateMany({
       where: { id, status },
       data: {
         ...data,
-        pickupDate:
-          pickupDate === undefined ? undefined : parseKstDate(pickupDate),
-        returnDate:
-          returnDate === undefined ? undefined : parseKstDate(returnDate),
         regularReturnLimitDate:
           regularReturnLimitDate === undefined
             ? undefined
@@ -164,39 +126,29 @@ export class RentalRepository {
     return rows.map(reservationFromDb);
   }
 
-  async listExtensions(reservationId: number) {
-    const rows = await this.txHost.tx.rentalExtension.findMany({
+  listExtensions(reservationId: number) {
+    return this.txHost.tx.rentalExtension.findMany({
       where: { reservationId },
       orderBy: { id: "asc" },
     });
-    return rows.map(extensionFromDb);
   }
 
-  async findExtension(reservationId: number, id: number) {
-    const row = await this.txHost.tx.rentalExtension.findUnique({
+  findExtension(reservationId: number, id: number) {
+    return this.txHost.tx.rentalExtension.findUnique({
       where: { reservationId_id: { reservationId, id } },
     });
-    return row ? extensionFromDb(row) : null;
   }
 
-  async listExtensionsByIds(ids: number[]) {
-    const rows = await this.txHost.tx.rentalExtension.findMany({
+  listExtensionsByIds(ids: number[]) {
+    return this.txHost.tx.rentalExtension.findMany({
       where: { id: { in: ids } },
-      select: { id: true, newReturnDate: true },
+      select: { id: true, newReturnHourId: true },
     });
-    return rows.map(({ id, newReturnDate }) => ({
-      id,
-      newReturnDate: formatKstDate(newReturnDate),
-    }));
   }
 
-  recordExtension(data: ExtensionCreate) {
+  recordExtension(data: Prisma.RentalExtensionUncheckedCreateInput) {
     return this.txHost.tx.rentalExtension.create({
-      data: {
-        ...data,
-        previousReturnDate: parseKstDate(data.previousReturnDate),
-        newReturnDate: parseKstDate(data.newReturnDate),
-      },
+      data,
       select: { id: true },
     });
   }
@@ -206,11 +158,15 @@ export class RentalRepository {
       pageOffset: number;
       itemCount: number;
       status?: RentalStatus;
-      officeDate?: string;
       overdue?: "true" | "false";
     },
-    today: string,
-    elapsedVersions: number[],
+    {
+      officeHourIds,
+      overdueReturnHourIds,
+    }: {
+      officeHourIds?: number[];
+      overdueReturnHourIds?: number[];
+    },
     studentId?: number,
   ) {
     const where: Prisma.RentalReservationWhereInput = {
@@ -218,17 +174,17 @@ export class RentalRepository {
       status: query.status,
     };
     const filters: Prisma.RentalReservationWhereInput[] = [];
-    if (query.officeDate) {
-      const date = parseKstDate(query.officeDate);
-      filters.push({ OR: [{ pickupDate: date }, { returnDate: date }] });
+    if (officeHourIds !== undefined) {
+      filters.push({
+        OR: [
+          { pickupHourId: { in: officeHourIds } },
+          { returnHourId: { in: officeHourIds } },
+        ],
+      });
     }
-    const currentDate = parseKstDate(today);
-    const overdue = {
+    const overdue: Prisma.RentalReservationWhereInput = {
       status: "CHECKED_OUT",
-      OR: [
-        { returnDate: { lt: currentDate } },
-        { returnDate: currentDate, returnVersion: { in: elapsedVersions } },
-      ],
+      returnHourId: { in: overdueReturnHourIds },
     };
     if (query.overdue === "true") filters.push(overdue);
     if (query.overdue === "false") filters.push({ NOT: overdue });
@@ -236,7 +192,7 @@ export class RentalRepository {
     const [items, total] = await Promise.all([
       this.txHost.tx.rentalReservation.findMany({
         where,
-        orderBy: { id: query.officeDate === undefined ? "desc" : "asc" },
+        orderBy: { id: officeHourIds === undefined ? "desc" : "asc" },
         skip: (query.pageOffset - 1) * query.itemCount,
         take: query.itemCount,
       }),

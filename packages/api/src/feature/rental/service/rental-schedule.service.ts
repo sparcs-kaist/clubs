@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
 } from "@nestjs/common";
 
 import type {
@@ -25,28 +26,53 @@ export function rentalDate(now: Date) {
   return koreaDate.format(now);
 }
 
-export function serializeWindow(
-  window: Omit<OfficeWindow, "isClosed">,
-): RentalSlot {
+export function serializeWindow(window: OfficeWindow): RentalSlot {
   return {
     date: window.date,
     opensAt: window.opensAt.toISOString(),
     closesAt: window.closesAt.toISOString(),
-    version: window.version,
   };
 }
 
-export function pickupKey(
-  rental: Pick<RentalReservationRow, "pickupDate" | "pickupVersion">,
-): RentalSlotSelection {
-  return { date: rental.pickupDate, version: rental.pickupVersion };
+export function selectionMatches(
+  window: OfficeWindow,
+  selection: RentalSlotSelection,
+) {
+  if (window.date !== selection.date) return false;
+  if (+window.opensAt !== Date.parse(selection.opensAt)) return false;
+  return +window.closesAt === Date.parse(selection.closesAt);
 }
 
-export function returnKey(
-  rental: Pick<RentalReservationRow, "returnDate" | "returnVersion">,
-): RentalSlotSelection {
-  return { date: rental.returnDate, version: rental.returnVersion };
+export function bookedHourIds(rows: readonly RentalReservationRow[]) {
+  return rows.flatMap(row => [row.pickupHourId, row.returnHourId]);
 }
+
+export function requireBookedWindow(
+  windows: ReadonlyMap<number, OfficeWindow>,
+  id: number,
+) {
+  const window = windows.get(id);
+  if (!window)
+    throw new InternalServerErrorException("RENTAL_REFERENCE_NOT_FOUND");
+  return window;
+}
+
+export function withBookedWindows(
+  row: RentalReservationRow,
+  windows: ReadonlyMap<number, OfficeWindow>,
+) {
+  const pickup = requireBookedWindow(windows, row.pickupHourId);
+  const returned = requireBookedWindow(windows, row.returnHourId);
+  return {
+    ...row,
+    pickup,
+    returned,
+    pickupDate: pickup.date,
+    returnDate: returned.date,
+  };
+}
+
+export type BookedRental = ReturnType<typeof withBookedWindows>;
 
 @Injectable()
 export class RentalScheduleService {
@@ -71,43 +97,38 @@ export class RentalScheduleService {
     return { pickup, limit, returns };
   }
 
+  async bookedWindows(ids: readonly number[]) {
+    const rows = await this.officeHours.listByIds([...new Set(ids)]);
+    return new Map(rows.map(window => [window.id, window]));
+  }
+
+  async bookedRentals(rows: readonly RentalReservationRow[]) {
+    const windows = await this.bookedWindows(bookedHourIds(rows));
+    return rows.map(row => withBookedWindows(row, windows));
+  }
+
   async resolve(selection: RentalSlotSelection, now: Date) {
-    const [window] = await this.officeHours.list(
-      selection.date,
-      selection.date,
-    );
+    const window = await this.officeHours.findLatest(selection.date);
     return this.requireSelection(window, selection, now);
   }
 
   requireSelection(
-    window: OfficeWindow | undefined,
+    window: OfficeWindow | null | undefined,
     selection: RentalSlotSelection,
     now: Date,
   ) {
     if (!window) throw new ConflictException("OFFICE_HOURS_CHANGED");
     if (window.isClosed) throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (window.version !== selection.version)
+    if (!selectionMatches(window, selection))
       throw new ConflictException("OFFICE_HOURS_CHANGED");
     if (window.closesAt <= now)
       throw new BadRequestException("OFFICE_HOURS_PASSED");
     return window;
   }
 
-  async resolveBooked(selection: RentalSlotSelection, now: Date) {
-    const versions = await this.officeHours.listDayVersions(selection.date);
-    const current = versions.at(-1);
-    const booked = versions.find(
-      window => window.version === selection.version,
-    );
-    if (!current) throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (!booked) throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (current.isClosed) throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (+current.opensAt !== +booked.opensAt)
-      throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (+current.closesAt !== +booked.closesAt)
-      throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (booked.closesAt <= now)
-      throw new BadRequestException("OFFICE_HOURS_PASSED");
+  async resolveBooked(booked: OfficeWindow, now: Date) {
+    const current = await this.officeHours.findLatest(booked.date);
+    this.requireSelection(current, serializeWindow(booked), now);
     return booked;
   }
 

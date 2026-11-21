@@ -9,6 +9,7 @@ import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
 import { RandomModule } from "@sparcs-clubs/api/common/random/random.module";
 import { TransactionModule } from "@sparcs-clubs/api/common/transaction/transaction.module";
+import { formatKstDate } from "@sparcs-clubs/api/common/util/calendar-date";
 import {
   HttpExceptionFilter,
   ZodErrorFilter,
@@ -42,7 +43,11 @@ const secret = "rental-integration-secret";
 })
 class TestConfigModule {}
 
-const slot = (date: string) => ({ date, version: 1 });
+const slot = (date: string) => ({
+  date,
+  opensAt: `${date}T12:00:00.000Z`,
+  closesAt: `${date}T13:00:00.000Z`,
+});
 const firstPickup = slot("2026-11-16");
 const sharedShift = slot("2026-11-17");
 const secondReturn = slot("2026-11-18");
@@ -207,6 +212,19 @@ describe("Rental API with MySQL", () => {
       message: "OFFICE_HOURS_CHANGED",
     });
 
+    const editedPickup = slot("2026-11-23");
+    await request(server)
+      .put(`/executive/office-hours/${editedPickup.date}`)
+      .set("Authorization", executive)
+      .send({ openTime: "21:30", closeTime: "22:00", isClosed: false })
+      .expect(200);
+    const staleHours = await submit(
+      create(editedPickup, slot("2026-11-24")),
+    ).expect(409);
+    expect(staleHours.body.message).toMatchObject({
+      message: "OFFICE_HOURS_CHANGED",
+    });
+
     const responses = await Promise.all(applicants.map(body => submit(body)));
     expect(responses.map(response => response.status).sort()).toEqual([
       201, 409,
@@ -220,21 +238,53 @@ describe("Rental API with MySQL", () => {
     const second = await submit(create(sharedShift, secondReturn)).expect(201);
     const secondId = second.body.id;
     expect(second.body.requiresSameDayReturn).toBe(true);
+    expect(second.body.pickup).toEqual(sharedShift);
+    expect(second.body.return).toEqual(secondReturn);
+    expect(second.body).not.toHaveProperty("pickupHourId");
+    expect(second.body).not.toHaveProperty("returnHourId");
 
     const changeSharedShift = (isClosed: boolean) =>
       request(server)
         .put(`/executive/office-hours/${sharedShift.date}`)
         .set("Authorization", executive)
         .send({ openTime: "21:00", closeTime: "22:00", isClosed });
+    await request(server)
+      .put(`/executive/office-hours/${sharedShift.date}`)
+      .set("Authorization", executive)
+      .send({
+        openTime: "21:00",
+        closeTime: "22:00",
+        isClosed: false,
+        publicMemo: "학생회실에서 수령하세요.",
+        internalMemo: "인도 전 물품 상태 확인",
+      })
+      .expect(200);
+    const memoOnly = await request(server)
+      .get(`/student/rentals/${secondId}`)
+      .set("Authorization", representative)
+      .expect(200);
+    expect(memoOnly.body.needsReschedule).toBe(false);
+    expect(memoOnly.body.pickup).toEqual(sharedShift);
+
     await changeSharedShift(true).expect(200);
     const affected = await request(server)
       .get(`/student/rentals/${secondId}`)
       .set("Authorization", representative)
       .expect(200);
     expect(affected.body).toMatchObject({
-      pickup: { ...sharedShift, opensAt: "2026-11-17T12:00:00.000Z" },
+      pickup: sharedShift,
       needsReschedule: true,
     });
+    const officeDateReservations = await request(server)
+      .get(`/executive/rentals?officeDate=${sharedShift.date}`)
+      .set("Authorization", executive)
+      .expect(200);
+    expect(officeDateReservations.body.total).toBe(2);
+    expect(
+      officeDateReservations.body.items.map(
+        (order: { id: number }) => order.id,
+      ),
+    ).toEqual([firstId, secondId]);
     await changeSharedShift(false).expect(200);
 
     now = new Date("2026-11-16T12:15:00Z");
@@ -260,6 +310,11 @@ describe("Rental API with MySQL", () => {
         expect.objectContaining({ id: firstId, overdue: false }),
       ]),
     );
+    const overdue = await request(server)
+      .get("/executive/rentals?overdue=true")
+      .set("Authorization", executive)
+      .expect(200);
+    expect(overdue.body.total).toBe(0);
     await changeSharedShift(false).expect(200);
 
     const blocked = await act(secondId, "checkout").expect(409);
@@ -274,10 +329,19 @@ describe("Rental API with MySQL", () => {
       "CHECKED_OUT",
     );
 
-    const extended = await act(secondId, "extend", {
+    const extensionRequest = {
       return: slot("2026-12-03"),
       reason: "동아리 행사 일정 변경",
-    }).expect(200);
+    };
+    const extended = await act(secondId, "extend", extensionRequest).expect(
+      200,
+    );
+    await act(secondId, "extend", extensionRequest).expect(200);
+    expect(
+      await prisma.rentalExtension.count({
+        where: { reservationId: secondId },
+      }),
+    ).toBe(1);
     expect(extended.body.extensions).toMatchObject([
       {
         previousReturnDate: secondReturn.date,
@@ -288,17 +352,53 @@ describe("Rental API with MySQL", () => {
     ]);
     const extension = await prisma.rentalExtension.findFirstOrThrow({
       where: { reservationId: secondId },
+      include: { previousReturnHour: true, newReturnHour: true },
     });
-    expect(extension).toMatchObject({
-      previousReturnVersion: 1,
-      newReturnVersion: 1,
-    });
+    expect(formatKstDate(extension.previousReturnHour.date)).toBe(
+      secondReturn.date,
+    );
+    expect(extension.previousReturnHour.closesAt.toISOString()).toBe(
+      secondReturn.closesAt,
+    );
+    expect(formatKstDate(extension.newReturnHour.date)).toBe(
+      extensionRequest.return.date,
+    );
+    expect(extension.newReturnHour.closesAt.toISOString()).toBe(
+      extensionRequest.return.closesAt,
+    );
     await expect(
       prisma.rentalReservation.update({
         where: { id: firstId },
         data: { approvedExtensionId: extension.id },
       }),
     ).rejects.toMatchObject({ code: "P2003" });
+
+    const reschedule = (returnSlot: typeof secondReturn) =>
+      request(server)
+        .patch(`/executive/rentals/${secondId}/schedule`)
+        .set("Authorization", executive)
+        .send({ return: returnSlot });
+    await request(server)
+      .put(`/executive/office-hours/${extensionRequest.return.date}`)
+      .set("Authorization", executive)
+      .send({ openTime: "21:30", closeTime: "22:00", isClosed: false })
+      .expect(200);
+    await reschedule(extensionRequest.return).expect(409);
+    const revisedReturn = {
+      ...extensionRequest.return,
+      opensAt: `${extensionRequest.return.date}T12:30:00.000Z`,
+    };
+    const rescheduled = await reschedule(revisedReturn).expect(200);
+    expect(rescheduled.body).toMatchObject({
+      return: revisedReturn,
+      approvedReturnLimitDate: revisedReturn.date,
+      needsReschedule: false,
+    });
+    const storedReservation = await prisma.rentalReservation.findUniqueOrThrow({
+      where: { id: secondId },
+    });
+    expect(storedReservation.returnHourId).not.toBe(extension.newReturnHourId);
+    expect(storedReservation.approvedExtensionId).toBe(extension.id);
 
     await request(server)
       .patch(`/executive/rental-items/${itemId}`)
