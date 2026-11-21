@@ -15,6 +15,7 @@ const ClubDetailPublicFrame: React.FC<
 > = ({ club, listPath = "/clubs" }) => {
   const { isEnglish } = useLanguage();
   const t = useTranslations("club");
+  const clubName = isEnglish ? club.nameEn : club.nameKr;
 
   return (
     <FlexWrapper direction="column" gap={60}>
@@ -22,11 +23,11 @@ const ClubDetailPublicFrame: React.FC<
         items={[
           { name: t("동아리 목록"), path: listPath },
           {
-            name: isEnglish ? club.nameEn : club.nameKr,
+            name: clubName,
             path: `/clubs/${club.id}`,
           },
         ]}
-        title={club.nameKr}
+        title={clubName}
       />
       <ClubDetailInfoFrame club={club} isRegistrationPeriod={false} />
     </FlexWrapper>

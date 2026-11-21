@@ -22,7 +22,9 @@ const PastClubListSection = () => {
   );
   const semesters = (semestersQuery.data?.semesters ?? []).filter(
     semester =>
-      semester.endTerm.getTime() < Date.now() && semesterIds.has(semester.id),
+      semester.endTerm.getTime() < Date.now() &&
+      semesterIds.has(semester.id) &&
+      !(semester.year === 2023 && semester.name === "봄"),
   );
 
   return (
