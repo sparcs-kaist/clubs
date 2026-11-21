@@ -130,7 +130,11 @@ export class AuthService {
     diagnostic.sso ??= { profile: captureSsoProfile(ssoProfile) };
     diagnostic.stage = "sso_profile_validation";
 
-    if (!this.appConfigService.isLocal) {
+    if (this.appConfigService.isDevelopment) {
+      return this.completeCopiedSignIn(session, diagnostic);
+    }
+
+    if (this.appConfigService.isProduction) {
       if (!ssoProfile.sid || !ssoProfile.kaist_v2_info) {
         logger.warn("Missing required SSO data", {
           hasSid: !!ssoProfile.sid,
@@ -341,6 +345,38 @@ export class AuthService {
       }
       throw error;
     }
+    return this.issueLoginTokens(user, session, diagnostic);
+  }
+
+  @Transactional()
+  private async completeCopiedSignIn(
+    session: Request["session"],
+    diagnosticContext: SsoLoginDiagnostic,
+  ) {
+    const diagnostic = diagnosticContext;
+    diagnostic.stage = "db.copied_user.read";
+    // The development SSO profile must not replace the copied user or academic records.
+    const user = await this.userPublicService.findUniqueLoginIdentityByEmail(
+      "gerbera3090@kaist.ac.kr",
+    );
+    if (!user?.sid) {
+      throw new NotFoundException("복제된 로그인 계정을 찾을 수 없습니다.");
+    }
+
+    const result = await this.issueLoginTokens(user, session, diagnostic);
+    logger.info("Signed in to a copied account via a configured SSO identity", {
+      userId: user.id,
+    });
+    return result;
+  }
+
+  @Transactional()
+  private async issueLoginTokens(
+    user: LoginIdentity,
+    session: Request["session"],
+    diagnosticContext: SsoLoginDiagnostic,
+  ) {
+    const diagnostic = diagnosticContext;
     diagnostic.userId = user.id;
     diagnostic.stage = "access_token_issue";
     const accessToken = this.getAccessToken(user);

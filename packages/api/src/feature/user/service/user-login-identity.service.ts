@@ -361,9 +361,19 @@ export class UserLoginIdentityService {
 
   async findLoginIdentity(id: number): Promise<LoginIdentity> {
     const user = await this.identityRepository.findUserById(id);
+    return this.loadLoginIdentity(user);
+  }
 
+  async findUniqueLoginIdentityByEmail(email: string) {
+    const user =
+      await this.identityRepository.findUniqueActiveUserByEmail(email);
+    return user ? this.loadLoginIdentity(user) : null;
+  }
+
+  private async loadLoginIdentity(user: LoginIdentity): Promise<LoginIdentity> {
+    const { id } = user;
     const result: LoginIdentity = {
-      id: user.id,
+      id,
       sid: user.sid,
       name: user.name,
       email: user.email,
