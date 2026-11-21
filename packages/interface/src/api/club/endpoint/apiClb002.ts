@@ -38,7 +38,8 @@ const responseBodyMap = {
     nameEn: zClub.shape.nameEn,
     type: z.nativeEnum(ClubTypeEnum), // 동아리 유형(정동아리 | 가동아리)
     isPermanent: z.coerce.boolean(), // 상임동아리 여부
-    characteristic: zClubCharacteristic.nullable(), // 동아리 소개
+    characteristic: zClubCharacteristic.nullable(), // 국문 활동 분야
+    characteristicEn: zClubCharacteristic.nullable().default(null),
     representative: zUserName, // 동아리 대표
     advisor: zUserName.nullable().optional(), // 동아리 지도교수
     totalMemberCnt: z.coerce.number().int().min(1),

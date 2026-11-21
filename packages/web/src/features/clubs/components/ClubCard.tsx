@@ -80,6 +80,9 @@ const ClubCard: React.FC<ClubCardProps> = ({
   const t = useTranslations();
   const { isLoggedIn, profile } = useAuth();
   const { isEnglish, isLoading } = useLanguage();
+  const characteristic = isEnglish
+    ? club.characteristicEn?.trim() || club.characteristic
+    : club.characteristic;
 
   const getClubName = () => {
     if (isLoading) {
@@ -121,7 +124,7 @@ const ClubCard: React.FC<ClubCardProps> = ({
       )}
       {!isMobile && (
         <ClubCardLongText isMobile={isMobile}>
-          {club.characteristic}
+          {characteristic}
         </ClubCardLongText>
       )}
       <ClubCardRow isMobile={isMobile}>
@@ -132,7 +135,7 @@ const ClubCard: React.FC<ClubCardProps> = ({
         )}
         {isMobile && (
           <ClubCardLongText isMobile={isMobile}>
-            {club.characteristic}
+            {characteristic}
           </ClubCardLongText>
         )}
         {isRegistrationPeriod && isLoggedIn && isStudent(profile) && (
