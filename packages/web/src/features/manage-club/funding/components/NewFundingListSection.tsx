@@ -4,16 +4,20 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import styled from "styled-components";
 
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import Info from "@sparcs-clubs/web/common/components/Info";
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 import {
   newFundingListSectionInfoText,
   newFundingListSectionTitle,
   newFundingOrderButtonText,
 } from "@sparcs-clubs/web/constants/manageClubFunding";
+import { formatSimpleDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 import { FUNDING_TABLE_NO_ACTIVITY_NAME } from "../constants";
 import useGetFundingDeadline from "../services/useGetFundingDeadline";
@@ -68,7 +72,16 @@ const NewFundingListSection: React.FC<NewFundingListSectionProps> = ({
           isLoading={isLoadingFundingDeadline}
           isError={isErrorFundingDeadline}
         >
-          <Info text={newFundingListSectionInfoText(fundingDeadline)} />
+          <Info text={newFundingListSectionInfoText(fundingDeadline)}>
+            {fundingDeadline?.objectionDeadline &&
+              fundingDeadline.deadline?.deadlineEnum !==
+                FundingDeadlineEnum.Exception && (
+                <Typography>
+                  이의제기 마감{" "}
+                  {formatSimpleDateTime(fundingDeadline.objectionDeadline)}
+                </Typography>
+              )}
+          </Info>
         </AsyncBoundary>
         <NewFundingOrderButtonRow>
           <IconButton icon="add" type="default" onClick={createFundingClick}>

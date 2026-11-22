@@ -17,7 +17,9 @@ import {
   isActivityReportUnverifiable,
 } from "../types/funding";
 
-const AddEvidenceFrame: React.FC = () => {
+const AddEvidenceFrame: React.FC<{ isFoodExpenseBlocked: boolean }> = ({
+  isFoodExpenseBlocked,
+}) => {
   const formCtx = useFormContext<FundingFormData>();
   const { control, watch, setValue } = formCtx;
 
@@ -50,7 +52,7 @@ const AddEvidenceFrame: React.FC = () => {
       setValue("isProfitMakingActivity", false);
       setValue("isJointExpense", false);
     }
-  }, [isNoActivityPurpose]);
+  }, [isNoActivityPurpose, setValue]);
 
   return (
     <FoldableSectionTitle title="추가 증빙">
@@ -143,17 +145,26 @@ const AddEvidenceFrame: React.FC = () => {
                       />
                     )}
                   />
-                  <FormController
-                    name="isFoodExpense"
-                    control={control}
-                    renderItem={({ value, onChange }) => (
-                      <CheckboxOption
-                        optionText="식비"
-                        checked={value}
-                        onClick={() => onChange(!value)}
-                      />
-                    )}
-                  />
+                  {isFoodExpenseBlocked && (
+                    <Typography fs={14} lh={20} color="GRAY.600">
+                      동아리 성격에 합치하지 않는 활동은 식비를 증빙할 수
+                      없습니다.
+                      {isFoodExpense && " 식비 선택을 해제해 주세요."}
+                    </Typography>
+                  )}
+                  {(!isFoodExpenseBlocked || isFoodExpense) && (
+                    <FormController
+                      name="isFoodExpense"
+                      control={control}
+                      renderItem={({ value, onChange }) => (
+                        <CheckboxOption
+                          optionText="식비"
+                          checked={value}
+                          onClick={() => onChange(!value)}
+                        />
+                      )}
+                    />
+                  )}
                   <FormController
                     name="isLaborContract"
                     control={control}
@@ -239,7 +250,7 @@ const AddEvidenceFrame: React.FC = () => {
         {isNonCorporateTransaction && (
           <NonCorpEvidenceBlock required={isNonCorporateTransaction} />
         )}
-        {isFoodExpense && (
+        {isFoodExpense && !isFoodExpenseBlocked && (
           <OtherEvidenceBlock
             content="식비"
             explanationControlName="foodExpenseExplanation"

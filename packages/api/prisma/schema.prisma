@@ -532,8 +532,36 @@ model Activity {
   activityTs            ActivityT[]
   activityFeedbacks     ActivityFeedback[]
   activityEvidenceFiles ActivityEvidenceFile[]
+  changeHistory         ActivityChangeHistory[]
+  internalMemo          ActivityInternalMemo?
 
   @@map("activity")
+}
+
+model ActivityInternalMemo {
+  activityId           Int      @id @map("activity_id")
+  content              String   @db.Text
+  updatedBy            String   @map("updated_by") @db.VarChar(255)
+  updatedByExecutiveId Int      @map("updated_by_executive_id")
+  updatedAt            DateTime @map("updated_at") @db.DateTime(3)
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("activity_internal_memo")
+}
+
+model ActivityChangeHistory {
+  id              Int      @id @default(autoincrement())
+  activityId      Int      @map("activity_id")
+  editorStudentId Int      @map("editor_student_id")
+  before          Json
+  after           Json
+  createdAt       DateTime @map("created_at") @db.Timestamp(3)
+
+  activity Activity @relation(fields: [activityId], references: [id])
+
+  @@index([activityId, id])
+  @@map("activity_change_history")
 }
 
 enum ProfessorApprovalStatus {
@@ -794,8 +822,36 @@ model Funding {
   fixtureSoftwareEvidenceFiles       FundingFixtureSoftwareEvidenceFile[]
   transportationPassengers           FundingTransportationPassenger[]
   feedbacks                          FundingFeedback[]
+  changeHistory                      FundingChangeHistory[]
+  internalMemo                       FundingInternalMemo?
 
   @@map("funding")
+}
+
+model FundingInternalMemo {
+  fundingId            Int      @id @map("funding_id")
+  content              String   @db.Text
+  updatedBy            String   @map("updated_by") @db.VarChar(255)
+  updatedByExecutiveId Int      @map("updated_by_executive_id")
+  updatedAt            DateTime @map("updated_at") @db.DateTime(3)
+
+  funding Funding @relation(fields: [fundingId], references: [id], onDelete: Cascade)
+
+  @@map("funding_internal_memo")
+}
+
+model FundingChangeHistory {
+  id              Int      @id @default(autoincrement())
+  fundingId       Int      @map("funding_id")
+  editorStudentId Int      @map("editor_student_id")
+  before          Json
+  after           Json
+  createdAt       DateTime @map("created_at") @db.Timestamp(3)
+
+  funding Funding @relation(fields: [fundingId], references: [id])
+
+  @@index([fundingId, id])
+  @@map("funding_change_history")
 }
 
 model FundingTradeEvidenceFile {

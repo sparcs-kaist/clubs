@@ -3,6 +3,8 @@ import React, { useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import styled from "styled-components";
 
+import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
@@ -11,7 +13,6 @@ import DateInput from "@sparcs-clubs/web/common/components/Forms/DateInput";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import UnitInput from "@sparcs-clubs/web/common/components/Forms/UnitInput";
 import Select from "@sparcs-clubs/web/common/components/Select";
-import useGetActivityAvailable from "@sparcs-clubs/web/features/activity-report/services/useGetActivityAvailable";
 import { FundingInfo } from "@sparcs-clubs/web/features/manage-club/funding/types/funding";
 import {
   getLocalDateLastTime,
@@ -30,15 +31,18 @@ const RowWrapper = styled.div`
     flex: 1;
   }
 `;
-const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
+interface FundingInfoFrameProps {
+  purposeActivities: IActivitySummary[];
+  isNameLocked: boolean;
+}
+
+const FundingInfoFrame: React.FC<FundingInfoFrameProps> = ({
+  purposeActivities,
+  isNameLocked,
+}) => {
   const formCtx = useFormContext<FundingInfo>();
   const { control } = formCtx;
 
-  const {
-    data: purposeActivity,
-    isLoading,
-    isError,
-  } = useGetActivityAvailable({ clubId });
   const {
     data: fundingDeadline,
     isLoading: isLoadingFundingDeadline,
@@ -46,10 +50,10 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
   } = useGetFundingDeadline();
 
   const purposeItems = [
-    ...(purposeActivity?.activities.map(activity => ({
+    ...purposeActivities.map(activity => ({
       value: activity.id,
       label: activity.name,
-    })) ?? []),
+    })),
     { value: Infinity, label: NO_ACTIVITY_REPORT_FUNDING },
   ];
 
@@ -81,8 +85,8 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
   return (
     <FoldableSectionTitle title="지원금 정보">
       <AsyncBoundary
-        isLoading={isLoading || isLoadingFundingDeadline}
-        isError={isError || isErrorFundingDeadline}
+        isLoading={isLoadingFundingDeadline}
+        isError={isErrorFundingDeadline}
       >
         <Card outline gap={32}>
           <FormController
@@ -94,6 +98,12 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
                 {...props}
                 label="항목명"
                 placeholder="항목명을 입력하세요"
+                disabled={isNameLocked}
+                helperText={
+                  isNameLocked
+                    ? "수정 제출 기간에는 항목명을 변경할 수 없습니다."
+                    : undefined
+                }
               />
             )}
           />

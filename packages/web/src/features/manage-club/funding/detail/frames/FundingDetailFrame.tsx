@@ -17,6 +17,8 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
 import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/CancellableModalContent";
 import { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
+import ReviewChangeHistoryButton from "@sparcs-clubs/web/features/executive/components/ReviewChangeHistoryButton";
+import ReviewInternalMemoCard from "@sparcs-clubs/web/features/executive/components/ReviewInternalMemoCard";
 import { useDeleteFunding } from "@sparcs-clubs/web/features/manage-club/funding/services/useDeleteFunding";
 import { useGetFunding } from "@sparcs-clubs/web/features/manage-club/funding/services/useGetFunding";
 import useGetFundingDeadline from "@sparcs-clubs/web/features/manage-club/funding/services/useGetFundingDeadline";
@@ -64,6 +66,8 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
     isLoading: isLoadingFundingDeadline,
     isError: isErrorFundingDeadline,
   } = useGetFundingDeadline();
+  const isExecutiveReview =
+    profile.type === UserTypeEnum.Executive && !isOperatingCommittee;
 
   const navigateToFundingList = () => {
     if (profile.type === UserTypeEnum.Executive) {
@@ -154,6 +158,15 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
       style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
     >
       <Card outline>
+        {isExecutiveReview && (
+          <FlexWrapper justify="flex-end">
+            <ReviewChangeHistoryButton
+              key={id}
+              kind="funding"
+              id={Number(id)}
+            />
+          </FlexWrapper>
+        )}
         <FundingStatusSection
           status={data.funding.fundingStatusEnum}
           editedAt={data.funding.editedAt}
@@ -233,14 +246,15 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
           )}
         </AsyncBoundary>
       </Card>
-      {profile.type === UserTypeEnum.Executive &&
-        !isPastFunding &&
-        !isOperatingCommittee && (
-          <ExecutiveFundingReviewSection
-            funding={data.funding}
-            comments={data.comments}
-          />
-        )}
+      {isExecutiveReview && !isPastFunding && (
+        <ExecutiveFundingReviewSection
+          funding={data.funding}
+          comments={data.comments}
+        />
+      )}
+      {isExecutiveReview && (
+        <ReviewInternalMemoCard key={id} kind="funding" id={Number(id)} />
+      )}
       {!isOperatingCommittee && (
         <ButtonWrapper>
           <Button type="default" onClick={navigateToFundingList}>

@@ -1,3 +1,5 @@
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
+
 import { SemesterService } from "./semester.service";
 
 jest.mock("@nestjs-cls/transactional", () => ({
@@ -78,5 +80,48 @@ describe("SemesterService term weekday validation", () => {
       }),
     ).rejects.toThrow("학기 시작일은 월요일, 종료일은 일요일이어야 합니다.");
     expect(semesterRepository.updateSemester).not.toHaveBeenCalled();
+  });
+});
+
+describe("SemesterService public activity deadlines", () => {
+  it("returns the upcoming objection deadline at the start of the modification period", async () => {
+    const now = new Date("2026-06-23T00:00:00.000Z");
+    const deadlines = [
+      {
+        deadlineEnum: ActivityDeadlineEnum.Writing,
+        startTerm: new Date("2026-06-21T00:00:00.000Z"),
+        endTerm: now,
+      },
+      {
+        deadlineEnum: ActivityDeadlineEnum.Modification,
+        startTerm: now,
+        endTerm: new Date("2026-06-25T00:00:00.000Z"),
+      },
+      {
+        deadlineEnum: ActivityDeadlineEnum.Exception,
+        startTerm: new Date("2026-06-27T00:00:00.000Z"),
+        endTerm: new Date("2026-06-29T00:00:00.000Z"),
+      },
+    ];
+    const service = new SemesterService(
+      { find: jest.fn().mockResolvedValue([{ id: 1 }]) } as never,
+      {} as never,
+      {
+        find: jest
+          .fn()
+          .mockResolvedValue([{ id: 2, name: "겨울-봄", year: 2026 }]),
+      } as never,
+      { find: jest.fn().mockResolvedValue(deadlines) } as never,
+    );
+    (service as unknown as { clock: { now: () => Date } }).clock = {
+      now: () => now,
+    };
+
+    await expect(service.getPublicActivitiesDeadline()).resolves.toMatchObject({
+      isWritable: false,
+      isEditable: true,
+      deadline: { activityDeadlineEnum: ActivityDeadlineEnum.Modification },
+      objectionDeadline: deadlines[2].endTerm,
+    });
   });
 });

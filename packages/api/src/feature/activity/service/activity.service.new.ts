@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Inject,
@@ -61,9 +62,16 @@ import {
   ApiAct017ResponseOk,
   ApiAct030ResponseOk,
 } from "@clubs/interface/api/activity/index";
+import type {
+  ReviewInternalMemoBody,
+  ReviewInternalMemoResponse,
+} from "@clubs/interface/api/review/endpoint/internalMemo";
+import { zReviewChangeHistory } from "@clubs/interface/api/review/type/review-change-history.type";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import { labelReviewChangeHistory } from "@sparcs-clubs/api/common/review/label-review-change-history";
+import { retryInternalMemoWrite } from "@sparcs-clubs/api/common/review/retry-internal-memo-write";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
@@ -372,12 +380,15 @@ export default class ActivityService {
       );
   }
 
+  @Transactional()
   async putStudentActivity(
     param: ApiAct003RequestParam,
     body: ApiAct003RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.activityRepository.fetch(param.activityId);
+    const activity = await this.activityRepository.fetchForReportUpdate(
+      param.activityId,
+    );
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.clubPublicService.checkIsStudentDelegate({
       studentId,
@@ -405,6 +416,15 @@ export default class ActivityService {
         ],
       })
       .then(takeExist());
+    const isModificationPeriod = availableDeadlines.some(
+      deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Modification,
+    );
+    const isNameChanged = body.name !== activity.name;
+    if (isModificationPeriod && isNameChanged) {
+      throw new BadRequestException(
+        "수정 제출 기간에는 활동명을 변경할 수 없습니다.",
+      );
+    }
     const shouldResetProfessorApproval = availableDeadlines.some(
       deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Writing,
     );
@@ -439,7 +459,7 @@ export default class ActivityService {
         );
     });
 
-    const isUpdateSucceed = await this.persistRegularActivityReport(
+    const isUpdateSucceed = await this.activityRepository.updateActivityReport(
       new MActivity({
         id: param.activityId,
         name: body.name,
@@ -474,11 +494,7 @@ export default class ActivityService {
         "Failed to update",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
-  }
-
-  @Transactional()
-  private persistRegularActivityReport(activity: MActivity): Promise<boolean> {
-    return this.activityRepository.updateActivityReport(activity);
+    await this.activityRepository.recordChangeHistory(activity, studentId, now);
   }
 
   async deleteStudentActivityProvisional(
@@ -717,7 +733,10 @@ export default class ActivityService {
     body: ApiAct008RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.activityRepository.fetch(param.activityId);
+    const activity = await this.activityRepository.fetchForReportUpdate(
+      param.activityId,
+    );
+    const now = this.clock.now();
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.clubPublicService.checkIsStudentDelegate({
       studentId,
@@ -738,7 +757,7 @@ export default class ActivityService {
       );
     }
     await this.registrationDeadlinePublicService.validate({
-      date: this.clock.now(),
+      date: now,
       semesterId: activityD.semester.id,
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
@@ -804,6 +823,8 @@ export default class ActivityService {
         "Failed to update",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+
+    await this.activityRepository.recordChangeHistory(activity, studentId, now);
 
     await this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.club.id,
@@ -1245,6 +1266,17 @@ export default class ActivityService {
     return {};
   }
 
+  async getExecutiveChangeHistory(executiveId: number, activityId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const history = zReviewChangeHistory.parse(
+      await this.activityRepository.findChangeHistory(activityId),
+    );
+    return labelReviewChangeHistory(history, {
+      files: ids => this.filePublicService.getFileNamesByIds(ids),
+      students: ids => this.userPublicService.getStudentMapByIds(ids),
+    });
+  }
+
   async getExecutiveActivity(activityId: number): Promise<ApiAct014ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
 
@@ -1373,5 +1405,48 @@ export default class ActivityService {
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
+  }
+
+  async getExecutiveInternalMemo(
+    id: number,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    return { memo: await this.activityRepository.getInternalMemo(id) };
+  }
+
+  putExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    return retryInternalMemoWrite(() =>
+      this.saveExecutiveInternalMemo(id, body, executiveId),
+    );
+  }
+
+  @Transactional()
+  private async saveExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const executive =
+      await this.userPublicService.fetchExecutiveSummary(executiveId);
+    const memo = await this.activityRepository.putInternalMemo(id, {
+      content: body.content,
+      updatedAt: this.clock.now(),
+      updatedBy: executive.name,
+      updatedByExecutiveId: executiveId,
+    });
+    return { memo };
+  }
+
+  @Transactional()
+  async deleteExecutiveInternalMemo(id: number, executiveId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    await this.activityRepository.deleteInternalMemo(id);
+    return {};
   }
 }
