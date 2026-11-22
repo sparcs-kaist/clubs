@@ -214,7 +214,15 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <FlexWrapper direction="column" gap={40} style={{ alignSelf: "stretch" }}>
+      <FlexWrapper
+        direction="column"
+        gap={40}
+        style={{
+          alignSelf: "stretch",
+          whiteSpace: "pre-wrap",
+          overflowWrap: "anywhere",
+        }}
+      >
         <Card outline padding="32px" gap={20}>
           {(isProgressVisible || isOperatingCommittee) && (
             <ActivitySection label="집행부 승인 상태">

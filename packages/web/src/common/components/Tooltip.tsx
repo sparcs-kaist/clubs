@@ -16,7 +16,7 @@ const ResponsiveTypography = styled(Typography)`
   padding: 4px 8px;
   justify-content: center;
   align-items: center;
-  white-space: normal;
+  overflow-wrap: anywhere;
 
   border-radius: 4px;
   border: 1px solid var(--gray200, #eee);
