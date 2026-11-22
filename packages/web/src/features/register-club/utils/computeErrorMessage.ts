@@ -5,6 +5,7 @@ import { FileDetail } from "@sparcs-clubs/web/common/components/File/attachment"
 interface ValidationData {
   registrationTypeEnumId: RegistrationTypeEnum;
   phoneNumber: string;
+  requiresPhoneNumber?: boolean;
   activityFieldKr: string;
   activityFieldEn: string;
   foundedAt: Date;
@@ -24,6 +25,7 @@ const computeErrorMessage = (
   const {
     registrationTypeEnumId: type,
     phoneNumber,
+    requiresPhoneNumber = true,
     activityFieldKr,
     activityFieldEn,
     foundedAt,
@@ -36,8 +38,8 @@ const computeErrorMessage = (
     isAgreed,
   } = data;
 
-  if (!phoneNumber) {
-    return translate?.("phoneRequired") ?? "대표자 전화번호를 입력해주세요";
+  if (requiresPhoneNumber && !phoneNumber) {
+    return translate?.("phoneRequired") ?? "본인 전화번호를 입력해 주세요.";
   }
   if (!activityFieldKr) {
     return (

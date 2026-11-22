@@ -72,7 +72,7 @@ describe("registration error guidance", () => {
     });
     assert.equal(
       getRegistrationErrorMessage(error),
-      "다음 항목의 입력값을 확인해주세요: 지도교수 정보, 대표자 전화번호.",
+      "다음 항목의 입력값을 확인해주세요: 지도교수 정보, 신청자 본인 전화번호.",
     );
     assert.match(
       getRegistrationErrorMessage(requestError({ message: [{ path: [] }] })),

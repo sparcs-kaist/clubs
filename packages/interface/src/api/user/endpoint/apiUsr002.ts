@@ -1,8 +1,6 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
-
 /**
  * @version v0.1
  * @description 유저의 현재 전화번호를 가져옵니다
@@ -14,14 +12,14 @@ const method = "GET";
 const requestParam = z.object({});
 
 const requestQuery = z.object({
-  profile: z.string(),
+  profile: z.string().optional(),
 });
 
 const requestBody = z.object({});
 
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
-    phoneNumber: z.union([zKrPhoneNumber, z.null()]),
+    phoneNumber: z.string().max(30).nullable(),
   }),
 };
 

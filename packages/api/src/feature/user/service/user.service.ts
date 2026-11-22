@@ -11,17 +11,14 @@ import ClubStudentTRepository from "@sparcs-clubs/api/feature/club/repository-ol
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";
 
 import ExecutiveRepository from "../repository/executive.repository";
-import OldProfessorRepository from "../repository/old.professor.repository";
-import OldStudentRepository from "../repository/old.student.repository";
 import { StudentRepository } from "../repository/student.repository";
+import { normalizeStoredPhoneNumber } from "../util/normalize-stored-phone-number";
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly oldStudentRepository: OldStudentRepository,
     private readonly executiveRepository: ExecutiveRepository,
-    private readonly professorRepository: OldProfessorRepository,
     private readonly clubStudentTRepository: ClubStudentTRepository,
     private readonly studentRepository: StudentRepository,
   ) {}
@@ -40,7 +37,7 @@ export class UserService {
       email,
       department: department || "학과 정보 없음",
       studentNumber,
-      phoneNumber: phoneNumber || "",
+      phoneNumber: normalizeStoredPhoneNumber(phoneNumber) ?? "",
       clubs,
     };
 
@@ -56,50 +53,7 @@ export class UserService {
   }
 
   async getUserPhoneNumber(userId: number): Promise<ApiUsr002ResponseOk> {
-    const phoneNumber = await this.userRepository.getPhoneNumber(userId);
-    return phoneNumber;
-  }
-
-  async getStudentPhoneNumberByUserId(
-    userId: number,
-  ): Promise<ApiUsr002ResponseOk> {
-    const phoneNumber =
-      await this.oldStudentRepository.getStudentPhoneNumber(userId);
-    return phoneNumber;
-  }
-
-  async getExecutivePhoneNumberByUserId(
-    userId: number,
-  ): Promise<ApiUsr002ResponseOk> {
-    const phoneNumber =
-      await this.executiveRepository.getExecutivePhoneNumber(userId);
-    return phoneNumber;
-  }
-
-  async getProfessorPhoneNumberByUserId(
-    userId: number,
-  ): Promise<ApiUsr002ResponseOk> {
-    const phoneNumber =
-      await this.professorRepository.getProfessorPhoneNumber(userId);
-    return phoneNumber;
-  }
-
-  async updatePhoneNumber(userId: number, phoneNumber: string) {
-    await this.userRepository.updatePhoneNumber(userId, phoneNumber);
-  }
-
-  async updateExecutivePhoneNumber(userId: number, phoneNumber: string) {
-    await this.executiveRepository.updateExecutivePhoneNumber(
-      userId,
-      phoneNumber,
-    );
-  }
-
-  async updateProfessorPhoneNumber(userId: number, phoneNumber: string) {
-    await this.professorRepository.updateProfessorPhoneNumber(
-      userId,
-      phoneNumber,
-    );
+    return this.userRepository.getPhoneNumber(userId);
   }
 
   //todo: 트랜잭션으로 전부 묶어야 함.

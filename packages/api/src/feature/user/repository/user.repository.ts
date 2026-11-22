@@ -4,8 +4,9 @@ import type { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapt
 import { Prisma } from "@prisma/client";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+
+import { normalizeStoredPhoneNumber } from "../util/normalize-stored-phone-number";
 
 const parseStudentNumber = (studentNumber: string) => {
   if (!/^\d+$/.test(studentNumber)) {
@@ -60,7 +61,10 @@ export default class UserRepository {
       ...student,
       user:
         user?.deletedAt === null
-          ? { id: user.id, phoneNumber: user.phoneNumber }
+          ? {
+              id: user.id,
+              phoneNumber: normalizeStoredPhoneNumber(user.phoneNumber),
+            }
           : null,
     }));
   }
@@ -144,11 +148,11 @@ export default class UserRepository {
   }
 
   async getPhoneNumber(userId: number) {
-    const result = await this.prisma.user.findMany({
+    const user = await this.txHost.tx.user.findUnique({
       where: { id: userId, deletedAt: null },
       select: { phoneNumber: true },
     });
-    return takeOne(result);
+    return { phoneNumber: normalizeStoredPhoneNumber(user?.phoneNumber) };
   }
 
   async updatePhoneNumber(userId: number, phoneNumber: string) {

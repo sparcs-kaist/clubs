@@ -3,7 +3,6 @@ import { Prisma } from "@prisma/client";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { IntentionalRollback } from "@sparcs-clubs/api/common/util/exception.filter";
-import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -73,40 +72,6 @@ export default class ExecutiveRepository {
       },
     });
     return result;
-  }
-
-  async getExecutivePhoneNumber(id: number) {
-    const result = await this.prisma.$queryRaw<
-      Array<{ phoneNumber: string | null }>
-    >(
-      Prisma.sql`
-        SELECT u.phone_number AS phoneNumber
-        FROM executive e
-        LEFT JOIN user u ON u.id = e.user_id
-        LEFT JOIN executive_t et ON et.executive_id = e.id
-          AND (et.end_term >= NOW() OR et.end_term IS NULL)
-          AND et.start_term <= NOW()
-          AND et.deleted_at IS NULL
-        WHERE e.user_id = ${id}
-        LIMIT 1
-      `,
-    );
-    return takeOne(result);
-  }
-
-  async updateExecutivePhoneNumber(id: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
-      const result = await tx.user.updateMany({
-        where: { id, deletedAt: null },
-        data: { phoneNumber },
-      });
-      if (result.count === 0) {
-        logger.debug("[updateExecutivePhoneNumber] rollback occurs");
-        throw new Error("updateExecutivePhoneNumber failed");
-      }
-      return true;
-    });
-    return isUpdateSucceed;
   }
 
   async selectExecutiveById(param: { id: number }) {

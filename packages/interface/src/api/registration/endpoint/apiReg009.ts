@@ -31,7 +31,8 @@ const requestBody = z
     clubId: z.coerce.number().int().min(1).nullable().optional(),
     clubNameKr: zClubNameKr,
     clubNameEn: zClubNameEn,
-    phoneNumber: zKrPhoneNumber,
+    // 신청자 본인 전화번호를 수정한 경우에만 보냅니다.
+    phoneNumber: zKrPhoneNumber.optional(),
     foundedAt: z.coerce.date(),
     divisionId: z.coerce.number().int().min(1),
     activityFieldKr: z.string().max(255),

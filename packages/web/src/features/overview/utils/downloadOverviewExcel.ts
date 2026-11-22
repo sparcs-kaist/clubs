@@ -1,7 +1,7 @@
 import * as XLSX from "sheetjs-style";
 
-import { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv001";
-import { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv002";
+import type { ApiOvv001ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv001";
+import type { ApiOvv002ResponseOK } from "@clubs/interface/api/overview/endpoint/apiOvv002";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import { clubBuildingNames } from "@sparcs-clubs/web/features/overview/utils/clubBuildingNames";
@@ -65,7 +65,7 @@ function fillColorOfSheet(sheet: XLSX.Sheet) {
   };
 }
 
-function createDelegateOverviewSheet(data: ApiOvv001ResponseOK) {
+export function createDelegateOverviewSheet(data: ApiOvv001ResponseOK) {
   const regulars = data.filter(
     club => club.clubTypeEnum === ClubTypeEnum.Regular,
   );
@@ -73,68 +73,58 @@ function createDelegateOverviewSheet(data: ApiOvv001ResponseOK) {
     club => club.clubTypeEnum === ClubTypeEnum.Provisional,
   );
 
+  const delegateHeaders = ["성명", "학번", "학과", "휴대전화", "KAIST E-Mail"];
+  const headers = [
+    "분과구",
+    "분과",
+    "동아리 대표명칭",
+    ...delegateHeaders,
+    ...delegateHeaders,
+    ...delegateHeaders,
+  ];
+  const delegateValues = (
+    delegate: ApiOvv001ResponseOK[number]["delegate1"],
+  ) => [
+    delegate?.name,
+    delegate?.studentNumber,
+    delegate?.department,
+    delegate?.phoneNumber,
+    delegate?.kaistEmail,
+  ];
   const rowMap = (row: ApiOvv001ResponseOK[number]) => [
     row.district,
     row.divisionName,
     row.clubNameKr,
-    row.representative?.name,
-    row.representative?.studentNumber,
-    row.representative?.department,
-    row.representative?.phoneNumber,
-    row.representative?.kaistEmail,
-    row.delegate1?.name,
-    row.delegate1?.studentNumber,
-    row.delegate1?.department,
-    row.delegate2?.name,
-    row.delegate2?.studentNumber,
-    row.delegate2?.department,
+    ...delegateValues(row.representative),
+    ...delegateValues(row.delegate1),
+    ...delegateValues(row.delegate2),
   ];
-
-  let aoa = regulars.map(rowMap);
-  aoa.unshift(
+  const groupRow = (label: string) => [
+    label,
+    ...new Array(headers.length - 1).fill(""),
+  ];
+  const aoa = [
     [
       "분과 정보",
       "분과 정보",
       "동아리 대표명칭",
-      "I",
-      "I",
-      "I",
-      "I",
-      "I",
-      "PART II - 대의원1 정보",
-      "PART II - 대의원1 정보",
-      "PART II - 대의원1 정보",
-      "PART III - 대의원2 정보",
-      "PART III - 대의원2 정보",
-      "PART III - 대의원2 정보",
+      ...delegateHeaders.map(() => "I"),
+      ...delegateHeaders.map(() => "PART II - 대의원1 정보"),
+      ...delegateHeaders.map(() => "PART III - 대의원2 정보"),
     ],
-    [
-      "분과구",
-      "분과",
-      "동아리 대표명칭",
-      "성명",
-      "학번",
-      "학과",
-      "휴대전화",
-      "KAIST E-Mail",
-      "성명",
-      "학번",
-      "학과",
-      "성명",
-      "학번",
-      "학과",
-    ],
-    ["정동아리", ...new Array(13).fill("")],
-  );
-  aoa.push(["가동아리", ...new Array(13).fill("")]);
-  aoa = [...aoa, ...provisionals.map(rowMap)];
+    headers,
+    groupRow("정동아리"),
+    ...regulars.map(rowMap),
+    groupRow("가동아리"),
+    ...provisionals.map(rowMap),
+  ];
 
   const sheet = XLSX.utils.aoa_to_sheet(aoa);
 
   const fillColor = fillColorOfSheet(sheet);
 
   for (let row = 0; row <= data.length + 4; row += 1) {
-    [..."ABCDEFGHIJKLMN"].forEach(col => {
+    [..."ABCDEFGHIJKLMNOPQR"].forEach(col => {
       if (sheet[`${col}${row}`]) {
         sheet[`${col}${row}`].s = structuredClone(commonCellStyle);
         if (row <= 2) {
@@ -170,25 +160,25 @@ function createDelegateOverviewSheet(data: ApiOvv001ResponseOK) {
 
   fillColor("A1:B2", "C9DAF8");
   fillColor("A3:B3", "FFF2CC");
-  fillColor("C3:N3", "B7B7B7");
-  fillColor("D1:N2", "B7E1CD");
+  fillColor("C3:R3", "B7B7B7");
+  fillColor("D1:R2", "B7E1CD");
   fillColor("C1:C2", "8AD3FF");
   fillColor(`B4:B${regulars.length + 3}`, "D9EAD3");
   fillColor(`A4:A${regulars.length + 3}`, "FFF2CC");
-  fillColor(`C${regulars.length + 4}:N${regulars.length + 4}`, "B7B7B7");
+  fillColor(`C${regulars.length + 4}:R${regulars.length + 4}`, "B7B7B7");
   fillColor(`A${regulars.length + 4}:B${data.length + 4}`, "FCE5CD");
   fillColor(`B${regulars.length + 5}:B${data.length + 4}`, "F4CCCC");
 
   sheet["!cols"] = [
-    6.33, 6.33, 16.44, 13.22, 8.33, 14, 11.89, 18.22, 15.56, 8.33, 14, 7.22,
-    8.33, 18.22,
+    6.33, 6.33, 16.44, 13.22, 8.33, 14, 11.89, 18.22, 15.56, 8.33, 14, 11.89,
+    18.22, 7.22, 8.33, 18.22, 11.89, 18.22,
   ].map(colWidth);
   sheet["!merges"] = [
     { s: { c: 0, r: 0 }, e: { c: 1, r: 0 } },
     { s: { c: 2, r: 0 }, e: { c: 2, r: 1 } },
     { s: { c: 3, r: 0 }, e: { c: 7, r: 0 } },
-    { s: { c: 8, r: 0 }, e: { c: 10, r: 0 } },
-    { s: { c: 11, r: 0 }, e: { c: 13, r: 0 } },
+    { s: { c: 8, r: 0 }, e: { c: 12, r: 0 } },
+    { s: { c: 13, r: 0 }, e: { c: 17, r: 0 } },
   ];
 
   return sheet;

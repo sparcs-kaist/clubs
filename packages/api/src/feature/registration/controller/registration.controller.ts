@@ -143,7 +143,7 @@ export class RegistrationController {
   ): Promise<ApiReg001ResponseCreated> {
     const response =
       await this.registrationService.postStudentRegistrationClubRegistration(
-        user.studentId,
+        { userId: user.id, studentId: user.studentId },
         body,
       );
     return response;
@@ -204,7 +204,7 @@ export class RegistrationController {
   ): Promise<ApiReg009ResponseOk> {
     const result =
       await this.registrationService.putStudentRegistrationsClubRegistration(
-        user.studentId,
+        { userId: user.id, studentId: user.studentId },
         applyId,
         body,
       );

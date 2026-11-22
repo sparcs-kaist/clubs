@@ -42,7 +42,6 @@ const ChangeRepresentativeModalContent: React.FC<
   const t = useTranslations("my.representative");
   const queryClient = useQueryClient();
   const { data: savedPhone, isLoading: phoneLoading } = useUserPhoneNumber(
-    { profile: profile.type },
     profile.id,
   );
   const [editedPhone, setEditedPhone] = useState<string>();
@@ -85,6 +84,7 @@ const ChangeRepresentativeModalContent: React.FC<
         helperText={t("phoneRequired")}
         placeholder="010-XXXX-XXXX"
         value={phone}
+        formatDisplay={editedPhone !== undefined}
         onChange={value =>
           setEditedPhone(value.replace(/^(010)(\d{4})(\d{4})$/, "$1-$2-$3"))
         }

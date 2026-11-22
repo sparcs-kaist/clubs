@@ -9,7 +9,6 @@ import Card from "@sparcs-clubs/web/common/components/Card";
 import CheckboxOption from "@sparcs-clubs/web/common/components/CheckboxOption";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FormController from "@sparcs-clubs/web/common/components/FormController";
-import PhoneInput from "@sparcs-clubs/web/common/components/Forms/PhoneInput";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
 import { notAllowKrRegx } from "@sparcs-clubs/web/features/register-club/constants";
@@ -22,6 +21,7 @@ import {
 
 import ClubNameField from "./_atomic/ClubNameField";
 import DivisionSelect from "./_atomic/DivisionSelect";
+import RegistrationPhoneField from "./_atomic/RegistrationPhoneField";
 import YearSelect from "./_atomic/YearSelect";
 import ProfessorInformFrame from "./ProfessorInformFrame";
 
@@ -97,25 +97,9 @@ const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
               placeholder={profile?.name ?? ""}
               disabled
             />
-            <FormController
-              name="phoneNumber"
-              required
-              control={control}
-              defaultValue={profile?.phoneNumber}
-              minLength={13}
-              rules={{
-                validate: value =>
-                  /^010-\d{4}-\d{4}$/.test(value.trim())
-                    ? undefined
-                    : t("invalidPhone"),
-              }}
-              renderItem={props => (
-                <PhoneInput
-                  {...props}
-                  label={t("representativePhone")}
-                  placeholder="010-XXXX-XXXX"
-                />
-              )}
+            <RegistrationPhoneField
+              editMode={editMode}
+              initialPhone={profile?.phoneNumber}
             />
           </FlexWrapper>
           <ClubNameField

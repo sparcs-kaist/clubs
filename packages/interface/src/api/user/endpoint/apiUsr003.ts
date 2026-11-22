@@ -16,7 +16,7 @@ const requestParam = z.object({});
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  profile: z.string(),
+  profile: z.string().optional(),
   phoneNumber: zKrPhoneNumber,
 });
 
