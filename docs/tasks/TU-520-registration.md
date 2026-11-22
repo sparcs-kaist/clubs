@@ -18,8 +18,8 @@
 
 ## DB 반영 순서
 
-1. 새 API 배포 전에 [추가 DDL](./TU-520-registration-professor-approval-ddl.sql)을 실행한다.
-2. 새 API를 배포한다. 이전 API가 남긴 서명은 새 상태가 비어 있어도 서명 시각을 기준으로 표시한다.
+1. 새 API 배포 전에 [추가 DDL](./TU-520-registration-professor-approval-ddl.sql)을 실행한다. 교수 서명 상태는 `NOT NULL DEFAULT 'PENDING'`이다.
+2. 새 API를 배포한다. 기존 서명 시각이 있는 행은 이관 전 저장 상태가 `PENDING`이어도 화면에 서명 완료로 표시한다.
 3. 이전 버전의 등록 쓰기 요청이 모두 종료되면 [보정 DML](./TU-520-registration-professor-approval-dml.sql)을 실행한다. 조회 결과의 불일치 세 집계가 모두 0인지 확인한다.
 
-기존 서명의 실제 마감 및 서명자를 당시 기록 없이 재구성할 수 없으므로, 이관은 서명 시각을 보존하고 현재 상태만 채운다. 이력은 새 서명부터 기록한다. 이 배포의 Prisma 스키마와 DDL은 nullable 컬럼을 사용해 롤링 배포 중 기존 데이터도 조회할 수 있게 한다.
+기존 서명의 실제 마감 및 서명자를 당시 기록 없이 재구성할 수 없으므로, 이관은 서명 시각과 기존 수정 시각을 보존하고 현재 상태만 채운다. 이력은 새 서명부터 기록한다.

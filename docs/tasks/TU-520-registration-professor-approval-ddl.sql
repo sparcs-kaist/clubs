@@ -1,6 +1,7 @@
 -- 새 API 배포 전에 실행합니다.
 ALTER TABLE `registration`
-  ADD COLUMN `professor_approval_status` ENUM('PENDING', 'APPROVED', 'LATE_APPROVED') NULL;
+  ADD COLUMN `professor_approval_status` ENUM('PENDING', 'APPROVED', 'LATE_APPROVED')
+  NOT NULL DEFAULT 'PENDING';
 
 CREATE TABLE `registration_professor_approval_log` (
   `id` INTEGER NOT NULL AUTO_INCREMENT,

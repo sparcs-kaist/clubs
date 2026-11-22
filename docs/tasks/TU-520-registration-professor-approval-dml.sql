@@ -4,7 +4,8 @@ UPDATE `registration`
 SET `professor_approval_status` = CASE
   WHEN `professor_approved_at` IS NULL THEN 'PENDING'
   ELSE 'APPROVED'
-END
+END,
+    `updated_at` = `updated_at`
 WHERE `professor_approval_status` IS NULL
    OR (`professor_approved_at` IS NULL AND `professor_approval_status` <> 'PENDING')
    OR (`professor_approved_at` IS NOT NULL AND `professor_approval_status` = 'PENDING');

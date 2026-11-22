@@ -147,7 +147,7 @@ describe("RegistrationService club registration review", () => {
 });
 
 describe("RegistrationService professor club registration brief", () => {
-  it("preserves semesters and independent professor approval through the response schema", async () => {
+  it("preserves semesters and recognizes existing signatures before the approval status backfill", async () => {
     const { service, clubRegistrationRepository } = createService(
       ClubTypeEnum.Regular,
     );
@@ -183,7 +183,9 @@ describe("RegistrationService professor club registration brief", () => {
           clubNameEn: "Club",
           professorApprovedAt: item.professorSignedAt,
           professorApprovalStatus:
-            item.id === 3 ? null : ProfessorApprovalStatus.LateApproved,
+            item.id === 3
+              ? ProfessorApprovalStatus.Pending
+              : ProfessorApprovalStatus.LateApproved,
         },
         club: { nameKr: "동아리", nameEn: "Club" },
         division: { name: "분과" },

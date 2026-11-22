@@ -1151,7 +1151,7 @@ model Registration {
   registrationClubRuleFileId            String?   @map("registration_club_rule_file_id") @db.VarChar(128)
   registrationExternalInstructionFileId String?   @map("registration_external_instruction_file_id") @db.VarChar(128)
   professorApprovedAt                   DateTime? @map("professor_approved_at") @db.Timestamp(0)
-  professorApprovalStatus               ProfessorApprovalStatus? @map("professor_approval_status")
+  professorApprovalStatus               ProfessorApprovalStatus @default(PENDING) @map("professor_approval_status")
   reviewedAt                            DateTime? @map("reviewed_at") @db.Timestamp(0)
   createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt                             DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
