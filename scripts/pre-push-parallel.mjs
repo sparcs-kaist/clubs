@@ -52,6 +52,11 @@ export const DEFAULT_GROUPS = [
         args: ["format:check:changed"],
       },
       {
+        name: "web-newlines:check",
+        command: "pnpm",
+        args: ["web-newlines:check"],
+      },
+      {
         name: "web-page-allowlist:check",
         command: "pnpm",
         args: ["web-page-allowlist:check"],
