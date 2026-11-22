@@ -1,5 +1,4 @@
 {
-  "publicDescription": "날짜별 상근 시간과 휴무를 확인할 수 있습니다. 시간은 한국 표준시 기준입니다.",
   "editDescription": "날짜를 선택해 상근 시간을 바꾸거나 임시 상근과 휴무를 등록하세요.",
   "previousMonth": "이전 달",
   "nextMonth": "다음 달",
@@ -20,7 +19,8 @@
   "publicMemo": "공개 안내 (선택)",
   "internalMemo": "집행부 전용 메모 (선택)",
   "dateMemo": "{date} 상근 안내",
-  "noPublicMemo": "추가 공지사항이 없습니다",
+  "officeClosed": "상근 휴무일입니다",
+  "noOfficeHours": "상근일이 아닙니다",
   "invalidTimes": "종료 시간은 시작 시간 이후로 설정해 주세요.",
   "loadingImpact": "이 날짜의 대여 예약을 확인하고 있습니다.",
   "impactError": "이 날짜의 대여 예약을 확인하지 못했습니다.",
