@@ -884,6 +884,9 @@ export class ClubRegistrationRepository {
         where: {
           id: applyId,
           deletedAt: null,
+          registrationApplicationStatusEnumId: {
+            not: RegistrationStatusEnum.Approved,
+          },
         },
         data: {
           registrationApplicationStatusEnumId: RegistrationStatusEnum.Rejected,

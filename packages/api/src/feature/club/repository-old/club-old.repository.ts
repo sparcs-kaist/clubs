@@ -203,31 +203,19 @@ export class ClubOldRepository {
       dateRange: { startMonth: Date; endMonth: Date | undefined }[];
     }[];
   }> {
-    const rows = await this.prisma.$queryRaw<
-      Array<{
-        clubId: number;
-        nameKr: string;
-        nameEn: string;
-        startTerm: Date;
-        endTerm: Date | null;
-      }>
-    >(Prisma.sql`
-      SELECT cst.club_id AS clubId,
-             c.name_kr AS nameKr,
-             c.name_en AS nameEn,
-             cst.start_term AS startTerm,
-             cst.end_term AS endTerm
-      FROM club_student_t cst
-      LEFT JOIN club c ON c.id = cst.club_id
-      WHERE cst.student_id = ${studentId}
-    `);
+    const memberships = await this.prisma.clubStudentT.findMany({
+      where: { studentId, deletedAt: null },
+      select: {
+        club: { select: { id: true, nameKr: true, nameEn: true } },
+        startTerm: true,
+        endTerm: true,
+      },
+    });
 
-    const clubActivities = rows.map(row => ({
-      id: row.clubId,
-      nameKr: row.nameKr,
-      nameEn: row.nameEn,
-      startMonth: row.startTerm,
-      endMonth: row.endTerm,
+    const clubActivities = memberships.map(({ club, startTerm, endTerm }) => ({
+      ...club,
+      startMonth: startTerm,
+      endMonth: endTerm,
     }));
 
     const groupedActivities = clubActivities.reduce(

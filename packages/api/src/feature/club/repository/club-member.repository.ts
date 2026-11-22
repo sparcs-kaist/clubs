@@ -28,13 +28,19 @@ export class ClubMemberRepository extends BaseSingleTableRepository<
     super("clubStudentT", MClubMember);
   }
 
-  async ensureMembershipForStudent(
+  async initializeMembershipForRegistration(
     param: ClubMemberQuery & { startTerm: Date; endTerm: Date },
+    approvedAt: Date,
   ): Promise<void> {
     const delegate = this.getDelegate(this.txHost.tx);
     const { clubId, studentId, semesterId } = param;
+    const activeMemberships = { clubId, semesterId, deletedAt: null };
+    await delegate.updateMany({
+      where: { ...activeMemberships, studentId: { not: studentId } },
+      data: { deletedAt: approvedAt },
+    });
     const existingMember = await delegate.findFirst({
-      where: { clubId, studentId, semesterId, deletedAt: null },
+      where: { ...activeMemberships, studentId },
       select: { id: true },
     });
     if (existingMember) return;

@@ -84,8 +84,10 @@ export default class ClubPublicService {
     characteristicKr: string | null;
     characteristicEn: string | null;
     professorId: number | null;
-    effectiveAt: Date;
+    approvedAt: Date;
   }): Promise<void> {
+    const previousSemesterEnd =
+      await this.semesterPublicService.getPreviousSemesterEnd(param.semester);
     const clubTerm = await this.clubSemesterRepository.ensureForRegistration({
       clubId: param.clubId,
       semesterId: param.semester.id,
@@ -106,16 +108,22 @@ export default class ClubPublicService {
       {
         clubId: param.clubId,
         studentId: param.studentId,
-        effectiveAt: param.effectiveAt,
+        previousSemesterEnd,
+        semesterStart: param.semester.startTerm,
+        semesterEnd: param.semester.endTerm,
+        approvedAt: param.approvedAt,
       },
     );
-    await this.clubMemberRepository.ensureMembershipForStudent({
-      clubId: param.clubId,
-      semesterId: param.semester.id,
-      studentId: param.studentId,
-      startTerm: clubTerm.startTerm,
-      endTerm: clubTerm.endTerm ?? param.semester.endTerm,
-    });
+    await this.clubMemberRepository.initializeMembershipForRegistration(
+      {
+        clubId: param.clubId,
+        semesterId: param.semester.id,
+        studentId: param.studentId,
+        startTerm: clubTerm.startTerm,
+        endTerm: clubTerm.endTerm ?? param.semester.endTerm,
+      },
+      param.approvedAt,
+    );
   }
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.

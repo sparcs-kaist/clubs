@@ -910,6 +910,32 @@ export class RegistrationService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+    const isApprovalPeriod = await this.registrationDeadlinePublicService.is({
+      semesterId: registration.semesterId,
+      date: approvedAt,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    if (!isApprovalPeriod) {
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.RegistrationPeriodClosed,
+          message: "해당 학기의 동아리 등록 신청 기간이 아닙니다.",
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const hasOtherApproval =
+      await this.clubRegistrationApprovalRepository.hasOtherApproval(
+        registration.clubId,
+        registration.semesterId,
+        applyId,
+      );
+    if (hasOtherApproval) {
+      throw new HttpException(
+        "Club registration is already approved for this semester",
+        HttpStatus.CONFLICT,
+      );
+    }
     const applicants = await this.userPublicService.getStudentsByIds([
       registration.studentId,
     ]);
@@ -941,9 +967,9 @@ export class RegistrationService {
       characteristicKr: registration.activityFieldKr,
       characteristicEn: registration.activityFieldEn,
       professorId: registration.professorId,
-      effectiveAt: approvedAt,
+      approvedAt,
     });
-    await this.memberRegistrationRepository.ensureApprovedForStudent({
+    await this.memberRegistrationRepository.initializeApprovedApplicant({
       clubId: registration.clubId,
       semesterId: registration.semesterId,
       studentId: registration.studentId,

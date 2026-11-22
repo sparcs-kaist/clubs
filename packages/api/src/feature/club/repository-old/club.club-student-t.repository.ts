@@ -133,21 +133,18 @@ export default class ClubStudentTRepository {
   }
 
   async getClubsByStudentId(studentId: number) {
-    const clubs = await this.prisma.$queryRaw<
-      Array<{
-        id: number;
-        nameKr: string | null;
-        nameEn: string | null;
-      }>
-    >(Prisma.sql`
-      SELECT DISTINCT cst.club_id AS id, c.name_kr AS nameKr, c.name_en AS nameEn
-      FROM club_student_t cst
-      LEFT JOIN club c ON c.id = cst.club_id
-      WHERE cst.student_id = ${studentId}
-        AND cst.start_term <= NOW()
-        AND (cst.end_term >= NOW() OR cst.end_term IS NULL)
-    `);
-    return clubs;
+    const now = this.clock.now();
+    const memberships = await this.prisma.clubStudentT.findMany({
+      where: {
+        studentId,
+        deletedAt: null,
+        startTerm: { lte: now },
+        OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+      },
+      distinct: ["clubId"],
+      select: { club: { select: { id: true, nameKr: true, nameEn: true } } },
+    });
+    return memberships.map(({ club }) => club);
   }
 
   @Transactional<PrismaTransactionalAdapter>({

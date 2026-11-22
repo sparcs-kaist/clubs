@@ -88,13 +88,27 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
     });
   }
 
-  async ensureApprovedForStudent(param: {
+  async initializeApprovedApplicant(param: {
     studentId: number;
     clubId: number;
     semesterId: number;
   }): Promise<void> {
     const delegate = this.getDelegate(this.txHost.tx);
-    const where = { ...param, deletedAt: null };
+    const { clubId, semesterId, studentId } = param;
+    const activeApplications = { clubId, semesterId, deletedAt: null };
+    await delegate.updateMany({
+      where: {
+        ...activeApplications,
+        studentId: { not: studentId },
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Approved,
+      },
+      data: {
+        registrationApplicationStudentEnum:
+          RegistrationApplicationStudentStatusEnum.Pending,
+      },
+    });
+    const where = { ...activeApplications, studentId };
     const existingApplication = await delegate.findFirst({
       where,
       select: { id: true },

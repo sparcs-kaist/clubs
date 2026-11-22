@@ -358,9 +358,12 @@ describe("OverviewRepository", () => {
       );
     });
 
-    it("uses the selected semester end term as delegate criteria for past semesters", async () => {
-      const now = new Date("2026-06-11T00:00:00Z");
+    it.each([
+      new Date("2025-12-31T14:59:59Z"),
+      new Date("2026-06-11T00:00:00Z"),
+    ])("looks before semester end when now is %s", async now => {
       const semesterEndTerm = new Date("2025-12-31T14:59:59Z");
+      const lastDelegateInstant = new Date("2025-12-31T14:59:58Z");
       const prisma = {
         semesterD: {
           findFirst: jest.fn().mockResolvedValue({
@@ -386,8 +389,8 @@ describe("OverviewRepository", () => {
       expect(prisma.clubDelegateD.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            OR: [{ endTerm: null }, { endTerm: { gt: semesterEndTerm } }],
-            startTerm: { lte: semesterEndTerm },
+            OR: [{ endTerm: null }, { endTerm: { gt: lastDelegateInstant } }],
+            startTerm: { lte: lastDelegateInstant },
           }),
         }),
       );

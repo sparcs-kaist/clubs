@@ -54,6 +54,19 @@ export class SemesterRepository extends BaseSingleTableRepository<
       .then(takeOne);
   }
 
+  async findPreviousEndTerm(startTerm: Date): Promise<Date | undefined> {
+    const previous = await this.txHost.tx.semesterD.findFirst({
+      where: {
+        startTerm: { lt: startTerm },
+        endTerm: { lte: startTerm },
+        deletedAt: null,
+      },
+      orderBy: { endTerm: "desc" },
+      select: { endTerm: true },
+    });
+    return previous?.endTerm;
+  }
+
   async createSemester(value: ISemesterCreate): Promise<{ id: number }> {
     const delegate = this.getDelegate(this.txHost.tx);
     const created = await delegate.create({ data: this.createToDB(value) });

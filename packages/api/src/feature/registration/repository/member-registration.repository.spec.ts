@@ -2,10 +2,25 @@ import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/commo
 
 import { MemberRegistrationRepository } from "./member-registration.repository";
 
-describe("MemberRegistrationRepository ensureApprovedForStudent", () => {
+describe("MemberRegistrationRepository initializeApprovedApplicant", () => {
   const applicant = { clubId: 42, semesterId: 20, studentId: 17160 };
 
-  it("creates only the applicant's approved application when missing", async () => {
+  const resetOtherApprovals = {
+    where: {
+      clubId: applicant.clubId,
+      semesterId: applicant.semesterId,
+      studentId: { not: applicant.studentId },
+      deletedAt: null,
+      registrationApplicationStudentEnum:
+        RegistrationApplicationStudentStatusEnum.Approved,
+    },
+    data: {
+      registrationApplicationStudentEnum:
+        RegistrationApplicationStudentStatusEnum.Pending,
+    },
+  };
+
+  it("creates the applicant's approved application and resets only other approved applications for that club and semester", async () => {
     const delegate = {
       findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
@@ -15,7 +30,7 @@ describe("MemberRegistrationRepository ensureApprovedForStudent", () => {
       tx: { registrationApplicationStudent: delegate },
     } as never);
 
-    await repository.ensureApprovedForStudent(applicant);
+    await repository.initializeApprovedApplicant(applicant);
 
     expect(delegate.findFirst).toHaveBeenCalledWith({
       where: { ...applicant, deletedAt: null },
@@ -28,7 +43,8 @@ describe("MemberRegistrationRepository ensureApprovedForStudent", () => {
           RegistrationApplicationStudentStatusEnum.Approved,
       },
     });
-    expect(delegate.updateMany).not.toHaveBeenCalled();
+    expect(delegate.updateMany).toHaveBeenCalledTimes(1);
+    expect(delegate.updateMany).toHaveBeenCalledWith(resetOtherApprovals);
   });
 
   it("approves existing applicant applications without duplicating them", async () => {
@@ -41,10 +57,12 @@ describe("MemberRegistrationRepository ensureApprovedForStudent", () => {
       tx: { registrationApplicationStudent: delegate },
     } as never);
 
-    await repository.ensureApprovedForStudent(applicant);
+    await repository.initializeApprovedApplicant(applicant);
 
     expect(delegate.create).not.toHaveBeenCalled();
-    expect(delegate.updateMany).toHaveBeenCalledWith({
+    expect(delegate.updateMany).toHaveBeenCalledTimes(2);
+    expect(delegate.updateMany).toHaveBeenNthCalledWith(1, resetOtherApprovals);
+    expect(delegate.updateMany).toHaveBeenNthCalledWith(2, {
       where: {
         ...applicant,
         deletedAt: null,
