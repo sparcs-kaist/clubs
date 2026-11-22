@@ -1,10 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
-import type {
-  RentalItem,
-  RentalPeriodPolicy,
-} from "@clubs/interface/api/rental/v2";
+import type { RentalItem } from "@clubs/interface/api/rental/v2";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -26,7 +23,7 @@ import {
   saveRentalItem,
   useExecutiveRentalItems,
 } from "../services/rentalApi";
-import { rentalPolicyLabels } from "../utils/rentalSchedule";
+import { formatRentalDuration } from "../utils/rentalSchedule";
 import { ExecutiveRentalPage } from "./ExecutiveRentalFrame";
 
 const RentalInventory = ({ userId }: { userId: number }) => {
@@ -55,7 +52,8 @@ const RentalInventory = ({ userId }: { userId: number }) => {
       body: {
         name: String(form.get("name") ?? "").trim(),
         totalQuantity: Number(form.get("totalQuantity")),
-        durationPolicy: form.get("durationPolicy") as RentalPeriodPolicy,
+        durationType: form.get("durationType") as RentalItem["durationType"],
+        durationValue: Number(form.get("durationValue")),
         isActive: form.has("isActive"),
       },
     });
@@ -96,19 +94,26 @@ const RentalInventory = ({ userId }: { userId: number }) => {
                 />
               </RentalField>
               <RentalField>
-                기본 대여 기한
+                대여 기한 단위
                 <RentalSelect
-                  name="durationPolicy"
-                  defaultValue={
-                    item?.durationPolicy ?? "SECOND_NEXT_OFFICE_HOUR"
-                  }
+                  name="durationType"
+                  defaultValue={item?.durationType ?? "OFFICE_HOURS"}
                 >
-                  {Object.entries(rentalPolicyLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  <option value="DAYS">일수</option>
+                  <option value="OFFICE_HOURS">상근 횟수</option>
                 </RentalSelect>
+              </RentalField>
+              <RentalField>
+                기본 대여 기한
+                <RentalInput
+                  name="durationValue"
+                  type="number"
+                  min={1}
+                  max={4294967295}
+                  step={1}
+                  defaultValue={item?.durationValue ?? 2}
+                  required
+                />
               </RentalField>
             </RentalFieldGrid>
             <label htmlFor="rental-item-active">
@@ -164,7 +169,7 @@ const RentalInventory = ({ userId }: { userId: number }) => {
           </RentalActions>
           <p>
             보유 수량 {current.totalQuantity}개 ·{" "}
-            {rentalPolicyLabels[current.durationPolicy]}
+            {formatRentalDuration(current)}
           </p>
           <RentalActions>
             <Button

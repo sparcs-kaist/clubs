@@ -151,7 +151,8 @@ describe("Rental API with MySQL", () => {
       .send({
         name: "운반 카트",
         totalQuantity: 1,
-        durationPolicy: "DAYS_14",
+        durationType: "DAYS",
+        durationValue: 14,
         isActive: true,
       })
       .expect(201);
@@ -352,26 +353,64 @@ describe("Rental API with MySQL", () => {
     ]);
     const extension = await prisma.rentalExtension.findFirstOrThrow({
       where: { reservationId: secondId },
-      include: { previousReturnHour: true, newReturnHour: true },
     });
-    expect(formatKstDate(extension.previousReturnHour.date)).toBe(
-      secondReturn.date,
-    );
-    expect(extension.previousReturnHour.closesAt.toISOString()).toBe(
+    const previousReturnHour = await prisma.officeHour.findUniqueOrThrow({
+      where: { id: extension.previousReturnHourId },
+    });
+    const newReturnHour = await prisma.officeHour.findUniqueOrThrow({
+      where: { id: extension.newReturnHourId },
+    });
+    expect(formatKstDate(previousReturnHour.date)).toBe(secondReturn.date);
+    expect(previousReturnHour.closesAt.toISOString()).toBe(
       secondReturn.closesAt,
     );
-    expect(formatKstDate(extension.newReturnHour.date)).toBe(
+    expect(formatKstDate(newReturnHour.date)).toBe(
       extensionRequest.return.date,
     );
-    expect(extension.newReturnHour.closesAt.toISOString()).toBe(
+    expect(newReturnHour.closesAt.toISOString()).toBe(
       extensionRequest.return.closesAt,
     );
-    await expect(
-      prisma.rentalReservation.update({
-        where: { id: firstId },
+    const foreignExtension = await prisma.rentalExtension.create({
+      data: {
+        reservationId: firstId,
+        previousReturnHourId: extension.previousReturnHourId,
+        newReturnHourId: extension.newReturnHourId,
+        reason: "다른 대여의 연장 승인",
+        processedByExecutiveId: executiveId,
+        processedAt: now,
+      },
+    });
+    await prisma.rentalReservation.update({
+      where: { id: secondId },
+      data: { approvedExtensionId: foreignExtension.id },
+    });
+    try {
+      const beforeRejectedUpdate =
+        await prisma.rentalReservation.findUniqueOrThrow({
+          where: { id: secondId },
+        });
+      const rejectedUpdate = await request(server)
+        .patch(`/executive/rentals/${secondId}/schedule`)
+        .set("Authorization", executive)
+        .send({ return: extensionRequest.return })
+        .expect(409);
+      expect(rejectedUpdate.body.message).toMatchObject({
+        message: "INVALID_RENTAL_STATE",
+      });
+      expect(
+        await prisma.rentalReservation.findUniqueOrThrow({
+          where: { id: secondId },
+        }),
+      ).toEqual(beforeRejectedUpdate);
+    } finally {
+      await prisma.rentalReservation.update({
+        where: { id: secondId },
         data: { approvedExtensionId: extension.id },
-      }),
-    ).rejects.toMatchObject({ code: "P2003" });
+      });
+      await prisma.rentalExtension.delete({
+        where: { id: foreignExtension.id },
+      });
+    }
 
     const reschedule = (returnSlot: typeof secondReturn) =>
       request(server)
@@ -410,5 +449,113 @@ describe("Rental API with MySQL", () => {
       .set("Authorization", representative)
       .expect(200);
     expect(renamed.body.itemName).toBe("수정된 카트");
+  });
+
+  it("applies edited item limits to new bookings while retaining existing duration snapshots", async () => {
+    now = new Date("2027-01-04T08:00:00Z");
+    const server = app.getHttpServer();
+    await request(server)
+      .post("/executive/office-hours/generate")
+      .set("Authorization", executive)
+      .send({ from: "2027-01-04", to: "2027-01-14" })
+      .expect(201);
+    const created = await request(server)
+      .post("/executive/rental-items")
+      .set("Authorization", executive)
+      .send({
+        name: "기간 설정 카트",
+        totalQuantity: 3,
+        durationType: "DAYS",
+        durationValue: 3,
+        isActive: true,
+      })
+      .expect(201);
+    const configuredItemId = created.body.id;
+    const apply = (returnDate: string) =>
+      request(server)
+        .post("/student/rentals")
+        .set("Authorization", representative)
+        .send({
+          clubId,
+          itemId: configuredItemId,
+          quantity: 1,
+          pickup: slot("2027-01-04"),
+          return: slot(returnDate),
+          contactPhoneNumber: "010-1234-5678",
+          purpose: "기간 설정 확인",
+          clientRequestId: randomUUID(),
+        });
+    const options = () =>
+      request(server)
+        .get(`/rentals/items/${configuredItemId}/return-options`)
+        .query({ pickupDate: "2027-01-04" })
+        .expect(200);
+    expect(
+      (await options()).body.options.map(({ date }: { date: string }) => date),
+    ).toEqual(["2027-01-05", "2027-01-06", "2027-01-07"]);
+    const original = await apply("2027-01-07").expect(201);
+    expect(original.body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 3,
+      regularReturnLimitDate: "2027-01-07",
+    });
+
+    await request(server)
+      .patch(`/executive/rental-items/${configuredItemId}`)
+      .set("Authorization", executive)
+      .send({ durationValue: 6 })
+      .expect(200);
+    const weekendCap = await apply("2027-01-07").expect(201);
+    expect(weekendCap.body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 6,
+      return: slot("2027-01-07"),
+      regularReturnLimitDate: "2027-01-07",
+    });
+    expect(
+      await prisma.rentalReservation.findUnique({
+        where: { id: weekendCap.body.id },
+      }),
+    ).toMatchObject({
+      regularReturnLimitDate: new Date("2027-01-06T15:00:00Z"),
+    });
+    await apply("2027-01-11").expect(400);
+
+    await request(server)
+      .patch(`/executive/rental-items/${configuredItemId}`)
+      .set("Authorization", executive)
+      .send({ durationType: "OFFICE_HOURS", durationValue: 4 })
+      .expect(200);
+    await request(server)
+      .put("/executive/office-hours/2027-01-06")
+      .set("Authorization", executive)
+      .send({ openTime: "21:00", closeTime: "22:00", isClosed: true })
+      .expect(200);
+    expect(
+      (await options()).body.options.map(({ date }: { date: string }) => date),
+    ).toEqual(["2027-01-05", "2027-01-07", "2027-01-11", "2027-01-12"]);
+    await apply("2027-01-13").expect(400);
+    const next = await apply("2027-01-12").expect(201);
+    expect(next.body).toMatchObject({
+      durationType: "OFFICE_HOURS",
+      durationValue: 4,
+      regularReturnLimitDate: "2027-01-12",
+    });
+    expect(
+      await prisma.rentalReservation.findUnique({
+        where: { id: original.body.id },
+      }),
+    ).toMatchObject({ durationType: "DAYS", durationValue: 3 });
+    const reschedule = (returned: string) =>
+      request(server)
+        .patch(`/executive/rentals/${original.body.id}/schedule`)
+        .set("Authorization", executive)
+        .send({ pickup: slot("2027-01-05"), return: slot(returned) });
+    await reschedule("2027-01-11").expect(400);
+    expect((await reschedule("2027-01-07").expect(200)).body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 3,
+      regularReturnLimitDate: "2027-01-07",
+    });
   });
 });

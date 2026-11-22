@@ -18,11 +18,11 @@ import {
   type apiRentalSchedule,
   type RentalSlotSelection,
   type RentalStatus,
-  zRentalPeriodPolicy,
+  zRentalDuration,
   zRentalStatus,
 } from "@clubs/interface/api/rental/v2";
 
-import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 
 import {
@@ -98,11 +98,14 @@ export class RentalService {
     if (!item.isActive) throw new NotFoundException("ITEM_NOT_FOUND");
 
     const now = this.clock.now();
-    const policy = zRentalPeriodPolicy.parse(item.durationPolicy);
+    const duration = zRentalDuration.parse(item);
     if (input.pickup.date >= input.return.date) {
       throw new BadRequestException("INVALID_RENTAL_PERIOD");
     }
-    const dates = await this.schedule.availableDates(policy, input.pickup.date);
+    const dates = await this.schedule.availableDates(
+      duration,
+      input.pickup.date,
+    );
     const pickup = this.schedule.requireSelection(
       dates.pickup,
       input.pickup,
@@ -140,7 +143,7 @@ export class RentalService {
         purpose: input.purpose,
         quantity: input.quantity,
         status: "RESERVED",
-        durationPolicy: policy,
+        ...duration,
         regularReturnLimitDate: regularLimit,
         clientRequestId: input.clientRequestId,
         requestFingerprint: fingerprint,
@@ -262,13 +265,13 @@ export class RentalService {
     const nextReturn = input.return
       ? await this.schedule.resolve(input.return, now)
       : await this.schedule.resolveBooked(booked.returned, now);
-    const policy = zRentalPeriodPolicy.parse(row.durationPolicy);
+    const duration = zRentalDuration.parse(row);
     let regularLimit = row.regularReturnLimitDate;
     let { approvedExtensionId } = row;
     let returnLimit: string;
     if (pickup.date !== booked.pickupDate) {
       regularLimit = await this.schedule.requireRegularLimit(
-        policy,
+        duration,
         pickup.date,
       );
       approvedExtensionId = null;
@@ -321,8 +324,10 @@ export class RentalService {
       throw new BadRequestException("INVALID_EXTENSION");
     if (nextReturn.date <= row.regularReturnLimitDate)
       throw new BadRequestException("INVALID_EXTENSION");
-    const days = row.durationPolicy === "DAYS_14" ? 14 : 7;
-    if (nextReturn.date > addRentalDays(row.regularReturnLimitDate, days)) {
+    const days = row.durationType === "DAYS" ? 14 : 7;
+    const extensionLimit =
+      addRentalDays(row.regularReturnLimitDate, days) ?? "9999-12-31";
+    if (nextReturn.date > extensionLimit) {
       throw new BadRequestException("INVALID_EXTENSION");
     }
 

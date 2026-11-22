@@ -56,11 +56,21 @@ const zOfficeHourInput = z
 export type OfficeDateRange = z.infer<typeof zOfficeDateRange>;
 export type OfficeHourInput = z.infer<typeof zOfficeHourInput>;
 
+const zOfficeHourQuery = z
+  .object({ from: zOfficeDate, to: zOfficeDate.optional() })
+  .refine(({ from, to }) => {
+    if (to === undefined) return true;
+    const duration = Date.parse(to) - Date.parse(from);
+    return duration >= 0 && duration < 366 * 86_400_000;
+  }, "조회 기간은 최대 366일입니다.");
+
+export type OfficeHourQuery = z.infer<typeof zOfficeHourQuery>;
+
 const empty = z.object({});
 const officeHoursList = {
   method: "GET",
   requestParam: empty,
-  requestQuery: zOfficeDateRange,
+  requestQuery: zOfficeHourQuery,
   requestBody: empty,
   responseBodyMap: {
     [HttpStatusCode.Ok]: z.object({ items: z.array(zOfficeHour) }),

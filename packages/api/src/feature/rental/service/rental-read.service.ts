@@ -13,12 +13,12 @@ import {
   type ExecutiveRentalReservation,
   type RentalItem,
   type RentalReservation,
-  zRentalPeriodPolicy,
+  zRentalDuration,
   zRentalStatus,
 } from "@clubs/interface/api/rental/v2";
 import type { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
-import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
 import { OfficeHoursPublicService } from "@sparcs-clubs/api/feature/office-hours/publicService/office-hours.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
@@ -48,7 +48,7 @@ export function serializeItem(row: ItemRow): RentalItem {
     id: row.id,
     name: row.name,
     totalQuantity: row.totalQuantity,
-    durationPolicy: zRentalPeriodPolicy.parse(row.durationPolicy),
+    ...zRentalDuration.parse(row),
     isActive: row.isActive,
   };
 }
@@ -152,9 +152,9 @@ export class RentalReadService {
   async returnOptions(itemId: number, date: string) {
     const item = await this.repository.findItem(itemId);
     if (!item?.isActive) throw new NotFoundException("ITEM_NOT_FOUND");
-    const policy = zRentalPeriodPolicy.parse(item.durationPolicy);
+    const duration = zRentalDuration.parse(item);
     const { pickup, returns } = await this.schedule.availableDates(
-      policy,
+      duration,
       date,
     );
     if (!pickup) throw new BadRequestException("INVALID_PICKUP_DATE");
@@ -355,7 +355,7 @@ export class RentalReadService {
           row.approvedExtensionId === null
             ? null
             : requireReference(approvedLimits.get(row.approvedExtensionId)),
-        durationPolicy: zRentalPeriodPolicy.parse(row.durationPolicy),
+        ...zRentalDuration.parse(row),
         createdAt: row.createdAt.toISOString(),
         checkedOutAt: row.checkedOutAt?.toISOString() ?? null,
         returnedAt: row.returnedAt?.toISOString() ?? null,

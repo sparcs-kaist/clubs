@@ -59,7 +59,7 @@ const Weekday = styled.span`
   font-size: 13px;
 `;
 
-const DayCell = styled.div<{ $selected?: boolean }>`
+const DayCell = styled.button<{ $selected?: boolean }>`
   display: flex;
   flex-direction: column;
   min-height: 72px;
@@ -74,11 +74,9 @@ const DayCell = styled.div<{ $selected?: boolean }>`
   background-color: ${({ theme, $selected }) =>
     $selected ? theme.colors.MINT[100] : theme.colors.WHITE};
 
-  &:is(button) {
-    cursor: pointer;
-  }
+  cursor: pointer;
 
-  &:is(button, a):hover,
+  &:hover,
   &:focus-visible {
     border-color: ${({ theme }) => theme.colors.PRIMARY};
   }
@@ -99,20 +97,12 @@ const DayStatus = styled.span<{ $closed?: boolean }>`
     $closed ? theme.colors.RED[600] : theme.colors.MINT[800]};
 `;
 
-const DayMemo = styled.span`
-  color: ${({ theme }) => theme.colors.MINT[800]};
-  font-size: 12px;
-  text-decoration: underline;
-`;
-
-export const officeHourMemoId = (date: string) => `office-hours-memo-${date}`;
-
 interface OfficeHoursCalendarProps {
   month: Date;
   items: OfficeHour[];
   selectedDate?: string;
   onMonthChange: (month: Date) => void;
-  onDateSelect?: (date: string) => void;
+  onDateSelect: (date: string) => void;
   children?: ReactNode;
 }
 
@@ -192,24 +182,8 @@ const OfficeHoursCalendar = ({
             </>
           );
 
-          if (!onDateSelect && officeHour?.publicMemo) {
-            return (
-              <DayCell
-                as="a"
-                key={date}
-                href={`#${officeHourMemoId(date)}`}
-                aria-label={t("dateMemo", { date })}
-                aria-describedby={statusId}
-              >
-                {label}
-                <DayMemo>{t("note")}</DayMemo>
-              </DayCell>
-            );
-          }
-
-          return onDateSelect ? (
+          return (
             <DayCell
-              as="button"
               type="button"
               key={date}
               $selected={selectedDate === date}
@@ -220,8 +194,6 @@ const OfficeHoursCalendar = ({
             >
               {label}
             </DayCell>
-          ) : (
-            <DayCell key={date}>{label}</DayCell>
           );
         })}
       </CalendarGrid>

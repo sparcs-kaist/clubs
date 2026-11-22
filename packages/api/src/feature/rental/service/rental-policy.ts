@@ -1,5 +1,5 @@
 import type {
-  RentalPeriodPolicy,
+  RentalDuration,
   RentalStatus,
 } from "@clubs/interface/api/rental/v2";
 
@@ -11,19 +11,29 @@ export interface ReservedStock {
   status: string;
 }
 
-export function addRentalDays(date: string, days: number): string {
+export function addRentalDays(date: string, days: number): string | undefined {
   const day = new Date(`${date}T00:00:00.000Z`);
   day.setUTCDate(day.getUTCDate() + days);
+  const timestamp = day.getTime();
+  if (!Number.isFinite(timestamp)) return undefined;
+  if (timestamp > Date.parse("9999-12-31T00:00:00.000Z")) return undefined;
   return day.toISOString().slice(0, 10);
 }
 
 export function regularReturnLimit(
-  policy: RentalPeriodPolicy,
+  duration: RentalDuration,
   pickupDate: string,
   nextOpenDates: readonly string[],
 ) {
-  if (policy === "DAYS_14") return addRentalDays(pickupDate, 14);
-  return nextOpenDates[1];
+  if (duration.durationType === "DAYS") {
+    const cap = addRentalDays(pickupDate, duration.durationValue);
+    if (cap === undefined) return undefined;
+    return nextOpenDates
+      .filter(date => date > pickupDate && date <= cap)
+      .sort()
+      .at(-1);
+  }
+  return nextOpenDates[duration.durationValue - 1];
 }
 
 export function peakReservedQuantity(

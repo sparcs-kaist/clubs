@@ -68,7 +68,7 @@ const ScheduleForm = ({
   const [returnDate, setReturnDate] = useState("");
   const today = todayRentalDate();
   const isExtension = action === "extend";
-  const extensionDays = order.durationPolicy === "DAYS_14" ? 14 : 7;
+  const extensionDays = order.durationType === "DAYS" ? 14 : 7;
   const extensionLimit = addRentalDays(
     order.regularReturnLimitDate,
     extensionDays,
@@ -80,7 +80,7 @@ const ScheduleForm = ({
   ].sort()[2];
   const officeHours = useRentalOfficeHours(
     isExtension ? extensionStart : today,
-    isExtension ? extensionLimit : addRentalDays(today, 365),
+    isExtension ? extensionLimit : undefined,
     !isExtension || extensionStart <= extensionLimit,
   );
   const slots =
@@ -93,26 +93,22 @@ const ScheduleForm = ({
   const pickup = pickupSlots.find(slot => slot.date === pickupDate);
   const nextPickupDate = pickup?.date ?? order.pickup.date;
   const hasNewPickupDate = nextPickupDate !== order.pickup.date;
-  const isTwoShiftPolicy = order.durationPolicy === "SECOND_NEXT_OFFICE_HOUR";
-  const nextOfficeHours = useRentalOfficeHours(
-    nextPickupDate,
-    addRentalDays(nextPickupDate, isTwoShiftPolicy ? 365 : 14),
-    hasNewPickupDate,
-  );
-  const laterSlots = hasNewPickupDate
-    ? (nextOfficeHours.data?.filter(
-        slot => !slot.isClosed && slot.date > nextPickupDate,
-      ) ?? [])
-    : slots.filter(slot => slot.date > nextPickupDate);
+  const laterSlots = slots.filter(slot => slot.date > nextPickupDate);
   let regularLimit: string | undefined =
     order.approvedReturnLimitDate ?? order.regularReturnLimitDate;
   if (hasNewPickupDate) {
-    regularLimit = isTwoShiftPolicy
-      ? laterSlots[1]?.date
-      : addRentalDays(nextPickupDate, 14);
+    const lastDate = addRentalDays(nextPickupDate, order.durationValue);
+    regularLimit =
+      order.durationType === "OFFICE_HOURS"
+        ? laterSlots[order.durationValue - 1]?.date
+        : laterSlots.filter(slot => slot.date <= lastDate).at(-1)?.date;
   }
   const returnSlots = isExtension
-    ? slots
+    ? slots.filter(
+        slot =>
+          slot.date > order.return.date &&
+          slot.date > order.regularReturnLimitDate,
+      )
     : laterSlots.filter(
         slot =>
           regularLimit !== undefined &&
@@ -189,7 +185,6 @@ const ScheduleForm = ({
             새 반납 상근일
             <RentalSelect
               value={returnDate}
-              disabled={nextOfficeHours.isLoading}
               required={isExtension || Boolean(pickup && !keepReturn)}
               onChange={event => setReturnDate(event.target.value)}
             >
@@ -206,21 +201,9 @@ const ScheduleForm = ({
             </RentalSelect>
           </RentalField>
         </RentalFieldGrid>
-        {nextOfficeHours.isLoading && (
-          <AsyncBoundary isLoading isError={false} />
+        {returnSlots.length === 0 && (
+          <p>선택할 수 있는 반납 일정이 없습니다.</p>
         )}
-        {nextOfficeHours.isError && (
-          <RentalError
-            error={nextOfficeHours.error}
-            fallback="새 수령일 이후의 상근 일정을 불러오지 못했습니다."
-            retry={nextOfficeHours.refetch}
-          />
-        )}
-        {returnSlots.length === 0 &&
-          !nextOfficeHours.isLoading &&
-          !nextOfficeHours.isError && (
-            <p>선택할 수 있는 반납 일정이 없습니다.</p>
-          )}
         {isExtension && (
           <RentalField>
             연장 사유

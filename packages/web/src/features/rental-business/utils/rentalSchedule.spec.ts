@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 
-import { isSameRentalSlot, rentalSlotSelection } from "./rentalSchedule.ts";
+import {
+  addRentalDays,
+  isSameRentalSlot,
+  rentalSlotSelection,
+} from "./rentalSchedule.ts";
 
 const saved = {
   date: "2026-11-16",
@@ -30,4 +34,10 @@ it("distinguishes changes to either time on the same office date", () => {
 it("sends only the displayed date and times for a rental slot", () => {
   const available = { ...saved, availableQuantity: 2 };
   assert.deepEqual(rentalSlotSelection(available), saved);
+});
+
+it("keeps configurable date arithmetic within the supported calendar", () => {
+  assert.equal(addRentalDays("2026-11-23", 7), "2026-11-30");
+  assert.equal(addRentalDays("9999-12-30", 14), "9999-12-31");
+  assert.equal(addRentalDays("2026-11-23", 4294967295), "9999-12-31");
 });

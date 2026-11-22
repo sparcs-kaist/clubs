@@ -18,14 +18,10 @@ import { axiosClient, axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 import { getLocalDateOnly } from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import OfficeHourEditor from "./components/OfficeHourEditor";
-import OfficeHoursCalendar, {
-  officeHourMemoId,
-} from "./components/OfficeHoursCalendar";
+import OfficeHoursCalendar from "./components/OfficeHoursCalendar";
 import OfficeHoursForm from "./components/OfficeHoursForm";
 
 const PublicMemo = styled.article`
-  scroll-margin-top: 72px;
-
   p {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -65,7 +61,9 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
     ? officeHours.data.items.find(item => item.date === selectedDate)
     : undefined;
   const title = executive ? paths("상근일 관리") : paths("상근일 현황");
-  const publicMemos = items.filter(item => item.publicMemo);
+  const selectedPublicMemo = items.find(
+    item => item.date === selectedDate,
+  )?.publicMemo;
 
   return (
     <FlexWrapper direction="column" gap={24}>
@@ -82,9 +80,7 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
         month={month}
         items={items}
         selectedDate={selectedDate}
-        onDateSelect={
-          executive && officeHours.isSuccess ? setSelectedDate : undefined
-        }
+        onDateSelect={setSelectedDate}
         onMonthChange={date => {
           setMonth(date);
           setSelectedDate(undefined);
@@ -104,29 +100,27 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
             </FlexWrapper>
           }
         >
-          {items.length === 0 && <p role="status">{t("emptyMonth")}</p>}
+          {null}
         </AsyncBoundary>
       </OfficeHoursCalendar>
-      {!executive && publicMemos.length > 0 && (
+      {!executive && officeHours.isSuccess && selectedDate && (
         <Card outline gap={16}>
-          {publicMemos.map(({ date, publicMemo }) => (
-            <PublicMemo key={date} id={officeHourMemoId(date)} tabIndex={-1}>
-              <FlexWrapper direction="column" gap={8}>
-                <h2>
-                  {t("dateMemo", {
-                    date: formatter.dateTime(
-                      new Date(`${date}T00:00:00+09:00`),
-                      {
-                        timeZone: "Asia/Seoul",
-                        dateStyle: "long",
-                      },
-                    ),
-                  })}
-                </h2>
-                <p>{publicMemo}</p>
-              </FlexWrapper>
-            </PublicMemo>
-          ))}
+          <PublicMemo aria-live="polite">
+            <FlexWrapper direction="column" gap={8}>
+              <h2>
+                {t("dateMemo", {
+                  date: formatter.dateTime(
+                    new Date(`${selectedDate}T00:00:00+09:00`),
+                    {
+                      timeZone: "Asia/Seoul",
+                      dateStyle: "long",
+                    },
+                  ),
+                })}
+              </h2>
+              <p>{selectedPublicMemo || t("noPublicMemo")}</p>
+            </FlexWrapper>
+          </PublicMemo>
         </Card>
       )}
       {executive && officeHours.isSuccess && selectedDate && (

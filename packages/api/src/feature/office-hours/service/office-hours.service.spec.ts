@@ -207,6 +207,12 @@ describe("office hours API validation", () => {
     expect(
       apiOfh001.requestQuery.safeParse({ from: date, to: date }).success,
     ).toBe(true);
+    expect(apiOfh001.requestQuery.safeParse({ from: date }).success).toBe(true);
+    expect(
+      apiOfh001.requestQuery.safeParse({ from: date, to: "2028-11-16" })
+        .success,
+    ).toBe(false);
+    expect(apiOfh003.requestBody.safeParse({ from: date }).success).toBe(false);
     expect(
       apiOfh003.requestBody.safeParse({ from: date, to: "2026-11-15" }).success,
     ).toBe(false);

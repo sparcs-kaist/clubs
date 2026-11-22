@@ -20,7 +20,8 @@ CREATE TABLE `rental_item` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(100) NOT NULL,
     `total_quantity` INTEGER UNSIGNED NOT NULL,
-    `duration_policy` VARCHAR(30) NOT NULL,
+    `duration_type` VARCHAR(30) NOT NULL,
+    `duration_value` INTEGER UNSIGNED NOT NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `lock_version` BIGINT UNSIGNED NOT NULL DEFAULT 0,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -39,7 +40,8 @@ CREATE TABLE `rental_reservation` (
     `purpose` VARCHAR(500) NOT NULL,
     `quantity` INTEGER UNSIGNED NOT NULL,
     `status` VARCHAR(16) NOT NULL,
-    `duration_policy` VARCHAR(30) NOT NULL,
+    `duration_type` VARCHAR(30) NOT NULL,
+    `duration_value` INTEGER UNSIGNED NOT NULL,
     `regular_return_limit_date` DATE NOT NULL,
     `approved_extension_id` INTEGER NULL,
     `pickup_hour_id` INTEGER NOT NULL,
@@ -80,45 +82,3 @@ CREATE TABLE `rental_extension` (
     UNIQUE INDEX `rental_extension_reservation_id_id_key`(`reservation_id`, `id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- AddForeignKey
-ALTER TABLE `office_hour` ADD CONSTRAINT `office_hour_updated_by_executive_id_fkey` FOREIGN KEY (`updated_by_executive_id`) REFERENCES `executive`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_item_id_fkey` FOREIGN KEY (`item_id`) REFERENCES `rental_item`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_club_id_fkey` FOREIGN KEY (`club_id`) REFERENCES `club`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_student_id_fkey` FOREIGN KEY (`student_id`) REFERENCES `student`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_checked_out_by_executive_id_fkey` FOREIGN KEY (`checked_out_by_executive_id`) REFERENCES `executive`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_returned_by_executive_id_fkey` FOREIGN KEY (`returned_by_executive_id`) REFERENCES `executive`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_closed_by_user_id_fkey` FOREIGN KEY (`closed_by_user_id`) REFERENCES `user`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_pickup_hour_id_fkey` FOREIGN KEY (`pickup_hour_id`) REFERENCES `office_hour`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_return_hour_id_fkey` FOREIGN KEY (`return_hour_id`) REFERENCES `office_hour`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `rental_reservation` ADD CONSTRAINT `rental_reservation_id_approved_extension_id_fkey` FOREIGN KEY (`id`, `approved_extension_id`) REFERENCES `rental_extension`(`reservation_id`, `id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `rental_extension` ADD CONSTRAINT `rental_extension_reservation_id_fkey` FOREIGN KEY (`reservation_id`) REFERENCES `rental_reservation`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `rental_extension` ADD CONSTRAINT `rental_extension_previous_return_hour_id_fkey` FOREIGN KEY (`previous_return_hour_id`) REFERENCES `office_hour`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `rental_extension` ADD CONSTRAINT `rental_extension_new_return_hour_id_fkey` FOREIGN KEY (`new_return_hour_id`) REFERENCES `office_hour`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
--- AddForeignKey
-ALTER TABLE `rental_extension` ADD CONSTRAINT `rental_extension_processed_by_executive_id_fkey` FOREIGN KEY (`processed_by_executive_id`) REFERENCES `executive`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

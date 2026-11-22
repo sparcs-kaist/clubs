@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 
 import type {
-  RentalPeriodPolicy,
+  RentalDuration,
   RentalSlot,
   RentalSlotSelection,
 } from "@clubs/interface/api/rental/v2";
@@ -78,15 +78,20 @@ export type BookedRental = ReturnType<typeof withBookedWindows>;
 export class RentalScheduleService {
   constructor(private readonly officeHours: OfficeHoursPublicService) {}
 
-  async availableDates(policy: RentalPeriodPolicy, pickupDate: string) {
-    // The second next shift may fall after a holiday or semester break.
-    const lastDate = addRentalDays(pickupDate, policy === "DAYS_14" ? 14 : 365);
+  async availableDates(duration: RentalDuration, pickupDate: string) {
+    const lastDate =
+      duration.durationType === "DAYS"
+        ? addRentalDays(pickupDate, duration.durationValue)
+        : "9999-12-31";
+    if (lastDate === undefined) {
+      throw new BadRequestException("INVALID_RENTAL_PERIOD");
+    }
     const windows = await this.officeHours.list(pickupDate, lastDate);
     const open = windows.filter(window => !window.isClosed);
     const pickup = open.find(window => window.date === pickupDate);
     const candidates = open.filter(window => window.date > pickupDate);
     const limit = regularReturnLimit(
-      policy,
+      duration,
       pickupDate,
       candidates.map(window => window.date),
     );
@@ -132,8 +137,8 @@ export class RentalScheduleService {
     return booked;
   }
 
-  async requireRegularLimit(policy: RentalPeriodPolicy, pickupDate: string) {
-    const { limit } = await this.availableDates(policy, pickupDate);
+  async requireRegularLimit(duration: RentalDuration, pickupDate: string) {
+    const { limit } = await this.availableDates(duration, pickupDate);
     if (!limit) throw new ConflictException("OFFICE_HOURS_NOT_PUBLISHED");
     return limit;
   }

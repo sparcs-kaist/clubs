@@ -10,16 +10,12 @@ export const repositoryBoundary = {
   exportedPrismaModels: ["rentalOrder", "rentalReservation", "rentalExtension"],
   importedPrismaModels: [
     {
-      from: "packages/api/src/feature/office-hours/repository/repository-boundary.ts",
-      models: ["officeHour"],
-    },
-    {
       from: "packages/api/src/feature/club/repository-boundary.ts",
       models: ["club"],
     },
     {
       from: "packages/api/src/feature/user/repository/repository-boundary.ts",
-      models: ["student", "executive", "user"],
+      models: ["student"],
     },
   ],
 } as const;

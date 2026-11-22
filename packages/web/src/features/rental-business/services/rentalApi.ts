@@ -30,7 +30,7 @@ export const rentalQueryKey = ["rental"] as const;
 
 export const useRentalOfficeHours = (
   from: string,
-  to: string,
+  to?: string,
   enabled = true,
 ) =>
   useQuery({
