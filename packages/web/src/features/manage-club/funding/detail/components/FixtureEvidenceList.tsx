@@ -24,8 +24,6 @@ const FixtureEvidenceList: React.FC<FixtureEvidenceListProps> = ({
   data,
 }) => {
   const content = isFixture ? "비품" : "동아리 용품";
-  const hasPurchaseReceipt =
-    "purchaseReceipt" in data && data.purchaseReceipt != null;
   const evidence = isFixture ? data.fixture : data.clubSupplies;
   const price = evidence?.price;
   const formattedPrice = price == null ? "-" : `${formatCurrency(price)}원`;
@@ -83,16 +81,12 @@ const FixtureEvidenceList: React.FC<FixtureEvidenceListProps> = ({
       <ListItem>
         {content}명: {isFixture ? data.fixture?.name : data.clubSupplies?.name}
       </ListItem>
-      {!hasPurchaseReceipt && (
-        <>
-          <ListItem>
-            {content} 개수: {evidence?.number ?? "-"}
-          </ListItem>
-          <ListItem>
-            {content} 개별 단가: {formattedPrice}
-          </ListItem>
-        </>
-      )}
+      <ListItem>
+        {content} 개수: {evidence?.number ?? "-"}
+      </ListItem>
+      <ListItem>
+        {content} 개별 단가: {formattedPrice}
+      </ListItem>
       <ListItem>{content} 증빙</ListItem>
 
       <FlexWrapper direction="column" gap={12} style={{ paddingLeft: 24 }}>
