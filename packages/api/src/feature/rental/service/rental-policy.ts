@@ -26,7 +26,12 @@ export function regularReturnLimit(
   nextOpenDates: readonly string[],
 ) {
   if (duration.durationType === "DAYS") {
-    return addRentalDays(pickupDate, duration.durationValue);
+    const cap = addRentalDays(pickupDate, duration.durationValue);
+    if (cap === undefined) return undefined;
+    return nextOpenDates
+      .filter(date => date > pickupDate && date <= cap)
+      .sort()
+      .at(-1);
   }
   return nextOpenDates[duration.durationValue - 1];
 }

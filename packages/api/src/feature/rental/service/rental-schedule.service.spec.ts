@@ -126,7 +126,8 @@ describe("configured rental duration", () => {
   });
 
   it("uses the configured day count to query the complete calendar range", async () => {
-    const list = jest.fn().mockResolvedValue([booked]);
+    const limit = window("2027-12-21", 4);
+    const list = jest.fn().mockResolvedValue([booked, limit]);
     const schedule = new RentalScheduleService({ list } as never);
     await expect(
       schedule.availableDates(
@@ -135,6 +136,41 @@ describe("configured rental duration", () => {
       ),
     ).resolves.toMatchObject({ limit: "2027-12-21" });
     expect(list).toHaveBeenCalledWith(booked.date, "2027-12-21");
+  });
+
+  it.each([
+    [6, "2026-11-22"],
+    [7, "2026-11-23"],
+  ])(
+    "uses the last open shift when the %i-day cap is a weekend or closure",
+    async (durationValue, cap) => {
+      const last = window("2026-11-19", 4);
+      const list = jest
+        .fn()
+        .mockResolvedValue([booked, last, window("2026-11-23", 5, true)]);
+      const schedule = new RentalScheduleService({ list } as never);
+      await expect(
+        schedule.availableDates(
+          { durationType: "DAYS", durationValue },
+          booked.date,
+        ),
+      ).resolves.toEqual({ pickup: booked, limit: last.date, returns: [last] });
+      expect(list).toHaveBeenCalledWith(booked.date, cap);
+    },
+  );
+
+  it("offers no returns when the day cap includes no later open shift", async () => {
+    const schedule = new RentalScheduleService({
+      list: jest
+        .fn()
+        .mockResolvedValue([booked, window("2026-11-17", 4, true)]),
+    } as never);
+    await expect(
+      schedule.availableDates(
+        { durationType: "DAYS", durationValue: 1 },
+        booked.date,
+      ),
+    ).resolves.toEqual({ pickup: booked, limit: undefined, returns: [] });
   });
 
   it("rejects a day count beyond the supported date range before querying", async () => {

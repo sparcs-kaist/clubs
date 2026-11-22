@@ -503,6 +503,27 @@ describe("Rental API with MySQL", () => {
     await request(server)
       .patch(`/executive/rental-items/${configuredItemId}`)
       .set("Authorization", executive)
+      .send({ durationValue: 6 })
+      .expect(200);
+    const weekendCap = await apply("2027-01-07").expect(201);
+    expect(weekendCap.body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 6,
+      return: slot("2027-01-07"),
+      regularReturnLimitDate: "2027-01-07",
+    });
+    expect(
+      await prisma.rentalReservation.findUnique({
+        where: { id: weekendCap.body.id },
+      }),
+    ).toMatchObject({
+      regularReturnLimitDate: new Date("2027-01-06T15:00:00Z"),
+    });
+    await apply("2027-01-11").expect(400);
+
+    await request(server)
+      .patch(`/executive/rental-items/${configuredItemId}`)
+      .set("Authorization", executive)
       .send({ durationType: "OFFICE_HOURS", durationValue: 4 })
       .expect(200);
     await request(server)
@@ -534,7 +555,7 @@ describe("Rental API with MySQL", () => {
     expect((await reschedule("2027-01-07").expect(200)).body).toMatchObject({
       durationType: "DAYS",
       durationValue: 3,
-      regularReturnLimitDate: "2027-01-08",
+      regularReturnLimitDate: "2027-01-07",
     });
   });
 });

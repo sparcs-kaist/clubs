@@ -97,10 +97,11 @@ const ScheduleForm = ({
   let regularLimit: string | undefined =
     order.approvedReturnLimitDate ?? order.regularReturnLimitDate;
   if (hasNewPickupDate) {
+    const lastDate = addRentalDays(nextPickupDate, order.durationValue);
     regularLimit =
       order.durationType === "OFFICE_HOURS"
         ? laterSlots[order.durationValue - 1]?.date
-        : addRentalDays(nextPickupDate, order.durationValue);
+        : laterSlots.filter(slot => slot.date <= lastDate).at(-1)?.date;
   }
   const returnSlots = isExtension
     ? slots.filter(

@@ -26,14 +26,7 @@ function reservation(
 }
 
 describe("rental period and inventory", () => {
-  it("uses the configured calendar days or published office count", () => {
-    expect(
-      regularReturnLimit(
-        { durationType: "DAYS", durationValue: 3 },
-        "2026-12-30",
-        [],
-      ),
-    ).toBe("2027-01-02");
+  it("uses the configured published office count", () => {
     expect(
       regularReturnLimit(
         { durationType: "OFFICE_HOURS", durationValue: 3 },
@@ -49,6 +42,25 @@ describe("rental period and inventory", () => {
       ),
     ).toBeUndefined();
   });
+
+  it.each([
+    [6, ["2027-01-11", "2027-01-04", "2027-01-07", "2027-01-05"], "2027-01-07"],
+    [3, ["2027-01-07", "2027-01-05"], "2027-01-07"],
+    [3, ["2027-01-04", "2027-01-11"], undefined],
+    [3, [], undefined],
+    [4294967295, ["2027-01-07"], undefined],
+  ])(
+    "uses the last later office date within %i calendar days",
+    (durationValue, dates, expected) => {
+      expect(
+        regularReturnLimit(
+          { durationType: "DAYS", durationValue },
+          "2027-01-04",
+          dates,
+        ),
+      ).toBe(expected);
+    },
+  );
 
   it("handles the database date limit without returning an extended ISO year", () => {
     expect(addRentalDays("9999-12-30", 1)).toBe("9999-12-31");
