@@ -1,74 +1,60 @@
-import { IFunding } from "@clubs/interface/api/funding/type/funding.type";
+import {
+  IFixture,
+  IFunding,
+} from "@clubs/interface/api/funding/type/funding.type";
 import {
   FixtureClassEnum,
   FixtureEvidenceEnum,
 } from "@clubs/interface/common/enum/funding.enum";
 
-const minimumFixtureUnitPrice = 50_000;
-
-type PurchaseDetails = Pick<
+type FundingPurchase = Pick<
   IFunding,
   | "clubSupplies"
   | "expenditureAmount"
   | "fixture"
   | "isFixture"
-  | "purchaseReceipt"
+  | "purposeActivity"
 >;
 
-function getTangiblePurchase(request: PurchaseDetails) {
-  const item = request.isFixture ? request.fixture : request.clubSupplies;
-  const isPurchase = item?.evidenceEnum === FixtureEvidenceEnum.Purchase;
-  const isSoftware = item?.classEnum === FixtureClassEnum.Software;
-  return isPurchase && !isSoftware ? item : undefined;
+function isSamePurchase(item: IFixture, previous: IFixture): boolean {
+  const sameClass = item.classEnum === previous.classEnum;
+  const sameEvidence = item.evidenceEnum === previous.evidenceEnum;
+  const sameQuantity = (item.number ?? null) === (previous.number ?? null);
+  const samePrice = (item.price ?? null) === (previous.price ?? null);
+  return sameClass && sameEvidence && sameQuantity && samePrice;
 }
 
-function hasSameLegacyPurchase(
-  request: PurchaseDetails,
-  stored: PurchaseDetails,
-  current: NonNullable<PurchaseDetails["fixture"]>,
-): boolean {
-  if (request.isFixture !== stored.isFixture) return false;
-  if (request.expenditureAmount !== stored.expenditureAmount) return false;
-  const previous = getTangiblePurchase(stored);
-  if (!previous) return false;
-  const sameClass = current.classEnum === previous.classEnum;
-  const sameQuantity = current.number === previous.number;
-  const samePrice = current.price === previous.price;
-  return sameClass && sameQuantity && samePrice;
+function getEvidence(funding: FundingPurchase): IFixture | undefined {
+  if (funding.isFixture) return funding.fixture;
+  return funding.purposeActivity?.id == null ? funding.clubSupplies : undefined;
 }
 
 export function getFundingPurchaseValidationError(
-  request: PurchaseDetails,
-  evidenceCount: number,
-  stored?: PurchaseDetails,
+  request: FundingPurchase,
+  stored?: FundingPurchase,
 ): string | undefined {
-  const tangiblePurchase = getTangiblePurchase(request);
-  const { purchaseReceipt, expenditureAmount, isFixture } = request;
+  const { isFixture, expenditureAmount } = request;
+  const item = getEvidence(request);
+  const isPurchase = item?.evidenceEnum === FixtureEvidenceEnum.Purchase;
+  const isSoftware = item?.classEnum === FixtureClassEnum.Software;
+  if (!isPurchase || isSoftware) return undefined;
 
-  if (purchaseReceipt) {
-    if (isFixture) {
-      if (!tangiblePurchase) {
-        return "비품 관리와 소프트웨어는 영수증 품목으로 신청할 수 없습니다.";
-      }
-      if (
-        expenditureAmount <
-        minimumFixtureUnitPrice * purchaseReceipt.quantity
-      ) {
-        return "비품 구매의 개별 단가는 50,000원 이상이어야 합니다.";
-      }
-    }
-    if (evidenceCount === 0) return "거래 증빙 파일을 첨부해 주세요.";
-    if (expenditureAmount <= 0) return "품목 지출 금액은 0원보다 커야 합니다.";
-    return undefined;
+  const previous =
+    stored?.isFixture === isFixture ? getEvidence(stored) : undefined;
+  const sameExpenditure = expenditureAmount === stored?.expenditureAmount;
+  const samePurchase = previous ? isSamePurchase(item, previous) : false;
+  if (sameExpenditure && samePurchase) return undefined;
+
+  const { number, price } = item;
+  const belowMinimum = (price ?? 0) < 50_000;
+  if (isFixture && belowMinimum) {
+    return "비품 구매의 개별 단가는 50,000원 이상이어야 합니다.";
   }
 
-  if (stored?.purchaseReceipt) return "영수증 정보를 삭제할 수 없습니다.";
-  if (!tangiblePurchase) return undefined;
-  if (stored) {
-    if (hasSameLegacyPurchase(request, stored, tangiblePurchase))
-      return undefined;
+  if (number == null) return undefined;
+  if (price == null) return undefined;
+  if (number * price > expenditureAmount) {
+    return "개수와 개별 단가를 곱한 금액은 지출 금액을 초과할 수 없습니다.";
   }
-  return isFixture
-    ? "비품 구매의 영수증 정보를 입력해 주세요."
-    : "동아리 용품 구매의 영수증 정보를 입력해 주세요.";
+  return undefined;
 }

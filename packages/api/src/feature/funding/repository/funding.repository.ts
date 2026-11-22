@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
@@ -17,18 +12,11 @@ import {
 import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
-import {
-  formatKstDate,
-  parseKstDate,
-} from "@sparcs-clubs/api/common/util/calendar-date";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { FundingDBResult, MFunding } from "../model/funding.model";
 import { VFundingSummary } from "../model/funding.summary.model";
-import {
-  buildFundingTransportationPassengerFindManyArgs,
-  getLegacyPurchaseAmounts,
-} from "./funding.repository.util";
+import { buildFundingTransportationPassengerFindManyArgs } from "./funding.repository.util";
 
 const fundingSummarySelect = {
   id: true,
@@ -70,7 +58,6 @@ export default class FundingRepository {
 
     const result = await tx.funding.findMany({
       where: { id, deletedAt: null },
-      include: { receipt: { select: { reference: true, totalAmount: true } } },
     });
 
     if (result.length === 0) {
@@ -290,7 +277,6 @@ export default class FundingRepository {
     extra: IFundingExtra,
   ): Promise<MFunding> {
     const { tx } = this.txHost;
-    const receiptId = await this.reserveReceiptItem(funding);
 
     // 1. Insert funding order
     const fundingOrder = await tx.funding.create({
@@ -302,9 +288,6 @@ export default class FundingRepository {
         name: funding.name,
         expenditureDate: funding.expenditureDate,
         expenditureAmount: funding.expenditureAmount,
-        receiptId,
-        receiptItemNumber: funding.purchaseReceipt?.itemNumber,
-        purchaseQuantity: funding.purchaseReceipt?.quantity,
         approvedAmount: extra.approvedAmount,
         isFixture: funding.isFixture,
         isTransportation: funding.isTransportation,
@@ -324,13 +307,16 @@ export default class FundingRepository {
         clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
         clubSuppliesPurpose: funding.clubSupplies?.purpose,
         clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
+        numberOfClubSupplies: funding.clubSupplies?.number,
+        priceOfClubSupplies: funding.clubSupplies?.price,
         // Fixture fields
         fixtureName: funding.fixture?.name,
         fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
         fixtureClassEnum: funding.fixture?.classEnum,
         fixturePurpose: funding.fixture?.purpose,
         fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
-        ...getLegacyPurchaseAmounts(funding),
+        numberOfFixture: funding.fixture?.number,
+        priceOfFixture: funding.fixture?.price,
         // Transportation fields
         transportationEnum: funding.transportation?.enum,
         origin: funding.transportation?.origin,
@@ -611,94 +597,6 @@ export default class FundingRepository {
     ]);
   }
 
-  async lockForEdit(id: number, clubId: number): Promise<MFunding> {
-    // The edit guard and save must see the same state, including receipt conversion.
-    const result = await this.txHost.tx.funding.updateMany({
-      where: { id, clubId, deletedAt: null },
-      data: { updatedAt: this.clock.now() },
-    });
-    if (result.count === 0)
-      throw new NotFoundException(`Funding: ${id} not found`);
-    return this.fetch(id);
-  }
-
-  private async reserveReceiptItem(
-    funding: IFundingRequest,
-    fundingId?: number,
-  ): Promise<number | undefined> {
-    const { purchaseReceipt } = funding;
-    if (!purchaseReceipt) return undefined;
-
-    const { tx } = this.txHost;
-    const { reference, totalAmount, itemNumber } = purchaseReceipt;
-    const identity = {
-      clubId: funding.club.id,
-      expenditureDate: parseKstDate(formatKstDate(funding.expenditureDate)),
-      reference,
-    };
-    const where = { clubId_expenditureDate_reference: identity };
-    const existing = await tx.fundingReceipt.findUnique({
-      where,
-      select: { id: true },
-    });
-    if (!existing) {
-      await tx.fundingReceipt.createMany({
-        data: { ...identity, totalAmount },
-        skipDuplicates: true,
-      });
-    }
-
-    // Lock the receipt until the funding save commits. Read committed observes earlier allocations.
-    const receipt = await tx.fundingReceipt.update({
-      where,
-      data: { lockVersion: { increment: 1 } },
-      select: { id: true, totalAmount: true },
-    });
-    const otherActiveItems = {
-      receiptId: receipt.id,
-      id: fundingId === undefined ? undefined : { not: fundingId },
-    };
-    const duplicate = await tx.funding.findFirst({
-      where: {
-        ...otherActiveItems,
-        deletedAt: null,
-        receiptItemNumber: itemNumber,
-      },
-      select: { id: true },
-    });
-    if (duplicate) {
-      throw new ConflictException(
-        "이 영수증의 품목 번호가 이미 등록되어 있습니다.",
-      );
-    }
-
-    const {
-      _sum: { expenditureAmount: allocatedAmount },
-      _count: otherActiveItemCount,
-    } = await tx.funding.aggregate({
-      where: { ...otherActiveItems, deletedAt: null },
-      _sum: { expenditureAmount: true },
-      _count: true,
-    });
-    if (receipt.totalAmount !== totalAmount) {
-      if (otherActiveItemCount > 0) {
-        throw new ConflictException(
-          "이미 등록한 영수증의 총 결제액과 다릅니다.",
-        );
-      }
-      await tx.fundingReceipt.update({
-        where: { id: receipt.id },
-        data: { totalAmount },
-      });
-    }
-    if ((allocatedAmount ?? 0) + funding.expenditureAmount > totalAmount) {
-      throw new ConflictException(
-        "품목 지출 금액의 합계가 영수증 총 결제액을 초과합니다.",
-      );
-    }
-    return receipt.id;
-  }
-
   async put(
     id: number,
     funding: IFundingRequest,
@@ -706,20 +604,16 @@ export default class FundingRepository {
   ): Promise<MFunding> {
     const { tx } = this.txHost;
     const now = this.clock.now();
-    const receiptId = await this.reserveReceiptItem(funding, id);
 
     // Update funding table
     await tx.funding.update({
-      where: { id, deletedAt: null },
+      where: { id },
       data: {
         purposeActivityId: funding.purposeActivity.id,
         fundingStatusEnum: extra.fundingStatusEnum,
         name: funding.name,
         expenditureDate: funding.expenditureDate,
         expenditureAmount: funding.expenditureAmount,
-        receiptId,
-        receiptItemNumber: funding.purchaseReceipt?.itemNumber,
-        purchaseQuantity: funding.purchaseReceipt?.quantity,
         approvedAmount: extra.approvedAmount,
         isFixture: funding.isFixture,
         isTransportation: funding.isTransportation,
@@ -739,13 +633,16 @@ export default class FundingRepository {
         clubSuppliesClassEnum: funding.clubSupplies?.classEnum,
         clubSuppliesPurpose: funding.clubSupplies?.purpose,
         clubSuppliesSoftwareEvidence: funding.clubSupplies?.softwareEvidence,
+        numberOfClubSupplies: funding.clubSupplies?.number,
+        priceOfClubSupplies: funding.clubSupplies?.price,
         // Fixture fields
         fixtureName: funding.fixture?.name,
         fixtureEvidenceEnum: funding.fixture?.evidenceEnum,
         fixtureClassEnum: funding.fixture?.classEnum,
         fixturePurpose: funding.fixture?.purpose,
         fixtureSoftwareEvidence: funding.fixture?.softwareEvidence,
-        ...getLegacyPurchaseAmounts(funding),
+        numberOfFixture: funding.fixture?.number,
+        priceOfFixture: funding.fixture?.price,
         // Transportation fields
         transportationEnum: funding.transportation?.enum,
         origin: funding.transportation?.origin,

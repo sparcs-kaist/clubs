@@ -6,152 +6,132 @@ import {
 import { getFundingPurchaseValidationError } from "./funding-purchase.validator";
 
 const fixture = {
-  name: "비품",
   evidenceEnum: FixtureEvidenceEnum.Purchase,
   classEnum: FixtureClassEnum.Electronics,
   number: 2,
-  price: 49_000,
+  price: 60_000,
   imageFiles: [],
   softwareEvidenceFiles: [],
 };
-
-const legacyPurchase = {
+const purchase = {
   isFixture: true,
   fixture,
-  expenditureAmount: 98_000,
-};
-
-const receipt = {
-  reference: "receipt-1",
-  totalAmount: 200_000,
-  itemNumber: 1,
-  quantity: 2,
+  expenditureAmount: 120_000,
 };
 
 describe("funding purchase validation", () => {
-  it("requires a receipt for a new tangible fixture purchase", () => {
-    expect(getFundingPurchaseValidationError(legacyPurchase, 1)).toMatch(
-      /영수증/,
-    );
-  });
+  it.each([120_000, 125_000])(
+    "accepts two 60,000 won items with expenditure %d",
+    expenditureAmount => {
+      expect(
+        getFundingPurchaseValidationError({ ...purchase, expenditureAmount }),
+      ).toBeUndefined();
+    },
+  );
 
-  it.each([
-    { isFixture: false },
-    { fixture: { ...fixture, evidenceEnum: FixtureEvidenceEnum.Management } },
-    { fixture: { ...fixture, classEnum: FixtureClassEnum.Software } },
-  ])("keeps non-purchase fixture flows without a receipt: %j", changes => {
+  it("accepts the inclusive 50,000 won unit price boundary", () => {
     expect(
-      getFundingPurchaseValidationError({ ...legacyPurchase, ...changes }, 0),
+      getFundingPurchaseValidationError({
+        ...purchase,
+        fixture: { ...fixture, price: 50_000 },
+        expenditureAmount: 100_000,
+      }),
     ).toBeUndefined();
   });
 
-  it("requires a receipt for a declared physical supplies purchase without imposing a fixture price", () => {
-    const request = {
+  it("checks the per-item minimum even when the receipt total exceeds it", () => {
+    expect(
+      getFundingPurchaseValidationError({
+        ...purchase,
+        fixture: { ...fixture, price: 49_999 },
+      }),
+    ).toMatch(/50,000원/);
+  });
+
+  it("rejects entering a multi-item total as the price of one item", () => {
+    expect(
+      getFundingPurchaseValidationError({
+        ...purchase,
+        fixture: { ...fixture, price: 120_000 },
+      }),
+    ).toMatch(/지출 금액을 초과/);
+  });
+
+  it("keeps supporting evidence separate from the primary fixture purchase", () => {
+    expect(
+      getFundingPurchaseValidationError({
+        ...purchase,
+        purposeActivity: { id: null },
+        clubSupplies: { ...fixture, price: 120_000 },
+      }),
+    ).toBeUndefined();
+  });
+
+  it.each([
+    { evidenceEnum: FixtureEvidenceEnum.Management, price: 1 },
+    { classEnum: FixtureClassEnum.Software, price: 1 },
+  ])("preserves existing policies for other evidence: %j", changes => {
+    expect(
+      getFundingPurchaseValidationError({
+        ...purchase,
+        fixture: { ...fixture, ...changes },
+      }),
+    ).toBeUndefined();
+  });
+
+  it("applies the subtotal check to declared active club supplies without a minimum unit price", () => {
+    const supplies = {
       isFixture: false,
-      clubSupplies: fixture,
+      purposeActivity: { id: null },
+      clubSupplies: { ...fixture, price: 10_000 },
       expenditureAmount: 20_000,
     };
-    expect(getFundingPurchaseValidationError(request, 1)).toMatch(
-      /동아리 용품/,
-    );
+    expect(getFundingPurchaseValidationError(supplies)).toBeUndefined();
     expect(
-      getFundingPurchaseValidationError(
-        { ...request, purchaseReceipt: receipt },
-        1,
-      ),
+      getFundingPurchaseValidationError({
+        ...supplies,
+        expenditureAmount: 19_999,
+      }),
+    ).toMatch(/지출 금액을 초과/);
+    expect(
+      getFundingPurchaseValidationError({
+        ...supplies,
+        expenditureAmount: 19_999,
+        purposeActivity: { id: 1 },
+      }),
+    ).toBeUndefined();
+    expect(
+      getFundingPurchaseValidationError({
+        ...supplies,
+        expenditureAmount: 19_999,
+        clubSupplies: { ...supplies.clubSupplies, number: undefined },
+      }),
     ).toBeUndefined();
   });
 
-  it("uses the unrounded per-item amount for the 50,000 won fixture minimum", () => {
-    expect(
-      getFundingPurchaseValidationError(
-        {
-          ...legacyPurchase,
-          purchaseReceipt: receipt,
-          expenditureAmount: 99_999,
-        },
-        1,
-      ),
-    ).toMatch(/50,000원/);
-    expect(
-      getFundingPurchaseValidationError(
-        {
-          ...legacyPurchase,
-          purchaseReceipt: receipt,
-          expenditureAmount: 100_000,
-        },
-        1,
-      ),
-    ).toBeUndefined();
-  });
+  const legacy = {
+    ...purchase,
+    fixture: { ...fixture, price: 49_000 },
+  };
 
-  it("rejects receipt details on fixture management and software", () => {
-    expect(
-      getFundingPurchaseValidationError(
-        {
-          ...legacyPurchase,
-          fixture: { ...fixture, evidenceEnum: FixtureEvidenceEnum.Management },
-          purchaseReceipt: receipt,
-        },
-        1,
-      ),
-    ).toMatch(/관리와 소프트웨어/);
-  });
-
-  it("requires a positive item amount and an evidence attachment for receipt-backed requests", () => {
-    const request = {
-      isFixture: false,
-      purchaseReceipt: receipt,
-      expenditureAmount: 1,
-    };
-    expect(getFundingPurchaseValidationError(request, 0)).toMatch(/첨부/);
-    expect(
-      getFundingPurchaseValidationError(
-        { ...request, expenditureAmount: 0 },
-        1,
-      ),
-    ).toMatch(/0원보다/);
-  });
-
-  it("preserves an unchanged legacy fixture purchase even below the new minimum", () => {
-    expect(
-      getFundingPurchaseValidationError(legacyPurchase, 0, legacyPurchase),
-    ).toBeUndefined();
+  it("allows unrelated edits to legacy values outside the new constraints", () => {
+    expect(getFundingPurchaseValidationError(legacy, legacy)).toBeUndefined();
   });
 
   it.each([
-    { expenditureAmount: 96_000 },
-    { fixture: { ...fixture, number: 3 } },
-    { fixture: { ...fixture, price: 48_000 } },
-    { fixture: { ...fixture, classEnum: FixtureClassEnum.Furniture } },
-    { fixture: { ...fixture, evidenceEnum: FixtureEvidenceEnum.Management } },
-    { isFixture: false },
-  ])("requires a receipt when a legacy purchase changes: %j", changes => {
+    {
+      fixture: {
+        ...legacy.fixture,
+        evidenceEnum: FixtureEvidenceEnum.Management,
+      },
+    },
+    { fixture: { ...legacy.fixture, classEnum: FixtureClassEnum.Furniture } },
+    { fixture: { ...legacy.fixture, number: 3 } },
+    { fixture: { ...legacy.fixture, price: 48_000 } },
+    { expenditureAmount: 100_000 },
+  ])("validates a legacy purchase when relevant values change: %j", changes => {
     expect(
-      getFundingPurchaseValidationError(legacyPurchase, 0, {
-        ...legacyPurchase,
-        ...changes,
-      }),
-    ).toMatch(/영수증/);
-  });
-
-  it("requires a receipt even when the modified legacy unit price reaches the minimum", () => {
-    const updated = {
-      ...legacyPurchase,
-      fixture: { ...fixture, price: 50_000 },
-    };
-    expect(
-      getFundingPurchaseValidationError(updated, 0, legacyPurchase),
-    ).toMatch(/영수증/);
-  });
-
-  it("rejects stripping the receipt even when editing to another category", () => {
-    expect(
-      getFundingPurchaseValidationError(
-        { ...legacyPurchase, isFixture: false },
-        1,
-        { ...legacyPurchase, purchaseReceipt: receipt },
-      ),
-    ).toMatch(/삭제/);
+      getFundingPurchaseValidationError(legacy, { ...legacy, ...changes }),
+    ).toMatch(/50,000원/);
   });
 });

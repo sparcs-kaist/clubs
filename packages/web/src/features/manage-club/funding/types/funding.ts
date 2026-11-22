@@ -1,5 +1,4 @@
 import { IActivitySummary } from "@clubs/interface/api/activity/type/activity.type";
-import { IPurchaseReceipt } from "@clubs/interface/api/funding/type/funding.type";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import {
   FixtureClassEnum,
@@ -96,12 +95,7 @@ export interface AddEvidence {
   nonCorporateTransactionFiles: FileDetail[];
 }
 
-export type FundingFormData = FundingInfo &
-  BasicEvidence &
-  AddEvidence & {
-    purchaseReceiptEnabled?: boolean;
-    purchaseReceipt?: IPurchaseReceipt;
-  };
+export type FundingFormData = FundingInfo & BasicEvidence & AddEvidence;
 
 export const isActivityReportUnverifiable = (purposeId?: number) =>
   purposeId === Infinity;

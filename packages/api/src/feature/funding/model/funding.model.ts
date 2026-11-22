@@ -5,7 +5,6 @@ import {
   IFunding,
   IMinorExpense,
   INonCorporateTransaction,
-  IPurchaseReceipt,
   ITransportation,
 } from "@clubs/interface/api/funding/type/funding.type";
 import { FundingStatusEnum } from "@clubs/interface/common/enum/funding.enum";
@@ -20,9 +19,6 @@ export type FundingDBResult = {
     name: string;
     expenditureDate: Date;
     expenditureAmount: number;
-    receipt?: Pick<IPurchaseReceipt, "reference" | "totalAmount"> | null;
-    receiptItemNumber?: number | null;
-    purchaseQuantity?: number | null;
     approvedAmount?: number;
     commentedExecutiveId?: number | null;
     editedAt: Date;
@@ -116,8 +112,6 @@ export class MFunding implements IFunding {
 
   expenditureAmount: number;
 
-  purchaseReceipt?: IPurchaseReceipt;
-
   approvedAmount?: number;
 
   commentedExecutive?: IFunding["commentedExecutive"];
@@ -183,18 +177,6 @@ export class MFunding implements IFunding {
   }
 
   static fromDBResult(result: FundingDBResult) {
-    const { receipt, receiptItemNumber, purchaseQuantity } = result.funding;
-    const hasReceipt = receipt != null;
-    const hasItemNumber = receiptItemNumber != null;
-    const hasQuantity = purchaseQuantity != null;
-    const purchaseReceipt =
-      hasReceipt && hasItemNumber && hasQuantity
-        ? {
-            ...receipt,
-            itemNumber: receiptItemNumber,
-            quantity: purchaseQuantity,
-          }
-        : undefined;
     return new MFunding({
       id: result.funding.id,
       club: { id: result.funding.clubId },
@@ -208,7 +190,6 @@ export class MFunding implements IFunding {
         : undefined,
       expenditureDate: result.funding.expenditureDate,
       expenditureAmount: result.funding.expenditureAmount,
-      purchaseReceipt,
       approvedAmount: result.funding.approvedAmount,
       commentedExecutive: result.funding.commentedExecutiveId
         ? { id: result.funding.commentedExecutiveId }
@@ -241,8 +222,8 @@ export class MFunding implements IFunding {
               .clubSuppliesClassEnum as IClubSupplies["classEnum"],
             purpose: result.funding.clubSuppliesPurpose,
             softwareEvidence: result.funding.clubSuppliesSoftwareEvidence,
-            number: result.funding.numberOfClubSupplies ?? undefined,
-            price: result.funding.priceOfClubSupplies ?? undefined,
+            number: result.funding.numberOfClubSupplies,
+            price: result.funding.priceOfClubSupplies,
             imageFiles: result.clubSuppliesImageFiles.map(file => ({
               id: file.id,
             })),
@@ -260,8 +241,8 @@ export class MFunding implements IFunding {
               .fixtureEvidenceEnum as IFixture["evidenceEnum"],
             classEnum: result.funding.fixtureClassEnum as IFixture["classEnum"],
             softwareEvidence: result.funding.fixtureSoftwareEvidence,
-            number: result.funding.numberOfFixture ?? undefined,
-            price: result.funding.priceOfFixture ?? undefined,
+            number: result.funding.numberOfFixture,
+            price: result.funding.priceOfFixture,
             imageFiles: result.fixtureImageFiles.map(file => ({
               id: file.id,
             })),

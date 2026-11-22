@@ -1,9 +1,5 @@
-import { FundingDBResult, MFunding } from "../model/funding.model";
 import FundingRepository from "./funding.repository";
-import {
-  buildFundingTransportationPassengerFindManyArgs,
-  getLegacyPurchaseAmounts,
-} from "./funding.repository.util";
+import { buildFundingTransportationPassengerFindManyArgs } from "./funding.repository.util";
 
 const NOW = new Date("2026-06-03T12:00:00.000Z");
 
@@ -112,81 +108,6 @@ describe("buildFundingTransportationPassengerFindManyArgs", () => {
   });
 });
 
-describe("funding receipt presentation", () => {
-  const purchaseReceipt = {
-    reference: "receipt",
-    totalAmount: 200_000,
-    itemNumber: 1,
-    quantity: 2,
-  };
-
-  function buildFromReceiptColumns(
-    columns: Pick<
-      FundingDBResult["funding"],
-      "receipt" | "receiptItemNumber" | "purchaseQuantity"
-    >,
-  ) {
-    return MFunding.fromDBResult({
-      funding: { purposeActivityId: 10, ...columns },
-      tradeEvidenceFiles: [],
-      tradeDetailFiles: [],
-    } as FundingDBResult);
-  }
-
-  it("returns saved metadata alongside the existing funding fields", () => {
-    expect(
-      buildFromReceiptColumns({
-        receipt: { reference: "receipt", totalAmount: 200_000 },
-        receiptItemNumber: 1,
-        purchaseQuantity: 2,
-      }).purchaseReceipt,
-    ).toEqual(purchaseReceipt);
-  });
-
-  it.each([
-    { receipt: null },
-    { receiptItemNumber: null },
-    { purchaseQuantity: null },
-  ])("does not infer metadata from incomplete columns: %j", missing => {
-    expect(
-      buildFromReceiptColumns({
-        receipt: { reference: "receipt", totalAmount: 200_000 },
-        receiptItemNumber: 1,
-        purchaseQuantity: 2,
-        ...missing,
-      }).purchaseReceipt,
-    ).toBeUndefined();
-  });
-
-  it.each([
-    [100_000, 50_000],
-    [100_001, null],
-  ])(
-    "stores a compatible legacy price for a %d won receipt item",
-    (amount, price) => {
-      const legacyEvidence = {
-        number: 1,
-        price: 1,
-        imageFiles: [],
-        softwareEvidenceFiles: [],
-      };
-      const request = {
-        ...(createFundingRequest() as object),
-        expenditureAmount: amount,
-        fixture: legacyEvidence,
-        clubSupplies: legacyEvidence,
-        purchaseReceipt,
-      } as Parameters<typeof getLegacyPurchaseAmounts>[0];
-      expect(getLegacyPurchaseAmounts(request)).toEqual({
-        numberOfClubSupplies: 2,
-        priceOfClubSupplies: price,
-        numberOfFixture: 2,
-        priceOfFixture: price,
-      });
-    },
-  );
-});
-
 describe("FundingRepository transactions", () => {
   it("inserts a funding through TransactionHost tx", async () => {
     const { prisma, repository, tx } = createRepository();
@@ -233,7 +154,7 @@ describe("FundingRepository transactions", () => {
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(tx.funding.update).toHaveBeenCalledWith({
-      where: { id: 402, deletedAt: null },
+      where: { id: 402 },
       data: expect.objectContaining({
         purposeActivityId: 201,
         fundingStatusEnum: 1,

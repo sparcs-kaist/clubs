@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -13,7 +12,6 @@ import EditFundingFrame from "@sparcs-clubs/web/features/manage-club/funding/fra
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 
 const EditFunding = () => {
-  const { id } = useParams<{ id: string }>();
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +41,7 @@ const EditFunding = () => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <EditFundingFrame key={id} clubId={data.clubId} fundingId={Number(id)} />
+      <EditFundingFrame clubId={data.clubId} />
     </AsyncBoundary>
   );
 };

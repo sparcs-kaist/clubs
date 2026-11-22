@@ -44,21 +44,6 @@ export const zFixture = z.object({
   price: z.coerce.number().int().min(1).optional(),
 });
 
-const zReceiptPositiveInt = z.preprocess(
-  value => (typeof value === "number" ? value : undefined),
-  z.coerce.number().int().positive().max(2_147_483_647),
-);
-
-export const zPurchaseReceipt = z.object({
-  reference: z.preprocess(
-    value => (typeof value === "string" ? value.normalize("NFC") : value),
-    z.string().trim().min(1).max(128),
-  ),
-  totalAmount: zReceiptPositiveInt,
-  itemNumber: zReceiptPositiveInt,
-  quantity: zReceiptPositiveInt,
-});
-
 export const zTransportation = z.object({
   enum: z.nativeEnum(TransportationEnum).optional(),
   origin: z.string().max(255).optional(),
@@ -91,7 +76,6 @@ export const zFunding = z.object({
   expenditureDate: z.coerce.date(),
   expenditureAmount: z.coerce.number().int().min(0),
   approvedAmount: z.coerce.number().int().min(0).optional(),
-  purchaseReceipt: zPurchaseReceipt.optional(),
   tradeEvidenceFiles: z.array(zFileSummary.pick({ id: true })),
   tradeDetailFiles: z.array(zFileSummary.pick({ id: true })),
   tradeDetailExplanation: zDbText,
@@ -164,8 +148,8 @@ export const zFundingRequest = zFundingRequestBase.superRefine((data, ctx) => {
       !data.clubSupplies.name ||
       !data.clubSupplies.evidenceEnum ||
       !data.clubSupplies.classEnum ||
-      (!data.purchaseReceipt &&
-        (!data.clubSupplies.number || !data.clubSupplies.price))
+      !data.clubSupplies.number ||
+      !data.clubSupplies.price
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -189,18 +173,13 @@ export const zFundingRequest = zFundingRequestBase.superRefine((data, ctx) => {
   }
 
   if (data.isFixture) {
-    const { fixture } = data;
-    const usesPurchaseReceipt =
-      data.purchaseReceipt !== undefined &&
-      fixture?.evidenceEnum === FixtureEvidenceEnum.Purchase &&
-      fixture.classEnum !== FixtureClassEnum.Software;
-
     if (
-      !fixture ||
-      !fixture.name ||
-      !fixture.evidenceEnum ||
-      !fixture.classEnum ||
-      (!usesPurchaseReceipt && (!fixture.number || !fixture.price))
+      !data.fixture ||
+      !data.fixture.name ||
+      !data.fixture.evidenceEnum ||
+      !data.fixture.classEnum ||
+      !data.fixture.number ||
+      !data.fixture.price
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -398,7 +377,6 @@ export const zFundingSummaryResponse = zFundingSummary.extend({
 
 export type IClubSupplies = z.infer<typeof zClubSupplies>;
 export type IFixture = z.infer<typeof zFixture>;
-export type IPurchaseReceipt = z.infer<typeof zPurchaseReceipt>;
 export type ITransportation = z.infer<typeof zTransportation>;
 export type IMinorExpense = z.infer<typeof zMinorExpense>;
 export type INonCorporateTransaction = z.infer<typeof zNonCorporateTransaction>;

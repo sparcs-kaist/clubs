@@ -1,6 +1,11 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
-import { Prisma } from "@prisma/client";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -73,7 +78,6 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
-import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -93,10 +97,6 @@ import {
   getFundingCommentPreFetchValidationError,
 } from "./funding-comment-validator/funding-comment.validator";
 import { getFundingPurchaseValidationError } from "./funding-purchase.validator";
-
-const readCommitted = {
-  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-};
 
 @Injectable()
 export default class FundingService {
@@ -132,16 +132,16 @@ export default class FundingService {
     }
   }
 
-  @Transactional<PrismaTransactionalAdapter>(readCommitted)
+  @Transactional()
   async postStudentFunding(
     body: ApiFnd001RequestBody,
     studentId: number,
   ): Promise<ApiFnd001ResponseCreated> {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([FundingDeadlineEnum.Writing]);
+    this.validatePurchase(body);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
-    this.validatePurchase(body);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -448,24 +448,29 @@ export default class FundingService {
     return undefined;
   }
 
-  @Transactional<PrismaTransactionalAdapter>(readCommitted)
+  @Transactional()
   async putStudentFunding(
     body: ApiFnd003RequestBody,
     param: ApiFnd003RequestParam,
     studentId: number,
   ): Promise<ApiFnd003ResponseOk> {
-    await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
+    const stored = await this.fundingRepository.fetch(param.id);
+    await this.clubPublicService.checkStudentDelegate(
+      studentId,
+      stored.club.id,
+    );
+    if (body.club.id !== stored.club.id) {
+      throw new BadRequestException(
+        "지원금 신청의 동아리를 변경할 수 없습니다.",
+      );
+    }
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
     ]);
+    this.validatePurchase(body, stored);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
-    const stored = await this.fundingRepository.lockForEdit(
-      param.id,
-      body.club.id,
-    );
-    this.validatePurchase(body, stored);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -478,14 +483,8 @@ export default class FundingService {
   }
 
   private validatePurchase(body: IFundingRequest, stored?: MFunding): void {
-    const evidenceCount =
-      body.tradeEvidenceFiles.length + body.tradeDetailFiles.length;
-    const error = getFundingPurchaseValidationError(
-      body,
-      evidenceCount,
-      stored,
-    );
-    if (error) throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    const error = getFundingPurchaseValidationError(body, stored);
+    if (error) throw new BadRequestException(error);
   }
 
   @Transactional()

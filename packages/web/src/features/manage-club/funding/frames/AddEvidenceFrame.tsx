@@ -17,9 +17,7 @@ import {
   isActivityReportUnverifiable,
 } from "../types/funding";
 
-const AddEvidenceFrame: React.FC<{ usesPurchaseReceipt: boolean }> = ({
-  usesPurchaseReceipt,
-}) => {
+const AddEvidenceFrame: React.FC = () => {
   const formCtx = useFormContext<FundingFormData>();
   const { control, watch, setValue } = formCtx;
 
@@ -229,19 +227,9 @@ const AddEvidenceFrame: React.FC<{ usesPurchaseReceipt: boolean }> = ({
         </Card>
         {/* 활보로 증빙 불가능한 동아리 용품 */}
         {isNoActivityPurpose && (
-          <FixtureEvidenceBlock
-            isFixture={false}
-            required
-            usesPurchaseReceipt={usesPurchaseReceipt}
-          />
+          <FixtureEvidenceBlock isFixture={false} required />
         )}
-        {isFixture && (
-          <FixtureEvidenceBlock
-            isFixture
-            required
-            usesPurchaseReceipt={usesPurchaseReceipt}
-          />
-        )}
+        {isFixture && <FixtureEvidenceBlock isFixture required={isFixture} />}
         {isTransportation && (
           <TransportEvidenceBlock
             required={isTransportation}

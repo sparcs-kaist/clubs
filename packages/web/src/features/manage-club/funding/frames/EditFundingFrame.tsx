@@ -1,4 +1,4 @@
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
@@ -21,15 +21,11 @@ import FundingForm from "./FundingForm";
 
 interface EditFundingFrameProps {
   clubId: number;
-  fundingId: number;
 }
 
-const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
-  clubId,
-  fundingId,
-}) => {
+const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
   const router = useRouter();
-  const draftKey = `${LOCAL_STORAGE_KEY.EDIT_FUNDING}:${fundingId}` as const;
+  const { id: fundingId } = useParams<{ id: string }>();
   const cancelClick = () => {
     router.push(`/manage-club/funding/${fundingId}`);
   };
@@ -38,12 +34,12 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
     data: funding,
     isLoading,
     isError,
-  } = useGetInitialFundingFormData(fundingId);
+  } = useGetInitialFundingFormData(+fundingId);
 
-  const { mutate: updateFunding } = useUpdateFunding(fundingId, clubId);
+  const { mutate: updateFunding } = useUpdateFunding(+fundingId, clubId);
 
   const { savedData, isModalOpen, handleConfirm, handleClose } =
-    useTemporaryStorage<FundingFormData>(draftKey);
+    useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.EDIT_FUNDING);
 
   const handleSubmit = (data: FundingFormData) => {
     const filteredData = Object.fromEntries(
@@ -54,7 +50,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
 
     updateFunding(filteredData, {
       onSuccess: () => {
-        LocalStorageUtil.remove(draftKey);
+        LocalStorageUtil.remove(LOCAL_STORAGE_KEY.EDIT_FUNDING);
         overlay.open(({ isOpen, close }) => (
           <Modal isOpen={isOpen}>
             <ConfirmModalContent
@@ -74,7 +70,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
           <Modal isOpen={isOpen}>
             <ConfirmModalContent onConfirm={close}>
               지원금 수정에 실패했습니다.
-              <Typography color="GRAY.600" fs={12} lh={16} fw="REGULAR">
+              <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
                 {getFundingFormError(error)}
               </Typography>
             </ConfirmModalContent>
@@ -110,17 +106,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
           clubId={clubId}
           onCancel={cancelClick}
           onSubmit={handleSubmit}
-          storedFunding={funding}
-          draftKey={draftKey}
-          initialData={
-            savedData
-              ? {
-                  ...savedData,
-                  purchaseReceipt:
-                    savedData.purchaseReceipt ?? funding.purchaseReceipt,
-                }
-              : funding
-          }
+          initialData={savedData ?? funding ?? []}
         />
       </AsyncBoundary>
     </FlexWrapper>
