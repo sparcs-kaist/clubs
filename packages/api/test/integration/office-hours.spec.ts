@@ -238,6 +238,23 @@ describe("Office hours API with MySQL", () => {
     });
   });
 
+  it("lists published future shifts when the ending date is omitted", async () => {
+    const server = app.getHttpServer();
+    const futureDate = "2028-11-16";
+    await request(server)
+      .put(`/executive/office-hours/${futureDate}`)
+      .set("Authorization", authorization)
+      .send({ ...closed, isClosed: false })
+      .expect(200);
+    const response = await request(server)
+      .get("/office-hours")
+      .query({ from: range.from })
+      .expect(200);
+    expect(response.body.items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ date: futureDate })]),
+    );
+  });
+
   it("publishes the closure reason and records independent internal memo edits", async () => {
     const date = "2026-11-24";
     const query = { from: date, to: date };

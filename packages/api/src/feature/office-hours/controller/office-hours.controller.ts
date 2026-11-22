@@ -18,6 +18,7 @@ import {
   type OfficeDateRange,
   type OfficeHour,
   type OfficeHourInput,
+  type OfficeHourQuery,
 } from "@clubs/interface/api/office-hours";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -53,7 +54,7 @@ export class OfficeHoursController {
   @Public()
   @Get(apiOfh001.url())
   @UsePipes(new ZodPipe(apiOfh001))
-  async getPublic(@Query() query: OfficeDateRange) {
+  async getPublic(@Query() query: OfficeHourQuery) {
     const rows = await this.officeHoursService.list(query);
     return { items: rows.map(serializeOfficeHour) };
   }
@@ -61,7 +62,7 @@ export class OfficeHoursController {
   @Executive()
   @Get(apiOfh002.url())
   @UsePipes(new ZodPipe(apiOfh002))
-  async getExecutive(@Query() query: OfficeDateRange) {
+  async getExecutive(@Query() query: OfficeHourQuery) {
     const rows = await this.officeHoursService.list(query);
     return { items: rows.map(serializeExecutiveOfficeHour) };
   }

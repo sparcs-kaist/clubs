@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import type {
   OfficeDateRange,
   OfficeHourInput,
+  OfficeHourQuery,
 } from "@clubs/interface/api/office-hours";
 
 import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -76,8 +77,8 @@ export class OfficeHoursService {
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
-  async list({ from, to }: OfficeDateRange) {
-    return this.officeHoursRepository.list(from, to);
+  async list({ from, to }: OfficeHourQuery) {
+    return this.officeHoursRepository.list(from, to ?? "9999-12-31");
   }
 
   async generate(range: OfficeDateRange, executiveId: number) {

@@ -10,12 +10,14 @@ export const zRentalStatus = z.enum([
   "CANCELLED",
   "REJECTED",
 ]);
-export const zRentalPeriodPolicy = z.enum([
-  "DAYS_14",
-  "SECOND_NEXT_OFFICE_HOUR",
-]);
+export const zRentalDurationType = z.enum(["DAYS", "OFFICE_HOURS"]);
+export const zRentalDuration = z.object({
+  durationType: zRentalDurationType,
+  durationValue: z.coerce.number().int().positive().max(4294967295),
+});
 export type RentalStatus = z.infer<typeof zRentalStatus>;
-export type RentalPeriodPolicy = z.infer<typeof zRentalPeriodPolicy>;
+export type RentalDurationType = z.infer<typeof zRentalDurationType>;
+export type RentalDuration = z.infer<typeof zRentalDuration>;
 
 const id = z.coerce.number().int().positive();
 const instant = z.union([
@@ -27,14 +29,13 @@ const zSlotSelection = z.object({
   opensAt: instant,
   closesAt: instant,
 });
-const zRentalItemFields = z.object({
+const zRentalItemFields = zRentalDuration.extend({
   name: z.string().trim().min(1).max(100),
   totalQuantity: z.coerce.number().int().min(0).max(1000000),
-  durationPolicy: zRentalPeriodPolicy,
   isActive: z.boolean(),
 });
 const zRentalItem = zRentalItemFields.extend({ id });
-const zRentalReservation = z.object({
+const zRentalReservation = zRentalDuration.extend({
   id,
   clubId: id,
   clubName: z.string(),
@@ -46,7 +47,6 @@ const zRentalReservation = z.object({
   return: zSlotSelection,
   regularReturnLimitDate: zOfficeDate,
   approvedReturnLimitDate: zOfficeDate.nullable(),
-  durationPolicy: zRentalPeriodPolicy,
   createdAt: instant,
   checkedOutAt: instant.nullable(),
   returnedAt: instant.nullable(),

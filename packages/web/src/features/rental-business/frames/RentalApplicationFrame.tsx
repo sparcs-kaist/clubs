@@ -30,9 +30,8 @@ import {
   useRentalReturnOptions,
 } from "../services/rentalApi";
 import {
-  addRentalDays,
+  formatRentalDuration,
   formatRentalSlot,
-  rentalPolicyLabels,
   rentalSlotSelection,
   todayRentalDate,
 } from "../utils/rentalSchedule";
@@ -55,7 +54,7 @@ const RentalApplicationForm = ({
   const today = todayRentalDate();
   const clubs = useRentalEligibleClubs(userId);
   const items = useRentalItems();
-  const officeHours = useRentalOfficeHours(today, addRentalDays(today, 365));
+  const officeHours = useRentalOfficeHours(today);
   const returnOptions = useRentalReturnOptions(itemId, pickupDate);
   const submit = useMutation({
     mutationFn: createRental,
@@ -178,9 +177,7 @@ const RentalApplicationForm = ({
             ))}
           </RentalSelect>
         </RentalField>
-        {selectedItem && (
-          <p>{rentalPolicyLabels[selectedItem.durationPolicy]}</p>
-        )}
+        {selectedItem && <p>{formatRentalDuration(selectedItem)}</p>}
         <RentalFieldGrid>
           <RentalField>
             수령 상근일

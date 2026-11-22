@@ -1398,14 +1398,15 @@ model OfficeHour {
 }
 
 model RentalItem {
-  id             Int      @id @default(autoincrement())
-  name           String   @db.VarChar(100)
-  totalQuantity  Int      @map("total_quantity") @db.UnsignedInt
-  durationPolicy String   @map("duration_policy") @db.VarChar(30)
-  isActive       Boolean  @default(true) @map("is_active")
-  lockVersion    BigInt   @default(0) @map("lock_version") @db.UnsignedBigInt
-  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  totalQuantity Int      @map("total_quantity") @db.UnsignedInt
+  durationType  String   @map("duration_type") @db.VarChar(30)
+  durationValue Int      @map("duration_value") @db.UnsignedInt
+  isActive      Boolean  @default(true) @map("is_active")
+  lockVersion   BigInt   @default(0) @map("lock_version") @db.UnsignedBigInt
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
   @@map("rental_item")
 }
@@ -1419,7 +1420,8 @@ model RentalReservation {
   purpose                 String    @db.VarChar(500)
   quantity                Int       @db.UnsignedInt
   status                  String    @db.VarChar(16)
-  durationPolicy          String    @map("duration_policy") @db.VarChar(30)
+  durationType            String    @map("duration_type") @db.VarChar(30)
+  durationValue           Int       @map("duration_value") @db.UnsignedInt
   regularReturnLimitDate  DateTime  @map("regular_return_limit_date") @db.Date
   approvedExtensionId     Int?      @map("approved_extension_id")
   pickupHourId            Int       @map("pickup_hour_id")

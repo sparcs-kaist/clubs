@@ -1,5 +1,6 @@
 import {
   activeRentalStatus,
+  addRentalDays,
   beforeSameDayReturns,
   checkoutQuantity,
   hasSameDayReturn,
@@ -25,17 +26,34 @@ function reservation(
 }
 
 describe("rental period and inventory", () => {
-  it("uses calendar days for easels and the second published open shift for other items", () => {
-    expect(regularReturnLimit("DAYS_14", "2026-12-24", [])).toBe("2027-01-07");
+  it("uses the configured calendar days or published office count", () => {
     expect(
-      regularReturnLimit("SECOND_NEXT_OFFICE_HOUR", monday, [
-        wednesday,
-        thursday,
-      ]),
+      regularReturnLimit(
+        { durationType: "DAYS", durationValue: 3 },
+        "2026-12-30",
+        [],
+      ),
+    ).toBe("2027-01-02");
+    expect(
+      regularReturnLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 3 },
+        monday,
+        [tuesday, wednesday, thursday],
+      ),
     ).toBe(thursday);
     expect(
-      regularReturnLimit("SECOND_NEXT_OFFICE_HOUR", monday, [wednesday]),
+      regularReturnLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 3 },
+        monday,
+        [wednesday, thursday],
+      ),
     ).toBeUndefined();
+  });
+
+  it("handles the database date limit without returning an extended ISO year", () => {
+    expect(addRentalDays("9999-12-30", 1)).toBe("9999-12-31");
+    expect(addRentalDays("9999-12-30", 2)).toBeUndefined();
+    expect(addRentalDays(monday, 4294967295)).toBeUndefined();
   });
 
   it("counts the peak within the requested interval and releases stock at the return shift", () => {

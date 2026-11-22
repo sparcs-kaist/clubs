@@ -69,3 +69,83 @@ describe("rental office hour selections", () => {
     ).rejects.toThrow("OFFICE_HOURS_PASSED");
   });
 });
+
+describe("configured rental duration", () => {
+  const window = (date: string, id: number, isClosed = false) => ({
+    ...booked,
+    id,
+    date,
+    isClosed,
+    opensAt: new Date(`${date}T12:00:00.000Z`),
+    closesAt: new Date(`${date}T13:00:00.000Z`),
+  });
+
+  it("counts only later open dates and reaches published shifts after a long break", async () => {
+    const first = window("2026-11-18", 5);
+    const second = window("2028-01-03", 6);
+    const third = window("2028-01-04", 7);
+    const list = jest
+      .fn()
+      .mockResolvedValue([
+        booked,
+        window("2026-11-17", 4, true),
+        first,
+        second,
+        third,
+        window("2028-01-05", 8),
+      ]);
+    const schedule = new RentalScheduleService({ list } as never);
+    const result = await schedule.availableDates(
+      { durationType: "OFFICE_HOURS", durationValue: 3 },
+      booked.date,
+    );
+    expect(list).toHaveBeenCalledWith(booked.date, "9999-12-31");
+    expect(result).toEqual({
+      pickup: booked,
+      limit: third.date,
+      returns: [first, second, third],
+    });
+  });
+
+  it("keeps unavailable future office counts unavailable", async () => {
+    const schedule = new RentalScheduleService({
+      list: jest.fn().mockResolvedValue([booked, window("2026-11-17", 4)]),
+    } as never);
+    await expect(
+      schedule.availableDates(
+        { durationType: "OFFICE_HOURS", durationValue: 2 },
+        booked.date,
+      ),
+    ).resolves.toMatchObject({ limit: undefined, returns: [] });
+    await expect(
+      schedule.requireRegularLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 2 },
+        booked.date,
+      ),
+    ).rejects.toThrow("OFFICE_HOURS_NOT_PUBLISHED");
+  });
+
+  it("uses the configured day count to query the complete calendar range", async () => {
+    const list = jest.fn().mockResolvedValue([booked]);
+    const schedule = new RentalScheduleService({ list } as never);
+    await expect(
+      schedule.availableDates(
+        { durationType: "DAYS", durationValue: 400 },
+        booked.date,
+      ),
+    ).resolves.toMatchObject({ limit: "2027-12-21" });
+    expect(list).toHaveBeenCalledWith(booked.date, "2027-12-21");
+  });
+
+  it("rejects a day count beyond the supported date range before querying", async () => {
+    const list = jest.fn();
+    const schedule = new RentalScheduleService({ list } as never);
+    await expect(
+      schedule.availableDates(
+        { durationType: "DAYS", durationValue: 4294967295 },
+        booked.date,
+      ),
+    ).rejects.toMatchObject({ status: 400, message: "INVALID_RENTAL_PERIOD" });
+    expect(list).not.toHaveBeenCalled();
+  });
+});

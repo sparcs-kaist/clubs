@@ -151,7 +151,8 @@ describe("Rental API with MySQL", () => {
       .send({
         name: "운반 카트",
         totalQuantity: 1,
-        durationPolicy: "DAYS_14",
+        durationType: "DAYS",
+        durationValue: 14,
         isActive: true,
       })
       .expect(201);
@@ -448,5 +449,92 @@ describe("Rental API with MySQL", () => {
       .set("Authorization", representative)
       .expect(200);
     expect(renamed.body.itemName).toBe("수정된 카트");
+  });
+
+  it("applies edited item limits to new bookings while retaining existing duration snapshots", async () => {
+    now = new Date("2027-01-04T08:00:00Z");
+    const server = app.getHttpServer();
+    await request(server)
+      .post("/executive/office-hours/generate")
+      .set("Authorization", executive)
+      .send({ from: "2027-01-04", to: "2027-01-14" })
+      .expect(201);
+    const created = await request(server)
+      .post("/executive/rental-items")
+      .set("Authorization", executive)
+      .send({
+        name: "기간 설정 카트",
+        totalQuantity: 3,
+        durationType: "DAYS",
+        durationValue: 3,
+        isActive: true,
+      })
+      .expect(201);
+    const configuredItemId = created.body.id;
+    const apply = (returnDate: string) =>
+      request(server)
+        .post("/student/rentals")
+        .set("Authorization", representative)
+        .send({
+          clubId,
+          itemId: configuredItemId,
+          quantity: 1,
+          pickup: slot("2027-01-04"),
+          return: slot(returnDate),
+          contactPhoneNumber: "010-1234-5678",
+          purpose: "기간 설정 확인",
+          clientRequestId: randomUUID(),
+        });
+    const options = () =>
+      request(server)
+        .get(`/rentals/items/${configuredItemId}/return-options`)
+        .query({ pickupDate: "2027-01-04" })
+        .expect(200);
+    expect(
+      (await options()).body.options.map(({ date }: { date: string }) => date),
+    ).toEqual(["2027-01-05", "2027-01-06", "2027-01-07"]);
+    const original = await apply("2027-01-07").expect(201);
+    expect(original.body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 3,
+      regularReturnLimitDate: "2027-01-07",
+    });
+
+    await request(server)
+      .patch(`/executive/rental-items/${configuredItemId}`)
+      .set("Authorization", executive)
+      .send({ durationType: "OFFICE_HOURS", durationValue: 4 })
+      .expect(200);
+    await request(server)
+      .put("/executive/office-hours/2027-01-06")
+      .set("Authorization", executive)
+      .send({ openTime: "21:00", closeTime: "22:00", isClosed: true })
+      .expect(200);
+    expect(
+      (await options()).body.options.map(({ date }: { date: string }) => date),
+    ).toEqual(["2027-01-05", "2027-01-07", "2027-01-11", "2027-01-12"]);
+    await apply("2027-01-13").expect(400);
+    const next = await apply("2027-01-12").expect(201);
+    expect(next.body).toMatchObject({
+      durationType: "OFFICE_HOURS",
+      durationValue: 4,
+      regularReturnLimitDate: "2027-01-12",
+    });
+    expect(
+      await prisma.rentalReservation.findUnique({
+        where: { id: original.body.id },
+      }),
+    ).toMatchObject({ durationType: "DAYS", durationValue: 3 });
+    const reschedule = (returned: string) =>
+      request(server)
+        .patch(`/executive/rentals/${original.body.id}/schedule`)
+        .set("Authorization", executive)
+        .send({ pickup: slot("2027-01-05"), return: slot(returned) });
+    await reschedule("2027-01-11").expect(400);
+    expect((await reschedule("2027-01-07").expect(200)).body).toMatchObject({
+      durationType: "DAYS",
+      durationValue: 3,
+      regularReturnLimitDate: "2027-01-08",
+    });
   });
 });
