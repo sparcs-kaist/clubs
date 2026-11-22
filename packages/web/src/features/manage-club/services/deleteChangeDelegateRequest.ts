@@ -1,4 +1,7 @@
-import type { ApiClb012RequestParam } from "@clubs/interface/api/club/endpoint/apiClb012";
+import type {
+  ApiClb012RequestParam,
+  ApiClb012RequestQuery,
+} from "@clubs/interface/api/club/endpoint/apiClb012";
 import apiClb012 from "@clubs/interface/api/club/endpoint/apiClb012";
 
 import {
@@ -8,9 +11,11 @@ import {
 
 export const deleteChangeDelegateRequest = async (
   requestParam: ApiClb012RequestParam,
+  requestQuery: ApiClb012RequestQuery,
 ) => {
   const { data } = await axiosClientWithAuth.delete(
     apiClb012.url(requestParam.clubId),
+    { params: requestQuery },
   );
 
   return apiClb012.responseBodyMap[201].parse(data);

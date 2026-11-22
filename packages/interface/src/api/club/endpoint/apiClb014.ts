@@ -11,7 +11,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 마이페이지에서 나에게 신청한 대표자 변경을 승인 또는 거절합니다.
+ * @description 마이페이지에서 받은 대표자 및 대의원 변경 요청을 수락하거나 거절합니다.
  */
 
 const url = (requestId: number) =>
@@ -24,18 +24,22 @@ const requestParam = z.object({
 
 const requestQuery = z.object({});
 
-const requestBody = z
-  .object({
-    phoneNumber: zKrPhoneNumber.optional(),
-    clubDelegateChangeRequestStatusEnum:
-      zClubDelegateChangeRequest.shape.clubDelegateChangeRequestStatusEnum,
-  })
-  .refine(
-    val =>
-      val.phoneNumber !== undefined ||
-      val.clubDelegateChangeRequestStatusEnum ===
+const requestBody = z.discriminatedUnion(
+  "clubDelegateChangeRequestStatusEnum",
+  [
+    z.object({
+      clubDelegateChangeRequestStatusEnum: z.literal(
+        ClubDelegateChangeRequestStatusEnum.Approved,
+      ),
+      phoneNumber: zKrPhoneNumber,
+    }),
+    z.object({
+      clubDelegateChangeRequestStatusEnum: z.literal(
         ClubDelegateChangeRequestStatusEnum.Rejected,
-  );
+      ),
+    }),
+  ],
+);
 
 const responseBodyMap = {
   [HttpStatusCode.Created]: z.object({}),
@@ -74,15 +78,13 @@ registry.registerPath({
   method: "patch",
   path: "/student/clubs/delegates/requests/request/{requestId}",
   summary:
-    "CLB-014: 마이페이지에서 나에게 신청한 대표자 변경을 승인 또는 거절합니다",
+    "CLB-014: 마이페이지에서 받은 대표자 및 대의원 변경 요청 수락 및 거절",
   description: `# CLB-014
 
-마이페이지에서 나에게 신청한 대표자 변경을 승인 또는 거절합니다.
+변경 요청을 받은 학생으로 로그인되어 있어야 합니다.
 
-학생으로 로그인되어 있어야 합니다.
-
-대표자 변경 신청을 승인하려면 전화번호를 입력해야 합니다.
-거절하는 경우 전화번호는 필요하지 않습니다.
+변경 요청을 수락하려면 유효한 전화번호가 필요합니다.
+거절하면 요청 상태만 변경됩니다.
   `,
   request: {
     params: requestParam,
@@ -96,7 +98,7 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "성공적으로 대표자 변경 신청을 처리했습니다.",
+      description: "변경 요청을 처리했습니다.",
       content: {
         "application/json": {
           schema: responseBodyMap[201],

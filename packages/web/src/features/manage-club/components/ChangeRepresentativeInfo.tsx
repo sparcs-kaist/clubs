@@ -5,18 +5,13 @@ import styled from "styled-components";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
-import {
-  changeRepresentativeCancelText,
-  changeRepresentativeRefuseText,
-  changeRepresentativeRequestText,
-} from "@sparcs-clubs/web/constants/changeRepresentative";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
 
 interface ChangeRepresentativeProps {
-  type: "Applied" | "Rejected" | "Canceled";
+  type: "Applied" | "Rejected";
   clubName: string;
-  prevRepresentative: string;
-  newRepresentative: string;
+  role: string;
+  candidate: string;
 }
 
 const ChangeRepresentativeWrapper = styled.div.withConfig({
@@ -39,43 +34,20 @@ const ChangeRepresentativeWrapper = styled.div.withConfig({
 const ChangeRepresentativeInfo: React.FC<ChangeRepresentativeProps> = ({
   type,
   clubName,
-  prevRepresentative,
-  newRepresentative,
+  role,
+  candidate,
 }) => {
-  let title;
-  let text;
-  switch (type) {
-    case "Applied":
-      title = "동아리 대표자 변경 요청 완료";
-      text = changeRepresentativeRequestText(
-        clubName,
-        prevRepresentative,
-        newRepresentative,
-      );
-      break;
-    case "Rejected":
-      title = "동아리 대표자 변경 요청 거절";
-      text = changeRepresentativeRefuseText(
-        clubName,
-        prevRepresentative,
-        newRepresentative,
-      );
-      break;
-    default:
-      title = "동아리 대표자 변경 요청 취소";
-      text = changeRepresentativeCancelText(clubName);
-      break;
-  }
+  const isPending = type === "Applied";
   return (
     <ChangeRepresentativeWrapper type={type}>
-      {type === "Rejected" ? (
+      {!isPending ? (
         <Icon type="cancel" size={20} color={colors.RED[600]} />
       ) : (
         <Icon type="check_circle" size={20} color={colors.GREEN[600]} />
       )}
       <FlexWrapper direction="column" gap={8}>
         <Typography fw="MEDIUM" fs={16} lh={20}>
-          {title}
+          {role} 변경 요청 {isPending ? "수락 대기" : "거절"}
         </Typography>
         <Typography
           fw="REGULAR"
@@ -83,16 +55,12 @@ const ChangeRepresentativeInfo: React.FC<ChangeRepresentativeProps> = ({
           lh={20}
           style={{ whiteSpace: "pre-wrap" }}
         >
-          {text}
+          {clubName} · {candidate}
         </Typography>
-        {type === "Applied" && (
+        {isPending && (
           <Typography fw="REGULAR" fs={16} lh={20}>
-            대표자 변경 요청을 취소할 수 있으며, 요청이 3일 내로 승인 또는
-            거절되지 않을 경우 자동으로 취소됩니다
-            <br />
-            <br />
-            만약 요청받으신 분의 &apos;마이페이지&apos;에서 대표자 변경 안내
-            팝업이 보이지 않는다면 채널톡으로 문의해 주세요!
+            대상자는 마이페이지에서 요청을 확인할 수 있습니다. 응답이 없으면 3일
+            후 만료됩니다.
           </Typography>
         )}
       </FlexWrapper>

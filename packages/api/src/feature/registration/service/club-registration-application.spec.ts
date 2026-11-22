@@ -40,6 +40,8 @@ const createContext = (
     putStudentRegistrationsClubRegistration: jest.fn().mockResolvedValue({}),
   };
   const clubs = {
+    lockRegistrationClub: jest.fn().mockResolvedValue(undefined),
+    lockRegistrationApplicant: jest.fn().mockResolvedValue(undefined),
     findStudentClubDelegate: jest.fn().mockResolvedValue({ id: 123 }),
     getClubByClubId: jest.fn().mockResolvedValue([{ id: 123 }]),
     makeClubSummaryResponse: jest.fn().mockResolvedValue({ id: 123 }),

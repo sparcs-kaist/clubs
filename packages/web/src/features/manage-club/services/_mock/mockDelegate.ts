@@ -35,6 +35,8 @@ export const mockClubDelegates: ApiClb006ResponseOK = {
 export const mockClubDelegateRequest: ApiClb011ResponseOk = {
   requests: [
     {
+      id: 1,
+      delegateEnumId: ClubDelegateEnum.Delegate1,
       studentId: 20200000,
       studentNumber: 20200000,
       studentName: "이도라",

@@ -1,8 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import styled from "styled-components";
 
-import { ApiClb006ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb006";
-import { ApiClb008ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb008";
+import apiClb006, {
+  type ApiClb006ResponseOK,
+} from "@clubs/interface/api/club/endpoint/apiClb006";
+import type { ApiClb008ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb008";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
@@ -11,7 +14,8 @@ import {
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import Select, { SelectItem } from "@sparcs-clubs/web/common/components/Select";
+import FormError from "@sparcs-clubs/web/common/components/FormError";
+import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 import { deleteChangeDelegateRequest } from "../services/deleteChangeDelegateRequest";
@@ -27,311 +31,168 @@ const LabelWrapper = styled.div`
   justify-content: space-between;
 `;
 
+const roles = [
+  { id: ClubDelegateEnum.Representative, label: "대표자" },
+  { id: ClubDelegateEnum.Delegate1, label: "대의원 1" },
+  { id: ClubDelegateEnum.Delegate2, label: "대의원 2" },
+];
+
+type DelegateAction =
+  | { type: "update"; delegateEnumId: ClubDelegateEnum; studentId: number }
+  | { type: "cancel"; delegateEnumId: ClubDelegateEnum; requestId: number };
+
 const ChangeRepresentativeCard: React.FC<{
   clubId: number;
   delegatesNow: ApiClb006ResponseOK;
   clubMembers: ApiClb008ResponseOk;
   clubName: string;
 }> = ({ clubId, delegatesNow, clubMembers, clubName }) => {
-  const getSelectItems = (members: ApiClb008ResponseOk): SelectItem<string>[] =>
-    members?.students.map(member => ({
-      label: `${member.studentNumber} ${member.name}${
-        member.phoneNumber ? ` (${member.phoneNumber})` : ""
-      }`,
-      value: member.id.toString(),
-      selectable: !delegatesNow.delegates.some(
-        delegate => delegate.studentId === member.id,
-      ),
-    })) ?? [];
-
-  const [representativeItems, setRepresentativeItems] = useState<
-    SelectItem<string>[]
-  >(getSelectItems(clubMembers));
-
-  const [delegateItems, setDelegateItems] = useState<SelectItem<string>[]>(
-    getSelectItems(clubMembers).filter(
-      item =>
-        item.value !==
-        delegatesNow?.delegates
-          .find(
-            delegate =>
-              delegate.delegateEnumId === ClubDelegateEnum.Representative,
-          )
-          ?.studentId?.toString(),
-    ),
-  );
-
-  const representative =
-    delegatesNow?.delegates
-      .find(
-        delegate => delegate.delegateEnumId === ClubDelegateEnum.Representative,
-      )
-      ?.studentId?.toString() ?? "";
-
-  const representativeName =
-    delegatesNow?.delegates.find(
-      delegate => delegate.delegateEnumId === ClubDelegateEnum.Representative,
-    )?.name ?? "";
-
-  const representativeStudentNumber =
-    delegatesNow?.delegates.find(
-      delegate => delegate.delegateEnumId === ClubDelegateEnum.Representative,
-    )?.studentNumber ?? "";
-
-  const [delegate1, setDelegate1] = useState<string>(
-    delegatesNow?.delegates.find(
-      delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1,
-    )?.studentId === 0
-      ? ""
-      : (delegatesNow?.delegates
-          .find(
-            delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1,
-          )
-          ?.studentId.toString() ?? ""),
-  );
-  const [delegate2, setDelegate2] = useState<string>(
-    delegatesNow?.delegates.find(
-      delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2,
-    )?.studentId === 0
-      ? ""
-      : (delegatesNow?.delegates
-          .find(
-            delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2,
-          )
-          ?.studentId.toString() ?? ""),
-  );
-
-  const [type, setType] = useState<
-    "Default" | "Applied" | "Rejected" | "Canceled"
-  >("Default");
-
-  const { data: requestStatus, refetch } = useGetChangeDelegateRequests({
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError, refetch } = useGetChangeDelegateRequests({
     clubId,
   });
 
-  useEffect(() => {
-    switch (requestStatus?.requests[0]?.clubDelegateChangeRequestStatusEnumId) {
-      case ClubDelegateChangeRequestStatusEnum.Applied:
-        setType("Applied");
-        break;
-      case ClubDelegateChangeRequestStatusEnum.Approved:
-        setType("Default");
-        break;
-      case ClubDelegateChangeRequestStatusEnum.Rejected:
-        setType("Rejected");
-        break;
-      default:
-        setType("Default");
-    }
-  }, [requestStatus]);
-
-  const updateCandidateItems = () => {
-    setRepresentativeItems(prevItems =>
-      prevItems.map(item =>
-        item.value === delegate1 ||
-        item.value === delegate2 ||
-        item.value === representative
-          ? { ...item, selectable: false }
-          : { ...item, selectable: true },
-      ),
-    );
-    setDelegateItems(prevItems =>
-      prevItems.map(item =>
-        item.value === delegate1 ||
-        item.value === delegate2 ||
-        item.value === representative
-          ? { ...item, selectable: false }
-          : { ...item, selectable: true },
-      ),
-    );
-  };
-
-  const delegate1Req = useRef(0);
-  const delegate2Req = useRef(0);
-
-  useEffect(() => {
-    const prevDelegate1 = delegatesNow?.delegates
-      .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate1)
-      ?.studentId?.toString();
-    if (delegate1 !== prevDelegate1 && type !== "Applied" && delegate1 !== "") {
-      delegate1Req.current += 1;
-      const token = delegate1Req.current;
-      (async () => {
-        try {
-          await updateClubDelegates(
+  const action = useMutation({
+    mutationFn: (input: DelegateAction) =>
+      input.type === "cancel"
+        ? deleteChangeDelegateRequest(
+            { clubId },
+            { requestId: input.requestId },
+          )
+        : updateClubDelegates(
             { clubId },
             {
-              delegateEnumId: ClubDelegateEnum.Delegate1,
-              studentId: Number(delegate1),
+              delegateEnumId: input.delegateEnumId,
+              studentId: input.studentId,
             },
-          );
-          if (token === delegate1Req.current) updateCandidateItems();
-        } catch {
-          if (token === delegate1Req.current) {
-            setDelegate1(prevDelegate1 ?? "");
-          }
-        }
-      })();
-    }
-  }, [delegate1, delegatesNow]);
+          ),
+    onSettled: async () => {
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: [apiClb006.url(clubId)] }),
+      ]);
+    },
+  });
 
-  useEffect(() => {
-    const prevDelegate2 = delegatesNow?.delegates
-      .find(delegate => delegate.delegateEnumId === ClubDelegateEnum.Delegate2)
-      ?.studentId?.toString();
-    if (delegate2 !== prevDelegate2 && type !== "Applied" && delegate2 !== "") {
-      delegate2Req.current += 1;
-      const token = delegate2Req.current;
-      (async () => {
-        try {
-          await updateClubDelegates(
-            { clubId },
-            {
-              delegateEnumId: ClubDelegateEnum.Delegate2,
-              studentId: Number(delegate2),
-            },
-          );
-          if (token === delegate2Req.current) updateCandidateItems();
-        } catch {
-          if (token === delegate2Req.current) {
-            setDelegate2(prevDelegate2 ?? "");
-          }
-        }
-      })();
-    }
-  }, [delegate2, delegatesNow]);
-
-  const cancelRequest = () => {
-    setType("Canceled");
-    deleteChangeDelegateRequest({ clubId });
-  };
-
-  const changeDelegateRequest = async (
-    studentId: number,
-    delegateEnumId: ClubDelegateEnum,
-  ) => {
-    await updateClubDelegates({ clubId }, { delegateEnumId, studentId });
-    await refetch();
-    if (delegateEnumId === ClubDelegateEnum.Representative && studentId !== 0) {
-      setType("Applied");
-    }
-    updateCandidateItems();
-  };
+  const requests = data?.requests ?? [];
+  const pendingRequests = requests.filter(
+    request =>
+      request.clubDelegateChangeRequestStatusEnumId ===
+      ClubDelegateChangeRequestStatusEnum.Applied,
+  );
+  const unavailableIds = new Set([
+    ...delegatesNow.delegates.map(delegate => delegate.studentId),
+    ...pendingRequests.map(request => request.studentId),
+  ]);
+  const items = clubMembers.students.map(member => ({
+    label: `${member.studentNumber} ${member.name}${member.phoneNumber ? ` (${member.phoneNumber})` : ""}`,
+    value: String(member.id),
+    selectable: !unavailableIds.has(member.id),
+  }));
+  const disabled = isLoading || isError || action.isPending;
 
   return (
     <Card outline gap={32} style={{ flex: 1 }}>
       <Typography fw="MEDIUM" fs={20} lh={24}>
         대표자 및 대의원
       </Typography>
-      {type !== "Default" && (
-        <ChangeRepresentativeInfo
-          type={type}
-          clubName={clubName}
-          prevRepresentative={`${representativeStudentNumber} ${representativeName}`}
-          newRepresentative={`${requestStatus?.requests[0]?.studentNumber} ${requestStatus?.requests[0]?.studentName}`}
-        />
+      {(isError || action.isError) && (
+        <div role="alert">
+          <FormError>
+            {isError
+              ? "변경 요청을 불러오지 못했습니다. 다시 시도해 주세요."
+              : "변경을 처리하지 못했습니다. 현재 직책과 요청 상태를 확인해 주세요."}
+          </FormError>
+        </div>
       )}
-      <FlexWrapper direction="column" gap={4}>
-        <LabelWrapper>
-          <Typography fw="MEDIUM" fs={16} lh={20}>
-            대표자
-          </Typography>
-          {type === "Applied" && (
-            <TextButton text="대표자 변경 요청 취소" onClick={cancelRequest} />
-          )}
-        </LabelWrapper>
-        <Select
-          items={representativeItems}
-          value={representative}
-          onChange={value => {
-            changeDelegateRequest(
-              Number(value),
-              ClubDelegateEnum.Representative,
-            );
-          }}
-          disabled={type === "Applied"}
-        />
-      </FlexWrapper>
-      <FlexWrapper direction="column" gap={4}>
-        <LabelWrapper>
-          <Typography fw="MEDIUM" fs={16} lh={20}>
-            대의원 1
-          </Typography>
-          <TextButton
-            text="대의원1 삭제"
-            onClick={async () => {
-              setDelegateItems(prevItems =>
-                prevItems.map(item =>
-                  item.value === delegate1
-                    ? { ...item, selectable: true }
-                    : item,
-                ),
-              );
-              setRepresentativeItems(prevItems =>
-                prevItems.map(item =>
-                  item.value === delegate1
-                    ? { ...item, selectable: true }
-                    : item,
-                ),
-              );
-              setDelegate1("");
-              delegate1Req.current += 1;
-              await updateClubDelegates(
-                { clubId },
-                { delegateEnumId: ClubDelegateEnum.Delegate1, studentId: 0 },
-              );
-            }}
-            disabled={delegate1 === "" || type === "Applied"}
-          />
-        </LabelWrapper>
-        <Select
-          items={delegateItems}
-          value={delegate1}
-          onChange={setDelegate1}
-          isRequired={false}
-          disabled={type === "Applied"}
-        />
-      </FlexWrapper>
-      <FlexWrapper direction="column" gap={4}>
-        <LabelWrapper>
-          <Typography fw="MEDIUM" fs={16} lh={20}>
-            대의원 2
-          </Typography>
-          <TextButton
-            text="대의원2 삭제"
-            onClick={async () => {
-              setDelegateItems(prevItems =>
-                prevItems.map(item =>
-                  item.value === delegate2
-                    ? { ...item, selectable: true }
-                    : item,
-                ),
-              );
-              setRepresentativeItems(prevItems =>
-                prevItems.map(item =>
-                  item.value === delegate2
-                    ? { ...item, selectable: true }
-                    : item,
-                ),
-              );
-              setDelegate2("");
-              delegate2Req.current += 1;
-              await updateClubDelegates(
-                { clubId },
-                { delegateEnumId: ClubDelegateEnum.Delegate2, studentId: 0 },
-              );
-            }}
-            disabled={delegate2 === "" || type === "Applied"}
-          />
-        </LabelWrapper>
-        <Select
-          items={delegateItems}
-          value={delegate2}
-          onChange={setDelegate2}
-          isRequired={false}
-          disabled={type === "Applied"}
-        />
-      </FlexWrapper>
+      {roles.map(({ id, label }) => {
+        const current = delegatesNow.delegates.find(
+          delegate => delegate.delegateEnumId === id,
+        );
+        const latestRequest = requests
+          .filter(request => request.delegateEnumId === id)
+          .sort((a, b) => b.id - a.id)[0];
+        const pending = pendingRequests.find(
+          request => request.delegateEnumId === id,
+        );
+        const rejected =
+          latestRequest?.clubDelegateChangeRequestStatusEnumId ===
+          ClubDelegateChangeRequestStatusEnum.Rejected
+            ? latestRequest
+            : undefined;
+        const request = pending ?? rejected;
+        const currentValue = current ? String(current.studentId) : "";
+        const roleItems =
+          current && !items.some(item => item.value === currentValue)
+            ? [
+                ...items,
+                {
+                  label: `${current.studentNumber} ${current.name}`,
+                  value: currentValue,
+                  selectable: false,
+                },
+              ]
+            : items;
+        return (
+          <FlexWrapper key={id} direction="column" gap={8}>
+            <LabelWrapper>
+              <Typography fw="MEDIUM" fs={16} lh={20}>
+                {label}
+              </Typography>
+              {pending ? (
+                <TextButton
+                  text={`${label} 변경 요청 취소`}
+                  disabled={disabled}
+                  onClick={() =>
+                    action.mutate({
+                      type: "cancel",
+                      delegateEnumId: id,
+                      requestId: pending.id,
+                    })
+                  }
+                />
+              ) : (
+                id !== ClubDelegateEnum.Representative &&
+                current && (
+                  <TextButton
+                    text={`${label} 삭제`}
+                    disabled={disabled}
+                    onClick={() =>
+                      action.mutate({
+                        type: "update",
+                        delegateEnumId: id,
+                        studentId: 0,
+                      })
+                    }
+                  />
+                )
+              )}
+            </LabelWrapper>
+            <Select
+              items={roleItems}
+              value={currentValue}
+              placeholder="미지정"
+              isRequired={id === ClubDelegateEnum.Representative}
+              disabled={disabled || pending !== undefined}
+              onChange={value =>
+                action.mutate({
+                  type: "update",
+                  delegateEnumId: id,
+                  studentId: Number(value),
+                })
+              }
+            />
+            {request && (
+              <ChangeRepresentativeInfo
+                type={pending ? "Applied" : "Rejected"}
+                clubName={clubName}
+                role={label}
+                candidate={`${request.studentNumber} ${request.studentName}`}
+              />
+            )}
+          </FlexWrapper>
+        );
+      })}
     </Card>
   );
 };

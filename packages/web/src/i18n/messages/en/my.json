@@ -1,16 +1,22 @@
 {
   "representative": {
-    "requestedTitle": "Club Representative Change Request",
-    "completedTitle": "Club Representative Changed",
-    "requestedBody": "A representative change has been requested for “{clubName}”.\n{prevRepresentative} → {newRepresentative} (pending approval)",
-    "completedBody": "The representative for “{clubName}” has changed.\n{prevRepresentative} → {newRepresentative}",
+    "roles": {
+      "representative": "Representative",
+      "delegate1": "Delegate 1",
+      "delegate2": "Delegate 2"
+    },
+    "requestedTitle": "{role} Change Request",
+    "completedTitle": "{role} Change Accepted",
+    "requestedBody": "{requester} requested that you become {role} for “{clubName}”.",
+    "completedBody": "You accepted the {role} position for “{clubName}”.",
     "viewMore": "View details",
     "manageClub": "Manage your club",
-    "modalBody": "A representative change has been requested for “{clubName}”.\n{prevRepresentative} → {newRepresentative}",
-    "phoneRequired": "Enter your phone number to approve the representative change.",
-    "cancel": "Cancel",
-    "reject": "Reject",
-    "approve": "Approve"
+    "phoneNumber": "Phone number",
+    "phoneRequired": "Enter or confirm your phone number before accepting.",
+    "responseError": "Could not process the request. It may have already been resolved or expired.",
+    "cancel": "Close",
+    "reject": "Decline",
+    "approve": "Accept"
   },
   "overview": {
     "myInformation": "My Information",

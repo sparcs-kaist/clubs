@@ -2,12 +2,13 @@ import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
 import { zClub } from "@clubs/domain/club/club";
+import { zClubDelegateChangeRequest } from "@clubs/domain/club/club-delegate-change-request";
 
 import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 동아리의 현재 신청된 대표자 변경을 취소합니다.
+ * @description 동아리의 대기 중인 대표자 또는 대의원 변경 요청을 취소합니다.
  */
 
 const url = (clubId: number) =>
@@ -18,7 +19,9 @@ const requestParam = z.object({
   clubId: zClub.shape.id,
 });
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  requestId: zClubDelegateChangeRequest.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
@@ -58,22 +61,21 @@ registry.registerPath({
   tags: ["club"],
   method: "delete",
   path: "/student/clubs/club/:clubId/delegates/delegate/requests",
-  summary: "CLB-012: 동아리의 현재 신청된 대표자 변경을 취소합니다",
+  summary: "CLB-012: 동아리 대표자 및 대의원 변경 요청 취소",
   description: `# CLB-012
-
-동아리의 현재 신청된 대표자 변경을 취소합니다.
 
 동아리 대표자로 로그인되어 있어야 합니다.
 
-현재 진행 중인 대표자 변경 신청을 취소할 수 있습니다.
-승인이나 거절된 신청은 취소할 수 없습니다.
+requestId에 해당하는 대기 중인 변경 요청을 취소합니다.
+requestId를 생략하면 대기 중인 대표자 변경 요청을 취소합니다.
   `,
   request: {
     params: requestParam,
+    query: requestQuery,
   },
   responses: {
     201: {
-      description: "성공적으로 대표자 변경 신청을 취소했습니다.",
+      description: "변경 요청을 취소했습니다.",
       content: {
         "application/json": {
           schema: responseBodyMap[201],

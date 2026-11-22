@@ -1,16 +1,22 @@
 {
   "representative": {
-    "requestedTitle": "동아리 대표자 변경 요청",
-    "completedTitle": "동아리 대표자 변경 완료",
-    "requestedBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 요청되었습니다 \n{prevRepresentative} -> {newRepresentative} (승인 전)",
-    "completedBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 완료되었습니다 \n{prevRepresentative} -> {newRepresentative}",
-    "viewMore": "클릭하여 더보기",
+    "roles": {
+      "representative": "대표자",
+      "delegate1": "대의원 1",
+      "delegate2": "대의원 2"
+    },
+    "requestedTitle": "동아리 {role} 변경 요청",
+    "completedTitle": "동아리 {role} 변경 완료",
+    "requestedBody": "{requester}님이 ‘{clubName}’의 {role}로 지정해 달라고 요청했습니다.",
+    "completedBody": "‘{clubName}’의 {role} 변경 요청을 수락했습니다.",
+    "viewMore": "요청 확인",
     "manageClub": "대표 동아리 관리 페이지 바로가기",
-    "modalBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 요청되었습니다 \n{prevRepresentative} -> {newRepresentative}",
-    "phoneRequired": "전화번호를 입력해야 동아리 대표자 변경을 승인할 수 있습니다",
-    "cancel": "취소",
+    "phoneNumber": "전화번호",
+    "phoneRequired": "수락하기 전에 전화번호를 입력하거나 확인해 주세요.",
+    "responseError": "요청을 처리하지 못했습니다. 이미 처리되었거나 만료된 요청일 수 있습니다.",
+    "cancel": "닫기",
     "reject": "거절",
-    "approve": "승인"
+    "approve": "수락"
   },
   "overview": {
     "myInformation": "나의 정보",

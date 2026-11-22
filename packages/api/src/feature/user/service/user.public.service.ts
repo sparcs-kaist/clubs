@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ApiAut005RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut005";
 import {
@@ -19,6 +20,7 @@ import OldProfessorRepository from "../repository/old.professor.repository";
 import OldStudentRepository from "../repository/old.student.repository";
 import { ProfessorRepository } from "../repository/professor.repository";
 import { StudentRepository } from "../repository/student.repository";
+import UserRepository from "../repository/user.repository";
 import { UserLoginIdentityService } from "./user-login-identity.service";
 
 @Injectable()
@@ -33,6 +35,7 @@ export default class UserPublicService {
     private studentRepository: StudentRepository,
     private exchangeLoginUserRepository: ExchangeLoginUserRepository,
     private readonly loginIdentityService: UserLoginIdentityService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   syncSsoIdentity(input: SsoIdentityInput, semester: LoginSemester) {
@@ -76,6 +79,10 @@ export default class UserPublicService {
     }
 
     return students[0];
+  }
+
+  findStudentContacts(studentIds: number[]) {
+    return this.userRepository.findStudentContacts(studentIds);
   }
 
   /**
@@ -210,11 +217,9 @@ export default class UserPublicService {
    * 학생의 전화번호를 업데이트 합니다.
    * */
 
+  @Transactional()
   async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    await this.oldStudentRepository.updateStudentPhoneNumber(
-      userId,
-      phoneNumber,
-    );
+    await this.userRepository.updatePhoneNumber(userId, phoneNumber);
   }
 
   /**

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
 import { ISemester } from "@clubs/domain/semester/semester";
 
@@ -69,6 +70,7 @@ import {
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import type { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -78,7 +80,6 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
-import { MMemberRegistration } from "../model/member.registration.model";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { ClubRegistrationApprovalRepository } from "../repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
@@ -166,7 +167,9 @@ export class RegistrationService {
   /**
    * @description 동아리 대표자인지 검증하는 로직은 repository쪽에서 진행됩니다.
    */
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async postStudentRegistrationClubRegistration(
     studentId: number,
     body: ApiReg001RequestBody,
@@ -250,6 +253,11 @@ export class RegistrationService {
     );
 
     try {
+      if (body.registrationTypeEnumId === RegistrationTypeEnum.NewProvisional) {
+        await this.clubPublicService.lockRegistrationApplicant(studentId);
+      } else if (body.clubId !== undefined) {
+        await this.clubPublicService.lockRegistrationClub(body.clubId);
+      }
       return await this.clubRegistrationRepository.createRegistration(
         studentId,
         semesterId,
@@ -668,6 +676,9 @@ export class RegistrationService {
   /**
    * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
    */
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async deleteStudentRegistrationsClubRegistration(
     studentId: number,
     applyId: number,
@@ -680,10 +691,40 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
+    const registration =
+      await this.clubRegistrationRepository.findActiveRegistrationForApplicant(
+        applyId,
+        studentId,
+      );
+    if (!registration) {
+      throw new NotFoundException("Registration Not Found");
+    }
+    const provisionalClubId =
+      registration.registrationApplicationTypeEnumId ===
+      RegistrationTypeEnum.NewProvisional
+        ? registration.clubId
+        : undefined;
+    if (provisionalClubId === null) {
+      throw new HttpException("Registration club is missing", 500);
+    }
+    if (provisionalClubId !== undefined) {
+      await this.clubPublicService.lockRegistrationClub(
+        provisionalClubId,
+        studentId,
+      );
+    }
+    const now = this.clock.now();
     await this.clubRegistrationRepository.deleteStudentRegistrationsClubRegistration(
       studentId,
       applyId,
+      now,
     );
+    if (provisionalClubId !== undefined) {
+      await this.clubPublicService.deleteProvisionalClub(
+        provisionalClubId,
+        now,
+      );
+    }
     return {};
   }
 
@@ -815,7 +856,9 @@ export class RegistrationService {
     return { ...result, semesterId };
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async patchExecutiveRegistrationsClubRegistrationApproval(
     applyId: number,
   ): Promise<ApiReg016ResponseOk> {
@@ -827,6 +870,16 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
+    const applicant =
+      await this.clubRegistrationApprovalRepository.findApplicantForApproval(
+        applyId,
+      );
+    if (applicant?.clubId != null) {
+      await this.clubPublicService.lockRegistrationClub(
+        applicant.clubId,
+        applicant.studentId,
+      );
+    }
     const approvedAt = this.clock.now();
     const registration = await this.clubRegistrationApprovalRepository.approve(
       applyId,
@@ -1378,6 +1431,9 @@ export class RegistrationService {
     return { status: HttpStatus.OK, data: { applies: result } };
   }
 
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async deleteMemberRegistration(
     studentId: number,
     applyId: number,
@@ -1397,19 +1453,25 @@ export class RegistrationService {
       .then(takeOnlyOne("MemberRegistration"));
 
     if (
-      this.clubPublicService.isStudentBelongsTo(studentId, application.club.id)
+      await this.clubPublicService.isStudentBelongsTo(
+        studentId,
+        application.club.id,
+      )
     ) {
       // 만약 동아리원인 경우 삭제
-      this.clubPublicService.removeStudentFromClub(
+      await this.clubPublicService.removeStudentFromClub(
         studentId,
         application.club.id,
       );
     }
 
-    await this.memberRegistrationRepository.delete({ id: applyId });
+    await this.memberRegistrationRepository.removeById(applyId);
     return {};
   }
 
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async patchMemberRegistration(
     studentId: number,
     applyId: number,
@@ -1459,29 +1521,15 @@ export class RegistrationService {
     } else if (
       applyStatusEnumId === RegistrationApplicationStudentStatusEnum.Rejected
     ) {
-      const isAplicatedStudentDelegate =
-        await this.clubPublicService.isStudentDelegate(
-          applicationStudentId,
-          clubId,
-        );
-      if (isAplicatedStudentDelegate)
-        throw new HttpException(
-          "club delegate cannot be rejected",
-          HttpStatus.BAD_REQUEST,
-        );
-      else
-        await this.clubPublicService.removeStudentFromClub(
-          applicationStudentId,
-          clubId,
-        );
+      await this.clubPublicService.removeStudentFromClub(
+        applicationStudentId,
+        clubId,
+        false,
+      );
     }
-    await this.memberRegistrationRepository.patch(
-      { id: applyId },
-      newbie =>
-        new MMemberRegistration({
-          ...newbie,
-          registrationApplicationStudentEnum: applyStatusEnumId,
-        }),
+    await this.memberRegistrationRepository.updateStatus(
+      applyId,
+      applyStatusEnumId,
     );
     return {};
   }

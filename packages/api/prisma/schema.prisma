@@ -361,6 +361,8 @@ model ClubDelegateChangeRequest {
   clubId                                Int       @map("club_id")
   prevStudentId                         Int       @map("prev_student_id")
   studentId                             Int       @map("student_id")
+  clubDelegateEnumId                    Int       @default(1) @map("club_delegate_enum_id")
+  expectedDelegateTermId                Int?      @map("expected_delegate_term_id")
   clubDelegateChangeRequestStatusEnumId Int       @map("club_delegate_change_request_status_enum_id")
   createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
