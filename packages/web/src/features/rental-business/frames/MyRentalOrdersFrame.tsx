@@ -97,6 +97,9 @@ const MyOrder = ({ userId, id }: { userId: number; id: number }) => {
     <Card outline gap={16}>
       <RentalReservationSummary order={reservation} />
       <p>신청 시각 {formatRentalInstant(reservation.createdAt)}</p>
+      {reservation.approvedAt && (
+        <p>대여 승인 {formatRentalInstant(reservation.approvedAt)}</p>
+      )}
       {reservation.checkedOutAt && (
         <p>수령 확인 {formatRentalInstant(reservation.checkedOutAt)}</p>
       )}
@@ -107,12 +110,12 @@ const MyOrder = ({ userId, id }: { userId: number; id: number }) => {
       {cancel.isError && (
         <RentalError
           error={cancel.error}
-          fallback="예약을 취소하지 못했습니다."
+          fallback="대여 신청을 취소하지 못했습니다."
         />
       )}
-      {reservation.status === "RESERVED" && (
+      {reservation.canCancel && (
         <FlexWrapper direction="column" gap={8}>
-          {confirmCancel && <p>이 대여 예약을 취소하시겠어요?</p>}
+          {confirmCancel && <p>이 대여 신청을 취소하시겠어요?</p>}
           <RentalActions>
             {confirmCancel ? (
               <>
@@ -120,7 +123,7 @@ const MyOrder = ({ userId, id }: { userId: number; id: number }) => {
                   type={cancel.isPending ? "disabled" : "danger"}
                   onClick={() => cancel.mutate()}
                 >
-                  예약 취소 확인
+                  대여 신청 취소 확인
                 </Button>
                 <Button
                   type={cancel.isPending ? "disabled" : "outlined"}
@@ -131,7 +134,7 @@ const MyOrder = ({ userId, id }: { userId: number; id: number }) => {
               </>
             ) : (
               <Button type="outlined" onClick={() => setConfirmCancel(true)}>
-                예약 취소
+                대여 신청 취소
               </Button>
             )}
           </RentalActions>
@@ -173,14 +176,16 @@ export const MyRentalOrderFrame = () => {
     <FlexWrapper direction="column" gap={16}>
       <PageHead
         items={[
-          { name: "마이페이지", path: "/my" },
-          { name: "내 대여 내역", path: myRentalPath },
+          { name: "대표 동아리 관리", path: "/manage-club" },
+          { name: "대여 신청", path: "/manage-club#rental-business" },
         ]}
         title="대여 상세"
         enableLast
       />
       <RentalActions>
-        <RentalLink href={myRentalPath}>내 대여 내역</RentalLink>
+        <RentalLink href="/manage-club#rental-business">
+          동아리 대여 신청 내역
+        </RentalLink>
         <RentalLink href="/office-hours">상근 일정 보기</RentalLink>
       </RentalActions>
       <RentalAuth>

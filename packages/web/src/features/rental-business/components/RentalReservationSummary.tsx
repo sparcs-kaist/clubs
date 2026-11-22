@@ -12,6 +12,7 @@ import { formatRentalSlot } from "../utils/rentalSchedule";
 import { RentalActions } from "./RentalFields";
 
 export const rentalStatusLabels: Record<RentalStatus, string> = {
+  REQUESTED: "신청 대기",
   RESERVED: "예약 확정",
   CHECKED_OUT: "대여 중",
   RETURNED: "반납 완료",
@@ -20,6 +21,7 @@ export const rentalStatusLabels: Record<RentalStatus, string> = {
 };
 
 const statusColors: Record<RentalStatus, TagColor> = {
+  REQUESTED: "ORANGE",
   RESERVED: "BLUE",
   CHECKED_OUT: "PURPLE",
   RETURNED: "GREEN",

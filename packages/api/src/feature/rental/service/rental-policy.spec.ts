@@ -2,11 +2,14 @@ import {
   activeRentalStatus,
   addRentalDays,
   beforeSameDayReturns,
+  canCancelRental,
+  cancellableRentalStatus,
   checkoutQuantity,
   hasSameDayReturn,
   peakReservedQuantity,
   physicalQuantity,
   regularReturnLimit,
+  requestedQuantity,
   type ReservedStock,
 } from "./rental-policy";
 
@@ -26,7 +29,7 @@ function reservation(
 }
 
 describe("rental period and inventory", () => {
-  it("uses the configured published office count", () => {
+  it("caps the configured office count at the last published shift", () => {
     expect(
       regularReturnLimit(
         { durationType: "OFFICE_HOURS", durationValue: 3 },
@@ -40,7 +43,52 @@ describe("rental period and inventory", () => {
         monday,
         [wednesday, thursday],
       ),
+    ).toBe(thursday);
+    expect(
+      regularReturnLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 3 },
+        monday,
+        [],
+      ),
     ).toBeUndefined();
+  });
+
+  it.each([
+    [1, 1, "REQUESTED", true],
+    [1, 2, "REQUESTED", false],
+    [1, 1, "RESERVED", true],
+    [1, 2, "RESERVED", false],
+    [1, 1, "CHECKED_OUT", false],
+    [1, 1, "RETURNED", false],
+    [1, 1, "CANCELLED", false],
+    [1, 1, "REJECTED", false],
+  ])(
+    "permits cancellation only for the applicant's uncollected request",
+    (owner, viewer, status, allowed) => {
+      expect(canCancelRental(owner, viewer, status)).toBe(allowed);
+    },
+  );
+
+  it.each([
+    ["REQUESTED", true],
+    ["RESERVED", true],
+    ["CHECKED_OUT", false],
+    ["RETURNED", false],
+    ["CANCELLED", false],
+    ["REJECTED", false],
+  ])("treats %s as cancellable: %s", (status, allowed) => {
+    expect(cancellableRentalStatus(status)).toBe(allowed);
+  });
+
+  it("counts overlapping pending demand without including touching endpoints", () => {
+    const requests = [
+      reservation(1, monday, tuesday, 10, "REQUESTED"),
+      reservation(2, tuesday, thursday, 2, "REQUESTED"),
+      reservation(3, wednesday, thursday, 3, "REQUESTED"),
+      reservation(4, thursday, "2026-11-23", 10, "REQUESTED"),
+    ];
+    expect(requestedQuantity(requests, tuesday, thursday)).toBe(5);
+    expect(requestedQuantity([], tuesday, thursday)).toBe(0);
   });
 
   it.each([
@@ -104,6 +152,7 @@ describe("rental period and inventory", () => {
   });
 
   it.each([
+    ["REQUESTED", false],
     ["RESERVED", true],
     ["CHECKED_OUT", true],
     ["RETURNED", false],

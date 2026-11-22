@@ -13,8 +13,10 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
+import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import { axiosClient, axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
+import { formatTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 import { getLocalDateOnly } from "@sparcs-clubs/web/utils/Date/getKSTDate";
 
 import OfficeHourEditor from "./components/OfficeHourEditor";
@@ -36,7 +38,9 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
   const [month, setMonth] = useState(() =>
     startOfMonth(getLocalDateOnly(new Date())),
   );
-  const [selectedDate, setSelectedDate] = useState<string>();
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(() =>
+    executive ? undefined : format(getLocalDateOnly(new Date()), "yyyy-MM-dd"),
+  );
   const from = format(month, "yyyy-MM-dd");
   const to = format(endOfMonth(month), "yyyy-MM-dd");
   const endpoint = executive ? apiOfh002 : apiOfh001;
@@ -61,21 +65,24 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
     ? officeHours.data.items.find(item => item.date === selectedDate)
     : undefined;
   const title = executive ? paths("상근일 관리") : paths("상근일 현황");
-  const selectedPublicMemo = items.find(
+  const selectedPublicOfficeHour = items.find(
     item => item.date === selectedDate,
-  )?.publicMemo;
+  );
 
   return (
     <FlexWrapper direction="column" gap={24}>
       <PageHead
         items={
           executive
-            ? [{ name: paths("집행부"), path: "/executive" }]
+            ? [
+                { name: paths("집행부원 대시보드"), path: "/executive" },
+                { name: title, path: "/executive/office-hours" },
+              ]
             : [{ name: title, path: "/office-hours" }]
         }
         title={title}
       />
-      <p>{t(executive ? "editDescription" : "publicDescription")}</p>
+      {executive && <p>{t("editDescription")}</p>}
       <OfficeHoursCalendar
         month={month}
         items={items}
@@ -118,7 +125,22 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
                   ),
                 })}
               </h2>
-              <p>{selectedPublicMemo || t("noPublicMemo")}</p>
+              {selectedPublicOfficeHour &&
+                !selectedPublicOfficeHour.isClosed && (
+                  <p>
+                    {formatTime(new Date(selectedPublicOfficeHour.opensAt))}~
+                    {formatTime(new Date(selectedPublicOfficeHour.closesAt))}
+                  </p>
+                )}
+              {selectedPublicOfficeHour?.isClosed && (
+                <Typography color="RED.600">{t("officeClosed")}</Typography>
+              )}
+              {!selectedPublicOfficeHour && (
+                <Typography color="RED.600">{t("noOfficeHours")}</Typography>
+              )}
+              {selectedPublicOfficeHour?.publicMemo && (
+                <p>{selectedPublicOfficeHour.publicMemo}</p>
+              )}
             </FlexWrapper>
           </PublicMemo>
         </Card>

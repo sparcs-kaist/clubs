@@ -56,6 +56,7 @@ describe("Rental API with MySQL", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let representative: string;
+  let fellowDelegate: string;
   let outsider: string;
   let executive: string;
   let executiveId: number;
@@ -109,6 +110,8 @@ describe("Rental API with MySQL", () => {
 
     const delegate = await createStudent(20260081, "Rental delegate");
     representative = authorization({ ...delegate, type: "undergraduate" });
+    const fellow = await createStudent(20260084, "Rental fellow delegate");
+    fellowDelegate = authorization({ ...fellow, type: "undergraduate" });
     const other = await createStudent(20260082, "Rental outsider");
     outsider = authorization({ ...other, type: "undergraduate" });
     const staff = await createStudent(20260083, "Rental executive");
@@ -138,6 +141,14 @@ describe("Rental API with MySQL", () => {
         startTerm: new Date("2026-09-01T00:00:00Z"),
       },
     });
+    await prisma.clubDelegateD.create({
+      data: {
+        clubId,
+        studentId: fellow.studentId,
+        clubDelegateEnum: 2,
+        startTerm: new Date("2026-09-01T00:00:00Z"),
+      },
+    });
 
     const server = app.getHttpServer();
     await request(server)
@@ -164,7 +175,7 @@ describe("Rental API with MySQL", () => {
     await closeDatabase();
   });
 
-  it("accepts only one concurrent claim and releases same-shift stock after actual return", async () => {
+  it("accepts concurrent requests, approves only the FIFO claim and releases same-shift stock after actual return", async () => {
     const server = app.getHttpServer();
     const create = (
       pickup: typeof firstPickup,
@@ -228,17 +239,64 @@ describe("Rental API with MySQL", () => {
 
     const responses = await Promise.all(applicants.map(body => submit(body)));
     expect(responses.map(response => response.status).sort()).toEqual([
-      201, 409,
+      201, 201,
     ]);
-    const winner = responses.findIndex(response => response.status === 201);
+    const winner = responses[0].body.id < responses[1].body.id ? 0 : 1;
     const firstId = responses[winner].body.id;
+    const laterId = responses[1 - winner].body.id;
     const retry = await submit(applicants[winner]).expect(201);
     expect(retry.body.id).toBe(firstId);
-    expect(await prisma.rentalReservation.count()).toBe(1);
+    expect(retry.body).toMatchObject({ status: "REQUESTED", approvedAt: null });
+    expect(await prisma.rentalReservation.count()).toBe(2);
+    const requested = await request(server)
+      .get(`/rentals/items/${itemId}/return-options`)
+      .query({ pickupDate: firstPickup.date })
+      .expect(200);
+    expect(requested.body.options[0]).toMatchObject({
+      availableQuantity: 1,
+      requestedQuantity: 2,
+    });
+    await act(firstId, "checkout").expect(409);
+    await request(server)
+      .post(`/executive/rentals/${firstId}/approve`)
+      .expect(401);
+    await request(server)
+      .post(`/executive/rentals/${firstId}/approve`)
+      .set("Authorization", representative)
+      .expect(401);
+    const fifo = await act(laterId, "approve").expect(409);
+    expect(fifo.body.message).toMatchObject({
+      message: "WAITING_FOR_APPROVAL",
+    });
+    const approvals = await Promise.all([
+      act(firstId, "approve"),
+      act(laterId, "approve"),
+    ]);
+    expect(approvals.map(response => response.status).sort()).toEqual([
+      200, 409,
+    ]);
+    const approved = await act(firstId, "approve").expect(200);
+    expect(approved.body).toMatchObject({
+      status: "RESERVED",
+      approvedAt: now.toISOString(),
+      approvedByExecutiveId: executiveId,
+    });
+    const afterApproval = await request(server)
+      .get(`/rentals/items/${itemId}/return-options`)
+      .query({ pickupDate: firstPickup.date })
+      .expect(200);
+    expect(afterApproval.body.options[0]).toMatchObject({
+      availableQuantity: 0,
+      requestedQuantity: 1,
+    });
+    await act(laterId, "reject", { reason: "중복 신청 정리" }).expect(200);
 
     const second = await submit(create(sharedShift, secondReturn)).expect(201);
     const secondId = second.body.id;
-    expect(second.body.requiresSameDayReturn).toBe(true);
+    expect(second.body.requiresSameDayReturn).toBe(false);
+    expect(
+      (await act(secondId, "approve").expect(200)).body.requiresSameDayReturn,
+    ).toBe(true);
     expect(second.body.pickup).toEqual(sharedShift);
     expect(second.body.return).toEqual(secondReturn);
     expect(second.body).not.toHaveProperty("pickupHourId");
@@ -277,7 +335,7 @@ describe("Rental API with MySQL", () => {
       needsReschedule: true,
     });
     const officeDateReservations = await request(server)
-      .get(`/executive/rentals?officeDate=${sharedShift.date}`)
+      .get(`/executive/rentals?officeDate=${sharedShift.date}&status=RESERVED`)
       .set("Authorization", executive)
       .expect(200);
     expect(officeDateReservations.body.total).toBe(2);
@@ -557,5 +615,284 @@ describe("Rental API with MySQL", () => {
       durationValue: 3,
       regularReturnLimitDate: "2027-01-07",
     });
+  });
+
+  it("allows partial published schedules and authorized club-wide reads while keeping cancellation applicant-only", async () => {
+    now = new Date("2027-03-04T08:00:00Z");
+    const server = app.getHttpServer();
+    await Promise.all(
+      ["2027-03-04", "2027-03-05", "2027-03-08"].map(date =>
+        request(server)
+          .put(`/executive/office-hours/${date}`)
+          .set("Authorization", executive)
+          .send({ openTime: "21:00", closeTime: "22:00", isClosed: false })
+          .expect(200),
+      ),
+    );
+    await request(server)
+      .put("/executive/office-hours/2027-03-06")
+      .set("Authorization", executive)
+      .send({ openTime: "21:00", closeTime: "22:00", isClosed: true })
+      .expect(200);
+    const created = await request(server)
+      .post("/executive/rental-items")
+      .set("Authorization", executive)
+      .send({
+        name: "일부 상근 공개 카트",
+        totalQuantity: 3,
+        durationType: "OFFICE_HOURS",
+        durationValue: 5,
+        isActive: true,
+      })
+      .expect(201);
+    const partialItemId = created.body.id;
+    const options = await request(server)
+      .get(`/rentals/items/${partialItemId}/return-options`)
+      .query({ pickupDate: "2027-03-04" })
+      .expect(200);
+    expect(
+      options.body.options.map(({ date }: { date: string }) => date),
+    ).toEqual(["2027-03-05", "2027-03-08"]);
+    const apply = (token: string, requestedClubId = clubId) =>
+      request(server)
+        .post("/student/rentals")
+        .set("Authorization", token)
+        .send({
+          clubId: requestedClubId,
+          itemId: partialItemId,
+          quantity: 1,
+          pickup: slot("2027-03-04"),
+          return: slot("2027-03-08"),
+          contactPhoneNumber: "010-1234-5678",
+          purpose: "일부 공개 일정 신청",
+          clientRequestId: randomUUID(),
+        });
+    const original = await apply(representative).expect(201);
+    expect(original.body).toMatchObject({
+      durationType: "OFFICE_HOURS",
+      durationValue: 5,
+      regularReturnLimitDate: "2027-03-08",
+      canCancel: true,
+    });
+    const fellowRequest = await apply(fellowDelegate).expect(201);
+    const club = await prisma.club.findUniqueOrThrow({ where: { id: clubId } });
+    const unrelatedClub = await prisma.club.create({
+      data: {
+        nameKr: "다른 대여 동아리",
+        foundingYear: 2020,
+        divisionId: club.divisionId,
+      },
+    });
+    const outsiderStudent = await prisma.student.findFirstOrThrow({
+      where: { number: 20260082 },
+    });
+    await prisma.clubDelegateD.create({
+      data: {
+        clubId: unrelatedClub.id,
+        studentId: outsiderStudent.id,
+        clubDelegateEnum: 1,
+        startTerm: new Date("2026-09-01T00:00:00Z"),
+      },
+    });
+    const unrelated = await apply(outsider, unrelatedClub.id).expect(201);
+    const clubListUrl = `/student/rentals?clubId=${clubId}`;
+    await request(server).get(clubListUrl).expect(401);
+    await request(server)
+      .get(clubListUrl)
+      .set("Authorization", outsider)
+      .expect(403);
+    await request(server)
+      .get(`/student/rentals?clubId=${unrelatedClub.id}`)
+      .set("Authorization", fellowDelegate)
+      .expect(403);
+    const clubList = await request(server)
+      .get(clubListUrl)
+      .set("Authorization", fellowDelegate)
+      .expect(200);
+    expect(clubList.body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: original.body.id, canCancel: false }),
+        expect.objectContaining({ id: fellowRequest.body.id, canCancel: true }),
+      ]),
+    );
+    expect(
+      clubList.body.items.every(
+        ({ clubId: resultClubId }: { clubId: number }) =>
+          resultClubId === clubId,
+      ),
+    ).toBe(true);
+    expect(
+      clubList.body.items.map(({ id }: { id: number }) => id),
+    ).not.toContain(unrelated.body.id);
+    const personal = await request(server)
+      .get("/student/rentals")
+      .set("Authorization", fellowDelegate)
+      .expect(200);
+    expect(personal.body.items.map(({ id }: { id: number }) => id)).toEqual([
+      fellowRequest.body.id,
+    ]);
+    const detailUrl = `/student/rentals/${original.body.id}`;
+    const detail = await request(server)
+      .get(detailUrl)
+      .set("Authorization", fellowDelegate)
+      .expect(200);
+    expect(detail.body).toMatchObject({
+      id: original.body.id,
+      canCancel: false,
+    });
+    expect(detail.body).not.toHaveProperty("contactPhoneNumber");
+    expect(detail.body).not.toHaveProperty("purpose");
+    await request(server)
+      .get(detailUrl)
+      .set("Authorization", outsider)
+      .expect(404);
+    await request(server)
+      .post(`${detailUrl}/cancel`)
+      .set("Authorization", fellowDelegate)
+      .expect(404);
+    expect(
+      await prisma.rentalReservation.findUnique({
+        where: { id: original.body.id },
+      }),
+    ).toMatchObject({ status: "REQUESTED" });
+    const cancelled = await request(server)
+      .post(`/student/rentals/${fellowRequest.body.id}/cancel`)
+      .set("Authorization", fellowDelegate)
+      .expect(200);
+    expect(cancelled.body).toMatchObject({
+      status: "CANCELLED",
+      canCancel: false,
+    });
+  });
+
+  it("checks out outside office hours while protecting earlier confirmed inventory and retaining legacy approvals", async () => {
+    now = new Date("2027-05-03T08:00:00Z");
+    const server = app.getHttpServer();
+    await request(server)
+      .post("/executive/office-hours/generate")
+      .set("Authorization", executive)
+      .send({ from: "2027-05-03", to: "2027-05-13" })
+      .expect(201);
+    const item = await request(server)
+      .post("/executive/rental-items")
+      .set("Authorization", executive)
+      .send({
+        name: "이른 수령 카트",
+        totalQuantity: 1,
+        durationType: "DAYS",
+        durationValue: 14,
+        isActive: true,
+      })
+      .expect(201);
+    const apply = (pickup: string, returned: string) =>
+      request(server)
+        .post("/student/rentals")
+        .set("Authorization", representative)
+        .send({
+          clubId,
+          itemId: item.body.id,
+          quantity: 1,
+          pickup: slot(pickup),
+          return: slot(returned),
+          contactPhoneNumber: "010-1234-5678",
+          purpose: "시간 외 수령 확인",
+          clientRequestId: randomUUID(),
+        });
+    const act = (id: number, action: string) =>
+      request(server)
+        .post(`/executive/rentals/${id}/${action}`)
+        .set("Authorization", executive)
+        .send({});
+    const earlier = await apply("2027-05-03", "2027-05-06").expect(201);
+    const future = await apply("2027-05-10", "2027-05-13").expect(201);
+    await act(earlier.body.id, "approve").expect(200);
+    await act(future.body.id, "approve").expect(200);
+    const blocked = await act(future.body.id, "checkout").expect(409);
+    expect(blocked.body.message).toMatchObject({ message: "OUT_OF_STOCK" });
+    await act(earlier.body.id, "checkout").expect(200);
+    await act(earlier.body.id, "return").expect(200);
+    await request(server)
+      .put("/executive/office-hours/2027-05-10")
+      .set("Authorization", executive)
+      .send({ openTime: "21:00", closeTime: "22:00", isClosed: true })
+      .expect(200);
+    const checkedOut = await act(future.body.id, "checkout").expect(200);
+    expect(checkedOut.body).toMatchObject({
+      status: "CHECKED_OUT",
+      checkedOutAt: now.toISOString(),
+      pickup: slot("2027-05-10"),
+    });
+    const stock = await request(server)
+      .get(`/rentals/items/${item.body.id}/return-options`)
+      .query({ pickupDate: "2027-05-04" })
+      .expect(200);
+    expect(stock.body.options[0]).toMatchObject({
+      date: "2027-05-05",
+      availableQuantity: 0,
+    });
+    await apply("2027-05-04", "2027-05-05").expect(409);
+    now = new Date("2027-05-20T08:00:00Z");
+    await act(future.body.id, "return").expect(200);
+    const prior = await prisma.rentalReservation.findUniqueOrThrow({
+      where: { id: future.body.id },
+    });
+    const legacy = await prisma.rentalReservation.create({
+      data: {
+        ...prior,
+        id: undefined,
+        status: "RESERVED",
+        approvedAt: null,
+        approvedByExecutiveId: null,
+        checkedOutAt: null,
+        checkedOutByExecutiveId: null,
+        returnedAt: null,
+        returnedByExecutiveId: null,
+        clientRequestId: randomUUID(),
+      },
+    });
+    const stillApproved = await act(legacy.id, "approve").expect(200);
+    expect(stillApproved.body).toMatchObject({
+      status: "RESERVED",
+      approvedAt: null,
+      approvedByExecutiveId: null,
+    });
+    const late = await act(legacy.id, "checkout").expect(200);
+    expect(late.body).toMatchObject({
+      status: "CHECKED_OUT",
+      checkedOutAt: now.toISOString(),
+      approvedAt: null,
+    });
+    await act(legacy.id, "return").expect(200);
+    const lateRequest = await prisma.rentalReservation.create({
+      data: {
+        ...prior,
+        id: undefined,
+        status: "REQUESTED",
+        approvedAt: null,
+        approvedByExecutiveId: null,
+        checkedOutAt: null,
+        checkedOutByExecutiveId: null,
+        returnedAt: null,
+        returnedByExecutiveId: null,
+        clientRequestId: randomUUID(),
+      },
+    });
+    const closedApproval = await act(lateRequest.id, "approve").expect(409);
+    expect(closedApproval.body.message).toMatchObject({
+      message: "OFFICE_HOURS_CHANGED",
+    });
+    await request(server)
+      .put("/executive/office-hours/2027-05-10")
+      .set("Authorization", executive)
+      .send({ openTime: "21:00", closeTime: "22:00", isClosed: false })
+      .expect(200);
+    expect(
+      (await act(lateRequest.id, "approve").expect(200)).body,
+    ).toMatchObject({
+      status: "RESERVED",
+      approvedAt: now.toISOString(),
+      approvedByExecutiveId: executiveId,
+    });
+    await act(lateRequest.id, "checkout").expect(200);
   });
 });

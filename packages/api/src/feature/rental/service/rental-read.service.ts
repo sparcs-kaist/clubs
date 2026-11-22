@@ -10,9 +10,11 @@ import type { z } from "zod";
 
 import {
   type apiRentalsExecutive,
+  type apiRentalsMy,
   type ExecutiveRentalReservation,
   type RentalItem,
   type RentalReservation,
+  type StudentRentalReservation,
   zRentalDuration,
   zRentalStatus,
 } from "@clubs/interface/api/rental/v2";
@@ -29,9 +31,12 @@ import {
 } from "../repository/rental.repository";
 import {
   beforeSameDayReturns,
+  canCancelRental,
+  cancellableRentalStatus,
   checkoutQuantity,
   hasSameDayReturn,
   peakReservedQuantity,
+  requestedQuantity,
 } from "./rental-policy";
 import {
   bookedHourIds,
@@ -40,6 +45,7 @@ import {
   RentalScheduleService,
   requireBookedWindow,
   serializeWindow,
+  stockWindow,
   withBookedWindows,
 } from "./rental-schedule.service";
 
@@ -60,18 +66,11 @@ function windowChanged(saved: OfficeWindow, current: OfficeWindow | undefined) {
   return +saved.closesAt !== +current.closesAt;
 }
 
-function isExpiredPickup(row: BookedRental, now: Date) {
-  if (row.status !== "RESERVED") return false;
-  return row.pickup.closesAt <= now;
-}
-
 function appointmentNeedsAttention(
   row: BookedRental,
-  now: Date,
   calendar: Map<string, OfficeWindow>,
 ) {
-  if (row.status === "RESERVED") {
-    if (isExpiredPickup(row, now)) return true;
+  if (cancellableRentalStatus(row.status)) {
     if (windowChanged(row.pickup, calendar.get(row.pickupDate))) return true;
     return windowChanged(row.returned, calendar.get(row.returnDate));
   }
@@ -108,11 +107,8 @@ function waitingForReturn(
   row: BookedRental,
   total: number,
   active: BookedRental[],
-  now: Date,
 ) {
   if (row.status !== "RESERVED") return false;
-  if (row.pickup.opensAt > now) return false;
-  if (row.pickup.closesAt <= now) return false;
   return checkoutQuantity(total, active, row) < row.quantity;
 }
 
@@ -129,6 +125,7 @@ function requireReference<T>(value: T | undefined): T {
 }
 
 type RentalQuery = z.output<typeof apiRentalsExecutive.requestQuery>;
+type StudentRentalQuery = z.output<typeof apiRentalsMy.requestQuery>;
 
 @Injectable()
 export class RentalReadService {
@@ -161,12 +158,18 @@ export class RentalReadService {
     const now = this.clock.now();
     if (pickup.closesAt <= now)
       throw new BadRequestException("INVALID_PICKUP_DATE");
-    const rows = await this.repository.listActiveReservations([itemId]);
-    const active = await this.schedule.bookedRentals(rows);
-    const planned = active.filter(row => !isExpiredPickup(row, now));
+    const [rows, requests] = await Promise.all([
+      this.repository.listActiveReservations([itemId]),
+      this.repository.listRequestedReservations([itemId]),
+    ]);
+    const [booked, requested] = await Promise.all([
+      this.schedule.bookedRentals(rows),
+      this.schedule.bookedRentals(requests),
+    ]);
+    const active = booked.map(stockWindow);
     const availableWithoutSameDayReturns = beforeSameDayReturns(
       item.totalQuantity,
-      planned,
+      active,
       date,
     );
     return {
@@ -177,6 +180,7 @@ export class RentalReadService {
         return {
           ...serializeWindow(window),
           availableQuantity,
+          requestedQuantity: requestedQuantity(requested, date, window.date),
           availableWithoutSameDayReturns: Math.min(
             availableQuantity,
             availableWithoutSameDayReturns,
@@ -186,22 +190,38 @@ export class RentalReadService {
     };
   }
 
-  async myList(studentId: number, query: RentalQuery) {
+  async myList(studentId: number, query: StudentRentalQuery) {
+    const { clubId } = query;
+    if (clubId !== undefined) {
+      await this.clubs.checkStudentDelegate(studentId, clubId);
+    }
     const now = this.clock.now();
     const { items, ...page } = await this.listReservations(
       query,
       now,
-      studentId,
+      clubId === undefined ? studentId : undefined,
+      clubId,
     );
-    return { ...page, items: await this.views(items, now) };
+    const views = await this.views(items, now);
+    return {
+      ...page,
+      items: items.map((row, index) =>
+        this.studentView(row, views[index], studentId),
+      ),
+    };
   }
 
   async myDetail(id: number, studentId: number) {
     const row = await this.requireReservation(id);
-    if (row.studentId !== studentId)
-      throw new NotFoundException("RENTAL_NOT_FOUND");
+    if (row.studentId !== studentId) {
+      const isDelegate = await this.clubs.isStudentDelegate(
+        studentId,
+        row.clubId,
+      );
+      if (!isDelegate) throw new NotFoundException("RENTAL_NOT_FOUND");
+    }
     const [view] = await this.views([row], this.clock.now());
-    return view;
+    return this.studentView(row, view, studentId);
   }
 
   async executiveList(query: RentalQuery) {
@@ -268,6 +288,7 @@ export class RentalReadService {
     query: RentalQuery,
     now: Date,
     studentId?: number,
+    clubId?: number,
   ) {
     const [officeHourIds, overdueReturnHourIds] = await Promise.all([
       query.officeDate === undefined
@@ -281,6 +302,7 @@ export class RentalReadService {
       query,
       { officeHourIds, overdueReturnHourIds },
       studentId,
+      clubId,
     );
   }
 
@@ -337,9 +359,7 @@ export class RentalReadService {
         rental => rental.itemId === row.itemId,
       );
       const total = item.totalQuantity;
-      const planned = itemReservations.filter(
-        rental => !isExpiredPickup(rental, now),
-      );
+      const planned = itemReservations.map(stockWindow);
       return {
         id: row.id,
         clubId: row.clubId,
@@ -357,18 +377,28 @@ export class RentalReadService {
             : requireReference(approvedLimits.get(row.approvedExtensionId)),
         ...zRentalDuration.parse(row),
         createdAt: row.createdAt.toISOString(),
+        approvedAt: row.approvedAt?.toISOString() ?? null,
         checkedOutAt: row.checkedOutAt?.toISOString() ?? null,
         returnedAt: row.returnedAt?.toISOString() ?? null,
         overdue: isOverdue(row, now),
-        needsReschedule: appointmentNeedsAttention(row, now, calendar),
-        requiresSameDayReturn: isExpiredPickup(row, now)
-          ? false
-          : requiresReturn(row, total, planned),
+        needsReschedule: appointmentNeedsAttention(row, calendar),
+        requiresSameDayReturn: requiresReturn(row, total, planned),
         hasDependentPickup: hasDependentPickup(row, total, planned),
-        waitingForReturn: waitingForReturn(row, total, itemReservations, now),
+        waitingForReturn: waitingForReturn(row, total, itemReservations),
         closeReason: row.closeReason,
       };
     });
+  }
+
+  private studentView(
+    row: ReservationRow,
+    view: RentalReservation,
+    studentId: number,
+  ): StudentRentalReservation {
+    return {
+      ...view,
+      canCancel: canCancelRental(row.studentId, studentId, row.status),
+    };
   }
 
   private executiveView(
@@ -384,6 +414,7 @@ export class RentalReadService {
       contactPhoneNumber: row.contactPhoneNumber,
       purpose: row.purpose,
       checkoutMemo: row.checkoutMemo,
+      approvedByExecutiveId: row.approvedByExecutiveId,
       checkedOutByExecutiveId: row.checkedOutByExecutiveId,
       returnedByExecutiveId: row.returnedByExecutiveId,
       extensions: [],

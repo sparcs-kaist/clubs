@@ -1,5 +1,4 @@
 {
-  "publicDescription": "View office hours and closures. All times are in Korea Standard Time.",
   "editDescription": "Select a date to change office hours, add a session, or mark a closure.",
   "previousMonth": "Previous month",
   "nextMonth": "Next month",
@@ -20,7 +19,8 @@
   "publicMemo": "Public note (optional)",
   "internalMemo": "Executive-only memo (optional)",
   "dateMemo": "Office hours note for {date}",
-  "noPublicMemo": "There are no additional announcements.",
+  "officeClosed": "The office is closed.",
+  "noOfficeHours": "No office hours are scheduled for this date.",
   "invalidTimes": "Closing time must be after opening time.",
   "loadingImpact": "Checking rental reservations for this date.",
   "impactError": "Could not check rental reservations for this date.",

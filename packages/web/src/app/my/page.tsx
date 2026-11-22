@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
@@ -64,9 +63,6 @@ const My: React.FC = () => {
         ))}
       {profile && profile.type !== UserTypeEnum.Executive && (
         <MyRegisterFrame profile={profile.type} />
-      )}
-      {isStudent(profile) && (
-        <Link href="/my/rental-business">{t("내 대여 내역")}</Link>
       )}
     </ResponsiveWrapper>
   );

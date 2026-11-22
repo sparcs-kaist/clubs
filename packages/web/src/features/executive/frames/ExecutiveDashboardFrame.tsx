@@ -121,18 +121,33 @@ const ExecutiveDashboardFrame = () => {
           </DashboardSectionInner>
         </FlexWrapper>
       </FlexWrapper>
-      <FlexWrapper direction="column" gap={20}>
-        <SectionTitle>{t("대여 사업")}</SectionTitle>
-        <DashboardSectionInner>
-          <DashboardButton
-            text={t("물품 대여 관리")}
-            link="/executive/rental-business"
-          />
-          <DashboardButton
-            text={t("상근일 관리")}
-            link="/executive/office-hours"
-          />
-        </DashboardSectionInner>
+      <FlexWrapper
+        direction="row"
+        gap={60}
+        style={{ justifyContent: "space-between" }}
+      >
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>{t("상근")}</SectionTitle>
+          <DashboardSectionInner>
+            <DashboardButton
+              text={t("상근일 관리")}
+              link="/executive/office-hours"
+            />
+          </DashboardSectionInner>
+        </FlexWrapper>
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>{t("물품 대여 사업")}</SectionTitle>
+          <DashboardSectionInner>
+            <DashboardButton
+              text={t("대여 물품 관리")}
+              link="/executive/rental-business/items"
+            />
+            <DashboardButton
+              text={t("물품 대여 신청 관리")}
+              link="/executive/rental-business"
+            />
+          </DashboardSectionInner>
+        </FlexWrapper>
       </FlexWrapper>
       <FlexWrapper direction="column" gap={20}>
         <SectionTitle>로그인 갈아끼우기</SectionTitle>

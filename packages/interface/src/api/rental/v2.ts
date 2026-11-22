@@ -4,6 +4,7 @@ import { zOfficeDate } from "@clubs/interface/api/office-hours";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 export const zRentalStatus = z.enum([
+  "REQUESTED",
   "RESERVED",
   "CHECKED_OUT",
   "RETURNED",
@@ -48,6 +49,7 @@ const zRentalReservation = zRentalDuration.extend({
   regularReturnLimitDate: zOfficeDate,
   approvedReturnLimitDate: zOfficeDate.nullable(),
   createdAt: instant,
+  approvedAt: instant.nullable(),
   checkedOutAt: instant.nullable(),
   returnedAt: instant.nullable(),
   overdue: z.boolean(),
@@ -64,6 +66,9 @@ const zRentalExtension = z.object({
   processedByExecutiveId: id,
   processedAt: instant,
 });
+const zStudentRentalReservation = zRentalReservation.extend({
+  canCancel: z.boolean(),
+});
 const zExecutiveRentalReservation = zRentalReservation.extend({
   studentId: id,
   studentName: z.string(),
@@ -71,6 +76,7 @@ const zExecutiveRentalReservation = zRentalReservation.extend({
   contactPhoneNumber: z.string(),
   purpose: z.string(),
   checkoutMemo: z.string().nullable(),
+  approvedByExecutiveId: id.nullable(),
   checkedOutByExecutiveId: id.nullable(),
   returnedByExecutiveId: id.nullable(),
   extensions: z.array(zRentalExtension),
@@ -79,6 +85,9 @@ export type RentalItem = z.infer<typeof zRentalItem>;
 export type RentalSlotSelection = z.infer<typeof zSlotSelection>;
 export type RentalSlot = RentalSlotSelection;
 export type RentalReservation = z.infer<typeof zRentalReservation>;
+export type StudentRentalReservation = z.infer<
+  typeof zStudentRentalReservation
+>;
 export type ExecutiveRentalReservation = z.infer<
   typeof zExecutiveRentalReservation
 >;
@@ -164,6 +173,7 @@ export const apiRentalReturnOptions = endpoint(
     options: z.array(
       zSlotSelection.extend({
         availableQuantity: z.coerce.number().int().nonnegative(),
+        requestedQuantity: z.coerce.number().int().nonnegative(),
         availableWithoutSameDayReturns: z.coerce.number().int().nonnegative(),
       }),
     ),
@@ -182,10 +192,10 @@ export const apiRentalsMy = endpoint(
   () => "/student/rentals",
   "GET",
   empty,
-  pagination,
+  pagination.extend({ clubId: id.optional() }),
   empty,
   200,
-  pageOf(zRentalReservation),
+  pageOf(zStudentRentalReservation),
 );
 export const apiRentalMyDetail = endpoint(
   (rentalId: number) => `/student/rentals/${rentalId}`,
@@ -194,7 +204,7 @@ export const apiRentalMyDetail = endpoint(
   empty,
   empty,
   200,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalCreate = endpoint(
   () => "/student/rentals",
@@ -212,7 +222,7 @@ export const apiRentalCreate = endpoint(
     clientRequestId: z.string().uuid(),
   }),
   201,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalCancel = endpoint(
   (rentalId: number) => `/student/rentals/${rentalId}/cancel`,
@@ -221,7 +231,7 @@ export const apiRentalCancel = endpoint(
   empty,
   empty,
   200,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalsExecutive = endpoint(
   () => "/executive/rentals",
@@ -262,6 +272,7 @@ export const apiRentalCheckout = executiveAction(
   "checkout",
   z.object({ memo: z.string().trim().max(500).optional() }),
 );
+export const apiRentalApprove = executiveAction("approve", empty);
 export const apiRentalReturn = executiveAction("return", empty);
 export const apiRentalExecutiveCancel = executiveAction(
   "cancel",

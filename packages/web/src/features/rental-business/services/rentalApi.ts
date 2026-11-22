@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { apiOfh001 } from "@clubs/interface/api/office-hours";
 import {
+  apiRentalApprove,
   apiRentalCancel,
   apiRentalCheckout,
   apiRentalCreate,
@@ -146,6 +147,7 @@ export const useExecutiveRentalOrder = (userId: number, id: number) =>
   });
 
 export type ExecutiveRentalAction =
+  | { name: "approve"; body: z.infer<typeof apiRentalApprove.requestBody> }
   | { name: "checkout"; body: z.infer<typeof apiRentalCheckout.requestBody> }
   | { name: "return"; body: z.infer<typeof apiRentalReturn.requestBody> }
   | {
@@ -157,6 +159,7 @@ export type ExecutiveRentalAction =
   | { name: "extend"; body: z.infer<typeof apiRentalExtend.requestBody> };
 
 const executiveRentalActions = {
+  approve: apiRentalApprove,
   checkout: apiRentalCheckout,
   return: apiRentalReturn,
   cancel: apiRentalExecutiveCancel,
@@ -226,8 +229,8 @@ export const getRentalErrorMessage = (error: unknown, fallback: string) => {
       return "선택한 일정의 재고가 부족합니다. 수량이나 일정을 다시 선택해 주세요.";
     case "WAITING_FOR_RETURN":
       return "아직 반납이 확인되지 않았습니다. 반납 확인 후 다시 시도해 주세요.";
-    case "PICKUP_NOT_STARTED":
-      return "아직 수령 상근이 시작되지 않았습니다. 수령 일정에 맞춰 확인해 주세요.";
+    case "WAITING_FOR_APPROVAL":
+      return "먼저 접수된 신청이 있습니다. 앞선 신청을 승인하거나 반려한 뒤 다시 시도해 주세요.";
     case "INVALID_RENTAL_STATE":
     case "PICKUP_ALREADY_CONFIRMED":
       return "대여 상태가 변경되었습니다. 최신 내역을 확인해 주세요.";

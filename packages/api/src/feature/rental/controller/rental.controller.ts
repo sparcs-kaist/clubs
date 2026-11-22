@@ -12,6 +12,7 @@ import {
 import type { z } from "zod";
 
 import {
+  apiRentalApprove,
   apiRentalCancel,
   apiRentalCheckout,
   apiRentalCreate,
@@ -172,6 +173,18 @@ export class RentalController {
   detailExecutive(
     @Param() { id }: Input<typeof apiRentalExecutiveDetail.requestParam>,
   ) {
+    return this.reads.executiveDetail(id);
+  }
+
+  @Executive()
+  @Post("/executive/rentals/:id/approve")
+  @HttpCode(200)
+  @UsePipes(new ZodPipe(apiRentalApprove))
+  async approve(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: Input<typeof apiRentalApprove.requestParam>,
+  ) {
+    await this.rentals.approve(id, executive.executiveId);
     return this.reads.executiveDetail(id);
   }
 

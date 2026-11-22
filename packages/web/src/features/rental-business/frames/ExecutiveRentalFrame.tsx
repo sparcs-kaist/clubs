@@ -228,6 +228,12 @@ const ExecutiveOrder = ({
         <p>사용 목적 {order.purpose}</p>
         <p>신청 시각 {formatRentalInstant(order.createdAt)}</p>
         <p>기본 반납 기한 {formatRentalDate(order.regularReturnLimitDate)}</p>
+        {order.approvedAt && (
+          <p>
+            대여 승인 {formatRentalInstant(order.approvedAt)} · 집행부 #
+            {order.approvedByExecutiveId}
+          </p>
+        )}
         {order.checkedOutAt && (
           <p>
             수령 확인 {formatRentalInstant(order.checkedOutAt)} · 집행부 #

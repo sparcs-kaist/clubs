@@ -33,6 +33,7 @@ import {
 import {
   activeRentalStatus,
   addRentalDays,
+  cancellableRentalStatus,
   checkoutQuantity,
   peakReservedQuantity,
   physicalQuantity,
@@ -43,6 +44,7 @@ import {
   RentalScheduleService,
   requireBookedWindow,
   selectionMatches,
+  stockWindow,
 } from "./rental-schedule.service";
 
 type CreateRental = z.output<typeof apiRentalCreate.requestBody>;
@@ -142,7 +144,7 @@ export class RentalService {
         contactPhoneNumber: input.contactPhoneNumber,
         purpose: input.purpose,
         quantity: input.quantity,
-        status: "RESERVED",
+        status: "REQUESTED",
         ...duration,
         regularReturnLimitDate: regularLimit,
         clientRequestId: input.clientRequestId,
@@ -187,6 +189,42 @@ export class RentalService {
   }
 
   @Transactional<TransactionalAdapterPrisma>(readCommitted)
+  async approve(id: number, executiveId: number) {
+    const { row, item } = await this.lockReservation(id);
+    if (row.status === "RESERVED") return row;
+    this.requireStatus(row, "REQUESTED");
+    const [booked] = await this.schedule.bookedRentals([row]);
+    await Promise.all([
+      this.schedule.resolveUnchangedBooked(booked.pickup),
+      this.schedule.resolveUnchangedBooked(booked.returned),
+    ]);
+    const active = await this.activeReservations(item.id);
+    assertCapacity(
+      item.totalQuantity,
+      active,
+      row.quantity,
+      booked.pickupDate,
+      booked.returnDate,
+    );
+    const requests = await this.repository.listRequestedReservations([item.id]);
+    const earlier = requests.filter(request => request.id < row.id);
+    const queued = await this.schedule.bookedRentals(earlier);
+    const used = peakReservedQuantity(
+      [...active, ...queued],
+      booked.pickupDate,
+      booked.returnDate,
+    );
+    if (used + row.quantity > item.totalQuantity) {
+      throw new ConflictException("WAITING_FOR_APPROVAL");
+    }
+    return this.change(row, {
+      status: "RESERVED",
+      approvedAt: this.clock.now(),
+      approvedByExecutiveId: executiveId,
+    });
+  }
+
+  @Transactional<TransactionalAdapterPrisma>(readCommitted)
   async checkout(id: number, executiveId: number, memo?: string) {
     const { row, item } = await this.lockReservation(id);
     if (row.status === "CHECKED_OUT") return row;
@@ -194,15 +232,17 @@ export class RentalService {
 
     const now = this.clock.now();
     const [booked] = await this.schedule.bookedRentals([row]);
-    const [pickup] = await Promise.all([
-      this.schedule.resolveBooked(booked.pickup, now),
-      this.schedule.resolveBooked(booked.returned, now),
-    ]);
-    if (now < pickup.opensAt) throw new ConflictException("PICKUP_NOT_STARTED");
     const active = await this.activeReservations(item.id);
     if (checkoutQuantity(item.totalQuantity, active, booked) < row.quantity) {
       throw new ConflictException("WAITING_FOR_RETURN");
     }
+    assertCapacity(
+      item.totalQuantity,
+      active.filter(reservation => reservation.id !== row.id),
+      row.quantity,
+      [booked.pickupDate, rentalDate(now)].sort()[0],
+      booked.returnDate,
+    );
     return this.change(row, {
       status: "CHECKED_OUT",
       checkedOutAt: now,
@@ -237,7 +277,9 @@ export class RentalService {
         throw new NotFoundException("RENTAL_NOT_FOUND");
     }
     if (row.status === status) return row;
-    this.requireStatus(row, "RESERVED");
+    if (!cancellableRentalStatus(row.status)) {
+      throw new ConflictException("INVALID_RENTAL_STATE");
+    }
     return this.change(row, {
       status,
       closedAt: this.clock.now(),
@@ -249,12 +291,12 @@ export class RentalService {
   @Transactional<TransactionalAdapterPrisma>(readCommitted)
   async reschedule(id: number, input: ScheduleUpdate) {
     const { row, item } = await this.lockReservation(id);
-    this.requireActive(row);
+    if (row.status !== "REQUESTED") this.requireActive(row);
     const now = this.clock.now();
 
     const [booked] = await this.schedule.bookedRentals([row]);
     let { pickup } = booked;
-    if (row.status === "RESERVED") {
+    if (cancellableRentalStatus(row.status)) {
       pickup = input.pickup
         ? await this.schedule.resolve(input.pickup, now)
         : await this.schedule.resolveBooked(pickup, now);
@@ -386,7 +428,8 @@ export class RentalService {
 
   private async activeReservations(itemId: number) {
     const reservations = await this.repository.listActiveReservations([itemId]);
-    return this.schedule.bookedRentals(reservations);
+    const booked = await this.schedule.bookedRentals(reservations);
+    return booked.map(stockWindow);
   }
 
   private async otherReservations(row: RentalReservationRow) {

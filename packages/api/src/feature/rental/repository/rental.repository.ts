@@ -126,6 +126,14 @@ export class RentalRepository {
     return rows.map(reservationFromDb);
   }
 
+  async listRequestedReservations(itemIds: number[]) {
+    const rows = await this.txHost.tx.rentalReservation.findMany({
+      where: { itemId: { in: itemIds }, status: "REQUESTED" },
+      orderBy: { id: "asc" },
+    });
+    return rows.map(reservationFromDb);
+  }
+
   listExtensions(reservationId: number) {
     return this.txHost.tx.rentalExtension.findMany({
       where: { reservationId },
@@ -168,9 +176,11 @@ export class RentalRepository {
       overdueReturnHourIds?: number[];
     },
     studentId?: number,
+    clubId?: number,
   ) {
     const where: Prisma.RentalReservationWhereInput = {
       studentId,
+      clubId,
       status: query.status,
     };
     const filters: Prisma.RentalReservationWhereInput[] = [];

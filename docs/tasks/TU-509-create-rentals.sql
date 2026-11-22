@@ -48,6 +48,8 @@ CREATE TABLE `rental_reservation` (
     `return_hour_id` INTEGER NOT NULL,
     `client_request_id` CHAR(36) NOT NULL,
     `request_fingerprint` CHAR(64) NOT NULL,
+    `approved_at` DATETIME(3) NULL,
+    `approved_by_executive_id` INTEGER NULL,
     `checked_out_at` DATETIME(3) NULL,
     `checked_out_by_executive_id` INTEGER NULL,
     `checkout_memo` VARCHAR(500) NULL,
