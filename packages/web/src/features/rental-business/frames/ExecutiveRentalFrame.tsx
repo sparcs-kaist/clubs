@@ -25,6 +25,7 @@ import {
   RentalSelect,
 } from "../components/RentalFields";
 import {
+  RentalDetailText,
   RentalReservationNotices,
   RentalReservationSummary,
   rentalStatusLabels,
@@ -225,7 +226,9 @@ const ExecutiveOrder = ({
           신청자 {order.studentName} ({order.studentNumber})
         </p>
         <p>연락처 {order.contactPhoneNumber || "미등록"}</p>
-        <p>사용 목적 {order.purpose}</p>
+        <p>
+          사용 목적 <RentalDetailText>{order.purpose}</RentalDetailText>
+        </p>
         <p>신청 시각 {formatRentalInstant(order.createdAt)}</p>
         <p>기본 반납 기한 {formatRentalDate(order.regularReturnLimitDate)}</p>
         {order.approvedAt && (
@@ -240,7 +243,11 @@ const ExecutiveOrder = ({
             {order.checkedOutByExecutiveId}
           </p>
         )}
-        {order.checkoutMemo && <p>인계 메모 {order.checkoutMemo}</p>}
+        {order.checkoutMemo && (
+          <p>
+            인계 메모 <RentalDetailText>{order.checkoutMemo}</RentalDetailText>
+          </p>
+        )}
         {order.returnedAt && (
           <p>
             반납 확인 {formatRentalInstant(order.returnedAt)} · 집행부 #
@@ -256,7 +263,8 @@ const ExecutiveOrder = ({
             {order.extensions.map(extension => (
               <li key={`${extension.processedAt}-${extension.newReturnDate}`}>
                 {formatRentalDate(extension.previousReturnDate)} →{" "}
-                {formatRentalDate(extension.newReturnDate)} · {extension.reason}
+                {formatRentalDate(extension.newReturnDate)} ·{" "}
+                <RentalDetailText>{extension.reason}</RentalDetailText>
                 <br />
                 {formatRentalInstant(extension.processedAt)} · 집행부 #
                 {extension.processedByExecutiveId}

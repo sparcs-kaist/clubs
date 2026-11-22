@@ -148,7 +148,11 @@ const FundingDetailFrame: React.FC<FundingDetailFrameProps> = ({
   }
 
   return (
-    <FlexWrapper direction="column" gap={40}>
+    <FlexWrapper
+      direction="column"
+      gap={40}
+      style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+    >
       <Card outline>
         <FundingStatusSection
           status={data.funding.fundingStatusEnum}

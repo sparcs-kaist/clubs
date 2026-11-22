@@ -79,7 +79,8 @@ const CellText = styled.div.withConfig({
     isGray ? theme.colors.GRAY[300] : theme.colors.BLACK};
   overflow: ${({ contentWrap }) => (contentWrap ? "visible" : "hidden")};
   text-overflow: ${({ contentWrap }) => (contentWrap ? "clip" : "ellipsis")};
-  white-space: ${({ contentWrap }) => (contentWrap ? "normal" : "nowrap")};
+  /* web-newline: single-line -- Cells without contentWrap use fixed-height ellipsis. */
+  white-space: ${({ contentWrap }) => (contentWrap ? "pre-line" : "nowrap")};
   overflow-wrap: anywhere;
   text-align: center;
 `;
@@ -89,7 +90,8 @@ const HeaderInner = styled.div.withConfig({
 })<{ contentWrap: boolean }>`
   font-weight: ${({ theme }) => theme.fonts.WEIGHT.MEDIUM};
   color: ${({ theme }) => theme.colors.WHITE};
-  white-space: ${({ contentWrap }) => (contentWrap ? "normal" : "nowrap")};
+  /* web-newline: single-line -- Headers without contentWrap stay on one line. */
+  white-space: ${({ contentWrap }) => (contentWrap ? "pre-line" : "nowrap")};
   overflow-wrap: anywhere;
   text-align: center;
 `;

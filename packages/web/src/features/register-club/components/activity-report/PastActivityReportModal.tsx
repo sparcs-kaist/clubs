@@ -202,7 +202,11 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
             </Button>
           </FlexWrapper>
         </FlexWrapper>
-        <FlexWrapper gap={20} direction="column">
+        <FlexWrapper
+          gap={20}
+          direction="column"
+          style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+        >
           {!isExecutive &&
             data.activityStatusEnumId === ActivityStatusEnum.Rejected &&
             data.comments.length > 0 && (

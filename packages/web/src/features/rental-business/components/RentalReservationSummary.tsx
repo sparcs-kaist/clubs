@@ -1,3 +1,5 @@
+import styled from "styled-components";
+
 import type {
   RentalReservation,
   RentalStatus,
@@ -10,6 +12,11 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 
 import { formatRentalSlot } from "../utils/rentalSchedule";
 import { RentalActions } from "./RentalFields";
+
+export const RentalDetailText = styled.span`
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+`;
 
 export const rentalStatusLabels: Record<RentalStatus, string> = {
   REQUESTED: "신청 대기",
@@ -74,6 +81,10 @@ export const RentalReservationNotices = ({
       order.hasDependentPickup && (
         <Info text="이 물품의 반납일에 다음 대여가 예정되어 있습니다. 상근 시작 시간에 맞춰 반납해 주세요." />
       )}
-    {order.closeReason && <p>처리 사유 {order.closeReason}</p>}
+    {order.closeReason && (
+      <p>
+        처리 사유 <RentalDetailText>{order.closeReason}</RentalDetailText>
+      </p>
+    )}
   </>
 );
