@@ -49,7 +49,6 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       prevStudent: { id: result.prevStudentId },
       student: { id: result.studentId },
       clubDelegateEnumId: result.clubDelegateEnumId,
-      expectedDelegateTermId: result.expectedDelegateTermId,
       clubDelegateChangeRequestStatusEnum:
         result.clubDelegateChangeRequestStatusEnumId,
       deletedAt: result.deletedAt,
@@ -64,7 +63,6 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       prevStudentId: model.prevStudent.id,
       studentId: model.student.id,
       clubDelegateEnumId: model.clubDelegateEnumId,
-      expectedDelegateTermId: model.expectedDelegateTermId,
       clubDelegateChangeRequestStatusEnumId:
         model.clubDelegateChangeRequestStatusEnum,
       deletedAt: model.deletedAt,
@@ -78,7 +76,6 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       prevStudentId: model.prevStudent.id,
       studentId: model.student.id,
       clubDelegateEnumId: model.clubDelegateEnumId,
-      expectedDelegateTermId: model.expectedDelegateTermId,
       clubDelegateChangeRequestStatusEnumId:
         model.clubDelegateChangeRequestStatusEnum,
     };

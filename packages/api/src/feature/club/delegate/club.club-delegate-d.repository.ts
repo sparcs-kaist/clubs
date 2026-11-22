@@ -87,7 +87,6 @@ export class ClubDelegateDRepository {
       | "clubDelegateEnumId"
       | "prevStudentId"
       | "studentId"
-      | "expectedDelegateTermId"
       | "createdAt"
     >,
   ) {
@@ -121,20 +120,6 @@ export class ClubDelegateDRepository {
     return this.txHost.tx.clubDelegateChangeRequest.updateMany({
       where: { ...where, deletedAt: null, ...pendingDelegateChangeWhere(now) },
       data: { deletedAt: now },
-    });
-  }
-
-  findLegacyRepresentativeTerms(clubId: number, requestedAt: Date) {
-    return this.txHost.tx.clubDelegateD.findMany({
-      where: {
-        clubId,
-        clubDelegateEnum: ClubDelegateEnum.Representative,
-        startTerm: { lt: requestedAt },
-        OR: [{ endTerm: { gt: requestedAt } }, { endTerm: null }],
-        deletedAt: null,
-      },
-      select: { id: true, studentId: true },
-      take: 2,
     });
   }
 

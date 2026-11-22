@@ -24,7 +24,6 @@ export const zClubDelegateChangeRequest = z.object({
   prevStudent: z.object({ id: zStudent.shape.id }),
   student: z.object({ id: zStudent.shape.id }),
   clubDelegateEnumId: z.nativeEnum(ClubDelegateEnum),
-  expectedDelegateTermId: zId.nullable(),
   clubDelegateChangeRequestStatusEnum: z
     .nativeEnum(ClubDelegateChangeRequestStatusEnum)
     .openapi({

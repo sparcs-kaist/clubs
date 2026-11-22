@@ -232,9 +232,7 @@ describe("club delegate requests with MySQL", () => {
     ).toMatchObject({ clubDelegateChangeRequestStatusEnumId: Status.Applied });
   });
 
-  it("rejects a request if the proposed role has changed", async () => {
-    await nominate();
-    const { id } = await prisma.clubDelegateChangeRequest.findFirstOrThrow();
+  it("invalidates a pending request when the current delegate is removed", async () => {
     await prisma.clubDelegateD.create({
       data: {
         clubId,
@@ -243,8 +241,52 @@ describe("club delegate requests with MySQL", () => {
         startTerm,
       },
     });
+    await nominate();
+    const { id } = await prisma.clubDelegateChangeRequest.findFirstOrThrow();
+    const sibling = await seedMember(20260004);
+    await nominate(sibling.studentId, Role.Delegate2);
+    await nominate(0);
+
+    const remaining = await service.getStudentClubsDelegatesRequests({
+      studentId: sibling.studentId,
+    });
+    expect(remaining.requests).toEqual([
+      expect.objectContaining({ delegateEnumId: Role.Delegate2 }),
+    ]);
     await expect(accept(id, newPhone)).rejects.toThrow(
-      "해당 직책이 변경되었습니다.",
+      "이미 처리되었거나 만료된 요청입니다.",
+    );
+    expect(await currentTargetRoles()).toHaveLength(0);
+    expect(
+      await repo.findDelegateByStudentId(other.studentId, now),
+    ).toHaveLength(0);
+    expect(
+      await prisma.user.findUnique({ where: { id: target.userId } }),
+    ).toMatchObject({ phoneNumber: oldPhone });
+  });
+
+  it("blocks a second request for the same candidate and allows a different candidate for another role", async () => {
+    await nominate();
+    await expect(nominate(target.studentId, Role.Delegate2)).rejects.toThrow(
+      "해당 직책 또는 대상자에게 대기 중인 요청이 있습니다.",
+    );
+    await expect(
+      nominate(other.studentId, Role.Delegate2),
+    ).resolves.toBeUndefined();
+  });
+
+  it("rejects an older representative request when the requester no longer holds the role", async () => {
+    const { id } = await prisma.clubDelegateChangeRequest.create({
+      data: {
+        clubId,
+        prevStudentId: other.studentId,
+        studentId: target.studentId,
+        clubDelegateChangeRequestStatusEnumId: Status.Applied,
+        createdAt: now,
+      },
+    });
+    await expect(accept(id, newPhone)).rejects.toThrow(
+      "요청 이후 동아리 대표자가 변경되었습니다.",
     );
     expect(await currentTargetRoles()).toHaveLength(0);
     expect(

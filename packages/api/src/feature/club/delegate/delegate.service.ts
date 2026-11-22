@@ -46,10 +46,6 @@ import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/public
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "./club.club-delegate-d.repository";
-import {
-  matchesLegacyRepresentativeTerm,
-  requiresLegacyRepresentativeTerm,
-} from "./delegate-change-policy";
 
 const readCommitted = {
   isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
@@ -204,7 +200,7 @@ export default class ClubDelegateService {
     const now = this.clock.now();
     const terms = await repo.findDelegateByClubId(clubId, now);
     this.requireRepresentative(terms, studentId);
-    const current = this.currentTermFor(terms, clubDelegateEnumId);
+    this.currentTermFor(terms, clubDelegateEnumId);
 
     if (targetStudentId === 0) {
       if (clubDelegateEnumId === ClubDelegateEnum.Representative) {
@@ -245,7 +241,6 @@ export default class ClubDelegateService {
       clubDelegateEnumId,
       prevStudentId: studentId,
       studentId: targetStudentId,
-      expectedDelegateTermId: current?.id ?? null,
       createdAt: now,
     });
   }
@@ -382,23 +377,12 @@ export default class ClubDelegateService {
     const terms = await repo.findDelegateByClubId(request.clubId, now);
     const current = this.currentTermFor(terms, role);
 
-    let expected = request.expectedDelegateTermId;
-    if (requiresLegacyRepresentativeTerm(role, expected)) {
-      const legacyTerms = await repo.findLegacyRepresentativeTerms(
-        request.clubId,
-        request.createdAt,
-      );
-      if (
-        !matchesLegacyRepresentativeTerm(legacyTerms, request.prevStudentId)
-      ) {
+    if (role === ClubDelegateEnum.Representative) {
+      if (current?.studentId !== request.prevStudentId) {
         throw new ConflictException(
-          "요청 당시 대표자 임기를 확인할 수 없습니다. 변경을 다시 요청해 주세요.",
+          "요청 이후 동아리 대표자가 변경되었습니다.",
         );
       }
-      expected = legacyTerms[0].id;
-    }
-    if ((current?.id ?? null) !== expected) {
-      throw new ConflictException("요청 이후 해당 직책이 변경되었습니다.");
     }
 
     const candidate = await this.validateCandidate(
