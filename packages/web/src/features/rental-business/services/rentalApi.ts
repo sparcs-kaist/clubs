@@ -225,6 +225,8 @@ export const getRentalErrorMessage = (error: unknown, fallback: string) => {
       return "물품의 기본 대여 기한에 맞는 반납일을 선택해 주세요.";
     case "INVALID_EXTENSION":
       return "기존 반납일보다 늦고 연장 가능한 상근일을 선택해 주세요.";
+    case "INVALID_RENTAL_QUANTITY":
+      return "1개부터 현재 신청·예약 수량까지만 처리할 수 있습니다.";
     case "OUT_OF_STOCK":
       return "선택한 일정의 재고가 부족합니다. 수량이나 일정을 다시 선택해 주세요.";
     case "WAITING_FOR_RETURN":

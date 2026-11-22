@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { zOfficeDate } from "@clubs/interface/api/office-hours";
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 export const zRentalStatus = z.enum([
   "REQUESTED",
@@ -217,7 +216,6 @@ export const apiRentalCreate = endpoint(
     quantity: z.coerce.number().int().positive(),
     pickup: zSlotSelection,
     return: zSlotSelection,
-    contactPhoneNumber: zKrPhoneNumber,
     purpose: z.string().trim().min(1).max(500),
     clientRequestId: z.string().uuid(),
   }),
@@ -270,9 +268,15 @@ const executiveAction = <Body extends z.ZodTypeAny>(
   );
 export const apiRentalCheckout = executiveAction(
   "checkout",
-  z.object({ memo: z.string().trim().max(500).optional() }),
+  z.object({
+    memo: z.string().trim().max(500).optional(),
+    quantity: z.coerce.number().int().positive().optional(),
+  }),
 );
-export const apiRentalApprove = executiveAction("approve", empty);
+export const apiRentalApprove = executiveAction(
+  "approve",
+  z.object({ quantity: z.coerce.number().int().positive().optional() }),
+);
 export const apiRentalReturn = executiveAction("return", empty);
 export const apiRentalExecutiveCancel = executiveAction(
   "cancel",

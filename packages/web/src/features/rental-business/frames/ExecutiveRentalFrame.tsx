@@ -224,7 +224,7 @@ const ExecutiveOrder = ({
         <p>
           신청자 {order.studentName} ({order.studentNumber})
         </p>
-        <p>연락처 {order.contactPhoneNumber}</p>
+        <p>연락처 {order.contactPhoneNumber || "미등록"}</p>
         <p>사용 목적 {order.purpose}</p>
         <p>신청 시각 {formatRentalInstant(order.createdAt)}</p>
         <p>기본 반납 기한 {formatRentalDate(order.regularReturnLimitDate)}</p>

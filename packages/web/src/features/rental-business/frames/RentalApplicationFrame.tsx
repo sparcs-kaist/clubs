@@ -17,7 +17,6 @@ import {
   type Profile,
   useAuth,
 } from "@sparcs-clubs/web/common/providers/AuthContext";
-import useUserPhoneNumber from "@sparcs-clubs/web/common/services/getUserPhoneNumber";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 
 import ClubRentalOrders from "../components/ClubRentalOrders";
@@ -39,6 +38,7 @@ import {
   useRentalOfficeHours,
   useRentalReturnOptions,
 } from "../services/rentalApi";
+import { rentalQuantityState } from "../utils/rentalQuantity";
 import {
   formatRentalDuration,
   formatRentalSlot,
@@ -49,13 +49,10 @@ import {
 const RentalApplicationForm = ({
   club,
   applicant,
-  savedPhone,
 }: {
   club: { id: number; name: string };
   applicant: string;
-  savedPhone: string | null;
 }) => {
-  const [phone, setPhone] = useState<string>();
   const [itemId, setItemId] = useState(0);
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
@@ -88,15 +85,9 @@ const RentalApplicationForm = ({
   );
   const pickup = pickupSlots?.find(slot => slot.date === pickupDate);
   const availableQuantity = returnSlot?.availableQuantity ?? 0;
-  const dependsOnReturn =
-    returnSlot && quantity > returnSlot.availableWithoutSameDayReturns;
+  const quantityState = returnSlot && rentalQuantityState(quantity, returnSlot);
   const canSubmit =
-    selectedItem &&
-    pickup &&
-    returnSlot &&
-    Number.isInteger(quantity) &&
-    quantity > 0 &&
-    quantity <= availableQuantity;
+    selectedItem && pickup && returnSlot && quantityState?.canRequest;
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,7 +99,6 @@ const RentalApplicationForm = ({
       quantity,
       pickup: rentalSlotSelection(pickup),
       return: rentalSlotSelection(returnSlot),
-      contactPhoneNumber: (phone ?? savedPhone ?? "").trim(),
       purpose: String(form.get("purpose") ?? "").trim(),
     };
     const key = JSON.stringify(body);
@@ -224,11 +214,28 @@ const RentalApplicationForm = ({
               min={1}
               max={availableQuantity || undefined}
               disabled={!returnSlot}
+              aria-invalid={quantityState?.exceedsAvailable || undefined}
+              aria-describedby={
+                quantityState?.exceedsAvailable
+                  ? "rental-quantity-error"
+                  : undefined
+              }
               value={quantity || ""}
               onChange={event => setQuantity(Number(event.target.value))}
             />
           </RentalField>
         </RentalFieldGrid>
+        {quantityState?.exceedsAvailable && (
+          <p id="rental-quantity-error" role="alert">
+            현재 예약된 물품보다 많은 개수를 신청하였습니다. 최대{" "}
+            {availableQuantity}개까지 신청할 수 있습니다.
+          </p>
+        )}
+        {quantityState?.waitingForApproval && (
+          <div role="status">
+            <Info text="현재 신청된 물품의 개수를 초과합니다. 실제 승인되는 개수가 더 적을 수 있습니다" />
+          </div>
+        )}
         {returnOptions.isLoading && <AsyncBoundary isLoading isError={false} />}
         {returnOptions.isError && (
           <RentalError
@@ -243,23 +250,9 @@ const RentalApplicationForm = ({
           ) && (
             <Info text="선택한 수령일에 가능한 반납 일정과 재고가 없습니다. 수령일을 바꿔 주세요." />
           )}
-        {dependsOnReturn && (
+        {quantityState?.dependsOnReturn && (
           <Info text="수령일에 같은 물품이 반납될 예정입니다. 집행부가 반납을 확인한 뒤 수령할 수 있습니다." />
         )}
-        <RentalField>
-          연락처
-          <RentalInput
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            placeholder="010-1234-5678"
-            pattern="010-[0-9]{4}-[0-9]{4}"
-            maxLength={13}
-            value={phone ?? savedPhone ?? ""}
-            onChange={event => setPhone(event.target.value)}
-            required
-          />
-        </RentalField>
         <RentalField>
           사용 목적
           <RentalTextarea name="purpose" maxLength={500} required />
@@ -286,7 +279,6 @@ const RentalApplicationForm = ({
 const RentalApplication = ({ profile }: { profile: Profile }) => {
   const clubs = useRentalEligibleClubs(profile.id);
   const managedClub = useGetMyManageClub();
-  const phone = useUserPhoneNumber({ profile: profile.type }, profile.id);
   const router = useRouter();
 
   if (clubs.isPending || managedClub.isPending) {
@@ -319,18 +311,10 @@ const RentalApplication = ({ profile }: { profile: Profile }) => {
 
   return (
     <>
-      {phone.isError && (
-        <RentalError
-          error={phone.error}
-          fallback="저장된 연락처를 불러오지 못했습니다. 연락처를 직접 입력하거나 다시 불러와 주세요."
-          retry={() => phone.refetch()}
-        />
-      )}
       <RentalApplicationForm
         key={club.id}
         club={club}
         applicant={profile.name}
-        savedPhone={phone.data?.phoneNumber ?? null}
       />
       <FlexWrapper direction="column" gap={16}>
         <SectionTitle>내 동아리 대여 신청 목록</SectionTitle>
