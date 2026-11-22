@@ -6,6 +6,7 @@ import { FixtureClassEnum } from "@clubs/interface/common/enum/funding.enum";
 import ThumbnailPreviewList from "@sparcs-clubs/web/common/components/File/ThumbnailPreviewList";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import { formatCurrency } from "@sparcs-clubs/web/utils/format";
 import {
   classEnumMap,
   evidenceEnumMap,
@@ -23,6 +24,9 @@ const FixtureEvidenceList: React.FC<FixtureEvidenceListProps> = ({
   data,
 }) => {
   const content = isFixture ? "비품" : "동아리 용품";
+  const evidence = isFixture ? data.fixture : data.clubSupplies;
+  const price = evidence?.price;
+  const formattedPrice = price == null ? "-" : `${formatCurrency(price)}원`;
 
   const { purpose, fileList } = useMemo(() => {
     if (isFixture) {
@@ -76,6 +80,12 @@ const FixtureEvidenceList: React.FC<FixtureEvidenceListProps> = ({
       </ListItem>
       <ListItem>
         {content}명: {isFixture ? data.fixture?.name : data.clubSupplies?.name}
+      </ListItem>
+      <ListItem>
+        {content} 개수: {evidence?.number ?? "-"}
+      </ListItem>
+      <ListItem>
+        {content} 개별 단가: {formattedPrice}
       </ListItem>
       <ListItem>{content} 증빙</ListItem>
 
