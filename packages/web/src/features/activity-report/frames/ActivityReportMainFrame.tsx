@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 
 import { ApiClb015ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb015";
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import IconButton from "@sparcs-clubs/web/common/components/Buttons/IconButton";
@@ -11,6 +12,7 @@ import Info from "@sparcs-clubs/web/common/components/Info";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
+import { formatSimpleDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
 
 import CurrentActivityReportTable from "../components/CurrentActivityReportTable";
 import PastActivityReportList from "../components/PastActivityReportTable";
@@ -73,7 +75,16 @@ const ActivityReportMainFrame: React.FC<ActivityReportMainFrameProps> = ({
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FoldableSectionTitle childrenMargin="20px" title="신규 활동 보고서">
           <FlexWrapper direction="column" gap={20}>
-            <Info text={newActivityReportListSectionInfoText(deadline)} />
+            <Info text={newActivityReportListSectionInfoText(deadline)}>
+              {deadline?.objectionDeadline &&
+                deadline.deadline?.activityDeadlineEnum !==
+                  ActivityDeadlineEnum.Exception && (
+                  <Typography>
+                    이의제기 마감{" "}
+                    {formatSimpleDateTime(deadline.objectionDeadline)}
+                  </Typography>
+                )}
+            </Info>
             <FlexWrapper
               direction="row"
               gap={16}

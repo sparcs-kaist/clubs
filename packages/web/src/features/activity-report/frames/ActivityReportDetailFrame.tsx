@@ -19,6 +19,8 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
+import ReviewChangeHistoryButton from "@sparcs-clubs/web/features/executive/components/ReviewChangeHistoryButton";
+import ReviewInternalMemoCard from "@sparcs-clubs/web/features/executive/components/ReviewInternalMemoCard";
 import { getActivityTypeLabel } from "@sparcs-clubs/web/types/activityType";
 import {
   formatDate,
@@ -106,6 +108,8 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
   const isProgressVisible =
     profile.type === UserTypeEnum.Undergraduate ||
     profile.type === UserTypeEnum.Executive;
+  const isExecutiveReview =
+    profile.type === UserTypeEnum.Executive && !isOperatingCommittee;
 
   const navigateToActivityReportList = () => {
     const profileType: UserTypeEnum = profile.type;
@@ -224,6 +228,15 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
         }}
       >
         <Card outline padding="32px" gap={20}>
+          {isExecutiveReview && (
+            <FlexWrapper justify="flex-end">
+              <ReviewChangeHistoryButton
+                key={id}
+                kind="activity"
+                id={Number(id)}
+              />
+            </FlexWrapper>
+          )}
           {(isProgressVisible || isOperatingCommittee) && (
             <ActivitySection label="집행부 승인 상태">
               <ActivityReportStatusSection
@@ -319,8 +332,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
           )}
         </Card>
 
-        {profile.type === UserTypeEnum.Executive &&
-          !isOperatingCommittee &&
+        {isExecutiveReview &&
           activityDeadline?.canApprove &&
           !isPastActivityReport && (
             <ExecutiveActivityReportApprovalSection
@@ -328,6 +340,10 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
               clubId={data.clubId}
             />
           )}
+
+        {isExecutiveReview && (
+          <ReviewInternalMemoCard key={id} kind="activity" id={Number(id)} />
+        )}
 
         {!isOperatingCommittee && (
           <FlexWrapper gap={20} justify="space-between">

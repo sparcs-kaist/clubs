@@ -12,7 +12,11 @@ import {
 } from "../repository/funding.deadline.repository";
 import { SemesterPublicService } from "./semester.public.service";
 
-type FundingDeadlineSearchQuery = {};
+type FundingDeadlineSearchQuery = {
+  semesterId?: number;
+  date?: Date;
+  deadlineEnum?: FundingDeadlineEnum | FundingDeadlineEnum[];
+};
 
 type FundingDeadlineLoadQuery = {
   semesterId?: number;

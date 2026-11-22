@@ -75,6 +75,10 @@ import apiAct029, {
   ApiAct029RequestUrl,
   ApiAct029ResponseOk,
 } from "@clubs/interface/api/activity/endpoint/apiAct029";
+import apiAct031, {
+  type ApiAct031RequestParam,
+  ApiAct031RequestUrl,
+} from "@clubs/interface/api/activity/endpoint/apiAct031";
 import {
   apiAct001,
   type ApiAct001RequestBody,
@@ -128,6 +132,12 @@ import {
   apiAct030,
   ApiAct030ResponseOk,
 } from "@clubs/interface/api/activity/index";
+import {
+  deleteReviewInternalMemo,
+  getReviewInternalMemo,
+  putReviewInternalMemo,
+  type ReviewInternalMemoBody,
+} from "@clubs/interface/api/review/endpoint/internalMemo";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -565,5 +575,59 @@ export default class ActivityController {
         //user.studentId,
       );
     return result;
+  }
+
+  @Executive()
+  @Get(getReviewInternalMemo.url("activity", ":id"))
+  @UsePipes(new ZodPipe(getReviewInternalMemo))
+  getExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+  ) {
+    return this.activityService.getExecutiveInternalMemo(
+      id,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Put(putReviewInternalMemo.url("activity", ":id"))
+  @UsePipes(new ZodPipe(putReviewInternalMemo))
+  putExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+    @Body() body: ReviewInternalMemoBody,
+  ) {
+    return this.activityService.putExecutiveInternalMemo(
+      id,
+      body,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Delete(deleteReviewInternalMemo.url("activity", ":id"))
+  @UsePipes(new ZodPipe(deleteReviewInternalMemo))
+  deleteExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+  ) {
+    return this.activityService.deleteExecutiveInternalMemo(
+      id,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Get(ApiAct031RequestUrl)
+  @UsePipes(new ZodPipe(apiAct031))
+  getExecutiveChangeHistory(
+    @GetExecutive() user: GetExecutive,
+    @Param() param: ApiAct031RequestParam,
+  ) {
+    return this.activityService.getExecutiveChangeHistory(
+      user.executiveId,
+      param.activityId,
+    );
   }
 }

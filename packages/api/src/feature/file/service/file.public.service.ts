@@ -16,6 +16,11 @@ export default class FilePublicService {
     private appConfigService: AppConfigService,
   ) {}
 
+  async getFileNamesByIds(fileIds: string[]): Promise<Map<string, string>> {
+    const files = await this.fileRepository.findByIds(fileIds);
+    return new Map(files.map(file => [file.id, file.name]));
+  }
+
   async getFileUrl(fileId: string): Promise<string> {
     const file = await this.fileRepository.findById(fileId);
 

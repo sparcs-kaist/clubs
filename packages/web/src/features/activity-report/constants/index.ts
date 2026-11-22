@@ -25,11 +25,7 @@ export const activityDeadlineEnumToString = (
 export const newActivityReportListSectionInfoText = (
   data?: ApiAct018ResponseOk,
 ) => {
-  // 기간이 없거나 이의제기 기간인 경우 기간 정보를 표시하지 않음
-  if (
-    data?.deadline == null ||
-    data?.deadline.activityDeadlineEnum === ActivityDeadlineEnum.Exception
-  ) {
+  if (data?.deadline == null) {
     return "현재는 활동 보고서 기간이 아닙니다.";
   }
 

@@ -70,14 +70,24 @@ import {
   IFundingRequest,
   IFundingResponse,
 } from "@clubs/interface/api/funding/type/funding.type";
+import type {
+  ReviewInternalMemoBody,
+  ReviewInternalMemoResponse,
+} from "@clubs/interface/api/review/endpoint/internalMemo";
+import { zReviewChangeHistory } from "@clubs/interface/api/review/type/review-change-history.type";
 import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
-import { ActivityDurationTypeEnum } from "@clubs/interface/common/enum/activity.enum";
+import {
+  ActivityDurationTypeEnum,
+  ActivityTypeEnum,
+} from "@clubs/interface/common/enum/activity.enum";
 import {
   FundingDeadlineEnum,
   FundingStatusEnum,
 } from "@clubs/interface/common/enum/funding.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { labelReviewChangeHistory } from "@sparcs-clubs/api/common/review/label-review-change-history";
+import { retryInternalMemoWrite } from "@sparcs-clubs/api/common/review/retry-internal-memo-write";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -140,6 +150,7 @@ export default class FundingService {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([FundingDeadlineEnum.Writing]);
     this.validatePurchase(body);
+    await this.validateFoodExpense(body);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
@@ -454,7 +465,7 @@ export default class FundingService {
     param: ApiFnd003RequestParam,
     studentId: number,
   ): Promise<ApiFnd003ResponseOk> {
-    const stored = await this.fundingRepository.fetch(param.id);
+    const stored = await this.fundingRepository.fetchForUpdate(param.id);
     await this.clubPublicService.checkStudentDelegate(
       studentId,
       stored.club.id,
@@ -464,22 +475,52 @@ export default class FundingService {
         "지원금 신청의 동아리를 변경할 수 없습니다.",
       );
     }
-    await this.checkDeadline([
+    const activeDeadlines = await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
     ]);
+    const isModificationPeriod = activeDeadlines.some(
+      deadline => deadline.deadlineEnum === FundingDeadlineEnum.Modification,
+    );
+    const isNameChanged = body.name !== stored.name;
+    if (isModificationPeriod && isNameChanged) {
+      throw new BadRequestException(
+        "수정 제출 기간에는 지원금 항목명을 변경할 수 없습니다.",
+      );
+    }
     this.validatePurchase(body, stored);
+    await this.validateFoodExpense(body);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
 
-    return this.fundingRepository.put(param.id, body, {
+    const updated = await this.fundingRepository.put(param.id, body, {
       activityD,
       fundingStatusEnum,
       approvedAmount,
     });
+    await this.fundingRepository.recordChangeHistory(
+      stored,
+      studentId,
+      this.clock.now(),
+    );
+    return updated;
+  }
+
+  private async validateFoodExpense(body: IFundingRequest): Promise<void> {
+    const { isFoodExpense, foodExpense } = body;
+    if (!isFoodExpense && !foodExpense) return;
+
+    const activityId = body.purposeActivity.id;
+    if (activityId === null) return;
+    const activity = await this.activityPublicService.fetchSummary(activityId);
+    if (activity.activityTypeEnum === ActivityTypeEnum.notMatchedActivity) {
+      throw new BadRequestException(
+        "동아리 성격에 합치하지 않는 활동은 식비를 증빙할 수 없습니다.",
+      );
+    }
   }
 
   private validatePurchase(body: IFundingRequest, stored?: MFunding): void {
@@ -598,20 +639,24 @@ export default class FundingService {
    */
   async getPublicFundingsDeadline(): Promise<ApiFnd007ResponseOk> {
     const now = this.clock.now();
-    const [targetDuration, allDeadlines] = await Promise.all([
-      this.activityDurationPublicService.load(),
-      this.fundingDeadlinePublicService.search({}),
-    ]);
-
-    // 현재 날짜에 해당하는 deadline 찾기
-    const todayDeadline = allDeadlines.find(
-      deadline => deadline.startTerm <= now && now <= deadline.endTerm,
+    const targetDuration = await this.activityDurationPublicService.load();
+    const deadlines = await this.fundingDeadlinePublicService.search({
+      semesterId: targetDuration.semester.id,
+    });
+    const activeDeadlines = deadlines.filter(
+      ({ startTerm, endTerm }) => startTerm <= now && now < endTerm,
     );
+    const todayDeadline =
+      activeDeadlines.find(
+        deadline => deadline.deadlineEnum === FundingDeadlineEnum.Modification,
+      ) ?? activeDeadlines[0];
+    const objectionDeadline = deadlines
+      .filter(
+        deadline => deadline.deadlineEnum === FundingDeadlineEnum.Exception,
+      )
+      .sort((a, b) => b.endTerm.getTime() - a.endTerm.getTime())[0]?.endTerm;
 
-    return {
-      targetDuration,
-      deadline: todayDeadline,
-    };
+    return { targetDuration, deadline: todayDeadline, objectionDeadline };
   }
 
   private async getPastActivityDurationsWithFunding(
@@ -1047,6 +1092,27 @@ export default class FundingService {
     };
   }
 
+  async getExecutiveChangeHistory(executiveId: number, fundingId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const history = zReviewChangeHistory.parse(
+      await this.fundingRepository.findChangeHistory(fundingId),
+    );
+    return labelReviewChangeHistory(history, {
+      files: ids => this.filePublicService.getFileNamesByIds(ids),
+      students: ids => this.userPublicService.getStudentMapByIds(ids),
+      activities: async ids => {
+        const names = await Promise.all(
+          ids.map(id => this.activityPublicService.getActivityNameById(id)),
+        );
+        return new Map(
+          names.flatMap(activity =>
+            activity ? [[activity.id, activity.name] as const] : [],
+          ),
+        );
+      },
+    });
+  }
+
   /**
    * @description 집행부원이 검토를 위해 지원금 신청을 조회합니다.
    * @returns 집행부원 검토를 위한 지원금 신청 정보를 리턴합니다.
@@ -1208,8 +1274,8 @@ export default class FundingService {
     };
   }
 
-  private async checkDeadline(enums: Array<FundingDeadlineEnum>) {
-    await this.fundingDeadlinePublicService
+  private checkDeadline(enums: FundingDeadlineEnum[]) {
+    return this.fundingDeadlinePublicService
       .search({
         date: this.clock.now(),
         deadlineEnum: enums,
@@ -1235,5 +1301,48 @@ export default class FundingService {
       );
     }
     return activityD;
+  }
+
+  async getExecutiveInternalMemo(
+    id: number,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    return { memo: await this.fundingRepository.getInternalMemo(id) };
+  }
+
+  putExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    return retryInternalMemoWrite(() =>
+      this.saveExecutiveInternalMemo(id, body, executiveId),
+    );
+  }
+
+  @Transactional()
+  private async saveExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const executive =
+      await this.userPublicService.fetchExecutiveSummary(executiveId);
+    const memo = await this.fundingRepository.putInternalMemo(id, {
+      content: body.content,
+      updatedAt: this.clock.now(),
+      updatedBy: executive.name,
+      updatedByExecutiveId: executiveId,
+    });
+    return { memo };
+  }
+
+  @Transactional()
+  async deleteExecutiveInternalMemo(id: number, executiveId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    await this.fundingRepository.deleteInternalMemo(id);
+    return {};
   }
 }

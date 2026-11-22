@@ -1,6 +1,8 @@
 import { overlay } from "overlay-kit";
 import React from "react";
 
+import { ActivityDeadlineEnum } from "@clubs/interface/common/enum/activity.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
@@ -11,6 +13,7 @@ import Typography from "@sparcs-clubs/web/common/components/Typography";
 import ActivityReportForm from "../components/ActivityReportForm";
 import useGetInitialActivityReportFormData from "../hooks/useGetInitialActivityReportFormData";
 import useUpdateActivityReport from "../hooks/useUpdateActivityReport";
+import useGetActivityDeadline from "../services/useGetActivityDeadline";
 import { ActivityReportFormData } from "../types/form";
 
 interface ActivityReportEditFrameProps {
@@ -27,6 +30,14 @@ const ActivityReportEditFrame: React.FC<ActivityReportEditFrameProps> = ({
     useGetInitialActivityReportFormData(activityId);
   const { mutateAsync: updateActivityReport } =
     useUpdateActivityReport(activityId);
+  const {
+    data: activityDeadline,
+    isLoading: isLoadingDeadline,
+    isError: isErrorDeadline,
+  } = useGetActivityDeadline();
+  const isNameLocked =
+    activityDeadline?.deadline?.activityDeadlineEnum ===
+    ActivityDeadlineEnum.Modification;
 
   const handleSubmit = (_data: ActivityReportFormData) => {
     updateActivityReport(_data, {
@@ -72,11 +83,15 @@ const ActivityReportEditFrame: React.FC<ActivityReportEditFrameProps> = ({
         enableLast
       />
 
-      <AsyncBoundary isLoading={isLoading} isError={isError}>
+      <AsyncBoundary
+        isLoading={isLoading || isLoadingDeadline}
+        isError={isError || isErrorDeadline}
+      >
         <ActivityReportForm
           clubId={clubId}
           onSubmit={handleSubmit}
           initialData={data}
+          lockedName={isNameLocked ? data.name : undefined}
         />
       </AsyncBoundary>
     </FlexWrapper>
