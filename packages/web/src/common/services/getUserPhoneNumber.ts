@@ -10,12 +10,17 @@ import {
   defineAxiosMock,
 } from "@sparcs-clubs/web/lib/axios";
 
-const useUserPhoneNumber = (requestQuery: ApiUsr002RequestQuery) =>
+const useUserPhoneNumber = (
+  requestQuery: ApiUsr002RequestQuery,
+  userId: number | undefined,
+) =>
   useQuery<ApiUsr002ResponseOk, Error>({
-    queryKey: [apiUsr002.url(), requestQuery],
-    queryFn: async (): Promise<ApiUsr002ResponseOk> => {
+    queryKey: [apiUsr002.url(), userId, requestQuery],
+    enabled: userId !== undefined,
+    queryFn: async ({ signal }): Promise<ApiUsr002ResponseOk> => {
       const { data } = await axiosClientWithAuth.get(apiUsr002.url(), {
         params: requestQuery,
+        signal,
       });
 
       return apiUsr002.responseBodyMap[200].parse(data);

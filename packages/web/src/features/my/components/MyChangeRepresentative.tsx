@@ -1,37 +1,32 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
 
-import {
-  ClubDelegateChangeRequestStatusEnum,
-  ClubDelegateEnum,
-} from "@clubs/interface/common/enum/club.enum";
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
+import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
-import Modal from "@sparcs-clubs/web/common/components/Modal";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import type { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
 
-import ChangeRepresentativeModalContent from "./ChangeRepresentativeModalContent";
+import useDelegateChangeRequestModal, {
+  delegateRoleLabelKeys,
+} from "../hooks/useDelegateChangeRequestModal";
 
 interface MyChangeRepresentativeProps {
-  status: ClubDelegateChangeRequestStatusEnum;
-  clubName: string;
-  delegateEnumId: ClubDelegateEnum;
-  requester: string;
-  requestId: number;
-  profile: string;
+  request: ApiClb013ResponseOk["requests"][number];
+  profile: Profile;
 }
 
 const MyChangeRepresentativeWrapper = styled.div.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
 })<{
-  status: MyChangeRepresentativeProps["status"];
+  status: ClubDelegateChangeRequestStatusEnum;
 }>`
   display: flex;
   flex-direction: row;
@@ -50,20 +45,17 @@ const MyChangeRepresentativeWrapper = styled.div.withConfig({
 `;
 
 const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
-  status,
-  clubName,
-  delegateEnumId,
-  requester,
-  requestId,
+  request,
   profile,
 }) => {
   const t = useTranslations("my.representative");
   const router = useRouter();
-  const role = {
-    [ClubDelegateEnum.Representative]: t("roles.representative"),
-    [ClubDelegateEnum.Delegate1]: t("roles.delegate1"),
-    [ClubDelegateEnum.Delegate2]: t("roles.delegate2"),
-  }[delegateEnumId];
+  const openConfirmation = useDelegateChangeRequestModal(profile);
+  const { clubName, delegateEnumId, prevStudentName, prevStudentNumber } =
+    request;
+  const status = request.clubDelegateChangeRequestStatusEnumId;
+  const role = t(delegateRoleLabelKeys[delegateEnumId]);
+  const requester = `${prevStudentNumber} ${prevStudentName}`;
   const isPending = status === ClubDelegateChangeRequestStatusEnum.Applied;
   const title = t(isPending ? "requestedTitle" : "completedTitle", { role });
   const body = t(isPending ? "requestedBody" : "completedBody", {
@@ -71,21 +63,6 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
     role,
     requester,
   });
-
-  const openConfirmModal = () => {
-    overlay.open(({ isOpen, close }) => (
-      <Modal isOpen={isOpen}>
-        <ChangeRepresentativeModalContent
-          clubName={clubName}
-          role={role}
-          requester={requester}
-          onClose={close}
-          profile={profile}
-          requestId={requestId}
-        />
-      </Modal>
-    ));
-  };
 
   return (
     <MyChangeRepresentativeWrapper status={status}>
@@ -106,7 +83,7 @@ const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
             color="GRAY"
             text={t("viewMore")}
             fw="REGULAR"
-            onClick={openConfirmModal}
+            onClick={() => openConfirmation(request)}
           />
         )}
         {status === ClubDelegateChangeRequestStatusEnum.Approved && (

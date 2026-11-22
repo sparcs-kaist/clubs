@@ -11,6 +11,7 @@ import Header from "@sparcs-clubs/web/common/components/Header";
 import ResponsiveContent from "@sparcs-clubs/web/common/components/Responsive";
 import StyledComponentsRegistry from "@sparcs-clubs/web/common/libs/styledComponents/StyledComponentRegistry";
 import { UseClientProvider } from "@sparcs-clubs/web/common/providers/UseClientProvider";
+import DelegateChangeRequestNotice from "@sparcs-clubs/web/features/landing/components/DelegateChangeRequestNotice";
 import {
   nanumSquare,
   pretendard,
@@ -43,6 +44,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             <NextIntlClientProvider>
               <UseClientProvider>
                 <AuthProvider>
+                  <DelegateChangeRequestNotice />
                   <DebugBadge />
                   <Header />
                   <ResponsiveContent>

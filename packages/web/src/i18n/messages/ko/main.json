@@ -9,5 +9,11 @@
     "view_registration_label": "{clubName} 등록 신청 {index} 보기",
     "hide_today": "오늘 하루 보지 않기",
     "close": "닫기"
+  },
+  "delegate_change_notice": {
+    "title": "동아리 직책 변경 요청이 도착했어요!",
+    "review": "요청 확인",
+    "review_label": "{clubName} {role} 변경 요청 확인",
+    "close": "닫기"
   }
 }

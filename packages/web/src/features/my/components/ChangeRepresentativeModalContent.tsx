@@ -16,6 +16,7 @@ import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FormError from "@sparcs-clubs/web/common/components/FormError";
 import PhoneInput from "@sparcs-clubs/web/common/components/Forms/PhoneInput";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import type { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useUserPhoneNumber from "@sparcs-clubs/web/common/services/getUserPhoneNumber";
 import { patchMyDelegateRequest } from "@sparcs-clubs/web/features/my/services/patchMyDelegateRequest";
 
@@ -24,7 +25,7 @@ interface ChangeRepresentativeModalContentProps {
   role: string;
   requester: string;
   onClose: () => void;
-  profile: string;
+  profile: Profile;
   requestId: number;
 }
 
@@ -40,9 +41,10 @@ const ChangeRepresentativeModalContent: React.FC<
 > = ({ clubName, role, requester, onClose, profile, requestId }) => {
   const t = useTranslations("my.representative");
   const queryClient = useQueryClient();
-  const { data: savedPhone, isLoading: phoneLoading } = useUserPhoneNumber({
-    profile,
-  });
+  const { data: savedPhone, isLoading: phoneLoading } = useUserPhoneNumber(
+    { profile: profile.type },
+    profile.id,
+  );
   const [editedPhone, setEditedPhone] = useState<string>();
   const phone = editedPhone ?? savedPhone?.phoneNumber ?? "";
   const isPhoneValid = zKrPhoneNumber.safeParse(phone).success;

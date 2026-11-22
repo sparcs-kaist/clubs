@@ -37,6 +37,7 @@ export type Profile = {
   id: number;
   name: string;
   type: UserTypeEnum;
+  studentId?: number;
   email?: string;
 };
 interface AuthContextType {
