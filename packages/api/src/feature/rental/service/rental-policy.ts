@@ -11,6 +11,14 @@ export interface ReservedStock {
   status: string;
 }
 
+export function validReducedRentalQuantity(quantity: number, maximum: number) {
+  const isInteger = Number.isInteger(quantity);
+  const isPositive = quantity > 0;
+  const isWithinLimit = quantity <= maximum;
+  const isValid = isInteger && isPositive && isWithinLimit;
+  return isValid;
+}
+
 export function addRentalDays(date: string, days: number): string | undefined {
   const day = new Date(`${date}T00:00:00.000Z`);
   day.setUTCDate(day.getUTCDate() + days);

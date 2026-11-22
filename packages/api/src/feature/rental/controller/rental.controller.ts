@@ -183,8 +183,9 @@ export class RentalController {
   async approve(
     @GetExecutive() executive: GetExecutive,
     @Param() { id }: Input<typeof apiRentalApprove.requestParam>,
+    @Body() { quantity }: Input<typeof apiRentalApprove.requestBody>,
   ) {
-    await this.rentals.approve(id, executive.executiveId);
+    await this.rentals.approve(id, executive.executiveId, quantity);
     return this.reads.executiveDetail(id);
   }
 
@@ -195,9 +196,9 @@ export class RentalController {
   async checkout(
     @GetExecutive() executive: GetExecutive,
     @Param() { id }: Input<typeof apiRentalCheckout.requestParam>,
-    @Body() { memo }: Input<typeof apiRentalCheckout.requestBody>,
+    @Body() { memo, quantity }: Input<typeof apiRentalCheckout.requestBody>,
   ) {
-    await this.rentals.checkout(id, executive.executiveId, memo);
+    await this.rentals.checkout(id, executive.executiveId, memo, quantity);
     return this.reads.executiveDetail(id);
   }
 

@@ -28,6 +28,7 @@ import {
   RentalError,
   RentalField,
   RentalFieldGrid,
+  RentalInput,
   RentalSelect,
   RentalTextarea,
 } from "./RentalFields";
@@ -260,10 +261,19 @@ const ExecutiveRentalActionForm = ({
     event.preventDefault();
     if (mutation.isPending) return;
     const data = new FormData(event.currentTarget);
-    if (action === "approve") mutation.mutate({ name: action, body: {} });
-    if (action === "checkout") {
+    if (action === "approve" || action === "checkout") {
+      const quantity = Number(data.get("quantity"));
+      if (!Number.isInteger(quantity)) return;
+      if (quantity < 1 || quantity > order.quantity) return;
       const memo = String(data.get("memo") ?? "").trim();
-      mutation.mutate({ name: action, body: memo ? { memo } : {} });
+      if (action === "approve") {
+        mutation.mutate({ name: action, body: { quantity } });
+      } else {
+        mutation.mutate({
+          name: action,
+          body: { quantity, ...(memo ? { memo } : {}) },
+        });
+      }
     }
     if (action === "return") mutation.mutate({ name: action, body: {} });
     if (action === "cancel" || action === "reject") {
@@ -302,8 +312,24 @@ const ExecutiveRentalActionForm = ({
         />
       )}
       {action && action !== "schedule" && action !== "extend" && (
-        <form key={action} onSubmit={submit}>
+        <form
+          key={`${action}-${order.status}-${order.quantity}`}
+          onSubmit={submit}
+        >
           <FlexWrapper direction="column" gap={12}>
+            {(action === "approve" || action === "checkout") && (
+              <RentalField>
+                {action === "approve" ? "승인 수량" : "수령 수량"}
+                <RentalInput
+                  name="quantity"
+                  type="number"
+                  required
+                  min={1}
+                  max={order.quantity}
+                  defaultValue={order.quantity}
+                />
+              </RentalField>
+            )}
             {action === "approve" && (
               <p>신청 내용과 재고를 확인한 뒤 대여를 승인해 주세요.</p>
             )}

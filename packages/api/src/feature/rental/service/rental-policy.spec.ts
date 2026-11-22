@@ -11,6 +11,7 @@ import {
   regularReturnLimit,
   requestedQuantity,
   type ReservedStock,
+  validReducedRentalQuantity,
 } from "./rental-policy";
 
 const monday = "2026-11-16";
@@ -29,6 +30,19 @@ function reservation(
 }
 
 describe("rental period and inventory", () => {
+  it.each([
+    [3, 5, true],
+    [5, 5, true],
+    [0, 5, false],
+    [-1, 5, false],
+    [0.5, 5, false],
+    [6, 5, false],
+  ])(
+    "accepts a positive whole quantity %s within current limit %s",
+    (quantity, maximum, valid) => {
+      expect(validReducedRentalQuantity(quantity, maximum)).toBe(valid);
+    },
+  );
   it("caps the configured office count at the last published shift", () => {
     expect(
       regularReturnLimit(

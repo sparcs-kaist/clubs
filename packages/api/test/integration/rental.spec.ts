@@ -2,7 +2,7 @@ import { Global, INestApplication, Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import request from "supertest";
 
 import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
@@ -95,8 +95,12 @@ describe("Rental API with MySQL", () => {
     prisma = fixture.get(PrismaService);
     await clearDatabase();
 
-    async function createStudent(number: number, name: string) {
-      const user = await prisma.user.create({ data: { name } });
+    async function createStudent(
+      number: number,
+      name: string,
+      phoneNumber?: string,
+    ) {
+      const user = await prisma.user.create({ data: { name, phoneNumber } });
       const student = await prisma.student.create({
         data: { userId: user.id, name, number },
       });
@@ -108,7 +112,11 @@ describe("Rental API with MySQL", () => {
       };
     }
 
-    const delegate = await createStudent(20260081, "Rental delegate");
+    const delegate = await createStudent(
+      20260081,
+      "Rental delegate",
+      "010-2345-6789",
+    );
     representative = authorization({ ...delegate, type: "undergraduate" });
     const fellow = await createStudent(20260084, "Rental fellow delegate");
     fellowDelegate = authorization({ ...fellow, type: "undergraduate" });
@@ -186,7 +194,6 @@ describe("Rental API with MySQL", () => {
       quantity: 1,
       pickup,
       return: returnSlot,
-      contactPhoneNumber: "010-1234-5678",
       purpose: "운반",
       clientRequestId: randomUUID(),
     });
@@ -539,7 +546,6 @@ describe("Rental API with MySQL", () => {
           quantity: 1,
           pickup: slot("2027-01-04"),
           return: slot(returnDate),
-          contactPhoneNumber: "010-1234-5678",
           purpose: "기간 설정 확인",
           clientRequestId: randomUUID(),
         });
@@ -663,7 +669,6 @@ describe("Rental API with MySQL", () => {
           quantity: 1,
           pickup: slot("2027-03-04"),
           return: slot("2027-03-08"),
-          contactPhoneNumber: "010-1234-5678",
           purpose: "일부 공개 일정 신청",
           clientRequestId: randomUUID(),
         });
@@ -794,7 +799,6 @@ describe("Rental API with MySQL", () => {
           quantity: 1,
           pickup: slot(pickup),
           return: slot(returned),
-          contactPhoneNumber: "010-1234-5678",
           purpose: "시간 외 수령 확인",
           clientRequestId: randomUUID(),
         });
@@ -894,5 +898,172 @@ describe("Rental API with MySQL", () => {
       approvedByExecutiveId: executiveId,
     });
     await act(lateRequest.id, "checkout").expect(200);
+  });
+
+  it("snapshots saved contact and reduces requested, approved and handed-out quantities without changing processed retries", async () => {
+    now = new Date("2027-06-07T08:00:00Z");
+    const server = app.getHttpServer();
+    await request(server)
+      .post("/executive/office-hours/generate")
+      .set("Authorization", executive)
+      .send({ from: "2027-06-07", to: "2027-06-17" })
+      .expect(201);
+    const item = await request(server)
+      .post("/executive/rental-items")
+      .set("Authorization", executive)
+      .send({
+        name: "수량 조정 카트",
+        totalQuantity: 5,
+        durationType: "DAYS",
+        durationValue: 14,
+        isActive: true,
+      })
+      .expect(201);
+    const create = (
+      quantity: number,
+      pickup = "2027-06-07",
+      returned = "2027-06-10",
+    ) => ({
+      clubId,
+      itemId: item.body.id,
+      quantity,
+      pickup: slot(pickup),
+      return: slot(returned),
+      purpose: "실제 수량 확인",
+      clientRequestId: randomUUID(),
+    });
+    const submit = (body: ReturnType<typeof create>, token = representative) =>
+      request(server)
+        .post("/student/rentals")
+        .set("Authorization", token)
+        .send(body);
+    const act = (id: number, action: string, quantity?: number) =>
+      request(server)
+        .post(`/executive/rentals/${id}/${action}`)
+        .set("Authorization", executive)
+        .send(quantity === undefined ? {} : { quantity });
+    const options = () =>
+      request(server)
+        .get(`/rentals/items/${item.body.id}/return-options`)
+        .query({ pickupDate: "2027-06-07" })
+        .expect(200);
+    const originalBody = create(5);
+    expect(originalBody).not.toHaveProperty("contactPhoneNumber");
+    const original = await submit(originalBody).expect(201);
+    const queued = await submit(create(2), fellowDelegate).expect(201);
+    const saved = await prisma.rentalReservation.findUniqueOrThrow({
+      where: { id: original.body.id },
+    });
+    expect(saved.contactPhoneNumber).toBe("010-2345-6789");
+    expect(
+      (
+        await prisma.rentalReservation.findUniqueOrThrow({
+          where: { id: queued.body.id },
+        })
+      ).contactPhoneNumber,
+    ).toBe("");
+    const fifo = await act(queued.body.id, "approve", 1).expect(409);
+    expect(fifo.body.message).toMatchObject({
+      message: "WAITING_FOR_APPROVAL",
+    });
+    await act(original.body.id, "approve", 0).expect(400);
+    const overRequested = await act(original.body.id, "approve", 6).expect(400);
+    expect(overRequested.body.message).toMatchObject({
+      message: "INVALID_RENTAL_QUANTITY",
+    });
+    const approved = await act(original.body.id, "approve", 3).expect(200);
+    expect(approved.body).toMatchObject({ status: "RESERVED", quantity: 3 });
+    expect((await options()).body.options[0]).toMatchObject({
+      availableQuantity: 2,
+      requestedQuantity: 2,
+    });
+    await act(original.body.id, "approve", 3).expect(200);
+    await act(original.body.id, "approve", 2).expect(409);
+    await act(original.body.id, "approve", 4).expect(409);
+
+    const applicant = await prisma.student.findFirstOrThrow({
+      where: { number: 20260081 },
+    });
+    if (applicant.userId === null)
+      throw new Error("Fixture student needs a user");
+    await prisma.user.update({
+      where: { id: applicant.userId },
+      data: { phoneNumber: "010-9876-5432" },
+    });
+    const legacyFingerprint = createHash("sha256")
+      .update(
+        JSON.stringify({
+          clubId: originalBody.clubId,
+          itemId: originalBody.itemId,
+          quantity: originalBody.quantity,
+          pickup: originalBody.pickup,
+          return: originalBody.return,
+          contactPhoneNumber: saved.contactPhoneNumber,
+          purpose: originalBody.purpose,
+          clientRequestId: originalBody.clientRequestId,
+        }),
+      )
+      .digest("hex");
+    await prisma.rentalReservation.update({
+      where: { id: original.body.id },
+      data: { requestFingerprint: legacyFingerprint },
+    });
+    expect((await submit(originalBody).expect(201)).body).toMatchObject({
+      id: original.body.id,
+      quantity: 3,
+    });
+    expect(
+      await prisma.rentalReservation.findUniqueOrThrow({
+        where: { id: original.body.id },
+      }),
+    ).toMatchObject({
+      contactPhoneNumber: "010-2345-6789",
+      requestFingerprint: legacyFingerprint,
+    });
+    await submit({ ...originalBody, purpose: "변경된 요청" }).expect(409);
+
+    await act(original.body.id, "checkout", 0).expect(400);
+    await act(original.body.id, "checkout", 4).expect(400);
+    const handedOut = await act(original.body.id, "checkout", 2).expect(200);
+    expect(handedOut.body).toMatchObject({
+      status: "CHECKED_OUT",
+      quantity: 2,
+      contactPhoneNumber: "010-2345-6789",
+    });
+    expect((await options()).body.options[0]).toMatchObject({
+      availableQuantity: 3,
+      requestedQuantity: 2,
+    });
+    await act(original.body.id, "checkout", 2).expect(200);
+    await act(original.body.id, "checkout").expect(200);
+    await act(original.body.id, "checkout", 1).expect(409);
+    await act(original.body.id, "checkout", 3).expect(409);
+    const afterRetry = await prisma.rentalReservation.findUniqueOrThrow({
+      where: { id: original.body.id },
+    });
+    expect(afterRetry.quantity).toBe(2);
+    expect(afterRetry.checkedOutAt).toEqual(
+      new Date(handedOut.body.checkedOutAt),
+    );
+    expect(
+      (await act(queued.body.id, "approve").expect(200)).body,
+    ).toMatchObject({ quantity: 2, contactPhoneNumber: "" });
+    expect(
+      (await act(queued.body.id, "checkout").expect(200)).body.quantity,
+    ).toBe(2);
+    expect((await options()).body.options[0].availableQuantity).toBe(1);
+
+    const future = await submit(create(4, "2027-06-10", "2027-06-14")).expect(
+      201,
+    );
+    await act(future.body.id, "approve").expect(200);
+    const physical = await act(future.body.id, "checkout").expect(409);
+    expect(physical.body.message).toMatchObject({
+      message: "WAITING_FOR_RETURN",
+    });
+    expect(
+      (await act(future.body.id, "checkout", 1).expect(200)).body,
+    ).toMatchObject({ quantity: 1, pickup: slot("2027-06-10") });
+    expect((await options()).body.options[0].availableQuantity).toBe(0);
   });
 });

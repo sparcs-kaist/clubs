@@ -24,6 +24,7 @@ import {
 
 import { CLOCK, type Clock } from "@sparcs-clubs/api/common/clock/clock";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import {
   RentalRepository,
@@ -38,6 +39,7 @@ import {
   peakReservedQuantity,
   physicalQuantity,
   type ReservedStock,
+  validReducedRentalQuantity,
 } from "./rental-policy";
 import {
   rentalDate,
@@ -72,6 +74,7 @@ export class RentalService {
     private readonly repository: RentalRepository,
     private readonly schedule: RentalScheduleService,
     private readonly clubs: ClubPublicService,
+    private readonly users: UserPublicService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -93,8 +96,24 @@ export class RentalService {
       input.clientRequestId,
     );
     if (existing) {
-      if (existing.requestFingerprint !== fingerprint)
-        throw new ConflictException("REQUEST_ID_REUSED");
+      if (existing.requestFingerprint !== fingerprint) {
+        const legacyFingerprint = createHash("sha256")
+          .update(
+            JSON.stringify({
+              clubId: input.clubId,
+              itemId: input.itemId,
+              quantity: input.quantity,
+              pickup: input.pickup,
+              return: input.return,
+              contactPhoneNumber: existing.contactPhoneNumber,
+              purpose: input.purpose,
+              clientRequestId: input.clientRequestId,
+            }),
+          )
+          .digest("hex");
+        if (existing.requestFingerprint !== legacyFingerprint)
+          throw new ConflictException("REQUEST_ID_REUSED");
+      }
       return existing;
     }
     if (!item.isActive) throw new NotFoundException("ITEM_NOT_FOUND");
@@ -135,13 +154,14 @@ export class RentalService {
       pickup.date,
       returned.date,
     );
+    const [contact] = await this.users.findStudentContacts([studentId]);
 
     try {
       return await this.repository.createReservation({
         itemId: item.id,
         clubId: club.id,
         studentId,
-        contactPhoneNumber: input.contactPhoneNumber,
+        contactPhoneNumber: contact?.user?.phoneNumber ?? "",
         purpose: input.purpose,
         quantity: input.quantity,
         status: "REQUESTED",
@@ -189,10 +209,17 @@ export class RentalService {
   }
 
   @Transactional<TransactionalAdapterPrisma>(readCommitted)
-  async approve(id: number, executiveId: number) {
+  async approve(id: number, executiveId: number, requestedQuantity?: number) {
     const { row, item } = await this.lockReservation(id);
-    if (row.status === "RESERVED") return row;
+    const quantity = requestedQuantity ?? row.quantity;
+    if (row.status === "RESERVED") {
+      if (quantity !== row.quantity)
+        throw new ConflictException("INVALID_RENTAL_STATE");
+      return row;
+    }
     this.requireStatus(row, "REQUESTED");
+    if (!validReducedRentalQuantity(quantity, row.quantity))
+      throw new BadRequestException("INVALID_RENTAL_QUANTITY");
     const [booked] = await this.schedule.bookedRentals([row]);
     await Promise.all([
       this.schedule.resolveUnchangedBooked(booked.pickup),
@@ -202,7 +229,7 @@ export class RentalService {
     assertCapacity(
       item.totalQuantity,
       active,
-      row.quantity,
+      quantity,
       booked.pickupDate,
       booked.returnDate,
     );
@@ -214,37 +241,51 @@ export class RentalService {
       booked.pickupDate,
       booked.returnDate,
     );
-    if (used + row.quantity > item.totalQuantity) {
+    if (used + quantity > item.totalQuantity) {
       throw new ConflictException("WAITING_FOR_APPROVAL");
     }
     return this.change(row, {
       status: "RESERVED",
+      quantity,
       approvedAt: this.clock.now(),
       approvedByExecutiveId: executiveId,
     });
   }
 
   @Transactional<TransactionalAdapterPrisma>(readCommitted)
-  async checkout(id: number, executiveId: number, memo?: string) {
+  async checkout(
+    id: number,
+    executiveId: number,
+    memo?: string,
+    requestedQuantity?: number,
+  ) {
     const { row, item } = await this.lockReservation(id);
-    if (row.status === "CHECKED_OUT") return row;
+    const quantity = requestedQuantity ?? row.quantity;
+    if (row.status === "CHECKED_OUT") {
+      if (quantity !== row.quantity)
+        throw new ConflictException("INVALID_RENTAL_STATE");
+      return row;
+    }
     this.requireStatus(row, "RESERVED");
+    if (!validReducedRentalQuantity(quantity, row.quantity))
+      throw new BadRequestException("INVALID_RENTAL_QUANTITY");
 
     const now = this.clock.now();
     const [booked] = await this.schedule.bookedRentals([row]);
     const active = await this.activeReservations(item.id);
-    if (checkoutQuantity(item.totalQuantity, active, booked) < row.quantity) {
+    if (checkoutQuantity(item.totalQuantity, active, booked) < quantity) {
       throw new ConflictException("WAITING_FOR_RETURN");
     }
     assertCapacity(
       item.totalQuantity,
       active.filter(reservation => reservation.id !== row.id),
-      row.quantity,
+      quantity,
       [booked.pickupDate, rentalDate(now)].sort()[0],
       booked.returnDate,
     );
     return this.change(row, {
       status: "CHECKED_OUT",
+      quantity,
       checkedOutAt: now,
       checkedOutByExecutiveId: executiveId,
       checkoutMemo: memo || null,
