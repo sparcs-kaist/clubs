@@ -1428,6 +1428,8 @@ model RentalReservation {
   returnHourId            Int       @map("return_hour_id")
   clientRequestId         String    @map("client_request_id") @db.Char(36)
   requestFingerprint      String    @map("request_fingerprint") @db.Char(64)
+  approvedAt              DateTime? @map("approved_at") @db.DateTime(3)
+  approvedByExecutiveId   Int?      @map("approved_by_executive_id")
   checkedOutAt            DateTime? @map("checked_out_at") @db.DateTime(3)
   checkedOutByExecutiveId Int?      @map("checked_out_by_executive_id")
   checkoutMemo            String?   @map("checkout_memo") @db.VarChar(500)

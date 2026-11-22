@@ -1,9 +1,11 @@
 import type { OfficeHoursPublicService } from "@sparcs-clubs/api/feature/office-hours/publicService/office-hours.public.service";
 
 import {
+  type BookedRental,
   RentalScheduleService,
   selectionMatches,
   serializeWindow,
+  stockWindow,
 } from "./rental-schedule.service";
 
 const booked = {
@@ -15,6 +17,31 @@ const booked = {
 };
 const selection = serializeWindow(booked);
 const now = new Date("2026-11-16T12:30:00.000Z");
+
+describe("stock occupancy after an early checkout", () => {
+  const row = {
+    pickupDate: booked.date,
+    pickup: booked,
+    status: "CHECKED_OUT",
+    checkedOutAt: new Date("2026-11-13T12:00:00Z"),
+  } as BookedRental;
+
+  it("starts inventory occupancy at actual checkout without changing booked display", () => {
+    const stock = stockWindow(row);
+    expect(stock.pickupDate).toBe("2026-11-13");
+    expect(stock.pickup.date).toBe(booked.date);
+    expect(row.pickupDate).toBe(booked.date);
+  });
+
+  it.each([
+    { status: "RESERVED", checkedOutAt: null },
+    { status: "CHECKED_OUT", checkedOutAt: null },
+    { status: "CHECKED_OUT", checkedOutAt: new Date("2026-11-17T12:00:00Z") },
+    { status: "CHECKED_OUT", checkedOutAt: new Date("2026-11-15T16:00:00Z") },
+  ])("retains the booked date when no earlier KST checkout exists", patch => {
+    expect(stockWindow({ ...row, ...patch }).pickupDate).toBe(booked.date);
+  });
+});
 
 describe("rental office hour selections", () => {
   const findLatest = jest.fn();
@@ -67,6 +94,28 @@ describe("rental office hour selections", () => {
     await expect(
       schedule.resolveBooked(booked, booked.closesAt),
     ).rejects.toThrow("OFFICE_HOURS_PASSED");
+  });
+
+  it("validates approval against the current calendar without a passed-time restriction", async () => {
+    findLatest.mockResolvedValue(booked);
+    await expect(schedule.resolveUnchangedBooked(booked)).resolves.toEqual(
+      booked,
+    );
+    findLatest.mockResolvedValue(null);
+    await expect(schedule.resolveUnchangedBooked(booked)).rejects.toThrow(
+      "OFFICE_HOURS_CHANGED",
+    );
+    findLatest.mockResolvedValue({ ...booked, isClosed: true });
+    await expect(schedule.resolveUnchangedBooked(booked)).rejects.toThrow(
+      "OFFICE_HOURS_CHANGED",
+    );
+    findLatest.mockResolvedValue({
+      ...booked,
+      closesAt: new Date("2026-11-16T14:00:00Z"),
+    });
+    await expect(schedule.resolveUnchangedBooked(booked)).rejects.toThrow(
+      "OFFICE_HOURS_CHANGED",
+    );
   });
 });
 

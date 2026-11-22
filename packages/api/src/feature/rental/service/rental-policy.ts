@@ -38,13 +38,31 @@ export function regularReturnLimit(
   ];
 }
 
+export function cancellableRentalStatus(status: string) {
+  const canClose = status === "REQUESTED" || status === "RESERVED";
+  return canClose;
+}
+
 export function canCancelRental(
   ownerStudentId: number,
   viewerStudentId: number,
   status: string,
 ) {
-  const canCancel = ownerStudentId === viewerStudentId && status === "RESERVED";
+  const canClose = cancellableRentalStatus(status);
+  const canCancel = ownerStudentId === viewerStudentId && canClose;
   return canCancel;
+}
+
+export function requestedQuantity(
+  requests: readonly ReservedStock[],
+  from: string,
+  to: string,
+) {
+  return requests.reduce((quantity, request) => {
+    if (request.pickupDate >= to) return quantity;
+    if (request.returnDate <= from) return quantity;
+    return quantity + request.quantity;
+  }, 0);
 }
 
 export function peakReservedQuantity(

@@ -74,6 +74,15 @@ export function withBookedWindows(
 
 export type BookedRental = ReturnType<typeof withBookedWindows>;
 
+export function stockWindow(row: BookedRental): BookedRental {
+  if (row.status !== "CHECKED_OUT") return row;
+  if (row.checkedOutAt === null) return row;
+  return {
+    ...row,
+    pickupDate: [row.pickupDate, rentalDate(row.checkedOutAt)].sort()[0],
+  };
+}
+
 @Injectable()
 export class RentalScheduleService {
   constructor(private readonly officeHours: OfficeHoursPublicService) {}
@@ -122,13 +131,27 @@ export class RentalScheduleService {
     selection: RentalSlotSelection,
     now: Date,
   ) {
+    const current = this.requireCurrentSelection(window, selection);
+    if (current.closesAt <= now)
+      throw new BadRequestException("OFFICE_HOURS_PASSED");
+    return current;
+  }
+
+  private requireCurrentSelection(
+    window: OfficeWindow | null | undefined,
+    selection: RentalSlotSelection,
+  ) {
     if (!window) throw new ConflictException("OFFICE_HOURS_CHANGED");
     if (window.isClosed) throw new ConflictException("OFFICE_HOURS_CHANGED");
     if (!selectionMatches(window, selection))
       throw new ConflictException("OFFICE_HOURS_CHANGED");
-    if (window.closesAt <= now)
-      throw new BadRequestException("OFFICE_HOURS_PASSED");
     return window;
+  }
+
+  async resolveUnchangedBooked(booked: OfficeWindow) {
+    const current = await this.officeHours.findLatest(booked.date);
+    this.requireCurrentSelection(current, serializeWindow(booked));
+    return booked;
   }
 
   async resolveBooked(booked: OfficeWindow, now: Date) {

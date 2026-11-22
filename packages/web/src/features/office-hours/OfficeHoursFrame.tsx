@@ -74,7 +74,10 @@ const OfficeHoursFrame = ({ executive = false }: { executive?: boolean }) => {
       <PageHead
         items={
           executive
-            ? [{ name: paths("집행부"), path: "/executive" }]
+            ? [
+                { name: paths("집행부원 대시보드"), path: "/executive" },
+                { name: title, path: "/executive/office-hours" },
+              ]
             : [{ name: title, path: "/office-hours" }]
         }
         title={title}

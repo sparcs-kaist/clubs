@@ -209,10 +209,9 @@ const RentalApplicationForm = ({
                   value={option.date}
                   disabled={option.availableQuantity === 0}
                 >
-                  {formatRentalSlot(option)} ·{" "}
-                  {option.availableQuantity > 0
-                    ? `최대 ${option.availableQuantity}개`
-                    : "재고 없음"}
+                  {formatRentalSlot(option)} · 최대 {option.availableQuantity}개
+                  {option.requestedQuantity > 0 &&
+                    ` · 현재 ${option.requestedQuantity}개 신청됨`}
                 </option>
               ))}
             </RentalSelect>

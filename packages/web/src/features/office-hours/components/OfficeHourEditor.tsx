@@ -73,6 +73,7 @@ const OfficeHourEditor = ({
         .flatMap(page => page.items)
         .filter(
           rental =>
+            rental.status === "REQUESTED" ||
             rental.status === "RESERVED" ||
             (rental.status === "CHECKED_OUT" && rental.return.date === date),
         );
@@ -190,7 +191,9 @@ const OfficeHourEditor = ({
               <ul>
                 {reservations.data.map(rental => {
                   const pickup =
-                    rental.status === "RESERVED" && rental.pickup.date === date;
+                    (rental.status === "REQUESTED" ||
+                      rental.status === "RESERVED") &&
+                    rental.pickup.date === date;
                   return (
                     <li key={rental.id}>
                       <Link href={`/executive/rental-business/${rental.id}`}>

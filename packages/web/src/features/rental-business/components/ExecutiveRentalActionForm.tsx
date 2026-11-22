@@ -33,10 +33,11 @@ import {
 } from "./RentalFields";
 
 const actionLabels: Record<ExecutiveRentalAction["name"], string> = {
+  approve: "대여 승인",
   checkout: "수령 확인",
   return: "반납 확인",
-  cancel: "예약 취소",
-  reject: "예약 반려",
+  cancel: "대여 취소",
+  reject: "대여 반려",
   schedule: "일정 조정",
   extend: "반납 연장",
 };
@@ -44,6 +45,7 @@ const actionLabels: Record<ExecutiveRentalAction["name"], string> = {
 const actionsByStatus: Partial<
   Record<RentalStatus, ExecutiveRentalAction["name"][]>
 > = {
+  REQUESTED: ["approve", "schedule", "cancel", "reject"],
   RESERVED: ["checkout", "schedule", "extend", "cancel", "reject"],
   CHECKED_OUT: ["return", "schedule", "extend"],
 };
@@ -100,7 +102,7 @@ const ScheduleForm = ({
     const lastDate = addRentalDays(nextPickupDate, order.durationValue);
     regularLimit =
       order.durationType === "OFFICE_HOURS"
-        ? laterSlots[order.durationValue - 1]?.date
+        ? laterSlots[Math.min(order.durationValue, laterSlots.length) - 1]?.date
         : laterSlots.filter(slot => slot.date <= lastDate).at(-1)?.date;
   }
   const returnSlots = isExtension
@@ -162,7 +164,7 @@ const ScheduleForm = ({
     <form onSubmit={submit}>
       <FlexWrapper direction="column" gap={12}>
         <RentalFieldGrid>
-          {!isExtension && order.status === "RESERVED" && (
+          {!isExtension && order.status !== "CHECKED_OUT" && (
             <RentalField>
               새 수령 상근일
               <RentalSelect
@@ -258,6 +260,7 @@ const ExecutiveRentalActionForm = ({
     event.preventDefault();
     if (mutation.isPending) return;
     const data = new FormData(event.currentTarget);
+    if (action === "approve") mutation.mutate({ name: action, body: {} });
     if (action === "checkout") {
       const memo = String(data.get("memo") ?? "").trim();
       mutation.mutate({ name: action, body: memo ? { memo } : {} });
@@ -301,6 +304,9 @@ const ExecutiveRentalActionForm = ({
       {action && action !== "schedule" && action !== "extend" && (
         <form key={action} onSubmit={submit}>
           <FlexWrapper direction="column" gap={12}>
+            {action === "approve" && (
+              <p>신청 내용과 재고를 확인한 뒤 대여를 승인해 주세요.</p>
+            )}
             {action === "checkout" && (
               <RentalField>
                 인계 메모 (선택)

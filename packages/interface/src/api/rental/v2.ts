@@ -4,6 +4,7 @@ import { zOfficeDate } from "@clubs/interface/api/office-hours";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 export const zRentalStatus = z.enum([
+  "REQUESTED",
   "RESERVED",
   "CHECKED_OUT",
   "RETURNED",
@@ -48,6 +49,7 @@ const zRentalReservation = zRentalDuration.extend({
   regularReturnLimitDate: zOfficeDate,
   approvedReturnLimitDate: zOfficeDate.nullable(),
   createdAt: instant,
+  approvedAt: instant.nullable(),
   checkedOutAt: instant.nullable(),
   returnedAt: instant.nullable(),
   overdue: z.boolean(),
@@ -74,6 +76,7 @@ const zExecutiveRentalReservation = zRentalReservation.extend({
   contactPhoneNumber: z.string(),
   purpose: z.string(),
   checkoutMemo: z.string().nullable(),
+  approvedByExecutiveId: id.nullable(),
   checkedOutByExecutiveId: id.nullable(),
   returnedByExecutiveId: id.nullable(),
   extensions: z.array(zRentalExtension),
@@ -170,6 +173,7 @@ export const apiRentalReturnOptions = endpoint(
     options: z.array(
       zSlotSelection.extend({
         availableQuantity: z.coerce.number().int().nonnegative(),
+        requestedQuantity: z.coerce.number().int().nonnegative(),
         availableWithoutSameDayReturns: z.coerce.number().int().nonnegative(),
       }),
     ),
@@ -268,6 +272,7 @@ export const apiRentalCheckout = executiveAction(
   "checkout",
   z.object({ memo: z.string().trim().max(500).optional() }),
 );
+export const apiRentalApprove = executiveAction("approve", empty);
 export const apiRentalReturn = executiveAction("return", empty);
 export const apiRentalExecutiveCancel = executiveAction(
   "cancel",
