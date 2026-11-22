@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
@@ -61,6 +67,7 @@ import {
 import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
+  IFundingRequest,
   IFundingResponse,
 } from "@clubs/interface/api/funding/type/funding.type";
 import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
@@ -89,6 +96,7 @@ import {
   getFundingCommentAmountValidationError,
   getFundingCommentPreFetchValidationError,
 } from "./funding-comment-validator/funding-comment.validator";
+import { getFundingPurchaseValidationError } from "./funding-purchase.validator";
 
 @Injectable()
 export default class FundingService {
@@ -131,6 +139,7 @@ export default class FundingService {
   ): Promise<ApiFnd001ResponseCreated> {
     await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
     await this.checkDeadline([FundingDeadlineEnum.Writing]);
+    this.validatePurchase(body);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
@@ -445,11 +454,21 @@ export default class FundingService {
     param: ApiFnd003RequestParam,
     studentId: number,
   ): Promise<ApiFnd003ResponseOk> {
-    await this.clubPublicService.checkStudentDelegate(studentId, body.club.id);
+    const stored = await this.fundingRepository.fetch(param.id);
+    await this.clubPublicService.checkStudentDelegate(
+      studentId,
+      stored.club.id,
+    );
+    if (body.club.id !== stored.club.id) {
+      throw new BadRequestException(
+        "지원금 신청의 동아리를 변경할 수 없습니다.",
+      );
+    }
     await this.checkDeadline([
       FundingDeadlineEnum.Writing,
       FundingDeadlineEnum.Modification,
     ]);
+    this.validatePurchase(body, stored);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
 
@@ -461,6 +480,11 @@ export default class FundingService {
       fundingStatusEnum,
       approvedAmount,
     });
+  }
+
+  private validatePurchase(body: IFundingRequest, stored?: MFunding): void {
+    const error = getFundingPurchaseValidationError(body, stored);
+    if (error) throw new BadRequestException(error);
   }
 
   @Transactional()

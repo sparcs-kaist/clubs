@@ -10,13 +10,15 @@ import Card from "@sparcs-clubs/web/common/components/Card";
 import FileUpload from "@sparcs-clubs/web/common/components/FileUpload";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import FormController from "@sparcs-clubs/web/common/components/FormController";
+import FormError from "@sparcs-clubs/web/common/components/FormError";
 import ItemNumberInput from "@sparcs-clubs/web/common/components/Forms/ItemNumberInput";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import UnitInput from "@sparcs-clubs/web/common/components/Forms/UnitInput";
 import Select from "@sparcs-clubs/web/common/components/Select";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import { formatCurrency } from "@sparcs-clubs/web/utils/format";
 
-import { AddEvidence } from "../types/funding";
+import { FundingFormData } from "../types/funding";
 import EvidenceBlockTitle from "./EvidenceBlockTitle";
 
 interface FixtureEvidenceBlockProps {
@@ -28,13 +30,44 @@ const FixtureEvidenceBlock: React.FC<FixtureEvidenceBlockProps> = ({
   isFixture,
   required = false,
 }) => {
-  const formCtx = useFormContext<AddEvidence>();
+  const formCtx = useFormContext<FundingFormData>();
   const { control, watch, setValue } = formCtx;
 
   const fixtureClassEnum = watch("fixtureClassEnum");
   const clubSuppliesClassEnum = watch("clubSuppliesClassEnum");
   const fixtureFiles = watch("fixtureSoftwareEvidenceFiles");
   const clubSuppliesFiles = watch("clubSuppliesSoftwareEvidenceFiles");
+  const selectedClass = isFixture ? fixtureClassEnum : clubSuppliesClassEnum;
+  const evidence = watch(
+    isFixture ? "fixtureEvidenceEnum" : "clubSuppliesEvidenceEnum",
+  );
+  const quantity = Number(
+    watch(isFixture ? "numberOfFixture" : "numberOfClubSupplies"),
+  );
+  const price = Number(
+    watch(isFixture ? "priceOfFixture" : "priceOfClubSupplies"),
+  );
+  const expenditureAmount = Number(watch("expenditureAmount"));
+  const isFixtureRow = watch("isFixture");
+  const isPurchase = evidence === FixtureEvidenceEnum.Purchase;
+  const isPhysicalPurchase =
+    isPurchase &&
+    selectedClass != null &&
+    selectedClass !== FixtureClassEnum.Software;
+  const isTangibleFixture = isPhysicalPurchase && isFixture;
+  const isTangibleClubSupplies = isPhysicalPurchase && !isFixtureRow;
+  const hasPrice = Number.isSafeInteger(price) && price > 0;
+  const subtotal = quantity * price;
+  const hasSubtotal =
+    hasPrice &&
+    Number.isSafeInteger(quantity) &&
+    quantity > 0 &&
+    Number.isSafeInteger(subtotal);
+  const exceedsExpenditure =
+    (isTangibleFixture || isTangibleClubSupplies) &&
+    hasSubtotal &&
+    Number.isSafeInteger(expenditureAmount) &&
+    subtotal > expenditureAmount;
 
   const content = isFixture ? "비품" : "동아리 용품";
 
@@ -127,6 +160,33 @@ const FixtureEvidenceBlock: React.FC<FixtureEvidenceBlockProps> = ({
               )}
             />
           </FlexWrapper>
+          {isPurchase && (
+            <FlexWrapper direction="column" gap={4}>
+              <Typography fs={14} lh={20}>
+                개별 단가에는 물품 한 개의 가격을 입력해 주세요. 배송비는 지출
+                금액에 포함할 수 있습니다.
+              </Typography>
+              {hasSubtotal && (
+                <Typography fs={14} lh={20}>
+                  품목 소계 {formatCurrency(subtotal)}원 ({quantity}개 ×{" "}
+                  {formatCurrency(price)}원)
+                </Typography>
+              )}
+              {isTangibleFixture &&
+                (hasPrice && price < 50_000 ? (
+                  <FormError>
+                    비품 구매는 개당 50,000원 이상이어야 합니다.
+                  </FormError>
+                ) : (
+                  <Typography fs={14} lh={20}>
+                    비품 구매는 개당 50,000원 이상인 물품을 신청해 주세요.
+                  </Typography>
+                ))}
+              {exceedsExpenditure && (
+                <FormError>품목 소계가 지출 금액보다 큽니다.</FormError>
+              )}
+            </FlexWrapper>
+          )}
           {/* TODO: EvidenceUploadWithText 컴포넌트로 변경 */}
           {(isFixture ? fixtureClassEnum : clubSuppliesClassEnum) && (
             <FlexWrapper direction="column" gap={4}>

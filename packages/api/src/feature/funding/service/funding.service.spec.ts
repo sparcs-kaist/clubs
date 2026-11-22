@@ -265,6 +265,27 @@ describe("FundingService funding deadline validation", () => {
   });
 });
 
+describe("FundingService funding edit authorization", () => {
+  it("authorizes editing against the stored club instead of the submitted club", async () => {
+    const { service, fundingRepository, clubPublicService } =
+      createFundingService();
+
+    await expect(
+      service.putStudentFunding(
+        { ...fundingBody, club: { id: club.id + 1 } } as never,
+        { id: funding.id },
+        studentId,
+      ),
+    ).rejects.toThrow("지원금 신청의 동아리를 변경할 수 없습니다.");
+
+    expect(clubPublicService.checkStudentDelegate).toHaveBeenCalledWith(
+      studentId,
+      club.id,
+    );
+    expect(fundingRepository.put).not.toHaveBeenCalled();
+  });
+});
+
 describe("FundingService historical semester club summaries", () => {
   it("loads executive dashboard club summaries for the requested semester", async () => {
     const {

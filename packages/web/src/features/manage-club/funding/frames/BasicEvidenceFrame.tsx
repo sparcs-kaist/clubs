@@ -56,6 +56,7 @@ const BasicEvidenceFrame: React.FC = () => {
               <TextInput
                 {...props}
                 placeholder="거래 세부항목 증빙을 입력하세요"
+                helperText="한 영수증의 서로 다른 품목은 각각 신청하고, 해당 품목이 보이는 거래명세를 첨부해 주세요. 지출 금액에는 이 품목에 해당하는 배송비를 포함할 수 있습니다."
                 area
               />
             )}

@@ -16,6 +16,7 @@ import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import useGetInitialFundingFormData from "../hooks/useGetInitialFundingForm";
 import useUpdateFunding from "../hooks/useUpdateFunding";
 import { FundingFormData } from "../types/funding";
+import getFundingFormError from "../utils/fundingFormError";
 import FundingForm from "./FundingForm";
 
 interface EditFundingFrameProps {
@@ -35,7 +36,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
     isError,
   } = useGetInitialFundingFormData(+fundingId);
 
-  const { mutateAsync: updateFunding } = useUpdateFunding(+fundingId, clubId);
+  const { mutate: updateFunding } = useUpdateFunding(+fundingId, clubId);
 
   const { savedData, isModalOpen, handleConfirm, handleClose } =
     useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.EDIT_FUNDING);
@@ -70,7 +71,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
             <ConfirmModalContent onConfirm={close}>
               지원금 수정에 실패했습니다.
               <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
-                {error.message}
+                {getFundingFormError(error)}
               </Typography>
             </ConfirmModalContent>
           </Modal>
