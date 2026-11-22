@@ -9,5 +9,11 @@
     "view_registration_label": "View registration application {index} for {clubName}",
     "hide_today": "Hide for today",
     "close": "Close"
+  },
+  "delegate_change_notice": {
+    "title": "You have a club role change request!",
+    "review": "Review request",
+    "review_label": "Review the {role} change request for {clubName}",
+    "close": "Close"
   }
 }

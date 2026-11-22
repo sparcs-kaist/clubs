@@ -6,17 +6,19 @@ import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FoldableSectionTitle from "@sparcs-clubs/web/common/components/FoldableSectionTitle";
 import PhoneInput from "@sparcs-clubs/web/common/components/Forms/PhoneInput";
+import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import useUserPhoneNumber from "@sparcs-clubs/web/common/services/getUserPhoneNumber";
 import usePatchMyPhoneNumber from "@sparcs-clubs/web/features/my/services/usePatchMyPhoneNumber";
 
 const MyInfoFrame: React.FC<{ profile: string }> = ({ profile }) => {
   const t = useTranslations("my.overview");
+  const { profile: activeProfile } = useAuth();
   const {
     data: myInfo,
     isLoading: infoLoading,
     isError: infoError,
     refetch,
-  } = useUserPhoneNumber({ profile });
+  } = useUserPhoneNumber({ profile }, activeProfile?.id);
 
   const myPhone = myInfo?.phoneNumber;
 

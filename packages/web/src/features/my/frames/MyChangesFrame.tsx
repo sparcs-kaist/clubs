@@ -4,11 +4,12 @@ import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enu
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import type { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
 import MyChangeRepresentative from "@sparcs-clubs/web/features/my/components/MyChangeRepresentative";
 import { useGetMyDelegateRequest } from "@sparcs-clubs/web/features/my/services/getMyDelegateRequest";
 
-export const MyChangesFrame = ({ profile }: { profile: string }) => {
-  const { data, isLoading, isError } = useGetMyDelegateRequest();
+export const MyChangesFrame = ({ profile }: { profile: Profile }) => {
+  const { data, isLoading, isError } = useGetMyDelegateRequest(profile);
   const requests = data?.requests.filter(
     request =>
       request.clubDelegateChangeRequestStatusEnumId ===
@@ -25,11 +26,7 @@ export const MyChangesFrame = ({ profile }: { profile: string }) => {
         {requests?.map(request => (
           <MyChangeRepresentative
             key={request.id}
-            status={request.clubDelegateChangeRequestStatusEnumId}
-            clubName={request.clubName}
-            delegateEnumId={request.delegateEnumId}
-            requester={`${request.prevStudentNumber} ${request.prevStudentName}`}
-            requestId={request.id}
+            request={request}
             profile={profile}
           />
         ))}
