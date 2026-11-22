@@ -235,23 +235,42 @@ describe("Professor activity approvals with MySQL", () => {
       studentId: student.id,
       type: "undergraduate",
     });
+    const executive = await prisma.executive.create({
+      data: {
+        studentId: student.id,
+        userId: user.id,
+        name: "Reviewer",
+        executiveTs: {
+          create: {
+            executiveStatusEnum: 1,
+            executiveBureauEnum: 1,
+            ...dateRange,
+          },
+        },
+      },
+    });
+    const reviewer = sign({
+      id: user.id,
+      executiveId: executive.id,
+      type: "executive",
+    });
     const server = app.getHttpServer();
     const approve = (ids: number[], authorization = advisor) =>
       request(server)
         .post("/professor/activities/approve")
         .set("Authorization", authorization)
         .send({ activities: ids.map(id => ({ id })) });
-    const edit = () =>
+    const edit = (changes: Partial<typeof activityBody> = {}) =>
       request(server)
         .put(`/student/activities/activity/${first.id}`)
         .set("Authorization", delegate)
         .send({
           ...activityBody,
+          ...changes,
           durations: [activityDates],
           evidenceFiles: [{ fileId: evidence.id }],
           participants: [{ studentId: student.id }],
-        })
-        .expect(200);
+        });
     const expectDetail = (
       status: ProfessorApprovalStatus,
       approvedAt: Date | null,
@@ -283,7 +302,7 @@ describe("Professor activity approvals with MySQL", () => {
     ).expect(403);
     await approve([first.id]).expect(201);
     const originalApprovalTime = now;
-    await edit();
+    await edit({ detail: "첫 수정" }).expect(200);
     await expectDetail(Pending, null);
     expect(
       await prisma.activity.findUniqueOrThrow({ where: { id: first.id } }),
@@ -301,8 +320,67 @@ describe("Professor activity approvals with MySQL", () => {
       professorApprovedAt: null,
     });
     await approve([second.id]).expect(201);
-    await edit();
+    await edit({ name: "이름 변경 시도" }).expect(400);
+    await Promise.all([
+      edit({ detail: "동시 수정 A" }).expect(200),
+      edit({ detail: "동시 수정 B" }).expect(200),
+    ]);
     await expectDetail(Approved, originalApprovalTime);
+
+    const historyUrl = `/executive/activities/activity/${first.id}/change-history`;
+    await request(server)
+      .get(historyUrl)
+      .set("Authorization", delegate)
+      .expect(401);
+    const { body: history } = await request(server)
+      .get(historyUrl)
+      .set("Authorization", reviewer)
+      .expect(200);
+    expect(history).toHaveLength(3);
+    expect(history[0].before).toEqual(history[1].after);
+    expect(history[1].before).toEqual(history[2].after);
+    expect([history[0].after.detail, history[1].after.detail].sort()).toEqual([
+      "동시 수정 A",
+      "동시 수정 B",
+    ]);
+    expect(history[2]).toMatchObject({
+      before: {
+        name: activityBody.name,
+        detail: activityBody.detail,
+        evidenceFiles: [],
+      },
+      after: {
+        name: activityBody.name,
+        detail: "첫 수정",
+        evidenceFiles: [{ id: evidence.id, name: evidence.name }],
+        participants: [{ id: student.id, name: student.name }],
+      },
+    });
+
+    const memoUrl = `/executive/reviews/activity/${first.id}/internal-memo`;
+    await request(server)
+      .get(memoUrl)
+      .set("Authorization", delegate)
+      .expect(401);
+    await request(server)
+      .put(memoUrl)
+      .set("Authorization", reviewer)
+      .send({ content: "내부 검토용 메모" })
+      .expect(200);
+    await request(server)
+      .get(memoUrl)
+      .set("Authorization", reviewer)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.memo).toMatchObject({
+          content: "내부 검토용 메모",
+          updatedBy: executive.name,
+        });
+      });
+    await request(server)
+      .delete(memoUrl)
+      .set("Authorization", reviewer)
+      .expect(200);
 
     const afterDeadlines = new Date("2026-11-28T09:00:00Z");
     now = afterDeadlines;

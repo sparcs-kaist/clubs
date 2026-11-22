@@ -24,12 +24,14 @@ import SelectParticipant from "./SelectParticipant";
 interface ActivityReportFormProps {
   clubId: number;
   initialData?: ActivityReportFormData;
+  lockedName?: string;
   onSubmit: (data: ActivityReportFormData) => void;
 }
 
 const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
   clubId,
   initialData = undefined,
+  lockedName = undefined,
   onSubmit,
 }) => {
   const formCtx = useForm<ActivityReportFormData>({
@@ -43,6 +45,12 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
     setValue,
     formState: { isValid },
   } = formCtx;
+
+  useEffect(() => {
+    if (lockedName !== undefined) {
+      setValue("name", lockedName, { shouldValidate: true });
+    }
+  }, [lockedName, setValue]);
 
   const submitHandler = useCallback(
     (data: ActivityReportFormData, e: React.BaseSyntheticEvent) => {
@@ -119,6 +127,12 @@ const ActivityReportForm: React.FC<ActivityReportFormProps> = ({
                     {...props}
                     label="활동명"
                     placeholder="활동명을 입력해주세요"
+                    disabled={lockedName !== undefined}
+                    helperText={
+                      lockedName !== undefined
+                        ? "수정 제출 기간에는 활동명을 변경할 수 없습니다."
+                        : undefined
+                    }
                   />
                 )}
               />

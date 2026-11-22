@@ -27,6 +27,8 @@ import {
   activityReportDetailQueryKey,
   useGetActivityReport,
 } from "@sparcs-clubs/web/features/activity-report/services/useGetActivityReport";
+import ReviewChangeHistoryButton from "@sparcs-clubs/web/features/executive/components/ReviewChangeHistoryButton";
+import ReviewInternalMemoCard from "@sparcs-clubs/web/features/executive/components/ReviewInternalMemoCard";
 
 import EditActivityReportModal from "./EditActivityReportModal";
 
@@ -306,6 +308,9 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
           </FlexWrapper>
           {isExecutive && (
             <>
+              <FlexWrapper justify="flex-end">
+                <ReviewChangeHistoryButton kind="activity" id={activityId} />
+              </FlexWrapper>
               {data.comments.length > 0 && (
                 <FlexWrapper direction="column" gap={8}>
                   {data.comments.map((comment, index) => (
@@ -343,6 +348,7 @@ const PastActivityReportModal: React.FC<PastActivityReportModalProps> = ({
                   area
                 />
               </FlexWrapper>
+              <ReviewInternalMemoCard kind="activity" id={activityId} />
             </>
           )}
           {!isExecutive && viewOnly ? (

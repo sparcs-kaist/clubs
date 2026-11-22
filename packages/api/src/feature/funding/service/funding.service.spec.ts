@@ -1,3 +1,4 @@
+import { ActivityTypeEnum } from "@clubs/interface/common/enum/activity.enum";
 import {
   FundingDeadlineEnum,
   FundingStatusEnum,
@@ -41,6 +42,9 @@ const studentId = 701;
 const now = new Date("2026-02-01");
 const fundingBody = {
   club: { id: club.id },
+  name: funding.name,
+  purposeActivity: { id: activity.id },
+  isFoodExpense: false,
   expenditureDate: new Date("2026-01-15"),
 };
 
@@ -50,6 +54,8 @@ const createFundingService = () => {
     put: jest.fn().mockResolvedValue({}),
     delete: jest.fn().mockResolvedValue({}),
     fetch: jest.fn().mockResolvedValue(funding),
+    fetchForUpdate: jest.fn().mockResolvedValue(funding),
+    recordChangeHistory: jest.fn().mockResolvedValue(undefined),
     fetchSummaries: jest.fn(),
     fetchCommentedSummaries: jest.fn(),
     updateChargedExecutive: jest.fn().mockResolvedValue(1),
@@ -78,6 +84,10 @@ const createFundingService = () => {
     fetchDivisionSummaries: jest.fn().mockResolvedValue([division]),
   };
   const activityPublicService = {
+    fetchSummary: jest.fn().mockResolvedValue({
+      ...activity,
+      activityTypeEnum: ActivityTypeEnum.matchedInternalActivity,
+    }),
     fetchSummaries: jest.fn().mockResolvedValue([activity]),
   };
   const semesterPublicService = {
@@ -135,6 +145,7 @@ const createFundingService = () => {
     userPublicService,
     clubPublicService,
     activityDurationPublicService,
+    activityPublicService,
     fundingDeadlinePublicService,
     prisma,
   };
@@ -262,6 +273,138 @@ describe("FundingService funding deadline validation", () => {
       ],
     });
     expect(fundingRepository.delete).not.toHaveBeenCalled();
+  });
+});
+
+describe("FundingService student funding restrictions", () => {
+  it.each([
+    [FundingDeadlineEnum.Modification, "새 항목명", false],
+    [FundingDeadlineEnum.Modification, funding.name, true],
+    [FundingDeadlineEnum.Writing, "새 항목명", true],
+  ])(
+    "validates the funding name during period %s for %s",
+    async (deadlineEnum, name, canSave) => {
+      const { service, fundingRepository, fundingDeadlinePublicService } =
+        createFundingService();
+      fundingDeadlinePublicService.search.mockResolvedValue([
+        { id: 1, deadlineEnum },
+      ]);
+
+      const save = service.putStudentFunding(
+        { ...fundingBody, name } as never,
+        { id: funding.id },
+        studentId,
+      );
+
+      if (canSave) {
+        await save;
+        expect(fundingRepository.put).toHaveBeenCalledWith(
+          funding.id,
+          expect.objectContaining({ name }),
+          expect.anything(),
+        );
+      } else {
+        await expect(save).rejects.toThrow(
+          "수정 제출 기간에는 지원금 항목명을 변경할 수 없습니다.",
+        );
+        expect(fundingRepository.put).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it.each([
+    [true, undefined],
+    [false, { explanation: "식사", files: [] }],
+  ])(
+    "rejects food evidence for a nonconforming purpose",
+    async (isFoodExpense, foodExpense) => {
+      const {
+        service,
+        activityPublicService,
+        fundingRepository,
+        fundingDeadlinePublicService,
+      } = createFundingService();
+      fundingDeadlinePublicService.search.mockResolvedValue([
+        { id: 1, deadlineEnum: FundingDeadlineEnum.Writing },
+      ]);
+      activityPublicService.fetchSummary.mockResolvedValue({
+        ...activity,
+        activityTypeEnum: ActivityTypeEnum.notMatchedActivity,
+      });
+
+      const body = { ...fundingBody, isFoodExpense, foodExpense } as never;
+      const message =
+        "동아리 성격에 합치하지 않는 활동은 식비를 증빙할 수 없습니다.";
+      await expect(service.postStudentFunding(body, studentId)).rejects.toThrow(
+        message,
+      );
+      await expect(
+        service.putStudentFunding(body, { id: funding.id }, studentId),
+      ).rejects.toThrow(message);
+      expect(fundingRepository.insert).not.toHaveBeenCalled();
+      expect(fundingRepository.put).not.toHaveBeenCalled();
+    },
+  );
+
+  it("permits food evidence for a conforming purpose", async () => {
+    const { service, fundingRepository, fundingDeadlinePublicService } =
+      createFundingService();
+    fundingDeadlinePublicService.search.mockResolvedValue([
+      { id: 1, deadlineEnum: FundingDeadlineEnum.Writing },
+    ]);
+    const body = {
+      ...fundingBody,
+      isFoodExpense: true,
+      foodExpense: { explanation: "식사", files: [] },
+    } as never;
+
+    await expect(service.postStudentFunding(body, studentId)).resolves.toEqual({
+      id: funding.id,
+    });
+    expect(fundingRepository.insert).toHaveBeenCalledWith(
+      body,
+      expect.anything(),
+    );
+  });
+
+  it("returns the last objection deadline even before the objection period", async () => {
+    const { service, fundingDeadlinePublicService } = createFundingService();
+    const deadlines = [
+      {
+        id: 1,
+        deadlineEnum: FundingDeadlineEnum.Writing,
+        startTerm: new Date("2026-01-01"),
+        endTerm: now,
+      },
+      {
+        id: 2,
+        deadlineEnum: FundingDeadlineEnum.Modification,
+        startTerm: now,
+        endTerm: new Date("2026-02-05"),
+      },
+      {
+        id: 3,
+        deadlineEnum: FundingDeadlineEnum.Exception,
+        startTerm: new Date("2026-02-06"),
+        endTerm: new Date("2026-02-07"),
+      },
+      {
+        id: 4,
+        deadlineEnum: FundingDeadlineEnum.Exception,
+        startTerm: new Date("2026-02-08"),
+        endTerm: new Date("2026-02-10"),
+      },
+    ];
+    fundingDeadlinePublicService.search.mockResolvedValue(deadlines);
+
+    await expect(service.getPublicFundingsDeadline()).resolves.toEqual({
+      targetDuration: activityDuration,
+      deadline: deadlines[1],
+      objectionDeadline: deadlines[3].endTerm,
+    });
+    expect(fundingDeadlinePublicService.search).toHaveBeenCalledWith({
+      semesterId: activityDuration.semester.id,
+    });
   });
 });
 

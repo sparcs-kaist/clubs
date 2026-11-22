@@ -173,6 +173,8 @@ describe("ActivityService", () => {
     const activityRepository = {
       approveExecutiveActivity: jest.fn().mockResolvedValue(true),
       fetch: jest.fn().mockResolvedValue(currentActivity),
+      fetchForReportUpdate: jest.fn().mockResolvedValue(currentActivity),
+      recordChangeHistory: jest.fn().mockResolvedValue(undefined),
       find: jest.fn().mockResolvedValue([currentActivity]),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
       sendBackExecutiveActivity: jest.fn().mockResolvedValue(true),
@@ -384,6 +386,7 @@ describe("ActivityService", () => {
 
     const updatedActivity = activityRepository.updateActivityReport.mock
       .calls[0][0] as MActivity;
+    expect(updatedActivity.name).toBe(body.name);
     expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
     expect(updatedActivity.professorApprovedAt).toBeNull();
     expect(updatedActivity.professorApprovalStatus).toBe(
@@ -397,7 +400,11 @@ describe("ActivityService", () => {
     const { activityDeadlinePublicService, activityRepository, service } =
       createService([{ deadlineEnum: ActivityDeadlineEnum.Modification }]);
 
-    await service.putStudentActivity({ activityId: activity.id }, body, 1);
+    await service.putStudentActivity(
+      { activityId: activity.id },
+      { ...body, name: activity.name },
+      1,
+    );
 
     expect(activityDeadlinePublicService.search).toHaveBeenCalledWith({
       semesterId: activityDuration.semester.id,
@@ -414,6 +421,17 @@ describe("ActivityService", () => {
     expect(updatedActivity.professorApprovedAt).toBeUndefined();
     expect(updatedActivity.professorApprovalStatus).toBeUndefined();
     expect(updatedActivity.commentedAt).toBeNull();
+  });
+
+  it("rejects changing a regular activity name during the modification period", async () => {
+    const { activityRepository, service } = createService([
+      { deadlineEnum: ActivityDeadlineEnum.Modification },
+    ]);
+
+    await expect(
+      service.putStudentActivity({ activityId: activity.id }, body, 1),
+    ).rejects.toThrow("수정 제출 기간에는 활동명을 변경할 수 없습니다.");
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
   });
 
   it("rejects regular activity report edits outside writing and modification periods", async () => {

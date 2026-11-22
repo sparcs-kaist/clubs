@@ -113,9 +113,18 @@ export class SemesterService {
     const thisSemesterDeadlines = await this.activityDeadlineRepository.find({
       semesterId: semester.id,
     });
-    const todayDeadline = thisSemesterDeadlines.find(
-      e => e.startTerm <= now && now <= e.endTerm,
+    const activeDeadlines = thisSemesterDeadlines.filter(
+      ({ startTerm, endTerm }) => startTerm <= now && now < endTerm,
     );
+    const todayDeadline =
+      activeDeadlines.find(
+        deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Modification,
+      ) ?? activeDeadlines[0];
+    const objectionDeadline = thisSemesterDeadlines
+      .filter(
+        deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Exception,
+      )
+      .sort((a, b) => b.endTerm.getTime() - a.endTerm.getTime())[0]?.endTerm;
 
     return {
       isWritable: todayDeadline?.deadlineEnum === ActivityDeadlineEnum.Writing,
@@ -133,6 +142,7 @@ export class SemesterService {
         endTerm: term.endTerm,
         year: term.year,
       },
+      objectionDeadline,
       deadline: todayDeadline
         ? {
             activityDeadlineEnum: todayDeadline.deadlineEnum,

@@ -11,6 +11,7 @@ import {
 
 import { PrismaTransactionClient } from "@sparcs-clubs/api/common/base/base.repository";
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { toReviewSnapshot } from "@sparcs-clubs/api/common/review/review-snapshot";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
@@ -30,6 +31,12 @@ const fundingSummarySelect = {
   commentedExecutiveId: true,
 } satisfies Prisma.FundingSelect;
 
+const internalMemoSelect = {
+  content: true,
+  updatedAt: true,
+  updatedBy: true,
+} as const;
+
 @Injectable()
 export default class FundingRepository {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -43,6 +50,94 @@ export default class FundingRepository {
     callback: (tx: PrismaTransactionClient) => Promise<Result>,
   ): Promise<Result> {
     return this.prisma.$transaction(callback);
+  }
+
+  async getInternalMemo(id: number) {
+    const item = await this.txHost.tx.funding.findUnique({
+      where: { id, deletedAt: null },
+      select: { internalMemo: { select: internalMemoSelect } },
+    });
+    if (!item) throw new NotFoundException(`Funding: ${id} not found`);
+    return item.internalMemo;
+  }
+
+  async putInternalMemo(
+    id: number,
+    memo: {
+      content: string;
+      updatedAt: Date;
+      updatedBy: string;
+      updatedByExecutiveId: number;
+    },
+  ) {
+    await this.getInternalMemo(id);
+    return this.txHost.tx.fundingInternalMemo.upsert({
+      where: { fundingId: id },
+      create: { fundingId: id, ...memo },
+      update: { ...memo },
+      select: internalMemoSelect,
+    });
+  }
+
+  async deleteInternalMemo(id: number) {
+    await this.getInternalMemo(id);
+    await this.txHost.tx.fundingInternalMemo.deleteMany({
+      where: { fundingId: id },
+    });
+  }
+
+  async fetchForUpdate(id: number): Promise<MFunding> {
+    const { tx } = this.txHost;
+    // Write before the first read so concurrent edits capture adjacent versions.
+    await tx.funding.updateMany({
+      where: { id, deletedAt: null },
+      data: { id },
+    });
+    return this.fetch(id);
+  }
+
+  async recordChangeHistory(
+    before: MFunding,
+    editorStudentId: number,
+    createdAt: Date,
+  ): Promise<void> {
+    const { tx } = this.txHost;
+    const after = await this.fetch(before.id);
+    await tx.fundingChangeHistory.create({
+      data: {
+        fundingId: before.id,
+        editorStudentId,
+        before: this.snapshot(before),
+        after: this.snapshot(after),
+        createdAt,
+      },
+    });
+  }
+
+  private snapshot(funding: MFunding) {
+    const {
+      id: _id,
+      club: _club,
+      activityD: _activityD,
+      fundingStatusEnum: _status,
+      approvedAmount: _approvedAmount,
+      commentedExecutive: _commentedExecutive,
+      editedAt: _editedAt,
+      commentedAt: _commentedAt,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...fields
+    } = funding;
+    return toReviewSnapshot(fields);
+  }
+
+  async findChangeHistory(fundingId: number) {
+    await this.fetch(fundingId);
+    return this.txHost.tx.fundingChangeHistory.findMany({
+      where: { fundingId },
+      orderBy: { id: "desc" },
+      select: { id: true, createdAt: true, before: true, after: true },
+    });
   }
 
   async fetch(id: number): Promise<MFunding> {

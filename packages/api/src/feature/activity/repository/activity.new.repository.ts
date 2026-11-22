@@ -21,6 +21,7 @@ import {
   PrismaMultiTableConfig,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
+import { toReviewSnapshot } from "@sparcs-clubs/api/common/review/review-snapshot";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
 import {
@@ -70,6 +71,12 @@ const activityTableConfig: PrismaMultiTableConfig = {
   },
 };
 
+const internalMemoSelect = {
+  content: true,
+  updatedAt: true,
+  updatedBy: true,
+} as const;
+
 @Injectable()
 export class ActivityNewRepository extends BaseMultiTableRepository<
   MActivity,
@@ -83,6 +90,91 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
   ) {
     super(activityTableConfig, MActivity, "activityId");
+  }
+
+  async getInternalMemo(id: number) {
+    const item = await this.txHost.tx.activity.findUnique({
+      where: { id, deletedAt: null },
+      select: { internalMemo: { select: internalMemoSelect } },
+    });
+    if (!item) throw new NotFoundException(`Activity: ${id} not found`);
+    return item.internalMemo;
+  }
+
+  async putInternalMemo(
+    id: number,
+    memo: {
+      content: string;
+      updatedAt: Date;
+      updatedBy: string;
+      updatedByExecutiveId: number;
+    },
+  ) {
+    await this.getInternalMemo(id);
+    return this.txHost.tx.activityInternalMemo.upsert({
+      where: { activityId: id },
+      create: { activityId: id, ...memo },
+      update: { ...memo },
+      select: internalMemoSelect,
+    });
+  }
+
+  async deleteInternalMemo(id: number) {
+    await this.getInternalMemo(id);
+    await this.txHost.tx.activityInternalMemo.deleteMany({
+      where: { activityId: id },
+    });
+  }
+
+  async fetchForReportUpdate(id: number): Promise<MActivity> {
+    const { tx } = this.txHost;
+    // Write before the first read so concurrent edits capture adjacent versions.
+    await tx.activity.updateMany({
+      where: { id, deletedAt: null },
+      data: { id },
+    });
+    return this.fetch(id, tx);
+  }
+
+  async recordChangeHistory(
+    before: MActivity,
+    editorStudentId: number,
+    createdAt: Date,
+  ): Promise<void> {
+    const { tx } = this.txHost;
+    const after = await this.fetch(before.id, tx);
+    await tx.activityChangeHistory.create({
+      data: {
+        activityId: before.id,
+        editorStudentId,
+        before: this.snapshot(before),
+        after: this.snapshot(after),
+        createdAt,
+      },
+    });
+  }
+
+  private snapshot(activity: MActivity) {
+    return toReviewSnapshot({
+      name: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
+      durations: activity.durations,
+      location: activity.location,
+      purpose: activity.purpose,
+      detail: activity.detail,
+      evidence: activity.evidence,
+      evidenceFiles: activity.evidenceFiles,
+      participants: activity.participants,
+    });
+  }
+
+  async findChangeHistory(activityId: number) {
+    await this.fetch(activityId);
+    return this.txHost.tx.activityChangeHistory.findMany({
+      where: { activityId },
+      orderBy: { id: "desc" },
+      select: { id: true, createdAt: true, before: true, after: true },
+    });
   }
 
   selectActivityByIds(activityIds: number[]) {

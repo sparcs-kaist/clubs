@@ -1,5 +1,4 @@
 import { ApiFnd007ResponseOk } from "@clubs/interface/api/funding/endpoint/apiFnd007";
-import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
 
 import { fundingDeadlineEnumToString } from "../features/manage-club/funding/constants/fundingDeadlineEnumToString";
 import { formatSimpleDateTime } from "../utils/Date/formatDate";
@@ -10,11 +9,7 @@ const manageClubFundingPagePath = "/manage-club/funding";
 
 const newFundingListSectionTitle = "신규 지원금 신청";
 const newFundingListSectionInfoText = (data?: ApiFnd007ResponseOk) => {
-  // 기간이 없거나 이의제기 기간인 경우 기간 정보를 표시하지 않음
-  if (
-    data?.deadline == null ||
-    data?.deadline.deadlineEnum === FundingDeadlineEnum.Exception
-  ) {
+  if (data?.deadline == null) {
     return "현재는 지원금 신청 기간이 아닙니다.";
   }
 
