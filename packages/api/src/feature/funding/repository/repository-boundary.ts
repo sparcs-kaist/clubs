@@ -14,6 +14,7 @@ export const repositoryBoundary = {
     "fundingNonCorporateTransactionFile",
     "fundingProfitMakingActivityFile",
     "fundingPublicationFile",
+    "fundingReceipt",
     "fundingTradeDetailFile",
     "fundingTradeEvidenceFile",
     "fundingTransportationPassenger",
@@ -21,6 +22,7 @@ export const repositoryBoundary = {
   exportedPrismaModels: [
     "funding",
     "fundingFeedback",
+    "fundingReceipt",
     "fundingTransportationPassenger",
   ],
   importedPrismaModels: [

@@ -12,7 +12,7 @@ import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import UnitInput from "@sparcs-clubs/web/common/components/Forms/UnitInput";
 import Select from "@sparcs-clubs/web/common/components/Select";
 import useGetActivityAvailable from "@sparcs-clubs/web/features/activity-report/services/useGetActivityAvailable";
-import { FundingInfo } from "@sparcs-clubs/web/features/manage-club/funding/types/funding";
+import { FundingFormData } from "@sparcs-clubs/web/features/manage-club/funding/types/funding";
 import {
   getLocalDateLastTime,
   getLocalDateOnly,
@@ -30,8 +30,11 @@ const RowWrapper = styled.div`
     flex: 1;
   }
 `;
-const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
-  const formCtx = useFormContext<FundingInfo>();
+const FundingInfoFrame: React.FC<{
+  clubId: number;
+  usesPurchaseReceipt: boolean;
+}> = ({ clubId, usesPurchaseReceipt }) => {
+  const formCtx = useFormContext<FundingFormData>();
   const { control } = formCtx;
 
   const {
@@ -146,16 +149,43 @@ const FundingInfoFrame: React.FC<{ clubId: number }> = ({ clubId }) => {
               name="expenditureAmount"
               required
               control={control}
-              renderItem={({ value, onChange, errorMessage }) => (
-                <UnitInput
-                  label="지출 금액"
-                  placeholder="금액을 입력해주세요"
-                  unit="원"
-                  value={value?.toString()}
-                  handleChange={onChange}
-                  errorMessage={errorMessage}
-                />
-              )}
+              rules={{
+                validate: value => {
+                  if (!usesPurchaseReceipt) return true;
+                  const amount = Number(value);
+                  return (
+                    (Number.isInteger(amount) &&
+                      amount > 0 &&
+                      amount <= 2_147_483_647) ||
+                    "1원 이상 2,147,483,647원 이하의 금액을 입력해 주세요."
+                  );
+                },
+              }}
+              renderItem={({ value, onChange, errorMessage }) =>
+                usesPurchaseReceipt ? (
+                  <TextInput
+                    aria-label="이 품목의 결제 금액"
+                    label="이 품목의 결제 금액(원)"
+                    placeholder="이 품목의 결제 금액을 입력해 주세요"
+                    helperText="배송비를 뺀 이 품목의 실제 결제 금액을 입력해 주세요."
+                    inputMode="numeric"
+                    value={value?.toString() ?? ""}
+                    errorMessage={errorMessage}
+                    handleChange={input => {
+                      if (/^\d*$/.test(input)) onChange(input);
+                    }}
+                  />
+                ) : (
+                  <UnitInput
+                    label="지출 금액"
+                    placeholder="금액을 입력해주세요"
+                    unit="원"
+                    value={value?.toString()}
+                    handleChange={onChange}
+                    errorMessage={errorMessage}
+                  />
+                )
+              }
             />
           </RowWrapper>
         </Card>

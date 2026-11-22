@@ -32,7 +32,7 @@ export const repositoryBoundary = {
     },
     {
       from: "packages/api/src/feature/funding/repository/repository-boundary.ts",
-      models: ["funding"],
+      models: ["funding", "fundingReceipt"],
     },
     {
       from: "packages/api/src/feature/meeting/repository/repository-boundary.ts",

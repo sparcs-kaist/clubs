@@ -246,6 +246,7 @@ model Club {
   commonSpaceUsageOrders          CommonSpaceUsageOrderD[]
   divisionPermanentClubDs         DivisionPermanentClubD[]
   fundings                        Funding[]
+  fundingReceipts                 FundingReceipt[]
   registrations                   Registration[]
   registrationApplicationStudents RegistrationApplicationStudent[]
   rentalOrders                    RentalOrder[]
@@ -717,6 +718,21 @@ model File {
 // Funding
 // ============================================================================
 
+model FundingReceipt {
+  id              Int      @id @default(autoincrement())
+  clubId          Int      @map("club_id")
+  expenditureDate DateTime @map("expenditure_date") @db.DateTime(0)
+  reference       String   @db.VarChar(128)
+  totalAmount     Int      @map("total_amount")
+  lockVersion     Int      @default(0) @map("lock_version")
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  fundings Funding[]
+
+  @@unique([clubId, expenditureDate, reference])
+  @@map("funding_receipt")
+}
+
 model Funding {
   id                                       Int       @id @default(autoincrement())
   clubId                                   Int       @map("club_id")
@@ -726,6 +742,9 @@ model Funding {
   name                                     String    @db.VarChar(255)
   expenditureDate                          DateTime  @map("expenditure_date") @db.DateTime(0)
   expenditureAmount                        Int       @map("expenditure_amount")
+  receiptId                                Int?      @map("receipt_id")
+  receiptItemNumber                        Int?      @map("receipt_item_number")
+  purchaseQuantity                         Int?      @map("purchase_quantity")
   approvedAmount                           Int?      @map("approved_amount")
   tradeDetailExplanation                   String?   @map("trade_detail_explanation") @db.Text
   clubSuppliesName                         String?   @map("club_supplies_name") @db.VarChar(255)
@@ -774,9 +793,10 @@ model Funding {
   updatedAt                                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt                                DateTime? @map("deleted_at") @db.Timestamp(0)
 
-  club             Club       @relation(fields: [clubId], references: [id], map: "funding_club_id_fk")
-  activityD        ActivityD  @relation(fields: [activityDId], references: [id])
-  chargedExecutive Executive? @relation(fields: [chargedExecutiveId], references: [id], map: "funding_charged_executive_id_fk")
+  club             Club            @relation(fields: [clubId], references: [id], map: "funding_club_id_fk")
+  activityD        ActivityD       @relation(fields: [activityDId], references: [id])
+  receipt          FundingReceipt? @relation(fields: [receiptId], references: [id])
+  chargedExecutive Executive?      @relation(fields: [chargedExecutiveId], references: [id], map: "funding_charged_executive_id_fk")
 
   tradeEvidenceFiles                 FundingTradeEvidenceFile[]
   tradeDetailFiles                   FundingTradeDetailFile[]
@@ -795,6 +815,7 @@ model Funding {
   transportationPassengers           FundingTransportationPassenger[]
   feedbacks                          FundingFeedback[]
 
+  @@index([receiptId, deletedAt, receiptItemNumber])
   @@map("funding")
 }
 

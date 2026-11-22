@@ -1,4 +1,4 @@
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
@@ -16,15 +16,20 @@ import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 import useGetInitialFundingFormData from "../hooks/useGetInitialFundingForm";
 import useUpdateFunding from "../hooks/useUpdateFunding";
 import { FundingFormData } from "../types/funding";
+import getFundingFormError from "../utils/fundingFormError";
 import FundingForm from "./FundingForm";
 
 interface EditFundingFrameProps {
   clubId: number;
+  fundingId: number;
 }
 
-const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
+const EditFundingFrame: React.FC<EditFundingFrameProps> = ({
+  clubId,
+  fundingId,
+}) => {
   const router = useRouter();
-  const { id: fundingId } = useParams<{ id: string }>();
+  const draftKey = `${LOCAL_STORAGE_KEY.EDIT_FUNDING}:${fundingId}` as const;
   const cancelClick = () => {
     router.push(`/manage-club/funding/${fundingId}`);
   };
@@ -33,12 +38,12 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
     data: funding,
     isLoading,
     isError,
-  } = useGetInitialFundingFormData(+fundingId);
+  } = useGetInitialFundingFormData(fundingId);
 
-  const { mutateAsync: updateFunding } = useUpdateFunding(+fundingId, clubId);
+  const { mutate: updateFunding } = useUpdateFunding(fundingId, clubId);
 
   const { savedData, isModalOpen, handleConfirm, handleClose } =
-    useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.EDIT_FUNDING);
+    useTemporaryStorage<FundingFormData>(draftKey);
 
   const handleSubmit = (data: FundingFormData) => {
     const filteredData = Object.fromEntries(
@@ -49,7 +54,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
 
     updateFunding(filteredData, {
       onSuccess: () => {
-        LocalStorageUtil.remove(LOCAL_STORAGE_KEY.EDIT_FUNDING);
+        LocalStorageUtil.remove(draftKey);
         overlay.open(({ isOpen, close }) => (
           <Modal isOpen={isOpen}>
             <ConfirmModalContent
@@ -69,8 +74,8 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
           <Modal isOpen={isOpen}>
             <ConfirmModalContent onConfirm={close}>
               지원금 수정에 실패했습니다.
-              <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
-                {error.message}
+              <Typography color="GRAY.600" fs={12} lh={16} fw="REGULAR">
+                {getFundingFormError(error)}
               </Typography>
             </ConfirmModalContent>
           </Modal>
@@ -105,7 +110,17 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
           clubId={clubId}
           onCancel={cancelClick}
           onSubmit={handleSubmit}
-          initialData={savedData ?? funding ?? []}
+          storedFunding={funding}
+          draftKey={draftKey}
+          initialData={
+            savedData
+              ? {
+                  ...savedData,
+                  purchaseReceipt:
+                    savedData.purchaseReceipt ?? funding.purchaseReceipt,
+                }
+              : funding
+          }
         />
       </AsyncBoundary>
     </FlexWrapper>

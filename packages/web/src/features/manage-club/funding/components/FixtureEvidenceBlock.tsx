@@ -22,11 +22,13 @@ import EvidenceBlockTitle from "./EvidenceBlockTitle";
 interface FixtureEvidenceBlockProps {
   isFixture: boolean;
   required?: boolean;
+  usesPurchaseReceipt: boolean;
 }
 
 const FixtureEvidenceBlock: React.FC<FixtureEvidenceBlockProps> = ({
   isFixture,
   required = false,
+  usesPurchaseReceipt,
 }) => {
   const formCtx = useFormContext<AddEvidence>();
   const { control, watch, setValue } = formCtx;
@@ -98,35 +100,37 @@ const FixtureEvidenceBlock: React.FC<FixtureEvidenceBlockProps> = ({
             )}
           />
 
-          <FlexWrapper direction="row" gap={32}>
-            <FormController
-              name={isFixture ? "numberOfFixture" : "numberOfClubSupplies"}
-              required={required}
-              control={control}
-              renderItem={props => (
-                <ItemNumberInput
-                  {...props}
-                  label={`${content} 개수`}
-                  placeholder={`${content} 개수를 입력해주세요`}
-                />
-              )}
-            />
-            <FormController
-              name={isFixture ? "priceOfFixture" : "priceOfClubSupplies"}
-              required={required}
-              control={control}
-              renderItem={({ value, onChange }) => (
-                <UnitInput
-                  label={`${content} 개별 단가`}
-                  placeholder={`${content} 개별 단가를 입력해주세요`}
-                  unit="원 / 1개"
-                  value={value?.toString()}
-                  handleChange={onChange}
-                  setErrorStatus={() => {}}
-                />
-              )}
-            />
-          </FlexWrapper>
+          {!usesPurchaseReceipt && (
+            <FlexWrapper direction="row" gap={32}>
+              <FormController
+                name={isFixture ? "numberOfFixture" : "numberOfClubSupplies"}
+                required={required}
+                control={control}
+                renderItem={props => (
+                  <ItemNumberInput
+                    {...props}
+                    label={`${content} 개수`}
+                    placeholder={`${content} 개수를 입력해주세요`}
+                  />
+                )}
+              />
+              <FormController
+                name={isFixture ? "priceOfFixture" : "priceOfClubSupplies"}
+                required={required}
+                control={control}
+                renderItem={({ value, onChange }) => (
+                  <UnitInput
+                    label={`${content} 개별 단가`}
+                    placeholder={`${content} 개별 단가를 입력해주세요`}
+                    unit="원 / 1개"
+                    value={value?.toString()}
+                    handleChange={onChange}
+                    setErrorStatus={() => {}}
+                  />
+                )}
+              />
+            </FlexWrapper>
+          )}
           {/* TODO: EvidenceUploadWithText 컴포넌트로 변경 */}
           {(isFixture ? fixtureClassEnum : clubSuppliesClassEnum) && (
             <FlexWrapper direction="column" gap={4}>

@@ -21,6 +21,7 @@ const useUpdateFunding = (fundingId: number, clubId: number) => {
       purposeActivity,
       name,
       expenditureAmount,
+      purchaseReceipt,
       tradeDetailExplanation,
       isFixture,
       isTransportation,
@@ -47,6 +48,7 @@ const useUpdateFunding = (fundingId: number, clubId: number) => {
             name,
             expenditureDate: data.expenditureDate,
             expenditureAmount: Number(expenditureAmount),
+            purchaseReceipt,
 
             tradeEvidenceFiles: data.tradeEvidenceFiles.map(file => ({
               id: file.id,
@@ -84,8 +86,12 @@ const useUpdateFunding = (fundingId: number, clubId: number) => {
                         id: file.id,
                       }))
                     : [],
-                  number: Number(data.numberOfClubSupplies),
-                  price: Number(data.priceOfClubSupplies),
+                  number: purchaseReceipt
+                    ? undefined
+                    : Number(data.numberOfClubSupplies),
+                  price: purchaseReceipt
+                    ? undefined
+                    : Number(data.priceOfClubSupplies),
                 }
               : undefined,
 
@@ -106,8 +112,8 @@ const useUpdateFunding = (fundingId: number, clubId: number) => {
                         id: file.id,
                       }))
                     : [],
-                  number: data.numberOfFixture,
-                  price: data.priceOfFixture,
+                  number: purchaseReceipt ? undefined : data.numberOfFixture,
+                  price: purchaseReceipt ? undefined : data.priceOfFixture,
                 }
               : undefined,
 

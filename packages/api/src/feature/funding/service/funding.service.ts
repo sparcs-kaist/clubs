@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
 import { IActivityDuration } from "@clubs/domain/semester/activity-duration";
 
@@ -61,6 +62,7 @@ import {
 import { IFundingComment } from "@clubs/interface/api/funding/type/funding.comment.type";
 import {
   IFunding,
+  IFundingRequest,
   IFundingResponse,
 } from "@clubs/interface/api/funding/type/funding.type";
 import { IExecutive, IStudent } from "@clubs/interface/api/user/type/user.type";
@@ -71,6 +73,7 @@ import {
 } from "@clubs/interface/common/enum/funding.enum";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import ActivityPublicService from "@sparcs-clubs/api/feature/activity/service/activity.public.service";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -89,6 +92,11 @@ import {
   getFundingCommentAmountValidationError,
   getFundingCommentPreFetchValidationError,
 } from "./funding-comment-validator/funding-comment.validator";
+import { getFundingPurchaseValidationError } from "./funding-purchase.validator";
+
+const readCommitted = {
+  isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+};
 
 @Injectable()
 export default class FundingService {
@@ -124,7 +132,7 @@ export default class FundingService {
     }
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>(readCommitted)
   async postStudentFunding(
     body: ApiFnd001RequestBody,
     studentId: number,
@@ -133,6 +141,7 @@ export default class FundingService {
     await this.checkDeadline([FundingDeadlineEnum.Writing]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
+    this.validatePurchase(body);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -439,7 +448,7 @@ export default class FundingService {
     return undefined;
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>(readCommitted)
   async putStudentFunding(
     body: ApiFnd003RequestBody,
     param: ApiFnd003RequestParam,
@@ -452,6 +461,11 @@ export default class FundingService {
     ]);
 
     const activityD = await this.validateExpenditureDate(body.expenditureDate);
+    const stored = await this.fundingRepository.lockForEdit(
+      param.id,
+      body.club.id,
+    );
+    this.validatePurchase(body, stored);
 
     const fundingStatusEnum = 1;
     const approvedAmount = 0;
@@ -461,6 +475,17 @@ export default class FundingService {
       fundingStatusEnum,
       approvedAmount,
     });
+  }
+
+  private validatePurchase(body: IFundingRequest, stored?: MFunding): void {
+    const evidenceCount =
+      body.tradeEvidenceFiles.length + body.tradeDetailFiles.length;
+    const error = getFundingPurchaseValidationError(
+      body,
+      evidenceCount,
+      stored,
+    );
+    if (error) throw new HttpException(error, HttpStatus.BAD_REQUEST);
   }
 
   @Transactional()

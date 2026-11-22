@@ -14,6 +14,7 @@ import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 
 import { useCreateFunding } from "../hooks/useCreateFunding";
 import { FundingFormData } from "../types/funding";
+import getFundingFormError from "../utils/fundingFormError";
 import FundingForm from "./FundingForm";
 
 interface CreateFundingFrameProps {
@@ -54,8 +55,8 @@ const CreateFundingFrame: React.FC<CreateFundingFrameProps> = ({ clubId }) => {
           <Modal isOpen={isOpen}>
             <ConfirmModalContent onConfirm={close}>
               지원금 신청에 실패했습니다.
-              <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
-                {error.message}
+              <Typography color="GRAY.600" fs={12} lh={16} fw="REGULAR">
+                {getFundingFormError(error)}
               </Typography>
             </ConfirmModalContent>
           </Modal>
