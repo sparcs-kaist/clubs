@@ -163,7 +163,8 @@ const FixtureEvidenceBlock: React.FC<FixtureEvidenceBlockProps> = ({
           {isPurchase && (
             <FlexWrapper direction="column" gap={4}>
               <Typography fs={14} lh={20}>
-                개별 단가에는 배송비를 포함하지 마세요.
+                개별 단가에는 물품 한 개의 가격을 입력해 주세요. 배송비는 지출
+                금액에 포함할 수 있습니다.
               </Typography>
               {hasSubtotal && (
                 <Typography fs={14} lh={20}>
