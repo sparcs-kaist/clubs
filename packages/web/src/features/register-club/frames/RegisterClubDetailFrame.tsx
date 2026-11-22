@@ -65,7 +65,12 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
 
   return (
     <AsyncBoundary isLoading={divisionLoading} isError={divisionError}>
-      <Card padding="32px" gap={20} outline>
+      <Card
+        padding="32px"
+        gap={20}
+        outline
+        style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+      >
         {/* 교수: progress 보여주지 않음. 상임동아리: progress는 보이나 comments 가림 */}
         {profile !== UserTypeEnum.Professor && (
           <RegisterClubStatusSection

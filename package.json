@@ -19,6 +19,7 @@
     "pre-push:parallel": "node scripts/pre-push-parallel.mjs --profile pre-push",
     "check:diff-line-convention-guards": "node scripts/pre-push-parallel.mjs --profile diff-line-convention-guards",
     "format:check:changed": "node scripts/check-format-changed.mjs",
+    "web-newlines:check": "node scripts/web-newline-guard/check.mjs",
     "web-page-allowlist:check": "node scripts/web-page-allowlist-guard/web-page-allowlist-guard.mjs",
     "mcdc": "node scripts/mcdc/cli.mjs",
     "mcdc:changed": "node scripts/mcdc/jest-runner.mjs --changed-from origin/dev --source packages/api/src --min-conditions 2",
@@ -65,6 +66,7 @@
     "service-db-access-guard:changed": "Pre-push validator. Blocks changed service methods from calling Prisma or TransactionHost.tx directly.",
     "soft-delete-guard:changed": "Pre-push validator. Requires explicit active/deleted/include-deleted intent on changed Prisma calls for models with deletedAt.",
     "test:prisma-query-guard": "Node test fixtures for the changed-line Prisma raw SQL guard.",
+    "web-newlines:check": "Pre-push validator for web styles that can collapse line breaks.",
     "web-page-allowlist:check": "Pre-push validator. Requires every Next app page route to be production-ready or explicitly dev-only."
   },
   "lint-staged": {
