@@ -2,17 +2,27 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Info from "@sparcs-clubs/web/common/components/Info";
+import ErrorModal from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
 import PageHead from "@sparcs-clubs/web/common/components/PageHead";
-import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
+import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
+import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import {
+  type Profile,
+  useAuth,
+} from "@sparcs-clubs/web/common/providers/AuthContext";
+import useUserPhoneNumber from "@sparcs-clubs/web/common/services/getUserPhoneNumber";
+import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
 
+import ClubRentalOrders from "../components/ClubRentalOrders";
 import {
   RentalActions,
-  RentalAuth,
   RentalError,
   RentalField,
   RentalFieldGrid,
@@ -37,13 +47,15 @@ import {
 } from "../utils/rentalSchedule";
 
 const RentalApplicationForm = ({
-  userId,
+  club,
   applicant,
+  savedPhone,
 }: {
-  userId: number;
+  club: { id: number; name: string };
   applicant: string;
+  savedPhone: string | null;
 }) => {
-  const [clubId, setClubId] = useState(0);
+  const [phone, setPhone] = useState<string>();
   const [itemId, setItemId] = useState(0);
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
@@ -52,7 +64,6 @@ const RentalApplicationForm = ({
   const queryClient = useQueryClient();
   const router = useRouter();
   const today = todayRentalDate();
-  const clubs = useRentalEligibleClubs(userId);
   const items = useRentalItems();
   const officeHours = useRentalOfficeHours(today);
   const returnOptions = useRentalReturnOptions(itemId, pickupDate);
@@ -68,7 +79,6 @@ const RentalApplicationForm = ({
     },
   });
 
-  const selectedClub = clubs.data?.find(club => club.id === clubId);
   const selectedItem = items.data?.find(item => item.id === itemId);
   const returnSlot = returnOptions.data?.options.find(
     option => option.date === returnDate && option.availableQuantity > 0,
@@ -81,7 +91,6 @@ const RentalApplicationForm = ({
   const dependsOnReturn =
     returnSlot && quantity > returnSlot.availableWithoutSameDayReturns;
   const canSubmit =
-    selectedClub &&
     selectedItem &&
     pickup &&
     returnSlot &&
@@ -94,12 +103,12 @@ const RentalApplicationForm = ({
     if (!canSubmit || submit.isPending) return;
     const form = new FormData(event.currentTarget);
     const body = {
-      clubId: selectedClub.id,
+      clubId: club.id,
       itemId: selectedItem.id,
       quantity,
       pickup: rentalSlotSelection(pickup),
       return: rentalSlotSelection(returnSlot),
-      contactPhoneNumber: String(form.get("phone") ?? "").trim(),
+      contactPhoneNumber: (phone ?? savedPhone ?? "").trim(),
       purpose: String(form.get("purpose") ?? "").trim(),
     };
     const key = JSON.stringify(body);
@@ -109,25 +118,19 @@ const RentalApplicationForm = ({
     submit.mutate({ ...body, clientRequestId: request.current.id });
   };
 
-  if (clubs.isPending || items.isPending || officeHours.isPending) {
+  if (items.isPending || officeHours.isPending) {
     return <AsyncBoundary isLoading isError={false} />;
   }
-  if (clubs.isError || items.isError || officeHours.isError) {
+  if (items.isError || officeHours.isError) {
     return (
       <RentalError
-        error={clubs.error ?? items.error ?? officeHours.error}
+        error={items.error ?? officeHours.error}
         fallback="신청에 필요한 정보를 불러오지 못했습니다."
         retry={() => {
-          clubs.refetch();
           items.refetch();
           officeHours.refetch();
         }}
       />
-    );
-  }
-  if (!clubs.data.length) {
-    return (
-      <Info text="현재 대표자 또는 대의원으로 등록된 동아리에서 신청할 수 있습니다." />
     );
   }
   if (!items.data.length || !pickupSlots?.length) {
@@ -140,18 +143,7 @@ const RentalApplicationForm = ({
         <RentalFieldGrid>
           <RentalField>
             동아리
-            <RentalSelect
-              required
-              value={clubId || ""}
-              onChange={event => setClubId(Number(event.target.value))}
-            >
-              <option value="">동아리 선택</option>
-              {clubs.data.map(club => (
-                <option key={club.id} value={club.id}>
-                  {club.name}
-                </option>
-              ))}
-            </RentalSelect>
+            <RentalInput readOnly value={club.name} />
           </RentalField>
           <RentalField>
             신청자
@@ -264,6 +256,8 @@ const RentalApplicationForm = ({
             placeholder="010-1234-5678"
             pattern="010-[0-9]{4}-[0-9]{4}"
             maxLength={13}
+            value={phone ?? savedPhone ?? ""}
+            onChange={event => setPhone(event.target.value)}
             required
           />
         </RentalField>
@@ -290,8 +284,78 @@ const RentalApplicationForm = ({
   );
 };
 
+const RentalApplication = ({ profile }: { profile: Profile }) => {
+  const clubs = useRentalEligibleClubs(profile.id);
+  const managedClub = useGetMyManageClub();
+  const phone = useUserPhoneNumber({ profile: profile.type }, profile.id);
+  const router = useRouter();
+
+  if (clubs.isPending || managedClub.isPending) {
+    return <AsyncBoundary isLoading isError={false} />;
+  }
+  if (clubs.isError || managedClub.isError) {
+    return (
+      <RentalError
+        error={clubs.error ?? managedClub.error}
+        fallback="신청할 동아리 정보를 불러오지 못했습니다."
+        retry={() => {
+          clubs.refetch();
+          managedClub.refetch();
+        }}
+      />
+    );
+  }
+  const managedClubId =
+    "clubId" in managedClub.data ? managedClub.data.clubId : undefined;
+  const club = clubs.data.find(current => current.id === managedClubId);
+  if (!club) {
+    return (
+      <ErrorModal
+        isOpen
+        message="현재 대표자/대의원만 신청하실 수 있습니다"
+        onConfirm={() => router.back()}
+      />
+    );
+  }
+
+  return (
+    <>
+      {phone.isError && (
+        <RentalError
+          error={phone.error}
+          fallback="저장된 연락처를 불러오지 못했습니다. 연락처를 직접 입력하거나 다시 불러와 주세요."
+          retry={() => phone.refetch()}
+        />
+      )}
+      <RentalApplicationForm
+        key={club.id}
+        club={club}
+        applicant={profile.name}
+        savedPhone={phone.data?.phoneNumber ?? null}
+      />
+      <FlexWrapper direction="column" gap={16}>
+        <SectionTitle>내 동아리 대여 신청 목록</SectionTitle>
+        <ClubRentalOrders clubId={club.id} />
+      </FlexWrapper>
+    </>
+  );
+};
+
 const RentalApplicationFrame = () => {
-  const { profile } = useAuth();
+  const { profile, isLoggedIn, login } = useAuth();
+  const router = useRouter();
+
+  if (!isLoggedIn) return <LoginRequired login={login} />;
+  if (!profile) return <AsyncBoundary isLoading isError={false} />;
+  if (!studentUserTypes.includes(profile.type)) {
+    return (
+      <ErrorModal
+        isOpen
+        message="현재 대표자/대의원만 신청하실 수 있습니다"
+        onConfirm={() => router.back()}
+      />
+    );
+  }
   return (
     <FlexWrapper direction="column" gap={24}>
       <PageHead
@@ -300,17 +364,11 @@ const RentalApplicationFrame = () => {
       />
       <RentalActions>
         <RentalLink href="/office-hours">상근 일정 보기</RentalLink>
-        <RentalLink href="/my/rental-business">내 대여 내역</RentalLink>
+        <RentalLink href="/manage-club#rental-business">
+          동아리 대여 내역
+        </RentalLink>
       </RentalActions>
-      <RentalAuth>
-        {profile && (
-          <RentalApplicationForm
-            key={profile.id}
-            userId={profile.id}
-            applicant={profile.name}
-          />
-        )}
-      </RentalAuth>
+      <RentalApplication key={profile.id} profile={profile} />
     </FlexWrapper>
   );
 };

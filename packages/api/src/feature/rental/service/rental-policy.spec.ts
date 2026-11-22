@@ -2,6 +2,7 @@ import {
   activeRentalStatus,
   addRentalDays,
   beforeSameDayReturns,
+  canCancelRental,
   checkoutQuantity,
   hasSameDayReturn,
   peakReservedQuantity,
@@ -26,7 +27,7 @@ function reservation(
 }
 
 describe("rental period and inventory", () => {
-  it("uses the configured published office count", () => {
+  it("caps the configured office count at the last published shift", () => {
     expect(
       regularReturnLimit(
         { durationType: "OFFICE_HOURS", durationValue: 3 },
@@ -40,8 +41,29 @@ describe("rental period and inventory", () => {
         monday,
         [wednesday, thursday],
       ),
+    ).toBe(thursday);
+    expect(
+      regularReturnLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 3 },
+        monday,
+        [],
+      ),
     ).toBeUndefined();
   });
+
+  it.each([
+    [1, 1, "RESERVED", true],
+    [1, 2, "RESERVED", false],
+    [1, 1, "CHECKED_OUT", false],
+    [1, 1, "RETURNED", false],
+    [1, 1, "CANCELLED", false],
+    [1, 1, "REJECTED", false],
+  ])(
+    "permits cancellation only for the applicant's reserved request",
+    (owner, viewer, status, allowed) => {
+      expect(canCancelRental(owner, viewer, status)).toBe(allowed);
+    },
+  );
 
   it.each([
     [6, ["2027-01-11", "2027-01-04", "2027-01-07", "2027-01-05"], "2027-01-07"],

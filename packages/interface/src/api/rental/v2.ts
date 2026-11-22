@@ -64,6 +64,9 @@ const zRentalExtension = z.object({
   processedByExecutiveId: id,
   processedAt: instant,
 });
+const zStudentRentalReservation = zRentalReservation.extend({
+  canCancel: z.boolean(),
+});
 const zExecutiveRentalReservation = zRentalReservation.extend({
   studentId: id,
   studentName: z.string(),
@@ -79,6 +82,9 @@ export type RentalItem = z.infer<typeof zRentalItem>;
 export type RentalSlotSelection = z.infer<typeof zSlotSelection>;
 export type RentalSlot = RentalSlotSelection;
 export type RentalReservation = z.infer<typeof zRentalReservation>;
+export type StudentRentalReservation = z.infer<
+  typeof zStudentRentalReservation
+>;
 export type ExecutiveRentalReservation = z.infer<
   typeof zExecutiveRentalReservation
 >;
@@ -182,10 +188,10 @@ export const apiRentalsMy = endpoint(
   () => "/student/rentals",
   "GET",
   empty,
-  pagination,
+  pagination.extend({ clubId: id.optional() }),
   empty,
   200,
-  pageOf(zRentalReservation),
+  pageOf(zStudentRentalReservation),
 );
 export const apiRentalMyDetail = endpoint(
   (rentalId: number) => `/student/rentals/${rentalId}`,
@@ -194,7 +200,7 @@ export const apiRentalMyDetail = endpoint(
   empty,
   empty,
   200,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalCreate = endpoint(
   () => "/student/rentals",
@@ -212,7 +218,7 @@ export const apiRentalCreate = endpoint(
     clientRequestId: z.string().uuid(),
   }),
   201,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalCancel = endpoint(
   (rentalId: number) => `/student/rentals/${rentalId}/cancel`,
@@ -221,7 +227,7 @@ export const apiRentalCancel = endpoint(
   empty,
   empty,
   200,
-  zRentalReservation,
+  zStudentRentalReservation,
 );
 export const apiRentalsExecutive = endpoint(
   () => "/executive/rentals",

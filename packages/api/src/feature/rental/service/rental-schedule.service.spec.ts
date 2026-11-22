@@ -107,16 +107,37 @@ describe("configured rental duration", () => {
     });
   });
 
-  it("keeps unavailable future office counts unavailable", async () => {
+  it("offers published shifts even before the entire office count is published", async () => {
+    const next = window("2026-11-17", 4);
     const schedule = new RentalScheduleService({
-      list: jest.fn().mockResolvedValue([booked, window("2026-11-17", 4)]),
+      list: jest.fn().mockResolvedValue([booked, next]),
     } as never);
     await expect(
       schedule.availableDates(
         { durationType: "OFFICE_HOURS", durationValue: 2 },
         booked.date,
       ),
-    ).resolves.toMatchObject({ limit: undefined, returns: [] });
+    ).resolves.toEqual({ pickup: booked, limit: next.date, returns: [next] });
+    await expect(
+      schedule.requireRegularLimit(
+        { durationType: "OFFICE_HOURS", durationValue: 2 },
+        booked.date,
+      ),
+    ).resolves.toBe(next.date);
+  });
+
+  it("keeps a calendar without any later open shift unavailable", async () => {
+    const schedule = new RentalScheduleService({
+      list: jest
+        .fn()
+        .mockResolvedValue([booked, window("2026-11-17", 4, true)]),
+    } as never);
+    await expect(
+      schedule.availableDates(
+        { durationType: "OFFICE_HOURS", durationValue: 2 },
+        booked.date,
+      ),
+    ).resolves.toEqual({ pickup: booked, limit: undefined, returns: [] });
     await expect(
       schedule.requireRegularLimit(
         { durationType: "OFFICE_HOURS", durationValue: 2 },

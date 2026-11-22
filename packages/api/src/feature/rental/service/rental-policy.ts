@@ -33,7 +33,18 @@ export function regularReturnLimit(
       .sort()
       .at(-1);
   }
-  return nextOpenDates[duration.durationValue - 1];
+  return nextOpenDates[
+    Math.min(duration.durationValue, nextOpenDates.length) - 1
+  ];
+}
+
+export function canCancelRental(
+  ownerStudentId: number,
+  viewerStudentId: number,
+  status: string,
+) {
+  const canCancel = ownerStudentId === viewerStudentId && status === "RESERVED";
+  return canCancel;
 }
 
 export function peakReservedQuantity(

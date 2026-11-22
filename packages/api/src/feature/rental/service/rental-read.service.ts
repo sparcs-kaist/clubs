@@ -10,9 +10,11 @@ import type { z } from "zod";
 
 import {
   type apiRentalsExecutive,
+  type apiRentalsMy,
   type ExecutiveRentalReservation,
   type RentalItem,
   type RentalReservation,
+  type StudentRentalReservation,
   zRentalDuration,
   zRentalStatus,
 } from "@clubs/interface/api/rental/v2";
@@ -29,6 +31,7 @@ import {
 } from "../repository/rental.repository";
 import {
   beforeSameDayReturns,
+  canCancelRental,
   checkoutQuantity,
   hasSameDayReturn,
   peakReservedQuantity,
@@ -129,6 +132,7 @@ function requireReference<T>(value: T | undefined): T {
 }
 
 type RentalQuery = z.output<typeof apiRentalsExecutive.requestQuery>;
+type StudentRentalQuery = z.output<typeof apiRentalsMy.requestQuery>;
 
 @Injectable()
 export class RentalReadService {
@@ -186,22 +190,38 @@ export class RentalReadService {
     };
   }
 
-  async myList(studentId: number, query: RentalQuery) {
+  async myList(studentId: number, query: StudentRentalQuery) {
+    const { clubId } = query;
+    if (clubId !== undefined) {
+      await this.clubs.checkStudentDelegate(studentId, clubId);
+    }
     const now = this.clock.now();
     const { items, ...page } = await this.listReservations(
       query,
       now,
-      studentId,
+      clubId === undefined ? studentId : undefined,
+      clubId,
     );
-    return { ...page, items: await this.views(items, now) };
+    const views = await this.views(items, now);
+    return {
+      ...page,
+      items: items.map((row, index) =>
+        this.studentView(row, views[index], studentId),
+      ),
+    };
   }
 
   async myDetail(id: number, studentId: number) {
     const row = await this.requireReservation(id);
-    if (row.studentId !== studentId)
-      throw new NotFoundException("RENTAL_NOT_FOUND");
+    if (row.studentId !== studentId) {
+      const isDelegate = await this.clubs.isStudentDelegate(
+        studentId,
+        row.clubId,
+      );
+      if (!isDelegate) throw new NotFoundException("RENTAL_NOT_FOUND");
+    }
     const [view] = await this.views([row], this.clock.now());
-    return view;
+    return this.studentView(row, view, studentId);
   }
 
   async executiveList(query: RentalQuery) {
@@ -268,6 +288,7 @@ export class RentalReadService {
     query: RentalQuery,
     now: Date,
     studentId?: number,
+    clubId?: number,
   ) {
     const [officeHourIds, overdueReturnHourIds] = await Promise.all([
       query.officeDate === undefined
@@ -281,6 +302,7 @@ export class RentalReadService {
       query,
       { officeHourIds, overdueReturnHourIds },
       studentId,
+      clubId,
     );
   }
 
@@ -369,6 +391,17 @@ export class RentalReadService {
         closeReason: row.closeReason,
       };
     });
+  }
+
+  private studentView(
+    row: ReservationRow,
+    view: RentalReservation,
+    studentId: number,
+  ): StudentRentalReservation {
+    return {
+      ...view,
+      canCancel: canCancelRental(row.studentId, studentId, row.status),
+    };
   }
 
   private executiveView(

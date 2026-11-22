@@ -168,9 +168,11 @@ export class RentalRepository {
       overdueReturnHourIds?: number[];
     },
     studentId?: number,
+    clubId?: number,
   ) {
     const where: Prisma.RentalReservationWhereInput = {
       studentId,
+      clubId,
       status: query.status,
     };
     const filters: Prisma.RentalReservationWhereInput[] = [];
