@@ -1,3 +1,5 @@
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useId, useRef, useState } from "react";
@@ -98,6 +100,7 @@ const ReviewChangeHistoryModal = ({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const headingId = useId();
   const [index, setIndex] = useState(0);
+  const [showChangedOnly, setShowChangedOnly] = useState(false);
   const api = kind === "activity" ? apiAct031 : apiFnd017;
   const url = api.url(id);
   const { data, isLoading, isError, refetch } = useQuery({
@@ -116,6 +119,8 @@ const ReviewChangeHistoryModal = ({
   const rows = version
     ? getReviewChangeRows(kind, version.before, version.after)
     : [];
+  const changedRows = rows.filter(row => row.changed);
+  const visibleRows = showChangedOnly ? changedRows : rows;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -161,12 +166,29 @@ const ReviewChangeHistoryModal = ({
       >
         {version ? (
           <>
-            <Typography aria-live="polite">
-              {formatDotDetailDate(version.createdAt)} · 최신순{" "}
-              {selectedIndex + 1}/{count}건
-              {rows.every(row => !row.changed) && " · 변경된 항목 없음"}
-            </Typography>
-            <TableScroll key={version.id}>
+            <FlexWrapper
+              gap={8}
+              justify="space-between"
+              style={{ alignItems: "center", flexWrap: "wrap" }}
+            >
+              <Typography aria-live="polite">
+                {formatDotDetailDate(version.createdAt)} · 최신순{" "}
+                {selectedIndex + 1}/{count}건
+                {changedRows.length === 0 && " · 변경된 항목 없음"}
+              </Typography>
+              <FormControlLabel
+                label="변경분만 보기"
+                control={
+                  <Switch
+                    size="small"
+                    checked={showChangedOnly}
+                    onChange={event => setShowChangedOnly(event.target.checked)}
+                    inputProps={{ role: "switch" }}
+                  />
+                }
+              />
+            </FlexWrapper>
+            <TableScroll key={version.id} hidden={visibleRows.length === 0}>
               <ComparisonTable aria-label="항목별 변경 전후 비교">
                 <thead>
                   <tr>
@@ -178,7 +200,7 @@ const ReviewChangeHistoryModal = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(row => (
+                  {visibleRows.map(row => (
                     <tr key={row.key} data-changed={row.changed}>
                       <th scope="row">
                         {row.label}
