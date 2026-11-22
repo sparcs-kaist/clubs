@@ -352,26 +352,64 @@ describe("Rental API with MySQL", () => {
     ]);
     const extension = await prisma.rentalExtension.findFirstOrThrow({
       where: { reservationId: secondId },
-      include: { previousReturnHour: true, newReturnHour: true },
     });
-    expect(formatKstDate(extension.previousReturnHour.date)).toBe(
-      secondReturn.date,
-    );
-    expect(extension.previousReturnHour.closesAt.toISOString()).toBe(
+    const previousReturnHour = await prisma.officeHour.findUniqueOrThrow({
+      where: { id: extension.previousReturnHourId },
+    });
+    const newReturnHour = await prisma.officeHour.findUniqueOrThrow({
+      where: { id: extension.newReturnHourId },
+    });
+    expect(formatKstDate(previousReturnHour.date)).toBe(secondReturn.date);
+    expect(previousReturnHour.closesAt.toISOString()).toBe(
       secondReturn.closesAt,
     );
-    expect(formatKstDate(extension.newReturnHour.date)).toBe(
+    expect(formatKstDate(newReturnHour.date)).toBe(
       extensionRequest.return.date,
     );
-    expect(extension.newReturnHour.closesAt.toISOString()).toBe(
+    expect(newReturnHour.closesAt.toISOString()).toBe(
       extensionRequest.return.closesAt,
     );
-    await expect(
-      prisma.rentalReservation.update({
-        where: { id: firstId },
+    const foreignExtension = await prisma.rentalExtension.create({
+      data: {
+        reservationId: firstId,
+        previousReturnHourId: extension.previousReturnHourId,
+        newReturnHourId: extension.newReturnHourId,
+        reason: "다른 대여의 연장 승인",
+        processedByExecutiveId: executiveId,
+        processedAt: now,
+      },
+    });
+    await prisma.rentalReservation.update({
+      where: { id: secondId },
+      data: { approvedExtensionId: foreignExtension.id },
+    });
+    try {
+      const beforeRejectedUpdate =
+        await prisma.rentalReservation.findUniqueOrThrow({
+          where: { id: secondId },
+        });
+      const rejectedUpdate = await request(server)
+        .patch(`/executive/rentals/${secondId}/schedule`)
+        .set("Authorization", executive)
+        .send({ return: extensionRequest.return })
+        .expect(409);
+      expect(rejectedUpdate.body.message).toMatchObject({
+        message: "INVALID_RENTAL_STATE",
+      });
+      expect(
+        await prisma.rentalReservation.findUniqueOrThrow({
+          where: { id: secondId },
+        }),
+      ).toEqual(beforeRejectedUpdate);
+    } finally {
+      await prisma.rentalReservation.update({
+        where: { id: secondId },
         data: { approvedExtensionId: extension.id },
-      }),
-    ).rejects.toMatchObject({ code: "P2003" });
+      });
+      await prisma.rentalExtension.delete({
+        where: { id: foreignExtension.id },
+      });
+    }
 
     const reschedule = (returnSlot: typeof secondReturn) =>
       request(server)

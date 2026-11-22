@@ -34,8 +34,6 @@ model User {
   meetingVoteResults          MeetingVoteResult[]
   userPrivacyPolicyAgreements UserPrivacyPolicyAgreement[]
 
-  closedRentalReservations RentalReservation[] @relation("RentalClosedBy")
-
   @@map("user")
 }
 
@@ -63,8 +61,6 @@ model Student {
   clubDelegateChangeRequestsPrev  ClubDelegateChangeRequest[]      @relation("PrevStudent")
   clubDelegateChangeRequestsNew   ClubDelegateChangeRequest[]      @relation("NewStudent")
   executive                       Executive?
-
-  rentalReservations RentalReservation[]
 
   @@map("student")
 }
@@ -102,11 +98,6 @@ model Executive {
   fundingChargedFundings        Funding[]
   fundingFeedbacks              FundingFeedback[]
   registrationExecutiveComments RegistrationExecutiveComment[]
-
-  updatedOfficeHours           OfficeHour[]
-  checkedOutRentalReservations RentalReservation[] @relation("RentalCheckedOutBy")
-  returnedRentalReservations   RentalReservation[] @relation("RentalReturnedBy")
-  rentalExtensions             RentalExtension[]
 
   @@map("executive")
 }
@@ -260,8 +251,6 @@ model Club {
   rentalOrders                    RentalOrder[]
   promotionalPrintingOrders       PromotionalPrintingOrder[]
   meetingAttendanceDays           MeetingAttendanceDay[]
-
-  rentalReservations RentalReservation[]
 
   @@map("club")
 }
@@ -1403,13 +1392,6 @@ model OfficeHour {
   updatedByExecutiveId Int?     @map("updated_by_executive_id")
   updatedAt            DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
-  updatedBy Executive? @relation(fields: [updatedByExecutiveId], references: [id])
-
-  rentalPickups            RentalReservation[] @relation("RentalPickupHour")
-  rentalReturns            RentalReservation[] @relation("RentalReturnHour")
-  extensionPreviousReturns RentalExtension[]   @relation("RentalExtensionPreviousReturnHour")
-  extensionNewReturns      RentalExtension[]   @relation("RentalExtensionNewReturnHour")
-
   @@index([date, updatedAt, id])
   @@index([closesAt])
   @@map("office_hour")
@@ -1424,8 +1406,6 @@ model RentalItem {
   lockVersion    BigInt   @default(0) @map("lock_version") @db.UnsignedBigInt
   createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
-
-  reservations RentalReservation[]
 
   @@map("rental_item")
 }
@@ -1457,17 +1437,6 @@ model RentalReservation {
   createdAt               DateTime  @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt               DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
 
-  item              RentalItem        @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  club              Club              @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  student           Student           @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  checkedOutBy      Executive?        @relation("RentalCheckedOutBy", fields: [checkedOutByExecutiveId], references: [id])
-  returnedBy        Executive?        @relation("RentalReturnedBy", fields: [returnedByExecutiveId], references: [id])
-  closedBy          User?             @relation("RentalClosedBy", fields: [closedByUserId], references: [id])
-  pickupHour        OfficeHour        @relation("RentalPickupHour", fields: [pickupHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  returnHour        OfficeHour        @relation("RentalReturnHour", fields: [returnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  extensions        RentalExtension[] @relation("RentalExtensionHistory")
-  approvedExtension RentalExtension?  @relation("RentalApprovedExtension", fields: [id, approvedExtensionId], references: [reservationId, id], onDelete: Restrict, onUpdate: Restrict)
-
   @@unique([studentId, clientRequestId])
   @@index([itemId, status, pickupHourId])
   @@index([studentId, createdAt])
@@ -1485,12 +1454,6 @@ model RentalExtension {
   reason                 String   @db.VarChar(500)
   processedByExecutiveId Int      @map("processed_by_executive_id")
   processedAt            DateTime @map("processed_at") @db.DateTime(3)
-
-  reservation        RentalReservation   @relation("RentalExtensionHistory", fields: [reservationId], references: [id], onDelete: Restrict)
-  approvedFor        RentalReservation[] @relation("RentalApprovedExtension")
-  previousReturnHour OfficeHour          @relation("RentalExtensionPreviousReturnHour", fields: [previousReturnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  newReturnHour      OfficeHour          @relation("RentalExtensionNewReturnHour", fields: [newReturnHourId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  processedBy        Executive           @relation(fields: [processedByExecutiveId], references: [id], onDelete: Restrict)
 
   @@unique([reservationId, id])
   @@index([reservationId, processedAt])

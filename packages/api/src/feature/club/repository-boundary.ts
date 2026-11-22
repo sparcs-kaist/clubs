@@ -48,7 +48,7 @@ export const repositoryBoundary = {
     },
     {
       from: "packages/api/src/feature/rental/repository/repository-boundary.ts",
-      models: ["rentalOrder", "rentalReservation"],
+      models: ["rentalOrder"],
     },
     {
       from: "packages/api/src/feature/semester/repository/repository-boundary.ts",
