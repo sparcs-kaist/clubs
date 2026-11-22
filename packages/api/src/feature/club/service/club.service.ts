@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
 import type {
   ApiClb001RequestQuery,
@@ -61,6 +62,7 @@ import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registrat
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import type { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import { isRegularClubMember } from "@sparcs-clubs/api/common/util/club-member";
 import { env } from "@sparcs-clubs/api/env";
 import { ClubRoomTRepository } from "@sparcs-clubs/api/feature/club/repository/club.club-room-t.repository";
@@ -454,7 +456,9 @@ export class ClubService {
     };
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async changeRegistrationDelegate(
     param: ApiClb021RequestParam,
     body: ApiClb021RequestBody,
@@ -489,11 +493,9 @@ export class ClubService {
       throw new ConflictException("Student does not have a user account");
     }
 
-    const now = this.clock.now();
     await this.clubDelegateRepository.lockForRegistrationChange(
       param.clubId,
       body.studentId,
-      now,
     );
     await this.registrationPublicService.checkDeadline({
       enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
@@ -511,12 +513,15 @@ export class ClubService {
       studentId: body.studentId,
       clubDelegateEnumId: body.clubDelegateEnumId,
       effectiveAt: context.effectiveAt,
+      changedAt: this.clock.now(),
     });
 
     return {};
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async cancelRegistrationDelegate(
     param: ApiClb022RequestParam,
     body: ApiClb022RequestBody,
@@ -525,11 +530,9 @@ export class ClubService {
       enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
     });
     const context = await this.getRegistrationDelegateChangeContext();
-    const now = this.clock.now();
     await this.clubDelegateRepository.lockForRegistrationChange(
       param.clubId,
       body.studentId,
-      now,
     );
     await this.registrationPublicService.checkDeadline({
       enums: [RegistrationDeadlineEnum.ClubRegistrationApplication],
@@ -539,6 +542,7 @@ export class ClubService {
       studentId: body.studentId,
       clubDelegateEnumId: body.clubDelegateEnumId,
       effectiveAt: context.effectiveAt,
+      changedAt: this.clock.now(),
     });
 
     return {};
@@ -889,8 +893,11 @@ export class ClubService {
     return { semesters: uniqueSemesters };
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async cancelRegistration(clubId: number): Promise<ApiClb017ResponseOk> {
+    await this.clubDelegateRepository.lockForRegistrationChange(clubId);
     const now = this.clock.now();
     const semesterId = await this.clubSemesterRepository.cancelRegistration(
       clubId,

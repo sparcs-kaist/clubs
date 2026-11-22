@@ -10,7 +10,6 @@ import {
   ApiReg009RequestBody,
   ApiReg009ResponseOk,
 } from "@clubs/interface/api/registration/endpoint/apiReg009";
-import { ApiReg010ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg010";
 import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
@@ -362,61 +361,25 @@ export class ClubRegistrationRepository {
     return {};
   }
 
+  async findActiveRegistrationForApplicant(applyId: number, studentId: number) {
+    return this.txHost.tx.registration.findFirst({
+      where: { id: applyId, studentId, deletedAt: null },
+      select: { clubId: true, registrationApplicationTypeEnumId: true },
+    });
+  }
+
   async deleteStudentRegistrationsClubRegistration(
     studentId: number,
     applyId: number,
-  ): Promise<ApiReg010ResponseOk> {
-    const cur = this.clock.now();
-    await this.prisma.$transaction(async tx => {
-      const registration = await tx.registration
-        .findMany({
-          where: {
-            id: applyId,
-            deletedAt: null,
-          },
-        })
-        .then(takeOne);
-      if (!registration) {
-        throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
-      }
-
-      const result = await tx.registration.updateMany({
-        where: {
-          id: applyId,
-          studentId,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: cur,
-        },
-      });
-      // 만약 신규 가등록의 경우, 동아리 및 동아리 대표자 기록을 삭제합니다.
-      // TODO: Service layer로 이동 및 club & delegate public service 로 이동 필요
-      if (
-        registration.registrationApplicationTypeEnumId ===
-        RegistrationTypeEnum.NewProvisional
-      ) {
-        const [clubResult, delegateResult] = await Promise.all([
-          tx.club.updateMany({
-            where: { id: registration.clubId },
-            data: { deletedAt: cur },
-          }),
-          tx.clubDelegateD.updateMany({
-            where: { clubId: registration.clubId },
-            data: { deletedAt: cur },
-          }),
-        ]);
-        if (clubResult.count === 0 || delegateResult.count === 0) {
-          throw new HttpException("ClubOld or delegate delete failed", 500);
-        }
-      }
-      if (result.count > 1) {
-        throw new HttpException("Registration delete failed", 500);
-      } else if (result.count === 0) {
-        throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
-      }
+    now: Date,
+  ): Promise<void> {
+    const result = await this.txHost.tx.registration.updateMany({
+      where: { id: applyId, studentId, deletedAt: null },
+      data: { deletedAt: now },
     });
-    return {};
+    if (result.count === 0) {
+      throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
+    }
   }
 
   async getStudentRegistrationsClubRegistration(

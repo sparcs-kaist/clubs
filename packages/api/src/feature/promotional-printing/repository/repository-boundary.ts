@@ -6,7 +6,7 @@ export const repositoryBoundary = {
   exportedPrismaModels: ["promotionalPrintingOrder"],
   importedPrismaModels: [
     {
-      from: "packages/api/src/feature/club/repository/repository-boundary.ts",
+      from: "packages/api/src/feature/club/repository-boundary.ts",
       models: ["club"],
     },
     {

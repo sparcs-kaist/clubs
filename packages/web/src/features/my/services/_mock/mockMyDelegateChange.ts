@@ -1,10 +1,14 @@
 import { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
-import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
+import {
+  ClubDelegateChangeRequestStatusEnum,
+  ClubDelegateEnum,
+} from "@clubs/interface/common/enum/club.enum";
 
 export const mockMyDelegateChange: ApiClb013ResponseOk = {
   requests: [
     {
       id: 1,
+      delegateEnumId: ClubDelegateEnum.Delegate1,
       prevStudentId: 20200000,
       prevStudentNumber: 20200000,
       prevStudentName: "이도라",

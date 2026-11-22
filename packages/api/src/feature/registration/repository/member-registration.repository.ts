@@ -71,6 +71,23 @@ export class MemberRegistrationRepository extends BaseSingleTableRepository<
     });
   }
 
+  async removeById(id: number): Promise<void> {
+    await this.txHost.tx.registrationApplicationStudent.updateMany({
+      where: { id, deletedAt: null },
+      data: { deletedAt: this.clock.now() },
+    });
+  }
+
+  async updateStatus(
+    id: number,
+    status: RegistrationApplicationStudentStatusEnum,
+  ): Promise<void> {
+    await this.txHost.tx.registrationApplicationStudent.updateMany({
+      where: { id, deletedAt: null },
+      data: { registrationApplicationStudentEnum: status },
+    });
+  }
+
   async ensureApprovedForStudent(param: {
     studentId: number;
     clubId: number;

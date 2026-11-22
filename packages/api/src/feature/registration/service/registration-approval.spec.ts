@@ -28,6 +28,13 @@ const semesterId = 20;
 
 function setup(registrationType = RegistrationTypeEnum.Renewal) {
   const tx = {
+    $queryRawUnsafe: jest.fn(),
+    club: {
+      findMany: jest.fn().mockResolvedValue([{ id: clubId }]),
+    },
+    student: {
+      findMany: jest.fn().mockResolvedValue([{ id: applicantId }]),
+    },
     registration: {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       findFirst: jest.fn().mockResolvedValue({
@@ -51,6 +58,9 @@ function setup(registrationType = RegistrationTypeEnum.Renewal) {
       findFirst: jest.fn().mockResolvedValue(null),
       updateMany: jest.fn().mockResolvedValue({ count: 2 }),
       create: jest.fn().mockResolvedValue({ id: 200 }),
+    },
+    clubDelegateChangeRequest: {
+      updateMany: jest.fn(),
     },
     registrationApplicationStudent: {
       findFirst: jest.fn().mockResolvedValue(null),
@@ -104,6 +114,27 @@ describe("club registration approval", () => {
       const { service, tx, getStudentsByIds } = setup(registrationType);
       await service.patchExecutiveRegistrationsClubRegistrationApproval(100);
 
+      expect(tx.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        1,
+        "SELECT 1 FROM `club` WHERE id IN (?) FOR UPDATE",
+        clubId,
+      );
+      expect(tx.$queryRawUnsafe).toHaveBeenNthCalledWith(
+        2,
+        "SELECT 1 FROM `student` WHERE id IN (?) FOR UPDATE",
+        applicantId,
+      );
+      expect(tx.$queryRawUnsafe.mock.invocationCallOrder[1]).toBeLessThan(
+        tx.registration.updateMany.mock.invocationCallOrder[0],
+      );
+      expect(tx.clubDelegateChangeRequest.updateMany).toHaveBeenCalledWith({
+        where: {
+          clubId,
+          clubDelegateChangeRequestStatusEnumId: 1,
+          deletedAt: null,
+        },
+        data: { deletedAt: approvedAt },
+      });
       expect(getStudentsByIds).toHaveBeenCalledWith([applicantId]);
       expect(tx.clubT.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ clubStatusEnumId }),
@@ -138,7 +169,7 @@ describe("club registration approval", () => {
         where: {
           clubId,
           startTerm: { lte: approvedAt },
-          OR: [{ endTerm: { gte: approvedAt } }, { endTerm: null }],
+          OR: [{ endTerm: { gt: approvedAt } }, { endTerm: null }],
           deletedAt: null,
         },
         data: { endTerm: approvedAt },
@@ -173,7 +204,7 @@ describe("club registration approval", () => {
       where: {
         clubId,
         startTerm: { lte: approvedAt },
-        OR: [{ endTerm: { gte: approvedAt } }, { endTerm: null }],
+        OR: [{ endTerm: { gt: approvedAt } }, { endTerm: null }],
         deletedAt: null,
       },
       data: { endTerm: approvedAt },

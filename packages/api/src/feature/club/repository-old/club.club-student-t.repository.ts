@@ -1,17 +1,29 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import type { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { MOldStudent } from "@sparcs-clubs/api/feature/user/model/old.student.model";
-import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
+
+import {
+  cancelPendingDelegateRequests,
+  lockClubDelegates,
+} from "../repository/lock-club-delegates";
 
 @Injectable()
 export default class ClubStudentTRepository {
   @Inject(CLOCK) private readonly clock: Clock;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+  ) {}
+
+  private get prisma() {
+    return this.txHost.tx;
+  }
 
   async findByClubIdAndSemesterId(clubId: number, semesterId: number) {
     const result = await this.prisma.clubStudentT.findMany({
@@ -138,6 +150,9 @@ export default class ClubStudentTRepository {
     return clubs;
   }
 
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async addStudentToClub(
     studentId: number,
     clubId: number,
@@ -145,45 +160,83 @@ export default class ClubStudentTRepository {
     startTerm: Date,
     endTerm: Date,
   ): Promise<void> {
-    await this.prisma.$transaction(async tx => {
-      await tx.$queryRaw(
-        Prisma.sql`
-          SELECT s.id
-          FROM student s
-          WHERE s.id = ${studentId}
-          FOR UPDATE
-        `,
-      );
+    const tx = this.prisma;
+    await lockClubDelegates(this.txHost, clubId, studentId);
 
-      const existingMember = await tx.clubStudentT.findFirst({
-        where: {
-          studentId,
-          clubId,
-          semesterId,
-          deletedAt: null,
-        },
-        select: { id: true },
-      });
+    const existingMember = await tx.clubStudentT.findFirst({
+      where: {
+        studentId,
+        clubId,
+        semesterId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
 
-      if (existingMember) {
-        return;
+    if (existingMember) {
+      return;
+    }
+
+    await tx.clubStudentT.create({
+      data: {
+        studentId,
+        clubId,
+        semesterId,
+        startTerm,
+        endTerm,
+      },
+    });
+  }
+
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
+  async removeStudentFromClub(
+    studentId: number,
+    clubId: number,
+    semesterId: number,
+    allowDelegateRemoval: boolean,
+  ): Promise<void> {
+    const tx = this.prisma;
+    await lockClubDelegates(this.txHost, clubId, studentId);
+    const now = this.clock.now();
+    const activeRoles = await tx.clubDelegateD.findMany({
+      where: {
+        studentId,
+        clubId,
+        startTerm: { lte: now },
+        OR: [{ endTerm: { gt: now } }, { endTerm: null }],
+        deletedAt: null,
+      },
+      select: { clubDelegateEnum: true },
+    });
+    const isTargetStudentDelegate = activeRoles.length > 0;
+    if (isTargetStudentDelegate) {
+      if (!allowDelegateRemoval) {
+        throw new BadRequestException("club delegate cannot be rejected");
       }
-
-      await tx.clubStudentT.create({
-        data: {
-          studentId,
-          clubId,
-          semesterId,
-          startTerm,
-          endTerm,
+    }
+    await this.deleteMembership(
+      studentId,
+      clubId,
+      semesterId,
+      isTargetStudentDelegate,
+    );
+    await cancelPendingDelegateRequests(this.txHost, clubId, now, {
+      OR: [
+        { studentId },
+        {
+          clubDelegateEnumId: {
+            in: activeRoles.map(role => role.clubDelegateEnum),
+          },
         },
-      });
+      ],
     });
   }
 
   // ** 주의: delegate 또는 일반 부원을 제거합니다.
   // ** 제거 시 hard deletion이 이루어집니다.
-  async removeStudentFromClub(
+  private async deleteMembership(
     studentId: number,
     clubId: number,
     semesterId: number,

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Put,
+  Query,
   Res,
   UsePipes,
 } from "@nestjs/common";
@@ -27,6 +28,7 @@ import {
   type ApiClb011ResponseOk,
   apiClb012,
   type ApiClb012RequestParam,
+  type ApiClb012RequestQuery,
   type ApiClb012ResponseCreated,
   apiClb013,
   ApiClb013ResponseOk,
@@ -122,9 +124,11 @@ export default class ClubDelegateController {
   async deleteStudentClubDelegateRequests(
     @GetStudent() user: GetStudent,
     @Param() param: ApiClb012RequestParam,
+    @Query() query: ApiClb012RequestQuery,
   ): Promise<ApiClb012ResponseCreated> {
     await this.clubDelegateService.deleteStudentClubDelegateRequests({
       studentId: user.studentId,
+      requestId: query.requestId,
       param,
     });
 
@@ -155,6 +159,7 @@ export default class ClubDelegateController {
   ): Promise<ApiClb014ResponseCreated> {
     await this.clubDelegateService.patchStudentClubsDelegatesRequest({
       studentId: user.studentId,
+      userId: user.id,
       param,
       body,
     });

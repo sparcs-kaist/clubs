@@ -58,6 +58,22 @@ export default class ClubPublicService {
     private clubMemberRepository: ClubMemberRepository,
   ) {}
 
+  async lockRegistrationClub(clubId: number, studentId?: number) {
+    await this.clubDelegateRepository.lockForRegistrationChange(
+      clubId,
+      studentId,
+    );
+  }
+
+  async lockRegistrationApplicant(studentId: number) {
+    await this.clubDelegateRepository.lockRegistrationApplicant(studentId);
+  }
+
+  @Transactional()
+  async deleteProvisionalClub(clubId: number, now: Date) {
+    await this.clubDelegateRepository.deleteProvisionalClub(clubId, now);
+  }
+
   @Transactional()
   async approveClubRegistration(param: {
     clubId: number;
@@ -356,9 +372,11 @@ export default class ClubPublicService {
    * 현재 학기를 기준으로 `semesterId`를 조회하고, 조회된 학기가 없는 경우 예외를 발생시킵니다.
    * 조회된 `semesterId`를 사용하여 해당 동아리(`clubId`)에서 학생(`studentId`)을 제거합니다.
    */
+  @Transactional()
   async removeStudentFromClub(
     studentId: number,
     clubId: number,
+    allowDelegateRemoval = true,
   ): Promise<void> {
     const semesterId = await this.semesterPublicService.loadId();
     if (!semesterId) {
@@ -368,16 +386,11 @@ export default class ClubPublicService {
       );
     }
 
-    const isTargetStudentDelegate = await this.isStudentDelegate(
-      studentId,
-      clubId,
-    );
-    // 신입 부원 제거
     await this.clubStudentTRepository.removeStudentFromClub(
       studentId,
       clubId,
       semesterId,
-      isTargetStudentDelegate,
+      allowDelegateRemoval,
     );
   }
 

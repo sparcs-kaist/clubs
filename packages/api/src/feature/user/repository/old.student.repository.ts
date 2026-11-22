@@ -3,7 +3,6 @@ import { Prisma } from "@prisma/client";
 
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
-import logger from "@sparcs-clubs/api/common/util/logger";
 import { withDeleted } from "@sparcs-clubs/api/common/util/soft-delete";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
@@ -238,22 +237,6 @@ export default class OldStudentRepository {
       LIMIT 1
     `);
     return takeOne(result);
-  }
-
-  async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
-      const result = await tx.user.updateMany({
-        where: { id: userId, deletedAt: null },
-        data: { phoneNumber },
-      });
-
-      if (result.count === 0) {
-        logger.debug("[OldStudentRepository] Failed to update phone number");
-        throw new Error("updateStudentPhoneNumber failed");
-      }
-      return true;
-    });
-    return isUpdateSucceed;
   }
 
   async fetchStudentSummaries(

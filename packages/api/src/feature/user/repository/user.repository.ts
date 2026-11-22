@@ -1,4 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
+import type { TransactionalAdapterPrisma } from "@nestjs-cls/transactional-adapter-prisma";
 import { Prisma } from "@prisma/client";
 
 import logger from "@sparcs-clubs/api/common/util/logger";
@@ -14,6 +16,9 @@ const parseStudentNumber = (studentNumber: string) => {
 
 @Injectable()
 export default class UserRepository {
+  @Inject(TransactionHost)
+  private readonly txHost: TransactionHost<TransactionalAdapterPrisma>;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findStudentById(studentId: number) {
@@ -38,6 +43,26 @@ export default class UserRepository {
       WHERE s.id = ${studentId}
     `);
     return user;
+  }
+
+  async findStudentContacts(studentIds: number[]) {
+    const students = await this.txHost.tx.student.findMany({
+      where: { id: { in: studentIds }, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        number: true,
+        user: { select: { id: true, phoneNumber: true, deletedAt: true } },
+      },
+    });
+
+    return students.map(({ user, ...student }) => ({
+      ...student,
+      user:
+        user?.deletedAt === null
+          ? { id: user.id, phoneNumber: user.phoneNumber }
+          : null,
+    }));
   }
 
   async findStudentByStudentNumberNameDate(
@@ -127,17 +152,14 @@ export default class UserRepository {
   }
 
   async updatePhoneNumber(userId: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
-      const result = await tx.user.updateMany({
-        where: { id: userId, deletedAt: null },
-        data: { phoneNumber },
-      });
-      if (result.count !== 1) {
-        logger.debug("[updatePhoneNumber] rollback occurs");
-        throw new Error("updatePhoneNumber failed");
-      }
-      return true;
+    const result = await this.txHost.tx.user.updateMany({
+      where: { id: userId, deletedAt: null },
+      data: { phoneNumber },
     });
-    return isUpdateSucceed;
+    if (result.count !== 1) {
+      logger.debug("[updatePhoneNumber] failed");
+      throw new Error("updatePhoneNumber failed");
+    }
+    return true;
   }
 }

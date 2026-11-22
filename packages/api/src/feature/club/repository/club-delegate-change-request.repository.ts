@@ -11,6 +11,7 @@ import {
   IClubDelegateChangeRequestCreate,
   MClubDelegateChangeRequest,
 } from "../model/club-delegate-change-request.model";
+import { cancelPendingDelegateRequests } from "./lock-club-delegates";
 
 type ClubDelegateChangeRequestQuery = {
   clubId: number;
@@ -37,16 +38,7 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
   }
 
   async cancelAppliedRequests(clubId: number, now: Date): Promise<void> {
-    const delegate = this.getDelegate(this.txHost.tx);
-    await delegate.updateMany({
-      where: {
-        clubId,
-        clubDelegateChangeRequestStatusEnumId:
-          ClubDelegateChangeRequestStatusEnum.Applied,
-        deletedAt: null,
-      },
-      data: { deletedAt: now },
-    });
+    await cancelPendingDelegateRequests(this.txHost, clubId, now);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,6 +48,7 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       club: { id: result.clubId },
       prevStudent: { id: result.prevStudentId },
       student: { id: result.studentId },
+      clubDelegateEnumId: result.clubDelegateEnumId,
       clubDelegateChangeRequestStatusEnum:
         result.clubDelegateChangeRequestStatusEnumId,
       deletedAt: result.deletedAt,
@@ -69,6 +62,7 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       clubId: model.club.id,
       prevStudentId: model.prevStudent.id,
       studentId: model.student.id,
+      clubDelegateEnumId: model.clubDelegateEnumId,
       clubDelegateChangeRequestStatusEnumId:
         model.clubDelegateChangeRequestStatusEnum,
       deletedAt: model.deletedAt,
@@ -81,6 +75,7 @@ export class ClubDelegateChangeRequestRepository extends BaseSingleTableReposito
       clubId: model.club.id,
       prevStudentId: model.prevStudent.id,
       studentId: model.student.id,
+      clubDelegateEnumId: model.clubDelegateEnumId,
       clubDelegateChangeRequestStatusEnumId:
         model.clubDelegateChangeRequestStatusEnum,
     };

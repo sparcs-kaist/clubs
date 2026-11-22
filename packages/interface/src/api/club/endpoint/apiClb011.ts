@@ -9,7 +9,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 동아리의 현재 신청된 대표자 변경을 조회합니다.
+ * @description 동아리의 대표자 및 대의원 변경 요청을 조회합니다.
  */
 
 const url = (clubId: number) =>
@@ -28,6 +28,8 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
     requests: z
       .object({
+        id: zClubDelegateChangeRequest.shape.id,
+        delegateEnumId: zClubDelegateChangeRequest.shape.clubDelegateEnumId,
         studentId: zStudent.shape.id,
         studentNumber: z.coerce.number().int().min(20000000).max(30000000),
         studentName: zStudent.shape.name,
@@ -68,17 +70,17 @@ registry.registerPath({
   tags: ["club"],
   method: "get",
   path: "/student/clubs/club/:clubId/delegates/delegate/requests",
-  summary: "CLB-011: 학생용 동아리 대표자 변경 신청 조회",
+  summary: "CLB-011: 동아리 대표자 및 대의원 변경 요청 조회",
   description: `# CLB-011
 
-동아리의 현재 신청된 대표자 변경을 조회합니다.
+동아리의 대표자 및 대의원 변경 요청을 조회합니다.
   `,
   request: {
     params: requestParam,
   },
   responses: {
     200: {
-      description: "동아리 대표자 변경 신청 조회 성공",
+      description: "동아리 대표자 및 대의원 변경 요청을 조회했습니다.",
       content: {
         "application/json": {
           schema: responseBodyMap[200],

@@ -24,6 +24,14 @@ export class ClubRegistrationApprovalRepository extends BaseSingleTableRepositor
     super("registration", MClubRegistrationApproval);
   }
 
+  async findApplicantForApproval(applyId: number) {
+    const delegate = this.getDelegate(this.txHost.tx);
+    return delegate.findFirst({
+      where: { id: applyId, deletedAt: null },
+      select: { clubId: true, studentId: true },
+    });
+  }
+
   async approve(
     applyId: number,
     reviewedAt: Date,
