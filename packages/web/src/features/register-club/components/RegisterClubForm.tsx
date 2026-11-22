@@ -7,6 +7,8 @@ import styled from "styled-components";
 
 import apiReg012 from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg025 from "@clubs/interface/api/registration/endpoint/apiReg025";
+import apiUsr001 from "@clubs/interface/api/user/endpoint/apiUsr001";
+import apiUsr002 from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -149,6 +151,8 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
 
   useEffect(() => {
     if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [apiUsr001.url()] });
+      queryClient.invalidateQueries({ queryKey: [apiUsr002.url()] });
       overlay.open(({ isOpen, close }) => (
         <Modal isOpen={isOpen}>
           <ConfirmModalContent

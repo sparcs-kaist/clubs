@@ -214,11 +214,11 @@ export default class UserPublicService {
     return students[0][0];
   }
   /**
-   * 학생의 전화번호를 업데이트 합니다.
+   * 계정에 저장된 현재 전화번호를 갱신합니다.
    * */
 
   @Transactional()
-  async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
+  async updatePhoneNumber(userId: number, phoneNumber: string) {
     await this.userRepository.updatePhoneNumber(userId, phoneNumber);
   }
 

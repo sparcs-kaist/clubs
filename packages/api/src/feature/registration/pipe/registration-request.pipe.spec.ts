@@ -52,6 +52,23 @@ describe("club registration request validation", () => {
     });
   });
 
+  it("allows phoneNumber to be omitted only when editing", () => {
+    const { phoneNumber, ...withoutPhone } = body;
+    expect(() => transform(withoutPhone)).toThrow(ZodError);
+    expect(
+      transform({ ...withoutPhone, clubId: 123 }, updatePipe),
+    ).not.toHaveProperty("phoneNumber");
+    expect(
+      transform({ ...withoutPhone, clubId: 123, phoneNumber }, updatePipe),
+    ).toMatchObject({ phoneNumber });
+    expect(() =>
+      transform(
+        { ...withoutPhone, clubId: 123, phoneNumber: "123" },
+        updatePipe,
+      ),
+    ).toThrow(ZodError);
+  });
+
   it.each([
     [{ clubId: 123 }, RegistrationErrorCode.InvalidClub],
     [{ clubId: -1 }, RegistrationErrorCode.InvalidClub],

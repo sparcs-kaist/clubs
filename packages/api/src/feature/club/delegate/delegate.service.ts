@@ -81,30 +81,23 @@ export default class ClubDelegateService {
         HttpStatus.FORBIDDEN,
       );
 
-    const delegateInfos = await Promise.all(
-      delegates.map(async e => {
-        const student = await this.userPublicService.getStudentById({
-          id: e.studentId,
-        });
-
-        if (student === undefined)
-          throw new HttpException(
-            "unreachable",
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-
-        return {
-          name: student.name,
-          studentId: student.id,
-          delegateEnumId: e.clubDelegateEnum as ClubDelegateEnum,
-          studentNumber: student.number,
-          phoneNumber:
-            student.phoneNumber === null
-              ? "010-0000-0000"
-              : student.phoneNumber,
-        };
-      }),
+    const students = await this.userPublicService.findStudentContacts(
+      delegates.map(delegate => delegate.studentId),
     );
+    const studentById = new Map(students.map(student => [student.id, student]));
+    const delegateInfos = delegates.map(delegate => {
+      const student = studentById.get(delegate.studentId);
+      if (!student)
+        throw new NotFoundException("직책자의 학생 정보를 찾을 수 없습니다.");
+
+      return {
+        name: student.name,
+        studentId: student.id,
+        delegateEnumId: delegate.clubDelegateEnum as ClubDelegateEnum,
+        studentNumber: student.number,
+        phoneNumber: student.user?.phoneNumber ?? null,
+      };
+    });
 
     return { delegates: delegateInfos };
   }
@@ -395,7 +388,7 @@ export default class ClubDelegateService {
       throw new ForbiddenException("요청을 받은 계정으로 수락해 주세요.");
     }
 
-    await this.userPublicService.updateStudentPhoneNumber(
+    await this.userPublicService.updatePhoneNumber(
       param.userId,
       param.body.phoneNumber,
     );

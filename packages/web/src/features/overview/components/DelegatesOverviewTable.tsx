@@ -62,6 +62,16 @@ const columns = [
     header: "대의원1/학과",
     size: 180,
   }),
+  columnHelper.accessor(row => row.delegate1?.phoneNumber ?? "-", {
+    id: "delegate1.phoneNumber",
+    header: "대의원1/전화번호",
+    size: 150,
+  }),
+  columnHelper.accessor(row => row.delegate1?.kaistEmail ?? "-", {
+    id: "delegate1.kaistEmail",
+    header: "대의원1/KAIST E-Mail",
+    size: 220,
+  }),
   columnHelper.accessor(row => row.delegate2?.name ?? "-", {
     id: "delegate2.name",
     header: "대의원2/성명",
@@ -76,6 +86,16 @@ const columns = [
     id: "delegate2.department",
     header: "대의원2/학과",
     size: 180,
+  }),
+  columnHelper.accessor(row => row.delegate2?.phoneNumber ?? "-", {
+    id: "delegate2.phoneNumber",
+    header: "대의원2/전화번호",
+    size: 150,
+  }),
+  columnHelper.accessor(row => row.delegate2?.kaistEmail ?? "-", {
+    id: "delegate2.kaistEmail",
+    header: "대의원2/KAIST E-Mail",
+    size: 220,
   }),
 ];
 

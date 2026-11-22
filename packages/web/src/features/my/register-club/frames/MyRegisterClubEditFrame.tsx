@@ -8,6 +8,8 @@ import styled from "styled-components";
 import apiReg011, {
   ApiReg011ResponseOk,
 } from "@clubs/interface/api/registration/endpoint/apiReg011";
+import apiUsr001 from "@clubs/interface/api/user/endpoint/apiUsr001";
+import apiUsr002 from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -56,6 +58,9 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
   const queryClient = useQueryClient();
 
   const [isAgreed, setIsAgreed] = useState(false);
+  const [initialPhoneNumber] = useState(
+    () => initialData?.representative.phoneNumber ?? "",
+  );
 
   const {
     data: clubDeadline,
@@ -69,7 +74,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
       ...initialData,
       clubNameKr: initialData?.newClubNameKr || initialData?.clubNameKr,
       clubNameEn: initialData?.newClubNameEn || initialData?.clubNameEn,
-      phoneNumber: initialData?.representative.phoneNumber,
+      phoneNumber: initialPhoneNumber,
     },
   });
 
@@ -93,7 +98,11 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     isValid;
 
   const errorMessage = useMemo(
-    () => computeErrorMessage({ ...formData, isAgreed }, validationT),
+    () =>
+      computeErrorMessage(
+        { ...formData, isAgreed, requiresPhoneNumber: false },
+        validationT,
+      ),
     [formData, isAgreed, validationT],
   );
 
@@ -117,11 +126,12 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     : undefined;
 
   const submitHandler = useCallback(
-    (data: RegisterClubModel) => {
+    ({ phoneNumber, ...data }: RegisterClubModel) => {
       mutate({
         requestParam: { applyId },
         body: {
           ...data,
+          ...(phoneNumber !== initialPhoneNumber ? { phoneNumber } : {}),
           registrationTypeEnumId: type,
           clubId: initialData?.clubId,
           clubRuleFileId: data.clubRuleFile?.id,
@@ -130,11 +140,13 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
         },
       });
     },
-    [mutate, applyId, type, initialData?.clubId],
+    [mutate, applyId, type, initialData?.clubId, initialPhoneNumber],
   );
 
   useEffect(() => {
     if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [apiUsr001.url()] });
+      queryClient.invalidateQueries({ queryKey: [apiUsr002.url()] });
       router.replace(`/my/register-club/${applyId}`);
       queryClient.invalidateQueries({
         queryKey: [apiReg011.url(applyId.toString())],
@@ -192,10 +204,11 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
           </FlexWrapper>
           {type === RegistrationTypeEnum.NewProvisional && (
             <NewProvisionalBasicInformFrame
+              editMode
               isInitialCheckedProfessor={initialData.professor != null}
               profile={{
                 name: initialData.representative.name,
-                phoneNumber: initialData.representative.phoneNumber,
+                phoneNumber: initialPhoneNumber,
               }}
             />
           )}
@@ -206,7 +219,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               existingClub={existingClub}
               profile={{
                 name: initialData.representative.name,
-                phoneNumber: initialData.representative.phoneNumber,
+                phoneNumber: initialPhoneNumber,
               }}
             />
           )}
@@ -218,7 +231,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               existingClub={existingClub}
               profile={{
                 name: initialData.representative.name,
-                phoneNumber: initialData.representative.phoneNumber,
+                phoneNumber: initialPhoneNumber,
               }}
             />
           )}

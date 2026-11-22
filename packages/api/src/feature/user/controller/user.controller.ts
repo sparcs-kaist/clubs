@@ -13,7 +13,6 @@ import {
 
 import apiUsr001 from "@clubs/interface/api/user/endpoint/apiUsr001";
 import apiUsr002, {
-  ApiUsr002RequestQuery,
   ApiUsr002ResponseOk,
 } from "@clubs/interface/api/user/endpoint/apiUsr002";
 import apiUsr003, {
@@ -33,7 +32,6 @@ import {
   type ApiUsr009RequestParam,
   type ApiUsr009ResponseOk,
 } from "@clubs/interface/api/user/endpoint/index";
-import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -72,59 +70,8 @@ export class UserController {
 
   @Get("/user/my/phone")
   @UsePipes(new ZodPipe(apiUsr002))
-  async getPhoneNumber(
-    @GetUser() user: GetUser,
-    @Query() query: ApiUsr002RequestQuery,
-  ): Promise<ApiUsr002ResponseOk> {
-    let phoneNumber;
-
-    if (studentUserTypes.includes(query.profile)) {
-      phoneNumber = await this.userService.getStudentPhoneNumberByUserId(
-        user.id,
-      );
-    } else if (query.profile === "executive") {
-      phoneNumber = await this.userService.getExecutivePhoneNumberByUserId(
-        user.id,
-      );
-    } else if (query.profile === "professor") {
-      phoneNumber = await this.userService.getProfessorPhoneNumberByUserId(
-        user.id,
-      );
-    }
-    // TODO: employee
-    if (
-      !phoneNumber ||
-      phoneNumber.phoneNumber === "" ||
-      phoneNumber.phoneNumber === undefined ||
-      phoneNumber.phoneNumber === null
-    ) {
-      phoneNumber = await this.userService.getUserPhoneNumber(user.id);
-      if (
-        !phoneNumber ||
-        phoneNumber.phoneNumber === "" ||
-        phoneNumber.phoneNumber === undefined ||
-        phoneNumber.phoneNumber === null
-      ) {
-        return { phoneNumber: null };
-      }
-      if (studentUserTypes.includes(query.profile)) {
-        await this.userPublicService.updateStudentPhoneNumber(
-          user.id,
-          phoneNumber.phoneNumber,
-        );
-      } else if (query.profile === "executive") {
-        await this.userService.updateExecutivePhoneNumber(
-          user.id,
-          phoneNumber.phoneNumber,
-        );
-      } else if (query.profile === "professor") {
-        await this.userService.updateProfessorPhoneNumber(
-          user.id,
-          phoneNumber.phoneNumber,
-        );
-      }
-    }
-    return phoneNumber;
+  async getPhoneNumber(@GetUser() user: GetUser): Promise<ApiUsr002ResponseOk> {
+    return this.userService.getUserPhoneNumber(user.id);
   }
 
   @Patch("/user/my/phone")
@@ -133,23 +80,7 @@ export class UserController {
     @GetUser() user: GetUser,
     @Body() body: ApiUsr003RequestBody,
   ) {
-    if (studentUserTypes.includes(body.profile)) {
-      await this.userPublicService.updateStudentPhoneNumber(
-        user.id,
-        body.phoneNumber,
-      );
-    } else if (body.profile === "executive") {
-      await this.userService.updateExecutivePhoneNumber(
-        user.id,
-        body.phoneNumber,
-      );
-    } else if (body.profile === "professor") {
-      await this.userService.updateProfessorPhoneNumber(
-        user.id,
-        body.phoneNumber,
-      );
-    }
-    await this.userService.updatePhoneNumber(user.id, body.phoneNumber);
+    await this.userPublicService.updatePhoneNumber(user.id, body.phoneNumber);
     return {};
   }
 

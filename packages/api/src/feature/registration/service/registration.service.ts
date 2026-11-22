@@ -95,6 +95,8 @@ interface ApiReg006ResponseType {
   data: ApiReg006ResponseOk | ApiReg006ResponseNoContent;
 }
 
+type RegistrationApplicant = { userId: number; studentId: number };
+
 @Injectable()
 export class RegistrationService {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -171,7 +173,7 @@ export class RegistrationService {
     isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
   })
   async postStudentRegistrationClubRegistration(
-    studentId: number,
+    { userId, studentId }: RegistrationApplicant,
     body: ApiReg001RequestBody,
   ): Promise<ApiReg001ResponseCreated> {
     // - 현재 동아리 등록 신청 기간이 맞는지 확인합니다.
@@ -258,11 +260,14 @@ export class RegistrationService {
       } else if (body.clubId !== undefined) {
         await this.clubPublicService.lockRegistrationClub(body.clubId);
       }
-      return await this.clubRegistrationRepository.createRegistration(
-        studentId,
-        semesterId,
-        transformedBody,
-      );
+      const registration =
+        await this.clubRegistrationRepository.createRegistration(
+          studentId,
+          semesterId,
+          transformedBody,
+        );
+      await this.userPublicService.updatePhoneNumber(userId, body.phoneNumber);
+      return registration;
     } catch (error) {
       if (isClubNameConflict(error)) {
         throw new HttpException(
@@ -638,9 +643,11 @@ export class RegistrationService {
   /**
    * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
    */
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async putStudentRegistrationsClubRegistration(
-    studentId: number,
+    { userId, studentId }: RegistrationApplicant,
     applyId: number,
     body: ApiReg009RequestBody,
   ): Promise<ApiReg009ResponseOk> {
@@ -664,13 +671,19 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationModification,
       ],
     });
-    const result =
+    const changedPhoneNumber =
       await this.clubRegistrationRepository.putStudentRegistrationsClubRegistration(
         studentId,
         applyId,
         body,
       );
-    return result;
+    if (changedPhoneNumber !== undefined) {
+      await this.userPublicService.updatePhoneNumber(
+        userId,
+        changedPhoneNumber,
+      );
+    }
+    return {};
   }
 
   /**

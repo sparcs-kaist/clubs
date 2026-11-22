@@ -4,7 +4,6 @@ import { Prisma } from "@prisma/client";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
 import { withDeleted } from "@sparcs-clubs/api/common/util/soft-delete";
-import { takeOne } from "@sparcs-clubs/api/common/util/util";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
@@ -220,23 +219,6 @@ export default class OldStudentRepository {
     });
 
     return latestStudentEnumMap;
-  }
-
-  async getStudentPhoneNumber(id: number) {
-    const result = await this.prisma.$queryRaw<
-      Array<{ phoneNumber: string | null }>
-    >(Prisma.sql`
-      SELECT u.phone_number AS phoneNumber
-      FROM student s
-      LEFT JOIN user u ON u.id = s.user_id
-      LEFT JOIN student_t st ON st.student_id = s.id
-        AND (st.end_term >= NOW() OR st.end_term IS NULL)
-        AND st.start_term <= NOW()
-        AND st.deleted_at IS NULL
-      WHERE s.user_id = ${id}
-      LIMIT 1
-    `);
-    return takeOne(result);
   }
 
   async fetchStudentSummaries(

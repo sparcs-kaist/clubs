@@ -54,7 +54,12 @@ const My: React.FC = () => {
         <ProfessorRegistrationBanner />
       )}
       {profile && isStudent(profile) && <MyChangesFrame profile={profile} />}
-      <MyInfoFrame profile={profile?.type as string} />
+      {profile && (
+        <MyInfoFrame
+          key={`${profile.id}:${profile.type}`}
+          profile={profile.type}
+        />
+      )}
       {profile?.type !== UserTypeEnum.Executive &&
         (profile?.type === UserTypeEnum.Professor ? (
           <ProfessorMyClubFrame />

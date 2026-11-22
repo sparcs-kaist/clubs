@@ -32,6 +32,9 @@ const createContext = () => {
     },
     registration: {
       create: jest.fn().mockResolvedValue({ id: 456 }),
+      findUniqueOrThrow: jest
+        .fn()
+        .mockResolvedValue({ phoneNumber: body.phoneNumber }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
@@ -99,7 +102,7 @@ describe("club application repository guards", () => {
         ...body,
         clubId: 123,
       }),
-    ).resolves.toEqual({});
+    ).resolves.toBeUndefined();
     const query = transaction.$queryRaw.mock.calls[0][0];
     expect(query.values).toEqual([
       456,
@@ -110,6 +113,50 @@ describe("club application repository guards", () => {
     expect(transaction.registration.updateMany).toHaveBeenCalledWith({
       where: { id: 456, studentId: 200, deletedAt: null },
       data: expect.objectContaining({ professorId: null }),
+    });
+  });
+
+  it("does not read or change the stored number when the edit omits it", async () => {
+    const { repository, transaction } = createContext();
+    transaction.$queryRaw.mockResolvedValue([
+      { RegistrationStatusEnum: RegistrationStatusEnum.Pending },
+    ]);
+
+    await expect(
+      repository.putStudentRegistrationsClubRegistration(200, 456, {
+        ...body,
+        clubId: 123,
+        phoneNumber: undefined,
+      }),
+    ).resolves.toBeUndefined();
+    expect(transaction.registration.findUniqueOrThrow).not.toHaveBeenCalled();
+    expect(transaction.registration.updateMany).toHaveBeenCalledWith({
+      where: { id: 456, studentId: 200, deletedAt: null },
+      data: expect.objectContaining({ phoneNumber: undefined }),
+    });
+  });
+
+  it("returns the requested number only after replacing a different snapshot", async () => {
+    const { repository, transaction } = createContext();
+    transaction.$queryRaw.mockResolvedValue([
+      { RegistrationStatusEnum: RegistrationStatusEnum.Pending },
+    ]);
+    transaction.registration.findUniqueOrThrow.mockResolvedValue({
+      phoneNumber: null,
+    });
+
+    await expect(
+      repository.putStudentRegistrationsClubRegistration(200, 456, {
+        ...body,
+        clubId: 123,
+      }),
+    ).resolves.toBe(body.phoneNumber);
+    expect(transaction.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      transaction.registration.findUniqueOrThrow.mock.invocationCallOrder[0],
+    );
+    expect(transaction.registration.updateMany).toHaveBeenCalledWith({
+      where: { id: 456, studentId: 200, deletedAt: null },
+      data: expect.objectContaining({ phoneNumber: body.phoneNumber }),
     });
   });
 

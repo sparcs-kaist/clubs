@@ -262,7 +262,7 @@ describe("RegistrationService professor club registration approval", () => {
 
     await expect(
       service.postStudentRegistrationClubRegistration(
-        studentId,
+        { userId: 100, studentId },
         {} as Parameters<
           RegistrationService["postStudentRegistrationClubRegistration"]
         >[1],

@@ -51,7 +51,7 @@ describe("club delegate requests with MySQL", () => {
           provide: UserPublicService,
           inject: [UserRepository],
           useFactory: (users: UserRepository) => ({
-            updateStudentPhoneNumber: users.updatePhoneNumber.bind(users),
+            updatePhoneNumber: users.updatePhoneNumber.bind(users),
             findStudentContacts: users.findStudentContacts.bind(users),
           }),
         },

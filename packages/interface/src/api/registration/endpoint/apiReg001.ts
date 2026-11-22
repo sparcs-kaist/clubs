@@ -40,7 +40,7 @@ const requestBody = z
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
     clubNameKr: zClubNameKr,
     clubNameEn: zClubNameEn,
-    phoneNumber: zKrPhoneNumber, // 대표자 전화번호
+    phoneNumber: zKrPhoneNumber, // 신청자 본인 전화번호
     /**
      * 가동아리 신청의 경우 설립연월이 신청에 포함됩니다.
      * 신규등록 | 재등록의 경우 설립연도가 신청에 포함됩니다.

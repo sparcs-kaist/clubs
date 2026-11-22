@@ -6,10 +6,7 @@ import {
   ApiReg001RequestBody,
   ApiReg001ResponseCreated,
 } from "@clubs/interface/api/registration/endpoint/apiReg001";
-import {
-  ApiReg009RequestBody,
-  ApiReg009ResponseOk,
-} from "@clubs/interface/api/registration/endpoint/apiReg009";
+import { ApiReg009RequestBody } from "@clubs/interface/api/registration/endpoint/apiReg009";
 import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg014ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg014";
@@ -269,7 +266,7 @@ export class ClubRegistrationRepository {
     studentId: number,
     applyId: number,
     body: ApiReg009RequestBody,
-  ): Promise<ApiReg009ResponseOk> {
+  ): Promise<string | undefined> {
     const cur = this.clock.now();
     const { tx } = this.txHost;
     const registrationRows = await (tx as unknown as PrismaClient).$queryRaw<
@@ -297,6 +294,17 @@ export class ClubRegistrationRepository {
         },
         HttpStatus.BAD_REQUEST,
       );
+    }
+
+    let changedPhoneNumber = body.phoneNumber;
+    if (changedPhoneNumber !== undefined) {
+      const previous = await tx.registration.findUniqueOrThrow({
+        where: { id: applyId, deletedAt: null },
+        select: { phoneNumber: true },
+      });
+      if (previous.phoneNumber === changedPhoneNumber) {
+        changedPhoneNumber = undefined;
+      }
     }
 
     let professor: { id: number } | null = null;
@@ -338,7 +346,7 @@ export class ClubRegistrationRepository {
       data: {
         clubNameKr: body.clubNameKr,
         clubNameEn: body.clubNameEn,
-        phoneNumber: body.phoneNumber,
+        phoneNumber: changedPhoneNumber,
         foundedAt: body.foundedAt,
         divisionId: body.divisionId,
         activityFieldKr: body.activityFieldKr,
@@ -358,7 +366,7 @@ export class ClubRegistrationRepository {
     } else if (result.count === 0) {
       throw new HttpException("Registration Not Found", HttpStatus.NOT_FOUND);
     }
-    return {};
+    return changedPhoneNumber;
   }
 
   async findActiveRegistrationForApplicant(applyId: number, studentId: number) {

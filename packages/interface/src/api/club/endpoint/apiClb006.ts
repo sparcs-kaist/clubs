@@ -5,7 +5,6 @@ import { zClub } from "@clubs/domain/club/club";
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
 import { zStudent } from "@clubs/domain/user/student";
 
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 import { registry } from "@clubs/interface/open-api";
 
 /**
@@ -32,7 +31,7 @@ const responseBodyMap = {
         studentId: zStudent.shape.id,
         studentNumber: z.coerce.number().int().min(1),
         name: zStudent.shape.name,
-        phoneNumber: zKrPhoneNumber,
+        phoneNumber: z.string().max(30).nullable(),
       }),
     ),
   }),
