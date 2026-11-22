@@ -48,4 +48,9 @@ export default class DivisionPublicService {
       district: districtMap.get(division.district.id),
     }));
   }
+
+  async findDivisionsByIds(ids: number[]) {
+    if (ids.length === 0) return [];
+    return this.divisionRepository.find({ id: [...new Set(ids)] });
+  }
 }

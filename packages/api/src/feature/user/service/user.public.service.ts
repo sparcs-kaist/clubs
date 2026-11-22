@@ -273,6 +273,17 @@ export default class UserPublicService {
     return professor;
   }
 
+  @Transactional()
+  saveRegistrationAdvisor(
+    contact: { name: string; email: string },
+    startTerm: Date,
+  ): Promise<number> {
+    return this.oldProfessorRepository.saveRegistrationAdvisor(
+      contact,
+      startTerm,
+    );
+  }
+
   /**
    * 현재 해당id의 집행부원이 유효한 지 확인합니다.
    * 만약 유효하지 않으면 403 Forbidden 에러를 던집니다.
@@ -355,6 +366,10 @@ export default class UserPublicService {
   async getProfessorsByIds(professorIds: number[]): Promise<RMProfessor[]> {
     const professors = await this.professorRepository.fetchAll(professorIds);
     return professors;
+  }
+
+  findProfessorNamesByIds(ids: number[]) {
+    return this.professorRepository.findNamesByIds(ids);
   }
 
   async getStudentsByIds(studentIds: number[]): Promise<MStudent[]> {

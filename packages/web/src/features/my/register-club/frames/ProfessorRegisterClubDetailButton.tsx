@@ -3,8 +3,6 @@ import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React from "react";
 
-import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
-
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
@@ -13,8 +11,8 @@ import { errorHandler } from "@sparcs-clubs/web/common/components/Modal/ErrorMod
 import usePatchClubRegProfessorApprove from "@sparcs-clubs/web/features/my/services/usePatchClubRegProfessorApprove";
 
 const ProfessorRegisterClubDetailButton: React.FC<{
-  clubDetail: ApiReg011ResponseOk;
-}> = ({ clubDetail }) => {
+  isSigned: boolean;
+}> = ({ isSigned }) => {
   const t = useTranslations("my.registration");
   const { id: idParam } = useParams<{ id: string }>();
   const applyId = Number(idParam);
@@ -54,13 +52,9 @@ const ProfessorRegisterClubDetailButton: React.FC<{
       <Button
         style={{ width: "max-content" }}
         onClick={professorApproveHandler}
-        type={
-          clubDetail && clubDetail.isProfessorSigned ? "disabled" : "default"
-        }
+        type={isSigned ? "disabled" : "default"}
       >
-        {clubDetail && clubDetail.isProfessorSigned
-          ? t("approved")
-          : t("approve")}
+        {isSigned ? t("signatureStatus.APPROVED") : t("approve")}
       </Button>
     </FlexWrapper>
   );

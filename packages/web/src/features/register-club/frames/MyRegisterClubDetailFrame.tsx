@@ -13,7 +13,9 @@ import ProfessorRegisterClubDetailButton from "@sparcs-clubs/web/features/my/reg
 import StudentRegisterClubDetailButton from "@sparcs-clubs/web/features/my/register-club/frames/StudentRegisterClubDetailButton";
 import RegisterClubDetailFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubDetailFrame";
 
-import useGetRegisterClubDetail from "../services/useGetRegisterClubDetail";
+import useGetRegisterClubDetail, {
+  useGetProfessorRegisterClubDetail,
+} from "../services/useGetRegisterClubDetail";
 
 const ButtonWrapper = styled.div`
   display: flex;
@@ -32,29 +34,40 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
 
   const isProfessor = profile === UserTypeEnum.Professor;
 
+  const studentDetail = useGetRegisterClubDetail(
+    isProfessor ? UserTypeEnum.Undergraduate : profile,
+    { applyId },
+    { enabled: isValidApplyId && !isProfessor },
+  );
+  const professorDetail = useGetProfessorRegisterClubDetail(
+    applyId,
+    isValidApplyId && isProfessor,
+  );
   const {
     data: clubDetail,
     isLoading,
     isError,
-  } = useGetRegisterClubDetail(
-    profile,
-    { applyId },
-    {
-      enabled: isValidApplyId,
-    },
-  );
+  } = isProfessor ? professorDetail : studentDetail;
 
   if (!isValidApplyId) {
     return <NotFound />;
   }
 
   if (!clubDetail) {
-    return null;
+    return (
+      <AsyncBoundary isLoading={isLoading} isError={isError}>
+        {null}
+      </AsyncBoundary>
+    );
   }
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <RegisterClubDetailFrame profile={profile} clubDetail={clubDetail} />
+      <RegisterClubDetailFrame
+        profile={profile}
+        clubDetail={clubDetail}
+        professorReview={isProfessor ? professorDetail.data : undefined}
+      />
       <ButtonWrapper>
         <Button
           style={{ width: "max-content" }}
@@ -65,7 +78,9 @@ const MyRegisterClubDetailFrame = ({ profile }: { profile: UserTypeEnum }) => {
           {t("backToList")}
         </Button>
         {isProfessor ? (
-          <ProfessorRegisterClubDetailButton clubDetail={clubDetail} />
+          <ProfessorRegisterClubDetailButton
+            isSigned={clubDetail.isProfessorSigned}
+          />
         ) : (
           <StudentRegisterClubDetailButton />
         )}

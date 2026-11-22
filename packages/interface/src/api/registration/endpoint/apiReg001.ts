@@ -3,15 +3,14 @@ import { z } from "zod";
 
 import { zCoercedDbText } from "@clubs/domain/common/string";
 
-import {
-  zClubNameEn,
-  zClubNameKr,
-  zUserName,
-} from "@clubs/interface/common/commonString";
+import { zClubNameEn, zClubNameKr } from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
+import {
+  zRegistrationActivityField,
+  zRegistrationProfessor,
+} from "../type/registration-application";
 import { refineRegistrationRequest } from "../utils/registrationTypeEnumChecker";
 
 /**
@@ -47,26 +46,13 @@ const requestBody = z
      */
     foundedAt: z.coerce.date(),
     divisionId: z.coerce.number().int().min(1),
-    activityFieldKr: z.string().max(255),
-    activityFieldEn: z.string().max(255),
+    activityFieldKr: zRegistrationActivityField,
+    activityFieldEn: zRegistrationActivityField,
     /**
      * 지도교수란이 기입되어 있으면 지도교수를 포함한 신청이고,
      * 없다면 지도교수 없는 동아리 신청으로 처리됩니다.
      */
-    professor: z
-      .object({
-        name: zUserName,
-        email: z
-          .string()
-          .max(255)
-          .email()
-          .refine(email => email.endsWith("@kaist.ac.kr"), {
-            message: "Must be a valid KAIST email address",
-          }),
-        professorEnumId: z.nativeEnum(ProfessorEnum),
-      })
-      .nullable()
-      .optional(),
+    professor: zRegistrationProfessor.nullable().optional(),
     divisionConsistency: zCoercedDbText,
     foundationPurpose: zCoercedDbText,
     activityPlan: zCoercedDbText,

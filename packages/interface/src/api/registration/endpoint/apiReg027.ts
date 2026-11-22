@@ -56,6 +56,14 @@ type ApiReg027RequestQuery = z.infer<typeof apiReg027.requestQuery>;
 type ApiReg027RequestBody = z.infer<typeof apiReg027.requestBody>;
 type ApiReg027ResponseOk = z.infer<(typeof apiReg027.responseBodyMap)[200]>;
 
+export const isClubRegistrationOpen = (
+  deadline: ApiReg027ResponseOk["deadline"] | undefined,
+  now = Date.now(),
+): boolean =>
+  !!deadline &&
+  new Date(deadline.startDate).getTime() <= now &&
+  now < new Date(deadline.endTerm).getTime();
+
 export default apiReg027;
 
 export type {

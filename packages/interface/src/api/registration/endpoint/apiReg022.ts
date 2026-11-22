@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 import { zCoercedDbText, zDbText } from "@clubs/domain/common/string";
 import { zSemester } from "@clubs/domain/semester/semester";
 
@@ -16,7 +17,7 @@ import registrationTypeEnumChecker from "../utils/registrationTypeEnumChecker";
 
 /**
  * @version v0.1
- * @description 이번학기 동아리 등록 신청서 조회
+ * @description 본인이 지도교수로 지정된 동아리 등록 신청서 조회
  */
 
 const url = (applyId: string) =>
@@ -35,7 +36,7 @@ const responseBodyMap = {
   [HttpStatusCode.Ok]: z
     .object({
       id: z.coerce.number().int().min(1),
-      semesterId: zSemester.shape.id,
+      semesterId: zSemester.shape.id.nullable(),
       registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
       registrationStatusEnumId: z.nativeEnum(RegistrationStatusEnum),
       clubId: z.coerce.number().int().min(1).optional(),
@@ -61,7 +62,7 @@ const responseBodyMap = {
             .refine(email => email.endsWith("@kaist.ac.kr"), {
               message: "Must be a valid KAIST email address",
             }),
-          professorEnumId: z.nativeEnum(ProfessorEnum),
+          professorEnumId: z.nativeEnum(ProfessorEnum).nullable(),
         })
         .optional(),
       divisionConsistency: zCoercedDbText,
@@ -89,6 +90,10 @@ const responseBodyMap = {
         })
         .optional(),
       isProfessorSigned: z.coerce.boolean(),
+      professorSignedAt: z.coerce.date().nullable(),
+      professorApprovalStatus: zProfessorApprovalStatus,
+      regularDeadline: z.coerce.date().nullable(),
+      lateSigningDeadline: z.coerce.date().nullable(),
       updatedAt: z.coerce.date(),
       comments: z.array(
         z.object({

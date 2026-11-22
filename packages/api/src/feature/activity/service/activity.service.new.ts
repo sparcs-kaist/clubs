@@ -636,6 +636,7 @@ export default class ActivityService {
     };
   }
 
+  @Transactional()
   async postStudentActivityProvisional(
     body: ApiAct007RequestBody,
     studentId: number,
@@ -646,15 +647,15 @@ export default class ActivityService {
       clubId: body.clubId,
     });
 
-    // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
-    await this.registrationDeadlinePublicService.validate({
-      date: this.clock.now(),
-      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
-    });
-
+    const date = this.clock.now();
     const activityD = await this.activityDurationPublicService.load({
-      date: this.clock.now(),
+      date,
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    await this.registrationDeadlinePublicService.validate({
+      date,
+      semesterId: activityD.semester.id,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
     const activityDId = activityD.id;
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
@@ -689,7 +690,7 @@ export default class ActivityService {
         this.filePublicService.getFileInfoById(key.fileId),
       ),
     );
-    const isInsertionSucceed = await this.activityRepository.create({
+    await this.activityRepository.createRegistrationReport({
       ...body,
       club: { id: body.clubId },
       activityTypeEnum: body.activityTypeEnumId,
@@ -704,14 +705,9 @@ export default class ActivityService {
       durations: body.durations,
     });
 
-    if (!isInsertionSucceed)
-      throw new HttpException(
-        "Failed to insert",
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-
     await this.registrationPublicService.resetClubRegistrationStatusEnum(
       body.clubId,
+      activityD.semester.id,
     );
   }
 
@@ -728,15 +724,6 @@ export default class ActivityService {
       clubId: activity.club.id,
     });
 
-    // 현재가 동아리 등록 기간인지 확인합니다.
-    await this.registrationDeadlinePublicService.validate({
-      date: this.clock.now(),
-      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
-    });
-
-    // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
-    // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
-
     // 제출한 활동 기간들이 활동기간 이내이며 작성일 이후를 포함하지 않는지 확인합니다.
     const activityD = await this.activityDurationPublicService.getById(
       activity.activityDuration.id,
@@ -750,6 +737,11 @@ export default class ActivityService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    await this.registrationDeadlinePublicService.validate({
+      date: this.clock.now(),
+      semesterId: activityD.semester.id,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
 
     // 파일 uuid의 유효성을 검사합니다.
@@ -815,6 +807,7 @@ export default class ActivityService {
 
     await this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.club.id,
+      activityD.semester.id,
     );
   }
 

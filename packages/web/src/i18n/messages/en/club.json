@@ -28,9 +28,9 @@
   "동아리 설명": "About the club",
   "동아리 설명 없음": "There is no description about the club",
   "registerClub": {
-    "koreanNameHelperText": "This name is shown mainly to Korean-speaking students. If your club does not have a separate Korean name, enter the name you normally use.",
+    "koreanNameHelperText": "This name is shown mainly to Korean-speaking students. If your club's official name is in English, you can enter it here as written.",
     "foreignNameHelperText": "This name is shown to international students. Enter a name that does not include Korean characters.",
-    "koreanNameChangeHelperText": "Edit this only if you want the club name to be displayed differently. This name is shown mainly to Korean-speaking students.",
+    "koreanNameChangeHelperText": "Edit this to change the displayed name. If your club's official name is in English, you can enter it here as written.",
     "foreignNameChangeHelperText": "Edit this only if you want the club name to be displayed differently. This name is shown to international students, and should not include Korean characters."
   }
 }

@@ -8,17 +8,17 @@ import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import CheckboxOption from "@sparcs-clubs/web/common/components/CheckboxOption";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import FormController from "@sparcs-clubs/web/common/components/FormController";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
-import { notAllowKrRegx } from "@sparcs-clubs/web/features/register-club/constants";
 import useGetClubsForPromotional from "@sparcs-clubs/web/features/register-club/services/useGetClubsForPromotional";
 import useGetClubsForRenewal from "@sparcs-clubs/web/features/register-club/services/useGetClubsForRenewal";
 import {
   ClubRegistrationInfo,
   RegisterClubModel,
+  toProfessorContact,
 } from "@sparcs-clubs/web/features/register-club/types/registerClub";
 
+import ActivityFieldInputs from "./_atomic/ActivityFieldInputs";
 import ClubNameField from "./_atomic/ClubNameField";
 import DivisionSelect from "./_atomic/DivisionSelect";
 import RegistrationPhoneField from "./_atomic/RegistrationPhoneField";
@@ -45,9 +45,8 @@ const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
     !editMode || !isRenewal || existingClub?.professor != null,
   );
 
-  const { watch, control, setValue } = useFormContext<RegisterClubModel>();
+  const { getValues, watch, setValue } = useFormContext<RegisterClubModel>();
   const clubId = watch("clubId");
-  const professor = watch("professor");
 
   const {
     data: promotionalList,
@@ -78,9 +77,11 @@ const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
       setValue("professor", undefined, { shouldValidate: true });
       return;
     }
-    if (professor || professorInfo == null) return;
-    setValue("professor", professorInfo, { shouldValidate: true });
-  }, [professorInfo, isCheckedProfessor, setValue]);
+    if (getValues("professor") || professorInfo == null) return;
+    setValue("professor", toProfessorContact(professorInfo), {
+      shouldValidate: true,
+    });
+  }, [getValues, professorInfo, isCheckedProfessor, setValue]);
 
   return (
     <AsyncBoundary
@@ -111,36 +112,7 @@ const BasicInformFrame: React.FC<BasicInformSectionProps> = ({
             <YearSelect />
             <DivisionSelect isRenewal={isRenewal} />
           </FlexWrapper>
-          <FormController
-            name="activityFieldKr"
-            required
-            control={control}
-            renderItem={props => (
-              <TextInput
-                {...props}
-                label={t("activityFieldKr")}
-                placeholder={t("activityFieldPlaceholder")}
-              />
-            )}
-          />
-          <FormController
-            name="activityFieldEn"
-            required
-            control={control}
-            rules={{
-              validate: value =>
-                notAllowKrRegx.test(value)
-                  ? undefined
-                  : t("invalidForeignCharacters"),
-            }}
-            renderItem={props => (
-              <TextInput
-                {...props}
-                label={t("activityFieldEn")}
-                placeholder={t("activityFieldPlaceholder")}
-              />
-            )}
-          />
+          <ActivityFieldInputs />
 
           {isRenewal &&
             clubId !== null &&

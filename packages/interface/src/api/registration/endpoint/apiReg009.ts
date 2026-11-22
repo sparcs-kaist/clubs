@@ -5,9 +5,12 @@ import { zCoercedDbText } from "@clubs/domain/common/string";
 
 import { zClubNameEn, zClubNameKr } from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
+import {
+  zRegistrationActivityField,
+  zRegistrationProfessor,
+} from "../type/registration-application";
 import { refineRegistrationRequest } from "../utils/registrationTypeEnumChecker";
 
 /**
@@ -35,22 +38,9 @@ const requestBody = z
     phoneNumber: zKrPhoneNumber.optional(),
     foundedAt: z.coerce.date(),
     divisionId: z.coerce.number().int().min(1),
-    activityFieldKr: z.string().max(255),
-    activityFieldEn: z.string().max(255),
-    professor: z
-      .object({
-        name: z.coerce.string().max(255),
-        email: z
-          .string()
-          .max(255)
-          .email()
-          .refine(email => email.endsWith("@kaist.ac.kr"), {
-            message: "Must be a valid KAIST email address",
-          }),
-        professorEnumId: z.nativeEnum(ProfessorEnum),
-      })
-      .nullable()
-      .optional(),
+    activityFieldKr: zRegistrationActivityField,
+    activityFieldEn: zRegistrationActivityField,
+    professor: zRegistrationProfessor.nullable().optional(),
     divisionConsistency: zCoercedDbText,
     foundationPurpose: zCoercedDbText,
     activityPlan: zCoercedDbText,

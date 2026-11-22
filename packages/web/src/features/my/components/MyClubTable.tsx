@@ -20,6 +20,7 @@ import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 
 interface MyClubTableProps {
   clubRegisterList: ApiReg012ResponseOk;
+  detailPath?: string;
 }
 const columnHelper =
   createColumnHelper<ApiReg012ResponseOk["registrations"][number]>();
@@ -112,7 +113,10 @@ const useColumns = () => {
   );
 };
 
-const MyClubTable: React.FC<MyClubTableProps> = ({ clubRegisterList }) => {
+const MyClubTable: React.FC<MyClubTableProps> = ({
+  clubRegisterList,
+  detailPath = "/my/register-club",
+}) => {
   const t = useTranslations("my.overview");
   const columns = useColumns();
   const table = useReactTable({
@@ -122,7 +126,7 @@ const MyClubTable: React.FC<MyClubTableProps> = ({ clubRegisterList }) => {
     enableSorting: false,
   });
   const getRowLink = (row: ApiReg012ResponseOk["registrations"][number]) => ({
-    pathname: `/my/register-club/${row.id.toString()}`,
+    pathname: `${detailPath}/${row.id}`,
   });
   return (
     <Table

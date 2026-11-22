@@ -56,6 +56,13 @@ export class ProfessorRepository extends BaseMultiTableRepository<
     super(professorTableConfig, MProfessor, "professorId");
   }
 
+  findNamesByIds(ids: number[]) {
+    return this.prisma.professor.findMany({
+      where: { id: { in: ids }, deletedAt: null },
+      select: { id: true, name: true },
+    });
+  }
+
   protected dbToModelMapping(result: ProfessorDbSelect): MProfessor {
     return new MProfessor({
       id: result.main.id,

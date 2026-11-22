@@ -59,7 +59,14 @@ const inspectMessage = (message: string, locale: string) => {
 };
 
 it("keeps app translations complete, compatible, and renderable in both languages", () => {
-  ["common", "my", "agree", "officeHours"].forEach(namespace => {
+  const namespaces = [
+    "common",
+    "my",
+    "agree",
+    "officeHours",
+    "registrationHistory",
+  ];
+  namespaces.forEach(namespace => {
     const load = (locale: string) =>
       JSON.parse(
         readFileSync(

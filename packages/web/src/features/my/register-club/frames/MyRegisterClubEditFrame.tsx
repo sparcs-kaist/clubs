@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import styled from "styled-components";
@@ -15,7 +15,6 @@ import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import Button from "@sparcs-clubs/web/common/components/Button";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import Info from "@sparcs-clubs/web/common/components/Info";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import WarningInfo from "@sparcs-clubs/web/common/components/WarningInfo";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
@@ -26,7 +25,11 @@ import BasicInformFrame from "@sparcs-clubs/web/features/register-club/component
 import NewProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/NewProvisionalBasicInformFrame";
 import ReProvisionalBasicInformFrame from "@sparcs-clubs/web/features/register-club/components/basic-info/ReProvisionalBasicInformFrame";
 import ClubRulesFrame from "@sparcs-clubs/web/features/register-club/components/compliance/ClubRulesFrame";
-import { RegisterClubModel } from "@sparcs-clubs/web/features/register-club/types/registerClub";
+import RegistrationDeadlineInfo from "@sparcs-clubs/web/features/register-club/components/RegistrationDeadlineInfo";
+import {
+  RegisterClubModel,
+  toProfessorContact,
+} from "@sparcs-clubs/web/features/register-club/types/registerClub";
 import computeErrorMessage from "@sparcs-clubs/web/features/register-club/utils/computeErrorMessage";
 import { getRegistrationErrorMessage } from "@sparcs-clubs/web/features/register-club/utils/getRegistrationErrorMessage";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
@@ -49,11 +52,6 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
   const t = useTranslations("my.registration");
   const validationT = useTranslations("my.registration.validation");
   const errorT = useTranslations("my.registration.errors");
-  const format = useFormatter();
-  const semesterNames: Record<string, string> = {
-    봄: t("spring"),
-    가을: t("fall"),
-  };
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -72,6 +70,7 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
     mode: "all",
     defaultValues: {
       ...initialData,
+      professor: toProfessorContact(initialData?.professor),
       clubNameKr: initialData?.newClubNameKr || initialData?.clubNameKr,
       clubNameEn: initialData?.newClubNameEn || initialData?.clubNameEn,
       phoneNumber: initialPhoneNumber,
@@ -172,27 +171,9 @@ const MyRegisterClubEditFrame: React.FC<RegisterClubMainFrameProps> = ({
               isError={isError || semesterError}
             >
               {clubDeadline?.deadline && (
-                <Info
-                  text={t("deadlineInfo", {
-                    year: semesterInfo?.year ?? "",
-                    semester:
-                      semesterNames[semesterInfo?.name ?? ""] ??
-                      semesterInfo?.name ??
-                      "",
-                    deadline: format.dateTime(
-                      new Date(clubDeadline.deadline.endTerm),
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        weekday: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                        timeZone: "Asia/Seoul",
-                      },
-                    ),
-                  })}
+                <RegistrationDeadlineInfo
+                  deadline={clubDeadline.deadline.endTerm}
+                  semester={semesterInfo}
                 />
               )}
             </AsyncBoundary>

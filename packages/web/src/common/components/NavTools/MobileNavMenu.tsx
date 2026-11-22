@@ -17,6 +17,7 @@ type MobileNavMenuProps = {
   className?: string;
   keys: (keyof Paths)[];
   onClose: VoidFunction;
+  hiddenSubPath?: string;
 };
 
 type Path = {
@@ -62,6 +63,7 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
   className = "",
   keys,
   onClose,
+  hiddenSubPath,
 }) => {
   const [selectedMenu, setSelectedMenu] = useState<keyof Paths | null>(null);
   const currentPath = usePathname();
@@ -93,7 +95,10 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
     <MobileNavMenuInner className={className}>
       {keys.map(key => {
         const subPath = (paths[key] as Path).sub?.filter(
-          ({ featureFlag }) => featureFlag && isFeatureEnabled(featureFlag),
+          ({ featureFlag, path }) =>
+            featureFlag &&
+            isFeatureEnabled(featureFlag) &&
+            (!hiddenSubPath || path !== hiddenSubPath),
         );
         const haveSubPath = subPath && subPath.length > 0;
 

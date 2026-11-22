@@ -45,6 +45,71 @@ describe("club registration request validation", () => {
     });
   });
 
+  describe.each([
+    ["creating", createPipe],
+    ["editing", updatePipe],
+  ] as const)("when %s a registration", (_, pipe) => {
+    const fields = ["activityFieldKr", "activityFieldEn"] as const;
+
+    it.each(fields)(
+      "accepts 40 total and 30 non-whitespace characters in %s",
+      field => {
+        const value = `${"a".repeat(30)}${" ".repeat(10)}`;
+        expect(transform({ ...body, [field]: value }, pipe)).toMatchObject({
+          [field]: value,
+        });
+      },
+    );
+
+    it("counts a supplementary Unicode character as one code point", () => {
+      const activityFieldKr = `${"가".repeat(29)}𠀀${" ".repeat(10)}`;
+      expect(transform({ ...body, activityFieldKr }, pipe)).toMatchObject({
+        activityFieldKr,
+      });
+    });
+
+    it.each(fields)(
+      "rejects either length overflow or blank input in %s",
+      field => {
+        const invalidValues = [
+          "a".repeat(31),
+          `${"a".repeat(30)}${" ".repeat(11)}`,
+          "\t \u00a0",
+        ];
+        invalidValues.forEach(value => {
+          expect(() => transform({ ...body, [field]: value }, pipe)).toThrow(
+            ZodError,
+          );
+        });
+      },
+    );
+
+    it("accepts an official English club name in the Korean name field", () => {
+      const clubNameKr = "Test Club";
+      expect(transform({ ...body, clubNameKr }, pipe)).toMatchObject({
+        clubNameKr,
+      });
+    });
+
+    it("accepts the advisor contact and ignores a legacy rank", () => {
+      const professor = { name: "교수", email: "professor@kaist.ac.kr" };
+      expect(transform({ ...body, professor }, pipe)).toMatchObject({
+        professor,
+      });
+      const legacy = transform(
+        { ...body, professor: { ...professor, professorEnumId: 1 } },
+        pipe,
+      );
+      expect(legacy).toMatchObject({ professor });
+      expect(legacy).not.toHaveProperty("professor.professorEnumId");
+    });
+
+    it("requires a KAIST email for a supplied advisor", () => {
+      const professor = { name: "교수", email: "professor@example.com" };
+      expect(() => transform({ ...body, professor }, pipe)).toThrow(ZodError);
+    });
+  });
+
   it("accepts the persisted clubId when editing a new provisional application", () => {
     expect(transform({ ...body, clubId: 123 }, updatePipe)).toMatchObject({
       clubId: 123,

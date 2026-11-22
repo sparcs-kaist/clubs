@@ -12,6 +12,7 @@ interface NavListProps {
   keys: (keyof Paths)[];
   className?: string;
   highlight?: boolean;
+  hiddenSubPath?: string;
 }
 
 const NavListInner = styled.div`
@@ -29,11 +30,21 @@ const NavList: React.FC<NavListProps> = ({
   keys,
   className = "",
   highlight = false,
+  hiddenSubPath,
 }) => (
   <NavListInner className={className}>
-    {keys.map(key => (
-      <StyledNavItem highlight={highlight} key={key} {...paths[key]} />
-    ))}
+    {keys.map(key => {
+      const item = paths[key];
+      const sub =
+        "sub" in item
+          ? item.sub.filter(
+              child => !hiddenSubPath || child.path !== hiddenSubPath,
+            )
+          : undefined;
+      return (
+        <StyledNavItem highlight={highlight} key={key} {...item} sub={sub} />
+      );
+    })}
   </NavListInner>
 );
 export default NavList;

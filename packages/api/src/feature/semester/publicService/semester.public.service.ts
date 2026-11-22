@@ -100,10 +100,15 @@ export class SemesterPublicService extends BasePublicService<
   }
 
   async getPreviousSemesterEnd(semester: ISemester): Promise<Date> {
-    const previousEnd = await this.semesterRepository.findPreviousEndTerm(
+    const previous = await this.semesterRepository.findPrevious(
       semester.startTerm,
     );
-    return previousEnd ?? semester.startTerm;
+    return previous?.endTerm ?? semester.startTerm;
+  }
+
+  async findPrevious(): Promise<MSemester | null> {
+    const semester = await this.load();
+    return this.semesterRepository.findPrevious(semester.startTerm);
   }
 
   // TODO: 아래 두 함수 적용해야 할 곳 (등록기간에 이전 학기 정보로 표기되어야 하는 곳들)에 적용해야 함

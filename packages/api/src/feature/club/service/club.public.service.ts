@@ -466,12 +466,26 @@ export default class ClubPublicService {
     return club;
   }
 
+  async findStudentDelegateClubIds(studentId: number): Promise<number[]> {
+    const delegates =
+      await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
+    const clubs = await this.findClubsByIds(
+      delegates.map(delegate => delegate.clubId),
+    );
+    return clubs.map(club => club.id);
+  }
+
   async findStudentClubDelegates(studentId: number): Promise<IClubSummary[]> {
     const delegates =
       await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
     if (delegates.length === 0) return [];
     const clubIds = [...new Set(delegates.map(delegate => delegate.clubId))];
     return this.fetchSummaries(clubIds);
+  }
+
+  async findClubsByIds(ids: number[]) {
+    if (ids.length === 0) return [];
+    return this.clubRepository.find({ id: [...new Set(ids)] });
   }
 
   async makeClubSummaryResponse(
