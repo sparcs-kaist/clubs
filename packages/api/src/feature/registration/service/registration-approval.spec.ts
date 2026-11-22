@@ -21,6 +21,7 @@ jest.mock("@nestjs-cls/transactional", () => ({
 
 const approvedAt = new Date("2026-09-08T00:00:00.000Z");
 const startTerm = new Date("2026-09-01T00:00:00.000Z");
+const previousSemesterEnd = new Date("2026-08-31T23:59:59.000Z");
 const endTerm = new Date("2027-03-01T00:00:00.000Z");
 const applicantId = 17160;
 const clubId = 42;
@@ -37,13 +38,16 @@ function setup(registrationType = RegistrationTypeEnum.Renewal) {
     },
     registration: {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      findFirst: jest.fn().mockResolvedValue({
-        id: 100,
-        clubId,
-        semesterId,
-        studentId: applicantId,
-        registrationApplicationTypeEnumId: registrationType,
-        divisionId: 1,
+      findFirst: jest.fn().mockImplementation(({ where }) => {
+        if (where.id !== 100) return null;
+        return {
+          id: 100,
+          clubId,
+          semesterId,
+          studentId: applicantId,
+          registrationApplicationTypeEnumId: registrationType,
+          divisionId: 1,
+        };
       }),
     },
     clubT: {
@@ -70,18 +74,27 @@ function setup(registrationType = RegistrationTypeEnum.Renewal) {
     clubStudentT: {
       findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
+      updateMany: jest.fn(),
     },
   };
   const txHost = { tx } as never;
+  const semesterPublicService = {
+    getById: jest
+      .fn()
+      .mockResolvedValue({ id: semesterId, startTerm, endTerm }),
+    getPreviousSemesterEnd: jest.fn().mockResolvedValue(previousSemesterEnd),
+  };
   const clubPublicService = Object.create(ClubPublicService.prototype);
   Object.assign(clubPublicService, {
     clubDelegateRepository: new ClubDelegateRepository(txHost),
     clubSemesterRepository: new ClubSemesterRepository(txHost),
     clubDivisionHistoryRepository: new ClubDivisionHistoryRepository(txHost),
     clubMemberRepository: new ClubMemberRepository(txHost),
+    semesterPublicService,
   });
   const getStudentsByIds = jest.fn().mockResolvedValue([{ id: applicantId }]);
   const checkDeadline = jest.fn();
+  const isApprovalPeriod = jest.fn().mockResolvedValue(true);
   const service = new RegistrationService(
     {} as never,
     clubPublicService,
@@ -90,16 +103,12 @@ function setup(registrationType = RegistrationTypeEnum.Renewal) {
     { checkDeadline } as never,
     { getStudentsByIds } as never,
     new MemberRegistrationRepository(txHost),
-    {
-      getById: jest
-        .fn()
-        .mockResolvedValue({ id: semesterId, startTerm, endTerm }),
-    } as never,
-    {} as never,
+    semesterPublicService as never,
+    { is: isApprovalPeriod } as never,
     new ClubRegistrationApprovalRepository(txHost),
   );
   Object.assign(service, { clock: { now: () => approvedAt } });
-  return { service, tx, getStudentsByIds, checkDeadline };
+  return { service, tx, getStudentsByIds, checkDeadline, isApprovalPeriod };
 }
 
 describe("club registration approval", () => {
@@ -109,7 +118,7 @@ describe("club registration approval", () => {
     [RegistrationTypeEnum.NewProvisional, 2],
     [RegistrationTypeEnum.ReProvisional, 2],
   ])(
-    "ends all current roles before registering the applicant for type %s",
+    "uses semester boundaries to register the applicant for type %s",
     async (registrationType, clubStatusEnumId) => {
       const { service, tx, getStudentsByIds } = setup(registrationType);
       await service.patchExecutiveRegistrationsClubRegistrationApproval(100);
@@ -162,19 +171,27 @@ describe("club registration approval", () => {
           clubId,
           studentId: applicantId,
           clubDelegateEnum: ClubDelegateEnum.Representative,
-          startTerm: approvedAt,
+          startTerm,
         },
       });
       expect(tx.clubDelegateD.updateMany).toHaveBeenCalledWith({
         where: {
           clubId,
-          startTerm: { lte: approvedAt },
-          OR: [{ endTerm: { gt: approvedAt } }, { endTerm: null }],
+          startTerm: { lte: previousSemesterEnd },
+          OR: [{ endTerm: { gt: previousSemesterEnd } }, { endTerm: null }],
           deletedAt: null,
         },
-        data: { endTerm: approvedAt },
+        data: { endTerm: previousSemesterEnd },
       });
-      expect(tx.clubDelegateD.updateMany).toHaveBeenCalledTimes(1);
+      expect(tx.clubDelegateD.updateMany).toHaveBeenCalledWith({
+        where: {
+          clubId,
+          startTerm: { gte: previousSemesterEnd, lt: endTerm },
+          deletedAt: null,
+        },
+        data: { deletedAt: approvedAt },
+      });
+      expect(tx.clubDelegateD.updateMany).toHaveBeenCalledTimes(2);
       expect(tx.clubDelegateD.create).toHaveBeenCalledTimes(1);
       expect(
         tx.clubDelegateD.updateMany.mock.invocationCallOrder[0],
@@ -184,15 +201,6 @@ describe("club registration approval", () => {
 
   it("recreates an existing applicant representative while preserving membership and club term", async () => {
     const { service, tx } = setup(RegistrationTypeEnum.NewProvisional);
-    tx.clubDelegateD.findFirst.mockImplementation(({ where }) =>
-      where.clubId === clubId
-        ? {
-            id: 200,
-            studentId: applicantId,
-            clubDelegateEnum: ClubDelegateEnum.Representative,
-          }
-        : null,
-    );
     tx.registrationApplicationStudent.findFirst.mockResolvedValue({ id: 300 });
     tx.clubStudentT.findFirst.mockResolvedValue({ id: 400 });
     tx.clubT.findFirst.mockResolvedValue({ startTerm, endTerm });
@@ -200,21 +208,12 @@ describe("club registration approval", () => {
 
     await service.patchExecutiveRegistrationsClubRegistrationApproval(100);
 
-    expect(tx.clubDelegateD.updateMany).toHaveBeenCalledWith({
-      where: {
-        clubId,
-        startTerm: { lte: approvedAt },
-        OR: [{ endTerm: { gt: approvedAt } }, { endTerm: null }],
-        deletedAt: null,
-      },
-      data: { endTerm: approvedAt },
-    });
     expect(tx.clubDelegateD.create).toHaveBeenCalledWith({
       data: {
         clubId,
         studentId: applicantId,
         clubDelegateEnum: ClubDelegateEnum.Representative,
-        startTerm: approvedAt,
+        startTerm,
       },
     });
     expect(
@@ -270,6 +269,32 @@ describe("club registration approval", () => {
     expect(tx.registration.updateMany).not.toHaveBeenCalled();
   });
 
+  it("does not update club history when the open period belongs to another semester", async () => {
+    const { service, tx, isApprovalPeriod } = setup();
+    isApprovalPeriod.mockResolvedValue(false);
+
+    await expect(
+      service.patchExecutiveRegistrationsClubRegistrationApproval(100),
+    ).rejects.toThrow("해당 학기의 동아리 등록 신청 기간이 아닙니다.");
+    expect(tx.clubT.create).not.toHaveBeenCalled();
+    expect(tx.clubDelegateD.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("preserves officer history already recorded for a later semester", async () => {
+    const { service, tx } = setup();
+    tx.clubDelegateD.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 200 });
+
+    await expect(
+      service.patchExecutiveRegistrationsClubRegistrationApproval(100),
+    ).rejects.toThrow(
+      "Delegate history exists after the registration semester",
+    );
+    expect(tx.clubDelegateD.updateMany).not.toHaveBeenCalled();
+    expect(tx.clubStudentT.updateMany).not.toHaveBeenCalled();
+  });
+
   it("does not repeat an already completed approval", async () => {
     const { service, tx } = setup();
     tx.registration.updateMany.mockResolvedValue({ count: 0 });
@@ -279,5 +304,21 @@ describe("club registration approval", () => {
     expect(tx.clubT.create).not.toHaveBeenCalled();
     expect(tx.clubDelegateD.updateMany).not.toHaveBeenCalled();
     expect(tx.clubDelegateD.create).not.toHaveBeenCalled();
+  });
+
+  it("does not replace a membership already initialized by another approval", async () => {
+    const { service, tx } = setup();
+    tx.registration.findFirst
+      .mockResolvedValueOnce({ clubId, studentId: applicantId })
+      .mockResolvedValueOnce({ clubId, semesterId, studentId: applicantId })
+      .mockResolvedValueOnce({ id: 101 });
+
+    await expect(
+      service.patchExecutiveRegistrationsClubRegistrationApproval(100),
+    ).rejects.toThrow(
+      "Club registration is already approved for this semester",
+    );
+    expect(tx.clubDelegateD.updateMany).not.toHaveBeenCalled();
+    expect(tx.clubStudentT.updateMany).not.toHaveBeenCalled();
   });
 });

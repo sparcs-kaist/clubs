@@ -71,7 +71,10 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
   async ensureRegistrationApplicantRepresentative(param: {
     clubId: number;
     studentId: number;
-    effectiveAt: Date;
+    previousSemesterEnd: Date;
+    semesterStart: Date;
+    semesterEnd: Date;
+    approvedAt: Date;
   }): Promise<void> {
     const { tx } = this.txHost;
     const delegate = this.getDelegate(tx);
@@ -79,8 +82,7 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
       where: {
         clubId: { not: param.clubId },
         studentId: param.studentId,
-        startTerm: { lte: param.effectiveAt },
-        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        OR: [{ endTerm: { gt: param.semesterStart } }, { endTerm: null }],
         deletedAt: null,
       },
     });
@@ -90,19 +92,42 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
       );
     }
 
-    await this.endCurrentTerms(param.clubId, param.effectiveAt);
+    const laterTerm = await delegate.findFirst({
+      where: {
+        clubId: param.clubId,
+        startTerm: { gte: param.semesterEnd },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (laterTerm) {
+      throw new ConflictException(
+        "Delegate history exists after the registration semester",
+      );
+    }
+
+    await this.endCurrentTerms(param.clubId, param.previousSemesterEnd);
+    // 승인 전에 만들어진 임시 직책을 새 학기에 이어가지 않습니다.
+    await delegate.updateMany({
+      where: {
+        clubId: param.clubId,
+        startTerm: { gte: param.previousSemesterEnd, lt: param.semesterEnd },
+        deletedAt: null,
+      },
+      data: { deletedAt: param.approvedAt },
+    });
     await delegate.create({
       data: {
         clubId: param.clubId,
         studentId: param.studentId,
         clubDelegateEnum: ClubDelegateEnum.Representative,
-        startTerm: param.effectiveAt,
+        startTerm: param.semesterStart,
       },
     });
     await cancelPendingDelegateRequests(
       this.txHost,
       param.clubId,
-      param.effectiveAt,
+      param.approvedAt,
     );
   }
 

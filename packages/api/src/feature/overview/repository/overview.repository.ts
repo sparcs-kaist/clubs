@@ -25,11 +25,9 @@ export class OverviewRepository {
       return semesterStartTerm;
     }
 
-    if (semesterEndTerm < now) {
-      return semesterEndTerm;
-    }
-
-    return now;
+    // Delegate terms exclude their end time and are stored to the second.
+    const lastDelegateInstant = new Date(semesterEndTerm.getTime() - 1000);
+    return now > lastDelegateInstant ? lastDelegateInstant : now;
   }
 
   private async getDivisionNameById(divisionIds: number[]) {
