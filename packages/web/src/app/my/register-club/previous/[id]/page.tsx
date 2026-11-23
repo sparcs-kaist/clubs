@@ -2,8 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Suspense } from "react";
 
 import type { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
 import apiReg029 from "@clubs/interface/api/registration/endpoint/apiReg029";
@@ -18,6 +19,10 @@ import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 const PreviousRegistrationDetail = () => {
   const t = useTranslations("registrationHistory");
   const router = useRouter();
+  const clubId = useSearchParams().get("clubId");
+  const backPath = clubId
+    ? `/my/register-club/previous?${new URLSearchParams({ clubId })}`
+    : "/my/register-club/previous";
   const { profile } = useAuth();
   const { id } = useParams<{ id: string }>();
   const applyId = Number(id);
@@ -47,7 +52,7 @@ const PreviousRegistrationDetail = () => {
       )}
       <Button
         style={{ width: "max-content" }}
-        onClick={() => router.push("/my/register-club/previous")}
+        onClick={() => router.push(backPath)}
       >
         {t("backToList")}
       </Button>
@@ -55,4 +60,10 @@ const PreviousRegistrationDetail = () => {
   );
 };
 
-export default PreviousRegistrationDetail;
+const PreviousRegistrationDetailPage = () => (
+  <Suspense fallback={<AsyncBoundary isLoading isError={false} />}>
+    <PreviousRegistrationDetail />
+  </Suspense>
+);
+
+export default PreviousRegistrationDetailPage;

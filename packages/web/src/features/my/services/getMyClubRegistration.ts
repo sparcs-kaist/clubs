@@ -21,18 +21,20 @@ type MyClubRegistrationOptions = Pick<
 
 export const useGetMyClubRegistration = ({
   semester,
+  clubId,
   viewerId,
   ...options
 }: MyClubRegistrationOptions = {}) =>
   useQuery<ApiReg012ResponseOk, Error>({
     ...options,
-    queryKey: semester
-      ? [apiReg012.url(), semester, viewerId]
-      : [apiReg012.url()],
+    queryKey:
+      semester || clubId !== undefined
+        ? [apiReg012.url(), semester, clubId, viewerId]
+        : [apiReg012.url()],
 
     queryFn: async (): Promise<ApiReg012ResponseOk> => {
       const { data, status } = await axiosClientWithAuth.get(apiReg012.url(), {
-        params: { semester },
+        params: { semester, clubId },
       });
 
       if (status === 204) {

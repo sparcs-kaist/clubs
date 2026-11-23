@@ -8,8 +8,8 @@
 | --- | --- |
 | REG001 신청 생성, REG009 신청 수정 | 국문·영문 활동 분야 각각 공백 포함 40자 및 공백 제외 30자 이내. 지도교수 입력은 이름과 KAIST 이메일을 사용한다. 수정은 현재 등록 기간의 신청자 본인이 할 수 있다. |
 | REG010 신청 삭제 | 현재 등록 기간의 신청자 본인이 할 수 있다. |
-| REG012 내 신청 목록 | `semester=previous`을 지정하면 직전 학기 미삭제 신청 중 본인 제출 건과 같은 동아리 현 대표자·대의원이 볼 수 있는 건을 반환한다. 옵션을 생략하면 이번 학기 본인 제출 건을 반환한다. |
-| REG029 직전 학기 상세 | `GET /student/registrations/club-registrations/my/previous/{applyId}`. REG012 직전 학기 목록과 같은 권한을 검사하고 REG011과 같은 상세를 반환한다. |
+| REG012 내 신청 목록 | `semester=previous`를 지정하면 현재 학기 전에 끝난 학기의 미삭제 신청 중 본인이 제출했거나 현재 대표자·대의원인 동아리의 신청을 반환한다. 응답의 `semesters`에 신청이 있는 학기를 최신순으로 담고, 각 신청의 `semesterId`로 학기를 구분한다. `clubId`를 지정하면 해당 동아리의 현재 대표자·대의원만 그 동아리의 신청을 조회할 수 있다. 두 옵션을 생략하면 이번 학기 본인 제출 건을 반환한다. |
+| REG029 과거 신청 상세 | `GET /student/registrations/club-registrations/my/previous/{applyId}`. REG012 과거 목록과 같은 학기 및 열람 조건을 검사하고 REG011과 같은 상세를 반환한다. |
 | REG021 교수 목록, REG022 교수 상세 | `professorApprovalStatus`를 추가한다. REG022는 `professorSignedAt`, `regularDeadline`, `lateSigningDeadline`도 반환한다. 날짜는 미설정·미서명 시 `null`이다. 기존 상태 및 서명 여부도 반환한다. |
 | REG023 교수 서명 | 신청서의 지도교수가 서명한다. 신청 학기의 정규 등록 마감 전은 `APPROVED`, 마감 시각부터는 `LATE_APPROVED`로 기록한다. 정규 마감이 미설정된 학기는 `APPROVED`를 사용한다. 지연 서명 안내 기한 이후에도 서명할 수 있다. |
 | REG027 현재 신청 기간 | 현재 시각이 시작 시각 이상이고 종료 시각 미만인 정규 등록 구간을 반환한다. 데스크톱·모바일 메뉴는 반환된 구간에서만 신청을 표시한다. |

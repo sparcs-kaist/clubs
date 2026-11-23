@@ -27,3 +27,25 @@ describe("SemesterRepository login query", () => {
     await expect(repository.findForLogin(date)).resolves.toBeNull();
   });
 });
+
+describe("SemesterRepository completed semesters", () => {
+  it("selects every active semester ending by the current semester's start", async () => {
+    const startTerm = new Date("2026-09-01T00:00:00.000Z");
+    const findMany = jest.fn().mockResolvedValue([{ id: 8 }, { id: 11 }]);
+    const repository = new SemesterRepository({
+      tx: { semesterD: { findMany } },
+    } as never);
+
+    await expect(
+      repository.findCompletedBefore(startTerm),
+    ).resolves.toMatchObject([{ id: 8 }, { id: 11 }]);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        startTerm: { lt: startTerm },
+        endTerm: { lte: startTerm },
+        deletedAt: null,
+      },
+      orderBy: [{ endTerm: "desc" }, { startTerm: "desc" }, { id: "desc" }],
+    });
+  });
+});

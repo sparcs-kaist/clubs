@@ -12,7 +12,7 @@ import {
 
 /**
  * @version v0.2
- * @description 이번 학기 본인 신청 목록 또는 직전 학기 열람 가능한 신청 목록을 조회합니다.
+ * @description 이번 학기 또는 지난 학기의 열람 가능한 동아리 등록 신청 목록을 조회합니다.
  */
 
 const url = () => `/student/registrations/club-registrations/my`;
@@ -20,17 +20,24 @@ const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({ semester: z.literal("previous").optional() });
+const requestQuery = z.object({
+  semester: z.literal("previous").optional(),
+  clubId: zClub.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
+const semesterSummary = zSemester.pick({ id: true, name: true, year: true });
+
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
-    semester: zSemester.pick({ id: true, name: true, year: true }).optional(),
+    semester: semesterSummary.optional(),
+    semesters: z.array(semesterSummary).optional(),
     registrations: z.array(
       z.object({
         // 나중에 registrationSummaryResponse로 변경 필요
         id: z.coerce.number().int().min(1),
+        semesterId: zSemester.shape.id.optional(),
         registrationStatusEnum: z.nativeEnum(RegistrationStatusEnum),
         registrationTypeEnum: z.nativeEnum(RegistrationTypeEnum),
         divisionName: z.string().max(128),
