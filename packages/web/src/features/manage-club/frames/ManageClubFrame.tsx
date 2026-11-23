@@ -12,6 +12,7 @@ import NoManageClub from "@sparcs-clubs/web/common/frames/NoManageClub";
 import NoSemesterInfo from "@sparcs-clubs/web/common/frames/NoSemesterInfo";
 import useGetClubRegistrationDeadline from "@sparcs-clubs/web/features/clubs/services/useGetClubRegistrationDeadline";
 import ActivityManageFrame from "@sparcs-clubs/web/features/manage-club/frames/ActivityManageFrame";
+import ClubRegistrationApplicationsFrame from "@sparcs-clubs/web/features/manage-club/frames/ClubRegistrationApplicationsFrame";
 import InfoManageFrame from "@sparcs-clubs/web/features/manage-club/frames/InfoManageFrame";
 import MemberManageFrame from "@sparcs-clubs/web/features/manage-club/frames/MemberManageFrame";
 // import ServiceManageFrame from "@sparcs-clubs/web/features/manage-club/frames/ServiceManageFrame";
@@ -65,6 +66,7 @@ const ManageClubFrame: React.FC = () => {
       ) : (
         <MemberManageFrame semesterInfo={data.semester} />
       )}
+      {clubId && <ClubRegistrationApplicationsFrame clubId={clubId} />}
       {clubId && (
         <section id="rental-business" aria-label="대여 신청">
           <FoldableSectionTitle title="대여 신청">

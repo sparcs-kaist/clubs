@@ -43,17 +43,23 @@ type ClubRegistrationListResponse = Pick<
 type Reg011DetailNoSemester = Omit<ApiReg011ResponseOk, "semesterId">;
 type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 
-export type PreviousRegistrationScope = {
-  semesterId: number;
-  delegateClubIds: number[];
-};
+export type ClubRegistrationReader =
+  | { studentId: number; delegateClubIds: number[] }
+  | { clubId: number };
 
-const previousRegistrationWhere = (
-  studentId: number,
-  scope: PreviousRegistrationScope,
+const readableRegistrationWhere = (
+  semesterIds: number[],
+  reader: ClubRegistrationReader,
 ): Prisma.RegistrationWhereInput => ({
-  semesterId: scope.semesterId,
-  OR: [{ studentId }, { clubId: { in: scope.delegateClubIds } }],
+  semesterId: { in: semesterIds },
+  ...("clubId" in reader
+    ? { clubId: reader.clubId }
+    : {
+        OR: [
+          { studentId: reader.studentId },
+          { clubId: { in: reader.delegateClubIds } },
+        ],
+      }),
 });
 
 @Injectable()
@@ -602,6 +608,7 @@ export class ClubRegistrationRepository {
     return {
       registrations: result.map(registration => ({
         ...registration,
+        semesterId: registration.semesterId ?? undefined,
         registrationTypeEnum:
           registration.registrationTypeEnum as RegistrationTypeEnum,
         registrationStatusEnum:
@@ -610,15 +617,15 @@ export class ClubRegistrationRepository {
     };
   }
 
-  async hasPreviousClubRegistration(
-    studentId: number,
+  async hasReadableClubRegistration(
     applyId: number,
-    scope: PreviousRegistrationScope,
+    semesterIds: number[],
+    reader: ClubRegistrationReader,
   ): Promise<boolean> {
     const registration = await this.txHost.tx.registration.findFirst({
       where: {
         id: applyId,
-        ...previousRegistrationWhere(studentId, scope),
+        ...readableRegistrationWhere(semesterIds, reader),
         deletedAt: null,
       },
       select: { id: true },
@@ -626,18 +633,19 @@ export class ClubRegistrationRepository {
     return registration !== null;
   }
 
-  getStudentPreviousClubRegistrations(
-    studentId: number,
-    scope: PreviousRegistrationScope,
+  getReadableClubRegistrations(
+    semesterIds: number[],
+    reader: ClubRegistrationReader,
   ) {
     return this.txHost.tx.registration.findMany({
       where: {
-        ...previousRegistrationWhere(studentId, scope),
+        ...readableRegistrationWhere(semesterIds, reader),
         deletedAt: null,
       },
       orderBy: { id: "desc" },
       select: {
         id: true,
+        semesterId: true,
         registrationApplicationStatusEnumId: true,
         registrationApplicationTypeEnumId: true,
         clubId: true,

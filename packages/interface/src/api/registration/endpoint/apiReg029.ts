@@ -17,13 +17,13 @@ registry.registerPath({
   tags: ["club-registration"],
   method: "get",
   path: `${baseUrl}/{applyId}`,
-  summary: "REG-029 직전 학기 동아리 등록 신청서 열람",
+  summary: "REG-029 지난 학기 동아리 등록 신청서 열람",
   description:
     "신청자 본인 또는 같은 동아리의 현재 대표자·대의원만 열람할 수 있습니다.",
   request: { params: apiReg029.requestParam },
   responses: {
     200: {
-      description: "직전 학기 동아리 등록 신청서",
+      description: "지난 학기 동아리 등록 신청서",
       content: {
         "application/json": { schema: apiReg029.responseBodyMap[200] },
       },

@@ -84,6 +84,7 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
+import type { ClubRegistrationReader } from "../repository/club-registration.repository";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { ClubRegistrationApprovalRepository } from "../repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
@@ -807,92 +808,131 @@ export class RegistrationService {
     return { ...result, semesterId };
   }
 
-  /**
-   * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
-   */
+  private async getClubRegistrationReader(
+    studentId: number,
+    clubId?: number,
+  ): Promise<ClubRegistrationReader> {
+    const delegateClubIds =
+      await this.clubPublicService.findStudentDelegateClubIds(studentId);
+    if (clubId === undefined) return { studentId, delegateClubIds };
+    if (!delegateClubIds.includes(clubId)) {
+      throw new NotFoundException("Club not found");
+    }
+    return { clubId };
+  }
+
   async getStudentRegistrationsClubRegistrationsMy(
     studentId: number,
     query: ApiReg012RequestQuery = {},
   ): Promise<ApiReg012ResponseOk> {
-    if (query.semester === "previous") {
-      const semester = await this.semesterPublicService.findPrevious();
-      if (!semester) return { registrations: [] };
-
-      const delegateClubIds =
-        await this.clubPublicService.findStudentDelegateClubIds(studentId);
-      const rows =
-        await this.clubRegistrationRepository.getStudentPreviousClubRegistrations(
-          studentId,
-          { semesterId: semester.id, delegateClubIds },
-        );
-      const [clubs, divisions, professors] = await Promise.all([
-        this.clubPublicService.findClubsByIds(
-          rows.map(row => row.clubId).filter(id => id !== null),
-        ),
-        this.divisionPublicService.findDivisionsByIds(
-          rows.map(row => row.divisionId),
-        ),
-        this.userPublicService.findProfessorNamesByIds(
-          rows.map(row => row.professorId).filter(id => id !== null),
-        ),
-      ]);
-      const clubsById = new Map(clubs.map(club => [club.id, club]));
-      const divisionNames = new Map(
-        divisions.map(item => [item.id, item.name]),
+    const isCurrent = query.semester === undefined;
+    const isPersonal = query.clubId === undefined;
+    if (isCurrent && isPersonal) {
+      const semesterId = await this.semesterPublicService.loadId();
+      return this.clubRegistrationRepository.getStudentRegistrationsClubRegistrationsMy(
+        studentId,
+        semesterId,
       );
-      const professorNames = new Map(
-        professors.map(item => [item.id, item.name]),
-      );
-
-      return {
-        semester: { id: semester.id, year: semester.year, name: semester.name },
-        registrations: rows.map(row => {
-          const club =
-            row.clubId === null ? undefined : clubsById.get(row.clubId);
-          return {
-            id: row.id,
-            registrationStatusEnum:
-              row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
-            registrationTypeEnum:
-              row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
-            clubId: row.clubId,
-            clubNameKr: club?.nameKr,
-            clubNameEn: club?.nameEn,
-            newClubNameKr: row.clubNameKr ?? "",
-            newClubNameEn: row.clubNameEn ?? "",
-            activityFieldKr: row.activityFieldKr ?? "",
-            activityFieldEn: row.activityFieldEn ?? "",
-            divisionName: divisionNames.get(row.divisionId) ?? "",
-            professorName:
-              row.professorId === null
-                ? null
-                : (professorNames.get(row.professorId) ?? null),
-          };
-        }),
-      };
     }
 
-    const semesterId = await this.semesterPublicService.loadId();
-    return this.clubRegistrationRepository.getStudentRegistrationsClubRegistrationsMy(
+    const reader = await this.getClubRegistrationReader(
       studentId,
-      semesterId,
+      query.clubId,
     );
+    const semesters = isCurrent
+      ? [await this.semesterPublicService.load()]
+      : await this.semesterPublicService.findPreviousSemesters();
+    const semesterSummaries = semesters.map(({ id, year, name }) => ({
+      id,
+      year,
+      name,
+    }));
+    const semesterIds = semesters.map(semester => semester.id);
+    if (semesterIds.length === 0) {
+      return { registrations: [], semesters: [] };
+    }
+
+    const rows =
+      await this.clubRegistrationRepository.getReadableClubRegistrations(
+        semesterIds,
+        reader,
+      );
+    const [clubs, divisions, professors] = await Promise.all([
+      this.clubPublicService.findClubsByIds(
+        rows.map(row => row.clubId).filter(id => id !== null),
+      ),
+      this.divisionPublicService.findDivisionsByIds(
+        rows.map(row => row.divisionId),
+      ),
+      this.userPublicService.findProfessorNamesByIds(
+        rows.map(row => row.professorId).filter(id => id !== null),
+      ),
+    ]);
+    const clubsById = new Map(clubs.map(club => [club.id, club]));
+    const divisionNames = new Map(divisions.map(item => [item.id, item.name]));
+    const professorNames = new Map(
+      professors.map(item => [item.id, item.name]),
+    );
+
+    const semesterOrder = new Map<number | null, number>(
+      semesterIds.map((id, index) => [id, index]),
+    );
+    rows.sort(
+      (a, b) =>
+        (semesterOrder.get(a.semesterId) ?? 0) -
+        (semesterOrder.get(b.semesterId) ?? 0),
+    );
+    const registrations = rows.map(row => {
+      const club = row.clubId === null ? undefined : clubsById.get(row.clubId);
+      return {
+        id: row.id,
+        semesterId: row.semesterId ?? undefined,
+        registrationStatusEnum:
+          row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
+        registrationTypeEnum:
+          row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
+        clubId: row.clubId,
+        clubNameKr: club?.nameKr,
+        clubNameEn: club?.nameEn,
+        newClubNameKr: row.clubNameKr ?? "",
+        newClubNameEn: row.clubNameEn ?? "",
+        activityFieldKr: row.activityFieldKr ?? "",
+        activityFieldEn: row.activityFieldEn ?? "",
+        divisionName: divisionNames.get(row.divisionId) ?? "",
+        professorName:
+          row.professorId === null
+            ? null
+            : (professorNames.get(row.professorId) ?? null),
+      };
+    });
+    const semester = semesterSummaries[0];
+    if (isCurrent) return { semester, registrations };
+
+    const visibleSemesterIds = new Set(rows.map(row => row.semesterId));
+    return {
+      semester,
+      semesters: semesterSummaries.filter(({ id }) =>
+        visibleSemesterIds.has(id),
+      ),
+      registrations,
+    };
   }
 
   async getStudentPreviousClubRegistration(
     studentId: number,
     applyId: number,
   ): Promise<ApiReg011ResponseOk> {
-    const semester = await this.semesterPublicService.findPrevious();
-    if (!semester) throw new NotFoundException("Registration not found");
+    const semesters = await this.semesterPublicService.findPreviousSemesters();
+    if (semesters.length === 0) {
+      throw new NotFoundException("Registration not found");
+    }
 
-    const delegateClubIds =
-      await this.clubPublicService.findStudentDelegateClubIds(studentId);
+    const reader = await this.getClubRegistrationReader(studentId);
     const canRead =
-      await this.clubRegistrationRepository.hasPreviousClubRegistration(
-        studentId,
+      await this.clubRegistrationRepository.hasReadableClubRegistration(
         applyId,
-        { semesterId: semester.id, delegateClubIds },
+        semesters.map(semester => semester.id),
+        reader,
       );
     if (!canRead) throw new NotFoundException("Registration not found");
 

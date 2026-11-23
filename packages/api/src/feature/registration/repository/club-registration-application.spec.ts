@@ -58,18 +58,19 @@ const createContext = () => {
 };
 
 describe("club application repository guards", () => {
-  it("scopes the history list and detail to the same previous semester and applicant or delegate clubs", async () => {
+  it("scopes history list and detail to the same completed semesters and applicant or delegate clubs", async () => {
     const { repository, transaction } = createContext();
-    const scope = { semesterId: 8, delegateClubIds: [12, 34] };
+    const semesterIds = [8, 11];
+    const reader = { studentId: 200, delegateClubIds: [12, 34] };
     const where = {
-      semesterId: 8,
+      semesterId: { in: semesterIds },
       deletedAt: null,
       OR: [{ studentId: 200 }, { clubId: { in: [12, 34] } }],
     };
 
-    await repository.getStudentPreviousClubRegistrations(200, scope);
+    await repository.getReadableClubRegistrations(semesterIds, reader);
     await expect(
-      repository.hasPreviousClubRegistration(200, 456, scope),
+      repository.hasReadableClubRegistration(456, semesterIds, reader),
     ).resolves.toBe(false);
     expect(transaction.registration.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where }),
@@ -78,6 +79,18 @@ describe("club application repository guards", () => {
       where: { id: 456, ...where },
       select: { id: true },
     });
+  });
+
+  it("restricts a managed application list to the selected club and semesters", async () => {
+    const { repository, transaction } = createContext();
+
+    await repository.getReadableClubRegistrations([9], { clubId: 34 });
+
+    expect(transaction.registration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { semesterId: { in: [9] }, clubId: 34, deletedAt: null },
+      }),
+    );
   });
 
   it("rejects a current representative's new provisional application before inserting a club", async () => {
