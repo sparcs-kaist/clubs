@@ -77,6 +77,19 @@ const asRecord = (value: unknown): Snapshot =>
     ? (value as Snapshot)
     : {};
 
+const getComparisonValue = (field: string, value: unknown): unknown => {
+  if (field !== "durations" || !Array.isArray(value)) return value;
+
+  return value.map(duration => {
+    const { startTerm, endTerm } = asRecord(duration);
+    return [startTerm, endTerm].map(term => {
+      if (typeof term !== "string") return term;
+      const timestamp = Date.parse(term);
+      return Number.isNaN(timestamp) ? term : timestamp;
+    });
+  });
+};
+
 const formatValue = (field: string, value: unknown): string => {
   if (field === "purposeActivity" && asRecord(value).id == null) {
     return NO_ACTIVITY_REPORT_FUNDING;
@@ -161,7 +174,9 @@ const buildRows = (
         label,
         before: formatValue(field, oldValue),
         after: formatValue(field, newValue),
-        changed: JSON.stringify(oldValue) !== JSON.stringify(newValue),
+        changed:
+          JSON.stringify(getComparisonValue(field, oldValue)) !==
+          JSON.stringify(getComparisonValue(field, newValue)),
       },
     ];
   });
