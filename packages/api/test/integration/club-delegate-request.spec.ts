@@ -4,6 +4,7 @@ import {
   ClubDelegateChangeRequestStatusEnum as Status,
   ClubDelegateEnum as Role,
 } from "@clubs/interface/common/enum/club.enum";
+import { RegistrationApplicationStudentStatusEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { CLOCK } from "@sparcs-clubs/api/common/clock/clock";
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
@@ -171,6 +172,337 @@ describe("club delegate requests with MySQL", () => {
       ).toMatchObject({ phoneNumber: oldPhone });
     },
   );
+
+  it.each([Role.Delegate1, Role.Delegate2])(
+    "swaps the representative with deputy role %s only after the incoming representative accepts",
+    async sourceRole => {
+      await prisma.clubT.create({
+        data: { clubId, semesterId, clubStatusEnumId: 1, startTerm, endTerm },
+      });
+      const sourceTerm = await prisma.clubDelegateD.create({
+        data: {
+          clubId,
+          studentId: target.studentId,
+          clubDelegateEnum: sourceRole,
+          startTerm,
+        },
+      });
+      const representativeTerm = await prisma.clubDelegateD.findFirstOrThrow({
+        where: {
+          clubId,
+          studentId: representative,
+          clubDelegateEnum: Role.Representative,
+        },
+      });
+      const otherRole =
+        sourceRole === Role.Delegate1 ? Role.Delegate2 : Role.Delegate1;
+      const unaffectedTerm = await prisma.clubDelegateD.create({
+        data: {
+          clubId,
+          studentId: other.studentId,
+          clubDelegateEnum: otherRole,
+          startTerm,
+        },
+      });
+      const sibling = await seedMember(20260004);
+      await nominate(sibling.studentId, sourceRole);
+      const sourceRequest =
+        await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+          where: { studentId: sibling.studentId },
+        });
+      await nominate(target.studentId, Role.Representative);
+      const moveRequest =
+        await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+          where: { studentId: target.studentId },
+        });
+
+      expect(await currentTargetRoles()).toEqual([
+        expect.objectContaining({
+          id: sourceTerm.id,
+          clubDelegateEnum: sourceRole,
+        }),
+      ]);
+      expect(await repo.findDelegateByStudentId(representative, now)).toEqual([
+        expect.objectContaining({
+          id: representativeTerm.id,
+          clubDelegateEnum: Role.Representative,
+        }),
+      ]);
+
+      await accept(moveRequest.id, newPhone);
+
+      expect(await currentTargetRoles()).toEqual([
+        expect.objectContaining({
+          clubDelegateEnum: Role.Representative,
+          startTerm: now,
+        }),
+      ]);
+      expect(await repo.findDelegateByStudentId(representative, now)).toEqual([
+        expect.objectContaining({
+          clubDelegateEnum: sourceRole,
+          startTerm: now,
+        }),
+      ]);
+      expect(await repo.findDelegateByStudentId(other.studentId, now)).toEqual([
+        expect.objectContaining({
+          id: unaffectedTerm.id,
+          clubDelegateEnum: otherRole,
+        }),
+      ]);
+      const registrations =
+        await prisma.registrationApplicationStudent.findMany({
+          where: { clubId, semesterId, deletedAt: null },
+        });
+      expect(registrations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            studentId: target.studentId,
+            registrationApplicationStudentEnum:
+              RegistrationApplicationStudentStatusEnum.Approved,
+          }),
+          expect.objectContaining({
+            studentId: representative,
+            registrationApplicationStudentEnum:
+              RegistrationApplicationStudentStatusEnum.Approved,
+          }),
+        ]),
+      );
+      expect(
+        await prisma.clubDelegateD.findUnique({ where: { id: sourceTerm.id } }),
+      ).toMatchObject({ endTerm: now });
+      expect(
+        await prisma.clubDelegateD.findUnique({
+          where: { id: representativeTerm.id },
+        }),
+      ).toMatchObject({ endTerm: now });
+      expect(
+        await prisma.clubDelegateChangeRequest.findUnique({
+          where: { id: sourceRequest.id },
+        }),
+      ).toMatchObject({ deletedAt: now });
+      await expect(
+        service.patchStudentClubsDelegatesRequest({
+          ...sibling,
+          param: { requestId: sourceRequest.id },
+          body: {
+            clubDelegateChangeRequestStatusEnum: Status.Approved,
+            phoneNumber: oldPhone,
+          },
+        }),
+      ).rejects.toThrow("이미 처리되었거나 만료된 요청입니다.");
+    },
+  );
+
+  it("preserves the representative, deputies and source-slot requests when a swap is declined", async () => {
+    await prisma.clubDelegateD.createMany({
+      data: [
+        {
+          clubId,
+          studentId: target.studentId,
+          clubDelegateEnum: Role.Delegate1,
+          startTerm,
+        },
+        {
+          clubId,
+          studentId: other.studentId,
+          clubDelegateEnum: Role.Delegate2,
+          startTerm,
+        },
+      ],
+    });
+    const sibling = await seedMember(20260004);
+    await nominate(sibling.studentId, Role.Delegate1);
+    await nominate(target.studentId, Role.Representative);
+    const { id } = await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+      where: { studentId: target.studentId },
+    });
+    await service.patchStudentClubsDelegatesRequest({
+      ...target,
+      param: { requestId: id },
+      body: { clubDelegateChangeRequestStatusEnum: Status.Rejected },
+    });
+
+    expect(await currentTargetRoles()).toEqual([
+      expect.objectContaining({ clubDelegateEnum: Role.Delegate1 }),
+    ]);
+    expect(await repo.findDelegateByStudentId(other.studentId, now)).toEqual([
+      expect.objectContaining({ clubDelegateEnum: Role.Delegate2 }),
+    ]);
+    expect(await repo.findDelegateByStudentId(representative, now)).toEqual([
+      expect.objectContaining({ clubDelegateEnum: Role.Representative }),
+    ]);
+    expect(
+      (
+        await service.getStudentClubsDelegatesRequests({
+          studentId: sibling.studentId,
+        })
+      ).requests,
+    ).toHaveLength(1);
+  });
+
+  it.each([
+    "invalid former membership",
+    "duplicate source slot",
+    "second role write failure",
+  ])("rolls back a swap on %s", async failure => {
+    const sourceTerm = await prisma.clubDelegateD.create({
+      data: {
+        clubId,
+        studentId: target.studentId,
+        clubDelegateEnum: Role.Delegate1,
+        startTerm,
+      },
+    });
+    const [representativeTerm] = await repo.findDelegateByStudentId(
+      representative,
+      now,
+    );
+    await nominate(other.studentId, Role.Delegate1);
+    const sourceRequest =
+      await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+        where: { studentId: other.studentId },
+      });
+    await nominate(target.studentId, Role.Representative);
+    const request = await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+      where: { studentId: target.studentId },
+    });
+    let failureSpy: jest.SpyInstance | undefined;
+    if (failure === "invalid former membership") {
+      await prisma.clubStudentT.updateMany({
+        where: { clubId, studentId: representative },
+        data: { deletedAt: now },
+      });
+    }
+    if (failure === "duplicate source slot") {
+      await prisma.clubDelegateD.create({
+        data: {
+          clubId,
+          studentId: other.studentId,
+          clubDelegateEnum: Role.Delegate1,
+          startTerm,
+        },
+      });
+    }
+    if (failure === "second role write failure") {
+      const updateDelegate = repo.updateDelegate.bind(repo);
+      failureSpy = jest
+        .spyOn(repo, "updateDelegate")
+        .mockImplementationOnce(updateDelegate)
+        .mockRejectedValueOnce(new Error("simulated swap failure"));
+    }
+    try {
+      await expect(accept(request.id, newPhone)).rejects.toThrow();
+    } finally {
+      failureSpy?.mockRestore();
+    }
+    expect(await currentTargetRoles()).toEqual([
+      expect.objectContaining({
+        id: sourceTerm.id,
+        clubDelegateEnum: Role.Delegate1,
+      }),
+    ]);
+    expect(await repo.findDelegateByStudentId(representative, now)).toEqual([
+      expect.objectContaining({
+        id: representativeTerm.id,
+        clubDelegateEnum: Role.Representative,
+      }),
+    ]);
+    expect(
+      await prisma.user.findUnique({ where: { id: target.userId } }),
+    ).toMatchObject({ phoneNumber: oldPhone });
+    expect(
+      await prisma.clubDelegateChangeRequest.findUnique({
+        where: { id: request.id },
+      }),
+    ).toMatchObject({
+      clubDelegateChangeRequestStatusEnumId: Status.Applied,
+      deletedAt: null,
+    });
+    expect(
+      await prisma.clubDelegateChangeRequest.findUnique({
+        where: { id: sourceRequest.id },
+      }),
+    ).toMatchObject({ deletedAt: null });
+  });
+
+  it.each([Role.Delegate1, Role.Delegate2])(
+    "rejects reappointment to the same deputy role %s",
+    async role => {
+      await prisma.clubDelegateD.create({
+        data: {
+          clubId,
+          studentId: target.studentId,
+          clubDelegateEnum: role,
+          startTerm,
+        },
+      });
+      await expect(nominate(target.studentId, role)).rejects.toThrow(
+        "대상자가 이미 동아리 직책을 맡고 있습니다.",
+      );
+      expect(await prisma.clubDelegateChangeRequest.count()).toBe(0);
+    },
+  );
+
+  it.each([
+    [Role.Delegate1, Role.Delegate2],
+    [Role.Delegate2, Role.Delegate1],
+  ])(
+    "rejects direct deputy moves from %s to %s",
+    async (sourceRole, targetRole) => {
+      await prisma.clubDelegateD.create({
+        data: {
+          clubId,
+          studentId: target.studentId,
+          clubDelegateEnum: sourceRole,
+          startTerm,
+        },
+      });
+      await expect(nominate(target.studentId, targetRole)).rejects.toThrow(
+        "대상자가 이미 동아리 직책을 맡고 있습니다.",
+      );
+      expect(await prisma.clubDelegateChangeRequest.count()).toBe(0);
+    },
+  );
+
+  it("rejects a deputy who holds a role in another club", async () => {
+    const currentClub = await prisma.club.findUniqueOrThrow({
+      where: { id: clubId },
+    });
+    const otherClub = await prisma.club.create({
+      data: {
+        nameKr: "다른 동아리",
+        foundingYear: 2020,
+        divisionId: currentClub.divisionId,
+      },
+    });
+    await prisma.clubDelegateD.create({
+      data: {
+        clubId: otherClub.id,
+        studentId: target.studentId,
+        clubDelegateEnum: Role.Delegate1,
+        startTerm,
+      },
+    });
+    await expect(nominate(target.studentId, Role.Delegate2)).rejects.toThrow(
+      "대상자가 다른 동아리에서 직책을 맡고 있습니다.",
+    );
+    expect(await prisma.clubDelegateChangeRequest.count()).toBe(0);
+  });
+
+  it("rejects a candidate with multiple current role terms", async () => {
+    await prisma.clubDelegateD.createMany({
+      data: [Role.Delegate1, Role.Delegate2].map(clubDelegateEnum => ({
+        clubId,
+        studentId: target.studentId,
+        clubDelegateEnum,
+        startTerm,
+      })),
+    });
+    await expect(
+      nominate(target.studentId, Role.Representative),
+    ).rejects.toThrow("대상자의 직책 임기 정보가 중복되어 있습니다.");
+    expect(await prisma.clubDelegateChangeRequest.count()).toBe(0);
+  });
 
   it("serializes two nominations for the same vacant role", async () => {
     const responses = await Promise.allSettled([
