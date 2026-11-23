@@ -26,3 +26,21 @@ export function pendingDelegateChangeWhere(now: Date) {
     createdAt: { gt: new Date(now.getTime() - REQUEST_LIFETIME_MS) },
   };
 }
+
+export function isLatestDelegateChangeRequestVisible(
+  request: {
+    clubDelegateChangeRequestStatusEnumId: number;
+    createdAt: Date;
+    deletedAt: Date | null;
+  },
+  now: Date,
+) {
+  const isCanceled = request.deletedAt !== null;
+  const isApplied =
+    request.clubDelegateChangeRequestStatusEnumId ===
+    ClubDelegateChangeRequestStatusEnum.Applied;
+  const isExpired =
+    request.createdAt.getTime() <= now.getTime() - REQUEST_LIFETIME_MS;
+  const shouldHide = !isCanceled && isApplied && isExpired;
+  return !shouldHide;
+}

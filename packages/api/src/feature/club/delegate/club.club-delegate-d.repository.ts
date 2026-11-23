@@ -15,7 +15,10 @@ import { syncDelegateMemberRegistrations } from "@sparcs-clubs/api/feature/regis
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 import { lockClubDelegates } from "../repository/lock-club-delegates";
-import { pendingDelegateChangeWhere } from "./delegate-change-policy";
+import {
+  isLatestDelegateChangeRequestVisible,
+  pendingDelegateChangeWhere,
+} from "./delegate-change-policy";
 
 function currentRoleClubName(
   club: { nameKr: string | null; nameEn: string | null },
@@ -56,22 +59,19 @@ export class ClubDelegateDRepository {
     });
   }
 
-  findClubRequests(clubId: number, now: Date) {
-    return this.txHost.tx.clubDelegateChangeRequest.findMany({
-      where: {
-        clubId,
-        deletedAt: null,
-        OR: [
-          {
-            clubDelegateChangeRequestStatusEnumId: {
-              not: ClubDelegateChangeRequestStatusEnum.Applied,
-            },
-          },
-          pendingDelegateChangeWhere(now),
-        ],
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    });
+  async findClubRequests(clubId: number, now: Date) {
+    const latestRequests =
+      await this.txHost.tx.clubDelegateChangeRequest.findMany({
+        where: withDeleted({
+          clubId,
+          clubDelegateEnumId: { in: Object.values(ClubDelegateEnum) },
+        }),
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        distinct: ["clubDelegateEnumId"],
+      });
+    return latestRequests.filter(request =>
+      isLatestDelegateChangeRequestVisible(request, now),
+    );
   }
 
   findReceivedRequests(studentId: number, now: Date) {

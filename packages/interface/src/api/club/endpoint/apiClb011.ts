@@ -35,6 +35,7 @@ const responseBodyMap = {
         studentName: zStudent.shape.name,
         clubDelegateChangeRequestStatusEnumId:
           zClubDelegateChangeRequest.shape.clubDelegateChangeRequestStatusEnum,
+        isCanceled: z.boolean(),
       })
       .array(),
   }),
@@ -73,7 +74,9 @@ registry.registerPath({
   summary: "CLB-011: 동아리 대표자 및 대의원 변경 요청 조회",
   description: `# CLB-011
 
-동아리의 대표자 및 대의원 변경 요청을 조회합니다.
+직책별 최신 변경 요청을 최대 한 건씩 조회합니다.
+취소된 최신 요청은 isCanceled가 true이며 기존 요청 상태 값은 유지됩니다.
+최신 요청이 만료된 대기 요청이면 해당 직책은 반환하지 않으며, 이전 요청으로 대체하지 않습니다.
   `,
   request: {
     params: requestParam,

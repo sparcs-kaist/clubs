@@ -8,10 +8,7 @@ import apiClb006, {
 import apiClb008, {
   type ApiClb008ResponseOk,
 } from "@clubs/interface/api/club/endpoint/apiClb008";
-import {
-  ClubDelegateChangeRequestStatusEnum,
-  ClubDelegateEnum,
-} from "@clubs/interface/common/enum/club.enum";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import Card from "@sparcs-clubs/web/common/components/Card";
@@ -28,6 +25,10 @@ import {
   delegateRoleLabels,
   getDelegateCandidateItems,
 } from "./delegateCandidates";
+import {
+  getDelegateRequestNoticeType,
+  getDelegateRequestState,
+} from "./delegateRequestState";
 
 const LabelWrapper = styled.div`
   display: flex;
@@ -83,15 +84,8 @@ const ChangeRepresentativeCard: React.FC<{
     },
   });
 
-  const requests = data?.requests ?? [];
-  const pendingRequests = requests.filter(
-    request =>
-      request.clubDelegateChangeRequestStatusEnumId ===
-      ClubDelegateChangeRequestStatusEnum.Applied,
-  );
-  const pendingStudentIds = new Set(
-    pendingRequests.map(request => request.studentId),
-  );
+  const { latestRequests, pendingRequests, pendingStudentIds } =
+    getDelegateRequestState(data?.requests ?? []);
   const disabled = isLoading || isError || action.isPending;
 
   return (
@@ -118,9 +112,10 @@ const ChangeRepresentativeCard: React.FC<{
         const current = delegatesNow.delegates.find(
           delegate => delegate.delegateEnumId === id,
         );
-        const latestRequest = requests
-          .filter(request => request.delegateEnumId === id)
-          .sort((a, b) => b.id - a.id)[0];
+        const latestRequest = latestRequests.find(
+          request => request.delegateEnumId === id,
+        );
+        const noticeType = getDelegateRequestNoticeType(latestRequest);
         const pending = pendingRequests.find(
           request => request.delegateEnumId === id,
         );
@@ -133,12 +128,6 @@ const ChangeRepresentativeCard: React.FC<{
           pendingCandidate.currentRoles[0].clubId === clubId &&
           pendingCandidate.currentRoles[0].delegateEnumId !==
             ClubDelegateEnum.Representative;
-        const rejected =
-          latestRequest?.clubDelegateChangeRequestStatusEnumId ===
-          ClubDelegateChangeRequestStatusEnum.Rejected
-            ? latestRequest
-            : undefined;
-        const request = pending ?? rejected;
         const currentValue = current ? String(current.studentId) : "";
         const roleItems =
           current && !items.some(item => item.value === currentValue)
@@ -205,12 +194,12 @@ const ChangeRepresentativeCard: React.FC<{
                 수락하면 현재 대표자가 대상자의 기존 대의원 직책을 맡습니다.
               </Typography>
             )}
-            {request && (
+            {latestRequest && noticeType && (
               <ChangeRepresentativeInfo
-                type={pending ? "Applied" : "Rejected"}
+                type={noticeType}
                 clubName={clubName}
                 role={label}
-                candidate={`${request.studentNumber} ${request.studentName}`}
+                candidate={`${latestRequest.studentNumber} ${latestRequest.studentName}`}
               />
             )}
           </FlexWrapper>
