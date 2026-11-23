@@ -172,6 +172,7 @@ describe("ActivityService", () => {
     const currentActivity = { ...activity, ...activityOverrides };
     const activityRepository = {
       approveExecutiveActivity: jest.fn().mockResolvedValue(true),
+      createRegistrationReport: jest.fn().mockResolvedValue(undefined),
       fetch: jest.fn().mockResolvedValue(currentActivity),
       fetchForReportUpdate: jest.fn().mockResolvedValue(currentActivity),
       recordChangeHistory: jest.fn().mockResolvedValue(undefined),
@@ -487,11 +488,80 @@ describe("ActivityService", () => {
     expect(updatedActivity.commentedAt).toBeNull();
     expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
       date: expect.any(Date),
+      semesterId: activityDuration.semester.id,
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
     expect(
       registrationPublicService.resetClubRegistrationStatusEnum,
-    ).toHaveBeenCalledWith(activity.club.id);
+    ).toHaveBeenCalledWith(activity.club.id, activityDuration.semester.id);
+  });
+
+  it("scopes the reset to the semester of a newly created registration report", async () => {
+    const {
+      activityDurationPublicService,
+      activityRepository,
+      registrationDeadlinePublicService,
+      registrationPublicService,
+      service,
+    } = createService();
+    const term = {
+      ...activityDuration,
+      semester: { id: 7 },
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    };
+    activityDurationPublicService.load.mockResolvedValue(term);
+    jest.useFakeTimers().setSystemTime(NOW);
+
+    await service.postStudentActivityProvisional(
+      { ...body, clubId: activity.club.id },
+      1,
+    );
+
+    expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
+      date: NOW,
+      semesterId: 7,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityRepository.createRegistrationReport).toHaveBeenCalled();
+    expect(
+      registrationPublicService.resetClubRegistrationStatusEnum,
+    ).toHaveBeenCalledWith(activity.club.id, 7);
+  });
+
+  it("does not edit a registration report whose own semester is closed", async () => {
+    const {
+      activityDurationPublicService,
+      activityRepository,
+      registrationDeadlinePublicService,
+      registrationPublicService,
+      service,
+    } = createService();
+    activityDurationPublicService.getById.mockResolvedValue({
+      ...activityDuration,
+      semester: { id: 3 },
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    registrationDeadlinePublicService.validate.mockRejectedValueOnce(
+      new Error("Semester registration is closed"),
+    );
+
+    await expect(
+      service.putStudentActivityProvisional(
+        { activityId: activity.id },
+        body,
+        1,
+      ),
+    ).rejects.toThrow("Semester registration is closed");
+
+    expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
+      date: expect.any(Date),
+      semesterId: 3,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
+    expect(
+      registrationPublicService.resetClubRegistrationStatusEnum,
+    ).not.toHaveBeenCalled();
   });
 
   it("sets commentedAt when an executive approves an activity report", async () => {

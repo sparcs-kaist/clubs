@@ -61,7 +61,7 @@ const responseBodyMap = {
             .refine(email => email.endsWith("@kaist.ac.kr"), {
               message: "Must be a valid KAIST email address",
             }),
-          professorEnumId: z.nativeEnum(ProfessorEnum),
+          professorEnumId: z.nativeEnum(ProfessorEnum).nullable(),
         })
         .optional(),
       divisionConsistency: zCoercedDbText,

@@ -188,6 +188,22 @@
     }
   },
   "registration": {
+    "executiveReview": "집행부 심사 상태",
+    "executiveStatus": {
+      "1": "대기",
+      "2": "승인",
+      "3": "반려"
+    },
+    "yourSignature": "본인 서명 상태",
+    "signatureStatus": {
+      "PENDING": "서명 대기",
+      "APPROVED": "서명 완료",
+      "LATE_APPROVED": "지연 서명"
+    },
+    "regularSignatureDeadline": "정규 서명 마감 · {date}",
+    "lateSignatureDeadline": "지연 서명 안내 기한 · {date}",
+    "deadlineNotConfigured": "미설정",
+    "signatureRecordedAt": "서명 시각 · {date}",
     "title": "동아리 등록",
     "myPage": "마이페이지",
     "backToList": "목록으로 돌아가기",
@@ -207,7 +223,7 @@
     "editWarning": "동아리 등록 신청을 수정하면 신청 상태 및 지도교수 승인 여부가 모두 초기화됩니다.",
     "editQuestion": "수정하시겠습니까?",
     "approvedNotEditable": "승인된 등록 신청은 수정하실 수 없습니다.",
-    "editTitle": "동아리 {type} 신청 수정",
+    "editTitle": "{type} 신청 수정",
     "typeRenewal": "재등록",
     "typePromotional": "신규 등록",
     "typeNewProvisional": "가등록",
@@ -250,14 +266,14 @@
     "professorApproval": "지도교수 승인",
     "approvalApproved": "승인",
     "approvalPending": "대기",
-    "clubNameKrPlaceholder": "국문 동아리명을 입력해주세요",
+    "clubNameKrPlaceholder": "공식 동아리명을 입력해주세요",
     "clubNameEnPlaceholder": "영문 동아리명을 입력해주세요",
     "clubNamePlaceholder": "동아리명을 선택해주세요",
     "activityFieldPlaceholder": "활동 분야를 입력해주세요",
     "requestProfessor": "지도교수를 신청하겠습니다",
     "invalidPhone": "본인 휴대전화 번호를 010-1234-5678 형식으로 입력해 주세요.",
     "invalidForeignCharacters": "영어 대소문자, 숫자, 특수문자, 공백만 입력 가능합니다.",
-    "invalidEmail": "유효하지 않은 이메일입니다.",
+    "invalidEmail": "올바른 KAIST 이메일 주소를 입력해주세요.",
     "professorNamePlaceholder": "지도교수 성함을 입력해주세요",
     "professorRankPlaceholder": "직급을 선택해주세요",
     "divisionPlaceholder": "소속 분과를 선택해주세요",
@@ -290,10 +306,10 @@
     "unionApproved": "동아리 연합회 신청 승인",
     "unionRejected": "동아리 연합회 신청 반려",
     "types": {
-      "1": "재등록",
-      "2": "신규 등록",
-      "3": "가등록",
-      "4": "가등록"
+      "1": "정동아리 재등록",
+      "2": "정동아리 신규 등록",
+      "3": "가등록(신규)",
+      "4": "가등록(재등록)"
     },
     "professorRanks": {
       "조교수": "조교수",
@@ -323,9 +339,9 @@
     "validation": {
       "phoneRequired": "본인 전화번호를 입력해 주세요.",
       "activityFieldKrRequired": "활동 분야(국문)를 입력해주세요",
-      "activityFieldKrTooLong": "활동 분야(국문)는 255자 이내로 입력해주세요",
+      "activityFieldKrTooLong": "활동 분야(국문)는 공백 포함 최대 40자, 공백 제외 최대 30자까지 입력할 수 있습니다.",
       "activityFieldEnRequired": "활동 분야(영문)를 입력해주세요",
-      "activityFieldEnTooLong": "활동 분야(영문)는 255자 이내로 입력해주세요",
+      "activityFieldEnTooLong": "활동 분야(영문)는 공백 포함 최대 40자, 공백 제외 최대 30자까지 입력할 수 있습니다.",
       "foundedAtRequired": "설립 연(월)을 입력해주세요",
       "divisionRequired": "분과를 선택해주세요",
       "divisionConsistencyRequired": "분과 정합성을 입력해주세요",
@@ -443,6 +459,37 @@
       "participantSearchEmpty": "검색 결과가 존재하지 않습니다",
       "selectedParticipantCount": "선택된 회원 목록 ({count}명)",
       "selectedParticipantsEmpty": "선택된 회원이 없습니다."
+    },
+    "applicationTitle": "{type} 신청",
+    "writeApplication": "신청서 작성",
+    "writeApplicationForType": "{type} 신청서 작성",
+    "changeRegistrationType": "등록 유형 다시 선택",
+    "viewSubmittedApplication": "신청 내역 확인",
+    "registrationClosed": "현재는 동아리 등록 신청 기간이 아닙니다.",
+    "restoreApplicationDraft": "{type} 신청서에 작성하던 내용이 있습니다. 불러오시겠습니까?",
+    "submitApplication": "신청",
+    "submittingApplication": "신청 중",
+    "submitSuccess": "신청이 완료되었습니다.",
+    "submitSuccessNext": "확인을 누르면 신청 내역 화면으로 이동합니다.",
+    "professorEligibility": "정교수, 부교수, 조교수만 지도교수를 맡을 수 있습니다.",
+    "activityFieldLimits": "공백 포함 최대 40자, 공백 제외 최대 30자",
+    "requirements": {
+      "renewal": "직전 학기에 정동아리 지위를 유지했던 동아리만 등록할 수 있습니다.",
+      "promotionalProvisional": "두 정규학기 이상 가등록 지위를 유지한 동아리가 등록할 수 있습니다.",
+      "promotionalCancelled": "등록 취소 후 세 정규학기가 지나지 않은 단체가 등록할 수 있습니다.",
+      "newProvisional": "새 동아리를 만들려는 학부 총학생회 정회원이 등록할 수 있습니다.",
+      "reProvisional": "직전 학기에 등록한 동아리가 신청할 수 있습니다. 정동아리도 포함됩니다."
+    },
+    "eligibility": {
+      "undergraduateOnly": "로그인한 학부생만 신청할 수 있습니다.",
+      "loadError": "신청 자격을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.",
+      "checking": "신청 자격을 확인하고 있습니다.",
+      "applicationLoadError": "신청 내역을 확인하지 못했습니다. 새로고침 후 다시 시도해주세요.",
+      "alreadyApplied": "이번 학기에 제출한 신청이 있습니다. 신청 내역을 확인해주세요.",
+      "noManagedClub": "현재 대표자·대의원으로 관리하는 동아리가 없습니다.",
+      "unavailable": "신청 자격을 확인하지 못했습니다. 다시 조회해주세요.",
+      "alreadyDelegate": "이미 동아리 대표자·대의원으로 등록되어 있습니다. 기존 동아리의 등록 유형을 선택해주세요.",
+      "notEligible": "해당 동아리의 신청 내역이 이미 존재하거나 이 등록 유형의 신청 조건을 충족하지 않습니다."
     }
   }
 }

@@ -188,6 +188,22 @@
     }
   },
   "registration": {
+    "executiveReview": "Executive review",
+    "executiveStatus": {
+      "1": "Pending",
+      "2": "Approved",
+      "3": "Rejected"
+    },
+    "yourSignature": "Your signature",
+    "signatureStatus": {
+      "PENDING": "Awaiting signature",
+      "APPROVED": "Signed",
+      "LATE_APPROVED": "Signed late"
+    },
+    "regularSignatureDeadline": "Regular signing deadline · {date}",
+    "lateSignatureDeadline": "Late signing guidance deadline · {date}",
+    "deadlineNotConfigured": "Not configured",
+    "signatureRecordedAt": "Signed at · {date}",
     "title": "Club registration",
     "myPage": "My page",
     "backToList": "Back to list",
@@ -207,7 +223,7 @@
     "editWarning": "Editing the application resets its review status and faculty advisor approval.",
     "editQuestion": "Edit this application?",
     "approvedNotEditable": "Approved registration applications cannot be edited.",
-    "editTitle": "Edit club {type} application",
+    "editTitle": "Edit application for {type}",
     "typeRenewal": "renewal",
     "typePromotional": "regular registration",
     "typeNewProvisional": "provisional registration",
@@ -250,14 +266,14 @@
     "professorApproval": "Faculty advisor approval",
     "approvalApproved": "Approved",
     "approvalPending": "Pending",
-    "clubNameKrPlaceholder": "Enter the club name in Korean",
+    "clubNameKrPlaceholder": "Enter the official club name",
     "clubNameEnPlaceholder": "Enter the club name in English",
     "clubNamePlaceholder": "Select a club",
     "activityFieldPlaceholder": "Enter the activity field",
     "requestProfessor": "I would like to appoint a faculty advisor",
     "invalidPhone": "Enter your own mobile number in the format 010-1234-5678.",
     "invalidForeignCharacters": "Use only English letters, numbers, symbols, and spaces.",
-    "invalidEmail": "Enter a valid email address.",
+    "invalidEmail": "Enter a valid KAIST email address.",
     "professorNamePlaceholder": "Enter the faculty advisor name",
     "professorRankPlaceholder": "Select a rank",
     "divisionPlaceholder": "Select the division",
@@ -290,10 +306,10 @@
     "unionApproved": "Approved by the Clubs Union",
     "unionRejected": "Returned by the Clubs Union",
     "types": {
-      "1": "renewal",
-      "2": "regular registration",
-      "3": "provisional registration",
-      "4": "provisional registration"
+      "1": "Regular club renewal",
+      "2": "New regular club registration",
+      "3": "New provisional club registration",
+      "4": "Provisional club renewal"
     },
     "professorRanks": {
       "조교수": "Assistant professor",
@@ -323,9 +339,9 @@
     "validation": {
       "phoneRequired": "Enter your own phone number.",
       "activityFieldKrRequired": "Enter the activity field in Korean",
-      "activityFieldKrTooLong": "Enter at most 255 characters for the Korean activity field",
+      "activityFieldKrTooLong": "The Korean activity field allows up to 40 characters including spaces and 30 excluding spaces.",
       "activityFieldEnRequired": "Enter the activity field in English",
-      "activityFieldEnTooLong": "Enter at most 255 characters for the English activity field",
+      "activityFieldEnTooLong": "The English activity field allows up to 40 characters including spaces and 30 excluding spaces.",
       "foundedAtRequired": "Enter the year and month founded",
       "divisionRequired": "Select a division",
       "divisionConsistencyRequired": "Explain how the club fits the division",
@@ -443,6 +459,37 @@
       "participantSearchEmpty": "No search results found",
       "selectedParticipantCount": "Selected members ({count, plural, one {# member} other {# members}})",
       "selectedParticipantsEmpty": "No members selected."
+    },
+    "applicationTitle": "{type} application",
+    "writeApplication": "Start application",
+    "writeApplicationForType": "Start application for {type}",
+    "changeRegistrationType": "Choose a registration type",
+    "viewSubmittedApplication": "View submitted application",
+    "registrationClosed": "Club registration is currently closed.",
+    "restoreApplicationDraft": "You have a saved draft for {type}. Would you like to restore it?",
+    "submitApplication": "Submit application",
+    "submittingApplication": "Submitting application",
+    "submitSuccess": "Your application has been submitted.",
+    "submitSuccessNext": "Select Confirm to view your application.",
+    "professorEligibility": "Only full professors, associate professors, and assistant professors are eligible to serve as faculty advisors.",
+    "activityFieldLimits": "Up to 40 characters including spaces and 30 excluding spaces",
+    "requirements": {
+      "renewal": "Open to clubs that retained regular status last semester.",
+      "promotionalProvisional": "Open to clubs that held provisional status for at least two regular semesters.",
+      "promotionalCancelled": "Open to groups whose registration was canceled less than three regular semesters ago.",
+      "newProvisional": "Open to full members of the Undergraduate Student Council who want to start a club.",
+      "reProvisional": "Open to clubs registered last semester, including regular clubs."
+    },
+    "eligibility": {
+      "undergraduateOnly": "Only signed-in undergraduate students can apply.",
+      "loadError": "We couldn't load your eligibility. Refresh the page and try again.",
+      "checking": "Checking eligibility.",
+      "applicationLoadError": "We couldn't load your application history. Refresh the page and try again.",
+      "alreadyApplied": "You already submitted an application this semester. View your submitted application.",
+      "noManagedClub": "You are currently not a representative or delegate for any club.",
+      "unavailable": "We couldn't verify your eligibility. Try again.",
+      "alreadyDelegate": "You are already a club representative or delegate. Choose a registration type for your existing club.",
+      "notEligible": "The club already has an application or does not meet the requirements for this registration type."
     }
   }
 }

@@ -1,9 +1,18 @@
 import { Test, TestingModule } from "@nestjs/testing";
 
-import type { ApiReg001RequestBody } from "@clubs/interface/api/registration/endpoint/apiReg001";
-import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
-import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 
+import type { ApiReg001RequestBody } from "@clubs/interface/api/registration/endpoint/apiReg001";
+import { RegistrationErrorCode } from "@clubs/interface/api/registration/type/registration-error";
+import { ClubDelegateEnum } from "@clubs/interface/common/enum/club.enum";
+import {
+  RegistrationDeadlineEnum,
+  RegistrationStatusEnum,
+  RegistrationTypeEnum,
+} from "@clubs/interface/common/enum/registration.enum";
+import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
+
+import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { ClockModule } from "@sparcs-clubs/api/common/clock/clock.module";
 import { TransactionModule } from "@sparcs-clubs/api/common/transaction/transaction.module";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -16,6 +25,8 @@ import { RegistrationPublicService } from "@sparcs-clubs/api/feature/registratio
 import { RegistrationService } from "@sparcs-clubs/api/feature/registration/service/registration.service";
 import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/semester/publicService/registration.deadline.public.service";
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
+import { RegistrationDeadlineRepository } from "@sparcs-clubs/api/feature/semester/repository/registration.deadline.repository";
+import OldProfessorRepository from "@sparcs-clubs/api/feature/user/repository/old.professor.repository";
 import UserRepository from "@sparcs-clubs/api/feature/user/repository/user.repository";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaModule } from "@sparcs-clubs/api/prisma/prisma.module";
@@ -44,13 +55,21 @@ describe("club registration contact", () => {
       imports: [ClockModule, PrismaModule, TransactionModule],
       providers: [
         ClubRegistrationRepository,
+        RegistrationDeadlineRepository,
+        RegistrationDeadlinePublicService,
         RegistrationService,
+        OldProfessorRepository,
         UserRepository,
         {
           provide: UserPublicService,
-          inject: [UserRepository],
-          useFactory: (repository: UserRepository) => ({
+          inject: [UserRepository, OldProfessorRepository],
+          useFactory: (
+            repository: UserRepository,
+            advisor: OldProfessorRepository,
+          ) => ({
             updatePhoneNumber: repository.updatePhoneNumber.bind(repository),
+            saveRegistrationAdvisor:
+              advisor.saveRegistrationAdvisor.bind(advisor),
           }),
         },
         {
@@ -68,7 +87,10 @@ describe("club registration contact", () => {
         },
         {
           provide: FilePublicService,
-          useValue: { getFileInfoById: async (id: string) => ({ id }) },
+          useValue: {
+            getFileInfoById: async (id: string) => ({ id, name: id }),
+            getFileUrl: async (id: string) => `https://example.test/${id}`,
+          },
         },
         {
           provide: RegistrationPublicService,
@@ -78,7 +100,6 @@ describe("club registration contact", () => {
           provide: SemesterPublicService,
           useValue: { loadId: async () => semesterId },
         },
-        { provide: RegistrationDeadlinePublicService, useValue: {} },
         { provide: ClubRegistrationApprovalRepository, useValue: {} },
         { provide: MemberRegistrationRepository, useValue: {} },
       ],
@@ -164,6 +185,17 @@ describe("club registration contact", () => {
       });
   }
 
+  async function createAdvisedApplication() {
+    const { id } = await service.postStudentRegistrationClubRegistration(
+      applicant,
+      {
+        ...body,
+        professor: { name: "지도교수", email: "advisor@kaist.ac.kr" },
+      },
+    );
+    return readRegistration(id);
+  }
+
   it("stores submitted and changed numbers while unrelated edits keep the saved profile number", async () => {
     const { id } = await service.postStudentRegistrationClubRegistration(
       applicant,
@@ -205,6 +237,44 @@ describe("club registration contact", () => {
     });
     await expect(readRegistration(id)).resolves.toMatchObject({
       phoneNumber: changedPhone,
+    });
+  });
+
+  it("does not edit or delete a previous-semester application during the current registration period", async () => {
+    const { id } = await service.postStudentRegistrationClubRegistration(
+      applicant,
+      body,
+    );
+    const currentSemester = await prisma.semesterD.create({
+      data: {
+        year: 2027,
+        name: "Spring",
+        startTerm: new Date("2027-03-01T00:00:00Z"),
+        endTerm: new Date("2027-08-31T00:00:00Z"),
+      },
+    });
+    semesterId = currentSemester.id;
+
+    await expect(
+      service.putStudentRegistrationsClubRegistration(applicant, id, {
+        ...body,
+        phoneNumber: changedPhone,
+      }),
+    ).rejects.toMatchObject({
+      response: { code: RegistrationErrorCode.ApplicationNotEditable },
+    });
+    await expect(
+      service.deleteStudentRegistrationsClubRegistration(
+        applicant.studentId,
+        id,
+      ),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(readRegistration(id)).resolves.toMatchObject({
+      deletedAt: null,
+      phoneNumber: submittedPhone,
+    });
+    await expect(readUser()).resolves.toMatchObject({
+      phoneNumber: submittedPhone,
     });
   });
 
@@ -321,5 +391,179 @@ describe("club registration contact", () => {
     await expect(readUser()).resolves.toMatchObject({
       phoneNumber: submittedPhone,
     });
+  });
+
+  it("keeps the existing professor rank when an application is edited", async () => {
+    const application = await createAdvisedApplication();
+    const where = { professorId: application.professorId! };
+    await expect(
+      prisma.professorT.findUnique({ where }),
+    ).resolves.toMatchObject({
+      professorEnum: null,
+    });
+    await prisma.professorT.update({
+      where,
+      data: { professorEnum: ProfessorEnum.Associate },
+    });
+    await service.putStudentRegistrationsClubRegistration(
+      applicant,
+      application.id,
+      {
+        ...body,
+        clubId: application.clubId,
+        professor: { name: "지도교수", email: "advisor@kaist.ac.kr" },
+      },
+    );
+    await expect(
+      prisma.professorT.findUnique({ where }),
+    ).resolves.toMatchObject({
+      professorEnum: ProfessorEnum.Associate,
+    });
+  });
+
+  it("records a single late signature for concurrent requests after both deadlines", async () => {
+    const application = await createAdvisedApplication();
+    const signedAt = new Date("2026-10-01T00:00:00Z");
+    const regularDeadline = new Date("2026-09-07T12:00:00Z");
+    const lateSigningDeadline = new Date("2026-09-14T12:00:00Z");
+    jest.spyOn(fixture.get<Clock>(CLOCK), "now").mockReturnValue(signedAt);
+    await prisma.registrationDeadlineD.createMany({
+      data: [
+        {
+          semesterId,
+          deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+          startTerm: new Date("2026-09-01T00:00:00Z"),
+          endTerm: regularDeadline,
+        },
+        {
+          semesterId,
+          deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationLate,
+          startTerm: regularDeadline,
+          endTerm: lateSigningDeadline,
+        },
+      ],
+    });
+    const repository = fixture.get(ClubRegistrationRepository);
+    const record = repository.recordProfessorApproval.bind(repository);
+    let arrivals = 0;
+    let release: () => void;
+    const bothRequestsReady = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    jest
+      .spyOn(repository, "recordProfessorApproval")
+      .mockImplementation(async approval => {
+        arrivals += 1;
+        if (arrivals === 2) release();
+        await bothRequestsReady;
+        await record(approval);
+      });
+    const sign = () =>
+      service.getProfessorRegistrationsClubRegistrationApproval({
+        professorId: application.professorId!,
+        param: { applyId: application.id },
+      });
+    const outcomes = await Promise.allSettled([sign(), sign()]);
+    expect(
+      outcomes.filter(outcome => outcome.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(outcomes).toContainEqual({
+      status: "rejected",
+      reason: expect.objectContaining({ status: 409 }),
+    });
+    await expect(readRegistration(application.id)).resolves.toMatchObject({
+      professorApprovedAt: signedAt,
+      professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
+      registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+    });
+    await expect(
+      prisma.registrationProfessorApprovalLog.findMany({
+        where: { registrationId: application.id },
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        professorId: application.professorId,
+        approvalStatus: ProfessorApprovalStatus.LateApproved,
+        approvedAt: signedAt,
+      }),
+    ]);
+    await expect(
+      service.getProfessorRegistrationsClubRegistration({
+        registrationId: application.id,
+        professorId: application.professorId!,
+      }),
+    ).resolves.toMatchObject({
+      professorSignedAt: signedAt,
+      professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
+      regularDeadline,
+      lateSigningDeadline,
+    });
+    await expect(
+      service.getProfessorRegistrationsClubRegistrationsBrief({
+        professorId: application.professorId!,
+      }),
+    ).resolves.toMatchObject({
+      items: [
+        {
+          professorSignedAt: signedAt,
+          professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
+        },
+      ],
+    });
+  });
+
+  it("resets one semester without changing a signed prior semester or its approval log", async () => {
+    const previous = await createAdvisedApplication();
+    await service.getProfessorRegistrationsClubRegistrationApproval({
+      professorId: previous.professorId!,
+      param: { applyId: previous.id },
+    });
+    const nextSemester = await prisma.semesterD.create({
+      data: {
+        year: 2027,
+        name: "Spring",
+        startTerm: new Date("2027-03-01T00:00:00Z"),
+        endTerm: new Date("2027-08-31T00:00:00Z"),
+      },
+    });
+    const current = await prisma.registration.create({
+      data: {
+        clubId: previous.clubId,
+        studentId: previous.studentId,
+        professorId: previous.professorId,
+        semesterId: nextSemester.id,
+        divisionId: previous.divisionId,
+        foundedAt: body.foundedAt,
+        registrationApplicationTypeEnumId: RegistrationTypeEnum.Renewal,
+        registrationApplicationStatusEnumId: RegistrationStatusEnum.Approved,
+      },
+    });
+    await service.getProfessorRegistrationsClubRegistrationApproval({
+      professorId: previous.professorId!,
+      param: { applyId: current.id },
+    });
+    const previousSigned = await readRegistration(previous.id);
+    const logs = await prisma.registrationProfessorApprovalLog.findMany({
+      orderBy: { id: "asc" },
+    });
+    expect(logs).toHaveLength(2);
+
+    await fixture
+      .get(ClubRegistrationRepository)
+      .resetClubRegistrationStatusEnum(previous.clubId!, nextSemester.id);
+
+    await expect(readRegistration(previous.id)).resolves.toEqual(
+      previousSigned,
+    );
+    await expect(readRegistration(current.id)).resolves.toMatchObject({
+      professorApprovedAt: null,
+      professorApprovalStatus: ProfessorApprovalStatus.Pending,
+      registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+    });
+    await expect(
+      prisma.registrationProfessorApprovalLog.findMany({
+        orderBy: { id: "asc" },
+      }),
+    ).resolves.toEqual(logs);
   });
 });

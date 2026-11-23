@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import React, { useId } from "react";
 
 import Button from "@sparcs-clubs/web/common/components/Button";
@@ -17,6 +18,7 @@ const ClubButton: React.FC<ClubButtonProps> = ({
   unavailableReason,
   onClick,
 }) => {
+  const t = useTranslations("my.registration");
   const reasonId = useId();
   return (
     <Card outline padding="20px 24px" gap={16}>
@@ -39,11 +41,11 @@ const ClubButton: React.FC<ClubButtonProps> = ({
       )}
       <Button
         type={unavailableReason ? "disabled" : "default"}
-        aria-label={`${title} 신청서 작성`}
+        aria-label={t("writeApplicationForType", { type: title })}
         aria-describedby={unavailableReason ? reasonId : undefined}
         onClick={onClick}
       >
-        신청서 작성
+        {t("writeApplication")}
       </Button>
     </Card>
   );

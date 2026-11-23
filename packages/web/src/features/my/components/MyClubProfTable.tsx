@@ -6,14 +6,14 @@ import {
 import { useTranslations } from "next-intl";
 import React, { useMemo } from "react";
 
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg021";
 
 import Table from "@sparcs-clubs/web/common/components/Table";
 import Tag from "@sparcs-clubs/web/common/components/Tag";
-import {
-  getDivisionTagColor,
-  ProfessorIsApprovedTagList,
-} from "@sparcs-clubs/web/constants/tableTagList";
+import { getDivisionTagColor } from "@sparcs-clubs/web/constants/tableTagList";
+import RegistrationSignatureTag from "@sparcs-clubs/web/features/register-club/components/RegistrationSignatureTag";
 import { useLanguage } from "@sparcs-clubs/web/i18n/hooks/useLanguage";
 
 interface MyClubTableProps {
@@ -28,18 +28,18 @@ const useColumns = () => {
   const { isEnglish } = useLanguage();
   return useMemo(
     () => [
-      columnHelper.accessor("professorSignedAt", {
-        id: "professorSignedAt",
+      columnHelper.accessor("professorApprovalStatus", {
         header: t("columns.status"),
-        cell: info => {
-          const isApproved = Boolean(info.getValue());
-          const { color } = ProfessorIsApprovedTagList(isApproved);
-          return (
-            <Tag color={color}>
-              {t(isApproved ? "status.approved" : "status.pending")}
-            </Tag>
-          );
-        },
+        cell: info => (
+          <RegistrationSignatureTag
+            status={
+              info.getValue() ??
+              (info.row.original.professorSignedAt
+                ? ProfessorApprovalStatus.Approved
+                : ProfessorApprovalStatus.Pending)
+            }
+          />
+        ),
         size: 10,
       }),
       columnHelper.accessor("division.name", {

@@ -54,7 +54,7 @@ export class SemesterRepository extends BaseSingleTableRepository<
       .then(takeOne);
   }
 
-  async findPreviousEndTerm(startTerm: Date): Promise<Date | undefined> {
+  async findPrevious(startTerm: Date): Promise<MSemester | null> {
     const previous = await this.txHost.tx.semesterD.findFirst({
       where: {
         startTerm: { lt: startTerm },
@@ -62,9 +62,8 @@ export class SemesterRepository extends BaseSingleTableRepository<
         deletedAt: null,
       },
       orderBy: { endTerm: "desc" },
-      select: { endTerm: true },
     });
-    return previous?.endTerm;
+    return previous ? this.dbToModelMapping(previous) : null;
   }
 
   async createSemester(value: ISemesterCreate): Promise<{ id: number }> {

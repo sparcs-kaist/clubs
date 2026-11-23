@@ -1,50 +1,32 @@
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
-import { Semester } from "@sparcs-clubs/web/types/semester";
-import { formatDateTime } from "@sparcs-clubs/web/utils/Date/formatDate";
-
 // 영문, 숫자, 특수문자, 공백이 허용되는 정규식(한글 안됨)
 export const notAllowKrRegx = /^[\x20-\x7E]+$/;
 export const regxErrorMessage =
   "영어 대소문자, 숫자, 특수문자, 공백만 입력 가능합니다.";
 
-export const registerClubDeadlineInfoText = (
-  date: Date,
-  targetSemester?: Semester,
-) =>
-  `현재는 ${targetSemester?.year}년 ${targetSemester?.name}학기 동아리 등록 기간입니다 (신청 마감 : ${formatDateTime(date)})`;
-
 export const registerClubOptions = [
   {
     type: RegistrationTypeEnum.Renewal,
-    title: "정동아리 재등록",
     path: "/register-club/renewal",
-    buttonText: ["직전 학기에 정동아리 지위를 유지했던 동아리만 등록 가능"],
+    requirements: ["renewal"],
   },
   {
     type: RegistrationTypeEnum.Promotional,
-    title: "정동아리 신규 등록",
     path: "/register-club/promotional",
-    buttonText: [
-      "2개 정규학기 이상 가등록 지위를 유지한 동아리 등록 가능",
-      "등록 취소 이후 3개 정규학기 이상 지나지 않은 단체 등록 가능",
-    ],
+    requirements: ["promotionalProvisional", "promotionalCancelled"],
   },
   {
     type: RegistrationTypeEnum.NewProvisional,
-    title: "가등록(신규)",
     path: "/register-club/provisional/new",
-    buttonText: ["새로 동아리를 만드려는 학부 총학생회 정회원 등록 가능"],
+    requirements: ["newProvisional"],
   },
   {
     type: RegistrationTypeEnum.ReProvisional,
-    title: "가등록(재)",
     path: "/register-club/provisional/renewal",
-    buttonText: [
-      "직전 학기에 등록 기록이 있는 동아리 등록 가능 (정동아리 포함)",
-    ],
+    requirements: ["reProvisional"],
   },
-];
+] as const;
 
 export const advancedInfoFileUploadContent = {
   activityPlanFile: {

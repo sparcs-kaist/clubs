@@ -75,14 +75,11 @@ export class RegistrationPublicService {
     return ids.length > 0;
   }
 
-  /**
-   * @param clubId
-   * @returns void
-   * @description clubId에 해당하는 동아리의 신청 상태를 초기화합니다.
-   */
-  async resetClubRegistrationStatusEnum(clubId: number) {
+  @Transactional()
+  async resetClubRegistrationStatusEnum(clubId: number, semesterId: number) {
     await this.clubRegistrationRepository.resetClubRegistrationStatusEnum(
       clubId,
+      semesterId,
     );
   }
 

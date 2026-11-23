@@ -1,7 +1,10 @@
 import { useTranslations } from "next-intl";
 import React from "react";
 
-import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
+import {
+  studentUserTypes,
+  UserTypeEnum,
+} from "@clubs/interface/common/enum/user.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -15,19 +18,19 @@ import RegisterClubProfFrame from "./_atomic/RegisterClubProfFrame";
 
 const MyRegisterFrame: React.FC<{ profile: string }> = ({ profile }) => {
   const t = useTranslations("my.overview");
+  const historyT = useTranslations("registrationHistory");
   const { data, isLoading, isError } = useGetMemberRegistrationDeadline();
+  const showHistory = studentUserTypes.includes(profile);
 
   return (
     <FoldableSectionTitle title={t("applications")}>
       <AsyncBoundary isLoading={isLoading} isError={isError}>
         <FlexWrapper direction="column" gap={40}>
-          {/* NOTE: (@dora) 동아리 등록 신청은 동아리 등록 신청 기간에만 보이는 게 아니라, 학기 단위로 항상 보임 */}
-          {/* TODO: (@dora) 동아리 등록 신청 history 볼 수 있는 화면이 필요할지도..? */}
           <FlexWrapper direction="column" gap={20}>
             <MoreDetailTitle
               title={t("clubRegistration")}
-              moreDetail=""
-              moreDetailPath=""
+              moreDetail={showHistory ? historyT("title") : ""}
+              moreDetailPath={showHistory ? "/my/register-club/previous" : ""}
             />
             {profile === UserTypeEnum.Professor ? (
               <RegisterClubProfFrame />

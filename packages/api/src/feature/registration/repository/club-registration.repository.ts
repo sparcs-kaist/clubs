@@ -1,6 +1,14 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma, PrismaClient } from "@prisma/client";
+
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 
 import {
   ApiReg001RequestBody,
@@ -25,6 +33,7 @@ import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 type ClubRegistrationListResponse = Pick<
@@ -34,6 +43,19 @@ type ClubRegistrationListResponse = Pick<
 type Reg011DetailNoSemester = Omit<ApiReg011ResponseOk, "semesterId">;
 type Reg015DetailNoSemester = Omit<ApiReg015ResponseOk, "semesterId">;
 
+export type PreviousRegistrationScope = {
+  semesterId: number;
+  delegateClubIds: number[];
+};
+
+const previousRegistrationWhere = (
+  studentId: number,
+  scope: PreviousRegistrationScope,
+): Prisma.RegistrationWhereInput => ({
+  semesterId: scope.semesterId,
+  OR: [{ studentId }, { clubId: { in: scope.delegateClubIds } }],
+});
+
 @Injectable()
 export class ClubRegistrationRepository {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -41,6 +63,7 @@ export class ClubRegistrationRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly txHost: TransactionHost<PrismaTransactionalAdapter>,
+    private readonly userPublicService: UserPublicService,
   ) {}
 
   async selectDeadlineByDate(
@@ -197,35 +220,12 @@ export class ClubRegistrationRepository {
       }
     }
 
-    let professor: { id: number } | null = null;
-    if (body.professor) {
-      await tx.$executeRaw(Prisma.sql`
-        INSERT INTO professor (email, name)
-        VALUES (${body.professor.email}, ${body.professor.name})
-        ON DUPLICATE KEY UPDATE name = ${body.professor.name}
-      `);
-      const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
-        Array<{ id: number }>
-      >(
-        Prisma.sql`
-          SELECT p.id
-          FROM professor p
-          WHERE p.email = ${body.professor.email}
-            AND p.name = ${body.professor.name}
-            AND p.deleted_at IS NULL
-          FOR SHARE
-        `,
-      );
-      professor = takeOne(professorRows);
-
-      logger.debug(professor);
-
-      await tx.$executeRaw(Prisma.sql`
-        INSERT INTO professor_t (professor_id, professor_enum, start_term)
-        VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
-        ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
-      `);
-    }
+    const professorId = body.professor
+      ? await this.userPublicService.saveRegistrationAdvisor(
+          body.professor,
+          cur,
+        )
+      : null;
 
     // registration insert 후 id 가져오기
     const registrationInsertResult = await tx.registration.create({
@@ -241,7 +241,8 @@ export class ClubRegistrationRepository {
         divisionId: body.divisionId,
         activityFieldKr: body.activityFieldKr,
         activityFieldEn: body.activityFieldEn,
-        professorId: professor?.id ?? null,
+        professorId,
+        professorApprovalStatus: ProfessorApprovalStatus.Pending,
         divisionConsistency: body.divisionConsistency,
         foundationPurpose: body.foundationPurpose,
         activityPlan: body.activityPlan,
@@ -266,6 +267,7 @@ export class ClubRegistrationRepository {
     studentId: number,
     applyId: number,
     body: ApiReg009RequestBody,
+    semesterId: number,
   ): Promise<string | undefined> {
     const cur = this.clock.now();
     const { tx } = this.txHost;
@@ -307,40 +309,18 @@ export class ClubRegistrationRepository {
       }
     }
 
-    let professor: { id: number } | null = null;
-    if (body.professor) {
-      await tx.$executeRaw(Prisma.sql`
-        INSERT INTO professor (email, name)
-        VALUES (${body.professor.email}, ${body.professor.name})
-        ON DUPLICATE KEY UPDATE name = ${body.professor.name}
-      `);
-      const professorRows = await (tx as unknown as PrismaClient).$queryRaw<
-        Array<{ id: number }>
-      >(
-        Prisma.sql`
-          SELECT p.id
-          FROM professor p
-          WHERE p.email = ${body.professor.email}
-            AND p.name = ${body.professor.name}
-            AND p.deleted_at IS NULL
-          FOR SHARE
-        `,
-      );
-      professor = takeOne(professorRows);
-
-      logger.debug(professor);
-
-      await tx.$executeRaw(Prisma.sql`
-        INSERT INTO professor_t (professor_id, professor_enum, start_term)
-        VALUES (${professor.id}, ${body.professor.professorEnumId}, ${cur})
-        ON DUPLICATE KEY UPDATE professor_enum = ${body.professor.professorEnumId}
-      `);
-    }
+    const professorId = body.professor
+      ? await this.userPublicService.saveRegistrationAdvisor(
+          body.professor,
+          cur,
+        )
+      : null;
 
     const result = await tx.registration.updateMany({
       where: {
         id: applyId,
         studentId,
+        semesterId,
         deletedAt: null,
       },
       data: {
@@ -351,7 +331,9 @@ export class ClubRegistrationRepository {
         divisionId: body.divisionId,
         activityFieldKr: body.activityFieldKr,
         activityFieldEn: body.activityFieldEn,
-        professorId: professor?.id ?? null,
+        professorId,
+        professorApprovedAt: null,
+        professorApprovalStatus: ProfessorApprovalStatus.Pending,
         divisionConsistency: body.divisionConsistency,
         foundationPurpose: body.foundationPurpose,
         activityPlan: body.activityPlan,
@@ -369,9 +351,13 @@ export class ClubRegistrationRepository {
     return changedPhoneNumber;
   }
 
-  async findActiveRegistrationForApplicant(applyId: number, studentId: number) {
+  async findActiveRegistrationForApplicant(
+    applyId: number,
+    studentId: number,
+    semesterId: number,
+  ) {
     return this.txHost.tx.registration.findFirst({
-      where: { id: applyId, studentId, deletedAt: null },
+      where: { id: applyId, studentId, semesterId, deletedAt: null },
       select: { clubId: true, registrationApplicationTypeEnumId: true },
     });
   }
@@ -380,9 +366,10 @@ export class ClubRegistrationRepository {
     studentId: number,
     applyId: number,
     now: Date,
+    semesterId: number,
   ): Promise<void> {
     const result = await this.txHost.tx.registration.updateMany({
-      where: { id: applyId, studentId, deletedAt: null },
+      where: { id: applyId, studentId, semesterId, deletedAt: null },
       data: { deletedAt: now },
     });
     if (result.count === 0) {
@@ -529,7 +516,8 @@ export class ClubRegistrationRepository {
             ? {
                 name: registration.professorName,
                 email: registration.professorEmail,
-                professorEnumId: registration.professorEnumId as ProfessorEnum,
+                professorEnumId:
+                  registration.professorEnumId as ProfessorEnum | null,
               }
             : undefined,
           divisionConsistency: registration.divisionConsistency,
@@ -620,6 +608,47 @@ export class ClubRegistrationRepository {
           registration.registrationStatusEnum as RegistrationStatusEnum,
       })),
     };
+  }
+
+  async hasPreviousClubRegistration(
+    studentId: number,
+    applyId: number,
+    scope: PreviousRegistrationScope,
+  ): Promise<boolean> {
+    const registration = await this.txHost.tx.registration.findFirst({
+      where: {
+        id: applyId,
+        ...previousRegistrationWhere(studentId, scope),
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    return registration !== null;
+  }
+
+  getStudentPreviousClubRegistrations(
+    studentId: number,
+    scope: PreviousRegistrationScope,
+  ) {
+    return this.txHost.tx.registration.findMany({
+      where: {
+        ...previousRegistrationWhere(studentId, scope),
+        deletedAt: null,
+      },
+      orderBy: { id: "desc" },
+      select: {
+        id: true,
+        registrationApplicationStatusEnumId: true,
+        registrationApplicationTypeEnumId: true,
+        clubId: true,
+        clubNameKr: true,
+        clubNameEn: true,
+        activityFieldKr: true,
+        activityFieldEn: true,
+        divisionId: true,
+        professorId: true,
+      },
+    });
   }
 
   async getRegistrationsClubRegistrations(
@@ -835,7 +864,8 @@ export class ClubRegistrationRepository {
             ? {
                 name: registration.professorName,
                 email: registration.professorEmail,
-                professorEnumId: registration.professorEnumId as ProfessorEnum,
+                professorEnumId:
+                  registration.professorEnumId as ProfessorEnum | null,
               }
             : undefined,
           divisionConsistency: registration.divisionConsistency,
@@ -1009,56 +1039,78 @@ export class ClubRegistrationRepository {
         AND r.deleted_at IS NULL
     `);
 
-    // Map flat SQL results to nested object structure expected by service
-    return rows.map(row => ({
-      registration: {
-        id: row.registrationId,
-        clubId: row.registrationClubId,
-        semesterId: row.registrationSemesterId,
-        registrationApplicationTypeEnumId:
-          row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
-        registrationApplicationStatusEnumId:
-          row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
-        clubNameKr: row.registrationClubNameKr,
-        clubNameEn: row.registrationClubNameEn,
-        studentId: row.registrationStudentId,
-        phoneNumber: row.registrationPhoneNumber,
-        foundedAt: row.registrationFoundedAt,
-        divisionId: row.registrationDivisionId,
-        activityFieldKr: row.registrationActivityFieldKr,
-        activityFieldEn: row.registrationActivityFieldEn,
-        professorId: row.registrationProfessorId,
-        divisionConsistency: row.registrationDivisionConsistency,
-        foundationPurpose: row.registrationFoundationPurpose,
-        activityPlan: row.registrationActivityPlan,
-        registrationActivityPlanFileId: row.registrationActivityPlanFileId,
-        registrationClubRuleFileId: row.registrationClubRuleFileId,
-        registrationExternalInstructionFileId:
-          row.registrationExternalInstructionFileId,
-        professorApprovedAt: row.registrationProfessorApprovedAt,
-        reviewedAt: row.registrationReviewedAt,
-        createdAt: row.registrationCreatedAt,
-        updatedAt: row.registrationUpdatedAt,
-        deletedAt: row.registrationDeletedAt,
+    const signatures = await this.prisma.registration.findMany({
+      where: {
+        id: { in: rows.map(row => row.registrationId) },
+        professorId: param.professorId,
+        deletedAt: null,
       },
-      club: {
-        nameKr: row.clubNameKr,
-        nameEn: row.clubNameEn,
+      select: {
+        id: true,
+        professorApprovedAt: true,
+        professorApprovalStatus: true,
       },
-      student: {
-        id: row.studentId,
-        name: row.studentName,
-        number: row.studentNumber,
-        email: row.userEmail,
-      },
-      user: {
-        phoneNumber: row.userPhoneNumber,
-      },
-      division: {
-        id: row.divisionId,
-        name: row.divisionName,
-      },
-    }));
+    });
+    const signatureById = new Map(
+      signatures.map(signature => [signature.id, signature]),
+    );
+
+    return rows.flatMap(row => {
+      const signature = signatureById.get(row.registrationId);
+      if (!signature) return [];
+      return [
+        {
+          registration: {
+            id: row.registrationId,
+            clubId: row.registrationClubId,
+            semesterId: row.registrationSemesterId,
+            registrationApplicationTypeEnumId:
+              row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
+            registrationApplicationStatusEnumId:
+              row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
+            clubNameKr: row.registrationClubNameKr,
+            clubNameEn: row.registrationClubNameEn,
+            studentId: row.registrationStudentId,
+            phoneNumber: row.registrationPhoneNumber,
+            foundedAt: row.registrationFoundedAt,
+            divisionId: row.registrationDivisionId,
+            activityFieldKr: row.registrationActivityFieldKr,
+            activityFieldEn: row.registrationActivityFieldEn,
+            professorId: row.registrationProfessorId,
+            divisionConsistency: row.registrationDivisionConsistency,
+            foundationPurpose: row.registrationFoundationPurpose,
+            activityPlan: row.registrationActivityPlan,
+            registrationActivityPlanFileId: row.registrationActivityPlanFileId,
+            registrationClubRuleFileId: row.registrationClubRuleFileId,
+            registrationExternalInstructionFileId:
+              row.registrationExternalInstructionFileId,
+            professorApprovedAt: signature.professorApprovedAt,
+            professorApprovalStatus: signature.professorApprovalStatus,
+            reviewedAt: row.registrationReviewedAt,
+            createdAt: row.registrationCreatedAt,
+            updatedAt: row.registrationUpdatedAt,
+            deletedAt: row.registrationDeletedAt,
+          },
+          club: {
+            nameKr: row.clubNameKr,
+            nameEn: row.clubNameEn,
+          },
+          student: {
+            id: row.studentId,
+            name: row.studentName,
+            number: row.studentNumber,
+            email: row.userEmail,
+          },
+          user: {
+            phoneNumber: row.userPhoneNumber,
+          },
+          division: {
+            id: row.divisionId,
+            name: row.divisionName,
+          },
+        },
+      ];
+    });
   }
 
   /**
@@ -1077,34 +1129,34 @@ export class ClubRegistrationRepository {
     return result;
   }
 
-  /**
-   * @param registrationId 동아리 등록 신청 ID
-   * @param approvedAt 갱신할 시간
-   * @description 해당 등록 신청의 교수 서명 시간을 갱신합니다. 신청 ID가 유효한지 검사하지 않습니다.
-   * @return 갱신 성공 여부를 boolean으로 리턴합니다. 참을 리턴하거나 예외가 발생합니다.
-   */
-  async updateRegistrationProfessorApprovedAt(param: {
+  async recordProfessorApproval(param: {
     registrationId: number;
+    professorId: number;
+    approvalStatus: Exclude<
+      ProfessorApprovalStatus,
+      typeof ProfessorApprovalStatus.Pending
+    >;
     approvedAt: Date;
-  }): Promise<boolean> {
-    const isUpdateSucceed = await this.prisma.$transaction<boolean>(
-      async tx => {
-        const updateResult = await tx.registration.updateMany({
-          where: {
-            id: param.registrationId,
-            deletedAt: null,
-          },
-          data: { professorApprovedAt: param.approvedAt },
-        });
-        if (updateResult.count !== 1)
-          throw new HttpException(
-            "update failed",
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        return true;
+  }): Promise<void> {
+    const { tx } = this.txHost;
+    const result = await tx.registration.updateMany({
+      where: {
+        id: param.registrationId,
+        professorId: param.professorId,
+        professorApprovedAt: null,
+        deletedAt: null,
       },
-    );
-    return isUpdateSucceed;
+      data: {
+        professorApprovedAt: param.approvedAt,
+        professorApprovalStatus: param.approvalStatus,
+      },
+    });
+    if (result.count !== 1) {
+      throw new ConflictException(
+        "Registration changed while it was being signed",
+      );
+    }
+    await tx.registrationProfessorApprovalLog.create({ data: param });
   }
 
   async getProfessorRegistrationsClubRegistration(param: {
@@ -1208,6 +1260,24 @@ export class ClubRegistrationRepository {
       );
     const row = results[0];
 
+    const signature = await this.prisma.registration.findFirst({
+      where: {
+        id: row.registrationId,
+        professorId: param.professorId,
+        deletedAt: null,
+      },
+      select: {
+        professorApprovedAt: true,
+        professorApprovalStatus: true,
+      },
+    });
+    if (!signature) {
+      throw new HttpException(
+        "not a valid applyId or ProfessorId",
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const comments = await this.prisma.registrationExecutiveComment.findMany({
       where: {
         registrationId: row.registrationId,
@@ -1241,7 +1311,8 @@ export class ClubRegistrationRepository {
         registrationClubRuleFileId: row.registrationClubRuleFileId,
         registrationExternalInstructionFileId:
           row.registrationExternalInstructionFileId,
-        professorApprovedAt: row.registrationProfessorApprovedAt,
+        professorApprovedAt: signature.professorApprovedAt,
+        professorApprovalStatus: signature.professorApprovalStatus,
         reviewedAt: row.registrationReviewedAt,
         createdAt: row.registrationCreatedAt,
         updatedAt: row.registrationUpdatedAt,
@@ -1262,24 +1333,24 @@ export class ClubRegistrationRepository {
         email: row.professorEmail,
       },
       professor_t: {
-        professorEnum: row.professorEnum as ProfessorEnum,
+        professorEnum: row.professorEnum as ProfessorEnum | null,
       },
       comments,
     };
   }
 
-  async resetClubRegistrationStatusEnum(clubId: number) {
-    await this.prisma.$transaction(async tx => {
-      await tx.registration.updateMany({
-        where: {
-          clubId,
-          deletedAt: null,
-        },
-        data: {
-          registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
-          professorApprovedAt: null,
-        },
-      });
+  async resetClubRegistrationStatusEnum(clubId: number, semesterId: number) {
+    await this.txHost.tx.registration.updateMany({
+      where: {
+        clubId,
+        semesterId,
+        deletedAt: null,
+      },
+      data: {
+        registrationApplicationStatusEnumId: RegistrationStatusEnum.Pending,
+        professorApprovedAt: null,
+        professorApprovalStatus: ProfessorApprovalStatus.Pending,
+      },
     });
   }
 

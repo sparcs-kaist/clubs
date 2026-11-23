@@ -3,6 +3,7 @@ export const repositoryBoundary = {
     "registration",
     "registrationApplicationStudent",
     "registrationExecutiveComment",
+    "registrationProfessorApprovalLog",
   ],
   exportedPrismaModels: [
     "registration",

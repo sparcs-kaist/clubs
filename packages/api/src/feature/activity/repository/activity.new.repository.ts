@@ -184,6 +184,19 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     });
   }
 
+  async createRegistrationReport(activity: IActivityCreate): Promise<void> {
+    const { main, oneToMany } = this.createToDBMapping(activity);
+    await this.txHost.tx.activity.create({
+      data: {
+        ...main,
+        activityTs: { create: oneToMany.activityT },
+        activityEvidenceFiles: { create: oneToMany.activityEvidenceFile },
+        activityParticipants: { create: oneToMany.activityParticipant },
+      },
+      select: { id: true },
+    });
+  }
+
   async recordProfessorActivityApprovals(param: {
     activityIds: number[];
     clubId: number;
@@ -438,7 +451,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     };
   }
 
-  protected createToDBMapping(model: IActivityCreate): ActivityDbInsert {
+  protected createToDBMapping(model: IActivityCreate) {
     return {
       main: {
         clubId: model.club.id,
@@ -465,7 +478,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
           studentId: participant.id,
         })),
       },
-    };
+    } satisfies ActivityDbInsert;
   }
 
   protected fieldMap(field: ActivityFieldMapKeys): string | null | undefined {

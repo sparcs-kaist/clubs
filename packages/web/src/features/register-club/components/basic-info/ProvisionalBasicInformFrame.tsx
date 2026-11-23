@@ -5,11 +5,10 @@ import { useFormContext } from "react-hook-form";
 import Card from "@sparcs-clubs/web/common/components/Card";
 import CheckboxOption from "@sparcs-clubs/web/common/components/CheckboxOption";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
-import FormController from "@sparcs-clubs/web/common/components/FormController";
 import TextInput from "@sparcs-clubs/web/common/components/Forms/TextInput";
 import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
-import { notAllowKrRegx } from "@sparcs-clubs/web/features/register-club/constants";
 
+import ActivityFieldInputs from "./_atomic/ActivityFieldInputs";
 import DivisionSelect from "./_atomic/DivisionSelect";
 import MonthSelect from "./_atomic/MonthSelect";
 import RegistrationPhoneField from "./_atomic/RegistrationPhoneField";
@@ -32,7 +31,7 @@ const ProvisionalBasicInformFrame: React.FC<
   editMode = false,
 }) => {
   const t = useTranslations("my.registration");
-  const { control, setValue } = useFormContext();
+  const { setValue } = useFormContext();
 
   const [isCheckedProfessor, setIsCheckedProfessor] = useState(
     isInitialCheckedProfessor,
@@ -65,36 +64,7 @@ const ProvisionalBasicInformFrame: React.FC<
           <MonthSelect />
           <DivisionSelect />
         </FlexWrapper>
-        <FormController
-          name="activityFieldKr"
-          required
-          control={control}
-          renderItem={props => (
-            <TextInput
-              {...props}
-              label={t("activityFieldKr")}
-              placeholder={t("activityFieldPlaceholder")}
-            />
-          )}
-        />
-        <FormController
-          name="activityFieldEn"
-          required
-          control={control}
-          rules={{
-            validate: value =>
-              notAllowKrRegx.test(value)
-                ? undefined
-                : t("invalidForeignCharacters"),
-          }}
-          renderItem={props => (
-            <TextInput
-              {...props}
-              label={t("activityFieldEn")}
-              placeholder={t("activityFieldPlaceholder")}
-            />
-          )}
-        />
+        <ActivityFieldInputs />
         <CheckboxOption
           optionText={t("requestProfessor")}
           checked={isCheckedProfessor}
