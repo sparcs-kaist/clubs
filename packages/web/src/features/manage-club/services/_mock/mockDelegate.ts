@@ -40,6 +40,7 @@ export const mockClubDelegateRequest: ApiClb011ResponseOk = {
       studentId: 20200000,
       studentNumber: 20200000,
       studentName: "이도라",
+      isCanceled: false,
       clubDelegateChangeRequestStatusEnumId:
         ClubDelegateChangeRequestStatusEnum.Applied,
     },

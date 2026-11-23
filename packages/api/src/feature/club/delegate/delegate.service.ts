@@ -281,6 +281,7 @@ export default class ClubDelegateService {
             studentName: student.name,
             clubDelegateChangeRequestStatusEnumId:
               request.clubDelegateChangeRequestStatusEnumId as ClubDelegateChangeRequestStatusEnum,
+            isCanceled: request.deletedAt !== null,
           },
         ];
       }),

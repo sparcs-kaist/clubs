@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 
+import apiClb011 from "@clubs/interface/api/club/endpoint/apiClb011";
 import {
   ClubDelegateChangeRequestStatusEnum as Status,
   ClubDelegateEnum as Role,
@@ -147,6 +148,186 @@ describe("club delegate requests with MySQL", () => {
     return repo.findDelegateByStudentId(target.studentId, now);
   }
 
+  async function readClubRequests(studentId = representative) {
+    const response = await service.getStudentClubDelegateRequests({
+      param: { clubId },
+      studentId,
+    });
+    return apiClb011.responseBodyMap[200].parse(
+      JSON.parse(JSON.stringify(response)),
+    );
+  }
+
+  it("keeps the latest canceled request after rejection and reapplication, independently for all three roles", async () => {
+    await nominate();
+    const rejected = await prisma.clubDelegateChangeRequest.findFirstOrThrow();
+    await service.patchStudentClubsDelegatesRequest({
+      ...target,
+      param: { requestId: rejected.id },
+      body: { clubDelegateChangeRequestStatusEnum: Status.Rejected },
+    });
+    await nominate();
+    const canceled = await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+      orderBy: { id: "desc" },
+    });
+    await service.deleteStudentClubDelegateRequests({
+      param: { clubId },
+      studentId: representative,
+      requestId: canceled.id,
+    });
+    await nominate(other.studentId, Role.Delegate2);
+    const replacement = await seedMember(20260004);
+    await nominate(replacement.studentId, Role.Representative);
+
+    const response = await readClubRequests();
+
+    expect(response.requests).toHaveLength(3);
+    expect(response.requests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: canceled.id,
+          delegateEnumId: Role.Delegate1,
+          clubDelegateChangeRequestStatusEnumId: Status.Applied,
+          isCanceled: true,
+        }),
+        expect.objectContaining({
+          delegateEnumId: Role.Delegate2,
+          clubDelegateChangeRequestStatusEnumId: Status.Applied,
+          isCanceled: false,
+        }),
+        expect.objectContaining({
+          delegateEnumId: Role.Representative,
+          clubDelegateChangeRequestStatusEnumId: Status.Applied,
+          isCanceled: false,
+        }),
+      ]),
+    );
+    expect(response.requests.map(request => request.id)).not.toContain(
+      rejected.id,
+    );
+    expect(await readClubRequests()).toEqual(response);
+    expect(
+      (
+        await service.getStudentClubsDelegatesRequests({
+          studentId: target.studentId,
+        })
+      ).requests,
+    ).toHaveLength(0);
+    await expect(accept(canceled.id)).rejects.toThrow(
+      "이미 처리되었거나 만료된 요청입니다.",
+    );
+    await nominate();
+    const renewed = (await readClubRequests()).requests.find(
+      request => request.delegateEnumId === Role.Delegate1,
+    );
+    expect(renewed).toMatchObject({
+      clubDelegateChangeRequestStatusEnumId: Status.Applied,
+      isCanceled: false,
+    });
+    expect(renewed.id).toBeGreaterThan(canceled.id);
+    expect(await currentTargetRoles()).toHaveLength(0);
+  });
+
+  it.each([-1000, 0, 1000])(
+    "does not fall back to older rejections at the 72-hour cutoff plus %s ms",
+    async offset => {
+      await prisma.clubDelegateChangeRequest.create({
+        data: {
+          clubId,
+          prevStudentId: representative,
+          studentId: target.studentId,
+          clubDelegateEnumId: Role.Delegate1,
+          clubDelegateChangeRequestStatusEnumId: Status.Rejected,
+          createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        },
+      });
+      const latest = await prisma.clubDelegateChangeRequest.create({
+        data: {
+          clubId,
+          prevStudentId: representative,
+          studentId: target.studentId,
+          clubDelegateEnumId: Role.Delegate1,
+          clubDelegateChangeRequestStatusEnumId: Status.Applied,
+          createdAt: new Date(now.getTime() - 72 * 60 * 60 * 1000 + offset),
+        },
+      });
+
+      const response = await readClubRequests();
+
+      expect(response.requests.map(request => request.id)).toEqual(
+        offset > 0 ? [latest.id] : [],
+      );
+    },
+  );
+
+  it.each([
+    { status: Status.Applied, isCanceled: true },
+    { status: Status.Approved, isCanceled: false },
+  ])(
+    "retains the latest status $status with cancellation $isCanceled beyond 72 hours",
+    async ({ status, isCanceled }) => {
+      await prisma.clubDelegateChangeRequest.create({
+        data: {
+          clubId,
+          prevStudentId: representative,
+          studentId: target.studentId,
+          clubDelegateEnumId: Role.Delegate1,
+          clubDelegateChangeRequestStatusEnumId: Status.Rejected,
+          createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        },
+      });
+      const latest = await prisma.clubDelegateChangeRequest.create({
+        data: {
+          clubId,
+          prevStudentId: representative,
+          studentId: target.studentId,
+          clubDelegateEnumId: Role.Delegate1,
+          clubDelegateChangeRequestStatusEnumId: status,
+          createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+          deletedAt: isCanceled
+            ? new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+            : null,
+        },
+      });
+
+      expect((await readClubRequests()).requests).toEqual([
+        expect.objectContaining({
+          id: latest.id,
+          clubDelegateChangeRequestStatusEnumId: status,
+          isCanceled,
+        }),
+      ]);
+    },
+  );
+
+  it("does not revive an older rejection when the latest canceled student's record is deleted", async () => {
+    await prisma.clubDelegateChangeRequest.create({
+      data: {
+        clubId,
+        prevStudentId: representative,
+        studentId: other.studentId,
+        clubDelegateEnumId: Role.Delegate1,
+        clubDelegateChangeRequestStatusEnumId: Status.Rejected,
+        createdAt: new Date(now.getTime() - 1000),
+      },
+    });
+    await nominate();
+    const latest = await prisma.clubDelegateChangeRequest.findFirstOrThrow({
+      orderBy: { id: "desc" },
+    });
+    await service.deleteStudentClubDelegateRequests({
+      param: { clubId },
+      studentId: representative,
+      requestId: latest.id,
+    });
+    await prisma.student.update({
+      where: { id: target.studentId },
+      data: { deletedAt: now },
+    });
+
+    expect((await readClubRequests()).requests).toEqual([]);
+  });
+
   it.each([Role.Delegate1, Role.Delegate2])(
     "waits for confirmation then appoints role %s",
     async role => {
@@ -230,6 +411,21 @@ describe("club delegate requests with MySQL", () => {
       ]);
 
       await accept(moveRequest.id, newPhone);
+
+      expect((await readClubRequests(target.studentId)).requests).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: sourceRequest.id,
+            clubDelegateChangeRequestStatusEnumId: Status.Applied,
+            isCanceled: true,
+          }),
+          expect.objectContaining({
+            id: moveRequest.id,
+            clubDelegateChangeRequestStatusEnumId: Status.Approved,
+            isCanceled: false,
+          }),
+        ]),
+      );
 
       expect(await currentTargetRoles()).toEqual([
         expect.objectContaining({
