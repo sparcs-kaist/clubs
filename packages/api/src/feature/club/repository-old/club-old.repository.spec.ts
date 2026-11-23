@@ -1,3 +1,4 @@
+import apiReg025 from "@clubs/interface/api/registration/endpoint/apiReg025";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 
 import { ClubOldRepository } from "./club-old.repository";
@@ -12,6 +13,44 @@ const injectTestClock = <T extends object>(target: T): T =>
 describe("ClubOldRepository", () => {
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  describe("fetchSummary", () => {
+    it("preserves the English name in a serialized REG025 response", async () => {
+      const prisma = {
+        $queryRaw: jest.fn().mockResolvedValue([
+          {
+            clubId: 201,
+            nameKr: "현재 동아리",
+            nameEn: "Current Club",
+            divisionId: 601,
+            ctId: 301,
+            clubStatusEnumId: ClubTypeEnum.Regular,
+          },
+        ]),
+      };
+      const repository = injectTestClock(
+        new ClubOldRepository(
+          prisma as unknown as ConstructorParameters<
+            typeof ClubOldRepository
+          >[0],
+        ),
+      );
+
+      const club = await repository.fetchSummary(201);
+      const response = {
+        club: {
+          ...club,
+          division: { id: 601, name: "문화" },
+          availableRegistrationTypeEnums: [],
+        },
+      };
+      const parsed = apiReg025.responseBodyMap[200].parse(
+        JSON.parse(JSON.stringify(response)),
+      );
+
+      expect(parsed.club?.nameEn).toBe("Current Club");
+    });
   });
 
   describe("fetchSummaries", () => {
@@ -72,6 +111,7 @@ describe("ClubOldRepository", () => {
         {
           id: 201,
           name: "과거 동아리",
+          nameEn: "Historical Club",
           typeEnum: ClubTypeEnum.Provisional,
           division: { id: 601 },
         },
@@ -137,6 +177,7 @@ describe("ClubOldRepository", () => {
         {
           id: 201,
           name: "현재 동아리",
+          nameEn: "Current Club",
           typeEnum: ClubTypeEnum.Regular,
           division: { id: 601 },
         },

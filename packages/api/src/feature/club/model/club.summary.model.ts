@@ -29,6 +29,7 @@ export class VClubSummary implements IClubSummary {
   constructor(result: VClubSummary) {
     this.id = result.id;
     this.name = result.name;
+    this.nameEn = result.nameEn;
     this.typeEnum = result.typeEnum;
     this.division = result.division;
   }
