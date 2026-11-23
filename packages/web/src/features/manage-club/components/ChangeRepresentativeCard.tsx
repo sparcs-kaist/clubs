@@ -5,7 +5,9 @@ import styled from "styled-components";
 import apiClb006, {
   type ApiClb006ResponseOK,
 } from "@clubs/interface/api/club/endpoint/apiClb006";
-import type { ApiClb008ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb008";
+import apiClb008, {
+  type ApiClb008ResponseOk,
+} from "@clubs/interface/api/club/endpoint/apiClb008";
 import {
   ClubDelegateChangeRequestStatusEnum,
   ClubDelegateEnum,
@@ -22,6 +24,10 @@ import { deleteChangeDelegateRequest } from "../services/deleteChangeDelegateReq
 import { useGetChangeDelegateRequests } from "../services/getChangeDelegateRequests";
 import { updateClubDelegates } from "../services/updateClubDelegate";
 import ChangeRepresentativeInfo from "./ChangeRepresentativeInfo";
+import {
+  delegateRoleLabels,
+  getDelegateCandidateItems,
+} from "./delegateCandidates";
 
 const LabelWrapper = styled.div`
   display: flex;
@@ -70,6 +76,9 @@ const ChangeRepresentativeCard: React.FC<{
       await Promise.all([
         refetch(),
         queryClient.invalidateQueries({ queryKey: [apiClb006.url(clubId)] }),
+        queryClient.invalidateQueries({
+          queryKey: [apiClb008.url(clubId, ClubDelegateEnum.Representative)],
+        }),
       ]);
     },
   });
@@ -80,15 +89,9 @@ const ChangeRepresentativeCard: React.FC<{
       request.clubDelegateChangeRequestStatusEnumId ===
       ClubDelegateChangeRequestStatusEnum.Applied,
   );
-  const unavailableIds = new Set([
-    ...delegatesNow.delegates.map(delegate => delegate.studentId),
-    ...pendingRequests.map(request => request.studentId),
-  ]);
-  const items = clubMembers.students.map(member => ({
-    label: `${member.studentNumber} ${member.name}${member.phoneNumber ? ` (${member.phoneNumber})` : ""}`,
-    value: String(member.id),
-    selectable: !unavailableIds.has(member.id),
-  }));
+  const pendingStudentIds = new Set(
+    pendingRequests.map(request => request.studentId),
+  );
   const disabled = isLoading || isError || action.isPending;
 
   return (
@@ -106,6 +109,12 @@ const ChangeRepresentativeCard: React.FC<{
         </div>
       )}
       {roles.map(({ id, label }) => {
+        const items = getDelegateCandidateItems(
+          clubMembers.students,
+          clubId,
+          id,
+          pendingStudentIds,
+        );
         const current = delegatesNow.delegates.find(
           delegate => delegate.delegateEnumId === id,
         );
@@ -127,7 +136,7 @@ const ChangeRepresentativeCard: React.FC<{
             ? [
                 ...items,
                 {
-                  label: `${current.studentNumber} ${current.name}`,
+                  label: `${current.studentNumber} ${current.name} (${clubName} ${delegateRoleLabels[id]})`,
                   value: currentValue,
                   selectable: false,
                 },

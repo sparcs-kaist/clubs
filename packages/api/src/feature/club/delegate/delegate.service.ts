@@ -469,17 +469,20 @@ export default class ClubDelegateService {
 
     const semesterId = await this.semesterPublicService.loadId();
     logger.debug(semesterId);
-    const candidateIds =
-      await this.clubDelegateDRepository.selectDelegateCandidateIds({
+    const candidates =
+      await this.clubDelegateDRepository.findDelegateCandidates({
         clubId: param.param.clubId,
         semesterId,
-        filterClubDelegateEnum:
-          param.param.delegateEnumId === ClubDelegateEnum.Representative
-            ? [ClubDelegateEnum.Representative]
-            : Object.values(ClubDelegateEnum),
       });
-    const students =
-      await this.userPublicService.findStudentContacts(candidateIds);
+    const rolesByStudentId = new Map(
+      candidates.map(({ studentId, currentRoles }) => [
+        studentId,
+        currentRoles,
+      ]),
+    );
+    const students = await this.userPublicService.findStudentContacts(
+      candidates.map(({ studentId }) => studentId),
+    );
     return {
       students: students.flatMap(student => {
         if (!student.user) return [];
@@ -489,6 +492,7 @@ export default class ClubDelegateService {
             studentNumber: String(student.number),
             name: student.name,
             phoneNumber: student.user.phoneNumber,
+            currentRoles: rolesByStudentId.get(student.id) ?? [],
           },
         ];
       }),

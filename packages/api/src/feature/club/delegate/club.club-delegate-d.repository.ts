@@ -17,6 +17,17 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 import { lockClubDelegates } from "../repository/lock-club-delegates";
 import { pendingDelegateChangeWhere } from "./delegate-change-policy";
 
+function currentRoleClubName(
+  club: { nameKr: string | null; nameEn: string | null },
+  clubId: number,
+) {
+  const nameKr = club.nameKr?.trim();
+  if (nameKr) return nameKr;
+  const nameEn = club.nameEn?.trim();
+  if (nameEn) return nameEn;
+  return `동아리 #${clubId}`;
+}
+
 @Injectable()
 export class ClubDelegateDRepository {
   @Inject(CLOCK) private readonly clock: Clock;
@@ -238,13 +249,9 @@ export class ClubDelegateDRepository {
     return !!result;
   }
 
-  async selectDelegateCandidateIds(param: {
-    clubId: number;
-    semesterId: number;
-    filterClubDelegateEnum: ClubDelegateEnum[];
-  }) {
+  async findDelegateCandidates(param: { clubId: number; semesterId: number }) {
     const now = this.clock.now();
-    const { clubId, semesterId, filterClubDelegateEnum } = param;
+    const { clubId, semesterId } = param;
     const { tx } = this.txHost;
     const memberships = await tx.clubStudentT.findMany({
       where: { clubId, semesterId, deletedAt: null, club: { deletedAt: null } },
@@ -252,25 +259,37 @@ export class ClubDelegateDRepository {
       select: { studentId: true },
     });
     const studentIds = memberships.map(({ studentId }) => studentId);
-    const unavailable = await tx.clubDelegateD.findMany({
+    const roles = await tx.clubDelegateD.findMany({
       where: {
         studentId: { in: studentIds },
         startTerm: { lte: now },
         deletedAt: null,
-        AND: [
-          { OR: [{ endTerm: { gt: now } }, { endTerm: null }] },
-          {
-            OR: [
-              { clubId: { not: clubId } },
-              { clubDelegateEnum: { in: filterClubDelegateEnum } },
-            ],
-          },
-        ],
+        OR: [{ endTerm: { gt: now } }, { endTerm: null }],
       },
-      select: { studentId: true },
+      select: {
+        studentId: true,
+        clubId: true,
+        clubDelegateEnum: true,
+        club: { select: { nameKr: true, nameEn: true } },
+      },
     });
-    const blocked = new Set(unavailable.map(({ studentId }) => studentId));
-    return studentIds.filter(studentId => !blocked.has(studentId));
+    const rolesByStudentId = new Map<
+      number,
+      { clubId: number; clubName: string; delegateEnumId: ClubDelegateEnum }[]
+    >();
+    roles.forEach(role => {
+      const currentRoles = rolesByStudentId.get(role.studentId) ?? [];
+      currentRoles.push({
+        clubId: role.clubId,
+        clubName: currentRoleClubName(role.club, role.clubId),
+        delegateEnumId: role.clubDelegateEnum as ClubDelegateEnum,
+      });
+      rolesByStudentId.set(role.studentId, currentRoles);
+    });
+    return memberships.map(({ studentId }) => ({
+      studentId,
+      currentRoles: rolesByStudentId.get(studentId) ?? [],
+    }));
   }
 
   async updateDelegate(param: {

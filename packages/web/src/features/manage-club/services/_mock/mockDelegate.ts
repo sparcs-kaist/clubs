@@ -53,36 +53,72 @@ export const mockClubDelegateCandidates: ApiClb008ResponseOk = {
       studentNumber: "20200510",
       name: "이지윤",
       phoneNumber: "010-1234-5678",
+      currentRoles: [
+        {
+          clubId: 1,
+          clubName: "술박스",
+          delegateEnumId: ClubDelegateEnum.Representative,
+        },
+      ],
     },
     {
       id: 20200511,
       studentNumber: "20200511",
       name: "박지호",
       phoneNumber: "010-1234-5678",
+      currentRoles: [
+        {
+          clubId: 1,
+          clubName: "술박스",
+          delegateEnumId: ClubDelegateEnum.Delegate1,
+        },
+      ],
     },
     {
       id: 20200512,
       studentNumber: "20200512",
       name: "박병찬",
       phoneNumber: "010-1234-5678",
+      currentRoles: [
+        {
+          clubId: 1,
+          clubName: "술박스",
+          delegateEnumId: ClubDelegateEnum.Delegate2,
+        },
+      ],
     },
     {
       id: 20200513,
       studentNumber: "20200513",
       name: "이도라",
       phoneNumber: "010-1234-5678",
+      currentRoles: [
+        {
+          clubId: 2,
+          clubName: "여로",
+          delegateEnumId: ClubDelegateEnum.Delegate1,
+        },
+      ],
     },
     {
       id: 20200514,
       studentNumber: "20200514",
       name: "삼도라",
       phoneNumber: "010-1234-5678",
+      currentRoles: [
+        {
+          clubId: 3,
+          clubName: "Khartes",
+          delegateEnumId: ClubDelegateEnum.Representative,
+        },
+      ],
     },
     {
       id: 20200515,
       studentNumber: "20200515",
       name: "사도라",
       phoneNumber: "010-1234-5678",
+      currentRoles: [],
     },
   ],
 };
