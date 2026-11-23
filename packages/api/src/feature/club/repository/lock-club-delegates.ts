@@ -23,12 +23,21 @@ export async function lockClubDelegates(
   txHost: TransactionHost<PrismaTransactionalAdapter>,
   clubId: number,
   studentId?: number,
+  additionalStudentId?: number,
 ): Promise<void> {
   // Stable rows also protect a vacant role and a student with no role.
   await clubs.acquireLock(txHost.tx, { id: clubId });
-  if (studentId !== undefined) {
-    await lockDelegateStudent(txHost, studentId);
-  }
+  const studentIds = [
+    ...new Set(
+      [studentId, additionalStudentId].filter(
+        (id): id is number => id !== undefined,
+      ),
+    ),
+  ].sort((left, right) => left - right);
+  await studentIds.reduce(async (previousLock, id) => {
+    await previousLock;
+    await lockDelegateStudent(txHost, id);
+  }, Promise.resolve());
 }
 
 export async function cancelPendingDelegateRequests(

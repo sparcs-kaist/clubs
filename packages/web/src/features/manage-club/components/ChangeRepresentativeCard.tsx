@@ -124,6 +124,15 @@ const ChangeRepresentativeCard: React.FC<{
         const pending = pendingRequests.find(
           request => request.delegateEnumId === id,
         );
+        const pendingCandidate = clubMembers.students.find(
+          member => member.id === pending?.studentId,
+        );
+        const isRepresentativeSwap =
+          id === ClubDelegateEnum.Representative &&
+          pendingCandidate?.currentRoles.length === 1 &&
+          pendingCandidate.currentRoles[0].clubId === clubId &&
+          pendingCandidate.currentRoles[0].delegateEnumId !==
+            ClubDelegateEnum.Representative;
         const rejected =
           latestRequest?.clubDelegateChangeRequestStatusEnumId ===
           ClubDelegateChangeRequestStatusEnum.Rejected
@@ -191,6 +200,11 @@ const ChangeRepresentativeCard: React.FC<{
                 })
               }
             />
+            {isRepresentativeSwap && (
+              <Typography fs={14} lh={20} color="GRAY.600">
+                수락하면 현재 대표자가 대상자의 기존 대의원 직책을 맡습니다.
+              </Typography>
+            )}
             {request && (
               <ChangeRepresentativeInfo
                 type={pending ? "Applied" : "Rejected"}

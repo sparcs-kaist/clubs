@@ -46,6 +46,7 @@ import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/public
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
 import { ClubDelegateDRepository } from "./club.club-delegate-d.repository";
+import { canTransferClubDelegateRole } from "./delegate-change-policy";
 
 const readCommitted = {
   isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
@@ -167,7 +168,12 @@ export default class ClubDelegateService {
         "대상자가 다른 동아리에서 직책을 맡고 있습니다.",
       );
     }
-    if (role !== ClubDelegateEnum.Representative) {
+    if (
+      !canTransferClubDelegateRole(
+        term.clubDelegateEnum as ClubDelegateEnum,
+        role,
+      )
+    ) {
       throw new ConflictException("대상자가 이미 동아리 직책을 맡고 있습니다.");
     }
     return {
@@ -357,7 +363,11 @@ export default class ClubDelegateService {
       throw new ForbiddenException("요청을 받은 학생만 응답할 수 있습니다.");
     }
 
-    await repo.lockChanges(request.clubId, param.studentId);
+    await repo.lockChanges(
+      request.clubId,
+      param.studentId,
+      request.prevStudentId,
+    );
     const now = this.clock.now();
     const status = param.body.clubDelegateChangeRequestStatusEnum;
     const transition = await repo.finishRequest(request.id, status, now);
@@ -387,6 +397,9 @@ export default class ClubDelegateService {
     if (candidate.userId !== param.userId) {
       throw new ForbiddenException("요청을 받은 계정으로 수락해 주세요.");
     }
+    if (candidate.previousRole !== undefined) {
+      this.currentTermFor(terms, candidate.previousRole);
+    }
 
     await this.userPublicService.updatePhoneNumber(
       param.userId,
@@ -400,6 +413,19 @@ export default class ClubDelegateService {
       semesterId: candidate.semesterId,
     });
     if (candidate.previousRole !== undefined) {
+      const formerRepresentative = await this.validateCandidate(
+        request.prevStudentId,
+        request.clubId,
+        candidate.previousRole,
+        now,
+      );
+      await repo.updateDelegate({
+        clubId: request.clubId,
+        clubDelegateEnumId: candidate.previousRole,
+        studentId: request.prevStudentId,
+        now,
+        semesterId: formerRepresentative.semesterId,
+      });
       await repo.cancelPendingRequests(
         { clubId: request.clubId, clubDelegateEnumId: candidate.previousRole },
         now,

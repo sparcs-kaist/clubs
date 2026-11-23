@@ -37,8 +37,17 @@ export class ClubDelegateDRepository {
     private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
   ) {}
 
-  lockChanges(clubId: number, studentId?: number) {
-    return lockClubDelegates(this.txHost, clubId, studentId);
+  lockChanges(
+    clubId: number,
+    studentId?: number,
+    additionalStudentId?: number,
+  ) {
+    return lockClubDelegates(
+      this.txHost,
+      clubId,
+      studentId,
+      additionalStudentId,
+    );
   }
 
   findRequestById(id: number) {

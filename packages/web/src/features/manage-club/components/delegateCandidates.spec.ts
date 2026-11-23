@@ -65,7 +65,7 @@ describe("delegate candidate labels and selection", () => {
     );
   });
 
-  it("allows a current deputy to become representative, but not another deputy", () => {
+  it("allows current deputies to become representative in the same club", () => {
     [ClubDelegateEnum.Delegate1, ClubDelegateEnum.Delegate2].forEach(role => {
       const currentRoles = [
         { clubId: 1, clubName: "술박스", delegateEnumId: role },
@@ -75,13 +75,40 @@ describe("delegate candidate labels and selection", () => {
         true,
       );
       assert.equal(
-        getItem(ClubDelegateEnum.Delegate1, currentRoles).selectable,
+        getItem(
+          ClubDelegateEnum.Representative,
+          currentRoles,
+          new Set([member.id]),
+        ).selectable,
         false,
       );
-      assert.equal(
-        getItem(ClubDelegateEnum.Delegate2, currentRoles).selectable,
-        false,
-      );
+    });
+  });
+
+  it("blocks direct moves between deputy slots", () => {
+    [
+      {
+        currentRole: ClubDelegateEnum.Delegate1,
+        targetRole: ClubDelegateEnum.Delegate2,
+      },
+      {
+        currentRole: ClubDelegateEnum.Delegate2,
+        targetRole: ClubDelegateEnum.Delegate1,
+      },
+    ].forEach(({ currentRole, targetRole }) => {
+      const currentRoles = [
+        { clubId: 1, clubName: "술박스", delegateEnumId: currentRole },
+      ];
+      assert.equal(getItem(targetRole, currentRoles).selectable, false);
+    });
+  });
+
+  it("blocks reassignment to the same current role", () => {
+    Object.values(ClubDelegateEnum).forEach(role => {
+      const currentRoles = [
+        { clubId: 1, clubName: "술박스", delegateEnumId: role },
+      ];
+      assert.equal(getItem(role, currentRoles).selectable, false);
     });
   });
 
@@ -113,7 +140,20 @@ describe("delegate candidate labels and selection", () => {
       },
     ];
     const item = getItem(ClubDelegateEnum.Representative, currentRoles);
-    assert.equal(item.selectable, false);
+    Object.values(ClubDelegateEnum).forEach(role => {
+      assert.equal(getItem(role, currentRoles).selectable, false);
+      assert.equal(
+        getItem(
+          role,
+          currentRoles.map(currentRole => ({
+            ...currentRole,
+            clubId: 1,
+            clubName: "술박스",
+          })),
+        ).selectable,
+        false,
+      );
+    });
     assert.equal(item.label, "20260001 홍길동 (술박스 대의원1) (여로 대의원2)");
   });
 });
