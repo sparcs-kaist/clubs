@@ -18,6 +18,8 @@ export * from "./endpoint/apiReg026";
 export { default as apiReg026 } from "./endpoint/apiReg026";
 export * from "./endpoint/apiReg028";
 export { default as apiReg028 } from "./endpoint/apiReg028";
+export * from "./endpoint/apiReg029";
+export { default as apiReg029 } from "./endpoint/apiReg029";
 
 registry.registerPath({
   tags: ["member-registration"],

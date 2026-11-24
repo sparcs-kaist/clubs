@@ -5,6 +5,7 @@ import { zId } from "@clubs/domain/common/id";
 import { zStudent } from "@clubs/domain/user/student";
 
 import { zClub } from "./club";
+import { ClubDelegateEnum } from "./club-delegate";
 
 extendZodWithOpenApi(z);
 
@@ -22,11 +23,12 @@ export const zClubDelegateChangeRequest = z.object({
   club: z.object({ id: zClub.shape.id }),
   prevStudent: z.object({ id: zStudent.shape.id }),
   student: z.object({ id: zStudent.shape.id }),
+  clubDelegateEnumId: z.nativeEnum(ClubDelegateEnum),
   clubDelegateChangeRequestStatusEnum: z
     .nativeEnum(ClubDelegateChangeRequestStatusEnum)
     .openapi({
       description:
-        "동아리 대표자 변경 요청의 상태입니다. 1: 제출, 2: 승인, 3: 반려",
+        "동아리 대표자 및 대의원 변경 요청의 상태입니다. 1: 제출, 2: 승인, 3: 반려",
       examples: [
         ClubDelegateChangeRequestStatusEnum.Applied,
         ClubDelegateChangeRequestStatusEnum.Approved,

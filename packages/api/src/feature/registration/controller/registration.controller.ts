@@ -37,7 +37,10 @@ import apiReg011, {
   ApiReg011RequestParam,
   ApiReg011ResponseOk,
 } from "@clubs/interface/api/registration/endpoint/apiReg011";
-import { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
+import apiReg012, {
+  ApiReg012RequestQuery,
+  ApiReg012ResponseOk,
+} from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg014, {
   ApiReg014RequestQuery,
   ApiReg014ResponseOk,
@@ -111,6 +114,8 @@ import {
   apiReg028,
   ApiReg028RequestUrl,
   ApiReg028ResponseOk,
+  apiReg029,
+  ApiReg029RequestUrl,
 } from "@clubs/interface/api/registration/index";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
@@ -143,7 +148,7 @@ export class RegistrationController {
   ): Promise<ApiReg001ResponseCreated> {
     const response =
       await this.registrationService.postStudentRegistrationClubRegistration(
-        user.studentId,
+        { userId: user.id, studentId: user.studentId },
         body,
       );
     return response;
@@ -204,7 +209,7 @@ export class RegistrationController {
   ): Promise<ApiReg009ResponseOk> {
     const result =
       await this.registrationService.putStudentRegistrationsClubRegistration(
-        user.studentId,
+        { userId: user.id, studentId: user.studentId },
         applyId,
         body,
       );
@@ -245,14 +250,30 @@ export class RegistrationController {
 
   @Student()
   @Get("/student/registrations/club-registrations/my")
+  @UsePipes(new ZodPipe(apiReg012))
   async getStudentRegistrationsClubRegistrationsMy(
     @GetStudent() user: GetStudent,
+    @Query() query: ApiReg012RequestQuery,
   ): Promise<ApiReg012ResponseOk> {
     const result =
       await this.registrationService.getStudentRegistrationsClubRegistrationsMy(
         user.studentId,
+        query,
       );
     return result;
+  }
+
+  @Student()
+  @Get(ApiReg029RequestUrl)
+  @UsePipes(new ZodPipe(apiReg029))
+  getStudentPreviousClubRegistration(
+    @GetStudent() user: GetStudent,
+    @Param() { applyId }: ApiReg011RequestParam,
+  ): Promise<ApiReg011ResponseOk> {
+    return this.registrationService.getStudentPreviousClubRegistration(
+      user.studentId,
+      applyId,
+    );
   }
 
   // Reg014~015: 등록 심의를 위해서 잠시 public으로 변경

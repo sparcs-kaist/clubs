@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import styled from "styled-components";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -18,6 +19,7 @@ const DashboardSectionInner = styled.div`
 `;
 
 const ExecutiveDashboardFrame = () => {
+  const t = useTranslations("path");
   const isLoading = false;
   const isError = false;
 
@@ -116,6 +118,34 @@ const ExecutiveDashboardFrame = () => {
                 link="/executive/funding"
               />
             </FlexWrapper>
+          </DashboardSectionInner>
+        </FlexWrapper>
+      </FlexWrapper>
+      <FlexWrapper
+        direction="row"
+        gap={60}
+        style={{ justifyContent: "space-between" }}
+      >
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>{t("상근")}</SectionTitle>
+          <DashboardSectionInner>
+            <DashboardButton
+              text={t("상근일 관리")}
+              link="/executive/office-hours"
+            />
+          </DashboardSectionInner>
+        </FlexWrapper>
+        <FlexWrapper direction="column" gap={20} style={{ flex: 1 }}>
+          <SectionTitle>{t("물품 대여 사업")}</SectionTitle>
+          <DashboardSectionInner>
+            <DashboardButton
+              text={t("대여 물품 관리")}
+              link="/executive/rental-business/items"
+            />
+            <DashboardButton
+              text={t("물품 대여 신청 관리")}
+              link="/executive/rental-business"
+            />
           </DashboardSectionInner>
         </FlexWrapper>
       </FlexWrapper>

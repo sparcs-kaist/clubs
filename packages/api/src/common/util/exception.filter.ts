@@ -76,6 +76,7 @@ export class HttpExceptionFilter<
     const request = ctx.getRequest();
 
     const resStatus = exception.getStatus();
+    const message = exception.getResponse();
     const diagnostic = request.ssoLoginDiagnostic;
     if (diagnostic) {
       logger.error(
@@ -86,11 +87,11 @@ export class HttpExceptionFilter<
         })}`,
       );
     } else {
-      logger.error(exception.getResponse());
+      logger.error(typeof message === "string" ? message : { ...message });
     }
     response.status(resStatus).json({
       // todo: exception의 response 형식 결정되면 변경해야함.
-      message: exception.getResponse(), // test를 위한 코드
+      message,
       statusCode: resStatus,
       timestamp: this.clock.now().toISOString(),
       path: request.url,

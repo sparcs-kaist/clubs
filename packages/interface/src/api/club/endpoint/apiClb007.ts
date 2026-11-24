@@ -8,7 +8,7 @@ import { registry } from "@clubs/interface/open-api";
 
 /**
  * @version v0.1
- * @description 동아리의 대표자 및 대의원을 변경합니다
+ * @description 동아리 대표자 및 대의원 변경을 요청하거나 대의원을 해제합니다.
  */
 
 const url = (clubId: number) =>
@@ -62,14 +62,19 @@ registry.registerPath({
   tags: ["club"],
   method: "put",
   path: "/student/clubs/club/:clubId/delegates/delegate",
-  summary: "CLB-007: 동아리의 대표자 및 대의원을 변경합니다",
+  summary: "CLB-007: 동아리 대표자 및 대의원 변경 요청, 대의원 해제",
   description: `# CLB-007
-
-동아리의 대표자 및 대의원을 변경합니다.
 
 동아리 대표자로 로그인되어 있어야 합니다.
 
-studentId가 0이면 해당 지위를 비워둡니다.
+studentId로 지정한 학생에게 대표자 또는 대의원 변경 요청을 보냅니다.
+지정된 학생이 요청을 수락하면 해당 직책의 임기가 시작됩니다.
+현재 같은 동아리의 대의원을 대표자 후보로 지정할 수 있습니다.
+이 요청을 수락하면 기존 대표자는 수락자의 이전 대의원 직책으로 함께 이동합니다.
+대의원 간 직접 이동, 같은 직책 재지정, 현직 대표자의 대의원 직접 지정은 허용하지 않습니다.
+수락 전까지 현재 직책은 유지됩니다.
+
+studentId가 0이면 대의원 직책을 즉시 비워둡니다.
 대표자는 반드시 한 명이 있어야 하므로 대표자를 0으로 설정할 수 없습니다.
   `,
   request: {
@@ -84,7 +89,7 @@ studentId가 0이면 해당 지위를 비워둡니다.
   },
   responses: {
     201: {
-      description: "성공적으로 동아리 대표자 및 대의원을 변경했습니다.",
+      description: "변경 요청을 생성했거나 대의원 직책을 해제했습니다.",
       content: {
         "application/json": {
           schema: responseBodyMap[201],

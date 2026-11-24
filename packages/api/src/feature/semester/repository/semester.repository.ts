@@ -54,6 +54,22 @@ export class SemesterRepository extends BaseSingleTableRepository<
       .then(takeOne);
   }
 
+  async findCompletedBefore(
+    startTerm: Date,
+    take?: number,
+  ): Promise<MSemester[]> {
+    const semesters = await this.txHost.tx.semesterD.findMany({
+      where: {
+        startTerm: { lt: startTerm },
+        endTerm: { lte: startTerm },
+        deletedAt: null,
+      },
+      orderBy: [{ endTerm: "desc" }, { startTerm: "desc" }, { id: "desc" }],
+      take,
+    });
+    return semesters.map(semester => this.dbToModelMapping(semester));
+  }
+
   async createSemester(value: ISemesterCreate): Promise<{ id: number }> {
     const delegate = this.getDelegate(this.txHost.tx);
     const created = await delegate.create({ data: this.createToDB(value) });

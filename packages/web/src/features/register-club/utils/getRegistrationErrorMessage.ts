@@ -45,7 +45,7 @@ const fieldLabels: Record<string, string> = {
   registrationTypeEnumId: "신청 유형",
   clubNameKr: "동아리명(국문)",
   clubNameEn: "동아리명(영문)",
-  phoneNumber: "대표자 전화번호",
+  phoneNumber: "신청자 본인 전화번호",
   foundedAt: "설립일",
   divisionId: "분과",
   activityFieldKr: "활동 분야(국문)",

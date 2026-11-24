@@ -32,23 +32,67 @@ const createContext = () => {
     },
     registration: {
       create: jest.fn().mockResolvedValue({ id: 456 }),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      findUniqueOrThrow: jest
+        .fn()
+        .mockResolvedValue({ phoneNumber: body.phoneNumber }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
   const prisma = {
     $transaction: jest.fn(async callback => callback(transaction)),
   };
+  const professorRepository = {
+    saveRegistrationAdvisor: jest.fn().mockResolvedValue(73),
+  };
   const repository = new ClubRegistrationRepository(
     prisma as unknown as Dependencies[0],
     { tx: transaction } as unknown as Dependencies[1],
+    professorRepository as unknown as Dependencies[2],
   );
   Object.assign(repository, {
     clock: { now: () => new Date("2026-09-01T00:00:00Z") },
   });
-  return { repository, transaction };
+  return { repository, transaction, professorRepository };
 };
 
 describe("club application repository guards", () => {
+  it("scopes history list and detail to the same completed semesters and applicant or delegate clubs", async () => {
+    const { repository, transaction } = createContext();
+    const semesterIds = [8, 11];
+    const reader = { studentId: 200, delegateClubIds: [12, 34] };
+    const where = {
+      semesterId: { in: semesterIds },
+      deletedAt: null,
+      OR: [{ studentId: 200 }, { clubId: { in: [12, 34] } }],
+    };
+
+    await repository.getReadableClubRegistrations(semesterIds, reader);
+    await expect(
+      repository.hasReadableClubRegistration(456, semesterIds, reader),
+    ).resolves.toBe(false);
+    expect(transaction.registration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where }),
+    );
+    expect(transaction.registration.findFirst).toHaveBeenCalledWith({
+      where: { id: 456, ...where },
+      select: { id: true },
+    });
+  });
+
+  it("restricts a managed application list to the selected club and semesters", async () => {
+    const { repository, transaction } = createContext();
+
+    await repository.getReadableClubRegistrations([9], { clubId: 34 });
+
+    expect(transaction.registration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { semesterId: { in: [9] }, clubId: 34, deletedAt: null },
+      }),
+    );
+  });
+
   it("rejects a current representative's new provisional application before inserting a club", async () => {
     const { repository, transaction } = createContext();
     transaction.clubDelegateD.findMany.mockResolvedValue([{ id: 1 }]);
@@ -89,17 +133,37 @@ describe("club application repository guards", () => {
     });
   });
 
+  it("creates an application with an advisor identified by name and email", async () => {
+    const { repository, transaction, professorRepository } = createContext();
+    const professor = { name: "지도교수", email: "advisor@kaist.ac.kr" };
+    transaction.$queryRaw
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: BigInt(123) }]);
+
+    await repository.createRegistration(200, 10, { ...body, professor });
+
+    expect(professorRepository.saveRegistrationAdvisor).toHaveBeenCalledWith(
+      professor,
+      new Date("2026-09-01T00:00:00Z"),
+    );
+    expect(transaction.registration.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ professorId: 73 }),
+    });
+  });
+
   it("keeps the persisted club, application type, and owner in the edit lookup", async () => {
     const { repository, transaction } = createContext();
     transaction.$queryRaw.mockResolvedValue([
       { RegistrationStatusEnum: RegistrationStatusEnum.Pending },
     ]);
     await expect(
-      repository.putStudentRegistrationsClubRegistration(200, 456, {
-        ...body,
-        clubId: 123,
-      }),
-    ).resolves.toEqual({});
+      repository.putStudentRegistrationsClubRegistration(
+        200,
+        456,
+        { ...body, clubId: 123 },
+        10,
+      ),
+    ).resolves.toBeUndefined();
     const query = transaction.$queryRaw.mock.calls[0][0];
     expect(query.values).toEqual([
       456,
@@ -108,8 +172,55 @@ describe("club application repository guards", () => {
       200,
     ]);
     expect(transaction.registration.updateMany).toHaveBeenCalledWith({
-      where: { id: 456, studentId: 200, deletedAt: null },
+      where: { id: 456, studentId: 200, semesterId: 10, deletedAt: null },
       data: expect.objectContaining({ professorId: null }),
+    });
+  });
+
+  it("does not read or change the stored number when the edit omits it", async () => {
+    const { repository, transaction } = createContext();
+    transaction.$queryRaw.mockResolvedValue([
+      { RegistrationStatusEnum: RegistrationStatusEnum.Pending },
+    ]);
+
+    await expect(
+      repository.putStudentRegistrationsClubRegistration(
+        200,
+        456,
+        { ...body, clubId: 123, phoneNumber: undefined },
+        10,
+      ),
+    ).resolves.toBeUndefined();
+    expect(transaction.registration.findUniqueOrThrow).not.toHaveBeenCalled();
+    expect(transaction.registration.updateMany).toHaveBeenCalledWith({
+      where: { id: 456, studentId: 200, semesterId: 10, deletedAt: null },
+      data: expect.objectContaining({ phoneNumber: undefined }),
+    });
+  });
+
+  it("returns the requested number only after replacing a different snapshot", async () => {
+    const { repository, transaction } = createContext();
+    transaction.$queryRaw.mockResolvedValue([
+      { RegistrationStatusEnum: RegistrationStatusEnum.Pending },
+    ]);
+    transaction.registration.findUniqueOrThrow.mockResolvedValue({
+      phoneNumber: null,
+    });
+
+    await expect(
+      repository.putStudentRegistrationsClubRegistration(
+        200,
+        456,
+        { ...body, clubId: 123 },
+        10,
+      ),
+    ).resolves.toBe(body.phoneNumber);
+    expect(transaction.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      transaction.registration.findUniqueOrThrow.mock.invocationCallOrder[0],
+    );
+    expect(transaction.registration.updateMany).toHaveBeenCalledWith({
+      where: { id: 456, studentId: 200, semesterId: 10, deletedAt: null },
+      data: expect.objectContaining({ phoneNumber: body.phoneNumber }),
     });
   });
 
@@ -122,10 +233,12 @@ describe("club application repository guards", () => {
       const { repository, transaction } = createContext();
       transaction.$queryRaw.mockResolvedValue(rows);
       await expect(
-        repository.putStudentRegistrationsClubRegistration(200, 456, {
-          ...body,
-          clubId: 123,
-        }),
+        repository.putStudentRegistrationsClubRegistration(
+          200,
+          456,
+          { ...body, clubId: 123 },
+          10,
+        ),
       ).rejects.toMatchObject({
         response: { code: RegistrationErrorCode.ApplicationNotEditable },
       });

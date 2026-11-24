@@ -135,7 +135,7 @@ test("diff-line convention guard profile runs only changed-line migration guards
   );
 });
 
-test("pre-push profile keeps MC/DC in a separate runtime evidence group", () => {
+test("pre-push profile runs the newline guard in static checks and MC/DC in runtime checks", () => {
   const groups = selectPrePushGroups(["--profile", "pre-push"]);
 
   assert.deepEqual(
@@ -146,6 +146,14 @@ test("pre-push profile keeps MC/DC in a separate runtime evidence group", () => 
       "lint",
       "runtime evidence checks",
     ],
+  );
+  assert.deepEqual(
+    groups[0].tasks.find(task => task.name === "web-newlines:check"),
+    {
+      name: "web-newlines:check",
+      command: "pnpm",
+      args: ["web-newlines:check"],
+    },
   );
   assert.deepEqual(
     groups.at(-1).tasks.map(task => task.name),

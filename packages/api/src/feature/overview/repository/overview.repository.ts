@@ -5,6 +5,7 @@ import { ClubTypeEnum } from "@clubs/domain/club/club-semester";
 import { RegistrationApplicationStudentStatusEnum } from "@clubs/domain/registration/member-registration";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
+import { normalizeStoredPhoneNumber } from "@sparcs-clubs/api/feature/user/util/normalize-stored-phone-number";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
@@ -24,11 +25,9 @@ export class OverviewRepository {
       return semesterStartTerm;
     }
 
-    if (semesterEndTerm < now) {
-      return semesterEndTerm;
-    }
-
-    return now;
+    // Delegate terms exclude their end time and are stored to the second.
+    const lastDelegateInstant = new Date(semesterEndTerm.getTime() - 1000);
+    return now > lastDelegateInstant ? lastDelegateInstant : now;
   }
 
   private async getDivisionNameById(divisionIds: number[]) {
@@ -197,7 +196,9 @@ export class OverviewRepository {
         delegateType: delegate.clubDelegateEnum as ClubDelegateEnum,
         name: delegate.student.user?.name ?? delegate.student.name,
         studentNumber: delegate.student.number,
-        phoneNumber: delegate.student.user?.phoneNumber ?? null,
+        phoneNumber: normalizeStoredPhoneNumber(
+          delegate.student.user?.phoneNumber,
+        ),
         kaistEmail: delegate.student.email,
         department: departmentNameById.get(departmentId) ?? "",
       };

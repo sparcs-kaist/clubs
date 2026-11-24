@@ -197,6 +197,7 @@ export class ActivityDurationRepository extends BaseSingleTableRepository<
             : null,
           editedAt: activity.editedAt,
           professorApprovedAt: activity.professorApprovedAt,
+          professorApprovalStatus: activity.professorApprovalStatus,
           commentedAt: activity.commentedAt,
           commentedExecutive: activity.commentedExecutiveId
             ? { id: activity.commentedExecutiveId }

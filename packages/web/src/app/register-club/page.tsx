@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
@@ -14,6 +15,7 @@ import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import RegisterClubFrame from "@sparcs-clubs/web/features/register-club/frames/RegisterClubFrame";
 
 const RegisterClub: React.FC = () => {
+  const t = useTranslations("my.registration");
   const { isLoggedIn, login, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
@@ -43,9 +45,7 @@ const RegisterClub: React.FC = () => {
     return (
       <ErrorPageTemplate
         message={
-          <ErrorMessage>
-            학부생만 동아리 등록을 신청할 수 있습니다.
-          </ErrorMessage>
+          <ErrorMessage>{t("eligibility.undergraduateOnly")}</ErrorMessage>
         }
       />
     );

@@ -13,6 +13,7 @@ import {
 const useGetDelegatesOverview = (requestQuery: ApiOvv001RequestQuery) =>
   useQuery<ApiOvv001ResponseOK, Error>({
     queryKey: [apiOvv001.url(), requestQuery],
+    refetchOnMount: "always",
     queryFn: async (): Promise<ApiOvv001ResponseOK> => {
       const { data } = await axiosClientWithAuth.get(apiOvv001.url(), {
         params: requestQuery,
@@ -49,8 +50,8 @@ defineAxiosMock(mock => {
           delegateType: 2,
           name: "홍길동",
           studentNumber: 20240000,
-          phoneNumber: null,
-          kaistEmail: "kaist@kaist.ac.kr",
+          phoneNumber: "010-1234-5678",
+          kaistEmail: "delegate1@kaist.ac.kr",
           department: null,
         },
         delegate2: {
@@ -58,8 +59,8 @@ defineAxiosMock(mock => {
           delegateType: 3,
           name: "홍길동",
           studentNumber: 20240000,
-          phoneNumber: null,
-          kaistEmail: "kaist@kaist.ac.kr",
+          phoneNumber: "010-2345-6789",
+          kaistEmail: "delegate2@kaist.ac.kr",
           department: null,
         },
       },

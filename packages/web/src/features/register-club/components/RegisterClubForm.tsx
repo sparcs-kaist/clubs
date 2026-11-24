@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { overlay } from "overlay-kit";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -7,6 +8,8 @@ import styled from "styled-components";
 
 import apiReg012 from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg025 from "@clubs/interface/api/registration/endpoint/apiReg025";
+import apiUsr001 from "@clubs/interface/api/user/endpoint/apiUsr001";
+import apiUsr002 from "@clubs/interface/api/user/endpoint/apiUsr002";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
@@ -20,7 +23,7 @@ import LocalStorageUtil from "@sparcs-clubs/web/common/services/localStorageUtil
 import { isObjectEmpty } from "@sparcs-clubs/web/utils";
 
 import useRegisterClub from "../services/useRegisterClub";
-import { RegisterClubModel } from "../types/registerClub";
+import { RegisterClubModel, toProfessorContact } from "../types/registerClub";
 import computeErrorMessage from "../utils/computeErrorMessage";
 import { getRegistrationErrorMessage } from "../utils/getRegistrationErrorMessage";
 import { getRegisterClubDraftKey } from "../utils/registrationDraft";
@@ -45,6 +48,9 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
   type,
   initialData = undefined,
 }) => {
+  const t = useTranslations("my.registration");
+  const validationT = useTranslations("my.registration.validation");
+  const errorT = useTranslations("my.registration.errors");
   const queryClient = useQueryClient();
 
   const router = useRouter();
@@ -60,6 +66,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
     mode: "all",
     defaultValues: {
       ...initialData,
+      professor: toProfessorContact(initialData?.professor),
       registrationTypeEnumId: type,
       clubId:
         type === RegistrationTypeEnum.NewProvisional
@@ -89,12 +96,8 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
     isValid;
 
   const errorMessage = useMemo(
-    () =>
-      computeErrorMessage({
-        ...formData,
-        isAgreed,
-      }),
-    [formData, isAgreed],
+    () => computeErrorMessage({ ...formData, isAgreed }, validationT),
+    [formData, isAgreed, validationT],
   );
 
   const {
@@ -149,6 +152,8 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
 
   useEffect(() => {
     if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [apiUsr001.url()] });
+      queryClient.invalidateQueries({ queryKey: [apiUsr002.url()] });
       overlay.open(({ isOpen, close }) => (
         <Modal isOpen={isOpen}>
           <ConfirmModalContent
@@ -164,9 +169,9 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               LocalStorageUtil.remove(getRegisterClubDraftKey(type));
             }}
           >
-            신청이 완료되었습니다.
+            {t("submitSuccess")}
             <br />
-            확인을 누르면 신청 내역 화면으로 이동합니다.
+            {t("submitSuccessNext")}
           </ConfirmModalContent>
         </Modal>
       ));
@@ -180,7 +185,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               close();
             }}
           >
-            {getRegistrationErrorMessage(registrationError)}
+            {getRegistrationErrorMessage(registrationError, errorT)}
           </ConfirmModalContent>
         </Modal>
       ));
@@ -193,6 +198,8 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
     queryClient,
     router,
     type,
+    t,
+    errorT,
   ]);
 
   return (
@@ -242,7 +249,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
               type="outlined"
               onClick={() => router.replace("/register-club")}
             >
-              취소
+              {t("cancel")}
             </Button>
 
             <FlexWrapper
@@ -267,7 +274,7 @@ const RegisterClubForm: React.FC<RegisterClubFormProps> = ({
                     : "disabled"
                 }
               >
-                {isPending ? "신청 중" : "신청"}
+                {t(isPending ? "submittingApplication" : "submitApplication")}
               </Button>
             </FlexWrapper>
           </ButtonWrapper>

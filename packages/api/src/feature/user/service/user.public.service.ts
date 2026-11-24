@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { Transactional } from "@nestjs-cls/transactional";
 
 import { ApiAut005RequestQuery } from "@clubs/interface/api/auth/endpoint/apiAut005";
 import {
@@ -19,6 +20,7 @@ import OldProfessorRepository from "../repository/old.professor.repository";
 import OldStudentRepository from "../repository/old.student.repository";
 import { ProfessorRepository } from "../repository/professor.repository";
 import { StudentRepository } from "../repository/student.repository";
+import UserRepository from "../repository/user.repository";
 import { UserLoginIdentityService } from "./user-login-identity.service";
 
 @Injectable()
@@ -33,6 +35,7 @@ export default class UserPublicService {
     private studentRepository: StudentRepository,
     private exchangeLoginUserRepository: ExchangeLoginUserRepository,
     private readonly loginIdentityService: UserLoginIdentityService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   syncSsoIdentity(input: SsoIdentityInput, semester: LoginSemester) {
@@ -41,6 +44,10 @@ export default class UserPublicService {
 
   findLoginIdentity(userId: number) {
     return this.loginIdentityService.findLoginIdentity(userId);
+  }
+
+  findUniqueLoginIdentityByEmail(email: string) {
+    return this.loginIdentityService.findUniqueLoginIdentityByEmail(email);
   }
 
   isActiveUser(userId: number) {
@@ -72,6 +79,10 @@ export default class UserPublicService {
     }
 
     return students[0];
+  }
+
+  findStudentContacts(studentIds: number[]) {
+    return this.userRepository.findStudentContacts(studentIds);
   }
 
   /**
@@ -203,14 +214,12 @@ export default class UserPublicService {
     return students[0][0];
   }
   /**
-   * 학생의 전화번호를 업데이트 합니다.
+   * 계정에 저장된 현재 전화번호를 갱신합니다.
    * */
 
-  async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    await this.oldStudentRepository.updateStudentPhoneNumber(
-      userId,
-      phoneNumber,
-    );
+  @Transactional()
+  async updatePhoneNumber(userId: number, phoneNumber: string) {
+    await this.userRepository.updatePhoneNumber(userId, phoneNumber);
   }
 
   /**
@@ -231,6 +240,12 @@ export default class UserPublicService {
     const students =
       await this.oldStudentRepository.fetchStudentSummaries(studentIds);
     return students;
+  }
+
+  fetchStudentSummariesIncludingDeleted(studentIds: number[]) {
+    return this.oldStudentRepository.fetchStudentSummariesIncludingDeleted(
+      studentIds,
+    );
   }
 
   async fetchCurrentExecutiveSummaries(): Promise<IExecutiveSummary[]> {
@@ -256,6 +271,17 @@ export default class UserPublicService {
   async findProfessor(professorId: number): Promise<IProfessor | null> {
     const professor = await this.oldProfessorRepository.find(professorId);
     return professor;
+  }
+
+  @Transactional()
+  saveRegistrationAdvisor(
+    contact: { name: string; email: string },
+    startTerm: Date,
+  ): Promise<number> {
+    return this.oldProfessorRepository.saveRegistrationAdvisor(
+      contact,
+      startTerm,
+    );
   }
 
   /**
@@ -340,6 +366,10 @@ export default class UserPublicService {
   async getProfessorsByIds(professorIds: number[]): Promise<RMProfessor[]> {
     const professors = await this.professorRepository.fetchAll(professorIds);
     return professors;
+  }
+
+  findProfessorNamesByIds(ids: number[]) {
+    return this.professorRepository.findNamesByIds(ids);
   }
 
   async getStudentsByIds(studentIds: number[]): Promise<MStudent[]> {

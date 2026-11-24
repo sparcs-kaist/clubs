@@ -1,4 +1,9 @@
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import { HttpStatus, NotFoundException } from "@nestjs/common";
+
+import {
+  ActivityStatusEnum,
+  ProfessorApprovalStatus,
+} from "@clubs/domain/activity/activity";
 import { ActivityDurationTypeEnum } from "@clubs/domain/semester/activity-duration";
 import {
   ActivityDeadlineEnum,
@@ -107,6 +112,7 @@ describe("ActivityService", () => {
   const activityDuration = {
     id: 10,
     semester: { id: 1 },
+    activityDurationTypeEnum: ActivityDurationTypeEnum.Regular,
     startTerm: new Date("2026-03-01T00:00:00.000Z"),
     endTerm: new Date("2026-06-30T14:59:59.999Z"),
   };
@@ -131,10 +137,12 @@ describe("ActivityService", () => {
     participants: [{ id: 1 }],
     chargedExecutive: { id: 7 },
     activityDuration: { id: activityDuration.id },
-    activityStatusEnum: ActivityStatusEnum.Approved,
+    activityStatusEnum: ActivityStatusEnum.Approved as ActivityStatusEnum,
     club: { id: 20 },
     editedAt,
     professorApprovedAt: approvedAt,
+    professorApprovalStatus:
+      ProfessorApprovalStatus.Approved as ProfessorApprovalStatus,
     commentedAt: reviewedAt,
     commentedExecutive: null,
   };
@@ -156,14 +164,19 @@ describe("ActivityService", () => {
   };
 
   const createService = (
-    activityDeadlines = [{ deadlineEnum: ActivityDeadlineEnum.Writing }],
+    activityDeadlines: { deadlineEnum: ActivityDeadlineEnum }[] = [
+      { deadlineEnum: ActivityDeadlineEnum.Writing },
+    ],
     activityOverrides: Partial<typeof activity> = {},
   ) => {
     const currentActivity = { ...activity, ...activityOverrides };
     const activityRepository = {
       approveExecutiveActivity: jest.fn().mockResolvedValue(true),
+      createRegistrationReport: jest.fn().mockResolvedValue(undefined),
       fetch: jest.fn().mockResolvedValue(currentActivity),
-      put: jest.fn().mockResolvedValue(new MActivity(currentActivity)),
+      fetchForReportUpdate: jest.fn().mockResolvedValue(currentActivity),
+      recordChangeHistory: jest.fn().mockResolvedValue(undefined),
+      find: jest.fn().mockResolvedValue([currentActivity]),
       patch: jest.fn().mockResolvedValue([new MActivity(currentActivity)]),
       sendBackExecutiveActivity: jest.fn().mockResolvedValue(true),
       updateActivityReport: jest
@@ -188,6 +201,9 @@ describe("ActivityService", () => {
     const clubPublicService = {
       checkIsStudentDelegate: jest.fn().mockResolvedValue(undefined),
       checkIsProfessor: jest.fn().mockResolvedValue(undefined),
+      getAtivatedClubs: jest
+        .fn()
+        .mockResolvedValue([{ club: { id: currentActivity.club.id } }]),
       getMemberFromSemester: jest
         .fn()
         .mockResolvedValue([{ studentId: 1 }, { studentId: 2 }]),
@@ -206,6 +222,7 @@ describe("ActivityService", () => {
     };
     const activityDurationPublicService = {
       load: jest.fn().mockResolvedValue(activityDuration),
+      loadId: jest.fn().mockResolvedValue(activityDuration.id),
       getById: jest.fn().mockResolvedValue(activityDuration),
     };
     const activityDeadlinePublicService = {
@@ -218,6 +235,11 @@ describe("ActivityService", () => {
       getValidationError: jest.fn().mockReturnValue(null),
     };
     const userPublicService = {
+      getExecutiveAndExecutiveTByExecutiveId: jest.fn(({ executiveId }) =>
+        Promise.resolve({
+          executive: { id: executiveId, name: `집행부원 ${executiveId}` },
+        }),
+      ),
       getStudentById: jest.fn().mockResolvedValue({
         number: 20260001,
         name: "학생",
@@ -235,10 +257,13 @@ describe("ActivityService", () => {
       ),
     };
 
+    const activityClubChargedExecutiveRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    };
     const service = injectTestClock(
       new ActivityService(
         activityRepository as never,
-        {} as never,
+        activityClubChargedExecutiveRepository as never,
         activityCommentRepository as never,
         activityDurationPublicService as never,
         activityDeadlinePublicService as never,
@@ -255,7 +280,9 @@ describe("ActivityService", () => {
 
     return {
       activityRepository,
+      activityClubChargedExecutiveRepository,
       activityCommentRepository,
+      activityDeadlinePublicService,
       activityDurationPublicService,
       filePublicService,
       registrationDeadlinePublicService,
@@ -292,6 +319,65 @@ describe("ActivityService", () => {
     );
   });
 
+  it.each([
+    {
+      termId: activityDuration.id,
+      status: ProfessorApprovalStatus.Pending,
+      canApprove: true,
+    },
+    { termId: 99, status: ProfessorApprovalStatus.Pending, canApprove: false },
+    {
+      termId: activityDuration.id,
+      status: ProfessorApprovalStatus.Approved,
+      canApprove: false,
+    },
+  ])(
+    "exposes professor approval availability for term $termId and status $status",
+    async ({ termId, status, canApprove }) => {
+      const { service } = createService(undefined, {
+        activityDuration: { id: termId },
+        professorApprovalStatus: status,
+      });
+
+      await expect(
+        service.getProfessorActivity(activity.id, 1),
+      ).resolves.toMatchObject({
+        professorApprovalStatus: status,
+        canProfessorApprove: canApprove,
+      });
+    },
+  );
+
+  it("keeps professor detail readable when the current reporting period is unavailable", async () => {
+    const { activityDurationPublicService, service } = createService();
+    activityDurationPublicService.loadId.mockRejectedValue(
+      new NotFoundException(),
+    );
+
+    await expect(
+      service.getProfessorActivity(activity.id, 1),
+    ).resolves.toMatchObject({
+      canProfessorApprove: false,
+    });
+  });
+
+  it("uses the denormalized final reviewer in the club brief", async () => {
+    const finalReviewerId = 8;
+    const { activityCommentRepository, service } = createService(undefined, {
+      commentedExecutive: { id: finalReviewerId },
+    });
+
+    const result = await service.getExecutiveActivitiesClubBrief({
+      query: { clubId: activity.club.id, semesterId: 1 },
+    });
+
+    expect(activityCommentRepository.find).not.toHaveBeenCalled();
+    expect(result.items[0].commentedExecutive).toEqual({
+      id: finalReviewerId,
+      name: `집행부원 ${finalReviewerId}`,
+    });
+  });
+
   it("clears professor approval when a regular activity report is edited during the writing period", async () => {
     const { activityRepository, service } = createService([
       { deadlineEnum: ActivityDeadlineEnum.Writing },
@@ -299,25 +385,54 @@ describe("ActivityService", () => {
 
     await service.putStudentActivity({ activityId: activity.id }, body, 1);
 
-    const updatedActivity = activityRepository.put.mock
+    const updatedActivity = activityRepository.updateActivityReport.mock
       .calls[0][0] as MActivity;
+    expect(updatedActivity.name).toBe(body.name);
     expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
     expect(updatedActivity.professorApprovedAt).toBeNull();
+    expect(updatedActivity.professorApprovalStatus).toBe(
+      ProfessorApprovalStatus.Pending,
+    );
     expect(updatedActivity.commentedAt).toBeNull();
   });
 
   it("keeps professor approval when a regular activity report is edited during the modification period", async () => {
+    jest.useFakeTimers().setSystemTime(NOW);
+    const { activityDeadlinePublicService, activityRepository, service } =
+      createService([{ deadlineEnum: ActivityDeadlineEnum.Modification }]);
+
+    await service.putStudentActivity(
+      { activityId: activity.id },
+      { ...body, name: activity.name },
+      1,
+    );
+
+    expect(activityDeadlinePublicService.search).toHaveBeenCalledWith({
+      semesterId: activityDuration.semester.id,
+      date: NOW,
+      deadlineEnum: [
+        ActivityDeadlineEnum.Writing,
+        ActivityDeadlineEnum.Modification,
+      ],
+    });
+
+    const updatedActivity = activityRepository.updateActivityReport.mock
+      .calls[0][0] as MActivity;
+    expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
+    expect(updatedActivity.professorApprovedAt).toBeUndefined();
+    expect(updatedActivity.professorApprovalStatus).toBeUndefined();
+    expect(updatedActivity.commentedAt).toBeNull();
+  });
+
+  it("rejects changing a regular activity name during the modification period", async () => {
     const { activityRepository, service } = createService([
       { deadlineEnum: ActivityDeadlineEnum.Modification },
     ]);
 
-    await service.putStudentActivity({ activityId: activity.id }, body, 1);
-
-    const updatedActivity = activityRepository.put.mock
-      .calls[0][0] as MActivity;
-    expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
-    expect(updatedActivity.professorApprovedAt).toBeUndefined();
-    expect(updatedActivity.commentedAt).toBeNull();
+    await expect(
+      service.putStudentActivity({ activityId: activity.id }, body, 1),
+    ).rejects.toThrow("수정 제출 기간에는 활동명을 변경할 수 없습니다.");
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
   });
 
   it("rejects regular activity report edits outside writing and modification periods", async () => {
@@ -326,16 +441,38 @@ describe("ActivityService", () => {
     await expect(
       service.putStudentActivity({ activityId: activity.id }, body, 1),
     ).rejects.toThrow("is empty");
-    expect(activityRepository.put).not.toHaveBeenCalled();
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
+  });
+
+  it("rejects editing a regular activity through the provisional report endpoint", async () => {
+    const { activityRepository, service } = createService();
+
+    await expect(
+      service.putStudentActivityProvisional(
+        {
+          activityId: activity.id,
+        },
+        body,
+        1,
+      ),
+    ).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+    });
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
   });
 
   it("keeps professor approval when a provisional activity report is edited", async () => {
     const {
       activityRepository,
+      activityDurationPublicService,
       registrationDeadlinePublicService,
       registrationPublicService,
       service,
     } = createService();
+    activityDurationPublicService.getById.mockResolvedValue({
+      ...activityDuration,
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
 
     await service.putStudentActivityProvisional(
       { activityId: activity.id },
@@ -347,14 +484,84 @@ describe("ActivityService", () => {
       .calls[0][0] as MActivity;
     expect(updatedActivity.activityStatusEnum).toBe(ActivityStatusEnum.Applied);
     expect(updatedActivity.professorApprovedAt).toBeUndefined();
+    expect(updatedActivity.professorApprovalStatus).toBeUndefined();
     expect(updatedActivity.commentedAt).toBeNull();
     expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
       date: expect.any(Date),
+      semesterId: activityDuration.semester.id,
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
     expect(
       registrationPublicService.resetClubRegistrationStatusEnum,
-    ).toHaveBeenCalledWith(activity.club.id);
+    ).toHaveBeenCalledWith(activity.club.id, activityDuration.semester.id);
+  });
+
+  it("scopes the reset to the semester of a newly created registration report", async () => {
+    const {
+      activityDurationPublicService,
+      activityRepository,
+      registrationDeadlinePublicService,
+      registrationPublicService,
+      service,
+    } = createService();
+    const term = {
+      ...activityDuration,
+      semester: { id: 7 },
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    };
+    activityDurationPublicService.load.mockResolvedValue(term);
+    jest.useFakeTimers().setSystemTime(NOW);
+
+    await service.postStudentActivityProvisional(
+      { ...body, clubId: activity.club.id },
+      1,
+    );
+
+    expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
+      date: NOW,
+      semesterId: 7,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityRepository.createRegistrationReport).toHaveBeenCalled();
+    expect(
+      registrationPublicService.resetClubRegistrationStatusEnum,
+    ).toHaveBeenCalledWith(activity.club.id, 7);
+  });
+
+  it("does not edit a registration report whose own semester is closed", async () => {
+    const {
+      activityDurationPublicService,
+      activityRepository,
+      registrationDeadlinePublicService,
+      registrationPublicService,
+      service,
+    } = createService();
+    activityDurationPublicService.getById.mockResolvedValue({
+      ...activityDuration,
+      semester: { id: 3 },
+      activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    registrationDeadlinePublicService.validate.mockRejectedValueOnce(
+      new Error("Semester registration is closed"),
+    );
+
+    await expect(
+      service.putStudentActivityProvisional(
+        { activityId: activity.id },
+        body,
+        1,
+      ),
+    ).rejects.toThrow("Semester registration is closed");
+
+    expect(registrationDeadlinePublicService.validate).toHaveBeenCalledWith({
+      date: expect.any(Date),
+      semesterId: 3,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    expect(activityRepository.updateActivityReport).not.toHaveBeenCalled();
+    expect(
+      registrationPublicService.resetClubRegistrationStatusEnum,
+    ).not.toHaveBeenCalled();
   });
 
   it("sets commentedAt when an executive approves an activity report", async () => {
@@ -373,6 +580,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 7,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -433,6 +641,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 8,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -459,6 +668,7 @@ describe("ActivityService", () => {
     expect(activityRepository.approveExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt: expect.any(Date),
+      commentedExecutiveId: 7,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,
@@ -497,6 +707,7 @@ describe("ActivityService", () => {
     expect(activityRepository.sendBackExecutiveActivity).toHaveBeenCalledWith({
       activityId: activity.id,
       commentedAt,
+      commentedExecutiveId: 8,
     });
     expect(
       activityCommentRepository.createExecutiveReviewComment,

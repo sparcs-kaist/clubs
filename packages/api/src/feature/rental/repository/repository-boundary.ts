@@ -1,9 +1,16 @@
 export const repositoryBoundary = {
-  ownedPrismaModels: ["rentalObject", "rentalOrder", "rentalOrderItemD"],
-  exportedPrismaModels: ["rentalOrder"],
+  ownedPrismaModels: [
+    "rentalObject",
+    "rentalOrder",
+    "rentalOrderItemD",
+    "rentalItem",
+    "rentalReservation",
+    "rentalExtension",
+  ],
+  exportedPrismaModels: ["rentalOrder", "rentalReservation", "rentalExtension"],
   importedPrismaModels: [
     {
-      from: "packages/api/src/feature/club/repository/repository-boundary.ts",
+      from: "packages/api/src/feature/club/repository-boundary.ts",
       models: ["club"],
     },
     {

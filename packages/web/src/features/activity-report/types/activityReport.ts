@@ -1,3 +1,5 @@
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 import {
   ActivityStatusEnum,
@@ -6,7 +8,6 @@ import {
 
 import { FileDetail } from "@sparcs-clubs/web/common/components/File/attachment";
 import { Comment } from "@sparcs-clubs/web/types/comment";
-import ProfessorApprovalEnum from "@sparcs-clubs/web/types/professorApproval";
 
 type Duration = {
   startTerm: Date | null;
@@ -30,8 +31,9 @@ export interface CurrentActivityReport extends BaseActivityReport {
   clubId: number;
   updatedAt: Date;
   activityStatusEnumId: ActivityStatusEnum;
-  professorApproval: ProfessorApprovalEnum | null;
+  professorApprovalStatus: ProfessorApprovalStatus | null;
   professorApprovedAt?: Date;
+  canProfessorApprove: boolean;
   comments: Comment[];
   editedAt: Date;
   commentedAt: Date | null;

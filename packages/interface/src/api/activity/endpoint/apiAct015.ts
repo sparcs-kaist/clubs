@@ -27,7 +27,9 @@ const requestQuery = z.object({});
 const requestBody = z.object({});
 
 const responseBodyMap = {
-  [HttpStatusCode.Ok]: apiAct002.responseBodyMap[HttpStatusCode.Ok],
+  [HttpStatusCode.Ok]: apiAct002.responseBodyMap[HttpStatusCode.Ok].extend({
+    canProfessorApprove: z.boolean(),
+  }),
 };
 
 const responseErrorMap = {};

@@ -1,3 +1,5 @@
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import type { ApiReg021ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg021";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
 import {
@@ -42,6 +44,7 @@ const mockProfClubRegister: ApiReg021ResponseOk = {
         email: "xxxxx@kaist.ac.kr",
       },
       professorSignedAt: new Date(),
+      professorApprovalStatus: ProfessorApprovalStatus.Approved,
     },
   ],
 };

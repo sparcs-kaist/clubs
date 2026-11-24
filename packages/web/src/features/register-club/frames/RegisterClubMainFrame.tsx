@@ -1,9 +1,8 @@
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 import React from "react";
 
-import {
-  getDisplayNameRegistration,
-  RegistrationTypeEnum,
-} from "@clubs/interface/common/enum/registration.enum";
+import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
@@ -13,7 +12,7 @@ import PageHead from "@sparcs-clubs/web/common/components/PageHead";
 import useGetSemesterNow from "@sparcs-clubs/web/utils/getSemesterNow";
 
 import RegisterClubForm from "../components/RegisterClubForm";
-import { registerClubDeadlineInfoText } from "../constants";
+import RegistrationDeadlineInfo from "../components/RegistrationDeadlineInfo";
 import useRegistrationDraft from "../hooks/useRegistrationDraft";
 
 interface RegisterClubMainFrameProps {
@@ -25,6 +24,9 @@ const RegisterClubMainFrame: React.FC<RegisterClubMainFrameProps> = ({
   type,
   deadline = undefined,
 }) => {
+  const t = useTranslations("my.registration");
+  const historyT = useTranslations("registrationHistory");
+  const registrationName = t(`types.${type}`);
   const {
     savedData,
     isLoading: isDraftLoading,
@@ -32,12 +34,6 @@ const RegisterClubMainFrame: React.FC<RegisterClubMainFrameProps> = ({
     handleConfirm,
     handleClose,
   } = useRegistrationDraft(type);
-  let registrationName: string = getDisplayNameRegistration(type);
-  if (type === RegistrationTypeEnum.NewProvisional) {
-    registrationName = "가등록(신규)";
-  } else if (type === RegistrationTypeEnum.ReProvisional) {
-    registrationName = "가등록(재)";
-  }
 
   const {
     semester: semesterInfo,
@@ -50,25 +46,38 @@ const RegisterClubMainFrame: React.FC<RegisterClubMainFrameProps> = ({
       <PageHead
         items={[
           {
-            name: `동아리 등록`,
+            name: t("title"),
             path: `/register-club`,
           },
         ]}
-        title={`동아리 ${registrationName} 신청`}
+        title={t("applicationTitle", { type: registrationName })}
         enableLast
+        action={
+          <Link
+            href="/my/register-club/previous"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline" }}
+          >
+            {historyT("title")}
+          </Link>
+        }
       />
       <AsyncBoundary isLoading={semesterLoading} isError={semesterError}>
         {deadline ? (
-          <Info text={registerClubDeadlineInfoText(deadline, semesterInfo)} />
+          <RegistrationDeadlineInfo
+            deadline={deadline}
+            semester={semesterInfo}
+          />
         ) : (
-          <Info text="현재는 동아리 등록 기간이 아닙니다" />
+          <Info text={t("registrationClosed")} />
         )}
       </AsyncBoundary>
       <AsyncBoundary isLoading={isDraftLoading} isError={false}>
         {isModalOpen ? (
           <RestoreDraftModal
             isOpen={isModalOpen}
-            mainText={`${registrationName} 신청에서 작성하시던 내역이 있습니다. 불러오시겠습니까?`}
+            mainText={t("restoreApplicationDraft", { type: registrationName })}
             onConfirm={handleConfirm}
             onClose={handleClose}
           />

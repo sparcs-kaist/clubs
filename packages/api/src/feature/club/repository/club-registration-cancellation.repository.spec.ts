@@ -71,7 +71,7 @@ describe("club registration cancellation repositories", () => {
       where: {
         clubId,
         startTerm: { lte: now },
-        OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+        OR: [{ endTerm: { gt: now } }, { endTerm: null }],
         deletedAt: null,
       },
       data: { endTerm: now },

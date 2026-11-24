@@ -3,15 +3,14 @@ import { z } from "zod";
 
 import { zCoercedDbText } from "@clubs/domain/common/string";
 
-import {
-  zClubNameEn,
-  zClubNameKr,
-  zUserName,
-} from "@clubs/interface/common/commonString";
+import { zClubNameEn, zClubNameKr } from "@clubs/interface/common/commonString";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
-import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
 import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
+import {
+  zRegistrationActivityField,
+  zRegistrationProfessor,
+} from "../type/registration-application";
 import { refineRegistrationRequest } from "../utils/registrationTypeEnumChecker";
 
 /**
@@ -40,33 +39,20 @@ const requestBody = z
     registrationTypeEnumId: z.nativeEnum(RegistrationTypeEnum),
     clubNameKr: zClubNameKr,
     clubNameEn: zClubNameEn,
-    phoneNumber: zKrPhoneNumber, // 대표자 전화번호
+    phoneNumber: zKrPhoneNumber, // 신청자 본인 전화번호
     /**
      * 가동아리 신청의 경우 설립연월이 신청에 포함됩니다.
      * 신규등록 | 재등록의 경우 설립연도가 신청에 포함됩니다.
      */
     foundedAt: z.coerce.date(),
     divisionId: z.coerce.number().int().min(1),
-    activityFieldKr: z.string().max(255),
-    activityFieldEn: z.string().max(255),
+    activityFieldKr: zRegistrationActivityField,
+    activityFieldEn: zRegistrationActivityField,
     /**
      * 지도교수란이 기입되어 있으면 지도교수를 포함한 신청이고,
      * 없다면 지도교수 없는 동아리 신청으로 처리됩니다.
      */
-    professor: z
-      .object({
-        name: zUserName,
-        email: z
-          .string()
-          .max(255)
-          .email()
-          .refine(email => email.endsWith("@kaist.ac.kr"), {
-            message: "Must be a valid KAIST email address",
-          }),
-        professorEnumId: z.nativeEnum(ProfessorEnum),
-      })
-      .nullable()
-      .optional(),
+    professor: zRegistrationProfessor.nullable().optional(),
     divisionConsistency: zCoercedDbText,
     foundationPurpose: zCoercedDbText,
     activityPlan: zCoercedDbText,

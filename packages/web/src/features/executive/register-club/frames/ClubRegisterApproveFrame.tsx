@@ -39,7 +39,11 @@ const ClubRegisterApproveFrame = ({ applyId }: { applyId: number }) => {
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <Card gap={20} outline>
+      <Card
+        gap={20}
+        outline
+        style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+      >
         {data && data.comments.length > 0 && (
           <FlexWrapper direction="column" gap={8}>
             {data.comments.map((comment, index) => (

@@ -27,6 +27,7 @@ jobs:
             image: ghcr.io/sparcs-kaist/clubs-stage-web
           - dockerfile: ./.docker/dockerfile/api.Dockerfile
             image: ghcr.io/sparcs-kaist/clubs-stage-api
+            build_args: FRONT_URL=https://clubs.stage.sparcs.org
 
     steps:
       - name: Checkout code
@@ -54,6 +55,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build_args }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

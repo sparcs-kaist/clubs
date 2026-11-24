@@ -22,6 +22,10 @@ body {
   margin: 0;
 }
 
+body {
+  white-space: pre-line;
+}
+
 ul,
 li {
   margin: 0;
@@ -56,7 +60,7 @@ main {
   content: "\f019";
 }
 
-.viewer-toolbar>ul>li {
+.viewer-toolbar > ul > li {
   margin-left: 5px;
   margin-right: 5px;
 }

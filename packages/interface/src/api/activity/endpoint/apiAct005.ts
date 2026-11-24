@@ -26,6 +26,7 @@ const responseBodyMap = {
       activityTypeEnumId: zActivity.shape.activityTypeEnum,
       durations: zActivity.shape.durations,
       professorApprovedAt: zActivity.shape.professorApprovedAt,
+      professorApprovalStatus: zActivity.shape.professorApprovalStatus,
       editedAt: zActivity.shape.editedAt,
       commentedAt: zActivity.shape.commentedAt,
     })

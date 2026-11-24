@@ -1,5 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 
+import { ISemester } from "@clubs/domain/semester/semester";
+
 import { RegistrationDeadlineEnum } from "@clubs/interface/common/enum/registration.enum";
 
 import { BasePublicService } from "@sparcs-clubs/api/common/base/base.public.service";
@@ -95,6 +97,19 @@ export class SemesterPublicService extends BasePublicService<
 
   loadForLogin(date: Date) {
     return this.semesterRepository.findForLogin(date);
+  }
+
+  async getPreviousSemesterEnd(semester: ISemester): Promise<Date> {
+    const [previous] = await this.semesterRepository.findCompletedBefore(
+      semester.startTerm,
+      1,
+    );
+    return previous?.endTerm ?? semester.startTerm;
+  }
+
+  async findPreviousSemesters(): Promise<MSemester[]> {
+    const semester = await this.load();
+    return this.semesterRepository.findCompletedBefore(semester.startTerm);
   }
 
   // TODO: 아래 두 함수 적용해야 할 곳 (등록기간에 이전 학기 정보로 표기되어야 하는 곳들)에 적용해야 함

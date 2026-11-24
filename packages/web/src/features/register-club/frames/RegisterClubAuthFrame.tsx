@@ -1,4 +1,5 @@
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -15,6 +16,7 @@ import useClubRegistrationEligibility from "../hooks/useClubRegistrationEligibil
 const RegisterClubAuthFrame: React.FC<{
   type: RegistrationTypeEnum;
 }> = ({ type }) => {
+  const t = useTranslations("my.registration");
   const router = useRouter();
   const { deadline, registrationPath, isLoading, getUnavailableReason } =
     useClubRegistrationEligibility();
@@ -26,8 +28,8 @@ const RegisterClubAuthFrame: React.FC<{
   }>();
   const currentDeadline = deadline?.deadline?.endTerm;
   const navigationText = registrationPath
-    ? "신청 내역 확인"
-    : "등록 유형 다시 선택";
+    ? t("viewSubmittedApplication")
+    : t("changeRegistrationType");
   const navigate = () => router.push(registrationPath ?? "/register-club");
 
   useEffect(() => {

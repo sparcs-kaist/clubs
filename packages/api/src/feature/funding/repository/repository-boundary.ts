@@ -1,6 +1,7 @@
 export const repositoryBoundary = {
   ownedPrismaModels: [
     "funding",
+    "fundingChangeHistory",
     "fundingClubSuppliesImageFile",
     "fundingClubSuppliesSoftwareEvidenceFile",
     "fundingEtcExpenseFile",
@@ -17,6 +18,7 @@ export const repositoryBoundary = {
     "fundingTradeDetailFile",
     "fundingTradeEvidenceFile",
     "fundingTransportationPassenger",
+    "fundingInternalMemo",
   ],
   exportedPrismaModels: [
     "funding",
@@ -25,7 +27,7 @@ export const repositoryBoundary = {
   ],
   importedPrismaModels: [
     {
-      from: "packages/api/src/feature/club/repository/repository-boundary.ts",
+      from: "packages/api/src/feature/club/repository-boundary.ts",
       models: ["club"],
     },
     {

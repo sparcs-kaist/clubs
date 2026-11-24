@@ -4,8 +4,8 @@ import { z } from "zod";
 import { zClub } from "@clubs/domain/club/club";
 import { zClubDelegate } from "@clubs/domain/club/club-delegate";
 import { zStudent } from "@clubs/domain/user/student";
+import { zUser } from "@clubs/domain/user/user";
 
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 import { registry } from "@clubs/interface/open-api";
 
 /**
@@ -33,7 +33,14 @@ const responseBodyMap = {
         id: zStudent.shape.id,
         studentNumber: zStudent.shape.studentNumber,
         name: zStudent.shape.name,
-        phoneNumber: zKrPhoneNumber,
+        phoneNumber: zUser.shape.phoneNumber.nullable(),
+        currentRoles: z.array(
+          z.object({
+            clubId: zClub.shape.id,
+            clubName: z.string().min(1),
+            delegateEnumId: zClubDelegate.shape.clubDelegateEnum,
+          }),
+        ),
       }),
     ),
   }),
@@ -74,9 +81,10 @@ registry.registerPath({
 
 동아리의 대표자 및 대의원 변경을 위한 목록을 가져옵니다.
 
-동아리 대표자로 로그인되어 있어야 합니다.
+대표자 변경 후보는 현재 대표자, 대의원 변경 후보는 현재 대표자 또는 대의원으로 로그인되어 있어야 합니다.
 
-해당 동아리의 현재 학기 회원 중에서 대표자나 대의원으로 변경 가능한 학생들의 목록을 반환합니다.
+해당 동아리의 현재 학기 회원 중 사용자 계정이 연결된 학생들과 현재 맡고 있는 직책을 반환합니다.
+다른 동아리의 대표자·대의원을 포함하며, 현재 직책에 따른 선택 가능 여부는 클라이언트에서 표시합니다.
   `,
   request: {
     params: requestParam,

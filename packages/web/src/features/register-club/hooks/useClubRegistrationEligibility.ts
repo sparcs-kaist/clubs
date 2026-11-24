@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
@@ -12,6 +13,7 @@ import { getClubRegistrationRedirectPath } from "../utils/getClubRegistrationRed
 import { getRegistrationUnavailableReason } from "../utils/getRegistrationUnavailableReason";
 
 const useClubRegistrationEligibility = () => {
+  const t = useTranslations("my.registration");
   const { isLoggedIn, profile } = useAuth();
   const available = useGetRegistrationAvailableClubs();
   const applications = useGetMyClubRegistration({ refetchOnMount: "always" });
@@ -39,15 +41,17 @@ const useClubRegistrationEligibility = () => {
       query =>
         !query.isError && (!query.isFetchedAfterMount || query.isFetching),
     ),
-    getUnavailableReason: (type: RegistrationTypeEnum) =>
-      getRegistrationUnavailableReason({
+    getUnavailableReason: (type: RegistrationTypeEnum) => {
+      const reason = getRegistrationUnavailableReason({
         type,
         isUndergraduate:
           isLoggedIn && profile?.type === UserTypeEnum.Undergraduate,
         available,
         applications,
         deadline,
-      }),
+      });
+      return reason ? t(reason) : null;
+    },
   };
 };
 

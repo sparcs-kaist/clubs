@@ -133,7 +133,11 @@ const MeetingDetailFrame: React.FC = () => {
           enableLast
         />
         <Card outline>
-          <Typography fs={16} lh={20} style={{ whiteSpace: "pre-line" }}>
+          <Typography
+            fs={16}
+            lh={20}
+            style={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}
+          >
             {announcementContent}
           </Typography>
         </Card>

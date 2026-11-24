@@ -19,6 +19,8 @@ import CancellableModalContent from "@sparcs-clubs/web/common/components/Modal/C
 import ConfirmModalContent from "@sparcs-clubs/web/common/components/Modal/ConfirmModalContent";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
 import { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
+import ReviewChangeHistoryButton from "@sparcs-clubs/web/features/executive/components/ReviewChangeHistoryButton";
+import ReviewInternalMemoCard from "@sparcs-clubs/web/features/executive/components/ReviewInternalMemoCard";
 import { getActivityTypeLabel } from "@sparcs-clubs/web/types/activityType";
 import {
   formatDate,
@@ -29,9 +31,9 @@ import ActivityApprovalStatusTag from "../components/ActivityApprovalStatusTag";
 import ActivityReportStatusSection from "../components/ActivityReportStatusSection";
 import ExecutiveActivityReportApprovalSection from "../components/ExecutiveActivityReportApprovalSection";
 import useGetActivityReportDetail from "../hooks/useGetActivityReportDetail";
-import useProfessorApproveSingleActivityReport from "../hooks/useProfessorApproveSingleActivityReport";
 import { useDeleteActivityReport } from "../services/useDeleteActivityReport";
 import useGetActivityDeadline from "../services/useGetActivityDeadline";
+import usePostProfessorApproveActivityReport from "../services/useProfessorApproveActivityReport";
 import { filterActivityComments } from "../utils/filterComment";
 
 interface ActivitySectionProps extends React.PropsWithChildren {
@@ -100,12 +102,14 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
     isError: isErrorDeadline,
   } = useGetActivityDeadline();
   const { mutate: deleteActivityReport } = useDeleteActivityReport();
-  const { mutate: approveActivityReport } =
-    useProfessorApproveSingleActivityReport();
+  const { mutate: approveActivityReport, isPending: isApproving } =
+    usePostProfessorApproveActivityReport();
 
   const isProgressVisible =
     profile.type === UserTypeEnum.Undergraduate ||
     profile.type === UserTypeEnum.Executive;
+  const isExecutiveReview =
+    profile.type === UserTypeEnum.Executive && !isOperatingCommittee;
 
   const navigateToActivityReportList = () => {
     const profileType: UserTypeEnum = profile.type;
@@ -166,27 +170,30 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
   }, [deleteActivityReport, id]);
 
   const handleProfessorApproval = useCallback(() => {
-    approveActivityReport(Number(id), {
-      onSuccess: () => {
-        overlay.open(({ isOpen, close }) => (
-          <Modal isOpen={isOpen}>
-            <ConfirmModalContent onConfirm={close}>
-              활동 보고서 승인이 완료되었습니다.
-            </ConfirmModalContent>
-          </Modal>
-        ));
+    approveActivityReport(
+      { activityIds: [Number(id)], clubId: data.clubId },
+      {
+        onSuccess: () => {
+          overlay.open(({ isOpen, close }) => (
+            <Modal isOpen={isOpen}>
+              <ConfirmModalContent onConfirm={close}>
+                활동 보고서 승인이 완료되었습니다.
+              </ConfirmModalContent>
+            </Modal>
+          ));
+        },
+        onError: () => {
+          overlay.open(({ isOpen, close }) => (
+            <Modal isOpen={isOpen}>
+              <ConfirmModalContent onConfirm={close}>
+                활동 보고서 승인에 실패했습니다.
+              </ConfirmModalContent>
+            </Modal>
+          ));
+        },
       },
-      onError: () => {
-        overlay.open(({ isOpen, close }) => (
-          <Modal isOpen={isOpen}>
-            <ConfirmModalContent onConfirm={close}>
-              활동 보고서 승인에 실패했습니다.
-            </ConfirmModalContent>
-          </Modal>
-        ));
-      },
-    });
-  }, [approveActivityReport, id]);
+    );
+  }, [approveActivityReport, data.clubId, id]);
 
   const isPastActivityReport = useMemo(
     () =>
@@ -211,8 +218,25 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
 
   return (
     <AsyncBoundary isLoading={isLoading} isError={isError}>
-      <FlexWrapper direction="column" gap={40} style={{ alignSelf: "stretch" }}>
+      <FlexWrapper
+        direction="column"
+        gap={40}
+        style={{
+          alignSelf: "stretch",
+          whiteSpace: "pre-wrap",
+          overflowWrap: "anywhere",
+        }}
+      >
         <Card outline padding="32px" gap={20}>
+          {isExecutiveReview && (
+            <FlexWrapper justify="flex-end">
+              <ReviewChangeHistoryButton
+                key={id}
+                kind="activity"
+                id={Number(id)}
+              />
+            </FlexWrapper>
+          )}
           {(isProgressVisible || isOperatingCommittee) && (
             <ActivitySection label="집행부 승인 상태">
               <ActivityReportStatusSection
@@ -286,7 +310,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
               gap={16}
             />
           </ActivitySection>
-          {data.professorApproval !== null && (
+          {data.professorApprovalStatus !== null && (
             <ActivitySection label="지도교수 승인 상태">
               <FlexWrapper
                 direction="row"
@@ -300,7 +324,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
                 )}
                 <ActivityApprovalStatusTag
                   type="professor"
-                  status={data.professorApproval}
+                  status={data.professorApprovalStatus}
                   width="64px"
                 />
               </FlexWrapper>
@@ -308,8 +332,7 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
           )}
         </Card>
 
-        {profile.type === UserTypeEnum.Executive &&
-          !isOperatingCommittee &&
+        {isExecutiveReview &&
           activityDeadline?.canApprove &&
           !isPastActivityReport && (
             <ExecutiveActivityReportApprovalSection
@@ -318,19 +341,22 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
             />
           )}
 
+        {isExecutiveReview && (
+          <ReviewInternalMemoCard key={id} kind="activity" id={Number(id)} />
+        )}
+
         {!isOperatingCommittee && (
           <FlexWrapper gap={20} justify="space-between">
             <Button type="default" onClick={navigateToActivityReportList}>
               목록으로 돌아가기
             </Button>
 
-            <AsyncBoundary
-              isLoading={isLoadingDeadline}
-              isError={isErrorDeadline}
-            >
-              {profile.type === UserTypeEnum.Undergraduate &&
-                activityDeadline?.isEditable &&
-                !isPastActivityReport && (
+            {profile.type === UserTypeEnum.Undergraduate && (
+              <AsyncBoundary
+                isLoading={isLoadingDeadline}
+                isError={isErrorDeadline}
+              >
+                {activityDeadline?.isEditable && !isPastActivityReport && (
                   <FlexWrapper gap={12}>
                     <Button type="default" onClick={handleDelete}>
                       삭제
@@ -340,17 +366,17 @@ const ActivityReportDetailFrame: React.FC<ActivityReportDetailFrameProps> = ({
                     </Button>
                   </FlexWrapper>
                 )}
-              {profile.type === UserTypeEnum.Professor &&
-                activityDeadline?.canApprove &&
-                !isPastActivityReport && (
-                  <Button
-                    type={data.professorApprovedAt ? "disabled" : "default"}
-                    onClick={handleProfessorApproval}
-                  >
-                    승인
-                  </Button>
-                )}
-            </AsyncBoundary>
+              </AsyncBoundary>
+            )}
+            {profile.type === UserTypeEnum.Professor &&
+              data.canProfessorApprove && (
+                <Button
+                  type={isApproving ? "disabled" : "default"}
+                  onClick={handleProfessorApproval}
+                >
+                  승인
+                </Button>
+              )}
           </FlexWrapper>
         )}
       </FlexWrapper>

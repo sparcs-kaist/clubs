@@ -19,7 +19,6 @@ interface ReProvisionalBasicInformFrameProps extends Omit<
   ProvisionalBasicInformFrameProps,
   "children"
 > {
-  editMode?: boolean;
   existingClub?: ClubRegistrationInfo;
 }
 
@@ -51,7 +50,7 @@ const ReProvisionalBasicInformFrame = ({
   existingClub,
   ...props
 }: ReProvisionalBasicInformFrameProps) => (
-  <ProvisionalBasicInformFrame {...props}>
+  <ProvisionalBasicInformFrame {...props} editMode={editMode}>
     {editMode ? (
       <ClubNameField
         type={RegistrationTypeEnum.ReProvisional}

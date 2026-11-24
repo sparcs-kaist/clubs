@@ -3,8 +3,7 @@ import { Prisma } from "@prisma/client";
 
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
 
-import logger from "@sparcs-clubs/api/common/util/logger";
-import { takeOne } from "@sparcs-clubs/api/common/util/util";
+import { withDeleted } from "@sparcs-clubs/api/common/util/soft-delete";
 import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 
 @Injectable()
@@ -222,39 +221,6 @@ export default class OldStudentRepository {
     return latestStudentEnumMap;
   }
 
-  async getStudentPhoneNumber(id: number) {
-    const result = await this.prisma.$queryRaw<
-      Array<{ phoneNumber: string | null }>
-    >(Prisma.sql`
-      SELECT u.phone_number AS phoneNumber
-      FROM student s
-      LEFT JOIN user u ON u.id = s.user_id
-      LEFT JOIN student_t st ON st.student_id = s.id
-        AND (st.end_term >= NOW() OR st.end_term IS NULL)
-        AND st.start_term <= NOW()
-        AND st.deleted_at IS NULL
-      WHERE s.user_id = ${id}
-      LIMIT 1
-    `);
-    return takeOne(result);
-  }
-
-  async updateStudentPhoneNumber(userId: number, phoneNumber: string) {
-    const isUpdateSucceed = await this.prisma.$transaction(async tx => {
-      const result = await tx.user.updateMany({
-        where: { id: userId, deletedAt: null },
-        data: { phoneNumber },
-      });
-
-      if (result.count === 0) {
-        logger.debug("[OldStudentRepository] Failed to update phone number");
-        throw new Error("updateStudentPhoneNumber failed");
-      }
-      return true;
-    });
-    return isUpdateSucceed;
-  }
-
   async fetchStudentSummaries(
     studentIds: number[],
   ): Promise<IStudentSummary[]> {
@@ -269,6 +235,20 @@ export default class OldStudentRepository {
       id: student.id,
       name: student.name,
       studentNumber: student.number.toString(),
+    }));
+  }
+
+  async fetchStudentSummariesIncludingDeleted(
+    studentIds: number[],
+  ): Promise<IStudentSummary[]> {
+    const students = await this.prisma.student.findMany({
+      where: withDeleted({ id: { in: studentIds } }),
+      select: { id: true, name: true, number: true },
+    });
+    return students.map(({ id, name, number }) => ({
+      id,
+      name,
+      studentNumber: number.toString(),
     }));
   }
 }

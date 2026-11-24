@@ -350,6 +350,7 @@ model ClubDelegateChangeRequest {
   clubId                                Int       @map("club_id")
   prevStudentId                         Int       @map("prev_student_id")
   studentId                             Int       @map("student_id")
+  clubDelegateEnumId                    Int       @default(1) @map("club_delegate_enum_id")
   clubDelegateChangeRequestStatusEnumId Int       @map("club_delegate_change_request_status_enum_id")
   createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   deletedAt                             DateTime? @map("deleted_at") @db.Timestamp(0)
@@ -506,33 +507,78 @@ model RegistrationDeadlineD {
 // ============================================================================
 
 model Activity {
-  id                   Int       @id @default(autoincrement())
-  clubId               Int       @map("club_id")
-  originalName         String    @map("original_name") @db.VarChar(255)
-  name                 String    @db.VarChar(255)
-  activityTypeEnumId   Int       @map("activity_type_enum_id")
-  location             String    @db.VarChar(255)
-  purpose              String    @db.Text
-  detail               String    @db.Text
-  evidence             String    @db.Text
-  activityDId          Int       @map("activity_d_id")
-  activityStatusEnumId Int       @map("activity_status_enum_id")
-  chargedExecutiveId   Int?      @map("charged_executive_id")
-  professorApprovedAt  DateTime? @map("professor_approved_at") @db.Timestamp(0)
-  commentedAt          DateTime? @map("commented_at") @db.Timestamp(0)
-  /// @deprecated Use the latest non-deleted `activity_feedback.executive_id` for the final reviewer.
-  commentedExecutiveId Int?      @map("commented_executive_id")
-  editedAt             DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  deletedAt            DateTime? @map("deleted_at") @db.Timestamp(0)
+  id                      Int                     @id @default(autoincrement())
+  clubId                  Int                     @map("club_id")
+  originalName            String                  @map("original_name") @db.VarChar(255)
+  name                    String                  @db.VarChar(255)
+  activityTypeEnumId      Int                     @map("activity_type_enum_id")
+  location                String                  @db.VarChar(255)
+  purpose                 String                  @db.Text
+  detail                  String                  @db.Text
+  evidence                String                  @db.Text
+  activityDId             Int                     @map("activity_d_id")
+  activityStatusEnumId    Int                     @map("activity_status_enum_id")
+  chargedExecutiveId      Int?                    @map("charged_executive_id")
+  professorApprovedAt     DateTime?               @map("professor_approved_at") @db.Timestamp(0)
+  professorApprovalStatus ProfessorApprovalStatus @default(PENDING) @map("professor_approval_status")
+  commentedAt             DateTime?               @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId    Int?                    @map("commented_executive_id")
+  editedAt                DateTime                @default(now()) @map("edited_at") @db.Timestamp(0)
+  createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt               DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deletedAt               DateTime?               @map("deleted_at") @db.Timestamp(0)
 
   activityParticipants  ActivityParticipant[]
   activityTs            ActivityT[]
   activityFeedbacks     ActivityFeedback[]
   activityEvidenceFiles ActivityEvidenceFile[]
+  changeHistory         ActivityChangeHistory[]
+  internalMemo          ActivityInternalMemo?
 
   @@map("activity")
+}
+
+model ActivityInternalMemo {
+  activityId           Int      @id @map("activity_id")
+  content              String   @db.Text
+  updatedBy            String   @map("updated_by") @db.VarChar(255)
+  updatedByExecutiveId Int      @map("updated_by_executive_id")
+  updatedAt            DateTime @map("updated_at") @db.DateTime(3)
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("activity_internal_memo")
+}
+
+model ActivityChangeHistory {
+  id              Int      @id @default(autoincrement())
+  activityId      Int      @map("activity_id")
+  editorStudentId Int      @map("editor_student_id")
+  before          Json
+  after           Json
+  createdAt       DateTime @map("created_at") @db.Timestamp(3)
+
+  activity Activity @relation(fields: [activityId], references: [id])
+
+  @@index([activityId, id])
+  @@map("activity_change_history")
+}
+
+enum ProfessorApprovalStatus {
+  PENDING
+  APPROVED
+  LATE_APPROVED
+}
+
+model ActivityProfessorApprovalLog {
+  id             Int                     @id @default(autoincrement())
+  activityId     Int                     @map("activity_id")
+  professorId    Int                     @map("professor_id")
+  approvedAt     DateTime                @map("approved_at") @db.Timestamp(0)
+  approvalStatus ProfessorApprovalStatus @map("approval_status")
+
+  @@index([activityId, approvedAt], map: "idx_activity_professor_approval_log_activity_time")
+  @@map("activity_professor_approval_log")
 }
 
 model ActivityParticipant {
@@ -751,6 +797,7 @@ model Funding {
   chargedExecutiveId                       Int?      @map("charged_executive_id")
   editedAt                                 DateTime  @default(now()) @map("edited_at") @db.Timestamp(0)
   commentedAt                              DateTime? @map("commented_at") @db.Timestamp(0)
+  commentedExecutiveId                     Int?      @map("commented_executive_id")
   createdAt                                DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt                                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   deletedAt                                DateTime? @map("deleted_at") @db.Timestamp(0)
@@ -775,8 +822,36 @@ model Funding {
   fixtureSoftwareEvidenceFiles       FundingFixtureSoftwareEvidenceFile[]
   transportationPassengers           FundingTransportationPassenger[]
   feedbacks                          FundingFeedback[]
+  changeHistory                      FundingChangeHistory[]
+  internalMemo                       FundingInternalMemo?
 
   @@map("funding")
+}
+
+model FundingInternalMemo {
+  fundingId            Int      @id @map("funding_id")
+  content              String   @db.Text
+  updatedBy            String   @map("updated_by") @db.VarChar(255)
+  updatedByExecutiveId Int      @map("updated_by_executive_id")
+  updatedAt            DateTime @map("updated_at") @db.DateTime(3)
+
+  funding Funding @relation(fields: [fundingId], references: [id], onDelete: Cascade)
+
+  @@map("funding_internal_memo")
+}
+
+model FundingChangeHistory {
+  id              Int      @id @default(autoincrement())
+  fundingId       Int      @map("funding_id")
+  editorStudentId Int      @map("editor_student_id")
+  before          Json
+  after           Json
+  createdAt       DateTime @map("created_at") @db.Timestamp(3)
+
+  funding Funding @relation(fields: [fundingId], references: [id])
+
+  @@index([fundingId, id])
+  @@map("funding_change_history")
 }
 
 model FundingTradeEvidenceFile {
@@ -1076,6 +1151,7 @@ model Registration {
   registrationClubRuleFileId            String?   @map("registration_club_rule_file_id") @db.VarChar(128)
   registrationExternalInstructionFileId String?   @map("registration_external_instruction_file_id") @db.VarChar(128)
   professorApprovedAt                   DateTime? @map("professor_approved_at") @db.Timestamp(0)
+  professorApprovalStatus               ProfessorApprovalStatus @default(PENDING) @map("professor_approval_status")
   reviewedAt                            DateTime? @map("reviewed_at") @db.Timestamp(0)
   createdAt                             DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt                             DateTime? @updatedAt @map("updated_at") @db.Timestamp(0)
@@ -1089,6 +1165,17 @@ model Registration {
   executiveComments RegistrationExecutiveComment[]
 
   @@map("registration")
+}
+
+model RegistrationProfessorApprovalLog {
+  id             Int                     @id @default(autoincrement())
+  registrationId Int                     @map("registration_id")
+  professorId    Int                     @map("professor_id")
+  approvedAt     DateTime                @map("approved_at") @db.Timestamp(0)
+  approvalStatus ProfessorApprovalStatus @map("approval_status")
+
+  @@index([registrationId, approvedAt], map: "idx_registration_professor_approval_log_registration_time")
+  @@map("registration_professor_approval_log")
 }
 
 model RegistrationExecutiveComment {
@@ -1360,4 +1447,87 @@ model AuthSsoLoginFailureLog {
   @@index([userId, occurredAt])
   @@index([studentId, occurredAt])
   @@map("auth_sso_login_failure_log")
+}
+
+model OfficeHour {
+  id                   Int      @id @default(autoincrement())
+  date                 DateTime @db.Date
+  opensAt              DateTime @map("opens_at") @db.DateTime(0)
+  closesAt             DateTime @map("closes_at") @db.DateTime(0)
+  isClosed             Boolean  @default(false) @map("is_closed")
+  publicMemo           String?  @map("public_memo") @db.VarChar(500)
+  internalMemo         String?  @map("internal_memo") @db.VarChar(500)
+  updatedByExecutiveId Int?     @map("updated_by_executive_id")
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([date, updatedAt, id])
+  @@index([closesAt])
+  @@map("office_hour")
+}
+
+model RentalItem {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  totalQuantity Int      @map("total_quantity") @db.UnsignedInt
+  durationType  String   @map("duration_type") @db.VarChar(30)
+  durationValue Int      @map("duration_value") @db.UnsignedInt
+  isActive      Boolean  @default(true) @map("is_active")
+  lockVersion   BigInt   @default(0) @map("lock_version") @db.UnsignedBigInt
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("rental_item")
+}
+
+model RentalReservation {
+  id                      Int       @id @default(autoincrement())
+  itemId                  Int       @map("item_id")
+  clubId                  Int       @map("club_id")
+  studentId               Int       @map("student_id")
+  contactPhoneNumber      String    @map("contact_phone_number") @db.VarChar(30)
+  purpose                 String    @db.VarChar(500)
+  quantity                Int       @db.UnsignedInt
+  status                  String    @db.VarChar(16)
+  durationType            String    @map("duration_type") @db.VarChar(30)
+  durationValue           Int       @map("duration_value") @db.UnsignedInt
+  regularReturnLimitDate  DateTime  @map("regular_return_limit_date") @db.Date
+  approvedExtensionId     Int?      @map("approved_extension_id")
+  pickupHourId            Int       @map("pickup_hour_id")
+  returnHourId            Int       @map("return_hour_id")
+  clientRequestId         String    @map("client_request_id") @db.Char(36)
+  requestFingerprint      String    @map("request_fingerprint") @db.Char(64)
+  approvedAt              DateTime? @map("approved_at") @db.DateTime(3)
+  approvedByExecutiveId   Int?      @map("approved_by_executive_id")
+  checkedOutAt            DateTime? @map("checked_out_at") @db.DateTime(3)
+  checkedOutByExecutiveId Int?      @map("checked_out_by_executive_id")
+  checkoutMemo            String?   @map("checkout_memo") @db.VarChar(500)
+  returnedAt              DateTime? @map("returned_at") @db.DateTime(3)
+  returnedByExecutiveId   Int?      @map("returned_by_executive_id")
+  closedAt                DateTime? @map("closed_at") @db.DateTime(3)
+  closedByUserId          Int?      @map("closed_by_user_id")
+  closeReason             String?   @map("close_reason") @db.VarChar(500)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@unique([studentId, clientRequestId])
+  @@index([itemId, status, pickupHourId])
+  @@index([studentId, createdAt])
+  @@index([pickupHourId])
+  @@index([returnHourId])
+  @@index([id, approvedExtensionId])
+  @@map("rental_reservation")
+}
+
+model RentalExtension {
+  id                     Int      @id @default(autoincrement())
+  reservationId          Int      @map("reservation_id")
+  previousReturnHourId   Int      @map("previous_return_hour_id")
+  newReturnHourId        Int      @map("new_return_hour_id")
+  reason                 String   @db.VarChar(500)
+  processedByExecutiveId Int      @map("processed_by_executive_id")
+  processedAt            DateTime @map("processed_at") @db.DateTime(3)
+
+  @@unique([reservationId, id])
+  @@index([reservationId, processedAt])
+  @@map("rental_extension")
 }

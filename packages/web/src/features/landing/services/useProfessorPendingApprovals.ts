@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { HttpStatusCode } from "axios";
 
 import apiAct019, {
   ApiAct019ResponseOk,
@@ -18,9 +19,14 @@ import { axiosClientWithAuth } from "@sparcs-clubs/web/lib/axios";
 
 import { getProfessorPendingApprovals } from "../utils/getProfessorPendingApprovals";
 
+export const professorPendingApprovalsQueryKey = (userId: number) => [
+  "professor-pending-approvals",
+  userId,
+];
+
 const useProfessorPendingApprovals = (userId: number) =>
   useQuery({
-    queryKey: ["professor-pending-approvals", userId],
+    queryKey: professorPendingApprovalsQueryKey(userId),
     staleTime: 0,
     refetchOnMount: "always",
     queryFn: async ({ signal }) => {
@@ -43,9 +49,19 @@ const useProfessorPendingApprovals = (userId: number) =>
         clubs.map(async club => {
           const response = await axiosClientWithAuth.get<ApiAct019ResponseOk>(
             apiAct019.url(),
-            { params: { clubId: club.id }, signal },
+            {
+              params: { clubId: club.id },
+              signal,
+              validateStatus: status =>
+                status === HttpStatusCode.Forbidden ||
+                (status >= 200 && status < 300),
+            },
           );
-          return { ...club, activities: response.data };
+          return {
+            ...club,
+            activities:
+              response.status === HttpStatusCode.Forbidden ? [] : response.data,
+          };
         }),
       );
       return getProfessorPendingApprovals(

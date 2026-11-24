@@ -16,6 +16,7 @@ export class MClubDelegateChangeRequest
   club: IClubDelegateChangeRequest["club"];
   prevStudent: IClubDelegateChangeRequest["prevStudent"];
   student: IClubDelegateChangeRequest["student"];
+  clubDelegateEnumId: IClubDelegateChangeRequest["clubDelegateEnumId"];
   clubDelegateChangeRequestStatusEnum: IClubDelegateChangeRequest["clubDelegateChangeRequestStatusEnum"];
   deletedAt: Date | null;
 

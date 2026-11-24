@@ -1,6 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { z } from "zod";
 
+import { zSemester } from "@clubs/domain/semester/semester";
+
 import { zClub } from "@clubs/interface/api/club/type/club.type";
 import { zClubName, zUserName } from "@clubs/interface/common/commonString";
 import {
@@ -10,7 +12,7 @@ import {
 
 /**
  * @version v0.2
- * @description 자신이 관리하는 동아리의 동아리 등록 목록을 조회합니다.
+ * @description 이번 학기 또는 지난 학기의 열람 가능한 동아리 등록 신청 목록을 조회합니다.
  */
 
 const url = () => `/student/registrations/club-registrations/my`;
@@ -18,27 +20,35 @@ const method = "GET";
 
 const requestParam = z.object({});
 
-const requestQuery = z.object({});
+const requestQuery = z.object({
+  semester: z.literal("previous").optional(),
+  clubId: zClub.shape.id.optional(),
+});
 
 const requestBody = z.object({});
 
+const semesterSummary = zSemester.pick({ id: true, name: true, year: true });
+
 const responseBodyMap = {
   [HttpStatusCode.Ok]: z.object({
+    semester: semesterSummary.optional(),
+    semesters: z.array(semesterSummary).optional(),
     registrations: z.array(
       z.object({
         // 나중에 registrationSummaryResponse로 변경 필요
         id: z.coerce.number().int().min(1),
+        semesterId: zSemester.shape.id.optional(),
         registrationStatusEnum: z.nativeEnum(RegistrationStatusEnum),
         registrationTypeEnum: z.nativeEnum(RegistrationTypeEnum),
         divisionName: z.string().max(128),
-        clubNameKr: zClubName.optional(),
+        clubNameKr: zClubName.nullish(),
         newClubNameKr: zClubName,
-        clubNameEn: zClubName.optional(),
+        clubNameEn: zClubName.nullish(),
         newClubNameEn: zClubName,
-        clubId: zClub.pick({ id: true }).shape.id,
+        clubId: zClub.shape.id.nullable(),
         activityFieldKr: z.string().max(255),
         activityFieldEn: z.string().max(255),
-        professorName: zUserName,
+        professorName: zUserName.nullable(),
       }),
     ),
   }),

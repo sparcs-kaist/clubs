@@ -30,6 +30,7 @@ const responseBodyMap = {
       startTerm: zActivityDuration.shape.startTerm,
       endTerm: zActivityDuration.shape.endTerm,
     }),
+    objectionDeadline: zActivityDeadline.shape.endTerm.optional(),
     deadline: z
       .object({
         activityDeadlineEnum: zActivityDeadline.shape.deadlineEnum,

@@ -93,7 +93,13 @@ const MyRegisterClubEdit = () => {
         enableLast
       />
       <AsyncBoundary isLoading={isLoading} isError={isError}>
-        <MyRegisterClubEditFrame applyId={applyId} initialData={detail} />
+        {detail && (
+          <MyRegisterClubEditFrame
+            key={applyId}
+            applyId={applyId}
+            initialData={detail}
+          />
+        )}
       </AsyncBoundary>
     </FlexWrapper>
   );

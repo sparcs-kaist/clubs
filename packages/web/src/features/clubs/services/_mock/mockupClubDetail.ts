@@ -3,10 +3,11 @@ import type { ApiClb002ResponseOK } from "@clubs/interface/api/club/endpoint/api
 const mockupData: ApiClb002ResponseOK = {
   id: 1,
   nameKr: "궁극의 맛",
-  nameEn: "test",
+  nameEn: "The Ultimate Taste",
   type: 1,
   isPermanent: false,
   characteristic: "요리",
+  characteristicEn: "Cooking",
   representative: "장주원",
   advisor: "",
   totalMemberCnt: 1,

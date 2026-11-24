@@ -11,7 +11,7 @@ const clubId = 201;
 const semesterId = 7;
 
 describe("ClubService getClubs", () => {
-  it("returns clubs using the requested semester snapshot", async () => {
+  it("returns historical list and detail fields from the requested semester snapshot", async () => {
     const semester = {
       id: semesterId,
       year: 2025,
@@ -36,6 +36,7 @@ describe("ClubService getClubs", () => {
           nameEn: "Historical Club",
           clubTypeEnum: 1,
           characteristicKr: "역사",
+          characteristicEn: "History",
           professor: { name: "지도교수" },
           clubRepresentative: { name: "대표자" },
           division: {
@@ -82,6 +83,7 @@ describe("ClubService getClubs", () => {
               type: 1,
               isPermanent: true,
               characteristic: "역사",
+              characteristicEn: "History",
               representative: "대표자",
               advisor: "지도교수",
               totalMemberCnt: 12,
@@ -101,6 +103,128 @@ describe("ClubService getClubs", () => {
     expect(
       clubOldRepository.getAllClubsGroupedByDivision,
     ).not.toHaveBeenCalled();
+
+    await expect(
+      service.getClub({ clubId }, { semesterId }),
+    ).resolves.toMatchObject({
+      characteristic: "역사",
+      characteristicEn: "History",
+    });
+    expect(clubPublicService.searchClubDetailByDate).toHaveBeenLastCalledWith({
+      date: snapshotDate,
+      semesterId,
+      clubId,
+      clubTypeEnum: [1, 2],
+    });
+  });
+});
+
+describe("ClubService current club characteristics", () => {
+  const legacyClub = { id: clubId, characteristic: "이전 활동" };
+  const missingHistoryClub = { id: clubId + 1, characteristic: "음악" };
+  const activeSemester = {
+    id: 20,
+    club: { id: clubId },
+    characteristicKr: "요리",
+    characteristicEn: "Cooking",
+  };
+  const olderSemester = {
+    ...activeSemester,
+    id: 19,
+    characteristicKr: "음악",
+    characteristicEn: "Music",
+  };
+
+  const createService = () => {
+    const clubOldRepository = {
+      getAllClubsGroupedByDivision: jest.fn().mockResolvedValue({
+        divisions: [
+          { id: 1, name: "생활문화", clubs: [legacyClub, missingHistoryClub] },
+        ],
+      }),
+      findClubDetail: jest.fn().mockResolvedValue(legacyClub),
+    };
+    const clubStudentTRepository = {
+      findTotalMemberCnt: jest.fn().mockResolvedValue(12),
+    };
+    const clubSemesterRepository = {
+      find: jest.fn().mockResolvedValue([olderSemester, activeSemester]),
+    };
+    const service = new ClubService(
+      clubOldRepository as ClubServiceDependencies[0],
+      { findRepresentativeName: jest.fn() } as ClubServiceDependencies[1],
+      { findClubLocationById: jest.fn() } as ClubServiceDependencies[2],
+      clubStudentTRepository as ClubServiceDependencies[3],
+      {} as ClubServiceDependencies[4],
+      { findPermenantClub: jest.fn() } as ClubServiceDependencies[5],
+      {} as ClubServiceDependencies[6],
+      {} as ClubServiceDependencies[7],
+      {} as ClubServiceDependencies[8],
+      { checkDeadline: jest.fn() } as ClubServiceDependencies[9],
+      {
+        load: jest.fn().mockResolvedValue({ id: semesterId }),
+      } as ClubServiceDependencies[10],
+      clubSemesterRepository as ClubServiceDependencies[11],
+      {} as ClubServiceDependencies[12],
+      {} as ClubServiceDependencies[13],
+      {} as ClubServiceDependencies[14],
+    );
+    Object.assign(service, { clock: { now: () => now } });
+
+    return {
+      service,
+      clubOldRepository,
+      clubSemesterRepository,
+      clubStudentTRepository,
+    };
+  };
+
+  it("loads active characteristics in a batch and keeps Korean when an active record is missing", async () => {
+    const { service, clubSemesterRepository } = createService();
+
+    const result = await service.getClubs({});
+
+    expect(result.divisions[0].clubs).toEqual([
+      { id: clubId, characteristic: "요리", characteristicEn: "Cooking" },
+      { ...missingHistoryClub, characteristicEn: null },
+    ]);
+    expect(clubSemesterRepository.find).toHaveBeenCalledTimes(1);
+    expect(clubSemesterRepository.find).toHaveBeenCalledWith({
+      clubId: [clubId, missingHistoryClub.id],
+      date: now,
+      clubTypeEnum: [1, 2],
+      orderBy: { id: 1 },
+    });
+  });
+
+  it("preserves empty divisions without querying club semesters", async () => {
+    const { service, clubOldRepository, clubSemesterRepository } =
+      createService();
+    const result = { divisions: [{ id: 1, name: "생활문화", clubs: [] }] };
+    clubOldRepository.getAllClubsGroupedByDivision.mockResolvedValue(result);
+    await expect(service.getClubs({})).resolves.toEqual(result);
+    expect(clubSemesterRepository.find).not.toHaveBeenCalled();
+  });
+
+  it("uses current characteristics and the previous semester's member count during registration", async () => {
+    const { service, clubStudentTRepository, clubSemesterRepository } =
+      createService();
+
+    await expect(service.getClub({ clubId }, {})).resolves.toMatchObject({
+      characteristic: "요리",
+      characteristicEn: "Cooking",
+      totalMemberCnt: 12,
+    });
+    expect(clubStudentTRepository.findTotalMemberCnt).toHaveBeenCalledWith(
+      clubId,
+      semesterId - 1,
+    );
+    expect(clubSemesterRepository.find).toHaveBeenCalledWith({
+      clubId,
+      date: now,
+      clubTypeEnum: [1, 2],
+      orderBy: { id: 1 },
+    });
   });
 });
 
@@ -110,6 +234,7 @@ describe("ClubService cancelRegistration", () => {
       cancelRegistration: jest.fn().mockResolvedValue(semesterId),
     };
     const clubDelegateRepository = {
+      lockForRegistrationChange: jest.fn().mockResolvedValue(undefined),
       endCurrentTerms: jest.fn().mockResolvedValue(undefined),
     };
     const clubDelegateChangeRequestRepository = {
@@ -138,6 +263,15 @@ describe("ClubService cancelRegistration", () => {
     Object.assign(service, { clock: { now: () => now } });
 
     await expect(service.cancelRegistration(clubId)).resolves.toEqual({});
+    expect(
+      clubDelegateRepository.lockForRegistrationChange,
+    ).toHaveBeenCalledWith(clubId);
+    expect(
+      clubDelegateRepository.lockForRegistrationChange.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      clubSemesterRepository.cancelRegistration.mock.invocationCallOrder[0],
+    );
     expect(clubSemesterRepository.cancelRegistration).toHaveBeenCalledWith(
       clubId,
       now,
@@ -718,7 +852,7 @@ describe("ClubService registration delegate change", () => {
     expect(registrationPublicService.checkDeadline).toHaveBeenCalledTimes(2);
     expect(
       clubDelegateRepository.lockForRegistrationChange,
-    ).toHaveBeenCalledWith(clubId, 30, now);
+    ).toHaveBeenCalledWith(clubId, 30);
     expect(
       clubDelegateRepository.lockForRegistrationChange.mock
         .invocationCallOrder[0],
@@ -735,6 +869,7 @@ describe("ClubService registration delegate change", () => {
       studentId: 30,
       clubDelegateEnumId: 2,
       effectiveAt: new Date("2026-08-27T14:59:00.000Z"),
+      changedAt: now,
     });
   });
 

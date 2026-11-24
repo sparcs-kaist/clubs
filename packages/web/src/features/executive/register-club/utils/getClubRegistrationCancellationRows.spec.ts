@@ -19,6 +19,7 @@ const club = (
   type,
   isPermanent: false,
   characteristic: null,
+  characteristicEn: null,
   representative: "대표자",
   advisor: null,
   totalMemberCnt: 1,

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
 import { TransactionHost } from "@nestjs-cls/transactional";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
@@ -13,6 +17,12 @@ import {
   IClubDelegateCreate,
   MClubDelegate,
 } from "@sparcs-clubs/api/feature/club/model/club-delegate.model";
+
+import {
+  cancelPendingDelegateRequests,
+  lockClubDelegates,
+  lockDelegateStudent,
+} from "./lock-club-delegates";
 
 export type ClubDelegateQuery = {
   // id: number; // id 는 기본 내장
@@ -51,7 +61,7 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
       where: {
         clubId,
         startTerm: { lte: now },
-        OR: [{ endTerm: { gte: now } }, { endTerm: null }],
+        OR: [{ endTerm: { gt: now } }, { endTerm: null }],
         deletedAt: null,
       },
       data: { endTerm: now },
@@ -61,15 +71,18 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
   async ensureRegistrationApplicantRepresentative(param: {
     clubId: number;
     studentId: number;
-    effectiveAt: Date;
+    previousSemesterEnd: Date;
+    semesterStart: Date;
+    semesterEnd: Date;
+    approvedAt: Date;
   }): Promise<void> {
-    const delegate = this.getDelegate(this.txHost.tx);
+    const { tx } = this.txHost;
+    const delegate = this.getDelegate(tx);
     const otherClubDelegate = await delegate.findFirst({
       where: {
         clubId: { not: param.clubId },
         studentId: param.studentId,
-        startTerm: { lte: param.effectiveAt },
-        OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
+        OR: [{ endTerm: { gt: param.semesterStart } }, { endTerm: null }],
         deletedAt: null,
       },
     });
@@ -79,25 +92,77 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
       );
     }
 
-    await this.endCurrentTerms(param.clubId, param.effectiveAt);
+    const laterTerm = await delegate.findFirst({
+      where: {
+        clubId: param.clubId,
+        startTerm: { gte: param.semesterEnd },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (laterTerm) {
+      throw new ConflictException(
+        "Delegate history exists after the registration semester",
+      );
+    }
+
+    await this.endCurrentTerms(param.clubId, param.previousSemesterEnd);
+    // 승인 전에 만들어진 임시 직책을 새 학기에 이어가지 않습니다.
+    await delegate.updateMany({
+      where: {
+        clubId: param.clubId,
+        startTerm: { gte: param.previousSemesterEnd, lt: param.semesterEnd },
+        deletedAt: null,
+      },
+      data: { deletedAt: param.approvedAt },
+    });
     await delegate.create({
       data: {
         clubId: param.clubId,
         studentId: param.studentId,
         clubDelegateEnum: ClubDelegateEnum.Representative,
-        startTerm: param.effectiveAt,
+        startTerm: param.semesterStart,
       },
     });
+    await cancelPendingDelegateRequests(
+      this.txHost,
+      param.clubId,
+      param.approvedAt,
+    );
   }
 
   async lockForRegistrationChange(
     clubId: number,
-    studentId: number,
-    now: Date,
+    studentId?: number,
   ): Promise<void> {
+    await lockClubDelegates(this.txHost, clubId, studentId);
+  }
+
+  async lockRegistrationApplicant(studentId: number): Promise<void> {
+    await lockDelegateStudent(this.txHost, studentId);
+  }
+
+  async deleteProvisionalClub(clubId: number, now: Date): Promise<void> {
     const { tx } = this.txHost;
-    await this.acquireLock(tx, { clubId, date: now });
-    await this.acquireLock(tx, { studentId, date: now });
+    const club = await tx.club.updateMany({
+      where: { id: clubId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    const delegates = await tx.clubDelegateD.updateMany({
+      where: { clubId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    if (club.count !== 1) {
+      throw new InternalServerErrorException(
+        "ClubOld or delegate delete failed",
+      );
+    }
+    if (delegates.count === 0) {
+      throw new InternalServerErrorException(
+        "ClubOld or delegate delete failed",
+      );
+    }
+    await cancelPendingDelegateRequests(this.txHost, clubId, now);
   }
 
   async replaceForRegistration(param: {
@@ -105,6 +170,7 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     studentId: number;
     clubDelegateEnumId: number;
     effectiveAt: Date;
+    changedAt: Date;
   }): Promise<void> {
     const { tx } = this.txHost;
     const delegate = this.getDelegate(tx);
@@ -162,7 +228,7 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
         OR: [{ endTerm: { gt: param.effectiveAt } }, { endTerm: null }],
         deletedAt: null,
       },
-      select: { id: true },
+      select: { clubDelegateEnum: true },
     });
     if (currentStudentRoles.length > 1) {
       throw new ConflictException("Student has multiple delegate roles");
@@ -196,6 +262,19 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
         startTerm: param.effectiveAt,
       },
     });
+    await cancelPendingDelegateRequests(
+      this.txHost,
+      param.clubId,
+      param.changedAt,
+      {
+        clubDelegateEnumId: {
+          in: [
+            param.clubDelegateEnumId,
+            ...currentStudentRoles.map(role => role.clubDelegateEnum),
+          ],
+        },
+      },
+    );
   }
 
   async cancelForRegistration(param: {
@@ -203,12 +282,14 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
     studentId: number;
     clubDelegateEnumId: number;
     effectiveAt: Date;
+    changedAt: Date;
   }): Promise<void> {
     if (param.clubDelegateEnumId === ClubDelegateEnum.Representative) {
       throw new ConflictException("Representative role cannot be canceled");
     }
 
-    const delegate = this.getDelegate(this.txHost.tx);
+    const { tx } = this.txHost;
+    const delegate = this.getDelegate(tx);
     const currentRoles = await delegate.findMany({
       where: {
         clubId: param.clubId,
@@ -228,6 +309,14 @@ export class ClubDelegateRepository extends BaseSingleTableRepository<
       where: { id: currentRoles[0].id, deletedAt: null },
       data: { endTerm: param.effectiveAt },
     });
+    await cancelPendingDelegateRequests(
+      this.txHost,
+      param.clubId,
+      param.changedAt,
+      {
+        clubDelegateEnumId: param.clubDelegateEnumId,
+      },
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

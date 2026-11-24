@@ -17,8 +17,7 @@ import MyClubFrame from "@sparcs-clubs/web/features/my/frames/MyClubFrame";
 import MyInfoFrame from "@sparcs-clubs/web/features/my/frames/MyInfoFrame";
 import MyRegisterFrame from "@sparcs-clubs/web/features/my/frames/MyRegisterFrame";
 import ProfessorMyClubFrame from "@sparcs-clubs/web/features/my/frames/ProfessorMyClubFrame";
-// import isStudent from "@sparcs-clubs/web/utils/isStudent";
-// import MyServiceFrame from "@sparcs-clubs/web/features/my/frames/MyServiceFrame";
+import isStudent from "@sparcs-clubs/web/utils/isStudent";
 
 const ResponsiveWrapper = styled(FlexWrapper)`
   @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.md}) {
@@ -54,8 +53,13 @@ const My: React.FC = () => {
       {profile?.type === UserTypeEnum.Professor && (
         <ProfessorRegistrationBanner />
       )}
-      {profile?.type === UserTypeEnum.Undergraduate && <MyChangesFrame />}
-      <MyInfoFrame profile={profile?.type as string} />
+      {profile && isStudent(profile) && <MyChangesFrame profile={profile} />}
+      {profile && (
+        <MyInfoFrame
+          key={`${profile.id}:${profile.type}`}
+          profile={profile.type}
+        />
+      )}
       {profile?.type !== UserTypeEnum.Executive &&
         (profile?.type === UserTypeEnum.Professor ? (
           <ProfessorMyClubFrame />
@@ -65,7 +69,6 @@ const My: React.FC = () => {
       {profile && profile.type !== UserTypeEnum.Executive && (
         <MyRegisterFrame profile={profile.type} />
       )}
-      {/* {isStudent(profile) && <MyServiceFrame />} */}
     </ResponsiveWrapper>
   );
 };

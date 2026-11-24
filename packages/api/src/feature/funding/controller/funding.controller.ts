@@ -79,11 +79,21 @@ import apiFnd016, {
   ApiFnd016RequestUrl,
   type ApiFnd016ResponseOk,
 } from "@clubs/interface/api/funding/endpoint/apiFnd016";
+import apiFnd017, {
+  type ApiFnd017RequestParam,
+  ApiFnd017RequestUrl,
+} from "@clubs/interface/api/funding/endpoint/apiFnd017";
 import {
   apiFnd001,
   type ApiFnd001RequestBody,
   type ApiFnd001ResponseCreated,
 } from "@clubs/interface/api/funding/index";
+import {
+  deleteReviewInternalMemo,
+  getReviewInternalMemo,
+  putReviewInternalMemo,
+  type ReviewInternalMemoBody,
+} from "@clubs/interface/api/review/endpoint/internalMemo";
 
 import { ZodPipe } from "@sparcs-clubs/api/common/pipe/zod-pipe";
 import {
@@ -294,6 +304,60 @@ export default class FundingController {
     return this.fundingService.getExecutiveFundingsClubExecutives(
       executive.executiveId,
       query,
+    );
+  }
+
+  @Executive()
+  @Get(getReviewInternalMemo.url("funding", ":id"))
+  @UsePipes(new ZodPipe(getReviewInternalMemo))
+  getExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+  ) {
+    return this.fundingService.getExecutiveInternalMemo(
+      id,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Put(putReviewInternalMemo.url("funding", ":id"))
+  @UsePipes(new ZodPipe(putReviewInternalMemo))
+  putExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+    @Body() body: ReviewInternalMemoBody,
+  ) {
+    return this.fundingService.putExecutiveInternalMemo(
+      id,
+      body,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Delete(deleteReviewInternalMemo.url("funding", ":id"))
+  @UsePipes(new ZodPipe(deleteReviewInternalMemo))
+  deleteExecutiveInternalMemo(
+    @GetExecutive() executive: GetExecutive,
+    @Param() { id }: { id: number },
+  ) {
+    return this.fundingService.deleteExecutiveInternalMemo(
+      id,
+      executive.executiveId,
+    );
+  }
+
+  @Executive()
+  @Get(ApiFnd017RequestUrl)
+  @UsePipes(new ZodPipe(apiFnd017))
+  getExecutiveChangeHistory(
+    @GetExecutive() user: GetExecutive,
+    @Param() param: ApiFnd017RequestParam,
+  ) {
+    return this.fundingService.getExecutiveChangeHistory(
+      user.executiveId,
+      param.id,
     );
   }
 }

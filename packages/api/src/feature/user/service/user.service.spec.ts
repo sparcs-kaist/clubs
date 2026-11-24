@@ -29,13 +29,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
       const startTerm = new Date("2025-02-28T15:00:00.000Z");
 
@@ -73,13 +71,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -114,13 +110,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -155,13 +149,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -188,13 +180,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -237,13 +227,11 @@ describe("UserService", () => {
         userRepository as unknown as ConstructorParameters<
           typeof UserService
         >[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -275,13 +263,11 @@ describe("UserService", () => {
       };
       const service = new UserService(
         {} as ConstructorParameters<typeof UserService>[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
       const startTerm = new Date("2025-02-28T15:00:00.000Z");
 
@@ -314,13 +300,11 @@ describe("UserService", () => {
       };
       const service = new UserService(
         {} as ConstructorParameters<typeof UserService>[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -348,13 +332,11 @@ describe("UserService", () => {
       };
       const service = new UserService(
         {} as ConstructorParameters<typeof UserService>[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -383,13 +365,11 @@ describe("UserService", () => {
       };
       const service = new UserService(
         {} as ConstructorParameters<typeof UserService>[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(
@@ -424,13 +404,11 @@ describe("UserService", () => {
       };
       const service = new UserService(
         {} as ConstructorParameters<typeof UserService>[0],
-        {} as ConstructorParameters<typeof UserService>[1],
         executiveRepository as unknown as ConstructorParameters<
           typeof UserService
-        >[2],
+        >[1],
+        {} as ConstructorParameters<typeof UserService>[2],
         {} as ConstructorParameters<typeof UserService>[3],
-        {} as ConstructorParameters<typeof UserService>[4],
-        {} as ConstructorParameters<typeof UserService>[5],
       );
 
       await expect(

@@ -1,0 +1,359 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useRef, useState } from "react";
+
+import { studentUserTypes } from "@clubs/interface/common/enum/user.enum";
+
+import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
+import Button from "@sparcs-clubs/web/common/components/Button";
+import Card from "@sparcs-clubs/web/common/components/Card";
+import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
+import Info from "@sparcs-clubs/web/common/components/Info";
+import ErrorModal from "@sparcs-clubs/web/common/components/Modal/ErrorModal";
+import PageHead from "@sparcs-clubs/web/common/components/PageHead";
+import SectionTitle from "@sparcs-clubs/web/common/components/SectionTitle";
+import LoginRequired from "@sparcs-clubs/web/common/frames/LoginRequired";
+import {
+  type Profile,
+  useAuth,
+} from "@sparcs-clubs/web/common/providers/AuthContext";
+import { useGetMyManageClub } from "@sparcs-clubs/web/features/manage-club/services/getMyManageClub";
+
+import ClubRentalOrders from "../components/ClubRentalOrders";
+import {
+  RentalActions,
+  RentalError,
+  RentalField,
+  RentalFieldGrid,
+  RentalInput,
+  RentalLink,
+  RentalSelect,
+  RentalTextarea,
+} from "../components/RentalFields";
+import {
+  createRental,
+  rentalQueryKey,
+  useRentalEligibleClubs,
+  useRentalItems,
+  useRentalOfficeHours,
+  useRentalReturnOptions,
+} from "../services/rentalApi";
+import { rentalQuantityState } from "../utils/rentalQuantity";
+import {
+  formatRentalDuration,
+  formatRentalSlot,
+  rentalSlotSelection,
+  todayRentalDate,
+} from "../utils/rentalSchedule";
+
+const RentalApplicationForm = ({
+  club,
+  applicant,
+}: {
+  club: { id: number; name: string };
+  applicant: string;
+}) => {
+  const [itemId, setItemId] = useState(0);
+  const [pickupDate, setPickupDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const request = useRef<{ key: string; id: string }>();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const today = todayRentalDate();
+  const items = useRentalItems();
+  const officeHours = useRentalOfficeHours(today);
+  const returnOptions = useRentalReturnOptions(itemId, pickupDate);
+  const submit = useMutation({
+    mutationFn: createRental,
+    onSuccess: reservation => {
+      queryClient.invalidateQueries({ queryKey: rentalQueryKey });
+      router.push(`/my/rental-business/${reservation.id}`);
+    },
+    onError: () => {
+      returnOptions.refetch();
+      officeHours.refetch();
+    },
+  });
+
+  const selectedItem = items.data?.find(item => item.id === itemId);
+  const returnSlot = returnOptions.data?.options.find(
+    option => option.date === returnDate && option.availableQuantity > 0,
+  );
+  const pickupSlots = officeHours.data?.filter(
+    slot => !slot.isClosed && new Date(slot.closesAt).getTime() > Date.now(),
+  );
+  const pickup = pickupSlots?.find(slot => slot.date === pickupDate);
+  const availableQuantity = returnSlot?.availableQuantity ?? 0;
+  const quantityState = returnSlot && rentalQuantityState(quantity, returnSlot);
+  const canSubmit =
+    selectedItem && pickup && returnSlot && quantityState?.canRequest;
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSubmit || submit.isPending) return;
+    const form = new FormData(event.currentTarget);
+    const body = {
+      clubId: club.id,
+      itemId: selectedItem.id,
+      quantity,
+      pickup: rentalSlotSelection(pickup),
+      return: rentalSlotSelection(returnSlot),
+      purpose: String(form.get("purpose") ?? "").trim(),
+    };
+    const key = JSON.stringify(body);
+    if (request.current?.key !== key) {
+      request.current = { key, id: crypto.randomUUID() };
+    }
+    submit.mutate({ ...body, clientRequestId: request.current.id });
+  };
+
+  if (items.isPending || officeHours.isPending) {
+    return <AsyncBoundary isLoading isError={false} />;
+  }
+  if (items.isError || officeHours.isError) {
+    return (
+      <RentalError
+        error={items.error ?? officeHours.error}
+        fallback="신청에 필요한 정보를 불러오지 못했습니다."
+        retry={() => {
+          items.refetch();
+          officeHours.refetch();
+        }}
+      />
+    );
+  }
+  if (!items.data.length || !pickupSlots?.length) {
+    return <Info text="현재 신청할 수 있는 물품 또는 상근 일정이 없습니다." />;
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <Card outline gap={16}>
+        <RentalFieldGrid>
+          <RentalField>
+            동아리
+            <RentalInput readOnly value={club.name} />
+          </RentalField>
+          <RentalField>
+            신청자
+            <RentalInput readOnly value={applicant} />
+          </RentalField>
+        </RentalFieldGrid>
+        <RentalField>
+          물품
+          <RentalSelect
+            required
+            value={itemId || ""}
+            onChange={event => {
+              setItemId(Number(event.target.value));
+              setReturnDate("");
+              setQuantity(1);
+            }}
+          >
+            <option value="">물품 선택</option>
+            {items.data.map(item => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </RentalSelect>
+        </RentalField>
+        {selectedItem && <p>{formatRentalDuration(selectedItem)}</p>}
+        <RentalFieldGrid>
+          <RentalField>
+            수령 상근일
+            <RentalSelect
+              required
+              disabled={!itemId}
+              value={pickupDate}
+              onChange={event => {
+                setPickupDate(event.target.value);
+                setReturnDate("");
+                setQuantity(1);
+              }}
+            >
+              <option value="">수령 일정 선택</option>
+              {pickupSlots.map(slot => (
+                <option key={slot.date} value={slot.date}>
+                  {formatRentalSlot(slot)}
+                </option>
+              ))}
+            </RentalSelect>
+          </RentalField>
+          <RentalField>
+            반납 상근일
+            <RentalSelect
+              required
+              disabled={!returnOptions.data}
+              value={returnSlot?.date ?? ""}
+              onChange={event => {
+                setReturnDate(event.target.value);
+                setQuantity(1);
+              }}
+            >
+              <option value="">반납 일정 선택</option>
+              {returnOptions.data?.options.map(option => (
+                <option
+                  key={option.date}
+                  value={option.date}
+                  disabled={option.availableQuantity === 0}
+                >
+                  {formatRentalSlot(option)} · 최대 {option.availableQuantity}개
+                  {option.requestedQuantity > 0 &&
+                    ` · 현재 ${option.requestedQuantity}개 신청됨`}
+                </option>
+              ))}
+            </RentalSelect>
+          </RentalField>
+          <RentalField>
+            수량
+            <RentalInput
+              required
+              type="number"
+              min={1}
+              max={availableQuantity || undefined}
+              disabled={!returnSlot}
+              aria-invalid={quantityState?.exceedsAvailable || undefined}
+              aria-describedby={
+                quantityState?.exceedsAvailable
+                  ? "rental-quantity-error"
+                  : undefined
+              }
+              value={quantity || ""}
+              onChange={event => setQuantity(Number(event.target.value))}
+            />
+          </RentalField>
+        </RentalFieldGrid>
+        {quantityState?.exceedsAvailable && (
+          <p id="rental-quantity-error" role="alert">
+            현재 예약된 물품보다 많은 개수를 신청하였습니다. 최대{" "}
+            {availableQuantity}개까지 신청할 수 있습니다.
+          </p>
+        )}
+        {quantityState?.waitingForApproval && (
+          <div role="status">
+            <Info text="현재 신청된 물품의 개수를 초과합니다. 실제 승인되는 개수가 더 적을 수 있습니다" />
+          </div>
+        )}
+        {returnOptions.isLoading && <AsyncBoundary isLoading isError={false} />}
+        {returnOptions.isError && (
+          <RentalError
+            error={returnOptions.error}
+            fallback="반납 가능 일정을 불러오지 못했습니다."
+            retry={() => returnOptions.refetch()}
+          />
+        )}
+        {returnOptions.data &&
+          !returnOptions.data.options.some(
+            option => option.availableQuantity > 0,
+          ) && (
+            <Info text="선택한 수령일에 가능한 반납 일정과 재고가 없습니다. 수령일을 바꿔 주세요." />
+          )}
+        {quantityState?.dependsOnReturn && (
+          <Info text="수령일에 같은 물품이 반납될 예정입니다. 집행부가 반납을 확인한 뒤 수령할 수 있습니다." />
+        )}
+        <RentalField>
+          사용 목적
+          <RentalTextarea name="purpose" maxLength={500} required />
+        </RentalField>
+        {submit.isError && (
+          <RentalError
+            error={submit.error}
+            fallback="대여 신청을 완료하지 못했습니다."
+          />
+        )}
+        <RentalActions>
+          <Button
+            buttonType="submit"
+            type={canSubmit && !submit.isPending ? "default" : "disabled"}
+          >
+            {submit.isPending ? "신청 중" : "대여 신청"}
+          </Button>
+        </RentalActions>
+      </Card>
+    </form>
+  );
+};
+
+const RentalApplication = ({ profile }: { profile: Profile }) => {
+  const clubs = useRentalEligibleClubs(profile.id);
+  const managedClub = useGetMyManageClub();
+  const router = useRouter();
+
+  if (clubs.isPending || managedClub.isPending) {
+    return <AsyncBoundary isLoading isError={false} />;
+  }
+  if (clubs.isError || managedClub.isError) {
+    return (
+      <RentalError
+        error={clubs.error ?? managedClub.error}
+        fallback="신청할 동아리 정보를 불러오지 못했습니다."
+        retry={() => {
+          clubs.refetch();
+          managedClub.refetch();
+        }}
+      />
+    );
+  }
+  const managedClubId =
+    "clubId" in managedClub.data ? managedClub.data.clubId : undefined;
+  const club = clubs.data.find(current => current.id === managedClubId);
+  if (!club) {
+    return (
+      <ErrorModal
+        isOpen
+        message="현재 대표자/대의원만 신청하실 수 있습니다"
+        onConfirm={() => router.back()}
+      />
+    );
+  }
+
+  return (
+    <>
+      <RentalApplicationForm
+        key={club.id}
+        club={club}
+        applicant={profile.name}
+      />
+      <FlexWrapper direction="column" gap={16}>
+        <SectionTitle>내 동아리 대여 신청 목록</SectionTitle>
+        <ClubRentalOrders clubId={club.id} />
+      </FlexWrapper>
+    </>
+  );
+};
+
+const RentalApplicationFrame = () => {
+  const { profile, isLoggedIn, login } = useAuth();
+  const router = useRouter();
+
+  if (!isLoggedIn) return <LoginRequired login={login} />;
+  if (!profile) return <AsyncBoundary isLoading isError={false} />;
+  if (!studentUserTypes.includes(profile.type)) {
+    return (
+      <ErrorModal
+        isOpen
+        message="현재 대표자/대의원만 신청하실 수 있습니다"
+        onConfirm={() => router.back()}
+      />
+    );
+  }
+  return (
+    <FlexWrapper direction="column" gap={24}>
+      <PageHead
+        items={[{ name: "대여 사업", path: "/rental-business" }]}
+        title="물품 대여"
+      />
+      <RentalActions>
+        <RentalLink href="/office-hours">상근 일정 보기</RentalLink>
+        <RentalLink href="/manage-club#rental-business">
+          동아리 대여 내역
+        </RentalLink>
+      </RentalActions>
+      <RentalApplication key={profile.id} profile={profile} />
+    </FlexWrapper>
+  );
+};
+
+export default RentalApplicationFrame;

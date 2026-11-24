@@ -7,12 +7,14 @@ import TextInput, {
 
 interface PhoneInputProps extends Omit<TextInputProps, "onChange"> {
   value?: string;
+  formatDisplay?: boolean;
   onChange: (value: string) => void;
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({
   label = "",
   value = "",
+  formatDisplay = true,
   onChange,
   ...props
 }) => {
@@ -90,7 +92,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <TextInput
       label={label}
-      value={formatValue(value)}
+      value={formatDisplay ? formatValue(value) : value}
       onChange={handleChange}
       errorMessage={error}
       onBlur={handleBlur}

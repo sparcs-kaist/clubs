@@ -18,7 +18,7 @@ export const repositoryBoundary = {
       models: ["activityCertificate"],
     },
     {
-      from: "packages/api/src/feature/club/repository/repository-boundary.ts",
+      from: "packages/api/src/feature/club/repository-boundary.ts",
       models: [
         "clubDelegateChangeRequest",
         "clubDelegateD",

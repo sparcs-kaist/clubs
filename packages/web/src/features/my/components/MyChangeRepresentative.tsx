@@ -1,33 +1,32 @@
 import isPropValid from "@emotion/is-prop-valid";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { overlay } from "overlay-kit";
 import React from "react";
 import styled from "styled-components";
 
+import type { ApiClb013ResponseOk } from "@clubs/interface/api/club/endpoint/apiClb013";
 import { ClubDelegateChangeRequestStatusEnum } from "@clubs/interface/common/enum/club.enum";
 
 import TextButton from "@sparcs-clubs/web/common/components/Buttons/TextButton";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Icon from "@sparcs-clubs/web/common/components/Icon";
-import Modal from "@sparcs-clubs/web/common/components/Modal";
 import Typography from "@sparcs-clubs/web/common/components/Typography";
+import type { Profile } from "@sparcs-clubs/web/common/providers/AuthContext";
 import colors from "@sparcs-clubs/web/styles/themes/colors";
 
-import ChangeRepresentativeModalContent from "./ChangeRepresentativeModalContent";
+import useDelegateChangeRequestModal, {
+  delegateRoleLabelKeys,
+} from "../hooks/useDelegateChangeRequestModal";
 
 interface MyChangeRepresentativeProps {
-  status: ClubDelegateChangeRequestStatusEnum;
-  clubName: string;
-  prevRepresentative: string;
-  newRepresentative: string;
-  requestId: number;
+  request: ApiClb013ResponseOk["requests"][number];
+  profile: Profile;
 }
 
 const MyChangeRepresentativeWrapper = styled.div.withConfig({
   shouldForwardProp: prop => isPropValid(prop),
 })<{
-  status: MyChangeRepresentativeProps["status"];
+  status: ClubDelegateChangeRequestStatusEnum;
 }>`
   display: flex;
   flex-direction: row;
@@ -46,74 +45,55 @@ const MyChangeRepresentativeWrapper = styled.div.withConfig({
 `;
 
 const MyChangeRepresentative: React.FC<MyChangeRepresentativeProps> = ({
-  status,
-  clubName,
-  prevRepresentative,
-  newRepresentative,
-  requestId,
+  request,
+  profile,
 }) => {
   const t = useTranslations("my.representative");
   const router = useRouter();
-  const Title =
-    status === ClubDelegateChangeRequestStatusEnum.Applied
-      ? t("requestedTitle")
-      : t("completedTitle");
-  const Text = t(
-    status === ClubDelegateChangeRequestStatusEnum.Applied
-      ? "requestedBody"
-      : "completedBody",
-    { clubName, prevRepresentative, newRepresentative },
-  );
-
-  const isNewRepresentative = true; // 이전 대표자한테도 보여주는지? -> 안 보여줄거면 이 부분 삭제
-  const openConfirmModal = () => {
-    overlay.open(({ isOpen, close }) => (
-      <Modal isOpen={isOpen}>
-        <ChangeRepresentativeModalContent
-          needPhoneNumber
-          clubName={clubName}
-          prevRepresentative={prevRepresentative}
-          newRepresentative={newRepresentative}
-          onClose={close}
-          requestId={requestId}
-        />
-      </Modal>
-    ));
-  };
+  const openConfirmation = useDelegateChangeRequestModal(profile);
+  const { clubName, delegateEnumId, prevStudentName, prevStudentNumber } =
+    request;
+  const status = request.clubDelegateChangeRequestStatusEnumId;
+  const role = t(delegateRoleLabelKeys[delegateEnumId]);
+  const requester = `${prevStudentNumber} ${prevStudentName}`;
+  const isPending = status === ClubDelegateChangeRequestStatusEnum.Applied;
+  const title = t(isPending ? "requestedTitle" : "completedTitle", { role });
+  const body = t(isPending ? "requestedBody" : "completedBody", {
+    clubName,
+    role,
+    requester,
+  });
 
   return (
     <MyChangeRepresentativeWrapper status={status}>
-      {status === ClubDelegateChangeRequestStatusEnum.Applied ? (
+      {isPending ? (
         <Icon type="error" size={20} color={colors.RED[600]} />
       ) : (
         <Icon type="check_circle" size={20} color={colors.GREEN[600]} />
       )}
       <FlexWrapper direction="column" gap={8}>
         <Typography fw="MEDIUM" fs={16} lh={20}>
-          {Title}
+          {title}
         </Typography>
         <Typography fs={16} lh={20} style={{ whiteSpace: "pre-wrap" }}>
-          {Text}
+          {body}
         </Typography>
-        {status === ClubDelegateChangeRequestStatusEnum.Applied && (
+        {isPending && (
           <TextButton
             color="GRAY"
             text={t("viewMore")}
             fw="REGULAR"
-            onClick={openConfirmModal}
+            onClick={() => openConfirmation(request)}
           />
         )}
-        {status === ClubDelegateChangeRequestStatusEnum.Approved &&
-          isNewRepresentative && (
-            <TextButton
-              color="GRAY"
-              text={t("manageClub")}
-              fw="REGULAR"
-              onClick={() => {
-                router.push(`/manage-club/`);
-              }}
-            />
-          )}
+        {status === ClubDelegateChangeRequestStatusEnum.Approved && (
+          <TextButton
+            color="GRAY"
+            text={t("manageClub")}
+            fw="REGULAR"
+            onClick={() => router.push("/manage-club/")}
+          />
+        )}
       </FlexWrapper>
     </MyChangeRepresentativeWrapper>
   );

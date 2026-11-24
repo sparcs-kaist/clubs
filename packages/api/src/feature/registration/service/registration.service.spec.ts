@@ -1,6 +1,13 @@
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import apiReg021 from "@clubs/interface/api/registration/endpoint/apiReg021";
+import apiReg022 from "@clubs/interface/api/registration/endpoint/apiReg022";
 import { ClubTypeEnum } from "@clubs/interface/common/enum/club.enum";
-import { RegistrationStatusEnum } from "@clubs/interface/common/enum/registration.enum";
+import {
+  RegistrationDeadlineEnum,
+  RegistrationStatusEnum,
+  RegistrationTypeEnum,
+} from "@clubs/interface/common/enum/registration.enum";
 
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
 
@@ -22,7 +29,8 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
   const clubRegistrationRepository = {
     selectRegistrationsAndRepresentativeByProfessorId: jest.fn(),
     selectRegistrationsById: jest.fn(),
-    updateRegistrationProfessorApprovedAt: jest.fn(),
+    getProfessorRegistrationsClubRegistration: jest.fn(),
+    recordProfessorApproval: jest.fn(),
     postExecutiveRegistrationsClubRegistrationSendBack: jest.fn(),
   };
   const clubPublicService = {
@@ -55,6 +63,7 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     getById: jest.fn().mockResolvedValue({ id: semesterId }),
   };
   const registrationDeadlinePublicService = {
+    search: jest.fn().mockResolvedValue([]),
     validate: jest.fn().mockResolvedValue(undefined),
   };
   const registrationPublicService = {
@@ -79,6 +88,7 @@ const createService = (clubTypeEnum: ClubTypeEnum) => {
     memberRegistrationRepository,
     userPublicService,
     clubPublicService,
+    registrationDeadlinePublicService,
     registrationPublicService,
   };
 };
@@ -137,18 +147,29 @@ describe("RegistrationService club registration review", () => {
 });
 
 describe("RegistrationService professor club registration brief", () => {
-  it("preserves semesters and independent professor approval through the response schema", async () => {
+  it("preserves semesters and recognizes existing signatures before the approval status backfill", async () => {
     const { service, clubRegistrationRepository } = createService(
       ClubTypeEnum.Regular,
     );
     const expected = [
-      { id: 1, semesterId, professorSignedAt: null },
+      {
+        id: 1,
+        semesterId,
+        professorSignedAt: null,
+        professorApprovalStatus: ProfessorApprovalStatus.Pending,
+      },
       {
         id: 2,
         semesterId: semesterId - 1,
         professorSignedAt: new Date("2026-09-14T00:00:00.000Z"),
+        professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
       },
-      { id: 3, semesterId: null, professorSignedAt: null },
+      {
+        id: 3,
+        semesterId: null,
+        professorSignedAt: new Date("2026-09-12T00:00:00.000Z"),
+        professorApprovalStatus: ProfessorApprovalStatus.Approved,
+      },
     ];
     clubRegistrationRepository.selectRegistrationsAndRepresentativeByProfessorId.mockResolvedValue(
       expected.map(item => ({
@@ -161,6 +182,10 @@ describe("RegistrationService professor club registration brief", () => {
           clubNameKr: "동아리",
           clubNameEn: "Club",
           professorApprovedAt: item.professorSignedAt,
+          professorApprovalStatus:
+            item.id === 3
+              ? ProfessorApprovalStatus.Pending
+              : ProfessorApprovalStatus.LateApproved,
         },
         club: { nameKr: "동아리", nameEn: "Club" },
         division: { name: "분과" },
@@ -189,20 +214,126 @@ describe("RegistrationService professor club registration brief", () => {
   });
 });
 
+describe("RegistrationService professor club registration detail", () => {
+  it("returns both approval states and the final deadlines of the application semester", async () => {
+    const {
+      clubRegistrationRepository,
+      registrationDeadlinePublicService,
+      service,
+    } = createService(ClubTypeEnum.Regular);
+    const regularDeadline = new Date("2026-09-01T12:00:00.000Z");
+    const lateSigningDeadline = new Date("2026-09-14T12:00:00.000Z");
+    const signedAt = new Date("2026-09-20T12:00:00.000Z");
+    registrationDeadlinePublicService.search
+      .mockResolvedValueOnce([
+        { endTerm: regularDeadline },
+        { endTerm: new Date("2026-08-30T12:00:00.000Z") },
+      ])
+      .mockResolvedValueOnce([{ endTerm: lateSigningDeadline }]);
+    clubRegistrationRepository.getProfessorRegistrationsClubRegistration.mockResolvedValue(
+      {
+        registration: {
+          id: 2,
+          clubId,
+          semesterId: semesterId - 1,
+          registrationApplicationTypeEnumId: RegistrationTypeEnum.Renewal,
+          registrationApplicationStatusEnumId: RegistrationStatusEnum.Rejected,
+          clubNameKr: "동아리",
+          clubNameEn: "Club",
+          phoneNumber: "010-1234-5678",
+          foundedAt: new Date("2026-01-01T00:00:00.000Z"),
+          divisionId: 1,
+          activityFieldKr: "활동",
+          activityFieldEn: "Activities",
+          registrationActivityPlanFileId: null,
+          registrationClubRuleFileId: null,
+          registrationExternalInstructionFileId: null,
+          professorApprovedAt: signedAt,
+          professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
+          updatedAt: signedAt,
+        },
+        club: { nameKr: "동아리", nameEn: "Club" },
+        student: { name: "학생", number: 20260001 },
+        professor: { name: "교수", email: "professor@kaist.ac.kr" },
+        professor_t: { professorEnum: null },
+        comments: [],
+      },
+    );
+
+    const detail = await service.getProfessorRegistrationsClubRegistration({
+      registrationId: 2,
+      professorId: 1,
+    });
+
+    expect(
+      apiReg022.responseBodyMap[200].parse(JSON.parse(JSON.stringify(detail))),
+    ).toMatchObject({
+      registrationStatusEnumId: RegistrationStatusEnum.Rejected,
+      isProfessorSigned: true,
+      professorApprovalStatus: ProfessorApprovalStatus.LateApproved,
+      professorSignedAt: signedAt,
+      professor: { professorEnumId: null },
+      regularDeadline,
+      lateSigningDeadline,
+    });
+    expect(registrationDeadlinePublicService.search.mock.calls).toEqual([
+      [
+        {
+          semesterId: semesterId - 1,
+          deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+        },
+      ],
+      [
+        {
+          semesterId: semesterId - 1,
+          deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationLate,
+        },
+      ],
+    ]);
+  });
+});
+
 describe("RegistrationService professor club registration approval", () => {
-  it.each([null, undefined])(
-    "allows an unsigned registration (%s) after the application deadline",
-    async professorApprovedAt => {
-      const { service, clubRegistrationRepository, registrationPublicService } =
-        createService(ClubTypeEnum.Regular);
-      const approvedAt = new Date("2026-09-14T00:00:00.000Z");
+  const deadline = new Date("2026-09-01T12:00:00.000Z");
+  const { Approved, LateApproved } = ProfessorApprovalStatus;
+
+  it.each([
+    { now: "2026-09-01T11:59:59.999Z", endTerm: deadline, status: Approved },
+    {
+      now: "2026-09-01T12:00:00.000Z",
+      endTerm: deadline,
+      status: LateApproved,
+    },
+    {
+      now: "2026-10-01T00:00:00.000Z",
+      endTerm: deadline,
+      status: LateApproved,
+    },
+    { now: "2026-10-01T00:00:00.000Z", endTerm: null, status: Approved },
+  ])(
+    "signs at $now and stores $status with regular cutoff $endTerm",
+    async ({ now, endTerm, status }) => {
+      const {
+        service,
+        clubRegistrationRepository,
+        registrationDeadlinePublicService,
+        registrationPublicService,
+      } = createService(ClubTypeEnum.Regular);
+      const approvedAt = new Date(now);
       Object.assign(service, { clock: { now: () => approvedAt } });
       registrationPublicService.checkDeadline.mockRejectedValue(
         new Error("Application deadline has passed"),
       );
       clubRegistrationRepository.selectRegistrationsById.mockResolvedValue([
-        { professorId: 1, professorApprovedAt },
+        {
+          professorId: 1,
+          semesterId: semesterId - 1,
+          professorApprovedAt: null,
+        },
       ]);
+      registrationDeadlinePublicService.search.mockResolvedValue(
+        endTerm ? [{ endTerm: new Date(0) }, { endTerm }] : [],
+      );
 
       await expect(
         service.getProfessorRegistrationsClubRegistrationApproval({
@@ -211,9 +342,19 @@ describe("RegistrationService professor club registration approval", () => {
         }),
       ).resolves.toEqual({});
       expect(registrationPublicService.checkDeadline).not.toHaveBeenCalled();
+      expect(registrationDeadlinePublicService.search).toHaveBeenCalledTimes(1);
+      expect(registrationDeadlinePublicService.search).toHaveBeenCalledWith({
+        semesterId: semesterId - 1,
+        deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+      });
       expect(
-        clubRegistrationRepository.updateRegistrationProfessorApprovedAt,
-      ).toHaveBeenCalledWith({ registrationId: 2, approvedAt });
+        clubRegistrationRepository.recordProfessorApproval,
+      ).toHaveBeenCalledWith({
+        registrationId: 2,
+        professorId: 1,
+        approvalStatus: status,
+        approvedAt,
+      });
     },
   );
 
@@ -248,7 +389,7 @@ describe("RegistrationService professor club registration approval", () => {
       }),
     ).rejects.toThrow(message);
     expect(
-      clubRegistrationRepository.updateRegistrationProfessorApprovedAt,
+      clubRegistrationRepository.recordProfessorApproval,
     ).not.toHaveBeenCalled();
   });
 
@@ -262,7 +403,7 @@ describe("RegistrationService professor club registration approval", () => {
 
     await expect(
       service.postStudentRegistrationClubRegistration(
-        studentId,
+        { userId: 100, studentId },
         {} as Parameters<
           RegistrationService["postStudentRegistrationClubRegistration"]
         >[1],

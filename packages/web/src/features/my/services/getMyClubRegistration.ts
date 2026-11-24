@@ -1,6 +1,9 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
-import type { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
+import type {
+  ApiReg012RequestQuery,
+  ApiReg012ResponseOk,
+} from "@clubs/interface/api/registration/endpoint/apiReg012";
 import apiReg012 from "@clubs/interface/api/registration/endpoint/apiReg012";
 
 import {
@@ -10,18 +13,29 @@ import {
 
 import { mockMyClubRegisterList } from "./_mock/mockMyClubRegisterDetail";
 
-export const useGetMyClubRegistration = (
-  options?: Pick<UseQueryOptions<ApiReg012ResponseOk>, "refetchOnMount">,
-) =>
+type MyClubRegistrationOptions = Pick<
+  UseQueryOptions<ApiReg012ResponseOk>,
+  "refetchOnMount"
+> &
+  ApiReg012RequestQuery & { viewerId?: number };
+
+export const useGetMyClubRegistration = ({
+  semester,
+  clubId,
+  viewerId,
+  ...options
+}: MyClubRegistrationOptions = {}) =>
   useQuery<ApiReg012ResponseOk, Error>({
     ...options,
-    queryKey: [apiReg012.url()],
+    queryKey:
+      semester || clubId !== undefined
+        ? [apiReg012.url(), semester, clubId, viewerId]
+        : [apiReg012.url()],
 
     queryFn: async (): Promise<ApiReg012ResponseOk> => {
-      const { data, status } = await axiosClientWithAuth.get(
-        apiReg012.url(),
-        {},
-      );
+      const { data, status } = await axiosClientWithAuth.get(apiReg012.url(), {
+        params: { semester, clubId },
+      });
 
       if (status === 204) {
         return { registrations: [] };

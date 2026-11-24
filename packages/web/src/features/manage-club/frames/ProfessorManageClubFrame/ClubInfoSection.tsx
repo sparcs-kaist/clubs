@@ -21,22 +21,30 @@ interface ClubInfoSectionProps {
 const ClubInfoRow = styled(FlexWrapper).attrs({
   direction: "row",
   gap: 16,
-})``;
+})`
+  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
+    flex-direction: column;
+  }
+`;
+
+const ClubInfoLabel = styled(Typography)`
+  width: 120px;
+  text-align: center;
+
+  @media (max-width: ${({ theme }) => theme.responsive.BREAKPOINT.sm}) {
+    width: 80px;
+  }
+`;
 
 const ClubInfoItem: React.FC<{ title: string; content: React.ReactNode }> = ({
   title,
   content,
 }) => (
   <FlexWrapper direction="row" gap={40} style={{ flex: 1 }}>
-    <Typography
-      fs={16}
-      lh={24}
-      fw="MEDIUM"
-      style={{ width: "120px", textAlign: "center" }}
-    >
+    <ClubInfoLabel fs={16} lh={24} fw="MEDIUM">
       {title}
-    </Typography>
-    <Typography fs={16} lh={24} style={{ flex: 1 }}>
+    </ClubInfoLabel>
+    <Typography fs={16} lh={24} style={{ flex: 1, minWidth: 0 }}>
       {content}
     </Typography>
   </FlexWrapper>
@@ -92,7 +100,14 @@ const ClubInfoSection: React.FC<ClubInfoSectionProps> = ({ clubId }) => {
               <ClubInfoItem
                 title="동아리 설명"
                 content={
-                  <Typography fs={16} lh={24}>
+                  <Typography
+                    fs={16}
+                    lh={24}
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
                     {data.description}
                   </Typography>
                 }

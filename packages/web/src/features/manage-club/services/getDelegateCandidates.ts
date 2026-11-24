@@ -21,7 +21,7 @@ export const useGetDelegateCandidates = (requestParam: ApiClb008RequestParam) =>
         apiClb008.url(requestParam.clubId, requestParam.delegateEnumId),
       );
 
-      return data;
+      return apiClb008.responseBodyMap[200].parse(data);
     },
   });
 

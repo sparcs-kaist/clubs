@@ -2,6 +2,8 @@ import { useParams, useRouter } from "next/navigation";
 import { overlay } from "overlay-kit";
 import React from "react";
 
+import { FundingDeadlineEnum } from "@clubs/interface/common/enum/funding.enum";
+
 import AsyncBoundary from "@sparcs-clubs/web/common/components/AsyncBoundary";
 import FlexWrapper from "@sparcs-clubs/web/common/components/FlexWrapper";
 import Modal from "@sparcs-clubs/web/common/components/Modal";
@@ -15,7 +17,9 @@ import { LOCAL_STORAGE_KEY } from "@sparcs-clubs/web/constants/localStorage";
 
 import useGetInitialFundingFormData from "../hooks/useGetInitialFundingForm";
 import useUpdateFunding from "../hooks/useUpdateFunding";
+import useGetFundingDeadline from "../services/useGetFundingDeadline";
 import { FundingFormData } from "../types/funding";
+import getFundingFormError from "../utils/fundingFormError";
 import FundingForm from "./FundingForm";
 
 interface EditFundingFrameProps {
@@ -35,7 +39,15 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
     isError,
   } = useGetInitialFundingFormData(+fundingId);
 
-  const { mutateAsync: updateFunding } = useUpdateFunding(+fundingId, clubId);
+  const { mutate: updateFunding } = useUpdateFunding(+fundingId, clubId);
+  const {
+    data: fundingDeadline,
+    isLoading: isLoadingDeadline,
+    isError: isErrorDeadline,
+  } = useGetFundingDeadline();
+  const isNameLocked =
+    fundingDeadline?.deadline?.deadlineEnum ===
+    FundingDeadlineEnum.Modification;
 
   const { savedData, isModalOpen, handleConfirm, handleClose } =
     useTemporaryStorage<FundingFormData>(LOCAL_STORAGE_KEY.EDIT_FUNDING);
@@ -70,7 +82,7 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
             <ConfirmModalContent onConfirm={close}>
               지원금 수정에 실패했습니다.
               <Typography color="GRAY.300" fs={12} lh={16} fw="REGULAR">
-                {error.message}
+                {getFundingFormError(error)}
               </Typography>
             </ConfirmModalContent>
           </Modal>
@@ -100,12 +112,16 @@ const EditFundingFrame: React.FC<EditFundingFrameProps> = ({ clubId }) => {
         title="지원금 수정"
         enableLast
       />
-      <AsyncBoundary isLoading={isLoading} isError={isError}>
+      <AsyncBoundary
+        isLoading={isLoading || isLoadingDeadline}
+        isError={isError || isErrorDeadline}
+      >
         <FundingForm
           clubId={clubId}
           onCancel={cancelClick}
           onSubmit={handleSubmit}
-          initialData={savedData ?? funding ?? []}
+          initialData={savedData ?? funding}
+          lockedName={isNameLocked ? funding.name : undefined}
         />
       </AsyncBoundary>
     </FlexWrapper>

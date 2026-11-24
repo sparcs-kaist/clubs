@@ -2,11 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import styled from "styled-components";
 
 import { useAuth } from "@sparcs-clubs/web/common/providers/AuthContext";
 import paths, { Paths } from "@sparcs-clubs/web/constants/paths";
+import { useGetFeatureFlagString } from "@sparcs-clubs/web/hooks/getFeatureFlag";
 
 import Button from "../Button";
 import Icon from "../Icon";
@@ -16,11 +17,13 @@ type MobileNavMenuProps = {
   className?: string;
   keys: (keyof Paths)[];
   onClose: VoidFunction;
+  hiddenSubPath?: string;
 };
 
 type Path = {
   name: string;
   path?: string;
+  featureFlag?: string;
   sub?: Path[];
 };
 
@@ -60,6 +63,7 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
   className = "",
   keys,
   onClose,
+  hiddenSubPath,
 }) => {
   const [selectedMenu, setSelectedMenu] = useState<keyof Paths | null>(null);
   const currentPath = usePathname();
@@ -70,6 +74,7 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
   const router = useRouter();
 
   const t = useTranslations();
+  const isFeatureEnabled = useGetFeatureFlagString();
 
   const handleMyPageClick = () => {
     onClose();
@@ -89,13 +94,17 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
   return (
     <MobileNavMenuInner className={className}>
       {keys.map(key => {
-        const subPath = (paths[key] as Path).sub;
+        const subPath = (paths[key] as Path).sub?.filter(
+          ({ featureFlag, path }) =>
+            featureFlag &&
+            isFeatureEnabled(featureFlag) &&
+            (!hiddenSubPath || path !== hiddenSubPath),
+        );
         const haveSubPath = subPath && subPath.length > 0;
 
         return (
-          <>
+          <Fragment key={key}>
             <MobileNavItem
-              key={key}
               isExpanded={haveSubPath ? isSelected(key) : false}
               {...paths[key]}
               onClick={() => {
@@ -110,7 +119,7 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
             />
 
             {isSelected(key) && (
-              <MobileSubMenuInner key={key}>
+              <MobileSubMenuInner>
                 {subPath?.map(({ name, path }) => (
                   <MobileNavItem
                     key={name}
@@ -122,7 +131,7 @@ const MobileNavMenu: React.FC<MobileNavMenuProps> = ({
                 ))}
               </MobileSubMenuInner>
             )}
-          </>
+          </Fragment>
         );
       })}
       {isLoggedIn ? (

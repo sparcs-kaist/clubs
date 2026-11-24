@@ -1,3 +1,5 @@
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
+
 import { ApiAct002ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct002";
 import { ApiAct011ResponseOk } from "@clubs/interface/api/activity/endpoint/apiAct011";
 import { IStudentSummary } from "@clubs/interface/api/user/type/user.type";
@@ -281,6 +283,7 @@ export const mockActivityDetailData: ApiAct002ResponseOkTemp = {
   ],
   advisorProfessorApproval: ActivityProfessorApprovalEnum.Requested,
   updatedAt: new Date(),
+  professorApprovalStatus: ProfessorApprovalStatus.Pending,
   professorApprovedAt: null,
   editedAt: new Date(),
   commentedAt: null,

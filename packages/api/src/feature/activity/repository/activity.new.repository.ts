@@ -1,6 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { Transactional, TransactionHost } from "@nestjs-cls/transactional";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { TransactionHost } from "@nestjs-cls/transactional";
 import { Prisma } from "@prisma/client";
+
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 
 import {
   ActivityStatusEnum,
@@ -15,7 +21,9 @@ import {
   PrismaMultiTableConfig,
 } from "@sparcs-clubs/api/common/base/base.multi.repository";
 import { BaseTableFieldMapKeys } from "@sparcs-clubs/api/common/base/base.repository";
+import { toReviewSnapshot } from "@sparcs-clubs/api/common/review/review-snapshot";
 import { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
+import { forEachAsyncSequentially } from "@sparcs-clubs/api/common/util/util";
 import {
   IActivityCreate,
   MActivity,
@@ -63,6 +71,12 @@ const activityTableConfig: PrismaMultiTableConfig = {
   },
 };
 
+const internalMemoSelect = {
+  content: true,
+  updatedAt: true,
+  updatedBy: true,
+} as const;
+
 @Injectable()
 export class ActivityNewRepository extends BaseMultiTableRepository<
   MActivity,
@@ -78,9 +92,174 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     super(activityTableConfig, MActivity, "activityId");
   }
 
+  async getInternalMemo(id: number) {
+    const item = await this.txHost.tx.activity.findUnique({
+      where: { id, deletedAt: null },
+      select: { internalMemo: { select: internalMemoSelect } },
+    });
+    if (!item) throw new NotFoundException(`Activity: ${id} not found`);
+    return item.internalMemo;
+  }
+
+  async putInternalMemo(
+    id: number,
+    memo: {
+      content: string;
+      updatedAt: Date;
+      updatedBy: string;
+      updatedByExecutiveId: number;
+    },
+  ) {
+    await this.getInternalMemo(id);
+    return this.txHost.tx.activityInternalMemo.upsert({
+      where: { activityId: id },
+      create: { activityId: id, ...memo },
+      update: { ...memo },
+      select: internalMemoSelect,
+    });
+  }
+
+  async deleteInternalMemo(id: number) {
+    await this.getInternalMemo(id);
+    await this.txHost.tx.activityInternalMemo.deleteMany({
+      where: { activityId: id },
+    });
+  }
+
+  async fetchForReportUpdate(id: number): Promise<MActivity> {
+    const { tx } = this.txHost;
+    // Write before the first read so concurrent edits capture adjacent versions.
+    await tx.activity.updateMany({
+      where: { id, deletedAt: null },
+      data: { id },
+    });
+    return this.fetch(id, tx);
+  }
+
+  async recordChangeHistory(
+    before: MActivity,
+    editorStudentId: number,
+    createdAt: Date,
+  ): Promise<void> {
+    const { tx } = this.txHost;
+    const after = await this.fetch(before.id, tx);
+    await tx.activityChangeHistory.create({
+      data: {
+        activityId: before.id,
+        editorStudentId,
+        before: this.snapshot(before),
+        after: this.snapshot(after),
+        createdAt,
+      },
+    });
+  }
+
+  private snapshot(activity: MActivity) {
+    return toReviewSnapshot({
+      name: activity.name,
+      activityTypeEnumId: activity.activityTypeEnum,
+      durations: activity.durations,
+      location: activity.location,
+      purpose: activity.purpose,
+      detail: activity.detail,
+      evidence: activity.evidence,
+      evidenceFiles: activity.evidenceFiles,
+      participants: activity.participants,
+    });
+  }
+
+  async findChangeHistory(activityId: number) {
+    await this.fetch(activityId);
+    return this.txHost.tx.activityChangeHistory.findMany({
+      where: { activityId },
+      orderBy: { id: "desc" },
+      select: { id: true, createdAt: true, before: true, after: true },
+    });
+  }
+
+  selectActivityByIds(activityIds: number[]) {
+    return this.txHost.tx.activity.findMany({
+      where: { id: { in: activityIds }, deletedAt: null },
+      select: { id: true, clubId: true, activityDId: true },
+    });
+  }
+
+  async createRegistrationReport(activity: IActivityCreate): Promise<void> {
+    const { main, oneToMany } = this.createToDBMapping(activity);
+    await this.txHost.tx.activity.create({
+      data: {
+        ...main,
+        activityTs: { create: oneToMany.activityT },
+        activityEvidenceFiles: { create: oneToMany.activityEvidenceFile },
+        activityParticipants: { create: oneToMany.activityParticipant },
+      },
+      select: { id: true },
+    });
+  }
+
+  async recordProfessorActivityApprovals(param: {
+    activityIds: number[];
+    clubId: number;
+    activityDId: number;
+    professorId: number;
+    approvalStatus: Exclude<
+      ProfessorApprovalStatus,
+      typeof ProfessorApprovalStatus.Pending
+    >;
+    approvedAt: Date;
+  }): Promise<void> {
+    const { clubId, activityDId, professorId, approvalStatus, approvedAt } =
+      param;
+    const logEntries: Prisma.ActivityProfessorApprovalLogCreateManyInput[] = [];
+
+    // The caller orders IDs so overlapping batches acquire row locks in the same order.
+    await forEachAsyncSequentially(param.activityIds, async id => {
+      const scope = { id, clubId, activityDId };
+      const result = await this.txHost.tx.activity.updateMany({
+        where: {
+          ...scope,
+          deletedAt: null,
+          professorApprovalStatus: ProfessorApprovalStatus.Pending,
+        },
+        data: {
+          professorApprovalStatus: approvalStatus,
+          professorApprovedAt: approvedAt,
+        },
+      });
+      if (result.count === 1) {
+        logEntries.push({
+          activityId: id,
+          professorId,
+          approvalStatus,
+          approvedAt,
+        });
+      } else {
+        const activity = await this.txHost.tx.activity.findFirst({
+          where: { ...scope, deletedAt: null },
+          select: { professorApprovalStatus: true },
+        });
+        if (!activity) throw new NotFoundException("No such activity");
+        if (
+          activity.professorApprovalStatus === ProfessorApprovalStatus.Pending
+        ) {
+          throw new ConflictException(
+            "Activity changed while it was being approved",
+          );
+        }
+      }
+    });
+
+    if (logEntries.length > 0) {
+      await this.txHost.tx.activityProfessorApprovalLog.createMany({
+        data: logEntries,
+      });
+    }
+  }
+
   async approveExecutiveActivity(param: {
     activityId: number;
     commentedAt: Date;
+    commentedExecutiveId: number;
   }): Promise<boolean> {
     const result = await this.txHost.tx.activity.updateMany({
       where: {
@@ -90,6 +269,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       data: {
         activityStatusEnumId: ActivityStatusEnum.Approved,
         commentedAt: param.commentedAt,
+        commentedExecutiveId: param.commentedExecutiveId,
         updatedAt: this.clock.now(),
       },
     });
@@ -100,6 +280,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
   async sendBackExecutiveActivity(param: {
     activityId: number;
     commentedAt: Date;
+    commentedExecutiveId: number;
   }): Promise<boolean> {
     const result = await this.txHost.tx.activity.updateMany({
       where: {
@@ -109,6 +290,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
       data: {
         activityStatusEnumId: ActivityStatusEnum.Rejected,
         commentedAt: param.commentedAt,
+        commentedExecutiveId: param.commentedExecutiveId,
         updatedAt: this.clock.now(),
       },
     });
@@ -116,7 +298,6 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     return result.count > 0;
   }
 
-  @Transactional()
   async updateActivityReport(activity: MActivity): Promise<boolean> {
     const data = this.modelToDB(activity);
     const { id: _, ...mainData } = data.main;
@@ -143,7 +324,11 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         id: activity.id,
         deletedAt: null,
       },
-      data: mainData,
+      data: {
+        ...mainData,
+        professorApprovedAt: activity.professorApprovedAt,
+        professorApprovalStatus: activity.professorApprovalStatus,
+      },
     });
 
     if (activityResult.count !== 1) return false;
@@ -214,10 +399,13 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         id: participant.studentId,
       })),
       chargedExecutive: { id: result.main.chargedExecutiveId },
-      commentedExecutive: undefined,
+      commentedExecutive: result.main.commentedExecutiveId
+        ? { id: result.main.commentedExecutiveId }
+        : undefined,
       commentedAt: result.main.commentedAt,
       editedAt: result.main.editedAt,
       professorApprovedAt: result.main.professorApprovedAt,
+      professorApprovalStatus: result.main.professorApprovalStatus,
       durations: result.oneToMany.activityT as {
         startTerm: Date;
         endTerm: Date;
@@ -239,10 +427,10 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
         detail: model.detail,
         evidence: model.evidence,
         chargedExecutiveId: model.chargedExecutive?.id,
+        commentedExecutiveId: model.commentedExecutive?.id ?? null,
         commentedAt: model.commentedAt,
         editedAt: model.editedAt,
         updatedAt: this.clock.now(),
-        professorApprovedAt: model.professorApprovedAt,
       },
       oneToOne: {},
       oneToMany: {
@@ -263,7 +451,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
     };
   }
 
-  protected createToDBMapping(model: IActivityCreate): ActivityDbInsert {
+  protected createToDBMapping(model: IActivityCreate) {
     return {
       main: {
         clubId: model.club.id,
@@ -290,7 +478,7 @@ export class ActivityNewRepository extends BaseMultiTableRepository<
           studentId: participant.id,
         })),
       },
-    };
+    } satisfies ActivityDbInsert;
   }
 
   protected fieldMap(field: ActivityFieldMapKeys): string | null | undefined {

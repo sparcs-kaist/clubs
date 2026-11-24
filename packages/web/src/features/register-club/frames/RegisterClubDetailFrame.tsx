@@ -3,6 +3,7 @@ import React from "react";
 import styled from "styled-components";
 
 import { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
+import type { ApiReg022ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg022";
 import { RegistrationTypeEnum } from "@clubs/interface/common/enum/registration.enum";
 import { UserTypeEnum } from "@clubs/interface/common/enum/user.enum";
 
@@ -31,9 +32,14 @@ import {
 import { getTagDetail } from "@sparcs-clubs/web/utils/getTagDetail";
 import { professorEnumToText } from "@sparcs-clubs/web/utils/getUserType";
 
+import ProfessorRegistrationReview from "../components/ProfessorRegistrationReview";
+
 interface ClubRegisterDetail {
   profile: UserTypeEnum | "permanent";
-  clubDetail: ApiReg011ResponseOk;
+  clubDetail: Omit<ApiReg011ResponseOk, "semesterId"> & {
+    semesterId: number | null;
+  };
+  professorReview?: ApiReg022ResponseOk;
 }
 
 const FilePreviewContainerWrapper = styled(FlexWrapper)`
@@ -52,6 +58,7 @@ export const FilePreviewContainer: React.FC<React.PropsWithChildren> = ({
 const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   profile,
   clubDetail,
+  professorReview,
 }: ClubRegisterDetail) => {
   const t = useTranslations("my.registration");
   const divisionT = useTranslations("division");
@@ -62,11 +69,19 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
   } = useGetDivisionType();
   const divisionName =
     divisionData?.divisionTagList[clubDetail.divisionId]?.text;
+  const professorRank = clubDetail.professor?.professorEnumId;
 
   return (
     <AsyncBoundary isLoading={divisionLoading} isError={divisionError}>
-      <Card padding="32px" gap={20} outline>
-        {/* 교수: progress 보여주지 않음. 상임동아리: progress는 보이나 comments 가림 */}
+      <Card
+        padding="32px"
+        gap={20}
+        outline
+        style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+      >
+        {professorReview && (
+          <ProfessorRegistrationReview {...professorReview} />
+        )}
         {profile !== UserTypeEnum.Professor && (
           <RegisterClubStatusSection
             status={clubDetail.registrationStatusEnumId}
@@ -155,12 +170,12 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
               <ListItem>
                 {t("name")}: {clubDetail.professor?.name}
               </ListItem>
-              <ListItem>
-                {t("rank")}:{" "}
-                {t(
-                  `professorRanks.${professorEnumToText(clubDetail.professor?.professorEnumId)}`,
-                )}
-              </ListItem>
+              {professorRank && (
+                <ListItem>
+                  {t("rank")}:{" "}
+                  {t(`professorRanks.${professorEnumToText(professorRank)}`)}
+                </ListItem>
+              )}
               <ListItem>
                 {t("email")}: {clubDetail.professor?.email}
               </ListItem>
@@ -221,14 +236,15 @@ const RegisterClubDetailFrame: React.FC<ClubRegisterDetail> = ({
         </FlexWrapper>
         {clubDetail.registrationTypeEnumId ===
           RegistrationTypeEnum.Promotional &&
-          clubDetail.clubId && (
+          clubDetail.clubId &&
+          clubDetail.semesterId !== null && (
             <MyRegisterClubActFrame
               profile={profile}
               clubId={clubDetail.clubId}
               semesterId={clubDetail.semesterId}
             />
           )}
-        {clubDetail.professor && (
+        {clubDetail.professor && profile !== UserTypeEnum.Professor && (
           <FlexWrapper gap={20} direction="row">
             <Typography fw="MEDIUM" lh={20} fs={16} style={{ flex: 1 }}>
               {t("professorApproval")}

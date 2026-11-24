@@ -14,7 +14,10 @@ const requestParam = z.object({});
 const requestQuery = z.object({});
 
 const requestBody = z.object({
-  activities: z.object({ id: z.coerce.number().int().min(1) }).array(),
+  activities: z
+    .object({ id: z.coerce.number().int().min(1) })
+    .array()
+    .min(1),
 });
 
 const responseBodyMap = {

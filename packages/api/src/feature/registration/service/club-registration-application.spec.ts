@@ -12,6 +12,7 @@ jest.mock("@nestjs-cls/transactional", () => ({
 }));
 
 type Dependencies = ConstructorParameters<typeof RegistrationService>;
+const applicant = { userId: 100, studentId: 200 };
 const body: ApiReg001RequestBody = {
   clubId: 123,
   registrationTypeEnumId: RegistrationTypeEnum.ReProvisional,
@@ -37,9 +38,13 @@ const createContext = (
     findByClubAndSemesterId: jest.fn().mockResolvedValue([]),
     findByStudentAndSemesterId: jest.fn().mockResolvedValue([]),
     createRegistration: jest.fn().mockResolvedValue({ id: 456 }),
-    putStudentRegistrationsClubRegistration: jest.fn().mockResolvedValue({}),
+    putStudentRegistrationsClubRegistration: jest
+      .fn()
+      .mockResolvedValue(undefined),
   };
   const clubs = {
+    lockRegistrationClub: jest.fn().mockResolvedValue(undefined),
+    lockRegistrationApplicant: jest.fn().mockResolvedValue(undefined),
     findStudentClubDelegate: jest.fn().mockResolvedValue({ id: 123 }),
     getClubByClubId: jest.fn().mockResolvedValue([{ id: 123 }]),
     makeClubSummaryResponse: jest.fn().mockResolvedValue({ id: 123 }),
@@ -59,6 +64,7 @@ const createContext = (
   const registration = {
     checkDeadline: jest.fn().mockResolvedValue(undefined),
   };
+  const users = { updatePhoneNumber: jest.fn().mockResolvedValue(undefined) };
   const semester = {
     loadId: jest.fn().mockResolvedValue(10),
     load: jest.fn().mockResolvedValue({ id: 10 }),
@@ -69,13 +75,13 @@ const createContext = (
     division as unknown as Dependencies[2],
     files as unknown as Dependencies[3],
     registration as unknown as Dependencies[4],
-    {} as Dependencies[5],
+    users as unknown as Dependencies[5],
     {} as Dependencies[6],
     semester as unknown as Dependencies[7],
     {} as Dependencies[8],
     {} as Dependencies[9],
   );
-  return { service, repository, clubs, files, registration };
+  return { service, repository, clubs, files, registration, users };
 };
 
 const expectCode = async (
@@ -95,9 +101,9 @@ describe("club application eligibility", () => {
   ])(
     "preserves provisional renewal from previous-semester club status %s",
     async type => {
-      const { service, repository } = createContext({ 9: type });
+      const { service, repository, users } = createContext({ 9: type });
       await expect(
-        service.postStudentRegistrationClubRegistration(200, body),
+        service.postStudentRegistrationClubRegistration(applicant, body),
       ).resolves.toEqual({ id: 456 });
       expect(repository.createRegistration).toHaveBeenCalledWith(
         200,
@@ -107,6 +113,13 @@ describe("club application eligibility", () => {
           clubId: 123,
         }),
       );
+      expect(users.updatePhoneNumber).toHaveBeenCalledWith(
+        applicant.userId,
+        body.phoneNumber,
+      );
+      expect(
+        repository.createRegistration.mock.invocationCallOrder[0],
+      ).toBeLessThan(users.updatePhoneNumber.mock.invocationCallOrder[0]);
     },
   );
 
@@ -115,7 +128,7 @@ describe("club application eligibility", () => {
       8: ClubTypeEnum.Provisional,
     });
     await expectCode(
-      service.postStudentRegistrationClubRegistration(200, body),
+      service.postStudentRegistrationClubRegistration(applicant, body),
       RegistrationErrorCode.NotEligible,
     );
     expect(repository.createRegistration).not.toHaveBeenCalled();
@@ -169,7 +182,7 @@ describe("club application errors", () => {
       const { service, repository } = createContext();
       repository[method].mockResolvedValue([{ id: 789 }]);
       await expectCode(
-        service.postStudentRegistrationClubRegistration(200, body),
+        service.postStudentRegistrationClubRegistration(applicant, body),
         code,
       );
       expect(repository.createRegistration).not.toHaveBeenCalled();
@@ -185,7 +198,7 @@ describe("club application errors", () => {
       ),
     );
     await expectCode(
-      service.postStudentRegistrationClubRegistration(200, body),
+      service.postStudentRegistrationClubRegistration(applicant, body),
       RegistrationErrorCode.RegistrationPeriodClosed,
     );
     expect(repository.findByStudentAndSemesterId).not.toHaveBeenCalled();
@@ -198,8 +211,12 @@ describe("club application errors", () => {
       files.getFileInfoById.mockRejectedValue(new NotFoundException());
       const operation =
         mode === "create"
-          ? service.postStudentRegistrationClubRegistration(200, body)
-          : service.putStudentRegistrationsClubRegistration(200, 456, body);
+          ? service.postStudentRegistrationClubRegistration(applicant, body)
+          : service.putStudentRegistrationsClubRegistration(
+              applicant,
+              456,
+              body,
+            );
       await expectCode(operation, RegistrationErrorCode.InvalidAttachment);
     },
   );
@@ -209,7 +226,7 @@ describe("club application errors", () => {
     const error = new Error("file service unavailable");
     files.getFileInfoById.mockRejectedValue(error);
     await expect(
-      service.postStudentRegistrationClubRegistration(200, body),
+      service.postStudentRegistrationClubRegistration(applicant, body),
     ).rejects.toBe(error);
   });
 });

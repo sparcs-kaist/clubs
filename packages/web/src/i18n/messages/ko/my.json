@@ -1,20 +1,31 @@
 {
   "representative": {
-    "requestedTitle": "동아리 대표자 변경 요청",
-    "completedTitle": "동아리 대표자 변경 완료",
-    "requestedBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 요청되었습니다 \n{prevRepresentative} -> {newRepresentative} (승인 전)",
-    "completedBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 완료되었습니다 \n{prevRepresentative} -> {newRepresentative}",
-    "viewMore": "클릭하여 더보기",
+    "roles": {
+      "representative": "대표자",
+      "delegate1": "대의원 1",
+      "delegate2": "대의원 2"
+    },
+    "requestedTitle": "동아리 {role} 변경 요청",
+    "completedTitle": "동아리 {role} 변경 완료",
+    "requestedBody": "{requester}님이 ‘{clubName}’의 {role}로 지정해 달라고 요청했습니다.",
+    "completedBody": "‘{clubName}’의 {role} 변경 요청을 수락했습니다.",
+    "viewMore": "요청 확인",
     "manageClub": "대표 동아리 관리 페이지 바로가기",
-    "modalBody": "''{clubName}''의 동아리 대표자 변경이 다음과 같이 요청되었습니다 \n{prevRepresentative} -> {newRepresentative}",
-    "phoneRequired": "전화번호를 입력해야 동아리 대표자 변경을 승인할 수 있습니다",
-    "cancel": "취소",
+    "phoneNumber": "전화번호",
+    "phoneRequired": "수락하기 전에 전화번호를 입력하거나 확인해 주세요.",
+    "responseError": "요청을 처리하지 못했습니다. 이미 처리되었거나 만료된 요청일 수 있습니다.",
+    "cancel": "닫기",
     "reject": "거절",
-    "approve": "승인"
+    "approve": "수락"
   },
   "overview": {
     "myInformation": "나의 정보",
     "phoneNumber": "전화번호",
+    "phoneLoadError": "전화번호를 불러오지 못했습니다.",
+    "retryPhoneLoad": "다시 불러오기",
+    "phoneSaveError": "전화번호를 저장하지 못했습니다. 다시 시도해 주세요.",
+    "phoneSaved": "전화번호를 저장했습니다.",
+    "phoneSavedReloadError": "전화번호를 저장했습니다. 저장한 번호를 확인하려면 새로고침해 주세요.",
     "save": "저장",
     "viewAll": "전체 보기",
     "semester": "{year}년 {name}학기",
@@ -177,6 +188,22 @@
     }
   },
   "registration": {
+    "executiveReview": "집행부 심사 상태",
+    "executiveStatus": {
+      "1": "대기",
+      "2": "승인",
+      "3": "반려"
+    },
+    "yourSignature": "본인 서명 상태",
+    "signatureStatus": {
+      "PENDING": "서명 대기",
+      "APPROVED": "서명 완료",
+      "LATE_APPROVED": "지연 서명"
+    },
+    "regularSignatureDeadline": "정규 서명 마감 · {date}",
+    "lateSignatureDeadline": "지연 서명 안내 기한 · {date}",
+    "deadlineNotConfigured": "미설정",
+    "signatureRecordedAt": "서명 시각 · {date}",
     "title": "동아리 등록",
     "myPage": "마이페이지",
     "backToList": "목록으로 돌아가기",
@@ -196,7 +223,7 @@
     "editWarning": "동아리 등록 신청을 수정하면 신청 상태 및 지도교수 승인 여부가 모두 초기화됩니다.",
     "editQuestion": "수정하시겠습니까?",
     "approvedNotEditable": "승인된 등록 신청은 수정하실 수 없습니다.",
-    "editTitle": "동아리 {type} 신청 수정",
+    "editTitle": "{type} 신청 수정",
     "typeRenewal": "재등록",
     "typePromotional": "신규 등록",
     "typeNewProvisional": "가등록",
@@ -209,6 +236,9 @@
     "newClubNameEn": "신규 동아리명 (영문)",
     "representativeName": "대표자 이름",
     "representativePhone": "대표자 전화번호",
+    "applicantPhone": "신청자 본인 전화번호",
+    "applicantPhoneSubmitHelp": "신청서를 제출하면 이 번호가 마이페이지에도 저장됩니다.",
+    "applicantPhoneEditHelp": "번호를 바꿔 저장하면 마이페이지에도 반영됩니다.",
     "foundedYear": "설립 연도",
     "foundedMonth": "설립 월",
     "foundedYearMonth": "설립 연월: {year}년 {month}월",
@@ -236,14 +266,14 @@
     "professorApproval": "지도교수 승인",
     "approvalApproved": "승인",
     "approvalPending": "대기",
-    "clubNameKrPlaceholder": "국문 동아리명을 입력해주세요",
+    "clubNameKrPlaceholder": "공식 동아리명을 입력해주세요",
     "clubNameEnPlaceholder": "영문 동아리명을 입력해주세요",
     "clubNamePlaceholder": "동아리명을 선택해주세요",
     "activityFieldPlaceholder": "활동 분야를 입력해주세요",
     "requestProfessor": "지도교수를 신청하겠습니다",
-    "invalidPhone": "올바른 전화번호 형식이 아닙니다.",
+    "invalidPhone": "본인 휴대전화 번호를 010-1234-5678 형식으로 입력해 주세요.",
     "invalidForeignCharacters": "영어 대소문자, 숫자, 특수문자, 공백만 입력 가능합니다.",
-    "invalidEmail": "유효하지 않은 이메일입니다.",
+    "invalidEmail": "올바른 KAIST 이메일 주소를 입력해주세요.",
     "professorNamePlaceholder": "지도교수 성함을 입력해주세요",
     "professorRankPlaceholder": "직급을 선택해주세요",
     "divisionPlaceholder": "소속 분과를 선택해주세요",
@@ -276,10 +306,10 @@
     "unionApproved": "동아리 연합회 신청 승인",
     "unionRejected": "동아리 연합회 신청 반려",
     "types": {
-      "1": "재등록",
-      "2": "신규 등록",
-      "3": "가등록",
-      "4": "가등록"
+      "1": "정동아리 재등록",
+      "2": "정동아리 신규 등록",
+      "3": "가등록(신규)",
+      "4": "가등록(재등록)"
     },
     "professorRanks": {
       "조교수": "조교수",
@@ -307,11 +337,11 @@
     },
     "divisionRulesContent": "제54조(분과자치규칙)\n① 분과자치규칙은 분과학생회의 운영을 위해 각 분과 내에서 제정∙개정 및 폐지 가능한 자\n치규칙을 칭한다.\n② 분과자치규칙은 본회 회칙과 달리 성립하지 아니하고, 본회 회칙에 위반되는 자치규칙은\n그 위반되는 부분에 한정하여 효력이 없다.\n③ 분과자치규칙은 분과회의 내 의결을 통해 제정∙개정할 수 있다.\n④ 확정된 분과자치규칙은 3일 이내에 공포하여야 하며 확정 5일 이후에 발효된다.\n⑤ 분과자치규칙이 제정∙개정 및 폐지된 경우 분과학생회장은 지체 없이 차기 운영위원회에\n해당 내용을 보고하여야 한다.\n⑥ 분과학생회장은 매 정규학기 개강일 20일 이전까지 분과자치규칙 존재여부 및 최신 분과\n자치규칙을 집행부에 송부해야 한다.\n",
     "validation": {
-      "phoneRequired": "대표자 전화번호를 입력해주세요",
+      "phoneRequired": "본인 전화번호를 입력해 주세요.",
       "activityFieldKrRequired": "활동 분야(국문)를 입력해주세요",
-      "activityFieldKrTooLong": "활동 분야(국문)는 255자 이내로 입력해주세요",
+      "activityFieldKrTooLong": "활동 분야(국문)는 공백 포함 최대 40자, 공백 제외 최대 30자까지 입력할 수 있습니다.",
       "activityFieldEnRequired": "활동 분야(영문)를 입력해주세요",
-      "activityFieldEnTooLong": "활동 분야(영문)는 255자 이내로 입력해주세요",
+      "activityFieldEnTooLong": "활동 분야(영문)는 공백 포함 최대 40자, 공백 제외 최대 30자까지 입력할 수 있습니다.",
       "foundedAtRequired": "설립 연(월)을 입력해주세요",
       "divisionRequired": "분과를 선택해주세요",
       "divisionConsistencyRequired": "분과 정합성을 입력해주세요",
@@ -343,7 +373,7 @@
         "registrationTypeEnumId": "신청 유형",
         "clubNameKr": "동아리명(국문)",
         "clubNameEn": "동아리명(영문)",
-        "phoneNumber": "대표자 전화번호",
+        "phoneNumber": "신청자 본인 전화번호",
         "foundedAt": "설립일",
         "divisionId": "분과",
         "activityFieldKr": "활동 분야(국문)",
@@ -429,6 +459,37 @@
       "participantSearchEmpty": "검색 결과가 존재하지 않습니다",
       "selectedParticipantCount": "선택된 회원 목록 ({count}명)",
       "selectedParticipantsEmpty": "선택된 회원이 없습니다."
+    },
+    "applicationTitle": "{type} 신청",
+    "writeApplication": "신청서 작성",
+    "writeApplicationForType": "{type} 신청서 작성",
+    "changeRegistrationType": "등록 유형 다시 선택",
+    "viewSubmittedApplication": "신청 내역 확인",
+    "registrationClosed": "현재는 동아리 등록 신청 기간이 아닙니다.",
+    "restoreApplicationDraft": "{type} 신청서에 작성하던 내용이 있습니다. 불러오시겠습니까?",
+    "submitApplication": "신청",
+    "submittingApplication": "신청 중",
+    "submitSuccess": "신청이 완료되었습니다.",
+    "submitSuccessNext": "확인을 누르면 신청 내역 화면으로 이동합니다.",
+    "professorEligibility": "정교수, 부교수, 조교수만 지도교수를 맡을 수 있습니다.",
+    "activityFieldLimits": "공백 포함 최대 40자, 공백 제외 최대 30자",
+    "requirements": {
+      "renewal": "직전 학기에 정동아리 지위를 유지했던 동아리만 등록할 수 있습니다.",
+      "promotionalProvisional": "두 정규학기 이상 가등록 지위를 유지한 동아리가 등록할 수 있습니다.",
+      "promotionalCancelled": "등록 취소 후 세 정규학기가 지나지 않은 단체가 등록할 수 있습니다.",
+      "newProvisional": "새 동아리를 만들려는 학부 총학생회 정회원이 등록할 수 있습니다.",
+      "reProvisional": "직전 학기에 등록한 동아리가 신청할 수 있습니다. 정동아리도 포함됩니다."
+    },
+    "eligibility": {
+      "undergraduateOnly": "로그인한 학부생만 신청할 수 있습니다.",
+      "loadError": "신청 자격을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.",
+      "checking": "신청 자격을 확인하고 있습니다.",
+      "applicationLoadError": "신청 내역을 확인하지 못했습니다. 새로고침 후 다시 시도해주세요.",
+      "alreadyApplied": "이번 학기에 제출한 신청이 있습니다. 신청 내역을 확인해주세요.",
+      "noManagedClub": "현재 대표자·대의원으로 관리하는 동아리가 없습니다.",
+      "unavailable": "신청 자격을 확인하지 못했습니다. 다시 조회해주세요.",
+      "alreadyDelegate": "이미 동아리 대표자·대의원으로 등록되어 있습니다. 기존 동아리의 등록 유형을 선택해주세요.",
+      "notEligible": "해당 동아리의 신청 내역이 이미 존재하거나 이 등록 유형의 신청 조건을 충족하지 않습니다."
     }
   }
 }

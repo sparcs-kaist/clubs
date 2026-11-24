@@ -1,7 +1,14 @@
 import type { ApiClb001ResponseOK } from "@clubs/interface/api/club/endpoint/apiClb001";
 
+import type { ClubDetail } from "@sparcs-clubs/web/features/clubs/types";
+
+type ClubListDivision = ApiClb001ResponseOK["divisions"][number];
+type MockDivision = Omit<ClubListDivision, "clubs"> & {
+  clubs: ClubDetail[];
+};
+
 // mockup model to interface
-const mockupData: ApiClb001ResponseOK = {
+const mockupData: { divisions: MockDivision[] } = {
   divisions: [
     {
       id: 1,
@@ -10,10 +17,11 @@ const mockupData: ApiClb001ResponseOK = {
         {
           id: 1,
           nameKr: "궁극의 맛",
-          nameEn: "궁극의 맛",
+          nameEn: "The Ultimate Taste",
           type: 1,
           isPermanent: false,
           characteristic: "요리",
+          characteristicEn: "Cooking",
           representative: "장주원",
           advisor: undefined,
           totalMemberCnt: 1,
@@ -1249,4 +1257,12 @@ const mockupData: ApiClb001ResponseOK = {
 
 // ----
 
-export default mockupData;
+export default {
+  divisions: mockupData.divisions.map(division => ({
+    ...division,
+    clubs: division.clubs.map(club => ({
+      ...club,
+      characteristicEn: club.characteristicEn ?? null,
+    })),
+  })),
+} satisfies ApiClb001ResponseOK;

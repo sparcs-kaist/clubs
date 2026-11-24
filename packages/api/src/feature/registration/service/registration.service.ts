@@ -6,7 +6,9 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
+import { Prisma } from "@prisma/client";
 
+import { ProfessorApprovalStatus } from "@clubs/domain/activity/activity";
 import { ISemester } from "@clubs/domain/semester/semester";
 
 import type {
@@ -28,7 +30,10 @@ import type {
 } from "@clubs/interface/api/registration/endpoint/apiReg009";
 import type { ApiReg010ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg010";
 import type { ApiReg011ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg011";
-import type { ApiReg012ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg012";
+import type {
+  ApiReg012RequestQuery,
+  ApiReg012ResponseOk,
+} from "@clubs/interface/api/registration/endpoint/apiReg012";
 import { ApiReg013ResponseOk } from "@clubs/interface/api/registration/endpoint/apiReg013";
 import type {
   ApiReg014RequestQuery,
@@ -69,6 +74,7 @@ import {
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import type { PrismaTransactionalAdapter } from "@sparcs-clubs/api/common/transaction/transaction.type";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeOne, takeOnlyOne } from "@sparcs-clubs/api/common/util/util";
 import ClubPublicService from "@sparcs-clubs/api/feature/club/service/club.public.service";
@@ -78,10 +84,11 @@ import { RegistrationDeadlinePublicService } from "@sparcs-clubs/api/feature/sem
 import { SemesterPublicService } from "@sparcs-clubs/api/feature/semester/publicService/semester.public.service";
 import UserPublicService from "@sparcs-clubs/api/feature/user/service/user.public.service";
 
-import { MMemberRegistration } from "../model/member.registration.model";
+import type { ClubRegistrationReader } from "../repository/club-registration.repository";
 import { ClubRegistrationRepository } from "../repository/club-registration.repository";
 import { ClubRegistrationApprovalRepository } from "../repository/club-registration-approval.repository";
 import { MemberRegistrationRepository } from "../repository/member-registration.repository";
+import { getStoredProfessorApprovalStatus } from "../util/professor-approval";
 import { isClubNameConflict } from "../util/registration-error";
 import {
   getMemberRegistrationStatistics,
@@ -93,6 +100,8 @@ interface ApiReg006ResponseType {
   status: number;
   data: ApiReg006ResponseOk | ApiReg006ResponseNoContent;
 }
+
+type RegistrationApplicant = { userId: number; studentId: number };
 
 @Injectable()
 export class RegistrationService {
@@ -166,9 +175,11 @@ export class RegistrationService {
   /**
    * @description 동아리 대표자인지 검증하는 로직은 repository쪽에서 진행됩니다.
    */
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async postStudentRegistrationClubRegistration(
-    studentId: number,
+    { userId, studentId }: RegistrationApplicant,
     body: ApiReg001RequestBody,
   ): Promise<ApiReg001ResponseCreated> {
     // - 현재 동아리 등록 신청 기간이 맞는지 확인합니다.
@@ -250,11 +261,19 @@ export class RegistrationService {
     );
 
     try {
-      return await this.clubRegistrationRepository.createRegistration(
-        studentId,
-        semesterId,
-        transformedBody,
-      );
+      if (body.registrationTypeEnumId === RegistrationTypeEnum.NewProvisional) {
+        await this.clubPublicService.lockRegistrationApplicant(studentId);
+      } else if (body.clubId !== undefined) {
+        await this.clubPublicService.lockRegistrationClub(body.clubId);
+      }
+      const registration =
+        await this.clubRegistrationRepository.createRegistration(
+          studentId,
+          semesterId,
+          transformedBody,
+        );
+      await this.userPublicService.updatePhoneNumber(userId, body.phoneNumber);
+      return registration;
     } catch (error) {
       if (isClubNameConflict(error)) {
         throw new HttpException(
@@ -630,9 +649,11 @@ export class RegistrationService {
   /**
    * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
    */
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async putStudentRegistrationsClubRegistration(
-    studentId: number,
+    { userId, studentId }: RegistrationApplicant,
     applyId: number,
     body: ApiReg009RequestBody,
   ): Promise<ApiReg009ResponseOk> {
@@ -656,18 +677,44 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationModification,
       ],
     });
-    const result =
+    const semesterId = await this.semesterPublicService.loadId();
+    const registration =
+      await this.clubRegistrationRepository.findActiveRegistrationForApplicant(
+        applyId,
+        studentId,
+        semesterId,
+      );
+    if (!registration) {
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.ApplicationNotEditable,
+          message: "이번 학기에 본인이 제출한 신청서만 수정할 수 있습니다.",
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const changedPhoneNumber =
       await this.clubRegistrationRepository.putStudentRegistrationsClubRegistration(
         studentId,
         applyId,
         body,
+        semesterId,
       );
-    return result;
+    if (changedPhoneNumber !== undefined) {
+      await this.userPublicService.updatePhoneNumber(
+        userId,
+        changedPhoneNumber,
+      );
+    }
+    return {};
   }
 
   /**
    * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
    */
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async deleteStudentRegistrationsClubRegistration(
     studentId: number,
     applyId: number,
@@ -680,10 +727,43 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
+    const semesterId = await this.semesterPublicService.loadId();
+    const registration =
+      await this.clubRegistrationRepository.findActiveRegistrationForApplicant(
+        applyId,
+        studentId,
+        semesterId,
+      );
+    if (!registration) {
+      throw new NotFoundException("Registration Not Found");
+    }
+    const provisionalClubId =
+      registration.registrationApplicationTypeEnumId ===
+      RegistrationTypeEnum.NewProvisional
+        ? registration.clubId
+        : undefined;
+    if (provisionalClubId === null) {
+      throw new HttpException("Registration club is missing", 500);
+    }
+    if (provisionalClubId !== undefined) {
+      await this.clubPublicService.lockRegistrationClub(
+        provisionalClubId,
+        studentId,
+      );
+    }
+    const now = this.clock.now();
     await this.clubRegistrationRepository.deleteStudentRegistrationsClubRegistration(
       studentId,
       applyId,
+      now,
+      semesterId,
     );
+    if (provisionalClubId !== undefined) {
+      await this.clubPublicService.deleteProvisionalClub(
+        provisionalClubId,
+        now,
+      );
+    }
     return {};
   }
 
@@ -728,29 +808,135 @@ export class RegistrationService {
     return { ...result, semesterId };
   }
 
-  /**
-   * @description studentId가 유효한지에 대한 검증은 repository쪽에서 진행됩니다.
-   */
+  private async getClubRegistrationReader(
+    studentId: number,
+    clubId?: number,
+  ): Promise<ClubRegistrationReader> {
+    const delegateClubIds =
+      await this.clubPublicService.findStudentDelegateClubIds(studentId);
+    if (clubId === undefined) return { studentId, delegateClubIds };
+    if (!delegateClubIds.includes(clubId)) {
+      throw new NotFoundException("Club not found");
+    }
+    return { clubId };
+  }
+
   async getStudentRegistrationsClubRegistrationsMy(
     studentId: number,
+    query: ApiReg012RequestQuery = {},
   ): Promise<ApiReg012ResponseOk> {
-    // 동아리 신청, 집행부원 피드백, 동아리 수정 기간인지 확인합니다.
-    // await this.registrationPublicService.checkDeadline({
-    //   enums: [
-    //     RegistrationDeadlineEnum.ClubRegistrationApplication,
-    //     // RegistrationDeadlineEnum.ClubRegistrationModification,
-    //     // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
-    //   ],
-    // });
-
-    const semesterId = await this.semesterPublicService.loadId();
-
-    const result =
-      await this.clubRegistrationRepository.getStudentRegistrationsClubRegistrationsMy(
+    const isCurrent = query.semester === undefined;
+    const isPersonal = query.clubId === undefined;
+    if (isCurrent && isPersonal) {
+      const semesterId = await this.semesterPublicService.loadId();
+      return this.clubRegistrationRepository.getStudentRegistrationsClubRegistrationsMy(
         studentId,
         semesterId,
       );
-    return result;
+    }
+
+    const reader = await this.getClubRegistrationReader(
+      studentId,
+      query.clubId,
+    );
+    const semesters = isCurrent
+      ? [await this.semesterPublicService.load()]
+      : await this.semesterPublicService.findPreviousSemesters();
+    const semesterSummaries = semesters.map(({ id, year, name }) => ({
+      id,
+      year,
+      name,
+    }));
+    const semesterIds = semesters.map(semester => semester.id);
+    if (semesterIds.length === 0) {
+      return { registrations: [], semesters: [] };
+    }
+
+    const rows =
+      await this.clubRegistrationRepository.getReadableClubRegistrations(
+        semesterIds,
+        reader,
+      );
+    const [clubs, divisions, professors] = await Promise.all([
+      this.clubPublicService.findClubsByIds(
+        rows.map(row => row.clubId).filter(id => id !== null),
+      ),
+      this.divisionPublicService.findDivisionsByIds(
+        rows.map(row => row.divisionId),
+      ),
+      this.userPublicService.findProfessorNamesByIds(
+        rows.map(row => row.professorId).filter(id => id !== null),
+      ),
+    ]);
+    const clubsById = new Map(clubs.map(club => [club.id, club]));
+    const divisionNames = new Map(divisions.map(item => [item.id, item.name]));
+    const professorNames = new Map(
+      professors.map(item => [item.id, item.name]),
+    );
+
+    const semesterOrder = new Map<number | null, number>(
+      semesterIds.map((id, index) => [id, index]),
+    );
+    rows.sort(
+      (a, b) =>
+        (semesterOrder.get(a.semesterId) ?? 0) -
+        (semesterOrder.get(b.semesterId) ?? 0),
+    );
+    const registrations = rows.map(row => {
+      const club = row.clubId === null ? undefined : clubsById.get(row.clubId);
+      return {
+        id: row.id,
+        semesterId: row.semesterId ?? undefined,
+        registrationStatusEnum:
+          row.registrationApplicationStatusEnumId as RegistrationStatusEnum,
+        registrationTypeEnum:
+          row.registrationApplicationTypeEnumId as RegistrationTypeEnum,
+        clubId: row.clubId,
+        clubNameKr: club?.nameKr,
+        clubNameEn: club?.nameEn,
+        newClubNameKr: row.clubNameKr ?? "",
+        newClubNameEn: row.clubNameEn ?? "",
+        activityFieldKr: row.activityFieldKr ?? "",
+        activityFieldEn: row.activityFieldEn ?? "",
+        divisionName: divisionNames.get(row.divisionId) ?? "",
+        professorName:
+          row.professorId === null
+            ? null
+            : (professorNames.get(row.professorId) ?? null),
+      };
+    });
+    const semester = semesterSummaries[0];
+    if (isCurrent) return { semester, registrations };
+
+    const visibleSemesterIds = new Set(rows.map(row => row.semesterId));
+    return {
+      semester,
+      semesters: semesterSummaries.filter(({ id }) =>
+        visibleSemesterIds.has(id),
+      ),
+      registrations,
+    };
+  }
+
+  async getStudentPreviousClubRegistration(
+    studentId: number,
+    applyId: number,
+  ): Promise<ApiReg011ResponseOk> {
+    const semesters = await this.semesterPublicService.findPreviousSemesters();
+    if (semesters.length === 0) {
+      throw new NotFoundException("Registration not found");
+    }
+
+    const reader = await this.getClubRegistrationReader(studentId);
+    const canRead =
+      await this.clubRegistrationRepository.hasReadableClubRegistration(
+        applyId,
+        semesters.map(semester => semester.id),
+        reader,
+      );
+    if (!canRead) throw new NotFoundException("Registration not found");
+
+    return this.getStudentRegistrationsClubRegistration(studentId, applyId);
   }
 
   async getExecutiveRegistrationsClubRegistrations(
@@ -815,7 +1001,9 @@ export class RegistrationService {
     return { ...result, semesterId };
   }
 
-  @Transactional()
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async patchExecutiveRegistrationsClubRegistrationApproval(
     applyId: number,
   ): Promise<ApiReg016ResponseOk> {
@@ -827,6 +1015,16 @@ export class RegistrationService {
         // RegistrationDeadlineEnum.ClubRegistrationExecutiveFeedback,
       ],
     });
+    const applicant =
+      await this.clubRegistrationApprovalRepository.findApplicantForApproval(
+        applyId,
+      );
+    if (applicant?.clubId != null) {
+      await this.clubPublicService.lockRegistrationClub(
+        applicant.clubId,
+        applicant.studentId,
+      );
+    }
     const approvedAt = this.clock.now();
     const registration = await this.clubRegistrationApprovalRepository.approve(
       applyId,
@@ -842,6 +1040,32 @@ export class RegistrationService {
       throw new HttpException(
         "Registration semester is missing",
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const isApprovalPeriod = await this.registrationDeadlinePublicService.is({
+      semesterId: registration.semesterId,
+      date: approvedAt,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
+    if (!isApprovalPeriod) {
+      throw new HttpException(
+        {
+          code: RegistrationErrorCode.RegistrationPeriodClosed,
+          message: "해당 학기의 동아리 등록 신청 기간이 아닙니다.",
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const hasOtherApproval =
+      await this.clubRegistrationApprovalRepository.hasOtherApproval(
+        registration.clubId,
+        registration.semesterId,
+        applyId,
+      );
+    if (hasOtherApproval) {
+      throw new HttpException(
+        "Club registration is already approved for this semester",
+        HttpStatus.CONFLICT,
       );
     }
     const applicants = await this.userPublicService.getStudentsByIds([
@@ -875,9 +1099,9 @@ export class RegistrationService {
       characteristicKr: registration.activityFieldKr,
       characteristicEn: registration.activityFieldEn,
       professorId: registration.professorId,
-      effectiveAt: approvedAt,
+      approvedAt,
     });
-    await this.memberRegistrationRepository.ensureApprovedForStudent({
+    await this.memberRegistrationRepository.initializeApprovedApplicant({
       clubId: registration.clubId,
       semesterId: registration.semesterId,
       studentId: registration.studentId,
@@ -965,6 +1189,9 @@ export class RegistrationService {
           email: e.student.email,
         },
         professorSignedAt: e.registration.professorApprovedAt,
+        professorApprovalStatus: getStoredProfessorApprovalStatus(
+          e.registration,
+        ),
       })),
     };
   }
@@ -984,6 +1211,16 @@ export class RegistrationService {
           professorId: param.professorId,
         },
       );
+    const [regularDeadline, lateSigningDeadline] = await Promise.all([
+      this.getFinalClubRegistrationDeadline(
+        result.registration.semesterId,
+        RegistrationDeadlineEnum.ClubRegistrationApplication,
+      ),
+      this.getFinalClubRegistrationDeadline(
+        result.registration.semesterId,
+        RegistrationDeadlineEnum.ClubRegistrationLate,
+      ),
+    ]);
     const activityPlanFile =
       result.registration.registrationActivityPlanFileId !== null
         ? {
@@ -1072,9 +1309,13 @@ export class RegistrationService {
               ...externalInstructionFile,
             }
           : undefined,
-      isProfessorSigned:
-        result.registration.professorApprovedAt !== undefined &&
-        result.registration.professorApprovedAt !== null,
+      isProfessorSigned: Boolean(result.registration.professorApprovedAt),
+      professorSignedAt: result.registration.professorApprovedAt,
+      professorApprovalStatus: getStoredProfessorApprovalStatus(
+        result.registration,
+      ),
+      regularDeadline,
+      lateSigningDeadline,
       updatedAt: result.registration.updatedAt,
       comments: result.comments.map(e => ({
         content: e.content,
@@ -1102,32 +1343,50 @@ export class RegistrationService {
         "no such registration-apply",
         HttpStatus.NOT_FOUND,
       );
-    // 해당 동아라의 등록 신청서상의 이번학기 지도교수가 professorId와 일치하는지 검사합니다.
-    if (registrations[0].professorId !== param.professorId)
+    const [registration] = registrations;
+    if (registration.professorId !== param.professorId)
       throw new HttpException(
         "It seems that you are not a advisor of the club",
         HttpStatus.BAD_REQUEST,
       );
-    // 해당 신청이 서명대기 상태인지 검사합니다. 쿼리가 null을주는것 같아 둘다 넣어두었어요.
-    logger.debug(registrations[0].professorApprovedAt);
-    if (
-      registrations[0].professorApprovedAt !== undefined &&
-      registrations[0].professorApprovedAt !== null
-    )
+    if (registration.professorApprovedAt)
       throw new HttpException(
         "It seems already approved",
         HttpStatus.BAD_REQUEST,
       );
 
-    // 동아리 신청에 서명합니다.
-    await this.clubRegistrationRepository.updateRegistrationProfessorApprovedAt(
-      {
-        registrationId: param.param.applyId,
-        approvedAt: this.clock.now(),
-      },
+    const approvedAt = this.clock.now();
+    const regularDeadline = await this.getFinalClubRegistrationDeadline(
+      registration.semesterId,
+      RegistrationDeadlineEnum.ClubRegistrationApplication,
     );
+    const approvalStatus =
+      approvedAt.getTime() >= (regularDeadline?.getTime() ?? Infinity)
+        ? ProfessorApprovalStatus.LateApproved
+        : ProfessorApprovalStatus.Approved;
 
+    await this.clubRegistrationRepository.recordProfessorApproval({
+      registrationId: param.param.applyId,
+      professorId: param.professorId,
+      approvedAt,
+      approvalStatus,
+    });
     return {};
+  }
+
+  private async getFinalClubRegistrationDeadline(
+    semesterId: number | null,
+    deadlineEnum: RegistrationDeadlineEnum,
+  ): Promise<Date | null> {
+    if (semesterId == null) return null;
+    const deadlines = await this.registrationDeadlinePublicService.search({
+      semesterId,
+      deadlineEnum,
+    });
+    if (deadlines.length === 0) return null;
+    return new Date(
+      Math.max(...deadlines.map(deadline => deadline.endTerm.getTime())),
+    );
   }
 
   async getStudentRegistrationsAvailableClub(
@@ -1232,8 +1491,8 @@ export class RegistrationService {
   async getClubRegistrationDeadline(): Promise<ApiReg027ResponseOk> {
     const today = this.clock.now();
     const semester = await this.semesterPublicService.load();
-    // TODO: 현재는 정규 기간만 제시함. 나중에 late도 구현할 경우 수정
     const deadline = await this.registrationDeadlinePublicService.searchOne({
+      date: today,
       deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
       semesterId: semester.id,
     });
@@ -1246,13 +1505,9 @@ export class RegistrationService {
         startTerm: semester.startTerm,
         endTerm: semester.endTerm,
       },
-      deadline:
-        deadline && deadline.startTerm <= today && today <= deadline.endTerm
-          ? {
-              startDate: deadline.startTerm,
-              endTerm: deadline.endTerm,
-            }
-          : null,
+      deadline: deadline
+        ? { startDate: deadline.startTerm, endTerm: deadline.endTerm }
+        : null,
     };
   }
 
@@ -1378,6 +1633,9 @@ export class RegistrationService {
     return { status: HttpStatus.OK, data: { applies: result } };
   }
 
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async deleteMemberRegistration(
     studentId: number,
     applyId: number,
@@ -1397,19 +1655,25 @@ export class RegistrationService {
       .then(takeOnlyOne("MemberRegistration"));
 
     if (
-      this.clubPublicService.isStudentBelongsTo(studentId, application.club.id)
+      await this.clubPublicService.isStudentBelongsTo(
+        studentId,
+        application.club.id,
+      )
     ) {
       // 만약 동아리원인 경우 삭제
-      this.clubPublicService.removeStudentFromClub(
+      await this.clubPublicService.removeStudentFromClub(
         studentId,
         application.club.id,
       );
     }
 
-    await this.memberRegistrationRepository.delete({ id: applyId });
+    await this.memberRegistrationRepository.removeById(applyId);
     return {};
   }
 
+  @Transactional<PrismaTransactionalAdapter>({
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+  })
   async patchMemberRegistration(
     studentId: number,
     applyId: number,
@@ -1459,29 +1723,15 @@ export class RegistrationService {
     } else if (
       applyStatusEnumId === RegistrationApplicationStudentStatusEnum.Rejected
     ) {
-      const isAplicatedStudentDelegate =
-        await this.clubPublicService.isStudentDelegate(
-          applicationStudentId,
-          clubId,
-        );
-      if (isAplicatedStudentDelegate)
-        throw new HttpException(
-          "club delegate cannot be rejected",
-          HttpStatus.BAD_REQUEST,
-        );
-      else
-        await this.clubPublicService.removeStudentFromClub(
-          applicationStudentId,
-          clubId,
-        );
+      await this.clubPublicService.removeStudentFromClub(
+        applicationStudentId,
+        clubId,
+        false,
+      );
     }
-    await this.memberRegistrationRepository.patch(
-      { id: applyId },
-      newbie =>
-        new MMemberRegistration({
-          ...newbie,
-          registrationApplicationStudentEnum: applyStatusEnumId,
-        }),
+    await this.memberRegistrationRepository.updateStatus(
+      applyId,
+      applyStatusEnumId,
     );
     return {};
   }

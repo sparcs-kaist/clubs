@@ -23,22 +23,10 @@ import { PrismaService } from "@sparcs-clubs/api/prisma/prisma.service";
 import { VClubSummary } from "../model/club.summary.model";
 import { MClubOld } from "../model/club-old.model";
 
-interface IClubs {
-  id: number;
-  name: string;
-  districtId: number;
-  clubs: {
-    type: ClubTypeEnum;
-    id: number;
-    nameKr: string;
-    nameEn: string;
-    isPermanent: boolean;
-    characteristic: string;
-    representative: string;
-    advisor: string;
-    totalMemberCnt: number;
-  }[];
-}
+type ClubListDivision = ApiClb001ResponseOK["divisions"][number];
+type LegacyClubListDivision = Omit<ClubListDivision, "clubs"> & {
+  clubs: Omit<ClubListDivision["clubs"][number], "characteristicEn">[];
+};
 
 @Injectable()
 export class ClubOldRepository {
@@ -106,7 +94,9 @@ export class ClubOldRepository {
     return { ...clubInfo, type: clubInfo?.type as ClubTypeEnum, division };
   }
 
-  async getAllClubsGroupedByDivision(): Promise<ApiClb001ResponseOK> {
+  async getAllClubsGroupedByDivision(): Promise<{
+    divisions: LegacyClubListDivision[];
+  }> {
     const clubs = await this.prisma.$queryRaw<
       Array<{
         divId: number;
@@ -163,7 +153,9 @@ export class ClubOldRepository {
                s.name, p.name, dpcd.id
     `);
 
-    const stackedClubs = clubs.reduce<Record<number, IClubs>>((acc, row) => {
+    const stackedClubs = clubs.reduce<
+      Record<number, LegacyClubListDivision & { districtId: number }>
+    >((acc, row) => {
       acc[row.divId] ??= {
         id: row.divId,
         name: row.divName,
@@ -211,31 +203,19 @@ export class ClubOldRepository {
       dateRange: { startMonth: Date; endMonth: Date | undefined }[];
     }[];
   }> {
-    const rows = await this.prisma.$queryRaw<
-      Array<{
-        clubId: number;
-        nameKr: string;
-        nameEn: string;
-        startTerm: Date;
-        endTerm: Date | null;
-      }>
-    >(Prisma.sql`
-      SELECT cst.club_id AS clubId,
-             c.name_kr AS nameKr,
-             c.name_en AS nameEn,
-             cst.start_term AS startTerm,
-             cst.end_term AS endTerm
-      FROM club_student_t cst
-      LEFT JOIN club c ON c.id = cst.club_id
-      WHERE cst.student_id = ${studentId}
-    `);
+    const memberships = await this.prisma.clubStudentT.findMany({
+      where: { studentId, deletedAt: null },
+      select: {
+        club: { select: { id: true, nameKr: true, nameEn: true } },
+        startTerm: true,
+        endTerm: true,
+      },
+    });
 
-    const clubActivities = rows.map(row => ({
-      id: row.clubId,
-      nameKr: row.nameKr,
-      nameEn: row.nameEn,
-      startMonth: row.startTerm,
-      endMonth: row.endTerm,
+    const clubActivities = memberships.map(({ club, startTerm, endTerm }) => ({
+      ...club,
+      startMonth: startTerm,
+      endMonth: endTerm,
     }));
 
     const groupedActivities = clubActivities.reduce(
@@ -773,8 +753,8 @@ export class ClubOldRepository {
   }
 
   async find(param: {
-    id?: IClubs["id"];
-    ids?: IClubs["id"][];
+    id?: MClubOld["id"];
+    ids?: MClubOld["id"][];
     semester: ISemester;
     clubStatusEnumId?: ClubTypeEnum;
     clubStatusEnumIds?: ClubTypeEnum[];

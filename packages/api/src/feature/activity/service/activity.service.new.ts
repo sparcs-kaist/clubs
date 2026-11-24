@@ -1,7 +1,17 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
-import { ActivityStatusEnum } from "@clubs/domain/activity/activity";
+import {
+  ActivityStatusEnum,
+  ProfessorApprovalStatus,
+} from "@clubs/domain/activity/activity";
 import {
   ActivityDurationTypeEnum,
   IActivityDuration,
@@ -52,9 +62,16 @@ import {
   ApiAct017ResponseOk,
   ApiAct030ResponseOk,
 } from "@clubs/interface/api/activity/index";
+import type {
+  ReviewInternalMemoBody,
+  ReviewInternalMemoResponse,
+} from "@clubs/interface/api/review/endpoint/internalMemo";
+import { zReviewChangeHistory } from "@clubs/interface/api/review/type/review-change-history.type";
 
 import { CLOCK, Clock } from "@sparcs-clubs/api/common/clock/clock";
 import { OrderByTypeEnum } from "@sparcs-clubs/api/common/enums";
+import { labelReviewChangeHistory } from "@sparcs-clubs/api/common/review/label-review-change-history";
+import { retryInternalMemoWrite } from "@sparcs-clubs/api/common/review/retry-internal-memo-write";
 import logger from "@sparcs-clubs/api/common/util/logger";
 import { takeExist } from "@sparcs-clubs/api/common/util/util";
 import { MActivity } from "@sparcs-clubs/api/feature/activity/model/activity.model.new";
@@ -174,6 +191,7 @@ export default class ActivityService {
         activityTypeEnumId: row.activityTypeEnum,
         durations: row.durations,
         professorApprovedAt: row.professorApprovedAt,
+        professorApprovalStatus: row.professorApprovalStatus,
         editedAt: row.editedAt,
         commentedAt: row.commentedAt,
       }))
@@ -295,6 +313,7 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -361,21 +380,35 @@ export default class ActivityService {
       );
   }
 
+  @Transactional()
   async putStudentActivity(
     param: ApiAct003RequestParam,
     body: ApiAct003RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.activityRepository.fetch(param.activityId);
+    const activity = await this.activityRepository.fetchForReportUpdate(
+      param.activityId,
+    );
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.clubPublicService.checkIsStudentDelegate({
       studentId,
       clubId: activity.club.id,
     });
+    const now = this.clock.now();
+    // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
+    const activityD = await this.activityDurationPublicService.load({
+      date: now,
+    });
+    if (activity.activityDuration.id !== activityD.id)
+      throw new HttpException(
+        "The activity is not the activity of the last activity duration ",
+        HttpStatus.BAD_REQUEST,
+      );
     // 오늘이 활동보고서 작성기간이거나, 수정 작성기간인지 확인합니다.
     const availableDeadlines = await this.activityDeadlinePublicService
       .search({
-        date: this.clock.now(),
+        semesterId: activityD.semester.id,
+        date: now,
         deadlineEnum: [
           ActivityDeadlineEnum.Writing,
           ActivityDeadlineEnum.Modification,
@@ -383,16 +416,18 @@ export default class ActivityService {
         ],
       })
       .then(takeExist());
+    const isModificationPeriod = availableDeadlines.some(
+      deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Modification,
+    );
+    const isNameChanged = body.name !== activity.name;
+    if (isModificationPeriod && isNameChanged) {
+      throw new BadRequestException(
+        "수정 제출 기간에는 활동명을 변경할 수 없습니다.",
+      );
+    }
     const shouldResetProfessorApproval = availableDeadlines.some(
       deadline => deadline.deadlineEnum === ActivityDeadlineEnum.Writing,
     );
-    // 해당 활동이 지난 활동기간에 대한 활동인지 확인합니다.
-    const activityD = await this.activityDurationPublicService.load();
-    if (activity.activityDuration.id !== activityD.id)
-      throw new HttpException(
-        "The activity is not the activity of the last activity duration ",
-        HttpStatus.BAD_REQUEST,
-      );
     // 제출한 활동 기간들이 지난 활동기간 이내인지 확인합니다.
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
     // 파일 uuid의 유효성을 검사하지 않습니다.
@@ -424,7 +459,7 @@ export default class ActivityService {
         );
     });
 
-    const isUpdateSucceed = await this.activityRepository.put(
+    const isUpdateSucceed = await this.activityRepository.updateActivityReport(
       new MActivity({
         id: param.activityId,
         name: body.name,
@@ -444,8 +479,11 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         club: { id: activity.club.id },
-        editedAt: this.clock.now(),
+        editedAt: now,
         professorApprovedAt: shouldResetProfessorApproval ? null : undefined,
+        professorApprovalStatus: shouldResetProfessorApproval
+          ? ProfessorApprovalStatus.Pending
+          : undefined,
         commentedAt: null,
         commentedExecutive: undefined,
       }),
@@ -456,7 +494,9 @@ export default class ActivityService {
         "Failed to update",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    await this.activityRepository.recordChangeHistory(activity, studentId, now);
   }
+
   async deleteStudentActivityProvisional(
     activityId: number,
     studentId: number,
@@ -612,6 +652,7 @@ export default class ActivityService {
     };
   }
 
+  @Transactional()
   async postStudentActivityProvisional(
     body: ApiAct007RequestBody,
     studentId: number,
@@ -622,15 +663,15 @@ export default class ActivityService {
       clubId: body.clubId,
     });
 
-    // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
-    await this.registrationDeadlinePublicService.validate({
-      date: this.clock.now(),
-      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
-    });
-
+    const date = this.clock.now();
     const activityD = await this.activityDurationPublicService.load({
-      date: this.clock.now(),
+      date,
       activityDurationTypeEnum: ActivityDurationTypeEnum.Registration,
+    });
+    await this.registrationDeadlinePublicService.validate({
+      date,
+      semesterId: activityD.semester.id,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
     });
     const activityDId = activityD.id;
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
@@ -665,7 +706,7 @@ export default class ActivityService {
         this.filePublicService.getFileInfoById(key.fileId),
       ),
     );
-    const isInsertionSucceed = await this.activityRepository.create({
+    await this.activityRepository.createRegistrationReport({
       ...body,
       club: { id: body.clubId },
       activityTypeEnum: body.activityTypeEnumId,
@@ -680,14 +721,9 @@ export default class ActivityService {
       durations: body.durations,
     });
 
-    if (!isInsertionSucceed)
-      throw new HttpException(
-        "Failed to insert",
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-
     await this.registrationPublicService.resetClubRegistrationStatusEnum(
       body.clubId,
+      activityD.semester.id,
     );
   }
 
@@ -697,26 +733,34 @@ export default class ActivityService {
     body: ApiAct008RequestBody,
     studentId: number,
   ): Promise<void> {
-    const activity = await this.activityRepository.fetch(param.activityId);
+    const activity = await this.activityRepository.fetchForReportUpdate(
+      param.activityId,
+    );
+    const now = this.clock.now();
     // 학생이 동아리 대표자 또는 대의원이 맞는지 확인합니다.
     await this.clubPublicService.checkIsStudentDelegate({
       studentId,
       clubId: activity.club.id,
     });
 
-    // 현재가 동아리 등록 기간인지 확인합니다.
-    await this.registrationDeadlinePublicService.validate({
-      date: this.clock.now(),
-      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
-    });
-
-    // 오늘이 활동보고서 작성기간이거나, 예외적 작성기간인지 확인하지 않습니다.
-    // 해당 활동이 지난 활동기간에 대한 활동인지 확인하지 않습니다.
-
     // 제출한 활동 기간들이 활동기간 이내이며 작성일 이후를 포함하지 않는지 확인합니다.
     const activityD = await this.activityDurationPublicService.getById(
       activity.activityDuration.id,
     );
+    if (
+      activityD.activityDurationTypeEnum !==
+      ActivityDurationTypeEnum.Registration
+    ) {
+      throw new HttpException(
+        "The activity is not in a registration reporting period",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    await this.registrationDeadlinePublicService.validate({
+      date: now,
+      semesterId: activityD.semester.id,
+      deadlineEnum: RegistrationDeadlineEnum.ClubRegistrationApplication,
+    });
     this.assertActivityDurationsAreSubmittable(body.durations, activityD);
 
     // 파일 uuid의 유효성을 검사합니다.
@@ -770,6 +814,7 @@ export default class ActivityService {
         activityDuration: { id: activity.activityDuration.id },
         activityStatusEnum: ActivityStatusEnum.Applied,
         professorApprovedAt: undefined,
+        professorApprovalStatus: undefined,
         commentedAt: null,
       }),
     );
@@ -779,8 +824,11 @@ export default class ActivityService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
+    await this.activityRepository.recordChangeHistory(activity, studentId, now);
+
     await this.registrationPublicService.resetClubRegistrationStatusEnum(
       activity.club.id,
+      activityD.semester.id,
     );
   }
 
@@ -970,6 +1018,7 @@ export default class ActivityService {
     const isUpdated = await this.activityRepository.approveExecutiveActivity({
       activityId: param.param.activityId,
       commentedAt,
+      commentedExecutiveId: param.executiveId,
     });
     if (!isUpdated)
       throw new HttpException(
@@ -1012,6 +1061,7 @@ export default class ActivityService {
     const isUpdated = await this.activityRepository.sendBackExecutiveActivity({
       activityId: param.param.activityId,
       commentedAt,
+      commentedExecutiveId: param.executiveId,
     });
     if (!isUpdated)
       throw new HttpException(
@@ -1087,27 +1137,12 @@ export default class ActivityService {
 
     const items: ApiAct024ResponseOk["items"] = await Promise.all(
       activities.map(async activity => {
-        const lastFeedback = await this.activityCommentRepository
-          .find({
-            activityId: activity.id,
-          })
-          .then(arr =>
-            arr.reduce((acc, cur) => {
-              if (acc === undefined || acc.createdAt < cur.createdAt) {
-                return cur;
-              }
-              return acc;
-            }, undefined),
-          );
-
         const commentedExecutive =
-          lastFeedback === undefined ||
-          lastFeedback.executive === undefined ||
-          lastFeedback.executive.id === null
+          activity.commentedExecutive?.id == null
             ? undefined
             : await this.userPublicService
                 .getExecutiveAndExecutiveTByExecutiveId({
-                  executiveId: lastFeedback.executive.id,
+                  executiveId: activity.commentedExecutive.id,
                 })
                 .then(e =>
                   e === undefined
@@ -1231,6 +1266,17 @@ export default class ActivityService {
     return {};
   }
 
+  async getExecutiveChangeHistory(executiveId: number, activityId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const history = zReviewChangeHistory.parse(
+      await this.activityRepository.findChangeHistory(activityId),
+    );
+    return labelReviewChangeHistory(history, {
+      files: ids => this.filePublicService.getFileNamesByIds(ids),
+      students: ids => this.userPublicService.getStudentMapByIds(ids),
+    });
+  }
+
   async getExecutiveActivity(activityId: number): Promise<ApiAct014ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
 
@@ -1280,6 +1326,7 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
@@ -1290,11 +1337,22 @@ export default class ActivityService {
     professorId: number,
   ): Promise<ApiAct015ResponseOk> {
     const activity = await this.activityRepository.fetch(activityId);
+    const now = this.clock.now();
     await this.clubPublicService.checkIsProfessor({
       professorId,
       clubId: activity.club.id,
-      date: this.clock.now(),
+      date: now,
     });
+    const currentTermId = await this.activityDurationPublicService
+      .loadId({ date: now })
+      .catch(error => {
+        if (error instanceof NotFoundException) return undefined;
+        throw error;
+      });
+    const isCurrentTerm = activity.activityDuration.id === currentTermId;
+    const isPendingApproval =
+      activity.professorApprovalStatus === ProfessorApprovalStatus.Pending;
+    const canProfessorApprove = isCurrentTerm && isPendingApproval;
 
     const studentMap = await this.userPublicService.getStudentMapByIds(
       activity.participants.map(e => e.id),
@@ -1342,8 +1400,53 @@ export default class ActivityService {
       })),
       updatedAt: activity.editedAt,
       professorApprovedAt: activity.professorApprovedAt,
+      professorApprovalStatus: activity.professorApprovalStatus,
+      canProfessorApprove,
       editedAt: activity.editedAt,
       commentedAt: activity.commentedAt,
     };
+  }
+
+  async getExecutiveInternalMemo(
+    id: number,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    return { memo: await this.activityRepository.getInternalMemo(id) };
+  }
+
+  putExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    return retryInternalMemoWrite(() =>
+      this.saveExecutiveInternalMemo(id, body, executiveId),
+    );
+  }
+
+  @Transactional()
+  private async saveExecutiveInternalMemo(
+    id: number,
+    body: ReviewInternalMemoBody,
+    executiveId: number,
+  ): Promise<ReviewInternalMemoResponse> {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    const executive =
+      await this.userPublicService.fetchExecutiveSummary(executiveId);
+    const memo = await this.activityRepository.putInternalMemo(id, {
+      content: body.content,
+      updatedAt: this.clock.now(),
+      updatedBy: executive.name,
+      updatedByExecutiveId: executiveId,
+    });
+    return { memo };
+  }
+
+  @Transactional()
+  async deleteExecutiveInternalMemo(id: number, executiveId: number) {
+    await this.userPublicService.checkCurrentExecutive(executiveId);
+    await this.activityRepository.deleteInternalMemo(id);
+    return {};
   }
 }

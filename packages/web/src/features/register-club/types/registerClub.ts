@@ -35,7 +35,7 @@ export interface RegisterClubModel {
   activityFieldKr: string;
   activityFieldEn: string;
 
-  professor?: ProfessorInfo;
+  professor?: ProfessorContact;
   divisionConsistency: string;
   foundationPurpose: string;
   activityPlan: string;
@@ -50,14 +50,22 @@ export interface ClubRegistrationInfo {
   id: number;
   clubNameKr: string;
   clubNameEn: string;
-  professor?: ProfessorInfo;
+  professor?: ProfessorInfo | null;
 }
 
-export interface ProfessorInfo {
+export interface ProfessorContact {
   name: string;
   email: string;
-  professorEnumId: ProfessorEnum;
 }
+
+export interface ProfessorInfo extends ProfessorContact {
+  professorEnumId: ProfessorEnum | null;
+}
+
+export const toProfessorContact = (
+  professor: ProfessorContact | null | undefined,
+): ProfessorContact | undefined =>
+  professor ? { name: professor.name, email: professor.email } : undefined;
 
 export interface Duration {
   startTerm: Date | null;

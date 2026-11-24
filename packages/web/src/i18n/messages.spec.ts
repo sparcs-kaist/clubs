@@ -58,8 +58,15 @@ const inspectMessage = (message: string, locale: string) => {
   return { signature: [...signature].sort(), values };
 };
 
-it("keeps My Page translations complete, compatible, and renderable in both languages", () => {
-  ["common", "my", "agree"].forEach(namespace => {
+it("keeps app translations complete, compatible, and renderable in both languages", () => {
+  const namespaces = [
+    "common",
+    "my",
+    "agree",
+    "officeHours",
+    "registrationHistory",
+  ];
+  namespaces.forEach(namespace => {
     const load = (locale: string) =>
       JSON.parse(
         readFileSync(

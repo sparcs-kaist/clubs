@@ -26,6 +26,10 @@ defineAxiosMock(mock => {
   mock.onGet(apiAct018.url()).reply(() => [
     200,
     {
+      isWritable: true,
+      isEditable: true,
+      canApprove: false,
+      objectionDeadline: new Date("2024-09-15T09:00:00.000Z"),
       targetTerm: {
         id: 1,
         year: 2023,

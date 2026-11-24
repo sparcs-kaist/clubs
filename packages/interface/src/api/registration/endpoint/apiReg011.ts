@@ -10,7 +10,6 @@ import {
   RegistrationTypeEnum,
 } from "@clubs/interface/common/enum/registration.enum";
 import { ProfessorEnum } from "@clubs/interface/common/enum/user.enum";
-import { zKrPhoneNumber } from "@clubs/interface/common/type/phoneNumber.type";
 
 import registrationTypeEnumChecker from "../utils/registrationTypeEnumChecker";
 
@@ -47,7 +46,8 @@ const responseBodyMap = {
       representative: z.object({
         studentNumber: z.coerce.number().int().min(1),
         name: zUserName,
-        phoneNumber: zKrPhoneNumber,
+        // 기존 신청서에는 현재 형식과 다른 번호나 비어 있는 값이 있을 수 있습니다.
+        phoneNumber: z.string().max(30).nullable(),
       }),
       foundedAt: z.coerce.date(),
       divisionId: z.coerce.number().int().min(1),
@@ -62,7 +62,7 @@ const responseBodyMap = {
             .refine(email => email.endsWith("@kaist.ac.kr"), {
               message: "Must be a valid KAIST email address",
             }),
-          professorEnumId: z.nativeEnum(ProfessorEnum),
+          professorEnumId: z.nativeEnum(ProfessorEnum).nullable(),
         })
         .optional(),
       divisionConsistency: zCoercedDbText,

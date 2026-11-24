@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { Transactional } from "@nestjs-cls/transactional";
 
 import { ClubDelegateEnum } from "@clubs/domain/club/club-delegate";
@@ -52,6 +58,22 @@ export default class ClubPublicService {
     private clubMemberRepository: ClubMemberRepository,
   ) {}
 
+  async lockRegistrationClub(clubId: number, studentId?: number) {
+    await this.clubDelegateRepository.lockForRegistrationChange(
+      clubId,
+      studentId,
+    );
+  }
+
+  async lockRegistrationApplicant(studentId: number) {
+    await this.clubDelegateRepository.lockRegistrationApplicant(studentId);
+  }
+
+  @Transactional()
+  async deleteProvisionalClub(clubId: number, now: Date) {
+    await this.clubDelegateRepository.deleteProvisionalClub(clubId, now);
+  }
+
   @Transactional()
   async approveClubRegistration(param: {
     clubId: number;
@@ -62,8 +84,10 @@ export default class ClubPublicService {
     characteristicKr: string | null;
     characteristicEn: string | null;
     professorId: number | null;
-    effectiveAt: Date;
+    approvedAt: Date;
   }): Promise<void> {
+    const previousSemesterEnd =
+      await this.semesterPublicService.getPreviousSemesterEnd(param.semester);
     const clubTerm = await this.clubSemesterRepository.ensureForRegistration({
       clubId: param.clubId,
       semesterId: param.semester.id,
@@ -84,16 +108,22 @@ export default class ClubPublicService {
       {
         clubId: param.clubId,
         studentId: param.studentId,
-        effectiveAt: param.effectiveAt,
+        previousSemesterEnd,
+        semesterStart: param.semester.startTerm,
+        semesterEnd: param.semester.endTerm,
+        approvedAt: param.approvedAt,
       },
     );
-    await this.clubMemberRepository.ensureMembershipForStudent({
-      clubId: param.clubId,
-      semesterId: param.semester.id,
-      studentId: param.studentId,
-      startTerm: clubTerm.startTerm,
-      endTerm: clubTerm.endTerm ?? param.semester.endTerm,
-    });
+    await this.clubMemberRepository.initializeMembershipForRegistration(
+      {
+        clubId: param.clubId,
+        semesterId: param.semester.id,
+        studentId: param.studentId,
+        startTerm: clubTerm.startTerm,
+        endTerm: clubTerm.endTerm ?? param.semester.endTerm,
+      },
+      param.approvedAt,
+    );
   }
 
   // 학생(studentId)이 현재 학기 동아리(clubId)에 소속되어 있는지 확인합니다.
@@ -350,9 +380,11 @@ export default class ClubPublicService {
    * 현재 학기를 기준으로 `semesterId`를 조회하고, 조회된 학기가 없는 경우 예외를 발생시킵니다.
    * 조회된 `semesterId`를 사용하여 해당 동아리(`clubId`)에서 학생(`studentId`)을 제거합니다.
    */
+  @Transactional()
   async removeStudentFromClub(
     studentId: number,
     clubId: number,
+    allowDelegateRemoval = true,
   ): Promise<void> {
     const semesterId = await this.semesterPublicService.loadId();
     if (!semesterId) {
@@ -362,16 +394,11 @@ export default class ClubPublicService {
       );
     }
 
-    const isTargetStudentDelegate = await this.isStudentDelegate(
-      studentId,
-      clubId,
-    );
-    // 신입 부원 제거
     await this.clubStudentTRepository.removeStudentFromClub(
       studentId,
       clubId,
       semesterId,
-      isTargetStudentDelegate,
+      allowDelegateRemoval,
     );
   }
 
@@ -400,6 +427,10 @@ export default class ClubPublicService {
   async fetchSummary(id: number): Promise<IClubSummary> {
     const result = await this.clubOldRepository.fetchSummary(id);
     return result;
+  }
+
+  fetchNamesIncludingDeleted(ids: number[]) {
+    return this.clubRepository.fetchNamesIncludingDeleted(ids);
   }
 
   async fetchSummaries(
@@ -433,6 +464,28 @@ export default class ClubPublicService {
     if (result.length === 0) return null;
     const club = await this.clubOldRepository.fetchSummary(result[0].clubId);
     return club;
+  }
+
+  async findStudentDelegateClubIds(studentId: number): Promise<number[]> {
+    const delegates =
+      await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
+    const clubs = await this.findClubsByIds(
+      delegates.map(delegate => delegate.clubId),
+    );
+    return clubs.map(club => club.id);
+  }
+
+  async findStudentClubDelegates(studentId: number): Promise<IClubSummary[]> {
+    const delegates =
+      await this.clubDelegateDRepository.findDelegateByStudentId(studentId);
+    if (delegates.length === 0) return [];
+    const clubIds = [...new Set(delegates.map(delegate => delegate.clubId))];
+    return this.fetchSummaries(clubIds);
+  }
+
+  async findClubsByIds(ids: number[]) {
+    if (ids.length === 0) return [];
+    return this.clubRepository.find({ id: [...new Set(ids)] });
   }
 
   async makeClubSummaryResponse(
@@ -740,16 +793,16 @@ export default class ClubPublicService {
     clubId: number;
     date?: Date;
   }): Promise<void> {
-    const semesterId = await this.semesterPublicService.loadId({
-      date: query.date,
-    });
+    const date = query.date ?? this.clock.now();
+    const semesterId = await this.semesterPublicService.loadId({ date });
     const isProfessor = await this.clubSemesterRepository.count({
       professorId: query.professorId,
       clubId: query.clubId,
       semesterId,
+      date,
     });
     if (isProfessor === 0) {
-      throw new Error(
+      throw new ForbiddenException(
         `Professor ${query.professorId} is not a professor of club: ${query.clubId}`,
       );
     }

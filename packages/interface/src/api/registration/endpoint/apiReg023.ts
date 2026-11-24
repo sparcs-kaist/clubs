@@ -3,7 +3,8 @@ import { z } from "zod";
 
 /**
  * @version v0.1
- * @description 교수로서 동아리 등록 신청을 수락(DB에서 boolean으로 관리)합니다.
+ * @description 지도교수로서 동아리 등록 신청에 서명합니다.
+ * 정규 신청 마감 시각부터는 지연 서명으로 기록합니다.
  */
 
 const url = (applyId: number) =>
