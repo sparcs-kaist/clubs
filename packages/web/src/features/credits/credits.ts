@@ -23,6 +23,30 @@ export interface SemesterCredit {
 
 const credits: SemesterCredit[] = [
   {
+    semester: "2026년 가을",
+    members: [
+      {
+        nickname: "gb",
+        name: "권혁원",
+        role: "PM",
+        roleType: RoleType.PM,
+        comment: "동~ 연~ (클럽스 톤으로)",
+      },
+    ],
+  },
+  {
+    semester: "2026년 여름",
+    members: [
+      {
+        nickname: "gb",
+        name: "권혁원",
+        role: "PM",
+        roleType: RoleType.PM,
+        comment: "다음을 사용하여 보냄: @Codex",
+      },
+    ],
+  },
+  {
     semester: "2026년 봄",
     members: [
       {
