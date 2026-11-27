@@ -5,6 +5,15 @@ export interface patchNote {
 }
 
 const patchNoteList: patchNote[] = [
+  // clubs:auto-patch-note version=v.0.1.30 source=7b66666f46b7
+  {
+    version: "v.0.1.30",
+    date: new Date("2026.11.27"),
+    patchNoteContent: `Clubs v0.1.30
+디자인 수정은 다음과 같습니다.
+- ‘만든 사람들’에서 2026년 여름·가을학기 PM인 gb의 한마디를 볼 수 있습니다. (#1978)
+`,
+  },
   // clubs:auto-patch-note version=v.0.1.29 source=6cd538d6f2ad
   {
     version: "v.0.1.29",
